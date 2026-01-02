@@ -31,8 +31,37 @@ import { Patient, Resident } from '@/types';
 export default function RecordingsGrid() {
   const navigate = useNavigate();
   const { recordings } = useLives();
-  const { user, role } = useAuth();
+  const { user, role, isAuthenticated } = useAuth();
   const { balance, canAfford, purchase } = useWallet();
+
+  // Block visitors completely
+  if (!isAuthenticated || role === 'visitor') {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12">
+          <Card className="max-w-lg mx-auto text-center p-8">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-premium/10 flex items-center justify-center">
+              <Lock className="w-8 h-8 text-premium" />
+            </div>
+            <h2 className="font-heading text-xl font-bold text-foreground mb-2">
+              Contenido Premium
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              Las grabaciones son contenido premium. Inicia sesión o crea una cuenta para acceder al catálogo.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={() => navigate('/login')}>
+                Iniciar Sesión
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/lives')}>
+                Ver Lives Gratis
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
   
   const [searchQuery, setSearchQuery] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');

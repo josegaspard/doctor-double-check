@@ -19,6 +19,9 @@ import Wallet from "./pages/Wallet";
 import Vault from "./pages/Vault";
 import Chat from "./pages/Chat";
 import DoctorProfile from "./pages/DoctorProfile";
+import DoctorDashboard from "./pages/DoctorDashboard";
+import DoctorUpload from "./pages/DoctorUpload";
+import DoctorVault from "./pages/DoctorVault";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,9 +49,9 @@ const App = () => (
                     <Route path="/chat" element={<Chat />} />
                     <Route path="/doctor/:id" element={<DoctorProfile />} />
                     <Route path="/profile" element={<Navigate to="/lives" />} />
-                    <Route path="/doctor/dashboard" element={<Navigate to="/lives" />} />
-                    <Route path="/doctor/upload" element={<Navigate to="/lives" />} />
-                    <Route path="/doctor/vault" element={<Navigate to="/lives" />} />
+                    <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+                    <Route path="/doctor/upload" element={<DoctorUpload />} />
+                    <Route path="/doctor/vault" element={<DoctorVault />} />
                     <Route path="/admin" element={<Navigate to="/lives" />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>

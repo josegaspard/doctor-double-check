@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
@@ -10,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageSquare, Send, User, Stethoscope } from 'lucide-react';
 
 export default function Chat() {
+  const navigate = useNavigate();
   const { getSessionsByUser, getSessionMessages, sendMessage, markAsRead } = useChat();
   const { user, role } = useAuth();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
@@ -33,7 +35,60 @@ export default function Chat() {
     setNewMessage('');
   };
 
-  if (role !== 'patient' && role !== 'doctor') return null;
+  // Block unauthorized roles
+  if (role !== 'patient' && role !== 'doctor') {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12">
+          <Card className="max-w-lg mx-auto text-center p-8">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+              <MessageSquare className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h2 className="font-heading text-xl font-bold text-foreground mb-2">
+              Chat 1:1
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              El chat está disponible solo para pacientes y médicos registrados.
+            </p>
+            <Button onClick={() => navigate('/login')}>
+              Iniciar Sesión
+            </Button>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Check entitlement for patients
+  const hasEntitlement = role === 'doctor' || (user as any)?.entitlements?.chat === true;
+
+  if (role === 'patient' && !hasEntitlement) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12">
+          <Card className="max-w-lg mx-auto text-center p-8">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-premium/10 flex items-center justify-center">
+              <MessageSquare className="w-8 h-8 text-premium" />
+            </div>
+            <h2 className="font-heading text-xl font-bold text-foreground mb-2">
+              Activa el Chat 1:1
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              El chat con médicos es un servicio premium. Adquiere el servicio para comunicarte directamente con profesionales de la salud.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={() => navigate('/wallet')}>
+                Ver Opciones
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/lives')}>
+                Ir a Lives
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
