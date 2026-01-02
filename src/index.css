@@ -2,95 +2,140 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Dr Double Check - Medical Design System */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    /* Medical Teal Primary */
+    --primary: 168 84% 32%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Soft backgrounds */
+    --background: 210 20% 98%;
+    --foreground: 215 25% 15%;
+    
+    /* Cards - clean white */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 215 25% 15%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --popover-foreground: 215 25% 15%;
+    
+    /* Secondary - soft blue-gray */
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 215 25% 25%;
+    
+    /* Muted */
+    --muted: 210 15% 94%;
+    --muted-foreground: 215 15% 45%;
+    
+    /* Accent - light teal */
+    --accent: 168 40% 94%;
+    --accent-foreground: 168 84% 25%;
+    
+    /* Destructive */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Success */
+    --success: 142 72% 42%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    /* Info */
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+    
+    /* Premium gold */
+    --premium: 45 93% 47%;
+    --premium-foreground: 0 0% 10%;
+    
+    /* Live indicator */
+    --live: 0 84% 60%;
+    --live-foreground: 0 0% 100%;
+    
+    /* Doctor verified */
+    --verified: 168 84% 32%;
+    --verified-foreground: 0 0% 100%;
+    
+    /* Borders */
+    --border: 214 20% 90%;
+    --input: 214 20% 90%;
+    --ring: 168 84% 32%;
+    
+    --radius: 0.75rem;
+    
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 25% 25%;
+    --sidebar-primary: 168 84% 32%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 168 40% 94%;
+    --sidebar-accent-foreground: 168 84% 25%;
+    --sidebar-border: 214 20% 92%;
+    --sidebar-ring: 168 84% 32%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --primary: 168 70% 45%;
+    --primary-foreground: 0 0% 100%;
+    
+    --background: 220 20% 10%;
+    --foreground: 210 20% 95%;
+    
+    --card: 220 18% 13%;
+    --card-foreground: 210 20% 95%;
+    
+    --popover: 220 18% 13%;
+    --popover-foreground: 210 20% 95%;
+    
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 210 20% 90%;
+    
+    --muted: 220 15% 20%;
+    --muted-foreground: 215 15% 60%;
+    
+    --accent: 168 30% 18%;
+    --accent-foreground: 168 70% 70%;
+    
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 142 60% 40%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 80% 45%;
+    --warning-foreground: 0 0% 100%;
+    
+    --info: 199 75% 45%;
+    --info-foreground: 0 0% 100%;
+    
+    --premium: 45 85% 50%;
+    --premium-foreground: 0 0% 10%;
+    
+    --live: 0 75% 55%;
+    --live-foreground: 0 0% 100%;
+    
+    --verified: 168 70% 45%;
+    --verified-foreground: 0 0% 100%;
+    
+    --border: 220 15% 22%;
+    --input: 220 15% 22%;
+    --ring: 168 70% 45%;
+    
+    --sidebar-background: 220 18% 12%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 168 70% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 168 30% 18%;
+    --sidebar-accent-foreground: 168 70% 70%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 168 70% 45%;
   }
 }
 
@@ -100,6 +145,89 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  /* Medical Badge Styles */
+  .badge-live {
+    @apply bg-live text-live-foreground animate-pulse;
+  }
+  
+  .badge-premium {
+    @apply bg-premium text-premium-foreground;
+  }
+  
+  .badge-verified {
+    @apply bg-verified text-verified-foreground;
+  }
+  
+  .badge-pending {
+    @apply bg-warning text-warning-foreground;
+  }
+  
+  /* Card Variants */
+  .card-medical {
+    @apply bg-card border border-border shadow-sm hover:shadow-md transition-shadow;
+  }
+  
+  .card-live {
+    @apply bg-card border-2 border-live/30 shadow-lg;
+  }
+  
+  .card-premium {
+    @apply bg-gradient-to-br from-premium/5 to-premium/10 border border-premium/20;
+  }
+  
+  /* Watermark */
+  .watermark {
+    @apply fixed pointer-events-none select-none text-foreground/10 text-xs font-mono;
+    transform: rotate(-30deg);
+  }
+  
+  /* Paywall overlay */
+  .paywall-overlay {
+    @apply absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50;
+  }
+  
+  /* Status indicators */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+  
+  .status-online {
+    @apply bg-success animate-pulse;
+  }
+  
+  .status-offline {
+    @apply bg-muted-foreground/40;
+  }
+  
+  .status-busy {
+    @apply bg-warning;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Prevent context menu on protected content */
+  .no-context-menu {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Gradient text */
+  .text-gradient-medical {
+    @apply bg-gradient-to-r from-primary to-info bg-clip-text text-transparent;
   }
 }
