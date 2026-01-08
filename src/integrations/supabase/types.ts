@@ -14,16 +14,964 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          sender_id: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender_id: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          is_double_check: boolean
+          last_message: string | null
+          last_message_at: string | null
+          original_consultation_id: string | null
+          participant1_id: string
+          participant1_type: Database["public"]["Enums"]["chat_participant_type"]
+          participant2_id: string
+          participant2_type: Database["public"]["Enums"]["chat_participant_type"]
+          status: Database["public"]["Enums"]["chat_status"]
+          unread_count_1: number
+          unread_count_2: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_double_check?: boolean
+          last_message?: string | null
+          last_message_at?: string | null
+          original_consultation_id?: string | null
+          participant1_id: string
+          participant1_type: Database["public"]["Enums"]["chat_participant_type"]
+          participant2_id: string
+          participant2_type: Database["public"]["Enums"]["chat_participant_type"]
+          status?: Database["public"]["Enums"]["chat_status"]
+          unread_count_1?: number
+          unread_count_2?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_double_check?: boolean
+          last_message?: string | null
+          last_message_at?: string | null
+          original_consultation_id?: string | null
+          participant1_id?: string
+          participant1_type?: Database["public"]["Enums"]["chat_participant_type"]
+          participant2_id?: string
+          participant2_type?: Database["public"]["Enums"]["chat_participant_type"]
+          status?: Database["public"]["Enums"]["chat_status"]
+          unread_count_1?: number
+          unread_count_2?: number
+        }
+        Relationships: []
+      }
+      clinical_session_invitations: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          id: string
+          responded_at: string | null
+          session_id: string
+          status: Database["public"]["Enums"]["clinical_session_status"]
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          id?: string
+          responded_at?: string | null
+          session_id: string
+          status?: Database["public"]["Enums"]["clinical_session_status"]
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          responded_at?: string | null
+          session_id?: string
+          status?: Database["public"]["Enums"]["clinical_session_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_session_invitations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinical_sessions: {
+        Row: {
+          case_summary: string | null
+          created_at: string
+          description: string | null
+          id: string
+          organizer_id: string
+          scheduled_at: string | null
+          specialty: string
+          status: Database["public"]["Enums"]["clinical_session_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          case_summary?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          organizer_id: string
+          scheduled_at?: string | null
+          specialty: string
+          status?: Database["public"]["Enums"]["clinical_session_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          case_summary?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          organizer_id?: string
+          scheduled_at?: string | null
+          specialty?: string
+          status?: Database["public"]["Enums"]["clinical_session_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      consultations: {
+        Row: {
+          chat_session_id: string | null
+          diagnosis: string | null
+          doctor_id: string
+          ended_at: string | null
+          id: string
+          notes: string | null
+          patient_id: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          chat_session_id?: string | null
+          diagnosis?: string | null
+          doctor_id: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          chat_session_id?: string | null
+          diagnosis?: string | null
+          doctor_id?: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultations_chat_session_id_fkey"
+            columns: ["chat_session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctor_content: {
+        Row: {
+          category: string | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          file_url: string
+          id: string
+          is_public: boolean
+          price: number | null
+          thumbnail_url: string | null
+          title: string
+          type: Database["public"]["Enums"]["content_type"]
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          file_url: string
+          id?: string
+          is_public?: boolean
+          price?: number | null
+          thumbnail_url?: string | null
+          title: string
+          type: Database["public"]["Enums"]["content_type"]
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          file_url?: string
+          id?: string
+          is_public?: boolean
+          price?: number | null
+          thumbnail_url?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["content_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      doctor_profiles: {
+        Row: {
+          available_for_clinical_sessions: boolean
+          available_for_double_check: boolean
+          bio: string | null
+          cedula_profesional: string | null
+          consultation_fee: number
+          created_at: string
+          followers_count: number
+          id: string
+          license: string
+          location: string | null
+          numero_consejo: string | null
+          rating: number
+          specialty: string
+          status: Database["public"]["Enums"]["doctor_status"]
+          total_consultations: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available_for_clinical_sessions?: boolean
+          available_for_double_check?: boolean
+          bio?: string | null
+          cedula_profesional?: string | null
+          consultation_fee?: number
+          created_at?: string
+          followers_count?: number
+          id?: string
+          license: string
+          location?: string | null
+          numero_consejo?: string | null
+          rating?: number
+          specialty: string
+          status?: Database["public"]["Enums"]["doctor_status"]
+          total_consultations?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available_for_clinical_sessions?: boolean
+          available_for_double_check?: boolean
+          bio?: string | null
+          cedula_profesional?: string | null
+          consultation_fee?: number
+          created_at?: string
+          followers_count?: number
+          id?: string
+          license?: string
+          location?: string | null
+          numero_consejo?: string | null
+          rating?: number
+          specialty?: string
+          status?: Database["public"]["Enums"]["doctor_status"]
+          total_consultations?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      entitlements: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      followers: {
+        Row: {
+          created_at: string
+          followed_id: string
+          follower_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          followed_id: string
+          follower_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          followed_id?: string
+          follower_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      live_likes: {
+        Row: {
+          created_at: string
+          id: string
+          live_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          live_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          live_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_likes_live_id_fkey"
+            columns: ["live_id"]
+            isOneToOne: false
+            referencedRelation: "lives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lives: {
+        Row: {
+          description: string | null
+          doctor_id: string
+          ended_at: string | null
+          id: string
+          likes_count: number
+          recording_price: number | null
+          specialty: string
+          started_at: string
+          status: Database["public"]["Enums"]["live_status"]
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          viewer_count: number
+        }
+        Insert: {
+          description?: string | null
+          doctor_id: string
+          ended_at?: string | null
+          id?: string
+          likes_count?: number
+          recording_price?: number | null
+          specialty: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["live_status"]
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          viewer_count?: number
+        }
+        Update: {
+          description?: string | null
+          doctor_id?: string
+          ended_at?: string | null
+          id?: string
+          likes_count?: number
+          recording_price?: number | null
+          specialty?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["live_status"]
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          viewer_count?: number
+        }
+        Relationships: []
+      }
+      medical_history: {
+        Row: {
+          category: string
+          created_at: string
+          date_of_study: string | null
+          description: string | null
+          file_size: number
+          file_type: Database["public"]["Enums"]["vault_file_type"]
+          file_url: string
+          id: string
+          patient_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          date_of_study?: string | null
+          description?: string | null
+          file_size?: number
+          file_type: Database["public"]["Enums"]["vault_file_type"]
+          file_url: string
+          id?: string
+          patient_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          date_of_study?: string | null
+          description?: string | null
+          file_size?: number
+          file_type?: Database["public"]["Enums"]["vault_file_type"]
+          file_url?: string
+          id?: string
+          patient_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          recording_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          recording_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          recording_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_recording_id_fkey"
+            columns: ["recording_id"]
+            isOneToOne: false
+            referencedRelation: "recordings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recordings: {
+        Row: {
+          created_at: string
+          description: string | null
+          doctor_id: string
+          duration: number
+          id: string
+          live_id: string | null
+          price: number
+          specialty: string
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          doctor_id: string
+          duration?: number
+          id?: string
+          live_id?: string | null
+          price?: number
+          specialty: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          doctor_id?: string
+          duration?: number
+          id?: string
+          live_id?: string | null
+          price?: number
+          specialty?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recordings_live_id_fkey"
+            columns: ["live_id"]
+            isOneToOne: false
+            referencedRelation: "lives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_group_activity: {
+        Row: {
+          content: string
+          created_at: string
+          group_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          group_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_group_activity_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "resident_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "resident_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          image_url: string | null
+          member_count: number
+          name: string
+          specialty: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          member_count?: number
+          name: string
+          specialty?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          member_count?: number
+          name?: string
+          specialty?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      resident_profiles: {
+        Row: {
+          cedula_profesional: string | null
+          created_at: string
+          followers_count: number
+          id: string
+          institution: string
+          specialty: string
+          status: Database["public"]["Enums"]["doctor_status"]
+          titulo_medicina: string | null
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          cedula_profesional?: string | null
+          created_at?: string
+          followers_count?: number
+          id?: string
+          institution: string
+          specialty: string
+          status?: Database["public"]["Enums"]["doctor_status"]
+          titulo_medicina?: string | null
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          cedula_profesional?: string | null
+          created_at?: string
+          followers_count?: number
+          id?: string
+          institution?: string
+          specialty?: string
+          status?: Database["public"]["Enums"]["doctor_status"]
+          titulo_medicina?: string | null
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          creator_id: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          price_paid: number
+          subscriber_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          price_paid: number
+          subscriber_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          price_paid?: number
+          subscriber_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vault_access: {
+        Row: {
+          consultation_id: string | null
+          doctor_id: string
+          expires_at: string | null
+          file_id: string
+          granted_at: string
+          id: string
+        }
+        Insert: {
+          consultation_id?: string | null
+          doctor_id: string
+          expires_at?: string | null
+          file_id: string
+          granted_at?: string
+          id?: string
+        }
+        Update: {
+          consultation_id?: string | null
+          doctor_id?: string
+          expires_at?: string | null
+          file_id?: string
+          granted_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vault_access_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "vault_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vault_files: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          file_size: number
+          file_type: Database["public"]["Enums"]["vault_file_type"]
+          file_url: string
+          id: string
+          medical_history_id: string | null
+          name: string
+          patient_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          file_size?: number
+          file_type: Database["public"]["Enums"]["vault_file_type"]
+          file_url: string
+          id?: string
+          medical_history_id?: string | null
+          name: string
+          patient_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          file_size?: number
+          file_type?: Database["public"]["Enums"]["vault_file_type"]
+          file_url?: string
+          id?: string
+          medical_history_id?: string | null
+          name?: string
+          patient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vault_files_medical_history_id_fkey"
+            columns: ["medical_history_id"]
+            isOneToOne: false
+            referencedRelation: "medical_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          status: Database["public"]["Enums"]["transaction_status"]
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          type?: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_price_for_user: {
+        Args: { _base_price: number; _user_id: string }
+        Returns: number
+      }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_approved_doctor: { Args: { _user_id: string }; Returns: boolean }
+      is_approved_resident: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "visitor" | "patient" | "doctor" | "resident" | "admin"
+      chat_participant_type: "patient" | "doctor" | "resident"
+      chat_status: "active" | "closed"
+      clinical_session_status:
+        | "pending"
+        | "accepted"
+        | "rejected"
+        | "completed"
+        | "cancelled"
+      content_type: "video" | "pdf" | "image"
+      doctor_status: "pending" | "approved" | "rejected"
+      live_status: "live" | "ended" | "processing_recording" | "recording_ready"
+      transaction_status: "initiated" | "paid" | "failed"
+      transaction_type:
+        | "topup"
+        | "purchase"
+        | "refund"
+        | "subscription"
+        | "earning"
+      vault_file_type: "pdf" | "image" | "study"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +1098,29 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["visitor", "patient", "doctor", "resident", "admin"],
+      chat_participant_type: ["patient", "doctor", "resident"],
+      chat_status: ["active", "closed"],
+      clinical_session_status: [
+        "pending",
+        "accepted",
+        "rejected",
+        "completed",
+        "cancelled",
+      ],
+      content_type: ["video", "pdf", "image"],
+      doctor_status: ["pending", "approved", "rejected"],
+      live_status: ["live", "ended", "processing_recording", "recording_ready"],
+      transaction_status: ["initiated", "paid", "failed"],
+      transaction_type: [
+        "topup",
+        "purchase",
+        "refund",
+        "subscription",
+        "earning",
+      ],
+      vault_file_type: ["pdf", "image", "study"],
+    },
   },
 } as const
