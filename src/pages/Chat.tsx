@@ -12,7 +12,7 @@ import { MessageSquare, Send, User, Stethoscope } from 'lucide-react';
 
 export default function Chat() {
   const navigate = useNavigate();
-  const { getSessionsByUser, getSessionMessages, sendMessage, markAsRead } = useChat();
+  const { getSessionsByUser, getSessionMessages, sendMessage, markAsRead, loadMessages } = useChat();
   const { user, role } = useAuth();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -22,8 +22,11 @@ export default function Chat() {
   const messages = selectedSession ? getSessionMessages(selectedSession) : [];
 
   useEffect(() => {
-    if (selectedSession) markAsRead(selectedSession);
-  }, [selectedSession, messages.length]);
+    if (selectedSession) {
+      loadMessages(selectedSession);
+      markAsRead(selectedSession);
+    }
+  }, [selectedSession]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -33,6 +36,14 @@ export default function Chat() {
     if (!newMessage.trim() || !selectedSession) return;
     await sendMessage(selectedSession, newMessage.trim());
     setNewMessage('');
+  };
+
+  // Get display name for session
+  const getSessionDisplayName = (session: any) => {
+    if (role === 'patient') {
+      return session.participant2Name || 'Doctor';
+    }
+    return session.participant1Name || 'Paciente';
   };
 
   // Block unauthorized roles
@@ -60,7 +71,7 @@ export default function Chat() {
   }
 
   // Check entitlement for patients
-  const hasEntitlement = role === 'doctor' || (user as any)?.entitlements?.chat === true;
+  const hasEntitlement = role === 'doctor' || user?.entitlements?.some(e => e.type === 'chat' && e.isActive);
 
   if (role === 'patient' && !hasEntitlement) {
     return (
@@ -120,7 +131,7 @@ export default function Chat() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">
-                          {role === 'patient' ? session.doctorName : session.patientName}
+                          {getSessionDisplayName(session)}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">{session.lastMessage}</p>
                       </div>
@@ -140,7 +151,7 @@ export default function Chat() {
               <>
                 <CardHeader className="pb-2 border-b">
                   <CardTitle className="text-sm">
-                    {sessions.find(s => s.id === selectedSession)?.doctorName || sessions.find(s => s.id === selectedSession)?.patientName}
+                    {getSessionDisplayName(sessions.find(s => s.id === selectedSession))}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 flex flex-col">
@@ -153,7 +164,7 @@ export default function Chat() {
                           }`}>
                             <p className="text-sm">{msg.content}</p>
                             <p className={`text-xs mt-1 ${msg.senderId === user?.id ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                              {new Date(msg.timestamp).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(msg.createdAt).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>

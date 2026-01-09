@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth, DEMO_USERS } from '@/contexts/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -58,14 +58,6 @@ export default function Login() {
       navigate('/lives');
     } else {
       setRegisterError(result.error || 'Error al registrarse');
-    }
-  };
-
-  const handleDemoLogin = async (type: keyof typeof DEMO_USERS) => {
-    const user = DEMO_USERS[type];
-    const result = await login(user.email, (user as any).password);
-    if (result.success) {
-      navigate('/lives');
     }
   };
 
@@ -137,49 +129,6 @@ export default function Login() {
                       {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Iniciar Sesión'}
                     </Button>
                   </form>
-
-                  {/* Demo Users */}
-                  <div className="mt-6 pt-6 border-t border-border">
-                    <p className="text-sm text-muted-foreground mb-3 text-center">Accesos rápidos demo:</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDemoLogin('patient')}
-                        className="flex items-center gap-2"
-                      >
-                        <User className="w-4 h-4" />
-                        Paciente
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDemoLogin('doctor')}
-                        className="flex items-center gap-2"
-                      >
-                        <Stethoscope className="w-4 h-4" />
-                        Médico
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDemoLogin('resident')}
-                        className="flex items-center gap-2"
-                      >
-                        <GraduationCap className="w-4 h-4" />
-                        Residente
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDemoLogin('admin')}
-                        className="flex items-center gap-2"
-                      >
-                        <Shield className="w-4 h-4" />
-                        Admin
-                      </Button>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

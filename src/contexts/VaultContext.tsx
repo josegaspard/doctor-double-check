@@ -1,109 +1,197 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { VaultFile, VaultPermission } from '@/types';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+
+export type VaultFileType = 'pdf' | 'image' | 'study';
+
+export interface VaultFile {
+  id: string;
+  patientId: string;
+  patientName?: string;
+  name: string;
+  type: VaultFileType;
+  size: number;
+  uploadedAt: Date;
+  description?: string;
+  category: string;
+  fileUrl: string;
+  permissions: VaultPermission[];
+}
+
+export interface VaultPermission {
+  id: string;
+  doctorId: string;
+  doctorName?: string;
+  grantedAt: Date;
+  expiresAt?: Date;
+}
+
+export interface MedicalHistoryItem {
+  id: string;
+  patientId: string;
+  title: string;
+  description?: string;
+  category: string;
+  fileType: VaultFileType;
+  fileUrl: string;
+  fileSize: number;
+  dateOfStudy?: Date;
+  createdAt: Date;
+}
 
 interface VaultContextType {
   files: VaultFile[];
+  medicalHistory: MedicalHistoryItem[];
   isLoading: boolean;
   uploadProgress: number | null;
   uploadFile: (file: File, category: string, description?: string) => Promise<{ success: boolean; error?: string }>;
   deleteFile: (fileId: string) => Promise<{ success: boolean; error?: string }>;
-  grantAccess: (fileId: string, doctorId: string, doctorName: string) => Promise<{ success: boolean }>;
-  revokeAccess: (fileId: string, doctorId: string) => Promise<{ success: boolean }>;
+  grantAccess: (fileId: string, doctorId: string) => Promise<{ success: boolean; error?: string }>;
+  revokeAccess: (fileId: string, doctorId: string) => Promise<{ success: boolean; error?: string }>;
   getAccessibleFiles: (doctorId: string) => VaultFile[];
   hasAccess: (fileId: string, doctorId: string) => boolean;
+  revokeAllAccessForConsultation: (consultationId: string) => Promise<void>;
+  uploadMedicalHistory: (file: File, title: string, category: string, description?: string, dateOfStudy?: Date) => Promise<{ success: boolean; error?: string }>;
+  refreshVault: () => Promise<void>;
 }
 
 const VaultContext = createContext<VaultContextType | undefined>(undefined);
 
-// Mock initial files for demo patient
-const INITIAL_FILES: VaultFile[] = [
-  {
-    id: 'file-001',
-    patientId: 'patient-001',
-    name: 'Electrocardiograma_2024.pdf',
-    type: 'pdf',
-    size: 2456000,
-    uploadedAt: new Date('2024-02-15'),
-    description: 'ECG de control',
-    category: 'Estudios Cardíacos',
-    permissions: [
-      {
-        doctorId: 'doctor-001',
-        doctorName: 'Dr. Carlos Mendoza',
-        grantedAt: new Date('2024-02-16'),
-      },
-    ],
-  },
-  {
-    id: 'file-002',
-    patientId: 'patient-001',
-    name: 'Radiografia_Torax.jpg',
-    type: 'image',
-    size: 1890000,
-    uploadedAt: new Date('2024-03-01'),
-    description: 'Radiografía de tórax PA y lateral',
-    category: 'Imagenología',
-    permissions: [],
-  },
-  {
-    id: 'file-003',
-    patientId: 'patient-001',
-    name: 'Laboratorios_Marzo_2024.pdf',
-    type: 'pdf',
-    size: 567000,
-    uploadedAt: new Date('2024-03-10'),
-    description: 'Biometría hemática, química sanguínea',
-    category: 'Laboratorios',
-    permissions: [
-      {
-        doctorId: 'doctor-001',
-        doctorName: 'Dr. Carlos Mendoza',
-        grantedAt: new Date('2024-03-11'),
-      },
-    ],
-  },
-];
-
 export function VaultProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [files, setFiles] = useState<VaultFile[]>([]);
+  const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [accessibleFiles, setAccessibleFiles] = useState<VaultFile[]>([]);
 
-  // Load files from localStorage
-  useEffect(() => {
-    if (user?.id) {
-      const stored = localStorage.getItem(`drDoubleCheck_vault_${user.id}`);
-      if (stored) {
-        const parsed = JSON.parse(stored).map((f: any) => ({
-          ...f,
-          uploadedAt: new Date(f.uploadedAt),
-          permissions: f.permissions.map((p: any) => ({
-            ...p,
-            grantedAt: new Date(p.grantedAt),
-            expiresAt: p.expiresAt ? new Date(p.expiresAt) : undefined,
-          })),
-        }));
-        setFiles(parsed);
-      } else if (user.id === 'patient-001') {
-        // Initialize with mock data for demo patient
-        setFiles(INITIAL_FILES);
-        localStorage.setItem(
-          `drDoubleCheck_vault_${user.id}`,
-          JSON.stringify(INITIAL_FILES)
-        );
+  const fetchFiles = useCallback(async () => {
+    if (!user?.id || user.role === 'visitor') return;
+
+    try {
+      if (user.role === 'patient') {
+        // Fetch patient's own files
+        const { data: vaultFiles } = await supabase
+          .from('vault_files')
+          .select('*')
+          .eq('patient_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (vaultFiles) {
+          // Fetch permissions for each file
+          const fileIds = vaultFiles.map(f => f.id);
+          const { data: allAccess } = await supabase
+            .from('vault_access')
+            .select('*')
+            .in('file_id', fileIds);
+
+          const accessByFile = new Map<string, any[]>();
+          allAccess?.forEach(a => {
+            const existing = accessByFile.get(a.file_id) || [];
+            existing.push(a);
+            accessByFile.set(a.file_id, existing);
+          });
+
+          // Get doctor names
+          const doctorIds = [...new Set(allAccess?.map(a => a.doctor_id) || [])];
+          const { data: doctorProfiles } = await supabase
+            .from('profiles')
+            .select('id, name')
+            .in('id', doctorIds);
+
+          const doctorMap = new Map(doctorProfiles?.map(d => [d.id, d.name]) || []);
+
+          setFiles(vaultFiles.map(f => ({
+            id: f.id,
+            patientId: f.patient_id,
+            name: f.name,
+            type: f.file_type as VaultFileType,
+            size: f.file_size,
+            uploadedAt: new Date(f.created_at),
+            description: f.description || undefined,
+            category: f.category,
+            fileUrl: f.file_url,
+            permissions: (accessByFile.get(f.id) || []).map(a => ({
+              id: a.id,
+              doctorId: a.doctor_id,
+              doctorName: doctorMap.get(a.doctor_id),
+              grantedAt: new Date(a.granted_at),
+              expiresAt: a.expires_at ? new Date(a.expires_at) : undefined,
+            })),
+          })));
+        }
+
+        // Fetch medical history
+        const { data: history } = await supabase
+          .from('medical_history')
+          .select('*')
+          .eq('patient_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (history) {
+          setMedicalHistory(history.map(h => ({
+            id: h.id,
+            patientId: h.patient_id,
+            title: h.title,
+            description: h.description || undefined,
+            category: h.category,
+            fileType: h.file_type as VaultFileType,
+            fileUrl: h.file_url,
+            fileSize: h.file_size,
+            dateOfStudy: h.date_of_study ? new Date(h.date_of_study) : undefined,
+            createdAt: new Date(h.created_at),
+          })));
+        }
+      } else if (user.role === 'doctor') {
+        // Fetch files doctor has access to
+        const { data: accessData } = await supabase
+          .from('vault_access')
+          .select('*, vault_files(*)')
+          .eq('doctor_id', user.id);
+
+        if (accessData) {
+          const patientIds = [...new Set(accessData.map(a => (a.vault_files as any)?.patient_id).filter(Boolean))];
+          const { data: patientProfiles } = await supabase
+            .from('profiles')
+            .select('id, name')
+            .in('id', patientIds);
+
+          const patientMap = new Map(patientProfiles?.map(p => [p.id, p.name]) || []);
+
+          setAccessibleFiles(accessData.filter(a => a.vault_files).map(a => {
+            const file = a.vault_files as any;
+            return {
+              id: file.id,
+              patientId: file.patient_id,
+              patientName: patientMap.get(file.patient_id),
+              name: file.name,
+              type: file.file_type as VaultFileType,
+              size: file.file_size,
+              uploadedAt: new Date(file.created_at),
+              description: file.description || undefined,
+              category: file.category,
+              fileUrl: file.file_url,
+              permissions: [{
+                id: a.id,
+                doctorId: a.doctor_id,
+                grantedAt: new Date(a.granted_at),
+                expiresAt: a.expires_at ? new Date(a.expires_at) : undefined,
+              }],
+            };
+          }));
+        }
       }
+    } catch (error) {
+      console.error('Error fetching vault data:', error);
     }
-  }, [user?.id]);
+  }, [user?.id, user?.role]);
 
-  const saveFiles = (newFiles: VaultFile[]) => {
-    if (user?.id) {
-      localStorage.setItem(
-        `drDoubleCheck_vault_${user.id}`,
-        JSON.stringify(newFiles)
-      );
-    }
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
+
+  const refreshVault = async () => {
+    await fetchFiles();
   };
 
   const uploadFile = async (
@@ -111,138 +199,194 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     category: string,
     description?: string
   ): Promise<{ success: boolean; error?: string }> => {
-    if (!user) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
 
     setIsLoading(true);
     setUploadProgress(0);
 
-    // Simulate upload progress
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      setUploadProgress(i);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min((prev || 0) + 10, 90));
+      }, 200);
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('vault-files')
+        .upload(filePath, file);
+
+      clearInterval(progressInterval);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('vault-files')
+        .getPublicUrl(filePath);
+
+      const fileType = file.type.includes('pdf') ? 'pdf' : 
+                       file.type.includes('image') ? 'image' : 'study';
+
+      // Create vault file record
+      const { error: dbError } = await supabase
+        .from('vault_files')
+        .insert({
+          patient_id: user.id,
+          name: file.name,
+          file_type: fileType,
+          file_size: file.size,
+          file_url: urlData.publicUrl,
+          description,
+          category,
+        });
+
+      if (dbError) throw dbError;
+
+      setUploadProgress(100);
+      await fetchFiles();
+
+      setUploadProgress(null);
+      setIsLoading(false);
+      return { success: true };
+    } catch (error: any) {
+      setUploadProgress(null);
+      setIsLoading(false);
+      return { success: false, error: error.message || 'Error al subir archivo' };
     }
+  };
 
-    const fileType = file.type.includes('pdf')
-      ? 'pdf'
-      : file.type.includes('image')
-      ? 'image'
-      : 'study';
+  const uploadMedicalHistory = async (
+    file: File,
+    title: string,
+    category: string,
+    description?: string,
+    dateOfStudy?: Date
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
 
-    const newFile: VaultFile = {
-      id: `file-${Date.now()}`,
-      patientId: user.id,
-      name: file.name,
-      type: fileType,
-      size: file.size,
-      uploadedAt: new Date(),
-      description,
-      category,
-      permissions: [],
-    };
+    setIsLoading(true);
+    setUploadProgress(0);
 
-    const newFiles = [newFile, ...files];
-    setFiles(newFiles);
-    saveFiles(newFiles);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/history/${Date.now()}.${fileExt}`;
 
-    setUploadProgress(null);
-    setIsLoading(false);
-    return { success: true };
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min((prev || 0) + 10, 90));
+      }, 200);
+
+      const { error: uploadError } = await supabase.storage
+        .from('medical-history')
+        .upload(filePath, file);
+
+      clearInterval(progressInterval);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('medical-history')
+        .getPublicUrl(filePath);
+
+      const fileType = file.type.includes('pdf') ? 'pdf' : 
+                       file.type.includes('image') ? 'image' : 'study';
+
+      const { error: dbError } = await supabase
+        .from('medical_history')
+        .insert({
+          patient_id: user.id,
+          title,
+          description,
+          category,
+          file_type: fileType,
+          file_url: urlData.publicUrl,
+          file_size: file.size,
+          date_of_study: dateOfStudy?.toISOString(),
+        });
+
+      if (dbError) throw dbError;
+
+      setUploadProgress(100);
+      await fetchFiles();
+
+      setUploadProgress(null);
+      setIsLoading(false);
+      return { success: true };
+    } catch (error: any) {
+      setUploadProgress(null);
+      setIsLoading(false);
+      return { success: false, error: error.message || 'Error al subir historial' };
+    }
   };
 
   const deleteFile = async (fileId: string): Promise<{ success: boolean; error?: string }> => {
-    if (!user) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
 
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 300));
+    try {
+      const { error } = await supabase
+        .from('vault_files')
+        .delete()
+        .eq('id', fileId)
+        .eq('patient_id', user.id);
 
-    const newFiles = files.filter(f => f.id !== fileId);
-    setFiles(newFiles);
-    saveFiles(newFiles);
+      if (error) throw error;
 
-    setIsLoading(false);
-    return { success: true };
+      await fetchFiles();
+      setIsLoading(false);
+      return { success: true };
+    } catch (error: any) {
+      setIsLoading(false);
+      return { success: false, error: error.message || 'Error al eliminar' };
+    }
   };
 
-  const grantAccess = async (
-    fileId: string,
-    doctorId: string,
-    doctorName: string
-  ): Promise<{ success: boolean }> => {
-    const newFiles = files.map(f => {
-      if (f.id === fileId) {
-        const alreadyHasAccess = f.permissions.some(p => p.doctorId === doctorId);
-        if (alreadyHasAccess) return f;
+  const grantAccess = async (fileId: string, doctorId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
 
-        return {
-          ...f,
-          permissions: [
-            ...f.permissions,
-            {
-              doctorId,
-              doctorName,
-              grantedAt: new Date(),
-            },
-          ],
-        };
-      }
-      return f;
-    });
+    try {
+      const { error } = await supabase
+        .from('vault_access')
+        .insert({
+          file_id: fileId,
+          doctor_id: doctorId,
+        });
 
-    setFiles(newFiles);
-    saveFiles(newFiles);
-    return { success: true };
+      if (error) throw error;
+
+      await fetchFiles();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Error al dar acceso' };
+    }
   };
 
-  const revokeAccess = async (fileId: string, doctorId: string): Promise<{ success: boolean }> => {
-    const newFiles = files.map(f => {
-      if (f.id === fileId) {
-        return {
-          ...f,
-          permissions: f.permissions.filter(p => p.doctorId !== doctorId),
-        };
-      }
-      return f;
-    });
+  const revokeAccess = async (fileId: string, doctorId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
 
-    setFiles(newFiles);
-    saveFiles(newFiles);
-    return { success: true };
+    try {
+      const { error } = await supabase
+        .from('vault_access')
+        .delete()
+        .eq('file_id', fileId)
+        .eq('doctor_id', doctorId);
+
+      if (error) throw error;
+
+      await fetchFiles();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Error al revocar acceso' };
+    }
   };
 
   const getAccessibleFiles = (doctorId: string): VaultFile[] => {
-    // Get all files where the doctor has permission
-    const allVaultFiles: VaultFile[] = [];
-    
-    // In a real app, this would query the backend
-    // For demo, we'll check localStorage for all patient vaults
-    const keys = Object.keys(localStorage).filter(k => 
-      k.startsWith('drDoubleCheck_vault_')
-    );
-    
-    keys.forEach(key => {
-      try {
-        const stored = JSON.parse(localStorage.getItem(key) || '[]');
-        stored.forEach((file: any) => {
-          const hasPermission = file.permissions?.some(
-            (p: any) => p.doctorId === doctorId
-          );
-          if (hasPermission) {
-            allVaultFiles.push({
-              ...file,
-              uploadedAt: new Date(file.uploadedAt),
-              permissions: file.permissions.map((p: any) => ({
-                ...p,
-                grantedAt: new Date(p.grantedAt),
-              })),
-            });
-          }
-        });
-      } catch (e) {
-        // Ignore parse errors
-      }
-    });
-    
-    return allVaultFiles;
+    if (user?.role === 'doctor' && user.id === doctorId) {
+      return accessibleFiles;
+    }
+    return files.filter(f => f.permissions.some(p => p.doctorId === doctorId));
   };
 
   const hasAccess = (fileId: string, doctorId: string): boolean => {
@@ -251,10 +395,24 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     return file.permissions.some(p => p.doctorId === doctorId);
   };
 
+  const revokeAllAccessForConsultation = async (consultationId: string) => {
+    try {
+      await supabase
+        .from('vault_access')
+        .delete()
+        .eq('consultation_id', consultationId);
+
+      await fetchFiles();
+    } catch (error) {
+      console.error('Error revoking access:', error);
+    }
+  };
+
   return (
     <VaultContext.Provider
       value={{
         files,
+        medicalHistory,
         isLoading,
         uploadProgress,
         uploadFile,
@@ -263,6 +421,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         revokeAccess,
         getAccessibleFiles,
         hasAccess,
+        revokeAllAccessForConsultation,
+        uploadMedicalHistory,
+        refreshVault,
       }}
     >
       {children}
