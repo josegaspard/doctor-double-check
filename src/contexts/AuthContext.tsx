@@ -1,77 +1,58 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Patient, Doctor, Resident, Admin, UserRole } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
-// Demo users
-const DEMO_USERS = {
-  patient: {
-    id: 'patient-001',
-    email: 'paciente@demo.com',
-    password: 'demo123',
-    name: 'María García',
-    role: 'patient' as const,
-    avatar: undefined,
-    createdAt: new Date('2024-01-15'),
-    walletBalance: 1500,
-    entitlements: {
-      chat: true,
-      recordings: ['rec-001', 'rec-002'],
-    },
-  } as Patient,
-  doctor: {
-    id: 'doctor-001',
-    email: 'medico@demo.com',
-    password: 'demo123',
-    name: 'Dr. Carlos Mendoza',
-    role: 'doctor' as const,
-    avatar: undefined,
-    createdAt: new Date('2023-06-10'),
-    status: 'approved' as const,
-    specialty: 'Cardiología',
-    license: 'MED-2023-001',
-    bio: 'Cardiólogo con más de 15 años de experiencia. Especialista en arritmias y enfermedades cardiovasculares.',
-    isVerified: true,
-    consultationFee: 500,
-    rating: 4.8,
-    totalConsultations: 342,
-  } as Doctor,
-  resident: {
-    id: 'resident-001',
-    email: 'residente@demo.com',
-    password: 'demo123',
-    name: 'Ana López',
-    role: 'resident' as const,
-    avatar: undefined,
-    createdAt: new Date('2024-03-01'),
-    walletBalance: 800,
-    institution: 'Hospital General de México',
-    specialty: 'Medicina Interna',
-    year: 2,
-    entitlements: {
-      recordings: ['rec-001'],
-    },
-  } as Resident,
-  admin: {
-    id: 'admin-001',
-    email: 'admin@demo.com',
-    password: 'admin123',
-    name: 'Administrador Sistema',
-    role: 'admin' as const,
-    avatar: undefined,
-    createdAt: new Date('2023-01-01'),
-    permissions: ['all'],
-  } as Admin,
-};
+// Role types
+export type UserRole = 'visitor' | 'patient' | 'doctor' | 'resident' | 'admin';
+export type DoctorStatus = 'pending' | 'approved' | 'rejected';
 
-interface AuthContextType {
-  user: User | Patient | Doctor | Resident | Admin | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  role: UserRole | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  loginAsVisitor: () => void;
-  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
-  updateUser: (updates: Partial<User>) => void;
+// Extended user with role-specific data
+export interface ExtendedUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  avatarUrl?: string;
+  createdAt: Date;
+  // Doctor-specific
+  doctorProfile?: {
+    id: string;
+    specialty: string;
+    license: string;
+    bio?: string;
+    status: DoctorStatus;
+    consultationFee: number;
+    rating: number;
+    totalConsultations: number;
+    followersCount: number;
+    availableForDoubleCheck: boolean;
+    availableForClinicalSessions: boolean;
+    cedulaProfesional?: string;
+    numeroConsejo?: string;
+    location?: string;
+  };
+  // Resident-specific
+  residentProfile?: {
+    id: string;
+    institution: string;
+    specialty: string;
+    year: number;
+    status: DoctorStatus;
+    followersCount: number;
+    tituloMedicina?: string;
+    cedulaProfesional?: string;
+  };
+  // Wallet info
+  wallet?: {
+    id: string;
+    balance: number;
+  };
+  // Entitlements
+  entitlements?: {
+    type: string;
+    isActive: boolean;
+    expiresAt?: Date;
+  }[];
 }
 
 interface RegisterData {
@@ -81,75 +62,228 @@ interface RegisterData {
   role: Exclude<UserRole, 'visitor' | 'admin'>;
   specialty?: string;
   institution?: string;
+  license?: string;
+  year?: number;
+}
+
+interface AuthContextType {
+  user: ExtendedUser | null;
+  supabaseUser: SupabaseUser | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  role: UserRole | null;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  loginAsVisitor: () => void;
+  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
+  updateUser: (updates: Partial<ExtendedUser>) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function fetchUserProfile(userId: string): Promise<ExtendedUser | null> {
+  try {
+    // Fetch base profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile) return null;
+
+    // Fetch role
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    const role = (roleData?.role as UserRole) || 'patient';
+
+    const extendedUser: ExtendedUser = {
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      role,
+      avatarUrl: profile.avatar_url || undefined,
+      createdAt: new Date(profile.created_at),
+    };
+
+    // Fetch role-specific data
+    if (role === 'doctor') {
+      const { data: doctorProfile } = await supabase
+        .from('doctor_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (doctorProfile) {
+        extendedUser.doctorProfile = {
+          id: doctorProfile.id,
+          specialty: doctorProfile.specialty,
+          license: doctorProfile.license,
+          bio: doctorProfile.bio || undefined,
+          status: doctorProfile.status as DoctorStatus,
+          consultationFee: Number(doctorProfile.consultation_fee),
+          rating: Number(doctorProfile.rating),
+          totalConsultations: doctorProfile.total_consultations,
+          followersCount: doctorProfile.followers_count,
+          availableForDoubleCheck: doctorProfile.available_for_double_check,
+          availableForClinicalSessions: doctorProfile.available_for_clinical_sessions,
+          cedulaProfesional: doctorProfile.cedula_profesional || undefined,
+          numeroConsejo: doctorProfile.numero_consejo || undefined,
+          location: doctorProfile.location || undefined,
+        };
+      }
+    }
+
+    if (role === 'resident') {
+      const { data: residentProfile } = await supabase
+        .from('resident_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (residentProfile) {
+        extendedUser.residentProfile = {
+          id: residentProfile.id,
+          institution: residentProfile.institution,
+          specialty: residentProfile.specialty,
+          year: residentProfile.year,
+          status: residentProfile.status as DoctorStatus,
+          followersCount: residentProfile.followers_count,
+          tituloMedicina: residentProfile.titulo_medicina || undefined,
+          cedulaProfesional: residentProfile.cedula_profesional || undefined,
+        };
+      }
+    }
+
+    // Fetch wallet for patients and residents
+    if (role === 'patient' || role === 'resident') {
+      const { data: wallet } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (wallet) {
+        extendedUser.wallet = {
+          id: wallet.id,
+          balance: Number(wallet.balance),
+        };
+      }
+    }
+
+    // Fetch entitlements
+    const { data: entitlements } = await supabase
+      .from('entitlements')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+
+    if (entitlements) {
+      extendedUser.entitlements = entitlements.map(e => ({
+        type: e.type,
+        isActive: e.is_active,
+        expiresAt: e.expires_at ? new Date(e.expires_at) : undefined,
+      }));
+    }
+
+    return extendedUser;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | Patient | Doctor | Resident | Admin | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored session
-    const storedUser = localStorage.getItem('drDoubleCheck_user');
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        // Restore dates
-        parsed.createdAt = new Date(parsed.createdAt);
-        setUser(parsed);
-      } catch (e) {
-        localStorage.removeItem('drDoubleCheck_user');
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSupabaseUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Use setTimeout to avoid potential race conditions with Supabase triggers
+        setTimeout(async () => {
+          const profile = await fetchUserProfile(session.user.id);
+          setUser(profile);
+          setIsLoading(false);
+        }, 0);
+      } else {
+        // Check for visitor session
+        const visitorData = sessionStorage.getItem('drDoubleCheck_visitor');
+        if (visitorData) {
+          setUser(JSON.parse(visitorData));
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    });
+
+    // THEN check current session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setSupabaseUser(session.user);
+        const profile = await fetchUserProfile(session.user.id);
+        setUser(profile);
+      } else {
+        // Check for visitor session
+        const visitorData = sessionStorage.getItem('drDoubleCheck_visitor');
+        if (visitorData) {
+          setUser(JSON.parse(visitorData));
+        }
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Check demo users
-    const demoUser = Object.values(DEMO_USERS).find(
-      u => u.email === email && (u as any).password === password
-    );
-    
-    if (demoUser) {
-      const { password: _pass, ...userWithoutPassword } = demoUser as any;
-      setUser(userWithoutPassword);
-      localStorage.setItem('drDoubleCheck_user', JSON.stringify(userWithoutPassword));
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setIsLoading(false);
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const profile = await fetchUserProfile(data.user.id);
+        setUser(profile);
+        setSupabaseUser(data.user);
+      }
+
       setIsLoading(false);
       return { success: true };
-    }
-    
-    // Check registered users in localStorage
-    const registeredUsers = JSON.parse(localStorage.getItem('drDoubleCheck_registeredUsers') || '[]');
-    const registeredUser = registeredUsers.find(
-      (u: any) => u.email === email && u.password === password
-    );
-    
-    if (registeredUser) {
-      const { password: _pw, ...userWithoutPassword } = registeredUser as any;
-      userWithoutPassword.createdAt = new Date(userWithoutPassword.createdAt);
-      setUser(userWithoutPassword);
-      localStorage.setItem('drDoubleCheck_user', JSON.stringify(userWithoutPassword));
+    } catch (error: any) {
       setIsLoading(false);
-      return { success: true };
+      return { success: false, error: error.message || 'Error al iniciar sesión' };
     }
-    
-    setIsLoading(false);
-    return { success: false, error: 'Credenciales incorrectas' };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
+    sessionStorage.removeItem('drDoubleCheck_visitor');
     setUser(null);
-    localStorage.removeItem('drDoubleCheck_user');
+    setSupabaseUser(null);
   };
 
   const loginAsVisitor = () => {
-    const visitorUser: User = {
+    const visitorUser: ExtendedUser = {
       id: `visitor-${Date.now()}`,
       email: '',
       name: 'Visitante',
@@ -157,77 +291,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       createdAt: new Date(),
     };
     setUser(visitorUser);
-    // Don't persist visitor sessions
+    sessionStorage.setItem('drDoubleCheck_visitor', JSON.stringify(visitorUser));
   };
 
   const register = async (data: RegisterData): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Check if email exists
-    const existingUsers = Object.values(DEMO_USERS).map(u => u.email);
-    const registeredUsers = JSON.parse(localStorage.getItem('drDoubleCheck_registeredUsers') || '[]');
-    const allEmails = [...existingUsers, ...registeredUsers.map((u: any) => u.email)];
-    
-    if (allEmails.includes(data.email)) {
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            name: data.name,
+            role: data.role,
+            specialty: data.specialty,
+            institution: data.institution,
+            license: data.license,
+            year: data.year,
+          },
+        },
+      });
+
+      if (authError) {
+        setIsLoading(false);
+        return { success: false, error: authError.message };
+      }
+
+      if (authData.user) {
+        // Wait a bit for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const profile = await fetchUserProfile(authData.user.id);
+        setUser(profile);
+        setSupabaseUser(authData.user);
+      }
+
       setIsLoading(false);
-      return { success: false, error: 'El correo ya está registrado' };
+      return { success: true };
+    } catch (error: any) {
+      setIsLoading(false);
+      return { success: false, error: error.message || 'Error al registrar' };
     }
-    
-    let newUser: any = {
-      id: `${data.role}-${Date.now()}`,
-      email: data.email,
-      password: data.password,
-      name: data.name,
-      role: data.role,
-      createdAt: new Date(),
-    };
-    
-    if (data.role === 'patient') {
-      newUser = {
-        ...newUser,
-        walletBalance: 0,
-        entitlements: { chat: false, recordings: [] },
-      };
-    } else if (data.role === 'doctor') {
-      newUser = {
-        ...newUser,
-        status: 'pending',
-        specialty: data.specialty || '',
-        license: '',
-        bio: '',
-        isVerified: false,
-        consultationFee: 0,
-        rating: 0,
-        totalConsultations: 0,
-      };
-    } else if (data.role === 'resident') {
-      newUser = {
-        ...newUser,
-        walletBalance: 0,
-        institution: data.institution || '',
-        specialty: data.specialty || '',
-        year: 1,
-        entitlements: { recordings: [] },
-      };
-    }
-    
-    registeredUsers.push(newUser);
-    localStorage.setItem('drDoubleCheck_registeredUsers', JSON.stringify(registeredUsers));
-    
-    const { password: _, ...userWithoutPassword } = newUser;
-    setUser(userWithoutPassword);
-    localStorage.setItem('drDoubleCheck_user', JSON.stringify(userWithoutPassword));
-    
-    setIsLoading(false);
-    return { success: true };
   };
 
-  const updateUser = (updates: Partial<User>) => {
+  const updateUser = (updates: Partial<ExtendedUser>) => {
     if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser as any);
-      localStorage.setItem('drDoubleCheck_user', JSON.stringify(updatedUser));
+      setUser({ ...user, ...updates });
+    }
+  };
+
+  const refreshUser = async () => {
+    if (supabaseUser) {
+      const profile = await fetchUserProfile(supabaseUser.id);
+      if (profile) {
+        setUser(profile);
+      }
     }
   };
 
@@ -235,6 +353,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        supabaseUser,
         isAuthenticated: !!user,
         isLoading,
         role: user?.role || null,
@@ -243,6 +362,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginAsVisitor,
         register,
         updateUser,
+        refreshUser,
       }}
     >
       {children}
@@ -257,5 +377,3 @@ export function useAuth() {
   }
   return context;
 }
-
-export { DEMO_USERS };

@@ -1,6 +1,20 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Transaction, TransactionStatus } from '@/types';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+
+export type TransactionType = 'topup' | 'purchase' | 'refund' | 'subscription' | 'earning';
+export type TransactionStatus = 'initiated' | 'paid' | 'failed';
+
+export interface Transaction {
+  id: string;
+  userId: string;
+  type: TransactionType;
+  amount: number;
+  description: string;
+  status: TransactionStatus;
+  createdAt: Date;
+  metadata?: Record<string, any>;
+}
 
 interface WalletContextType {
   balance: number;
@@ -10,125 +24,100 @@ interface WalletContextType {
   purchase: (amount: number, description: string, metadata?: any) => Promise<{ success: boolean; error?: string }>;
   canAfford: (amount: number) => boolean;
   getTransactionHistory: () => Transaction[];
+  refreshWallet: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-// Initial mock transactions
-const INITIAL_TRANSACTIONS: Transaction[] = [
-  {
-    id: 'tx-001',
-    userId: 'patient-001',
-    type: 'topup',
-    amount: 2000,
-    description: 'Recarga inicial',
-    status: 'paid',
-    createdAt: new Date('2024-01-20'),
-  },
-  {
-    id: 'tx-002',
-    userId: 'patient-001',
-    type: 'purchase',
-    amount: -300,
-    description: 'Grabación: Cardiología Básica',
-    status: 'paid',
-    createdAt: new Date('2024-02-15'),
-    metadata: { recordingId: 'rec-001' },
-  },
-  {
-    id: 'tx-003',
-    userId: 'patient-001',
-    type: 'purchase',
-    amount: -200,
-    description: 'Chat con Dr. Mendoza',
-    status: 'paid',
-    createdAt: new Date('2024-03-01'),
-    metadata: { chatSessionId: 'chat-001' },
-  },
-];
-
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load transactions from localStorage
-  useEffect(() => {
-    if (user?.id) {
-      const stored = localStorage.getItem(`drDoubleCheck_transactions_${user.id}`);
-      if (stored) {
-        const parsed = JSON.parse(stored).map((t: any) => ({
-          ...t,
-          createdAt: new Date(t.createdAt),
-        }));
-        setTransactions(parsed);
-      } else if (user.id === 'patient-001') {
-        // Initialize with mock data for demo patient
-        setTransactions(INITIAL_TRANSACTIONS);
-        localStorage.setItem(
-          `drDoubleCheck_transactions_${user.id}`,
-          JSON.stringify(INITIAL_TRANSACTIONS)
-        );
+  const fetchWalletData = useCallback(async () => {
+    if (!user?.id || user.role === 'visitor') return;
+
+    try {
+      // Fetch wallet balance
+      const { data: wallet } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', user.id)
+        .single();
+
+      if (wallet) {
+        setBalance(Number(wallet.balance));
       }
-    }
-  }, [user?.id]);
 
-  const getBalance = (): number => {
-    if (!user) return 0;
-    
-    // Check if user has walletBalance property
-    if ('walletBalance' in user) {
-      return (user as any).walletBalance;
-    }
-    return 0;
-  };
+      // Fetch transactions
+      const { data: txns } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-  const updateBalance = (newBalance: number) => {
-    if (!user) return;
-    
-    // Update in localStorage
-    const storedUser = localStorage.getItem('drDoubleCheck_user');
-    if (storedUser) {
-      const parsed = JSON.parse(storedUser);
-      parsed.walletBalance = newBalance;
-      localStorage.setItem('drDoubleCheck_user', JSON.stringify(parsed));
+      if (txns) {
+        setTransactions(txns.map(t => ({
+          id: t.id,
+          userId: t.user_id,
+          type: t.type as TransactionType,
+          amount: Number(t.amount),
+          description: t.description,
+          status: t.status as TransactionStatus,
+          createdAt: new Date(t.created_at),
+          metadata: t.metadata as Record<string, any> | undefined,
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching wallet data:', error);
     }
-    
-    // Force re-render by updating a transaction
-    setTransactions(prev => [...prev]);
+  }, [user?.id, user?.role]);
+
+  useEffect(() => {
+    fetchWalletData();
+  }, [fetchWalletData]);
+
+  const refreshWallet = async () => {
+    await fetchWalletData();
+    await refreshUser();
   };
 
   const topUp = async (amount: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
     if (amount <= 0) return { success: false, error: 'Monto inválido' };
-    
+
     setIsLoading(true);
-    
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const newTransaction: Transaction = {
-      id: `tx-${Date.now()}`,
-      userId: user.id,
-      type: 'topup',
-      amount: amount,
-      description: `Recarga de saldo`,
-      status: 'paid',
-      createdAt: new Date(),
-    };
-    
-    const newBalance = getBalance() + amount;
-    updateBalance(newBalance);
-    
-    const newTransactions = [newTransaction, ...transactions];
-    setTransactions(newTransactions);
-    localStorage.setItem(
-      `drDoubleCheck_transactions_${user.id}`,
-      JSON.stringify(newTransactions)
-    );
-    
-    setIsLoading(false);
-    return { success: true };
+    try {
+      // Create transaction record
+      const { error: txnError } = await supabase
+        .from('wallet_transactions')
+        .insert({
+          user_id: user.id,
+          type: 'topup',
+          amount: amount,
+          description: 'Recarga de saldo',
+          status: 'paid',
+        });
+
+      if (txnError) throw txnError;
+
+      // Update wallet balance
+      const { error: walletError } = await supabase
+        .from('wallets')
+        .update({ balance: balance + amount })
+        .eq('user_id', user.id);
+
+      if (walletError) throw walletError;
+
+      await refreshWallet();
+      setIsLoading(false);
+      return { success: true };
+    } catch (error: any) {
+      setIsLoading(false);
+      return { success: false, error: error.message || 'Error al recargar' };
+    }
   };
 
   const purchase = async (
@@ -136,60 +125,68 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     description: string,
     metadata?: any
   ): Promise<{ success: boolean; error?: string }> => {
-    if (!user) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
     if (amount <= 0) return { success: false, error: 'Monto inválido' };
-    
-    const currentBalance = getBalance();
-    if (currentBalance < amount) {
-      return { success: false, error: 'Saldo insuficiente' };
-    }
-    
+    if (balance < amount) return { success: false, error: 'Saldo insuficiente' };
+
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const newTransaction: Transaction = {
-      id: `tx-${Date.now()}`,
-      userId: user.id,
-      type: 'purchase',
-      amount: -amount,
-      description,
-      status: 'paid',
-      createdAt: new Date(),
-      metadata,
-    };
-    
-    const newBalance = currentBalance - amount;
-    updateBalance(newBalance);
-    
-    const newTransactions = [newTransaction, ...transactions];
-    setTransactions(newTransactions);
-    localStorage.setItem(
-      `drDoubleCheck_transactions_${user.id}`,
-      JSON.stringify(newTransactions)
-    );
-    
-    setIsLoading(false);
-    return { success: true };
+    try {
+      // Get price for user (50% discount for residents)
+      const { data: adjustedPrice } = await supabase
+        .rpc('get_price_for_user', { _base_price: amount, _user_id: user.id });
+
+      const finalAmount = adjustedPrice || amount;
+
+      // Create transaction record
+      const { error: txnError } = await supabase
+        .from('wallet_transactions')
+        .insert({
+          user_id: user.id,
+          type: 'purchase',
+          amount: -finalAmount,
+          description,
+          status: 'paid',
+          metadata,
+        });
+
+      if (txnError) throw txnError;
+
+      // Update wallet balance
+      const { error: walletError } = await supabase
+        .from('wallets')
+        .update({ balance: balance - finalAmount })
+        .eq('user_id', user.id);
+
+      if (walletError) throw walletError;
+
+      await refreshWallet();
+      setIsLoading(false);
+      return { success: true };
+    } catch (error: any) {
+      setIsLoading(false);
+      return { success: false, error: error.message || 'Error en la compra' };
+    }
   };
 
   const canAfford = (amount: number): boolean => {
-    return getBalance() >= amount;
+    return balance >= amount;
   };
 
   const getTransactionHistory = (): Transaction[] => {
-    return transactions.filter(t => t.userId === user?.id);
+    return transactions;
   };
 
   return (
     <WalletContext.Provider
       value={{
-        balance: getBalance(),
+        balance,
         transactions,
         isLoading,
         topUp,
         purchase,
         canAfford,
         getTransactionHistory,
+        refreshWallet,
       }}
     >
       {children}

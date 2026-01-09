@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useVault } from '@/contexts/VaultContext';
+import { useVault, VaultFile } from '@/contexts/VaultContext';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Folder,
@@ -30,12 +29,10 @@ import {
   UserPlus,
   UserMinus,
   Shield,
-  Eye,
   Calendar,
   Stethoscope,
   CheckCircle,
 } from 'lucide-react';
-import { VaultFile } from '@/types';
 
 const CATEGORIES = ['Laboratorios', 'Imagenología', 'Estudios Cardíacos', 'Recetas', 'Otros'];
 
@@ -76,10 +73,9 @@ export default function Vault() {
     return <FileText className="w-5 h-5 text-primary" />;
   };
 
-  const handleGrantAccess = async (doctorId: string, doctorName: string) => {
+  const handleGrantAccess = async (doctorId: string) => {
     if (!permissionFile) return;
-    await grantAccess(permissionFile.id, doctorId, doctorName);
-    // Refresh the permission file data
+    await grantAccess(permissionFile.id, doctorId);
     const updatedFiles = files.find(f => f.id === permissionFile.id);
     if (updatedFiles) setPermissionFile(updatedFiles);
   };
@@ -87,7 +83,6 @@ export default function Vault() {
   const handleRevokeAccess = async (doctorId: string) => {
     if (!permissionFile) return;
     await revokeAccess(permissionFile.id, doctorId);
-    // Refresh the permission file data
     const updatedFiles = files.find(f => f.id === permissionFile.id);
     if (updatedFiles) setPermissionFile(updatedFiles);
   };
@@ -97,7 +92,6 @@ export default function Vault() {
     setShowPermissionDialog(true);
   };
 
-  // Get fresh data for permission file
   const currentPermissionFile = permissionFile ? files.find(f => f.id === permissionFile.id) : null;
 
   return (
@@ -111,7 +105,6 @@ export default function Vault() {
           Guarda tus estudios de forma segura y controla quién puede verlos
         </p>
 
-        {/* Security Info */}
         <Card className="mb-6 bg-primary/5 border-primary/20">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
@@ -119,14 +112,13 @@ export default function Vault() {
               <div>
                 <h3 className="font-semibold text-foreground text-sm">Tú controlas el acceso</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Solo los médicos que tú autorices podrán ver tus archivos. Puedes revocar el acceso en cualquier momento.
+                  Solo los médicos que tú autorices podrán ver tus archivos.
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Upload Section */}
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -161,7 +153,6 @@ export default function Vault() {
           </CardContent>
         </Card>
 
-        {/* Files List */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Mis Archivos ({files.length})</CardTitle>
@@ -187,13 +178,12 @@ export default function Vault() {
                         </span>
                       </div>
                       
-                      {/* Permissions info */}
                       <div className="flex items-center flex-wrap gap-2 mt-3">
                         {file.permissions.length > 0 ? (
                           file.permissions.map(perm => (
-                            <Badge key={perm.doctorId} variant="verified" className="text-xs gap-1">
+                            <Badge key={perm.doctorId} variant="secondary" className="text-xs gap-1">
                               <Stethoscope className="w-3 h-3" />
-                              {perm.doctorName.split(' ').slice(0, 2).join(' ')}
+                              {perm.doctorName || 'Doctor'}
                             </Badge>
                           ))
                         ) : (
@@ -206,21 +196,11 @@ export default function Vault() {
                     </div>
                     
                     <div className="flex flex-col gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openPermissions(file)}
-                        className="gap-1"
-                      >
+                      <Button variant="outline" size="sm" onClick={() => openPermissions(file)} className="gap-1">
                         <Share2 className="w-3 h-3" />
                         Permisos
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteFile(file.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => deleteFile(file.id)} className="text-destructive hover:text-destructive">
                         <Trash2 className="w-3 h-3 mr-1" />
                         Eliminar
                       </Button>
@@ -233,14 +213,13 @@ export default function Vault() {
                 <Lock className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
                 <h3 className="font-semibold text-foreground mb-2">Tu vault está vacío</h3>
                 <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                  Sube tus estudios médicos para tenerlos siempre disponibles y compartirlos de forma segura con tus médicos.
+                  Sube tus estudios médicos para tenerlos siempre disponibles.
                 </p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Permission Management Dialog */}
         <Dialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -248,13 +227,10 @@ export default function Vault() {
                 <Share2 className="w-5 h-5 text-primary" />
                 Gestionar Permisos
               </DialogTitle>
-              <DialogDescription>
-                {currentPermissionFile?.name}
-              </DialogDescription>
+              <DialogDescription>{currentPermissionFile?.name}</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-              {/* Current Permissions */}
               {currentPermissionFile?.permissions && currentPermissionFile.permissions.length > 0 && (
                 <div>
                   <h4 className="text-sm font-medium text-foreground mb-3">Con acceso actualmente:</h4>
@@ -266,18 +242,13 @@ export default function Vault() {
                             <Stethoscope className="w-4 h-4 text-success" />
                           </div>
                           <div>
-                            <p className="font-medium text-sm">{perm.doctorName}</p>
+                            <p className="font-medium text-sm">{perm.doctorName || 'Doctor'}</p>
                             <p className="text-xs text-muted-foreground">
                               Desde {new Date(perm.grantedAt).toLocaleDateString('es-MX')}
                             </p>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRevokeAccess(perm.doctorId)}
-                          className="text-destructive hover:text-destructive gap-1"
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleRevokeAccess(perm.doctorId)} className="text-destructive hover:text-destructive gap-1">
                           <UserMinus className="w-4 h-4" />
                           Revocar
                         </Button>
@@ -289,7 +260,6 @@ export default function Vault() {
 
               <Separator />
 
-              {/* Grant New Access */}
               <div>
                 <h4 className="text-sm font-medium text-foreground mb-3">Dar acceso a:</h4>
                 <div className="space-y-2">
@@ -306,12 +276,7 @@ export default function Vault() {
                           <p className="text-xs text-muted-foreground">{doctor.specialty}</p>
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleGrantAccess(doctor.id, doctor.name)}
-                        className="gap-1"
-                      >
+                      <Button variant="outline" size="sm" onClick={() => handleGrantAccess(doctor.id)} className="gap-1">
                         <UserPlus className="w-4 h-4" />
                         Dar acceso
                       </Button>

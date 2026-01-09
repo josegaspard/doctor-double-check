@@ -1,5 +1,43 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Live, Recording, LiveStatus } from '@/types';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthContext';
+
+export type LiveStatus = 'live' | 'ended' | 'processing_recording' | 'recording_ready';
+
+export interface Live {
+  id: string;
+  title: string;
+  description?: string;
+  doctorId: string;
+  doctorName: string;
+  doctorAvatar?: string;
+  specialty: string;
+  status: LiveStatus;
+  viewerCount: number;
+  likesCount: number;
+  startedAt: Date;
+  endedAt?: Date;
+  thumbnailUrl?: string;
+  recordingPrice?: number;
+  tags: string[];
+  followersCount?: number;
+}
+
+export interface Recording {
+  id: string;
+  liveId?: string;
+  title: string;
+  description?: string;
+  doctorId: string;
+  doctorName: string;
+  specialty: string;
+  duration: number;
+  price: number;
+  thumbnailUrl?: string;
+  videoUrl?: string;
+  createdAt: Date;
+  tags: string[];
+}
 
 interface LivesContextType {
   lives: Live[];
@@ -9,189 +47,189 @@ interface LivesContextType {
   getRecording: (id: string) => Recording | undefined;
   getLivesByDoctor: (doctorId: string) => Live[];
   getRecordingsByDoctor: (doctorId: string) => Recording[];
+  likeLive: (liveId: string) => Promise<void>;
+  unlikeLive: (liveId: string) => Promise<void>;
+  hasLiked: (liveId: string) => boolean;
+  createLive: (data: Partial<Live>) => Promise<{ success: boolean; liveId?: string; error?: string }>;
+  endLive: (liveId: string) => Promise<{ success: boolean; error?: string }>;
+  refreshLives: () => Promise<void>;
+  refreshRecordings: () => Promise<void>;
 }
 
 const LivesContext = createContext<LivesContextType | undefined>(undefined);
 
-// Mock data for lives
-const MOCK_LIVES: Live[] = [
-  {
-    id: 'live-001',
-    title: 'Hipertensión Arterial: Diagnóstico y Tratamiento',
-    description: 'Aprende sobre las últimas guías de manejo de hipertensión arterial.',
-    doctorId: 'doctor-001',
-    doctorName: 'Dr. Carlos Mendoza',
-    specialty: 'Cardiología',
-    status: 'live',
-    viewerCount: 127,
-    startedAt: new Date(),
-    tags: ['cardiología', 'hipertensión', 'guías clínicas'],
-  },
-  {
-    id: 'live-002',
-    title: 'Manejo del Dolor Crónico',
-    description: 'Estrategias modernas para el tratamiento del dolor crónico.',
-    doctorId: 'doctor-002',
-    doctorName: 'Dra. Laura Jiménez',
-    specialty: 'Medicina del Dolor',
-    status: 'live',
-    viewerCount: 89,
-    startedAt: new Date(Date.now() - 30 * 60000),
-    tags: ['dolor', 'tratamiento', 'rehabilitación'],
-  },
-  {
-    id: 'live-003',
-    title: 'Diabetes Tipo 2: Novedades en Tratamiento',
-    description: 'Nuevos medicamentos y enfoques en el manejo de diabetes.',
-    doctorId: 'doctor-003',
-    doctorName: 'Dr. Roberto Sánchez',
-    specialty: 'Endocrinología',
-    status: 'live',
-    viewerCount: 203,
-    startedAt: new Date(Date.now() - 45 * 60000),
-    tags: ['diabetes', 'endocrinología', 'tratamiento'],
-  },
-  {
-    id: 'live-004',
-    title: 'Emergencias Pediátricas',
-    description: 'Cómo identificar y manejar emergencias en niños.',
-    doctorId: 'doctor-004',
-    doctorName: 'Dra. Patricia Morales',
-    specialty: 'Pediatría',
-    status: 'live',
-    viewerCount: 156,
-    startedAt: new Date(Date.now() - 20 * 60000),
-    tags: ['pediatría', 'emergencias', 'niños'],
-  },
-  {
-    id: 'live-005',
-    title: 'Salud Mental en el Trabajo',
-    description: 'Estrategias para mantener el bienestar mental laboral.',
-    doctorId: 'doctor-005',
-    doctorName: 'Dr. Miguel Ángel Ruiz',
-    specialty: 'Psiquiatría',
-    status: 'live',
-    viewerCount: 312,
-    startedAt: new Date(Date.now() - 60 * 60000),
-    tags: ['salud mental', 'trabajo', 'estrés'],
-  },
-  {
-    id: 'live-006',
-    title: 'Nutrición y Enfermedades Crónicas',
-    description: 'El papel de la alimentación en la prevención de enfermedades.',
-    doctorId: 'doctor-006',
-    doctorName: 'Dra. Carmen Vega',
-    specialty: 'Nutrición Clínica',
-    status: 'live',
-    viewerCount: 178,
-    startedAt: new Date(Date.now() - 15 * 60000),
-    tags: ['nutrición', 'prevención', 'enfermedades crónicas'],
-  },
-];
-
-// Mock data for recordings
-const MOCK_RECORDINGS: Recording[] = [
-  {
-    id: 'rec-001',
-    liveId: 'live-old-001',
-    title: 'Fundamentos de Cardiología',
-    description: 'Conceptos básicos de cardiología para médicos generales.',
-    doctorId: 'doctor-001',
-    doctorName: 'Dr. Carlos Mendoza',
-    specialty: 'Cardiología',
-    duration: 45,
-    price: 300,
-    createdAt: new Date('2024-01-10'),
-    tags: ['cardiología', 'fundamentos', 'ECG'],
-  },
-  {
-    id: 'rec-002',
-    liveId: 'live-old-002',
-    title: 'Interpretación de Electrocardiogramas',
-    description: 'Guía práctica para leer e interpretar ECGs.',
-    doctorId: 'doctor-001',
-    doctorName: 'Dr. Carlos Mendoza',
-    specialty: 'Cardiología',
-    duration: 60,
-    price: 450,
-    createdAt: new Date('2024-02-05'),
-    tags: ['ECG', 'diagnóstico', 'arritmias'],
-  },
-  {
-    id: 'rec-003',
-    liveId: 'live-old-003',
-    title: 'Manejo de Asma en Adultos',
-    description: 'Protocolo actualizado para el manejo del asma.',
-    doctorId: 'doctor-007',
-    doctorName: 'Dr. Fernando Castro',
-    specialty: 'Neumología',
-    duration: 50,
-    price: 350,
-    createdAt: new Date('2024-02-20'),
-    tags: ['asma', 'neumología', 'tratamiento'],
-  },
-  {
-    id: 'rec-004',
-    liveId: 'live-old-004',
-    title: 'Dermatología Práctica',
-    description: 'Diagnóstico visual de las lesiones cutáneas más comunes.',
-    doctorId: 'doctor-008',
-    doctorName: 'Dra. Isabel Torres',
-    specialty: 'Dermatología',
-    duration: 55,
-    price: 400,
-    createdAt: new Date('2024-03-01'),
-    tags: ['dermatología', 'diagnóstico', 'lesiones'],
-  },
-  {
-    id: 'rec-005',
-    liveId: 'live-old-005',
-    title: 'Urgencias Neurológicas',
-    description: 'Manejo inicial del ACV y otras urgencias neurológicas.',
-    doctorId: 'doctor-009',
-    doctorName: 'Dr. Alejandro Vargas',
-    specialty: 'Neurología',
-    duration: 65,
-    price: 500,
-    createdAt: new Date('2024-03-15'),
-    tags: ['neurología', 'ACV', 'urgencias'],
-  },
-  {
-    id: 'rec-006',
-    liveId: 'live-old-006',
-    title: 'Oftalmología para Médicos Generales',
-    description: 'Conceptos esenciales de oftalmología en atención primaria.',
-    doctorId: 'doctor-010',
-    doctorName: 'Dra. Lucía Campos',
-    specialty: 'Oftalmología',
-    duration: 40,
-    price: 280,
-    createdAt: new Date('2024-03-25'),
-    tags: ['oftalmología', 'atención primaria', 'ojo'],
-  },
-];
-
 export function LivesProvider({ children }: { children: ReactNode }) {
-  const [lives, setLives] = useState<Live[]>(MOCK_LIVES);
-  const [recordings, setRecordings] = useState<Recording[]>(MOCK_RECORDINGS);
-  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const [lives, setLives] = useState<Live[]>([]);
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [likedLives, setLikedLives] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Simulate live viewer count changes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLives(prev =>
-        prev.map(live => ({
-          ...live,
-          viewerCount: Math.max(
-            10,
-            live.viewerCount + Math.floor(Math.random() * 11) - 5
-          ),
-        }))
-      );
-    }, 5000);
+  const fetchLives = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('lives')
+        .select(`
+          *,
+          profiles!lives_doctor_id_fkey (name, avatar_url),
+          doctor_profiles!lives_doctor_id_fkey (followers_count)
+        `)
+        .order('started_at', { ascending: false });
 
-    return () => clearInterval(interval);
+      if (error) {
+        // Fallback query without joins if foreign key doesn't exist
+        const { data: livesData } = await supabase
+          .from('lives')
+          .select('*')
+          .order('started_at', { ascending: false });
+        
+        if (livesData) {
+          // Fetch doctor names separately
+          const doctorIds = [...new Set(livesData.map(l => l.doctor_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, name, avatar_url')
+            .in('id', doctorIds);
+          
+          const { data: doctorProfiles } = await supabase
+            .from('doctor_profiles')
+            .select('user_id, followers_count')
+            .in('user_id', doctorIds);
+
+          const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+          const doctorMap = new Map(doctorProfiles?.map(d => [d.user_id, d]) || []);
+
+          setLives(livesData.map(l => ({
+            id: l.id,
+            title: l.title,
+            description: l.description || undefined,
+            doctorId: l.doctor_id,
+            doctorName: profileMap.get(l.doctor_id)?.name || 'Doctor',
+            doctorAvatar: profileMap.get(l.doctor_id)?.avatar_url || undefined,
+            specialty: l.specialty,
+            status: l.status as LiveStatus,
+            viewerCount: l.viewer_count,
+            likesCount: l.likes_count,
+            startedAt: new Date(l.started_at),
+            endedAt: l.ended_at ? new Date(l.ended_at) : undefined,
+            thumbnailUrl: l.thumbnail_url || undefined,
+            recordingPrice: l.recording_price ? Number(l.recording_price) : undefined,
+            tags: l.tags || [],
+            followersCount: doctorMap.get(l.doctor_id)?.followers_count || 0,
+          })));
+        }
+      } else if (data) {
+        setLives(data.map((l: any) => ({
+          id: l.id,
+          title: l.title,
+          description: l.description || undefined,
+          doctorId: l.doctor_id,
+          doctorName: l.profiles?.name || 'Doctor',
+          doctorAvatar: l.profiles?.avatar_url || undefined,
+          specialty: l.specialty,
+          status: l.status as LiveStatus,
+          viewerCount: l.viewer_count,
+          likesCount: l.likes_count,
+          startedAt: new Date(l.started_at),
+          endedAt: l.ended_at ? new Date(l.ended_at) : undefined,
+          thumbnailUrl: l.thumbnail_url || undefined,
+          recordingPrice: l.recording_price ? Number(l.recording_price) : undefined,
+          tags: l.tags || [],
+          followersCount: l.doctor_profiles?.followers_count || 0,
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching lives:', error);
+    }
   }, []);
+
+  const fetchRecordings = useCallback(async () => {
+    try {
+      const { data: recordingsData } = await supabase
+        .from('recordings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (recordingsData) {
+        const doctorIds = [...new Set(recordingsData.map(r => r.doctor_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', doctorIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+        setRecordings(recordingsData.map(r => ({
+          id: r.id,
+          liveId: r.live_id || undefined,
+          title: r.title,
+          description: r.description || undefined,
+          doctorId: r.doctor_id,
+          doctorName: profileMap.get(r.doctor_id)?.name || 'Doctor',
+          specialty: r.specialty,
+          duration: r.duration,
+          price: Number(r.price),
+          thumbnailUrl: r.thumbnail_url || undefined,
+          videoUrl: r.video_url || undefined,
+          createdAt: new Date(r.created_at),
+          tags: r.tags || [],
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching recordings:', error);
+    }
+  }, []);
+
+  const fetchLikedLives = useCallback(async () => {
+    if (!user?.id || user.role === 'visitor') return;
+
+    try {
+      const { data } = await supabase
+        .from('live_likes')
+        .select('live_id')
+        .eq('user_id', user.id);
+
+      if (data) {
+        setLikedLives(new Set(data.map(l => l.live_id)));
+      }
+    } catch (error) {
+      console.error('Error fetching liked lives:', error);
+    }
+  }, [user?.id, user?.role]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      await Promise.all([fetchLives(), fetchRecordings(), fetchLikedLives()]);
+      setIsLoading(false);
+    };
+
+    loadData();
+
+    // Set up realtime subscription for lives
+    const channel = supabase
+      .channel('lives-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'lives' },
+        () => {
+          fetchLives();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'live_likes' },
+        () => {
+          fetchLives();
+          fetchLikedLives();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchLives, fetchRecordings, fetchLikedLives]);
 
   const getLive = (id: string): Live | undefined => {
     return lives.find(l => l.id === id);
@@ -209,6 +247,97 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     return recordings.filter(r => r.doctorId === doctorId);
   };
 
+  const likeLive = async (liveId: string) => {
+    if (!user?.id || user.role === 'visitor') return;
+
+    try {
+      await supabase
+        .from('live_likes')
+        .insert({ live_id: liveId, user_id: user.id });
+
+      setLikedLives(prev => new Set([...prev, liveId]));
+    } catch (error) {
+      console.error('Error liking live:', error);
+    }
+  };
+
+  const unlikeLive = async (liveId: string) => {
+    if (!user?.id) return;
+
+    try {
+      await supabase
+        .from('live_likes')
+        .delete()
+        .eq('live_id', liveId)
+        .eq('user_id', user.id);
+
+      setLikedLives(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(liveId);
+        return newSet;
+      });
+    } catch (error) {
+      console.error('Error unliking live:', error);
+    }
+  };
+
+  const hasLiked = (liveId: string): boolean => {
+    return likedLives.has(liveId);
+  };
+
+  const createLive = async (data: Partial<Live>): Promise<{ success: boolean; liveId?: string; error?: string }> => {
+    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+
+    try {
+      const { data: newLive, error } = await supabase
+        .from('lives')
+        .insert({
+          doctor_id: user.id,
+          title: data.title || 'Nueva transmisión',
+          description: data.description,
+          specialty: data.specialty || 'General',
+          tags: data.tags || [],
+          recording_price: data.recordingPrice,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await fetchLives();
+      return { success: true, liveId: newLive.id };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Error al crear live' };
+    }
+  };
+
+  const endLive = async (liveId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+
+    try {
+      const { error } = await supabase
+        .from('lives')
+        .update({ status: 'ended', ended_at: new Date().toISOString() })
+        .eq('id', liveId)
+        .eq('doctor_id', user.id);
+
+      if (error) throw error;
+
+      await fetchLives();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Error al terminar live' };
+    }
+  };
+
+  const refreshLives = async () => {
+    await fetchLives();
+  };
+
+  const refreshRecordings = async () => {
+    await fetchRecordings();
+  };
+
   return (
     <LivesContext.Provider
       value={{
@@ -219,6 +348,13 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         getRecording,
         getLivesByDoctor,
         getRecordingsByDoctor,
+        likeLive,
+        unlikeLive,
+        hasLiked,
+        createLive,
+        endLive,
+        refreshLives,
+        refreshRecordings,
       }}
     >
       {children}
