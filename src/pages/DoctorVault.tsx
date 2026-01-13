@@ -16,7 +16,7 @@ import {
   Calendar,
   Eye,
 } from 'lucide-react';
-import { Doctor, VaultFile } from '@/types';
+import { VaultFile } from '@/contexts/VaultContext';
 
 export default function DoctorVault() {
   const navigate = useNavigate();
@@ -28,8 +28,7 @@ export default function DoctorVault() {
     return null;
   }
 
-  const doctor = user as Doctor;
-  const accessibleFiles = getAccessibleFiles(doctor?.id || '');
+  const accessibleFiles = getAccessibleFiles(user?.id || '');
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
