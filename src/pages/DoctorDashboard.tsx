@@ -7,24 +7,18 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
   Video,
   PlayCircle,
-  Users,
   MessageSquare,
   Folder,
-  TrendingUp,
   Clock,
   AlertTriangle,
   CheckCircle,
   Upload,
   Radio,
-  DollarSign,
-  Calendar,
   Star,
 } from 'lucide-react';
-import { Doctor } from '@/types';
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
@@ -37,14 +31,14 @@ export default function DoctorDashboard() {
     return null;
   }
 
-  const doctor = user as Doctor;
-  const myLives = getLivesByDoctor(doctor?.id || '');
-  const myRecordings = getRecordingsByDoctor(doctor?.id || '');
-  const accessibleVaultFiles = getAccessibleFiles(doctor?.id || '');
+  const doctorProfile = user?.doctorProfile;
+  const myLives = getLivesByDoctor(user?.id || '');
+  const myRecordings = getRecordingsByDoctor(user?.id || '');
+  const accessibleVaultFiles = getAccessibleFiles(user?.id || '');
 
-  const isApproved = doctor?.status === 'approved';
-  const isPending = doctor?.status === 'pending';
-  const isRejected = doctor?.status === 'rejected';
+  const isApproved = doctorProfile?.status === 'approved';
+  const isPending = doctorProfile?.status === 'pending';
+  const isRejected = doctorProfile?.status === 'rejected';
 
   return (
     <MainLayout>
@@ -56,7 +50,7 @@ export default function DoctorDashboard() {
               Panel de Médico
             </h1>
             <p className="text-muted-foreground mt-1">
-              Bienvenido, {doctor?.name}
+              Bienvenido, {user?.name}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -165,7 +159,7 @@ export default function DoctorDashboard() {
                   <Star className="w-5 h-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{doctor?.rating || 0}</p>
+                  <p className="text-2xl font-bold text-foreground">{doctorProfile?.rating || 0}</p>
                   <p className="text-xs text-muted-foreground">Rating</p>
                 </div>
               </div>

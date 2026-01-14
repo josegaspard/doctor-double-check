@@ -23,12 +23,12 @@ import {
 export default function LivePlayer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getLive } = useLives();
+  const { getLive, likeLive, unlikeLive, hasLiked } = useLives();
   const { user, role } = useAuth();
   
-  const [isLiked, setIsLiked] = useState(false);
-  
   const live = getLive(id || '');
+  const [isLiking, setIsLiking] = useState(false);
+  const isLiked = live ? hasLiked(live.id) : false;
 
   if (!live) {
     return (
@@ -48,6 +48,21 @@ export default function LivePlayer() {
     if (minutes < 60) return `${minutes} minutos`;
     const hours = Math.floor(minutes / 60);
     return `${hours}h ${minutes % 60}m`;
+  };
+
+  const handleLike = async () => {
+    if (role === 'visitor' || !user || isLiking) return;
+    
+    setIsLiking(true);
+    try {
+      if (isLiked) {
+        await unlikeLive(live.id);
+      } else {
+        await likeLive(live.id);
+      }
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   // Watermark for authenticated users
@@ -143,11 +158,12 @@ export default function LivePlayer() {
                 <Button
                   variant={isLiked ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setIsLiked(!isLiked)}
+                  onClick={handleLike}
+                  disabled={role === 'visitor' || isLiking}
                   className="gap-2"
                 >
                   <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                  Me gusta
+                  {live.likesCount} Me gusta
                 </Button>
                 <Button variant="outline" size="sm" className="gap-2">
                   <Share2 className="w-4 h-4" />
@@ -190,15 +206,18 @@ export default function LivePlayer() {
                 
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
-                    <p className="text-2xl font-bold text-foreground">4.8</p>
+                    <p className="text-2xl font-bold text-foreground">{live.likesCount}</p>
                     <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                      <Star className="w-3 h-3 fill-premium text-premium" />
-                      Rating
+                      <Heart className="w-3 h-3 fill-destructive text-destructive" />
+                      Likes
                     </p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-foreground">342</p>
-                    <p className="text-xs text-muted-foreground">Consultas</p>
+                    <p className="text-2xl font-bold text-foreground">{live.followersCount || 0}</p>
+                    <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                      <Star className="w-3 h-3 fill-premium text-premium" />
+                      Seguidores
+                    </p>
                   </div>
                 </div>
                 
