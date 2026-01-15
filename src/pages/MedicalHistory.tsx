@@ -83,12 +83,13 @@ export default function MedicalHistory() {
     }, 200);
 
     try {
-      const result = await uploadMedicalHistory(selectedFile, {
-        title: formData.title,
-        description: formData.description || undefined,
-        category: formData.category,
-        dateOfStudy: formData.dateOfStudy ? new Date(formData.dateOfStudy) : undefined,
-      });
+      const result = await uploadMedicalHistory(
+        selectedFile,
+        formData.title,
+        formData.category,
+        formData.description || undefined,
+        formData.dateOfStudy ? new Date(formData.dateOfStudy) : undefined
+      );
 
       clearInterval(progressInterval);
 
