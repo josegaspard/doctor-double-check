@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
 
 interface NavItem {
   label: string;
@@ -152,6 +153,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
             {/* Right Side */}
             <div className="flex items-center gap-2">
+              {/* Global Search */}
+              <GlobalSearch />
+              
               {/* Language Switcher */}
               <LanguageSwitcher />
               
