@@ -53,34 +53,24 @@ export function useWallet(userId: string | undefined) {
     fetchWallet();
   }, [fetchWallet]);
 
-  // Top up wallet
-  const topUp = async (amount: number, description: string = 'Recarga de saldo'): Promise<{ success: boolean; error?: string }> => {
+  // Top up wallet - uses secure server-side function
+  const topUp = async (amount: number, _description: string = 'Recarga de saldo'): Promise<{ success: boolean; error?: string }> => {
     if (!userId) return { success: false, error: 'No user' };
 
     try {
-      // Create transaction
-      const { error: txnError } = await supabase
-        .from('wallet_transactions')
-        .insert({
-          user_id: userId,
-          type: 'topup' as TransactionType,
-          amount,
-          description,
-          status: 'paid',
-        });
+      // Use secure server-side function for wallet operations
+      const { data, error } = await supabase.rpc('process_wallet_topup', {
+        p_amount: amount,
+      });
 
-      if (txnError) {
-        return { success: false, error: txnError.message };
+      if (error) {
+        return { success: false, error: error.message };
       }
-
-      // Update wallet balance
-      const { error: walletError } = await supabase
-        .from('wallets')
-        .update({ balance: balance + amount })
-        .eq('user_id', userId);
-
-      if (walletError) {
-        return { success: false, error: walletError.message };
+      
+      const result = data as { success: boolean; error?: string };
+      
+      if (!result.success) {
+        return { success: false, error: result.error || 'Error al recargar' };
       }
 
       // Refresh data
@@ -91,43 +81,30 @@ export function useWallet(userId: string | undefined) {
     }
   };
 
-  // Make a purchase
+  // Make a purchase - uses secure server-side function
   const purchase = async (
     amount: number, 
     description: string, 
     metadata?: Record<string, any>
   ): Promise<{ success: boolean; error?: string }> => {
     if (!userId) return { success: false, error: 'No user' };
-    
-    if (balance < amount) {
-      return { success: false, error: 'Saldo insuficiente' };
-    }
 
     try {
-      // Create transaction
-      const { error: txnError } = await supabase
-        .from('wallet_transactions')
-        .insert({
-          user_id: userId,
-          type: 'purchase' as TransactionType,
-          amount: -amount,
-          description,
-          status: 'paid',
-          metadata,
-        });
+      // Use secure server-side function for wallet operations
+      const { data, error } = await supabase.rpc('process_wallet_purchase', {
+        p_amount: amount,
+        p_description: description,
+        p_metadata: metadata || null,
+      });
 
-      if (txnError) {
-        return { success: false, error: txnError.message };
+      if (error) {
+        return { success: false, error: error.message };
       }
-
-      // Update wallet balance
-      const { error: walletError } = await supabase
-        .from('wallets')
-        .update({ balance: balance - amount })
-        .eq('user_id', userId);
-
-      if (walletError) {
-        return { success: false, error: walletError.message };
+      
+      const result = data as { success: boolean; error?: string };
+      
+      if (!result.success) {
+        return { success: false, error: result.error || 'Error al procesar compra' };
       }
 
       // Refresh data

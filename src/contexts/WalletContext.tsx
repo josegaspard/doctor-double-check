@@ -90,26 +90,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // Create transaction record
-      const { error: txnError } = await supabase
-        .from('wallet_transactions')
-        .insert({
-          user_id: user.id,
-          type: 'topup',
-          amount: amount,
-          description: 'Recarga de saldo',
-          status: 'paid',
-        });
+      // Use secure server-side function for wallet operations
+      const { data, error } = await supabase.rpc('process_wallet_topup', {
+        p_amount: amount,
+      });
 
-      if (txnError) throw txnError;
-
-      // Update wallet balance
-      const { error: walletError } = await supabase
-        .from('wallets')
-        .update({ balance: balance + amount })
-        .eq('user_id', user.id);
-
-      if (walletError) throw walletError;
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; new_balance?: number };
+      
+      if (!result.success) {
+        setIsLoading(false);
+        return { success: false, error: result.error || 'Error al recargar' };
+      }
 
       await refreshWallet();
       setIsLoading(false);
@@ -127,37 +120,24 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   ): Promise<{ success: boolean; error?: string }> => {
     if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
     if (amount <= 0) return { success: false, error: 'Monto inválido' };
-    if (balance < amount) return { success: false, error: 'Saldo insuficiente' };
 
     setIsLoading(true);
     try {
-      // Get price for user (50% discount for residents)
-      const { data: adjustedPrice } = await supabase
-        .rpc('get_price_for_user', { _base_price: amount, _user_id: user.id });
+      // Use secure server-side function for wallet operations
+      const { data, error } = await supabase.rpc('process_wallet_purchase', {
+        p_amount: amount,
+        p_description: description,
+        p_metadata: metadata || null,
+      });
 
-      const finalAmount = adjustedPrice || amount;
-
-      // Create transaction record
-      const { error: txnError } = await supabase
-        .from('wallet_transactions')
-        .insert({
-          user_id: user.id,
-          type: 'purchase',
-          amount: -finalAmount,
-          description,
-          status: 'paid',
-          metadata,
-        });
-
-      if (txnError) throw txnError;
-
-      // Update wallet balance
-      const { error: walletError } = await supabase
-        .from('wallets')
-        .update({ balance: balance - finalAmount })
-        .eq('user_id', user.id);
-
-      if (walletError) throw walletError;
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; amount_charged?: number; new_balance?: number };
+      
+      if (!result.success) {
+        setIsLoading(false);
+        return { success: false, error: result.error || 'Error en la compra' };
+      }
 
       await refreshWallet();
       setIsLoading(false);
