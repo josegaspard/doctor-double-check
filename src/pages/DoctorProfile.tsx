@@ -43,7 +43,7 @@ export default function DoctorProfile() {
       if (doctorProfile) {
         // Fetch user profile for name and avatar
         const { data: profile } = await supabase
-          .from('public_profiles')
+          .from('profiles_public')
           .select('id, name, avatar_url')
           .eq('id', doctorProfile.user_id)
           .single();
