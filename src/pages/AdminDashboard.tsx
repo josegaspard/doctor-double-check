@@ -30,6 +30,16 @@ interface AdminModule {
 
 const adminModules: AdminModule[] = [
   {
+    id: 'analytics',
+    title: 'Analytics y Reportes',
+    titleEn: 'Analytics & Reports',
+    description: 'Visualiza estadísticas de ingresos, usuarios y actividad',
+    descriptionEn: 'View revenue, users and activity statistics',
+    icon: LayoutDashboard,
+    href: '/admin/analytics',
+    color: 'text-primary',
+  },
+  {
     id: 'verifications',
     title: 'Verificaciones de Identidad',
     titleEn: 'Identity Verifications',

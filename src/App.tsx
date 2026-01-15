@@ -38,6 +38,7 @@ import AdminVerifications from "./pages/AdminVerifications";
 import AdminDoctors from "./pages/AdminDoctors";
 import AdminResidents from "./pages/AdminResidents";
 import AdminUsers from "./pages/AdminUsers";
+import AdminAnalytics from "./pages/AdminAnalytics";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -80,6 +81,7 @@ const App = () => (
                       <Route path="/admin/doctors" element={<AdminDoctors />} />
                       <Route path="/admin/residents" element={<AdminResidents />} />
                       <Route path="/admin/users" element={<AdminUsers />} />
+                      <Route path="/admin/analytics" element={<AdminAnalytics />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>
