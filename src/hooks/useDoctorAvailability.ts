@@ -37,7 +37,7 @@ export function useDoctorAvailability() {
     if (publicData) {
       const doctorIds = [...new Set(publicData.map(a => a.doctor_id))];
       const { data: profiles } = await supabase
-        .from('profiles_public')
+        .from('public_profiles')
         .select('id, name')
         .in('id', doctorIds);
 

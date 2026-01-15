@@ -35,10 +35,6 @@ import UserProfile from "./pages/UserProfile";
 import IdentityVerification from "./pages/IdentityVerification";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminVerifications from "./pages/AdminVerifications";
-import AdminDoctors from "./pages/AdminDoctors";
-import AdminResidents from "./pages/AdminResidents";
-import AdminUsers from "./pages/AdminUsers";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -78,10 +74,9 @@ const App = () => (
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/admin" element={<AdminDashboard />} />
                       <Route path="/admin/verifications" element={<AdminVerifications />} />
-                      <Route path="/admin/doctors" element={<AdminDoctors />} />
-                      <Route path="/admin/residents" element={<AdminResidents />} />
-                      <Route path="/admin/users" element={<AdminUsers />} />
-                      <Route path="*" element={<NotFound />} />
+                      <Route path="/admin/doctors" element={<AdminDashboard />} />
+                      <Route path="/admin/residents" element={<AdminDashboard />} />
+                      <Route path="/admin/users" element={<AdminDashboard />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>
