@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLives } from '@/contexts/LivesContext';
@@ -7,6 +7,24 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Video,
   PlayCircle,
@@ -18,13 +36,40 @@ import {
   Upload,
   Radio,
   Star,
+  Users,
+  Loader2,
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+const SPECIALTIES = [
+  'Cardiología',
+  'Medicina Interna',
+  'Pediatría',
+  'Neurología',
+  'Dermatología',
+  'Oftalmología',
+  'Neumología',
+  'Endocrinología',
+  'Psiquiatría',
+  'Ginecología',
+  'Traumatología',
+  'Otro',
+];
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
-  const { getLivesByDoctor, getRecordingsByDoctor } = useLives();
+  const { getLivesByDoctor, getRecordingsByDoctor, createLive } = useLives();
   const { getAccessibleFiles } = useVault();
+  const { toast } = useToast();
+
+  const [isLiveDialogOpen, setIsLiveDialogOpen] = useState(false);
+  const [liveForm, setLiveForm] = useState({
+    title: '',
+    description: '',
+    specialty: '',
+  });
+  const [isStartingLive, setIsStartingLive] = useState(false);
 
   if (role !== 'doctor') {
     navigate('/lives');
@@ -40,6 +85,46 @@ export default function DoctorDashboard() {
   const isPending = doctorProfile?.status === 'pending';
   const isRejected = doctorProfile?.status === 'rejected';
 
+  const handleStartLive = async () => {
+    if (!liveForm.title.trim() || !liveForm.specialty) {
+      toast({
+        title: 'Campos requeridos',
+        description: 'El título y la especialidad son obligatorios',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsStartingLive(true);
+
+    const result = await createLive({
+      title: liveForm.title.trim(),
+      description: liveForm.description.trim() || undefined,
+      specialty: liveForm.specialty,
+    });
+
+    setIsStartingLive(false);
+
+    if (result.success) {
+      toast({
+        title: '🔴 Live iniciado',
+        description: 'Se notificó a tus suscriptores',
+      });
+      setIsLiveDialogOpen(false);
+      setLiveForm({ title: '', description: '', specialty: '' });
+      // Navigate to the live
+      if (result.liveId) {
+        navigate(`/live/${result.liveId}`);
+      }
+    } else {
+      toast({
+        title: 'Error',
+        description: result.error,
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -53,12 +138,18 @@ export default function DoctorDashboard() {
               Bienvenido, {user?.name}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {isApproved && (
-              <Badge variant="verified" className="gap-1">
-                <CheckCircle className="w-3 h-3" />
-                Verificado
-              </Badge>
+              <>
+                <Button onClick={() => setIsLiveDialogOpen(true)} className="gap-2 bg-red-600 hover:bg-red-700">
+                  <Radio className="w-4 h-4" />
+                  Iniciar Live
+                </Button>
+                <Badge variant="verified" className="gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Verificado
+                </Badge>
+              </>
             )}
             {isPending && (
               <Badge variant="warning" className="gap-1">
@@ -74,6 +165,91 @@ export default function DoctorDashboard() {
             )}
           </div>
         </div>
+
+        {/* Start Live Dialog */}
+        <Dialog open={isLiveDialogOpen} onOpenChange={setIsLiveDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Radio className="w-5 h-5 text-red-500" />
+                Iniciar transmisión en vivo
+              </DialogTitle>
+              <DialogDescription>
+                Tus suscriptores recibirán una notificación automáticamente
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="live-title">Título *</Label>
+                <Input
+                  id="live-title"
+                  placeholder="Ej: Cómo interpretar un ECG correctamente"
+                  value={liveForm.title}
+                  onChange={(e) => setLiveForm(prev => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="live-specialty">Especialidad *</Label>
+                <Select
+                  value={liveForm.specialty}
+                  onValueChange={(v) => setLiveForm(prev => ({ ...prev, specialty: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una especialidad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SPECIALTIES.map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="live-description">Descripción (opcional)</Label>
+                <Textarea
+                  id="live-description"
+                  placeholder="Describe brevemente de qué tratará tu live..."
+                  value={liveForm.description}
+                  onChange={(e) => setLiveForm(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg text-sm">
+                <Users className="w-4 h-4 text-primary" />
+                <span className="text-muted-foreground">
+                  {doctorProfile?.followersCount || 0} suscriptores serán notificados
+                </span>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsLiveDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleStartLive}
+                disabled={isStartingLive}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isStartingLive ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Iniciando...
+                  </>
+                ) : (
+                  <>
+                    <Radio className="w-4 h-4 mr-2" />
+                    Iniciar Live
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Pending/Rejected Alert */}
         {!isApproved && (
@@ -180,7 +356,12 @@ export default function DoctorDashboard() {
                   <p className="text-sm text-muted-foreground mb-3">
                     Comienza una transmisión en vivo para tus pacientes
                   </p>
-                  <Button size="sm" disabled={!isApproved}>
+                  <Button 
+                    size="sm" 
+                    disabled={!isApproved}
+                    onClick={() => isApproved && setIsLiveDialogOpen(true)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
                     {isApproved ? 'Iniciar' : 'No disponible'}
                   </Button>
                 </div>
