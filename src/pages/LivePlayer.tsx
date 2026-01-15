@@ -23,12 +23,29 @@ import {
 export default function LivePlayer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getLive, likeLive, unlikeLive, hasLiked } = useLives();
+  const { getLive, likeLive, unlikeLive, hasLiked, isLoading, refreshLives } = useLives();
   const { user, role } = useAuth();
   
-  const live = getLive(id || '');
   const [isLiking, setIsLiking] = useState(false);
+  
+  // Refresh on mount
+  React.useEffect(() => {
+    refreshLives();
+  }, [refreshLives]);
+  
+  const live = getLive(id || '');
   const isLiked = live ? hasLiked(live.id) : false;
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted animate-pulse" />
+          <div className="h-4 bg-muted animate-pulse rounded w-48 mx-auto" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!live) {
     return (
