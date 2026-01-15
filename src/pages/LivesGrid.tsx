@@ -16,10 +16,15 @@ import {
 } from 'lucide-react';
 
 export default function LivesGrid() {
-  const { lives } = useLives();
+  const { lives, isLoading, refreshLives } = useLives();
   const { role } = useAuth();
 
   const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
+
+  // Refresh on mount
+  React.useEffect(() => {
+    refreshLives();
+  }, [refreshLives]);
 
   const formatDuration = (startedAt: Date) => {
     const diff = Date.now() - startedAt.getTime();
@@ -55,7 +60,19 @@ export default function LivesGrid() {
         </div>
 
         {/* Lives Grid */}
-        {activeLives.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <Card key={i} className="overflow-hidden">
+                <div className="aspect-video bg-muted animate-pulse" />
+                <CardContent className="p-4 space-y-2">
+                  <div className="h-4 bg-muted animate-pulse rounded" />
+                  <div className="h-3 bg-muted animate-pulse rounded w-2/3" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : activeLives.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {activeLives.map((live) => (
               <Link key={live.id} to={`/live/${live.id}`}>
