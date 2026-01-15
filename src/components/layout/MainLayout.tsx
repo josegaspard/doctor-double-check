@@ -31,8 +31,9 @@ import {
   Stethoscope,
   LayoutDashboard,
   Upload,
-  Users,
 } from 'lucide-react';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 
 interface NavItem {
   label: string;
@@ -150,6 +151,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
             {/* Right Side */}
             <div className="flex items-center gap-2">
+              {/* Language Switcher */}
+              <LanguageSwitcher />
+              
+              {/* Notifications */}
+              {isAuthenticated && <NotificationBell />}
+              
               {/* Wallet (for patients/residents) */}
               {(role === 'patient' || role === 'resident') && (
                 <Link to="/wallet">
@@ -194,6 +201,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                         Mi Wallet
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem onClick={() => navigate('/settings')}>
+                      <Settings className="w-4 h-4 mr-2" />
+                      Configuración
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                       <LogOut className="w-4 h-4 mr-2" />
