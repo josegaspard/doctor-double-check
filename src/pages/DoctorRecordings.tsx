@@ -42,6 +42,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Slider } from '@/components/ui/slider';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import {
   Video,
@@ -57,6 +73,10 @@ import {
   Play,
   BarChart3,
   Loader2,
+  Search,
+  Filter,
+  X,
+  CalendarIcon,
 } from 'lucide-react';
 
 interface RecordingStats {
@@ -88,7 +108,66 @@ export default function DoctorRecordings() {
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
 
-  const myRecordings = getRecordingsByDoctor(user?.id || '');
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [specialtyFilter, setSpecialtyFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const allRecordings = getRecordingsByDoctor(user?.id || '');
+  
+  // Get unique specialties from recordings
+  const specialties = [...new Set(allRecordings.map(r => r.specialty))];
+  
+  // Get max price for slider
+  const maxPrice = Math.max(...allRecordings.map(r => r.price), 1000);
+
+  // Apply filters
+  const myRecordings = allRecordings.filter(recording => {
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesTitle = recording.title.toLowerCase().includes(query);
+      const matchesTags = recording.tags.some(tag => tag.toLowerCase().includes(query));
+      if (!matchesTitle && !matchesTags) return false;
+    }
+    
+    // Specialty filter
+    if (specialtyFilter !== 'all' && recording.specialty !== specialtyFilter) {
+      return false;
+    }
+    
+    // Date range filter
+    if (dateFrom && recording.createdAt < dateFrom) {
+      return false;
+    }
+    if (dateTo) {
+      const endOfDay = new Date(dateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      if (recording.createdAt > endOfDay) {
+        return false;
+      }
+    }
+    
+    // Price range filter
+    if (recording.price < priceRange[0] || recording.price > priceRange[1]) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  const hasActiveFilters = searchQuery || specialtyFilter !== 'all' || dateFrom || dateTo || priceRange[0] > 0 || priceRange[1] < maxPrice;
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSpecialtyFilter('all');
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setPriceRange([0, maxPrice]);
+  };
 
   // Redirect if not doctor
   useEffect(() => {
@@ -238,10 +317,16 @@ export default function DoctorRecordings() {
     return recordingStats.get(recordingId) || { purchaseCount: 0, totalRevenue: 0 };
   };
 
-  // Calculate totals
+  // Calculate totals (from filtered results)
   const totalRecordings = myRecordings.length;
-  const totalPurchases = Array.from(recordingStats.values()).reduce((sum, s) => sum + s.purchaseCount, 0);
-  const totalRevenue = Array.from(recordingStats.values()).reduce((sum, s) => sum + s.totalRevenue, 0);
+  const totalPurchases = myRecordings.reduce((sum, r) => {
+    const stats = recordingStats.get(r.id);
+    return sum + (stats?.purchaseCount || 0);
+  }, 0);
+  const totalRevenue = myRecordings.reduce((sum, r) => {
+    const stats = recordingStats.get(r.id);
+    return sum + (stats?.totalRevenue || 0);
+  }, 0);
   const totalDuration = myRecordings.reduce((sum, r) => sum + r.duration, 0);
 
   if (role !== 'doctor') return null;
@@ -323,12 +408,131 @@ export default function DoctorRecordings() {
           </Card>
         </div>
 
+        {/* Search and Filters */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por título o tags..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              
+              {/* Specialty Filter */}
+              <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Especialidad" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las especialidades</SelectItem>
+                  {specialties.map(s => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Toggle Advanced Filters */}
+              <Button 
+                variant={showFilters ? "secondary" : "outline"} 
+                onClick={() => setShowFilters(!showFilters)}
+                className="gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Filtros
+                {hasActiveFilters && (
+                  <Badge variant="default" className="ml-1 h-5 w-5 p-0 justify-center">
+                    !
+                  </Badge>
+                )}
+              </Button>
+              
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <Button variant="ghost" size="icon" onClick={clearFilters}>
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+            
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="mt-4 pt-4 border-t grid md:grid-cols-3 gap-4">
+                {/* Date From */}
+                <div className="space-y-2">
+                  <Label>Desde</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateFrom ? format(dateFrom, 'dd MMM yyyy', { locale: es }) : 'Seleccionar fecha'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateFrom}
+                        onSelect={setDateFrom}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                {/* Date To */}
+                <div className="space-y-2">
+                  <Label>Hasta</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateTo ? format(dateTo, 'dd MMM yyyy', { locale: es }) : 'Seleccionar fecha'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateTo}
+                        onSelect={setDateTo}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                {/* Price Range */}
+                <div className="space-y-2">
+                  <Label>Rango de precio: {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}</Label>
+                  <Slider
+                    value={priceRange}
+                    onValueChange={(value) => setPriceRange(value as [number, number])}
+                    max={maxPrice}
+                    step={10}
+                    className="mt-3"
+                  />
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Recordings Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Video className="w-5 h-5" />
-              Todas las Grabaciones
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Video className="w-5 h-5" />
+                Grabaciones
+              </span>
+              {hasActiveFilters && (
+                <Badge variant="secondary">
+                  {myRecordings.length} de {allRecordings.length} grabaciones
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
