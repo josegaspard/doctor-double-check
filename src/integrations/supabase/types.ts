@@ -1104,6 +1104,84 @@ export type Database = {
       }
     }
     Views: {
+      doctor_profiles_public: {
+        Row: {
+          available_for_clinical_sessions: boolean | null
+          available_for_double_check: boolean | null
+          bio: string | null
+          consultation_fee: number | null
+          created_at: string | null
+          followers_count: number | null
+          id: string | null
+          location: string | null
+          rating: number | null
+          specialty: string | null
+          status: Database["public"]["Enums"]["doctor_status"] | null
+          total_consultations: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          available_for_clinical_sessions?: boolean | null
+          available_for_double_check?: boolean | null
+          bio?: string | null
+          consultation_fee?: number | null
+          created_at?: string | null
+          followers_count?: number | null
+          id?: string | null
+          location?: string | null
+          rating?: number | null
+          specialty?: string | null
+          status?: Database["public"]["Enums"]["doctor_status"] | null
+          total_consultations?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          available_for_clinical_sessions?: boolean | null
+          available_for_double_check?: boolean | null
+          bio?: string | null
+          consultation_fee?: number | null
+          created_at?: string | null
+          followers_count?: number | null
+          id?: string | null
+          location?: string | null
+          rating?: number | null
+          specialty?: string | null
+          status?: Database["public"]["Enums"]["doctor_status"] | null
+          total_consultations?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          id: string | null
+          is_identity_verified: boolean | null
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_identity_verified?: boolean | null
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_identity_verified?: boolean | null
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
@@ -1125,6 +1203,42 @@ export type Database = {
           id?: string | null
           name?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      resident_profiles_public: {
+        Row: {
+          created_at: string | null
+          followers_count: number | null
+          id: string | null
+          institution: string | null
+          specialty: string | null
+          status: Database["public"]["Enums"]["doctor_status"] | null
+          updated_at: string | null
+          user_id: string | null
+          year: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          followers_count?: number | null
+          id?: string | null
+          institution?: string | null
+          specialty?: string | null
+          status?: Database["public"]["Enums"]["doctor_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+          year?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          followers_count?: number | null
+          id?: string | null
+          institution?: string | null
+          specialty?: string | null
+          status?: Database["public"]["Enums"]["doctor_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+          year?: number | null
         }
         Relationships: []
       }
