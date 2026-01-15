@@ -33,7 +33,8 @@ import DoctorAvailability from "./pages/DoctorAvailability";
 import DoctorRecordings from "./pages/DoctorRecordings";
 import UserProfile from "./pages/UserProfile";
 import IdentityVerification from "./pages/IdentityVerification";
-
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminVerifications from "./pages/AdminVerifications";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -71,7 +72,11 @@ const App = () => (
                       <Route path="/clinical-sessions" element={<ClinicalSessions />} />
                       <Route path="/double-check" element={<DoubleCheck />} />
                       <Route path="/settings" element={<Settings />} />
-                      <Route path="/admin" element={<Navigate to="/lives" />} />
+                      <Route path="/admin" element={<AdminDashboard />} />
+                      <Route path="/admin/verifications" element={<AdminVerifications />} />
+                      <Route path="/admin/doctors" element={<AdminDashboard />} />
+                      <Route path="/admin/residents" element={<AdminDashboard />} />
+                      <Route path="/admin/users" element={<AdminDashboard />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>
