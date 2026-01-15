@@ -215,8 +215,51 @@ export type Database = {
           },
         ]
       }
+      doctor_availability: {
+        Row: {
+          created_at: string
+          description: string | null
+          doctor_id: string
+          duration_minutes: number
+          id: string
+          notifications_sent: boolean
+          scheduled_at: string
+          status: Database["public"]["Enums"]["availability_status"]
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          doctor_id: string
+          duration_minutes?: number
+          id?: string
+          notifications_sent?: boolean
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["availability_status"]
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          doctor_id?: string
+          duration_minutes?: number
+          id?: string
+          notifications_sent?: boolean
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["availability_status"]
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       doctor_content: {
         Row: {
+          audience_type: Database["public"]["Enums"]["content_audience"]
           category: string | null
           created_at: string
           creator_id: string
@@ -231,6 +274,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          audience_type?: Database["public"]["Enums"]["content_audience"]
           category?: string | null
           created_at?: string
           creator_id: string
@@ -245,6 +289,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          audience_type?: Database["public"]["Enums"]["content_audience"]
           category?: string | null
           created_at?: string
           creator_id?: string
@@ -368,6 +413,45 @@ export type Database = {
         }
         Relationships: []
       }
+      identity_verifications: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          external_id: string | null
+          id: string
+          metadata: Json | null
+          provider: string
+          status: Database["public"]["Enums"]["identity_verification_status"]
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          external_id?: string | null
+          id?: string
+          metadata?: Json | null
+          provider?: string
+          status?: Database["public"]["Enums"]["identity_verification_status"]
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          external_id?: string | null
+          id?: string
+          metadata?: Json | null
+          provider?: string
+          status?: Database["public"]["Enums"]["identity_verification_status"]
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       live_likes: {
         Row: {
           created_at: string
@@ -487,13 +571,87 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_notifications: boolean
+          id: string
+          in_app_notifications: boolean
+          notify_chat_messages: boolean
+          notify_doctor_live: boolean
+          notify_new_content: boolean
+          push_notifications: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_notifications?: boolean
+          id?: string
+          in_app_notifications?: boolean
+          notify_chat_messages?: boolean
+          notify_doctor_live?: boolean
+          notify_new_content?: boolean
+          push_notifications?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_notifications?: boolean
+          id?: string
+          in_app_notifications?: boolean
+          notify_chat_messages?: boolean
+          notify_doctor_live?: boolean
+          notify_new_content?: boolean
+          push_notifications?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
           email: string
           id: string
+          is_identity_verified: boolean
           name: string
+          preferred_language: Database["public"]["Enums"]["supported_language"]
           updated_at: string
         }
         Insert: {
@@ -501,7 +659,9 @@ export type Database = {
           created_at?: string
           email: string
           id: string
+          is_identity_verified?: boolean
           name: string
+          preferred_language?: Database["public"]["Enums"]["supported_language"]
           updated_at?: string
         }
         Update: {
@@ -509,7 +669,9 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          is_identity_verified?: boolean
           name?: string
+          preferred_language?: Database["public"]["Enums"]["supported_language"]
           updated_at?: string
         }
         Relationships: []
@@ -745,8 +907,12 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
+          notify_on_availability: boolean
+          notify_on_content: boolean
+          notify_on_live: boolean
           price_paid: number
           subscriber_id: string
+          tier: Database["public"]["Enums"]["subscription_tier"]
         }
         Insert: {
           created_at?: string
@@ -754,8 +920,12 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          notify_on_availability?: boolean
+          notify_on_content?: boolean
+          notify_on_live?: boolean
           price_paid: number
           subscriber_id: string
+          tier?: Database["public"]["Enums"]["subscription_tier"]
         }
         Update: {
           created_at?: string
@@ -763,8 +933,12 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          notify_on_availability?: boolean
+          notify_on_content?: boolean
+          notify_on_live?: boolean
           price_paid?: number
           subscriber_id?: string
+          tier?: Database["public"]["Enums"]["subscription_tier"]
         }
         Relationships: []
       }
@@ -973,6 +1147,16 @@ export type Database = {
       }
       is_approved_doctor: { Args: { _user_id: string }; Returns: boolean }
       is_approved_resident: { Args: { _user_id: string }; Returns: boolean }
+      notify_subscribers: {
+        Args: {
+          p_data?: Json
+          p_doctor_id: string
+          p_message: string
+          p_notification_type: Database["public"]["Enums"]["notification_type"]
+          p_title: string
+        }
+        Returns: number
+      }
       process_wallet_purchase: {
         Args: { p_amount: number; p_description: string; p_metadata?: Json }
         Returns: Json
@@ -981,6 +1165,7 @@ export type Database = {
     }
     Enums: {
       app_role: "visitor" | "patient" | "doctor" | "resident" | "admin"
+      availability_status: "scheduled" | "confirmed" | "cancelled" | "completed"
       chat_participant_type: "patient" | "doctor" | "resident"
       chat_status: "active" | "closed"
       clinical_session_status:
@@ -989,9 +1174,25 @@ export type Database = {
         | "rejected"
         | "completed"
         | "cancelled"
+      content_audience: "all" | "patients" | "professionals"
       content_type: "video" | "pdf" | "image"
       doctor_status: "pending" | "approved" | "rejected"
+      identity_verification_status:
+        | "pending"
+        | "in_progress"
+        | "verified"
+        | "failed"
+        | "expired"
       live_status: "live" | "ended" | "processing_recording" | "recording_ready"
+      notification_type:
+        | "doctor_live"
+        | "doctor_availability"
+        | "new_content"
+        | "subscription_update"
+        | "chat_message"
+        | "system"
+      subscription_tier: "free" | "basic" | "premium"
+      supported_language: "es" | "en"
       transaction_status: "initiated" | "paid" | "failed"
       transaction_type:
         | "topup"
@@ -1128,6 +1329,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["visitor", "patient", "doctor", "resident", "admin"],
+      availability_status: ["scheduled", "confirmed", "cancelled", "completed"],
       chat_participant_type: ["patient", "doctor", "resident"],
       chat_status: ["active", "closed"],
       clinical_session_status: [
@@ -1137,9 +1339,27 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      content_audience: ["all", "patients", "professionals"],
       content_type: ["video", "pdf", "image"],
       doctor_status: ["pending", "approved", "rejected"],
+      identity_verification_status: [
+        "pending",
+        "in_progress",
+        "verified",
+        "failed",
+        "expired",
+      ],
       live_status: ["live", "ended", "processing_recording", "recording_ready"],
+      notification_type: [
+        "doctor_live",
+        "doctor_availability",
+        "new_content",
+        "subscription_update",
+        "chat_message",
+        "system",
+      ],
+      subscription_tier: ["free", "basic", "premium"],
+      supported_language: ["es", "en"],
       transaction_status: ["initiated", "paid", "failed"],
       transaction_type: [
         "topup",
