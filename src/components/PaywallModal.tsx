@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Lock, 
   Wallet, 
@@ -18,6 +20,8 @@ import {
   AlertCircle,
   CheckCircle,
   Loader2,
+  CreditCard,
+  ExternalLink,
 } from 'lucide-react';
 import { Recording } from '@/types';
 
@@ -41,6 +45,8 @@ export default function PaywallModal({
   balance,
 }: PaywallModalProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isStripeProcessing, setIsStripeProcessing] = useState(false);
 
   if (!recording) return null;
 
@@ -49,6 +55,31 @@ export default function PaywallModal({
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
+  };
+
+  const handleStripeCheckout = async () => {
+    setIsStripeProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-recording-checkout', {
+        body: { recordingId: recording.id },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        onClose();
+      }
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo iniciar el proceso de pago',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsStripeProcessing(false);
+    }
   };
 
   return (
@@ -63,7 +94,7 @@ export default function PaywallModal({
           </div>
           <DialogTitle className="text-xl">{recording.title}</DialogTitle>
           <DialogDescription>
-            Esta grabación requiere una compra para acceder
+            Elige cómo deseas adquirir esta grabación
           </DialogDescription>
         </DialogHeader>
 
@@ -87,91 +118,108 @@ export default function PaywallModal({
 
           <Separator />
 
-          {/* Price & Balance */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Precio:</span>
-              <span className="text-xl font-bold text-premium">${recording.price}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Tu saldo:</span>
-              <span className={`font-semibold ${canAfford ? 'text-success' : 'text-destructive'}`}>
-                ${balance.toLocaleString()}
-              </span>
-            </div>
-            {canAfford && (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Saldo después:</span>
-                <span className="text-muted-foreground">${(balance - recording.price).toLocaleString()}</span>
-              </div>
-            )}
+          {/* Price Display */}
+          <div className="text-center py-2">
+            <p className="text-sm text-muted-foreground">Precio</p>
+            <p className="text-3xl font-bold text-premium">${recording.price} MXN</p>
           </div>
-
-          {/* Insufficient Balance Warning */}
-          {!canAfford && (
-            <div className="flex items-start gap-3 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
-              <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-destructive">Saldo insuficiente</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Necesitas ${(recording.price - balance).toLocaleString()} más para comprar esta grabación.
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* Benefits */}
           <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">Incluye:</p>
             <ul className="space-y-1">
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle className="w-4 h-4 text-success" />
+                <CheckCircle className="w-4 h-4 text-green-500" />
                 Acceso ilimitado a la grabación
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle className="w-4 h-4 text-success" />
+                <CheckCircle className="w-4 h-4 text-green-500" />
                 Reproducción en cualquier dispositivo
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle className="w-4 h-4 text-success" />
+                <CheckCircle className="w-4 h-4 text-green-500" />
                 Sin fecha de expiración
               </li>
             </ul>
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex flex-col gap-2">
-          {canAfford ? (
-            <Button onClick={onPurchase} disabled={isPurchasing} className="w-full">
-              {isPurchasing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Procesando...
-                </>
+          <Separator />
+
+          {/* Payment Options */}
+          <div className="space-y-3">
+            {/* Option 1: Pay with Stripe */}
+            <Button 
+              onClick={handleStripeCheckout} 
+              disabled={isStripeProcessing}
+              className="w-full h-12 gap-2"
+              variant="default"
+            >
+              {isStripeProcessing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Comprar por ${recording.price}
+                  <CreditCard className="w-4 h-4" />
+                  Pagar con Tarjeta
+                  <ExternalLink className="w-3 h-3 ml-1" />
                 </>
               )}
             </Button>
-          ) : (
-            <Button 
-              onClick={() => {
-                onClose();
-                navigate('/wallet');
-              }} 
-              className="w-full"
-            >
-              <Wallet className="w-4 h-4 mr-2" />
-              Recargar Wallet
-            </Button>
-          )}
-          <Button variant="outline" onClick={onClose} className="w-full">
-            Cancelar
-          </Button>
+
+            {/* Option 2: Pay with Wallet */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">o usa tu wallet</span>
+              </div>
+            </div>
+
+            {canAfford ? (
+              <Button 
+                onClick={onPurchase} 
+                disabled={isPurchasing} 
+                className="w-full"
+                variant="outline"
+              >
+                {isPurchasing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <Wallet className="w-4 h-4 mr-2" />
+                    Pagar con Wallet (Saldo: ${balance.toLocaleString()})
+                  </>
+                )}
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-yellow-800 dark:text-yellow-200">Saldo insuficiente</p>
+                    <p className="text-yellow-700 dark:text-yellow-300 text-xs">
+                      Tienes ${balance.toLocaleString()} - Necesitas ${(recording.price - balance).toLocaleString()} más
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => { onClose(); navigate('/wallet'); }} 
+                  className="w-full"
+                  variant="outline"
+                >
+                  <Wallet className="w-4 h-4 mr-2" />
+                  Recargar Wallet
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
+
+        <Button variant="ghost" onClick={onClose} className="w-full">
+          Cancelar
+        </Button>
       </DialogContent>
     </Dialog>
   );
