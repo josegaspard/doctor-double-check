@@ -30,6 +30,7 @@ import ClinicalSessions from "./pages/ClinicalSessions";
 import DoubleCheck from "./pages/DoubleCheck";
 import Settings from "./pages/Settings";
 import DoctorAvailability from "./pages/DoctorAvailability";
+import DoctorRecordings from "./pages/DoctorRecordings";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App = () => (
                       <Route path="/doctor/upload" element={<DoctorUpload />} />
                       <Route path="/doctor/vault" element={<DoctorVault />} />
                       <Route path="/doctor/availability" element={<DoctorAvailability />} />
+                      <Route path="/doctor/recordings" element={<DoctorRecordings />} />
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />
                       <Route path="/clinical-sessions" element={<ClinicalSessions />} />
