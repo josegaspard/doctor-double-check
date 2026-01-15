@@ -103,12 +103,13 @@ export function useVault(userId: string | undefined, userRole: string | undefine
         return { success: false, error: uploadError.message };
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
+      // Get signed URL for private bucket (1 year expiration for storage reference)
+      const { data: urlData, error: urlError } = await supabase.storage
         .from(bucket)
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 31536000); // 1 year expiration
 
-      const fileUrl = urlData.publicUrl;
+      if (urlError) throw urlError;
+      const fileUrl = urlData?.signedUrl || '';
 
       // Save to medical history if requested
       let medicalHistoryId: string | null = null;

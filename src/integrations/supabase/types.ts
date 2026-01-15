@@ -930,7 +930,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          id: string | null
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_price_for_user: {
@@ -950,6 +973,11 @@ export type Database = {
       }
       is_approved_doctor: { Args: { _user_id: string }; Returns: boolean }
       is_approved_resident: { Args: { _user_id: string }; Returns: boolean }
+      process_wallet_purchase: {
+        Args: { p_amount: number; p_description: string; p_metadata?: Json }
+        Returns: Json
+      }
+      process_wallet_topup: { Args: { p_amount: number }; Returns: Json }
     }
     Enums: {
       app_role: "visitor" | "patient" | "doctor" | "resident" | "admin"

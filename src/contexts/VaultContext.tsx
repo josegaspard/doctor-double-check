@@ -222,10 +222,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
+      // Get signed URL for private bucket (1 year expiration for storage reference)
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('vault-files')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 31536000); // 1 year expiration
+      
+      if (urlError) throw urlError;
 
       const fileType = file.type.includes('pdf') ? 'pdf' : 
                        file.type.includes('image') ? 'image' : 'study';
@@ -238,7 +240,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           name: file.name,
           file_type: fileType,
           file_size: file.size,
-          file_url: urlData.publicUrl,
+          file_url: urlData?.signedUrl || '',
           description,
           category,
         });
@@ -286,9 +288,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
+      // Get signed URL for private bucket (1 year expiration for storage reference)
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('medical-history')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 31536000); // 1 year expiration
+      
+      if (urlError) throw urlError;
 
       const fileType = file.type.includes('pdf') ? 'pdf' : 
                        file.type.includes('image') ? 'image' : 'study';
@@ -301,7 +306,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           description,
           category,
           file_type: fileType,
-          file_url: urlData.publicUrl,
+          file_url: urlData?.signedUrl || '',
           file_size: file.size,
           date_of_study: dateOfStudy?.toISOString(),
         });
