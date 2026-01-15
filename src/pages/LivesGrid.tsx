@@ -6,6 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { UpcomingAvailabilities } from '@/components/availability/UpcomingAvailabilities';
 import { 
   Video, 
   Users, 
@@ -17,7 +18,7 @@ import {
 
 export default function LivesGrid() {
   const { lives, isLoading, refreshLives } = useLives();
-  const { role } = useAuth();
+  const { role, isAuthenticated } = useAuth();
 
   const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
 
@@ -37,6 +38,11 @@ export default function LivesGrid() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6">
+        {/* Upcoming Availabilities - for authenticated users */}
+        {isAuthenticated && role !== 'visitor' && (
+          <UpcomingAvailabilities />
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
