@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -40,7 +40,11 @@ import {
   Pencil,
   Wallet,
   Settings,
+  FileCheck,
+  Clock,
 } from 'lucide-react';
+
+type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired' | null;
 
 export default function UserProfile() {
   const navigate = useNavigate();
@@ -59,6 +63,37 @@ export default function UserProfile() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [isSavingLanguage, setIsSavingLanguage] = useState(false);
+  
+  // Identity verification status
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(null);
+  const [isLoadingVerification, setIsLoadingVerification] = useState(true);
+
+  // Fetch verification status
+  useEffect(() => {
+    const fetchVerificationStatus = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data } = await supabase
+          .from('identity_verifications')
+          .select('status')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (data) {
+          setVerificationStatus(data.status as VerificationStatus);
+        }
+      } catch (error) {
+        // No verification found
+      } finally {
+        setIsLoadingVerification(false);
+      }
+    };
+
+    fetchVerificationStatus();
+  }, [user?.id]);
 
   if (!user) {
     navigate('/login');
@@ -364,13 +399,31 @@ export default function UserProfile() {
                 <div className="flex items-center gap-3">
                   <Shield className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground">
-                    {language === 'es' ? 'Estado de la cuenta' : 'Account status'}
+                    {language === 'es' ? 'Verificación de identidad' : 'Identity verification'}
                   </span>
                 </div>
-                <Badge variant="success" className="gap-1">
-                  <Check className="w-3 h-3" />
-                  {language === 'es' ? 'Activa' : 'Active'}
-                </Badge>
+                {isLoadingVerification ? (
+                  <Badge variant="secondary">...</Badge>
+                ) : verificationStatus === 'approved' ? (
+                  <Badge variant="success" className="gap-1">
+                    <Check className="w-3 h-3" />
+                    {language === 'es' ? 'Verificado' : 'Verified'}
+                  </Badge>
+                ) : verificationStatus === 'pending' ? (
+                  <Badge variant="warning" className="gap-1">
+                    <Clock className="w-3 h-3" />
+                    {language === 'es' ? 'Pendiente' : 'Pending'}
+                  </Badge>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate('/verify-identity')}
+                  >
+                    <FileCheck className="w-3 h-3 mr-1" />
+                    {language === 'es' ? 'Verificar' : 'Verify'}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
