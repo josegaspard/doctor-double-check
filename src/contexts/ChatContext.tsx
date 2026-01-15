@@ -305,7 +305,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   };
 
   const sendMessage = async (sessionId: string, content: string) => {
-    if (!user?.id || !content.trim()) return;
+    if (!user?.id) return;
+
+    // Validate message content
+    const trimmed = content.trim();
+    if (!trimmed || trimmed.length === 0) return;
+    
+    // Limit message length to prevent DoS (matches server-side trigger)
+    const MAX_MESSAGE_LENGTH = 10000;
+    if (trimmed.length > MAX_MESSAGE_LENGTH) {
+      console.error(`Message too long: ${trimmed.length} characters (max ${MAX_MESSAGE_LENGTH})`);
+      return;
+    }
 
     try {
       await supabase
@@ -313,17 +324,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         .insert({
           session_id: sessionId,
           sender_id: user.id,
-          content: content.trim(),
+          content: trimmed,
         });
 
-      // Update session last message
+      // Update session last message (truncate for preview)
+      const previewMessage = trimmed.length > 100 ? trimmed.substring(0, 100) + '...' : trimmed;
       const session = sessions.find(s => s.id === sessionId);
       if (session) {
         const isParticipant1 = session.participant1Id === user.id;
         await supabase
           .from('chat_sessions')
           .update({
-            last_message: content.trim(),
+            last_message: previewMessage,
             last_message_at: new Date().toISOString(),
             ...(isParticipant1 
               ? { unread_count_2: (session.unreadCount || 0) + 1 }
