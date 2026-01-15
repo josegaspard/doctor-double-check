@@ -8,6 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from 'sonner';
+import {
   Video,
   Users,
   Clock,
@@ -18,15 +28,20 @@ import {
   Stethoscope,
   Star,
   Award,
+  StopCircle,
+  Save,
 } from 'lucide-react';
 
 export default function LivePlayer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getLive, likeLive, unlikeLive, hasLiked, isLoading, refreshLives } = useLives();
+  const { getLive, likeLive, unlikeLive, hasLiked, endLive, isLoading, refreshLives } = useLives();
   const { user, role } = useAuth();
   
   const [isLiking, setIsLiking] = useState(false);
+  const [showEndDialog, setShowEndDialog] = useState(false);
+  const [saveAsRecording, setSaveAsRecording] = useState(true);
+  const [isEnding, setIsEnding] = useState(false);
   
   // Refresh on mount
   React.useEffect(() => {
@@ -81,6 +96,32 @@ export default function LivePlayer() {
       setIsLiking(false);
     }
   };
+
+  const handleEndLive = async () => {
+    if (!live) return;
+    
+    setIsEnding(true);
+    try {
+      const result = await endLive(live.id, saveAsRecording);
+      
+      if (result.success) {
+        toast.success(
+          saveAsRecording 
+            ? 'Live terminado y grabación guardada' 
+            : 'Live terminado exitosamente'
+        );
+        setShowEndDialog(false);
+        navigate('/lives');
+      } else {
+        toast.error(result.error || 'Error al terminar el live');
+      }
+    } finally {
+      setIsEnding(false);
+    }
+  };
+
+  const isOwner = user?.id === live?.doctorId;
+  const isLiveActive = live?.status === 'live';
 
   // Watermark for authenticated users
   const Watermark = () => {
@@ -274,6 +315,34 @@ export default function LivePlayer() {
               </CardContent>
             </Card>
 
+            {/* Doctor Controls - End Live */}
+            {isOwner && isLiveActive && (
+              <Card className="bg-destructive/5 border-destructive/20">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                      <StopCircle className="w-5 h-5 text-destructive" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-foreground text-sm">Panel del Doctor</h4>
+                      <p className="text-xs text-muted-foreground mt-1 mb-3">
+                        Controles de tu transmisión en vivo.
+                      </p>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => setShowEndDialog(true)}
+                      >
+                        <StopCircle className="w-4 h-4 mr-2" />
+                        Terminar Live
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Visitor Notice */}
             {role === 'visitor' && (
               <Card className="bg-info/5 border-info/20">
@@ -290,6 +359,57 @@ export default function LivePlayer() {
           </div>
         </div>
       </div>
+
+      {/* End Live Dialog */}
+      <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Terminar transmisión</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas terminar esta transmisión en vivo?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="flex items-start space-x-3 p-4 rounded-lg bg-muted/50">
+              <Checkbox 
+                id="saveRecording" 
+                checked={saveAsRecording}
+                onCheckedChange={(checked) => setSaveAsRecording(checked === true)}
+              />
+              <div className="flex-1">
+                <label 
+                  htmlFor="saveRecording" 
+                  className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  Guardar como grabación
+                </label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  La grabación estará disponible para que tus suscriptores la vean después.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowEndDialog(false)}
+              disabled={isEnding}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleEndLive}
+              disabled={isEnding}
+            >
+              {isEnding ? 'Terminando...' : 'Terminar Live'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

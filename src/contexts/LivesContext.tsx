@@ -51,7 +51,7 @@ interface LivesContextType {
   unlikeLive: (liveId: string) => Promise<void>;
   hasLiked: (liveId: string) => boolean;
   createLive: (data: Partial<Live>) => Promise<{ success: boolean; liveId?: string; error?: string }>;
-  endLive: (liveId: string) => Promise<{ success: boolean; error?: string }>;
+  endLive: (liveId: string, saveAsRecording?: boolean) => Promise<{ success: boolean; recordingId?: string; error?: string }>;
   refreshLives: () => Promise<void>;
   refreshRecordings: () => Promise<void>;
 }
@@ -322,20 +322,61 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const endLive = async (liveId: string): Promise<{ success: boolean; error?: string }> => {
+  const endLive = async (liveId: string, saveAsRecording: boolean = false): Promise<{ success: boolean; recordingId?: string; error?: string }> => {
     if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
 
     try {
+      // Get the live data first
+      const live = lives.find(l => l.id === liveId);
+      if (!live) return { success: false, error: 'Live no encontrado' };
+
+      // Update live status
+      const newStatus = saveAsRecording ? 'processing_recording' : 'ended';
       const { error } = await supabase
         .from('lives')
-        .update({ status: 'ended', ended_at: new Date().toISOString() })
+        .update({ status: newStatus, ended_at: new Date().toISOString() })
         .eq('id', liveId)
         .eq('doctor_id', user.id);
 
       if (error) throw error;
 
-      await fetchLives();
-      return { success: true };
+      let recordingId: string | undefined;
+
+      // Create recording if requested
+      if (saveAsRecording) {
+        const duration = Math.floor((Date.now() - live.startedAt.getTime()) / 60000); // Duration in minutes
+        
+        const { data: newRecording, error: recordingError } = await supabase
+          .from('recordings')
+          .insert({
+            live_id: liveId,
+            doctor_id: user.id,
+            title: live.title,
+            description: live.description,
+            specialty: live.specialty,
+            duration: duration,
+            price: live.recordingPrice || 0,
+            tags: live.tags,
+            thumbnail_url: live.thumbnailUrl,
+          })
+          .select()
+          .single();
+
+        if (recordingError) {
+          console.error('Error creating recording:', recordingError);
+        } else {
+          recordingId = newRecording.id;
+          
+          // Update live status to recording_ready
+          await supabase
+            .from('lives')
+            .update({ status: 'recording_ready' })
+            .eq('id', liveId);
+        }
+      }
+
+      await Promise.all([fetchLives(), fetchRecordings()]);
+      return { success: true, recordingId };
     } catch (error: any) {
       return { success: false, error: error.message || 'Error al terminar live' };
     }
