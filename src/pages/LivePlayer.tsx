@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDaily } from '@/hooks/useDaily';
 import MainLayout from '@/components/layout/MainLayout';
+import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
+import { LiveChat } from '@/components/live/LiveChat';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +34,8 @@ import {
   Award,
   StopCircle,
   Save,
+  Radio,
+  Loader2,
 } from 'lucide-react';
 
 export default function LivePlayer() {
@@ -37,26 +43,71 @@ export default function LivePlayer() {
   const navigate = useNavigate();
   const { getLive, likeLive, unlikeLive, hasLiked, endLive, isLoading, refreshLives } = useLives();
   const { user, role } = useAuth();
+  const { getViewerToken, createRoom, isLoading: isDailyLoading } = useDaily();
   
   const [isLiking, setIsLiking] = useState(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [saveAsRecording, setSaveAsRecording] = useState(true);
   const [isEnding, setIsEnding] = useState(false);
+  const [showChat, setShowChat] = useState(true);
+  
+  // Daily.co state
+  const [roomUrl, setRoomUrl] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isJoiningStream, setIsJoiningStream] = useState(false);
   
   // Refresh on mount
-  React.useEffect(() => {
+  useEffect(() => {
     refreshLives();
   }, [refreshLives]);
   
   const live = getLive(id || '');
   const isLiked = live ? hasLiked(live.id) : false;
+  const isOwner = user?.id === live?.doctorId;
+  const isLiveActive = live?.status === 'live';
+
+  // Join the stream when component mounts and live is active
+  useEffect(() => {
+    const joinStream = async () => {
+      if (!live || !isLiveActive) return;
+      if (roomUrl && token) return; // Already joined
+      
+      // Check if live has a daily room name (stored in description or separate field)
+      const dailyRoomName = (live as any).dailyRoomName || `live-${live.id}`;
+      
+      setIsJoiningStream(true);
+      try {
+        const viewerToken = await getViewerToken(dailyRoomName);
+        if (viewerToken) {
+          setRoomUrl(`https://doctordoublecheck.daily.co/${dailyRoomName}`);
+          setToken(viewerToken);
+        }
+      } catch (error) {
+        console.error('Error joining stream:', error);
+      } finally {
+        setIsJoiningStream(false);
+      }
+    };
+
+    joinStream();
+  }, [live, isLiveActive, getViewerToken, roomUrl, token]);
 
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="container mx-auto px-4 py-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted animate-pulse" />
-          <div className="h-4 bg-muted animate-pulse rounded w-48 mx-auto" />
+        <div className="container mx-auto px-4 py-6 max-w-6xl">
+          <Skeleton className="h-8 w-32 mb-4" />
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+              <Skeleton className="aspect-video w-full rounded-xl" />
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-48 w-full rounded-lg" />
+              <Skeleton className="h-32 w-full rounded-lg" />
+            </div>
+          </div>
         </div>
       </MainLayout>
     );
@@ -120,9 +171,6 @@ export default function LivePlayer() {
     }
   };
 
-  const isOwner = user?.id === live?.doctorId;
-  const isLiveActive = live?.status === 'live';
-
   // Watermark for authenticated users
   const Watermark = () => {
     if (!user || role === 'visitor') return null;
@@ -157,43 +205,65 @@ export default function LivePlayer() {
           {/* Video Player */}
           <div className="lg:col-span-2 space-y-4">
             {/* Player Container */}
-            <div className="relative aspect-video bg-black rounded-xl overflow-hidden no-context-menu">
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-info/30">
-                <div className="text-center">
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center animate-pulse">
-                    <Video className="w-10 h-10 text-white" />
+            {roomUrl && token ? (
+              <DailyVideoPlayer
+                roomUrl={roomUrl}
+                token={token}
+                isOwner={isOwner}
+                onLeave={() => navigate('/lives')}
+                onParticipantCountChange={(count) => {
+                  // Could update viewer count here
+                }}
+              />
+            ) : (
+              <div className="relative aspect-video bg-black rounded-xl overflow-hidden no-context-menu">
+                {isJoiningStream ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-info/30">
+                    <div className="text-center">
+                      <Loader2 className="w-12 h-12 mx-auto mb-4 text-white animate-spin" />
+                      <p className="text-white/80 text-sm">Conectando a la transmisión...</p>
+                    </div>
                   </div>
-                  <p className="text-white/80 text-sm">Transmisión en vivo</p>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-info/30">
+                    <div className="text-center">
+                      <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
+                        <Radio className="w-10 h-10 text-white animate-pulse" />
+                      </div>
+                      <p className="text-white/80 text-sm">Transmisión en vivo</p>
+                      <p className="text-white/60 text-xs mt-1">Esperando conexión de video...</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Watermarks */}
+                <Watermark />
+                
+                {/* Live indicator */}
+                <div className="absolute top-4 left-4 z-10">
+                  <Badge variant="live" className="gap-1">
+                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                    EN VIVO
+                  </Badge>
+                </div>
+                
+                {/* Viewers */}
+                <div className="absolute top-4 right-4 z-10">
+                  <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
+                    <Users className="w-3 h-3" />
+                    {live.viewerCount} viendo
+                  </Badge>
+                </div>
+                
+                {/* Duration */}
+                <div className="absolute bottom-4 left-4 z-10">
+                  <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
+                    <Clock className="w-3 h-3" />
+                    {formatDuration(live.startedAt)}
+                  </Badge>
                 </div>
               </div>
-              
-              {/* Watermarks */}
-              <Watermark />
-              
-              {/* Live indicator */}
-              <div className="absolute top-4 left-4">
-                <Badge variant="live" className="gap-1">
-                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                  EN VIVO
-                </Badge>
-              </div>
-              
-              {/* Viewers */}
-              <div className="absolute top-4 right-4">
-                <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
-                  <Users className="w-3 h-3" />
-                  {live.viewerCount} viendo
-                </Badge>
-              </div>
-              
-              {/* Duration */}
-              <div className="absolute bottom-4 left-4">
-                <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
-                  <Clock className="w-3 h-3" />
-                  {formatDuration(live.startedAt)}
-                </Badge>
-              </div>
-            </div>
+            )}
 
             {/* Video Info */}
             <div>
@@ -228,7 +298,12 @@ export default function LivePlayer() {
                   Compartir
                 </Button>
                 {role !== 'visitor' && (
-                  <Button variant="outline" size="sm" className="gap-2">
+                  <Button 
+                    variant={showChat ? "default" : "outline"} 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => setShowChat(!showChat)}
+                  >
                     <MessageSquare className="w-4 h-4" />
                     Chat
                   </Button>
@@ -242,8 +317,15 @@ export default function LivePlayer() {
             </div>
           </div>
 
-          {/* Sidebar - Doctor Info */}
+          {/* Sidebar - Doctor Info & Chat */}
           <div className="space-y-4">
+            {/* Live Chat */}
+            {showChat && role !== 'visitor' && (
+              <div className="h-[350px]">
+                <LiveChat liveId={live.id} isOwner={isOwner} />
+              </div>
+            )}
+            
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
@@ -292,7 +374,7 @@ export default function LivePlayer() {
                     onClick={() => navigate('/chat')}
                   >
                     <MessageSquare className="w-4 h-4 mr-2" />
-                    Iniciar Chat
+                    Iniciar Chat Privado
                   </Button>
                 )}
               </CardContent>
@@ -348,7 +430,7 @@ export default function LivePlayer() {
               <Card className="bg-info/5 border-info/20">
                 <CardContent className="p-4 text-center">
                   <p className="text-sm text-muted-foreground mb-3">
-                    Regístrate para guardar este contenido y más
+                    Regístrate para participar en el chat y más
                   </p>
                   <Button size="sm" onClick={() => navigate('/login')}>
                     Crear Cuenta
