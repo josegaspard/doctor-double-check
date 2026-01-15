@@ -40,7 +40,7 @@ export function useSubscriptions() {
       // Fetch creator profiles
       const creatorIds = mySubscriptions.map(s => s.creator_id);
       const { data: profiles } = await supabase
-        .from('public_profiles')
+        .from('profiles_public')
         .select('id, name, avatar_url')
         .in('id', creatorIds);
 
@@ -75,7 +75,7 @@ export function useSubscriptions() {
     if (mySubscribers) {
       const subscriberIds = mySubscribers.map(s => s.subscriber_id);
       const { data: profiles } = await supabase
-        .from('public_profiles')
+        .from('profiles_public')
         .select('id, name, avatar_url')
         .in('id', subscriberIds);
 
