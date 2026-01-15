@@ -176,16 +176,27 @@ export default function IdentityVerification() {
       setUploadProgress(90);
 
       // Create verification record
-      const { error } = await supabase
+      const { data: insertedData, error } = await supabase
         .from('identity_verifications')
         .insert({
           user_id: user.id,
           provider: 'manual',
           status: 'pending',
           metadata: metadata,
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Send verification email notification
+      try {
+        await supabase.functions.invoke('send-verification-email', {
+          body: { user_id: user.id, status: 'pending' },
+        });
+      } catch (emailError) {
+        console.warn('Failed to send verification email:', emailError);
+      }
 
       setUploadProgress(100);
       toast.success(
