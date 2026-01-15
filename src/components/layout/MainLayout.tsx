@@ -49,6 +49,7 @@ const navItems: NavItem[] = [
   { label: 'Mi Vault', href: '/vault', icon: Folder, roles: ['patient'] },
   { label: 'Vault Pacientes', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   { label: 'Mi Panel', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
+  { label: 'Disponibilidad', href: '/doctor/availability', icon: Settings, roles: ['doctor'] },
   { label: 'Subir Contenido', href: '/doctor/upload', icon: Upload, roles: ['doctor'] },
   { label: 'Admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];
