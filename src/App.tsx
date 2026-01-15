@@ -32,6 +32,7 @@ import Settings from "./pages/Settings";
 import DoctorAvailability from "./pages/DoctorAvailability";
 import DoctorRecordings from "./pages/DoctorRecordings";
 import UserProfile from "./pages/UserProfile";
+import IdentityVerification from "./pages/IdentityVerification";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
                       <Route path="/chat" element={<Chat />} />
                       <Route path="/doctor/:id" element={<DoctorProfile />} />
                       <Route path="/profile" element={<UserProfile />} />
+                      <Route path="/verify-identity" element={<IdentityVerification />} />
                       <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
                       <Route path="/doctor/upload" element={<DoctorUpload />} />
                       <Route path="/doctor/vault" element={<DoctorVault />} />
