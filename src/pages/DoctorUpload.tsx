@@ -28,8 +28,11 @@ import {
   Loader2,
   X,
   Clock,
+  Users,
 } from 'lucide-react';
-import { Doctor } from '@/types';
+import { AudienceSelector, ContentAudience } from '@/components/content/AudienceSelector';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const CONTENT_CATEGORIES = [
   'Cardiología',
@@ -51,12 +54,14 @@ interface UploadedContent {
   description: string;
   category: string;
   isPublic: boolean;
+  audienceType: ContentAudience;
   uploadedAt: Date;
 }
 
 export default function DoctorUpload() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -64,6 +69,7 @@ export default function DoctorUpload() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [isPublic, setIsPublic] = useState(true);
+  const [audienceType, setAudienceType] = useState<ContentAudience>('all');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedContent, setUploadedContent] = useState<UploadedContent[]>([]);
@@ -74,8 +80,7 @@ export default function DoctorUpload() {
     return null;
   }
 
-  const doctor = user as Doctor;
-  const isApproved = doctor?.status === 'approved';
+  const isApproved = user?.doctorProfile?.status === 'approved';
 
   const getFileType = (file: File): 'video' | 'pdf' | 'image' => {
     if (file.type.includes('video')) return 'video';
@@ -99,46 +104,104 @@ export default function DoctorUpload() {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !title || !category) return;
+    if (!selectedFile || !title || !category || !user?.id) return;
 
     setIsUploading(true);
     setUploadProgress(0);
 
-    // Simulate upload progress
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setUploadProgress(i);
+    try {
+      // Upload file to Supabase Storage
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      // Simulate progress since Supabase JS doesn't support onUploadProgress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
+      const { error: uploadError } = await supabase.storage
+        .from('doctor-content')
+        .upload(fileName, selectedFile);
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      if (uploadError) throw uploadError;
+
+      // Get signed URL for the file
+      const { data: urlData } = await supabase.storage
+        .from('doctor-content')
+        .createSignedUrl(fileName, 60 * 60 * 24 * 365); // 1 year
+
+      // Save content metadata to database
+      const { data: contentData, error: dbError } = await supabase
+        .from('doctor_content')
+        .insert({
+          creator_id: user.id,
+          type: getFileType(selectedFile),
+          title: title.trim(),
+          description: description.trim() || null,
+          category,
+          is_public: isPublic,
+          audience_type: audienceType,
+          file_url: fileName,
+        })
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      const newContent: UploadedContent = {
+        id: contentData.id,
+        type: getFileType(selectedFile),
+        title,
+        description,
+        category,
+        isPublic,
+        audienceType,
+        uploadedAt: new Date(),
+      };
+
+      setUploadedContent(prev => [newContent, ...prev]);
+      setShowSuccess(true);
+      
+      // Notify subscribers if content is public
+      if (isPublic) {
+        await supabase.rpc('notify_subscribers', {
+          p_doctor_id: user.id,
+          p_notification_type: 'new_content',
+          p_title: `Nuevo contenido: ${title}`,
+          p_message: `${user.name} ha subido nuevo contenido en ${category}`,
+          p_data: { content_id: contentData.id, type: getFileType(selectedFile) },
+        });
+      }
+
+      toast({
+        title: 'Contenido subido',
+        description: isPublic ? 'Se notificó a tus suscriptores' : 'Guardado como privado',
+      });
+      
+      // Reset form
+      setSelectedFile(null);
+      setTitle('');
+      setDescription('');
+      setCategory('');
+      setIsPublic(true);
+      setAudienceType('all');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({
+        title: 'Error al subir',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      setTimeout(() => setShowSuccess(false), 3000);
     }
-
-    const newContent: UploadedContent = {
-      id: `content-${Date.now()}`,
-      type: getFileType(selectedFile),
-      title,
-      description,
-      category,
-      isPublic,
-      uploadedAt: new Date(),
-    };
-
-    // Save to localStorage
-    const stored = JSON.parse(localStorage.getItem(`drDoubleCheck_doctorContent_${doctor.id}`) || '[]');
-    stored.unshift(newContent);
-    localStorage.setItem(`drDoubleCheck_doctorContent_${doctor.id}`, JSON.stringify(stored));
-
-    setUploadedContent(prev => [newContent, ...prev]);
-    setShowSuccess(true);
-    
-    // Reset form
-    setSelectedFile(null);
-    setTitle('');
-    setDescription('');
-    setCategory('');
-    setIsPublic(true);
-    setIsUploading(false);
-    setUploadProgress(0);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-
-    setTimeout(() => setShowSuccess(false), 3000);
   };
 
   const formatSize = (bytes: number) => {
@@ -147,16 +210,33 @@ export default function DoctorUpload() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // Load existing content
+  // Load existing content from Supabase
   React.useEffect(() => {
-    if (doctor?.id) {
-      const stored = JSON.parse(localStorage.getItem(`drDoubleCheck_doctorContent_${doctor.id}`) || '[]');
-      setUploadedContent(stored.map((c: any) => ({
-        ...c,
-        uploadedAt: new Date(c.uploadedAt),
-      })));
-    }
-  }, [doctor?.id]);
+    const loadContent = async () => {
+      if (!user?.id) return;
+
+      const { data } = await supabase
+        .from('doctor_content')
+        .select('*')
+        .eq('creator_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setUploadedContent(data.map(c => ({
+          id: c.id,
+          type: c.type as 'video' | 'pdf' | 'image',
+          title: c.title,
+          description: c.description || '',
+          category: c.category || '',
+          isPublic: c.is_public,
+          audienceType: c.audience_type as ContentAudience,
+          uploadedAt: new Date(c.created_at),
+        })));
+      }
+    };
+
+    loadContent();
+  }, [user?.id]);
 
   return (
     <MainLayout>
@@ -280,12 +360,19 @@ export default function DoctorUpload() {
               </Select>
             </div>
 
+            {/* Audience Type */}
+            <AudienceSelector
+              value={audienceType}
+              onChange={setAudienceType}
+              disabled={!isApproved}
+            />
+
             {/* Public/Private */}
             <div className="flex items-center justify-between">
               <div>
                 <Label>Contenido Público</Label>
                 <p className="text-xs text-muted-foreground">
-                  El contenido público aparece en tu perfil
+                  El contenido público aparece en tu perfil y notifica a suscriptores
                 </p>
               </div>
               <Switch checked={isPublic} onCheckedChange={setIsPublic} disabled={!isApproved} />
@@ -348,6 +435,17 @@ export default function DoctorUpload() {
                       <p className="font-medium text-sm truncate">{content.title}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="outline" className="text-xs">{content.category}</Badge>
+                        {content.audienceType === 'professionals' && (
+                          <Badge variant="warning" className="text-xs gap-1">
+                            <Users className="w-3 h-3" />
+                            Solo profesionales
+                          </Badge>
+                        )}
+                        {content.audienceType === 'patients' && (
+                          <Badge variant="info" className="text-xs">
+                            Pacientes
+                          </Badge>
+                        )}
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {content.uploadedAt.toLocaleDateString('es-MX')}
