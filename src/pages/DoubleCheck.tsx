@@ -6,11 +6,10 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { DoubleCheckFlow } from '@/components/doublecheck/DoubleCheckFlow';
 import {
   CheckCheck,
-  Search,
   Star,
   Users,
   MessageSquare,
@@ -39,6 +38,8 @@ export default function DoubleCheck() {
   const [doctors, setDoctors] = useState<DoubleCheckDoctor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState<DoubleCheckDoctor | null>(null);
+  const [isFlowOpen, setIsFlowOpen] = useState(false);
 
   const isDoctor = role === 'doctor';
   const isPatient = role === 'patient';
@@ -131,9 +132,14 @@ export default function DoubleCheck() {
     }
   };
 
-  const handleStartChat = (doctorUserId: string) => {
-    // Navigate to chat with this doctor
-    navigate('/chat', { state: { startChatWith: doctorUserId } });
+  const handleStartDoubleCheck = (doctor: DoubleCheckDoctor) => {
+    setSelectedDoctor(doctor);
+    setIsFlowOpen(true);
+  };
+
+  const handleFlowClose = () => {
+    setIsFlowOpen(false);
+    setSelectedDoctor(null);
   };
 
   return (
@@ -247,7 +253,7 @@ export default function DoubleCheck() {
                           {isPatient && (
                             <Button 
                               size="sm" 
-                              onClick={() => handleStartChat(doctor.userId)}
+                              onClick={() => handleStartDoubleCheck(doctor)}
                               className="gap-1"
                             >
                               <MessageSquare className="w-4 h-4" />
@@ -328,6 +334,20 @@ export default function DoubleCheck() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Double Check Flow Dialog */}
+      {selectedDoctor && (
+        <DoubleCheckFlow
+          doctor={{
+            userId: selectedDoctor.userId,
+            name: selectedDoctor.name,
+            specialty: selectedDoctor.specialty,
+            consultationFee: selectedDoctor.consultationFee,
+          }}
+          isOpen={isFlowOpen}
+          onClose={handleFlowClose}
+        />
+      )}
     </MainLayout>
   );
 }
