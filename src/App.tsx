@@ -31,6 +31,7 @@ import DoubleCheck from "./pages/DoubleCheck";
 import Settings from "./pages/Settings";
 import DoctorAvailability from "./pages/DoctorAvailability";
 import DoctorRecordings from "./pages/DoctorRecordings";
+import UserProfile from "./pages/UserProfile";
 
 const queryClient = new QueryClient();
 
@@ -57,7 +58,7 @@ const App = () => (
                       <Route path="/vault" element={<Vault />} />
                       <Route path="/chat" element={<Chat />} />
                       <Route path="/doctor/:id" element={<DoctorProfile />} />
-                      <Route path="/profile" element={<Navigate to="/lives" />} />
+                      <Route path="/profile" element={<UserProfile />} />
                       <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
                       <Route path="/doctor/upload" element={<DoctorUpload />} />
                       <Route path="/doctor/vault" element={<DoctorVault />} />
