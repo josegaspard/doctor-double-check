@@ -5,13 +5,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio } from 'lucide-react';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DoctorData {
   id: string;
-  userId: string;
+  visibleId: string;
   name: string;
   specialty: string;
   bio?: string;
@@ -23,10 +23,17 @@ interface DoctorData {
   avatarUrl?: string;
 }
 
+interface LiveData {
+  id: string;
+  title: string;
+  viewerCount: number;
+}
+
 export default function DoctorProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState<DoctorData | null>(null);
+  const [activeLive, setActiveLive] = useState<LiveData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -49,8 +56,8 @@ export default function DoctorProfile() {
           .single();
 
         setDoctor({
-          id: doctorProfile.id,
-          userId: doctorProfile.user_id,
+          id: doctorProfile.user_id,
+          visibleId: doctorProfile.id,
           name: profile?.name || 'Doctor',
           specialty: doctorProfile.specialty,
           bio: doctorProfile.bio || undefined,
@@ -61,11 +68,54 @@ export default function DoctorProfile() {
           followersCount: doctorProfile.followers_count,
           avatarUrl: profile?.avatar_url || undefined,
         });
+
+        // Check if doctor has an active live
+        const { data: liveData } = await supabase
+          .from('lives')
+          .select('id, title, viewer_count')
+          .eq('doctor_id', doctorProfile.user_id)
+          .eq('status', 'live')
+          .maybeSingle();
+
+        if (liveData) {
+          setActiveLive({
+            id: liveData.id,
+            title: liveData.title,
+            viewerCount: liveData.viewer_count,
+          });
+        }
       }
       setIsLoading(false);
     };
 
     fetchDoctor();
+
+    // Subscribe to live status changes
+    const channel = supabase
+      .channel('doctor-live-status')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'lives' },
+        (payload) => {
+          if (payload.new && (payload.new as any).doctor_id === doctor?.id) {
+            const live = payload.new as any;
+            if (live.status === 'live') {
+              setActiveLive({
+                id: live.id,
+                title: live.title,
+                viewerCount: live.viewer_count,
+              });
+            } else {
+              setActiveLive(null);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
   if (isLoading) {
@@ -100,20 +150,66 @@ export default function DoctorProfile() {
           Volver
         </Button>
 
+        {/* Live Indicator Banner */}
+        {activeLive && (
+          <Card 
+            className="mb-4 border-destructive/50 bg-destructive/5 cursor-pointer hover:bg-destructive/10 transition-colors"
+            onClick={() => navigate(`/live/${activeLive.id}`)}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <span className="flex h-4 w-4">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-4 w-4 bg-destructive"></span>
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="destructive" className="gap-1">
+                        <Radio className="w-3 h-3" />
+                        EN VIVO
+                      </Badge>
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        {activeLive.viewerCount} viendo
+                      </span>
+                    </div>
+                    <p className="font-medium text-sm mt-1">{activeLive.title}</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="destructive" className="gap-1">
+                  <Video className="w-4 h-4" />
+                  Ver Ahora
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row items-start gap-6">
-              {doctor.avatarUrl ? (
-                <img
-                  src={doctor.avatarUrl}
-                  alt={doctor.name}
-                  className="w-24 h-24 rounded-full object-cover flex-shrink-0"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Stethoscope className="w-12 h-12 text-primary" />
-                </div>
-              )}
+              {/* Avatar with live indicator */}
+              <div className="relative flex-shrink-0">
+                {doctor.avatarUrl ? (
+                  <img
+                    src={doctor.avatarUrl}
+                    alt={doctor.name}
+                    className={`w-24 h-24 rounded-full object-cover ${activeLive ? 'ring-4 ring-destructive ring-offset-2' : ''}`}
+                  />
+                ) : (
+                  <div className={`w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center ${activeLive ? 'ring-4 ring-destructive ring-offset-2' : ''}`}>
+                    <Stethoscope className="w-12 h-12 text-primary" />
+                  </div>
+                )}
+                {activeLive && (
+                  <div className="absolute -bottom-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    LIVE
+                  </div>
+                )}
+              </div>
               <div className="flex-1">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div>
@@ -160,7 +256,7 @@ export default function DoctorProfile() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <SubscribeButton doctorId={doctor.userId} doctorName={doctor.name} />
+                  <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} />
                   <Button className="gap-2" onClick={() => navigate('/chat')}>
                     <MessageSquare className="w-4 h-4" />
                     Iniciar Consulta
