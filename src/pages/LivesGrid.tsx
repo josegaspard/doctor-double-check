@@ -82,7 +82,7 @@ export default function LivesGrid() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {activeLives.map((live) => (
               <Link key={live.id} to={`/live/${live.id}`}>
-                <Card className="card-live group cursor-pointer overflow-hidden hover:shadow-lg transition-all">
+                <Card className="card-live group cursor-pointer overflow-hidden hover:shadow-lg transition-all relative ring-2 ring-live animate-pulse-ring">
                   {/* Thumbnail */}
                   <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-info/20">
                     <div className="absolute inset-0 flex items-center justify-center">
