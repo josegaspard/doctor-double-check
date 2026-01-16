@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useChat } from '@/contexts/ChatContext';
+import { useChat, ChatSession } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
@@ -9,9 +9,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChatFileUpload } from '@/components/chat/ChatFileUpload';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
-import { MessageSquare, Send, User, Stethoscope, FileText, Image } from 'lucide-react';
+import { 
+  MessageSquare, 
+  Send, 
+  User, 
+  Stethoscope, 
+  FileText, 
+  Image, 
+  History,
+  CheckCheck,
+  Lock,
+  Clock
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -21,21 +35,27 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [otherUserTyping, setOtherUserTyping] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const sessions = getSessionsByUser();
+  const allSessions = getSessionsByUser();
+  const activeSessions = allSessions.filter(s => s.status === 'active');
+  const closedSessions = allSessions.filter(s => s.status === 'closed');
   const messages = selectedSession ? getSessionMessages(selectedSession) : [];
 
+  // Get the selected session data
+  const selectedSessionData = allSessions.find(s => s.id === selectedSession);
+  const isSessionClosed = selectedSessionData?.status === 'closed';
+
   // Get the other participant's name for the selected session
-  const selectedSessionData = sessions.find(s => s.id === selectedSession);
   const otherUserName = selectedSessionData 
     ? (role === 'patient' ? selectedSessionData.participant2Name : selectedSessionData.participant1Name)
     : null;
 
   // Subscribe to typing indicators via Supabase Realtime
   useEffect(() => {
-    if (!selectedSession || !user?.id) return;
+    if (!selectedSession || !user?.id || isSessionClosed) return;
 
     const channel = supabase.channel(`typing:${selectedSession}`)
       .on('broadcast', { event: 'typing' }, (payload) => {
@@ -50,11 +70,11 @@ export default function Chat() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedSession, user?.id]);
+  }, [selectedSession, user?.id, isSessionClosed]);
 
   // Broadcast typing status
   const broadcastTyping = useCallback(() => {
-    if (!selectedSession || !user) return;
+    if (!selectedSession || !user || isSessionClosed) return;
 
     supabase.channel(`typing:${selectedSession}`)
       .send({
@@ -62,13 +82,13 @@ export default function Chat() {
         event: 'typing',
         payload: { userId: user.id, userName: user.name || 'Usuario' }
       });
-  }, [selectedSession, user]);
+  }, [selectedSession, user, isSessionClosed]);
 
   // Handle input change with typing indicator
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
     
-    if (!isTyping) {
+    if (!isTyping && !isSessionClosed) {
       setIsTyping(true);
       broadcastTyping();
     }
@@ -95,8 +115,13 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Reset selected session when changing tabs
+  useEffect(() => {
+    setSelectedSession(null);
+  }, [activeTab]);
+
   const handleSend = async () => {
-    if (!newMessage.trim() || !selectedSession) return;
+    if (!newMessage.trim() || !selectedSession || isSessionClosed) return;
     await sendMessage(selectedSession, newMessage.trim());
     setNewMessage('');
     setIsTyping(false);
@@ -104,7 +129,7 @@ export default function Chat() {
 
   // Handle file upload - send as a message with file info
   const handleFileUploaded = async (fileUrl: string, fileName: string, fileType: string) => {
-    if (!selectedSession) return;
+    if (!selectedSession || isSessionClosed) return;
     
     const fileMessage = fileType.startsWith('image/') 
       ? `📷 [Imagen: ${fileName}]\n${fileUrl}`
@@ -114,7 +139,7 @@ export default function Chat() {
   };
 
   // Get display name for session
-  const getSessionDisplayName = (session: any) => {
+  const getSessionDisplayName = (session: ChatSession) => {
     if (role === 'patient') {
       return session.participant2Name || 'Doctor';
     }
@@ -161,6 +186,60 @@ export default function Chat() {
     }
 
     return <p className="text-sm whitespace-pre-wrap">{content}</p>;
+  };
+
+  // Render session item
+  const renderSessionItem = (session: ChatSession) => {
+    const isClosed = session.status === 'closed';
+    
+    return (
+      <div
+        key={session.id}
+        onClick={() => setSelectedSession(session.id)}
+        className={`p-3 rounded-lg cursor-pointer mb-2 transition-colors ${
+          selectedSession === session.id 
+            ? 'bg-accent' 
+            : isClosed 
+              ? 'hover:bg-muted/50 opacity-75' 
+              : 'hover:bg-muted'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+            isClosed ? 'bg-muted' : 'bg-primary/10'
+          }`}>
+            {role === 'patient' 
+              ? <Stethoscope className={`w-4 h-4 ${isClosed ? 'text-muted-foreground' : 'text-primary'}`} /> 
+              : <User className={`w-4 h-4 ${isClosed ? 'text-muted-foreground' : 'text-primary'}`} />
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1">
+              <p className="font-medium text-sm truncate">
+                {getSessionDisplayName(session)}
+              </p>
+              {session.isDoubleCheck && (
+                <Badge variant="outline" className="text-[10px] px-1">
+                  <CheckCheck className="w-3 h-3 mr-0.5" />
+                  2nd
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground truncate">{session.lastMessage}</p>
+            {isClosed && session.lastMessageAt && (
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                <Clock className="w-3 h-3" />
+                Cerrada {format(session.lastMessageAt, 'dd MMM yyyy', { locale: es })}
+              </p>
+            )}
+          </div>
+          {!isClosed && session.unreadCount > 0 && (
+            <Badge variant="destructive" className="text-xs">{session.unreadCount}</Badge>
+          )}
+          {isClosed && <Lock className="w-3 h-3 text-muted-foreground" />}
+        </div>
+      </div>
+    );
   };
 
   // Block unauthorized roles
@@ -227,36 +306,52 @@ export default function Chat() {
         </h1>
 
         <div className="grid md:grid-cols-3 gap-4 h-[calc(100vh-220px)]">
-          {/* Sessions List */}
+          {/* Sessions List with Tabs */}
           <Card className="md:col-span-1">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Conversaciones</CardTitle>
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'active' | 'history')}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="active" className="flex-1 gap-1">
+                    <MessageSquare className="w-3 h-3" />
+                    Activas
+                    {activeSessions.length > 0 && (
+                      <Badge variant="secondary" className="text-xs ml-1">
+                        {activeSessions.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="history" className="flex-1 gap-1">
+                    <History className="w-3 h-3" />
+                    Historial
+                    {closedSessions.length > 0 && (
+                      <Badge variant="outline" className="text-xs ml-1">
+                        {closedSessions.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </CardHeader>
             <CardContent className="p-2">
               <ScrollArea className="h-[400px]">
-                {sessions.length > 0 ? sessions.map(session => (
-                  <div
-                    key={session.id}
-                    onClick={() => setSelectedSession(session.id)}
-                    className={`p-3 rounded-lg cursor-pointer mb-2 transition-colors ${
-                      selectedSession === session.id ? 'bg-accent' : 'hover:bg-muted'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        {role === 'patient' ? <Stethoscope className="w-4 h-4 text-primary" /> : <User className="w-4 h-4 text-primary" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">
-                          {getSessionDisplayName(session)}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">{session.lastMessage}</p>
-                      </div>
-                      {session.unreadCount > 0 && <Badge variant="destructive" className="text-xs">{session.unreadCount}</Badge>}
+                {activeTab === 'active' ? (
+                  activeSessions.length > 0 ? (
+                    activeSessions.map(session => renderSessionItem(session))
+                  ) : (
+                    <div className="text-center py-8">
+                      <MessageSquare className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground text-sm">No hay conversaciones activas</p>
                     </div>
-                  </div>
-                )) : (
-                  <p className="text-center text-muted-foreground py-8 text-sm">No hay conversaciones</p>
+                  )
+                ) : (
+                  closedSessions.length > 0 ? (
+                    closedSessions.map(session => renderSessionItem(session))
+                  ) : (
+                    <div className="text-center py-8">
+                      <History className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground text-sm">No hay consultas anteriores</p>
+                    </div>
+                  )
                 )}
               </ScrollArea>
             </CardContent>
@@ -264,12 +359,33 @@ export default function Chat() {
 
           {/* Messages */}
           <Card className="md:col-span-2 flex flex-col">
-            {selectedSession ? (
+            {selectedSession && selectedSessionData ? (
               <>
                 <CardHeader className="pb-2 border-b">
-                  <CardTitle className="text-sm">
-                    {getSessionDisplayName(sessions.find(s => s.id === selectedSession))}
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm">
+                        {getSessionDisplayName(selectedSessionData)}
+                      </CardTitle>
+                      {selectedSessionData.isDoubleCheck && (
+                        <Badge variant="outline" className="text-xs">
+                          <CheckCheck className="w-3 h-3 mr-1" />
+                          Double Check
+                        </Badge>
+                      )}
+                    </div>
+                    {isSessionClosed && (
+                      <Badge variant="secondary" className="gap-1">
+                        <Lock className="w-3 h-3" />
+                        Consulta cerrada
+                      </Badge>
+                    )}
+                  </div>
+                  {isSessionClosed && selectedSessionData.createdAt && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Consulta del {format(selectedSessionData.createdAt, 'dd MMMM yyyy', { locale: es })}
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent className="flex-1 p-0 flex flex-col">
                   <ScrollArea className="flex-1 p-4">
@@ -277,18 +393,24 @@ export default function Chat() {
                       {messages.map(msg => (
                         <div key={msg.id} className={`flex ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
                           <div className={`max-w-[70%] p-3 rounded-lg ${
-                            msg.senderId === user?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                            msg.senderId === user?.id 
+                              ? isSessionClosed 
+                                ? 'bg-primary/70 text-primary-foreground' 
+                                : 'bg-primary text-primary-foreground' 
+                              : isSessionClosed 
+                                ? 'bg-muted/70' 
+                                : 'bg-muted'
                           }`}>
                             {renderMessageContent(msg.content)}
                             <p className={`text-xs mt-1 ${msg.senderId === user?.id ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                              {new Date(msg.createdAt).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                              {format(msg.createdAt, 'dd MMM, HH:mm', { locale: es })}
                             </p>
                           </div>
                         </div>
                       ))}
                       
                       {/* Typing Indicator */}
-                      {otherUserTyping && (
+                      {otherUserTyping && !isSessionClosed && (
                         <div className="flex justify-start">
                           <TypingIndicator userName={otherUserTyping} />
                         </div>
@@ -298,30 +420,49 @@ export default function Chat() {
                     </div>
                   </ScrollArea>
                   
-                  {/* Input area with file upload */}
-                  <div className="p-4 border-t space-y-2">
-                    <div className="flex gap-2 items-center">
-                      <ChatFileUpload 
-                        sessionId={selectedSession} 
-                        onFileUploaded={handleFileUploaded}
-                      />
-                      <Input
-                        placeholder="Escribe un mensaje..."
-                        value={newMessage}
-                        onChange={handleInputChange}
-                        onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                        className="flex-1"
-                      />
-                      <Button onClick={handleSend} size="icon" disabled={!newMessage.trim()}>
-                        <Send className="w-4 h-4" />
-                      </Button>
+                  {/* Input area with file upload - only for active sessions */}
+                  {isSessionClosed ? (
+                    <div className="p-4 border-t bg-muted/30">
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <Lock className="w-4 h-4" />
+                        <p className="text-sm">Esta consulta ha sido cerrada. Solo puedes ver el historial.</p>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="p-4 border-t space-y-2">
+                      <div className="flex gap-2 items-center">
+                        <ChatFileUpload 
+                          sessionId={selectedSession} 
+                          onFileUploaded={handleFileUploaded}
+                        />
+                        <Input
+                          placeholder="Escribe un mensaje..."
+                          value={newMessage}
+                          onChange={handleInputChange}
+                          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                          className="flex-1"
+                        />
+                        <Button onClick={handleSend} size="icon" disabled={!newMessage.trim()}>
+                          <Send className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                Selecciona una conversación
+              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8">
+                {activeTab === 'active' ? (
+                  <>
+                    <MessageSquare className="w-12 h-12 mb-3 opacity-50" />
+                    <p className="text-center">Selecciona una conversación para comenzar</p>
+                  </>
+                ) : (
+                  <>
+                    <History className="w-12 h-12 mb-3 opacity-50" />
+                    <p className="text-center">Selecciona una consulta anterior para ver el historial</p>
+                  </>
+                )}
               </div>
             )}
           </Card>
