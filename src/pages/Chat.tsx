@@ -12,6 +12,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChatFileUpload } from '@/components/chat/ChatFileUpload';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { 
   MessageSquare, 
   Send, 
@@ -22,20 +33,24 @@ import {
   History,
   CheckCheck,
   Lock,
-  Clock
+  Clock,
+  XCircle,
+  Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 export default function Chat() {
   const navigate = useNavigate();
-  const { getSessionsByUser, getSessionMessages, sendMessage, markAsRead, loadMessages } = useChat();
+  const { getSessionsByUser, getSessionMessages, sendMessage, markAsRead, loadMessages, closeSession } = useChat();
   const { user, role } = useAuth();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [otherUserTyping, setOtherUserTyping] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
+  const [isClosingSession, setIsClosingSession] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -125,6 +140,23 @@ export default function Chat() {
     await sendMessage(selectedSession, newMessage.trim());
     setNewMessage('');
     setIsTyping(false);
+  };
+
+  // Handle closing session
+  const handleCloseSession = async () => {
+    if (!selectedSession) return;
+    
+    setIsClosingSession(true);
+    const result = await closeSession(selectedSession);
+    setIsClosingSession(false);
+
+    if (result.success) {
+      toast.success('Consulta cerrada exitosamente');
+      setSelectedSession(null);
+      setActiveTab('history');
+    } else {
+      toast.error(result.error || 'Error al cerrar la consulta');
+    }
   };
 
   // Handle file upload - send as a message with file info
@@ -374,12 +406,52 @@ export default function Chat() {
                         </Badge>
                       )}
                     </div>
-                    {isSessionClosed && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Lock className="w-3 h-3" />
-                        Consulta cerrada
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isSessionClosed ? (
+                        <Badge variant="secondary" className="gap-1">
+                          <Lock className="w-3 h-3" />
+                          Consulta cerrada
+                        </Badge>
+                      ) : (
+                        role === 'doctor' && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="gap-1 text-destructive hover:text-destructive">
+                                <XCircle className="w-4 h-4" />
+                                Cerrar consulta
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Cerrar esta consulta?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Al cerrar la consulta, el paciente ya no podrá enviar más mensajes. 
+                                  El historial de la conversación se mantendrá disponible para ambas partes.
+                                  Esta acción no se puede deshacer.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={handleCloseSession}
+                                  disabled={isClosingSession}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  {isClosingSession ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                      Cerrando...
+                                    </>
+                                  ) : (
+                                    'Sí, cerrar consulta'
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )
+                      )}
+                    </div>
                   </div>
                   {isSessionClosed && selectedSessionData.createdAt && (
                     <p className="text-xs text-muted-foreground mt-1">

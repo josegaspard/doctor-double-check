@@ -49,6 +49,7 @@ interface ChatContextType {
   markAsRead: (sessionId: string) => Promise<void>;
   refreshSessions: () => Promise<void>;
   loadMessages: (sessionId: string) => Promise<void>;
+  closeSession: (sessionId: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -392,6 +393,38 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     await fetchSessions();
   };
 
+  const closeSession = async (sessionId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+
+    try {
+      const session = sessions.find(s => s.id === sessionId);
+      if (!session) return { success: false, error: 'Sesión no encontrada' };
+
+      // Only allow doctors to close sessions
+      const userType = getUserType();
+      if (userType !== 'doctor') {
+        return { success: false, error: 'Solo los médicos pueden cerrar consultas' };
+      }
+
+      // Verify user is participant
+      if (session.participant1Id !== user.id && session.participant2Id !== user.id) {
+        return { success: false, error: 'No tienes permisos para cerrar esta consulta' };
+      }
+
+      const { error } = await supabase
+        .from('chat_sessions')
+        .update({ status: 'closed' })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      await fetchSessions();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Error al cerrar la consulta' };
+    }
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -406,6 +439,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         markAsRead,
         refreshSessions,
         loadMessages,
+        closeSession,
       }}
     >
       {children}
