@@ -24,10 +24,15 @@ serve(async (req) => {
       throw new Error("DAILY_API_KEY is not configured");
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
+    // Client for auth check
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    
+    // Service client for database operations (bypasses RLS)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
@@ -41,31 +46,155 @@ serve(async (req) => {
     logStep("User authenticated", { userId });
 
     // Parse request body
-    const { roomName } = await req.json();
-    if (!roomName) throw new Error("roomName is required");
+    const { liveId, roomName, saveRecording = true } = await req.json();
+    if (!liveId) throw new Error("liveId is required");
 
-    logStep("Ending Daily.co room", { roomName });
+    logStep("Ending live", { liveId, roomName, saveRecording });
 
-    // Delete the room in Daily.co
-    const dailyResponse = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": `Bearer ${dailyApiKey}`,
-      },
-    });
+    // Verify user owns this live
+    const { data: live, error: liveError } = await supabaseAdmin
+      .from("lives")
+      .select("*")
+      .eq("id", liveId)
+      .single();
 
-    if (!dailyResponse.ok && dailyResponse.status !== 404) {
-      const errorData = await dailyResponse.json();
-      logStep("Daily.co API error", errorData);
-      throw new Error(`Daily.co API error: ${errorData.error || "Unknown error"}`);
+    if (liveError || !live) {
+      throw new Error("Live not found");
     }
 
-    logStep("Room ended successfully", { roomName });
+    if (live.doctor_id !== userId) {
+      throw new Error("User is not the owner of this live");
+    }
+
+    logStep("Live verified", { doctorId: live.doctor_id, status: live.status });
+
+    // Delete the Daily.co room if roomName provided
+    if (roomName) {
+      try {
+        const deleteResponse = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${dailyApiKey}`,
+          },
+        });
+
+        if (deleteResponse.ok) {
+          logStep("Daily.co room deleted", { roomName });
+        } else {
+          const errorData = await deleteResponse.json().catch(() => ({}));
+          logStep("Warning: Could not delete room", { roomName, error: errorData });
+        }
+      } catch (roomError) {
+        logStep("Warning: Error deleting room", { error: String(roomError) });
+      }
+    }
+
+    // Get recordings from Daily.co if saving is enabled
+    let recordingUrl: string | null = null;
+    let recordingDuration = 0;
+
+    if (saveRecording && roomName) {
+      try {
+        // List recordings for this room
+        const recordingsResponse = await fetch(
+          `https://api.daily.co/v1/recordings?room_name=${roomName}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${dailyApiKey}`,
+            },
+          }
+        );
+
+        if (recordingsResponse.ok) {
+          const recordingsData = await recordingsResponse.json();
+          logStep("Recordings fetched", { count: recordingsData.data?.length || 0 });
+
+          if (recordingsData.data && recordingsData.data.length > 0) {
+            // Get the most recent recording
+            const latestRecording = recordingsData.data[0];
+            recordingDuration = Math.round(latestRecording.duration || 0);
+
+            // Get download link
+            const downloadResponse = await fetch(
+              `https://api.daily.co/v1/recordings/${latestRecording.id}/access-link`,
+              {
+                headers: {
+                  "Authorization": `Bearer ${dailyApiKey}`,
+                },
+              }
+            );
+
+            if (downloadResponse.ok) {
+              const downloadData = await downloadResponse.json();
+              recordingUrl = downloadData.download_link;
+              logStep("Recording URL obtained", { duration: recordingDuration });
+            }
+          }
+        }
+      } catch (recError) {
+        logStep("Warning: Error fetching recordings", { error: String(recError) });
+      }
+    }
+
+    // Update live status
+    const newStatus = saveRecording ? (recordingUrl ? "recording_ready" : "processing_recording") : "ended";
+    const { error: updateError } = await supabaseAdmin
+      .from("lives")
+      .update({
+        status: newStatus,
+        ended_at: new Date().toISOString(),
+        viewer_count: 0, // Reset viewer count
+      })
+      .eq("id", liveId);
+
+    if (updateError) {
+      logStep("Error updating live status", { error: updateError.message });
+      throw new Error("Failed to update live status");
+    }
+
+    logStep("Live status updated", { newStatus });
+
+    // Create recording entry if we have a recording or if recording was enabled
+    let recordingId: string | null = null;
+    if (saveRecording) {
+      const { data: newRecording, error: recordingError } = await supabaseAdmin
+        .from("recordings")
+        .insert({
+          doctor_id: live.doctor_id,
+          live_id: liveId,
+          title: live.title,
+          description: live.description,
+          specialty: live.specialty,
+          tags: live.tags || [],
+          thumbnail_url: live.thumbnail_url,
+          video_url: recordingUrl,
+          duration: recordingDuration,
+          price: live.recording_price || 0,
+        })
+        .select("id")
+        .single();
+
+      if (recordingError) {
+        logStep("Warning: Error creating recording", { error: recordingError.message });
+      } else {
+        recordingId = newRecording.id;
+        logStep("Recording created", { recordingId });
+
+        // Update live status to recording_ready if we created a recording
+        await supabaseAdmin
+          .from("lives")
+          .update({ status: "recording_ready" })
+          .eq("id", liveId);
+      }
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Room ended successfully",
+        liveId,
+        status: newStatus,
+        recordingId,
+        hasRecording: !!recordingUrl,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
