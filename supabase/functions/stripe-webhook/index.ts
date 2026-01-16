@@ -125,6 +125,75 @@ serve(async (req) => {
           logStep("Purchase recorded successfully", { userId, recordingId });
         }
       }
+
+      // Handle creator subscriptions
+      if (session.metadata?.type === "creator_subscription" && session.payment_status === "paid") {
+        const userId = session.metadata.user_id;
+        const creatorId = session.metadata.creator_id;
+        const tier = session.metadata.tier as "basic" | "premium";
+        
+        logStep("Processing creator subscription", { userId, creatorId, tier });
+
+        const supabaseAdmin = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+          { auth: { persistSession: false } }
+        );
+
+        // Check if subscription exists and update or create
+        const { data: existingSub } = await supabaseAdmin
+          .from("subscriptions")
+          .select("id")
+          .eq("subscriber_id", userId)
+          .eq("creator_id", creatorId)
+          .single();
+
+        const tierPrice = tier === "premium" ? 199 : 99;
+        const expiresAt = new Date();
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+        if (existingSub) {
+          await supabaseAdmin
+            .from("subscriptions")
+            .update({
+              tier,
+              price_paid: tierPrice,
+              is_active: true,
+              expires_at: expiresAt.toISOString(),
+            })
+            .eq("id", existingSub.id);
+          logStep("Subscription upgraded", { userId, creatorId, tier });
+        } else {
+          await supabaseAdmin
+            .from("subscriptions")
+            .insert({
+              subscriber_id: userId,
+              creator_id: creatorId,
+              tier,
+              price_paid: tierPrice,
+              is_active: true,
+              expires_at: expiresAt.toISOString(),
+            });
+          logStep("Subscription created", { userId, creatorId, tier });
+        }
+
+        // Create notification for the creator
+        const { data: subscriberProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("name")
+          .eq("id", userId)
+          .single();
+
+        await supabaseAdmin
+          .from("notifications")
+          .insert({
+            user_id: creatorId,
+            type: "subscription_update",
+            title: "¡Nuevo suscriptor!",
+            message: `${subscriberProfile?.name || "Un usuario"} se suscribió a tu plan ${tier}`,
+            data: { subscriber_id: userId, tier },
+          });
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {
