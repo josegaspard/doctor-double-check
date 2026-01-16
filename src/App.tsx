@@ -31,6 +31,7 @@ import DoubleCheck from "./pages/DoubleCheck";
 import Settings from "./pages/Settings";
 import DoctorAvailability from "./pages/DoctorAvailability";
 import DoctorRecordings from "./pages/DoctorRecordings";
+import DoctorGoLive from "./pages/DoctorGoLive";
 import UserProfile from "./pages/UserProfile";
 import IdentityVerification from "./pages/IdentityVerification";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -71,6 +72,7 @@ const App = () => (
                       <Route path="/doctor/vault" element={<DoctorVault />} />
                       <Route path="/doctor/availability" element={<DoctorAvailability />} />
                       <Route path="/doctor/recordings" element={<DoctorRecordings />} />
+                      <Route path="/doctor/go-live" element={<DoctorGoLive />} />
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />
                       <Route path="/clinical-sessions" element={<ClinicalSessions />} />

@@ -1,0 +1,552 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import MainLayout from '@/components/layout/MainLayout';
+import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
+import { LiveChat } from '@/components/live/LiveChat';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { 
+  Video, 
+  Radio, 
+  Loader2, 
+  X, 
+  Plus,
+  Users,
+  Heart,
+  Clock,
+  MessageSquare,
+  StopCircle,
+  AlertTriangle
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+const SPECIALTIES = [
+  'Cardiología',
+  'Dermatología',
+  'Endocrinología',
+  'Gastroenterología',
+  'Ginecología',
+  'Medicina General',
+  'Medicina Interna',
+  'Neurología',
+  'Oftalmología',
+  'Oncología',
+  'Ortopedia',
+  'Pediatría',
+  'Psiquiatría',
+  'Urología',
+  'Otra',
+];
+
+interface LiveData {
+  id: string;
+  title: string;
+  description: string;
+  specialty: string;
+  viewerCount: number;
+  likesCount: number;
+  startedAt: Date;
+}
+
+interface RoomData {
+  name: string;
+  url: string;
+  ownerToken: string;
+}
+
+export default function DoctorGoLive() {
+  const navigate = useNavigate();
+  const { user, role } = useAuth();
+  
+  // Form state
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [specialty, setSpecialty] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [recordingPrice, setRecordingPrice] = useState<number>(0);
+  const [enableRecording, setEnableRecording] = useState(true);
+  
+  // Live state
+  const [isCreating, setIsCreating] = useState(false);
+  const [isLive, setIsLive] = useState(false);
+  const [liveData, setLiveData] = useState<LiveData | null>(null);
+  const [roomData, setRoomData] = useState<RoomData | null>(null);
+  const [showChat, setShowChat] = useState(true);
+  const [showEndDialog, setShowEndDialog] = useState(false);
+  const [isEnding, setIsEnding] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Timer for elapsed time
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLive && liveData?.startedAt) {
+      interval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - new Date(liveData.startedAt).getTime()) / 1000);
+        setElapsedTime(elapsed);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isLive, liveData?.startedAt]);
+
+  // Format elapsed time
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Add tag
+  const addTag = () => {
+    const trimmed = tagInput.trim().toLowerCase();
+    if (trimmed && !tags.includes(trimmed) && tags.length < 5) {
+      setTags([...tags, trimmed]);
+      setTagInput('');
+    }
+  };
+
+  // Remove tag
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(t => t !== tagToRemove));
+  };
+
+  // Start live
+  const handleStartLive = async () => {
+    if (!user?.id || !title.trim() || !specialty) {
+      toast.error('Por favor completa el título y la especialidad');
+      return;
+    }
+
+    setIsCreating(true);
+
+    try {
+      // 1. Create live record in database
+      const { data: live, error: liveError } = await supabase
+        .from('lives')
+        .insert({
+          doctor_id: user.id,
+          title: title.trim(),
+          description: description.trim() || null,
+          specialty,
+          tags: tags.length > 0 ? tags : null,
+          recording_price: enableRecording ? recordingPrice : null,
+          status: 'live',
+        })
+        .select()
+        .single();
+
+      if (liveError) throw liveError;
+
+      // 2. Create Daily.co room
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session?.access_token) throw new Error('No authenticated');
+
+      const response = await supabase.functions.invoke('create-daily-room', {
+        body: { liveId: live.id, title: title.trim() },
+      });
+
+      if (response.error || !response.data?.success) {
+        // Rollback: delete live record
+        await supabase.from('lives').delete().eq('id', live.id);
+        throw new Error(response.data?.error || 'Error creating room');
+      }
+
+      // 3. Set live state
+      setLiveData({
+        id: live.id,
+        title: live.title,
+        description: live.description || '',
+        specialty: live.specialty,
+        viewerCount: 0,
+        likesCount: 0,
+        startedAt: new Date(live.started_at),
+      });
+      setRoomData(response.data.room);
+      setIsLive(true);
+
+      // 4. Notify subscribers
+      try {
+        await supabase.rpc('notify_subscribers', {
+          p_doctor_id: user.id,
+          p_notification_type: 'doctor_live',
+          p_title: '¡En vivo ahora!',
+          p_message: `${user.name || 'Un doctor que sigues'} está transmitiendo: ${title}`,
+          p_data: { liveId: live.id },
+        });
+      } catch (notifyError) {
+        console.warn('Failed to notify subscribers:', notifyError);
+      }
+
+      toast.success('¡Transmisión iniciada!');
+    } catch (error: any) {
+      console.error('Error starting live:', error);
+      toast.error(error.message || 'Error al iniciar la transmisión');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // End live
+  const handleEndLive = async () => {
+    if (!liveData?.id) return;
+
+    setIsEnding(true);
+
+    try {
+      // 1. Update live status
+      await supabase
+        .from('lives')
+        .update({
+          status: enableRecording ? 'processing_recording' : 'ended',
+          ended_at: new Date().toISOString(),
+        })
+        .eq('id', liveData.id);
+
+      // 2. End Daily.co room
+      try {
+        await supabase.functions.invoke('end-daily-room', {
+          body: { liveId: liveData.id, roomName: roomData?.name },
+        });
+      } catch (error) {
+        console.warn('Error ending Daily room:', error);
+      }
+
+      toast.success('Transmisión finalizada');
+      navigate('/doctor/dashboard');
+    } catch (error: any) {
+      console.error('Error ending live:', error);
+      toast.error('Error al finalizar la transmisión');
+    } finally {
+      setIsEnding(false);
+      setShowEndDialog(false);
+    }
+  };
+
+  // Block non-doctors
+  if (role !== 'doctor') {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12">
+          <Card className="max-w-lg mx-auto text-center p-8">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+              <Video className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h2 className="font-heading text-xl font-bold text-foreground mb-2">
+              Iniciar Transmisión
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              Solo los médicos verificados pueden iniciar transmisiones en vivo.
+            </p>
+            <Button onClick={() => navigate('/login')}>
+              Iniciar Sesión como Médico
+            </Button>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Live streaming view
+  if (isLive && roomData && liveData) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-4">
+          {/* Header with controls */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                </span>
+                <Badge variant="destructive">EN VIVO</Badge>
+              </div>
+              <div>
+                <h1 className="font-heading text-lg font-bold">{liveData.title}</h1>
+                <p className="text-xs text-muted-foreground">{liveData.specialty}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              {/* Stats */}
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  {formatTime(elapsedTime)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  {liveData.viewerCount}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Heart className="w-4 h-4" />
+                  {liveData.likesCount}
+                </span>
+              </div>
+
+              {/* Actions */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowChat(!showChat)}
+                className="gap-1"
+              >
+                <MessageSquare className="w-4 h-4" />
+                {showChat ? 'Ocultar' : 'Chat'}
+              </Button>
+
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowEndDialog(true)}
+                className="gap-1"
+              >
+                <StopCircle className="w-4 h-4" />
+                Finalizar
+              </Button>
+            </div>
+          </div>
+
+          {/* Video + Chat */}
+          <div className="grid lg:grid-cols-4 gap-4">
+            <div className={showChat ? 'lg:col-span-3' : 'lg:col-span-4'}>
+              <DailyVideoPlayer
+                roomUrl={roomData.url}
+                token={roomData.ownerToken}
+                isOwner={true}
+              />
+            </div>
+
+            {showChat && (
+              <div className="lg:col-span-1">
+                <LiveChat liveId={liveData.id} isOwner={true} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* End confirmation dialog */}
+        <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+                ¿Finalizar transmisión?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {enableRecording 
+                  ? 'La grabación se procesará y estará disponible para la venta.'
+                  : 'Esta acción finalizará la transmisión para todos los espectadores.'
+                }
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isEnding}>Continuar transmitiendo</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleEndLive}
+                disabled={isEnding}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isEnding ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Finalizando...
+                  </>
+                ) : (
+                  'Sí, finalizar'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </MainLayout>
+    );
+  }
+
+  // Setup form view
+  return (
+    <MainLayout>
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+            <Radio className="w-6 h-6 text-destructive" />
+          </div>
+          <div>
+            <h1 className="font-heading text-2xl font-bold">Iniciar Transmisión</h1>
+            <p className="text-muted-foreground">Configura tu live antes de comenzar</p>
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Detalles del Live</CardTitle>
+            <CardDescription>
+              Esta información se mostrará a los espectadores
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Title */}
+            <div className="space-y-2">
+              <Label htmlFor="title">Título *</Label>
+              <Input
+                id="title"
+                placeholder="Ej: Consulta abierta sobre hipertensión"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={100}
+              />
+              <p className="text-xs text-muted-foreground">{title.length}/100 caracteres</p>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                placeholder="Describe de qué tratará tu transmisión..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground">{description.length}/500 caracteres</p>
+            </div>
+
+            {/* Specialty */}
+            <div className="space-y-2">
+              <Label>Especialidad *</Label>
+              <Select value={specialty} onValueChange={setSpecialty}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona una especialidad" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SPECIALTIES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <Label>Etiquetas</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Añade una etiqueta"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                  maxLength={30}
+                />
+                <Button type="button" variant="outline" size="icon" onClick={addTag} disabled={tags.length >= 5}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {tags.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="gap-1">
+                      #{tag}
+                      <button onClick={() => removeTag(tag)} className="ml-1 hover:text-destructive">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">{tags.length}/5 etiquetas</p>
+            </div>
+
+            {/* Recording settings */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Grabar transmisión</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Guarda la grabación para venderla después
+                  </p>
+                </div>
+                <Switch
+                  checked={enableRecording}
+                  onCheckedChange={setEnableRecording}
+                />
+              </div>
+
+              {enableRecording && (
+                <div className="space-y-2">
+                  <Label htmlFor="price">Precio de la grabación (MXN)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    min={0}
+                    step={10}
+                    placeholder="0 = gratuita"
+                    value={recordingPrice}
+                    onChange={(e) => setRecordingPrice(Number(e.target.value))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Deja en 0 para ofrecer la grabación gratis
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Submit */}
+            <Button
+              className="w-full gap-2"
+              size="lg"
+              onClick={handleStartLive}
+              disabled={isCreating || !title.trim() || !specialty}
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Preparando transmisión...
+                </>
+              ) : (
+                <>
+                  <Video className="w-5 h-5" />
+                  Iniciar Transmisión en Vivo
+                </>
+              )}
+            </Button>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Al iniciar, se notificará automáticamente a tus suscriptores
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
+  );
+}
