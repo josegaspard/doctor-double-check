@@ -58,8 +58,13 @@ export default function Login() {
     });
     
     if (result.success) {
-      // Show email confirmation message
-      setShowEmailConfirmation(true);
+      // For patients, redirect directly to lives
+      if (registerRole === 'patient') {
+        navigate('/lives');
+      } else {
+        // For doctors/residents, redirect to verification pending page
+        navigate('/verification-pending');
+      }
     } else {
       setRegisterError(result.error || 'Error al registrarse');
     }
