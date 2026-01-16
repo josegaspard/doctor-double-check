@@ -1,23 +1,34 @@
 import React, { useState } from 'react';
-import { Bell, BellOff, Check, UserPlus, Settings } from 'lucide-react';
+import { Bell, BellOff, Check, UserPlus, Settings, Crown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SubscribeButtonProps {
   doctorId: string;
   doctorName?: string;
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg' | 'icon';
+  showUpgrade?: boolean;
 }
 
 export function SubscribeButton({
@@ -25,6 +36,7 @@ export function SubscribeButton({
   doctorName,
   variant = 'default',
   size = 'default',
+  showUpgrade = true,
 }: SubscribeButtonProps) {
   const { user, isAuthenticated } = useAuth();
   const { isSubscribedTo, getSubscription, subscribe, unsubscribe, updateNotificationPrefs } =
@@ -32,6 +44,8 @@ export function SubscribeButton({
   const { t } = useLanguage();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   const isSubscribed = isSubscribedTo(doctorId);
   const subscription = getSubscription(doctorId);
@@ -85,6 +99,30 @@ export function SubscribeButton({
   ) => {
     if (!subscription) return;
     await updateNotificationPrefs(subscription.id, { [key]: value });
+  };
+
+  const handleUpgrade = async (tier: 'basic' | 'premium') => {
+    setIsUpgrading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
+        body: { creatorId: doctorId, tier },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        setShowUpgradeModal(false);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo iniciar el proceso de pago',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpgrading(false);
+    }
   };
 
   if (!isSubscribed) {
@@ -156,6 +194,22 @@ export function SubscribeButton({
             </div>
           </div>
 
+          {showUpgrade && subscription?.tier === 'free' && (
+            <>
+              <div className="border-t pt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2"
+                  onClick={() => setShowUpgradeModal(true)}
+                >
+                  <Crown className="h-4 w-4 text-yellow-500" />
+                  Mejorar suscripción
+                </Button>
+              </div>
+            </>
+          )}
+
           <Button
             variant="destructive"
             size="sm"
@@ -168,6 +222,70 @@ export function SubscribeButton({
           </Button>
         </div>
       </PopoverContent>
+
+      {/* Upgrade Modal */}
+      <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-yellow-500" />
+              Mejora tu suscripción
+            </DialogTitle>
+            <DialogDescription>
+              Obtén beneficios exclusivos de {doctorName || 'este doctor'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            {/* Basic Tier */}
+            <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => handleUpgrade('basic')}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h4 className="font-semibold">Básico</h4>
+                    <p className="text-sm text-muted-foreground">Contenido exclusivo y notificaciones</p>
+                  </div>
+                  <Badge variant="outline">$99/mes</Badge>
+                </div>
+                <ul className="text-sm text-muted-foreground space-y-1 mt-3">
+                  <li>✓ Acceso a contenido exclusivo</li>
+                  <li>✓ Notificaciones prioritarias</li>
+                  <li>✓ Badge de suscriptor</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Premium Tier */}
+            <Card className="cursor-pointer border-yellow-500/50 hover:border-yellow-500 transition-colors" onClick={() => handleUpgrade('premium')}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h4 className="font-semibold flex items-center gap-2">
+                      Premium
+                      <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600">Popular</Badge>
+                    </h4>
+                    <p className="text-sm text-muted-foreground">Todo lo básico + descuentos y más</p>
+                  </div>
+                  <Badge variant="default">$199/mes</Badge>
+                </div>
+                <ul className="text-sm text-muted-foreground space-y-1 mt-3">
+                  <li>✓ Todo lo del plan Básico</li>
+                  <li>✓ 20% descuento en grabaciones</li>
+                  <li>✓ Chat prioritario</li>
+                  <li>✓ Acceso anticipado a lives</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          {isUpgrading && (
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Redirigiendo al pago...
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Popover>
   );
 }

@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.get-daily-token]
 verify_jwt = false
+
+[functions.daily-webhook]
+verify_jwt = false
+
+[functions.purchase-recording-wallet]
+verify_jwt = false
+
+[functions.create-subscription-checkout]
+verify_jwt = false

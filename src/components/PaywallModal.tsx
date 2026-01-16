@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { usePurchases } from '@/hooks/usePurchases';
 import {
   Dialog,
   DialogContent,
@@ -29,8 +30,8 @@ interface PaywallModalProps {
   open: boolean;
   onClose: () => void;
   recording: Recording | null;
-  onPurchase: () => void;
-  isPurchasing: boolean;
+  onPurchase?: () => void;
+  isPurchasing?: boolean;
   canAfford: boolean;
   balance: number;
 }
@@ -40,13 +41,16 @@ export default function PaywallModal({
   onClose,
   recording,
   onPurchase,
-  isPurchasing,
+  isPurchasing: externalIsPurchasing,
   canAfford,
   balance,
 }: PaywallModalProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { purchaseWithWallet, isPurchasing: walletIsPurchasing } = usePurchases();
   const [isStripeProcessing, setIsStripeProcessing] = useState(false);
+
+  const isPurchasing = externalIsPurchasing || walletIsPurchasing;
 
   if (!recording) return null;
 
@@ -176,7 +180,15 @@ export default function PaywallModal({
 
             {canAfford ? (
               <Button 
-                onClick={onPurchase} 
+                onClick={async () => {
+                  if (recording) {
+                    const result = await purchaseWithWallet(recording.id);
+                    if (result.success) {
+                      onClose();
+                      navigate(`/recording/${recording.id}`);
+                    }
+                  }
+                }} 
                 disabled={isPurchasing} 
                 className="w-full"
                 variant="outline"

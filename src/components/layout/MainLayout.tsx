@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -60,6 +61,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const location = useLocation();
   const { user, isAuthenticated, logout, role } = useAuth();
   const { balance } = useWallet();
+  
+  // Enable realtime notifications
+  useNotificationsRealtime();
 
   const filteredNavItems = navItems.filter(item => 
     role && item.roles.includes(role)
