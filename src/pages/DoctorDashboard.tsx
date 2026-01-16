@@ -141,7 +141,7 @@ export default function DoctorDashboard() {
           <div className="flex items-center gap-3">
             {isApproved && (
               <>
-                <Button onClick={() => setIsLiveDialogOpen(true)} className="gap-2 bg-red-600 hover:bg-red-700">
+                <Button onClick={() => navigate('/doctor/go-live')} className="gap-2 bg-red-600 hover:bg-red-700">
                   <Radio className="w-4 h-4" />
                   Iniciar Live
                 </Button>
@@ -362,7 +362,7 @@ export default function DoctorDashboard() {
                   <Button 
                     size="sm" 
                     disabled={!isApproved}
-                    onClick={() => isApproved && setIsLiveDialogOpen(true)}
+                    onClick={() => isApproved && navigate('/doctor/go-live')}
                     className="bg-red-600 hover:bg-red-700"
                   >
                     {isApproved ? 'Iniciar' : 'No disponible'}
