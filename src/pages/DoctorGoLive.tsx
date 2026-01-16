@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useViewerCount } from '@/hooks/useViewerCount';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
@@ -102,6 +103,12 @@ export default function DoctorGoLive() {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Real-time viewer count (owner doesn't auto-join as viewer)
+  const { viewerCount, likesCount } = useViewerCount({
+    liveId: liveData?.id || '',
+    autoJoin: false,
+  });
 
   // Timer for elapsed time
   useEffect(() => {
@@ -306,11 +313,11 @@ export default function DoctorGoLive() {
                 </span>
                 <span className="flex items-center gap-1">
                   <Users className="w-4 h-4" />
-                  {liveData.viewerCount}
+                  {viewerCount || liveData.viewerCount}
                 </span>
                 <span className="flex items-center gap-1">
                   <Heart className="w-4 h-4" />
-                  {liveData.likesCount}
+                  {likesCount || liveData.likesCount}
                 </span>
               </div>
 

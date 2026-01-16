@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDaily } from '@/hooks/useDaily';
+import { useViewerCount } from '@/hooks/useViewerCount';
 import MainLayout from '@/components/layout/MainLayout';
 import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
 import { LiveChat } from '@/components/live/LiveChat';
@@ -56,15 +57,17 @@ export default function LivePlayer() {
   const [token, setToken] = useState<string | null>(null);
   const [isJoiningStream, setIsJoiningStream] = useState(false);
   
-  // Refresh on mount
-  useEffect(() => {
-    refreshLives();
-  }, [refreshLives]);
-  
   const live = getLive(id || '');
-  const isLiked = live ? hasLiked(live.id) : false;
   const isOwner = user?.id === live?.doctorId;
   const isLiveActive = live?.status === 'live';
+
+  // Real-time viewer count hook
+  const { viewerCount, likesCount: realtimeLikesCount } = useViewerCount({
+    liveId: id || '',
+    autoJoin: isLiveActive && !isOwner,
+  });
+  
+  const isLiked = live ? hasLiked(live.id) : false;
 
   // Join the stream when component mounts and live is active
   useEffect(() => {
@@ -247,11 +250,11 @@ export default function LivePlayer() {
                   </Badge>
                 </div>
                 
-                {/* Viewers */}
+                {/* Viewers - Real-time */}
                 <div className="absolute top-4 right-4 z-10">
                   <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
                     <Users className="w-3 h-3" />
-                    {live.viewerCount} viendo
+                    {viewerCount || live.viewerCount} viendo
                   </Badge>
                 </div>
                 
@@ -291,7 +294,7 @@ export default function LivePlayer() {
                   className="gap-2"
                 >
                   <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                  {live.likesCount} Me gusta
+                  {realtimeLikesCount || live.likesCount} Me gusta
                 </Button>
                 <Button variant="outline" size="sm" className="gap-2">
                   <Share2 className="w-4 h-4" />
@@ -346,7 +349,7 @@ export default function LivePlayer() {
                 
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
-                    <p className="text-2xl font-bold text-foreground">{live.likesCount}</p>
+                    <p className="text-2xl font-bold text-foreground">{realtimeLikesCount || live.likesCount}</p>
                     <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
                       <Heart className="w-3 h-3 fill-destructive text-destructive" />
                       Likes
