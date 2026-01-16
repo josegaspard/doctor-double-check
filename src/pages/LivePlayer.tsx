@@ -7,6 +7,7 @@ import { useViewerCount } from '@/hooks/useViewerCount';
 import MainLayout from '@/components/layout/MainLayout';
 import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
 import { LiveChat } from '@/components/live/LiveChat';
+import { AnimatedViewerCount } from '@/components/live/AnimatedViewerCount';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -250,12 +251,9 @@ export default function LivePlayer() {
                   </Badge>
                 </div>
                 
-                {/* Viewers - Real-time */}
+                {/* Viewers - Real-time Animated */}
                 <div className="absolute top-4 right-4 z-10">
-                  <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
-                    <Users className="w-3 h-3" />
-                    {viewerCount || live.viewerCount} viendo
-                  </Badge>
+                  <AnimatedViewerCount count={viewerCount || live.viewerCount} />
                 </div>
                 
                 {/* Duration */}
