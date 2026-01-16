@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
 import { LiveChat } from '@/components/live/LiveChat';
+import { AnimatedViewerCount } from '@/components/live/AnimatedViewerCount';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -311,10 +312,10 @@ export default function DoctorGoLive() {
                   <Clock className="w-4 h-4" />
                   {formatTime(elapsedTime)}
                 </span>
-                <span className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  {viewerCount || liveData.viewerCount}
-                </span>
+                <AnimatedViewerCount 
+                  count={viewerCount || liveData.viewerCount} 
+                  variant="inline" 
+                />
                 <span className="flex items-center gap-1">
                   <Heart className="w-4 h-4" />
                   {likesCount || liveData.likesCount}
