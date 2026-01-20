@@ -14,13 +14,15 @@ import { UserRole } from '@/types';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, register, isLoading } = useAuth();
+  const { login, register, isLoading, resetPassword } = useAuth();
   
   const preferredRole = (location.state as any)?.preferredRole || 'patient';
   
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
@@ -33,12 +35,32 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
+    setResetEmailSent(false);
     
     const result = await login(loginEmail, loginPassword);
     if (result.success) {
       navigate('/lives');
     } else {
       setLoginError(result.error || 'Error al iniciar sesión');
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!loginEmail) {
+      setLoginError('Ingresa tu correo electrónico primero');
+      return;
+    }
+    
+    setResetLoading(true);
+    setLoginError('');
+    
+    const result = await resetPassword(loginEmail);
+    setResetLoading(false);
+    
+    if (result.success) {
+      setResetEmailSent(true);
+    } else {
+      setLoginError(result.error || 'Error al enviar el correo de recuperación');
     }
   };
 
@@ -134,8 +156,29 @@ export default function Login() {
                       <p className="text-sm text-destructive">{loginError}</p>
                     )}
                     
+                    {resetEmailSent && (
+                      <Alert className="border-success/30 bg-success/5">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        <AlertTitle>Correo enviado</AlertTitle>
+                        <AlertDescription>
+                          Revisa tu bandeja de entrada para restablecer tu contraseña.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Iniciar Sesión'}
+                    </Button>
+                    
+                    <Button 
+                      type="button" 
+                      variant="link" 
+                      className="w-full text-muted-foreground"
+                      onClick={handleForgotPassword}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      ¿Olvidaste tu contraseña?
                     </Button>
                   </form>
                 </CardContent>
