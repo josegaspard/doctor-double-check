@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -142,9 +143,8 @@ export default function Login() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="password">Contraseña</Label>
-                      <Input
+                      <PasswordInput
                         id="password"
-                        type="password"
                         placeholder="••••••••"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
@@ -262,9 +262,8 @@ export default function Login() {
                       
                       <div className="space-y-2">
                         <Label htmlFor="reg-password">Contraseña</Label>
-                        <Input
+                        <PasswordInput
                           id="reg-password"
-                          type="password"
                           placeholder="••••••••"
                           value={registerPassword}
                           onChange={(e) => setRegisterPassword(e.target.value)}
