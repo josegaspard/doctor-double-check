@@ -689,6 +689,7 @@ export type Database = {
           id: string
           is_identity_verified: boolean
           name: string
+          onboarding_completed: boolean
           preferred_language: Database["public"]["Enums"]["supported_language"]
           updated_at: string
         }
@@ -699,6 +700,7 @@ export type Database = {
           id: string
           is_identity_verified?: boolean
           name: string
+          onboarding_completed?: boolean
           preferred_language?: Database["public"]["Enums"]["supported_language"]
           updated_at?: string
         }
@@ -709,6 +711,7 @@ export type Database = {
           id?: string
           is_identity_verified?: boolean
           name?: string
+          onboarding_completed?: boolean
           preferred_language?: Database["public"]["Enums"]["supported_language"]
           updated_at?: string
         }

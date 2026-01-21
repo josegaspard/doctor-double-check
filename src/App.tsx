@@ -46,6 +46,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import AdminReports from "./pages/AdminReports";
+import Onboarding from "./pages/Onboarding";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -94,6 +95,7 @@ const App = () => (
                       <Route path="/verification-pending" element={<VerificationPending />} />
                       <Route path="/doctors" element={<Doctors />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/onboarding" element={<Onboarding />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="*" element={<NotFound />} />

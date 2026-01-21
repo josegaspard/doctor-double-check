@@ -14,6 +14,7 @@ export interface ExtendedUser {
   role: UserRole;
   avatarUrl?: string;
   createdAt: Date;
+  onboardingCompleted?: boolean;
   // Doctor-specific
   doctorProfile?: {
     id: string;
@@ -110,6 +111,7 @@ async function fetchUserProfile(userId: string): Promise<ExtendedUser | null> {
       role,
       avatarUrl: profile.avatar_url || undefined,
       createdAt: new Date(profile.created_at),
+      onboardingCompleted: profile.onboarding_completed ?? true,
     };
 
     // Fetch role-specific data
