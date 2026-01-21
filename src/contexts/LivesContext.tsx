@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './AuthContext';
+import { AuthContext } from './AuthContext';
 
 export type LiveStatus = 'live' | 'ended' | 'processing_recording' | 'recording_ready';
 
@@ -59,7 +59,8 @@ interface LivesContextType {
 const LivesContext = createContext<LivesContextType | undefined>(undefined);
 
 export function LivesProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user;
   const [lives, setLives] = useState<Live[]>([]);
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [likedLives, setLikedLives] = useState<Set<string>>(new Set());
