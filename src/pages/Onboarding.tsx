@@ -168,6 +168,8 @@ export default function Onboarding() {
     );
   }
 
+  const totalSteps = selectedRole === 'patient' ? 1 : 2;
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -185,6 +187,40 @@ export default function Onboarding() {
       {/* Main */}
       <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
         <div className="w-full max-w-lg">
+          {/* Progress Indicator */}
+          <div className="mb-8">
+            <div className="flex items-center justify-center gap-3">
+              {Array.from({ length: totalSteps }, (_, i) => i + 1).map((stepNumber) => (
+                <div key={stepNumber} className="flex items-center">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                      step === stepNumber
+                        ? 'bg-primary text-primary-foreground ring-4 ring-primary/20'
+                        : step > stepNumber
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {step > stepNumber ? (
+                      <CheckCircle className="w-5 h-5" />
+                    ) : (
+                      stepNumber
+                    )}
+                  </div>
+                  {stepNumber < totalSteps && (
+                    <div
+                      className={`w-16 h-1 mx-2 rounded-full transition-all ${
+                        step > stepNumber ? 'bg-primary' : 'bg-muted'
+                      }`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-sm text-muted-foreground mt-3">
+              Paso {step} de {totalSteps}
+            </p>
+          </div>
           {step === 1 && (
             <Card>
               <CardHeader className="text-center">
