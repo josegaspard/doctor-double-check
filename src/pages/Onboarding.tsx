@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,18 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserRole } from '@/types';
+
+const pageVariants = {
+  initial: { opacity: 0, x: 20 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -20 }
+};
+
+const pageTransition = {
+  type: "tween" as const,
+  ease: "easeInOut" as const,
+  duration: 0.3
+};
 
 type OnboardingRole = Exclude<UserRole, 'visitor' | 'admin'>;
 
@@ -221,195 +234,216 @@ export default function Onboarding() {
               Paso {step} de {totalSteps}
             </p>
           </div>
-          {step === 1 && (
-            <Card>
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="w-8 h-8 text-primary" />
-                </div>
-                <CardTitle className="text-2xl">¡Bienvenido a Dr Double Check!</CardTitle>
-                <CardDescription className="text-base">
-                  Para personalizar tu experiencia, cuéntanos más sobre ti
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">¿Cuál es tu rol?</Label>
-                  <RadioGroup 
-                    value={selectedRole} 
-                    onValueChange={(v) => handleRoleSelect(v as OnboardingRole)}
-                    className="grid gap-3"
-                  >
-                    <Label
-                      htmlFor="patient"
-                      className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        selectedRole === 'patient' 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={pageTransition}
+              >
+                <Card>
+                  <CardHeader className="text-center">
+                    <motion.div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center"
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.1, duration: 0.3 }}
                     >
-                      <RadioGroupItem value="patient" id="patient" className="sr-only" />
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        selectedRole === 'patient' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                      }`}>
-                        <User className="w-6 h-6" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">Paciente</p>
-                        <p className="text-sm text-muted-foreground">
-                          Accede a consultas médicas y contenido educativo
-                        </p>
-                      </div>
-                      {selectedRole === 'patient' && (
-                        <CheckCircle className="w-5 h-5 text-primary" />
-                      )}
-                    </Label>
-
-                    <Label
-                      htmlFor="doctor"
-                      className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        selectedRole === 'doctor' 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <RadioGroupItem value="doctor" id="doctor" className="sr-only" />
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        selectedRole === 'doctor' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                      }`}>
-                        <Stethoscope className="w-6 h-6" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">Médico</p>
-                        <p className="text-sm text-muted-foreground">
-                          Ofrece consultas y comparte conocimiento médico
-                        </p>
-                      </div>
-                      {selectedRole === 'doctor' && (
-                        <CheckCircle className="w-5 h-5 text-primary" />
-                      )}
-                    </Label>
-
-                    <Label
-                      htmlFor="resident"
-                      className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        selectedRole === 'resident' 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <RadioGroupItem value="resident" id="resident" className="sr-only" />
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        selectedRole === 'resident' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                      }`}>
-                        <GraduationCap className="w-6 h-6" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">Residente</p>
-                        <p className="text-sm text-muted-foreground">
-                          Accede a grupos de estudio y contenido con descuento
-                        </p>
-                      </div>
-                      {selectedRole === 'resident' && (
-                        <CheckCircle className="w-5 h-5 text-primary" />
-                      )}
-                    </Label>
-                  </RadioGroup>
-                </div>
-
-                <Button 
-                  onClick={handleContinue} 
-                  className="w-full" 
-                  size="lg"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : null}
-                  {selectedRole === 'patient' ? 'Completar registro' : 'Continuar'}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {step === 2 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Completa tu perfil de {selectedRole === 'doctor' ? 'médico' : 'residente'}</CardTitle>
-                <CardDescription>
-                  Esta información nos ayudará a verificar tu identidad profesional
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="specialty">Especialidad</Label>
-                  <Input
-                    id="specialty"
-                    placeholder="Ej: Cardiología, Medicina General"
-                    value={specialty}
-                    onChange={(e) => setSpecialty(e.target.value)}
-                  />
-                </div>
-
-                {selectedRole === 'doctor' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="license">Número de licencia médica</Label>
-                    <Input
-                      id="license"
-                      placeholder="Número de cédula profesional"
-                      value={license}
-                      onChange={(e) => setLicense(e.target.value)}
-                    />
-                  </div>
-                )}
-
-                {selectedRole === 'resident' && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="institution">Institución</Label>
-                      <Input
-                        id="institution"
-                        placeholder="Nombre del hospital o universidad"
-                        value={institution}
-                        onChange={(e) => setInstitution(e.target.value)}
-                      />
+                      <Sparkles className="w-8 h-8 text-primary" />
+                    </motion.div>
+                    <CardTitle className="text-2xl">¡Bienvenido a Dr Double Check!</CardTitle>
+                    <CardDescription className="text-base">
+                      Para personalizar tu experiencia, cuéntanos más sobre ti
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-3">
+                      <Label className="text-base font-medium">¿Cuál es tu rol?</Label>
+                      <RadioGroup 
+                        value={selectedRole} 
+                        onValueChange={(v) => handleRoleSelect(v as OnboardingRole)}
+                        className="grid gap-3"
+                      >
+                        {[
+                          { value: 'patient', icon: User, label: 'Paciente', desc: 'Accede a consultas médicas y contenido educativo' },
+                          { value: 'doctor', icon: Stethoscope, label: 'Médico', desc: 'Ofrece consultas y comparte conocimiento médico' },
+                          { value: 'resident', icon: GraduationCap, label: 'Residente', desc: 'Accede a grupos de estudio y contenido con descuento' }
+                        ].map((role, index) => (
+                          <motion.div
+                            key={role.value}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 + index * 0.1, duration: 0.3 }}
+                          >
+                            <Label
+                              htmlFor={role.value}
+                              className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                                selectedRole === role.value 
+                                  ? 'border-primary bg-primary/5' 
+                                  : 'border-border hover:border-primary/50'
+                              }`}
+                            >
+                              <RadioGroupItem value={role.value} id={role.value} className="sr-only" />
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                                selectedRole === role.value ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                              }`}>
+                                <role.icon className="w-6 h-6" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-medium">{role.label}</p>
+                                <p className="text-sm text-muted-foreground">{role.desc}</p>
+                              </div>
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: selectedRole === role.value ? 1 : 0 }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                              >
+                                <CheckCircle className="w-5 h-5 text-primary" />
+                              </motion.div>
+                            </Label>
+                          </motion.div>
+                        ))}
+                      </RadioGroup>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="year">Año de residencia</Label>
-                      <Input
-                        id="year"
-                        type="number"
-                        min={1}
-                        max={7}
-                        value={year}
-                        onChange={(e) => setYear(parseInt(e.target.value) || 1)}
-                      />
-                    </div>
-                  </>
-                )}
 
-                <div className="flex gap-3 pt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setStep(1)}
-                    className="flex-1"
-                  >
-                    Atrás
-                  </Button>
-                  <Button 
-                    onClick={handleSubmit} 
-                    className="flex-1"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : null}
-                    Completar registro
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4, duration: 0.3 }}
+                    >
+                      <Button 
+                        onClick={handleContinue} 
+                        className="w-full" 
+                        size="lg"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : null}
+                        {selectedRole === 'patient' ? 'Completar registro' : 'Continuar'}
+                      </Button>
+                    </motion.div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={pageTransition}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Completa tu perfil de {selectedRole === 'doctor' ? 'médico' : 'residente'}</CardTitle>
+                    <CardDescription>
+                      Esta información nos ayudará a verificar tu identidad profesional
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <motion.div 
+                      className="space-y-2"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1, duration: 0.3 }}
+                    >
+                      <Label htmlFor="specialty">Especialidad</Label>
+                      <Input
+                        id="specialty"
+                        placeholder="Ej: Cardiología, Medicina General"
+                        value={specialty}
+                        onChange={(e) => setSpecialty(e.target.value)}
+                      />
+                    </motion.div>
+
+                    {selectedRole === 'doctor' && (
+                      <motion.div 
+                        className="space-y-2"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.3 }}
+                      >
+                        <Label htmlFor="license">Número de licencia médica</Label>
+                        <Input
+                          id="license"
+                          placeholder="Número de cédula profesional"
+                          value={license}
+                          onChange={(e) => setLicense(e.target.value)}
+                        />
+                      </motion.div>
+                    )}
+
+                    {selectedRole === 'resident' && (
+                      <>
+                        <motion.div 
+                          className="space-y-2"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2, duration: 0.3 }}
+                        >
+                          <Label htmlFor="institution">Institución</Label>
+                          <Input
+                            id="institution"
+                            placeholder="Nombre del hospital o universidad"
+                            value={institution}
+                            onChange={(e) => setInstitution(e.target.value)}
+                          />
+                        </motion.div>
+                        <motion.div 
+                          className="space-y-2"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.3, duration: 0.3 }}
+                        >
+                          <Label htmlFor="year">Año de residencia</Label>
+                          <Input
+                            id="year"
+                            type="number"
+                            min={1}
+                            max={7}
+                            value={year}
+                            onChange={(e) => setYear(parseInt(e.target.value) || 1)}
+                          />
+                        </motion.div>
+                      </>
+                    )}
+
+                    <motion.div 
+                      className="flex gap-3 pt-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4, duration: 0.3 }}
+                    >
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setStep(1)}
+                        className="flex-1"
+                      >
+                        Atrás
+                      </Button>
+                      <Button 
+                        onClick={handleSubmit} 
+                        className="flex-1"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : null}
+                        Completar registro
+                      </Button>
+                    </motion.div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
     </div>
