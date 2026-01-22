@@ -12,6 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserRole } from '@/types';
+import { AvatarUpload } from '@/components/onboarding/AvatarUpload';
 
 const triggerConfetti = () => {
   const duration = 3000;
@@ -78,6 +79,7 @@ export default function Onboarding() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // Check if user needs onboarding or should be redirected
   useEffect(() => {
@@ -186,10 +188,18 @@ export default function Onboarding() {
         }
       }
 
-      // Mark onboarding as completed
+      // Mark onboarding as completed and save avatar
+      const updateData: { onboarding_completed: boolean; avatar_url?: string } = { 
+        onboarding_completed: true 
+      };
+      
+      if (avatarUrl) {
+        updateData.avatar_url = avatarUrl;
+      }
+
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ onboarding_completed: true })
+        .update(updateData)
         .eq('id', supabaseUser.id);
 
       if (profileError) throw profileError;
@@ -431,6 +441,16 @@ export default function Onboarding() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    {/* Avatar Upload */}
+                    {supabaseUser && (
+                      <AvatarUpload
+                        userId={supabaseUser.id}
+                        userName={user?.name}
+                        currentAvatarUrl={avatarUrl}
+                        onAvatarChange={setAvatarUrl}
+                      />
+                    )}
+
                     <div className="space-y-3">
                       <Label className="text-base font-medium">¿Cuál es tu rol?</Label>
                       <RadioGroup 
