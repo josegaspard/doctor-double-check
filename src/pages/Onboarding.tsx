@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,44 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserRole } from '@/types';
+
+const triggerConfetti = () => {
+  const duration = 3000;
+  const end = Date.now() + duration;
+
+  const colors = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444'];
+
+  const frame = () => {
+    confetti({
+      particleCount: 3,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0, y: 0.7 },
+      colors: colors
+    });
+    confetti({
+      particleCount: 3,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1, y: 0.7 },
+      colors: colors
+    });
+
+    if (Date.now() < end) {
+      requestAnimationFrame(frame);
+    }
+  };
+
+  // Initial burst
+  confetti({
+    particleCount: 100,
+    spread: 70,
+    origin: { y: 0.6 },
+    colors: colors
+  });
+
+  frame();
+};
 
 const pageVariants = {
   initial: { opacity: 0, x: 20 },
@@ -157,14 +196,19 @@ export default function Onboarding() {
       // Refresh user data
       await refreshUser();
 
+      // Trigger celebration confetti
+      triggerConfetti();
+
       toast.success('¡Perfil completado exitosamente!');
       
-      // Redirect based on role
-      if (selectedRole === 'patient') {
-        navigate('/lives');
-      } else {
-        navigate('/verification-pending');
-      }
+      // Redirect based on role after a short delay to show confetti
+      setTimeout(() => {
+        if (selectedRole === 'patient') {
+          navigate('/lives');
+        } else {
+          navigate('/verification-pending');
+        }
+      }, 1500);
     } catch (error: any) {
       console.error('Onboarding error:', error);
       toast.error(error.message || 'Error al completar el perfil');
