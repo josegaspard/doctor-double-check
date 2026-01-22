@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles } from 'lucide-react';
+import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserRole } from '@/types';
 
@@ -77,6 +77,7 @@ export default function Onboarding() {
   const [year, setYear] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   // Check if user needs onboarding or should be redirected
   useEffect(() => {
@@ -199,16 +200,10 @@ export default function Onboarding() {
       // Trigger celebration confetti
       triggerConfetti();
 
-      toast.success('¡Perfil completado exitosamente!');
+      // Show welcome screen
+      setShowWelcome(true);
       
-      // Redirect based on role after a short delay to show confetti
-      setTimeout(() => {
-        if (selectedRole === 'patient') {
-          navigate('/lives');
-        } else {
-          navigate('/verification-pending');
-        }
-      }, 1500);
+      toast.success('¡Perfil completado exitosamente!');
     } catch (error: any) {
       console.error('Onboarding error:', error);
       toast.error(error.message || 'Error al completar el perfil');
@@ -217,10 +212,142 @@ export default function Onboarding() {
     }
   };
 
+  const handleContinueToApp = () => {
+    if (selectedRole === 'patient') {
+      navigate('/lives');
+    } else {
+      navigate('/verification-pending');
+    }
+  };
+
+  const getRoleLabel = () => {
+    switch (selectedRole) {
+      case 'patient':
+        return 'Paciente';
+      case 'doctor':
+        return 'Médico';
+      case 'resident':
+        return 'Residente';
+      default:
+        return 'Usuario';
+    }
+  };
+
+  const getRoleIcon = () => {
+    switch (selectedRole) {
+      case 'patient':
+        return User;
+      case 'doctor':
+        return Stethoscope;
+      case 'resident':
+        return GraduationCap;
+      default:
+        return User;
+    }
+  };
+
   if (authLoading || isCheckingOnboarding) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Welcome screen after successful onboarding
+  if (showWelcome) {
+    const RoleIcon = getRoleIcon();
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Header */}
+        <header className="border-b border-border bg-card">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <Shield className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="font-heading font-bold text-foreground">Dr Double Check</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Welcome Content */}
+        <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
+          <motion.div 
+            className="w-full max-w-lg text-center"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          >
+            <motion.div
+              className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
+            >
+              <PartyPopper className="w-12 h-12 text-primary-foreground" />
+            </motion.div>
+
+            <motion.h1 
+              className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.4 }}
+            >
+              ¡Bienvenido{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
+            </motion.h1>
+
+            <motion.p 
+              className="text-lg text-muted-foreground mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
+            >
+              Tu cuenta ha sido configurada exitosamente
+            </motion.p>
+
+            <motion.div
+              className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-primary/10 border border-primary/20 mb-8"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6, type: "spring", stiffness: 300, damping: 20 }}
+            >
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                <RoleIcon className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-lg font-medium text-foreground">
+                {getRoleLabel()}
+              </span>
+              <CheckCircle className="w-5 h-5 text-primary" />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.4 }}
+            >
+              <Button 
+                size="lg" 
+                onClick={handleContinueToApp}
+                className="gap-2"
+              >
+                {selectedRole === 'patient' ? 'Explorar contenido' : 'Continuar con verificación'}
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </motion.div>
+
+            {selectedRole !== 'patient' && (
+              <motion.p
+                className="mt-4 text-sm text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1, duration: 0.4 }}
+              >
+                Tu perfil será verificado por nuestro equipo
+              </motion.p>
+            )}
+          </motion.div>
+        </main>
       </div>
     );
   }
