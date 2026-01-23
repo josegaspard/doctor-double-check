@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -88,6 +88,10 @@ export default function Onboarding() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [isLoadingProgress, setIsLoadingProgress] = useState(true);
+  const [isSavingProgress, setIsSavingProgress] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasLoadedProgress = useRef(false);
 
   // Validation logic
   const validateForm = useMemo(() => {
@@ -139,9 +143,63 @@ export default function Onboarding() {
     }
   }, [validateForm, hasAttemptedSubmit]);
 
-  // Check if user needs onboarding or should be redirected
+  // Save progress to database with debounce
+  const saveProgress = useCallback(async () => {
+    if (!supabaseUser || !hasLoadedProgress.current) return;
+    
+    setIsSavingProgress(true);
+    try {
+      const progressData = {
+        user_id: supabaseUser.id,
+        step,
+        selected_role: selectedRole,
+        specialty: specialty || null,
+        license: license || null,
+        institution: institution || null,
+        year,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('onboarding_progress')
+        .upsert(progressData, { onConflict: 'user_id' });
+
+      if (error) {
+        console.error('Error saving progress:', error);
+      }
+    } catch (error) {
+      console.error('Error saving progress:', error);
+    } finally {
+      setIsSavingProgress(false);
+    }
+  }, [supabaseUser, step, selectedRole, specialty, license, institution, year, avatarUrl]);
+
+  // Debounced save - saves 1 second after last change
+  const debouncedSave = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      saveProgress();
+    }, 1000);
+  }, [saveProgress]);
+
+  // Auto-save when form data changes
   useEffect(() => {
-    const checkOnboardingStatus = async () => {
+    if (hasLoadedProgress.current && supabaseUser) {
+      debouncedSave();
+    }
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [step, selectedRole, specialty, license, institution, year, avatarUrl, debouncedSave, supabaseUser]);
+
+  // Load saved progress and check onboarding status
+  useEffect(() => {
+    const loadProgressAndCheck = async () => {
       if (authLoading) return;
       
       if (!supabaseUser) {
@@ -157,15 +215,33 @@ export default function Onboarding() {
         .single();
 
       if (profile?.onboarding_completed) {
-        // User already completed onboarding, redirect to lives
         navigate('/lives');
         return;
       }
 
+      // Load saved progress
+      const { data: savedProgress } = await supabase
+        .from('onboarding_progress')
+        .select('*')
+        .eq('user_id', supabaseUser.id)
+        .single();
+
+      if (savedProgress) {
+        if (savedProgress.step) setStep(savedProgress.step);
+        if (savedProgress.selected_role) setSelectedRole(savedProgress.selected_role as OnboardingRole);
+        if (savedProgress.specialty) setSpecialty(savedProgress.specialty);
+        if (savedProgress.license) setLicense(savedProgress.license);
+        if (savedProgress.institution) setInstitution(savedProgress.institution);
+        if (savedProgress.year) setYear(savedProgress.year);
+        if (savedProgress.avatar_url) setAvatarUrl(savedProgress.avatar_url);
+      }
+
+      hasLoadedProgress.current = true;
+      setIsLoadingProgress(false);
       setIsCheckingOnboarding(false);
     };
 
-    checkOnboardingStatus();
+    loadProgressAndCheck();
   }, [authLoading, supabaseUser, navigate]);
 
   const handleRoleSelect = (role: OnboardingRole) => {
@@ -276,6 +352,12 @@ export default function Onboarding() {
 
       if (profileError) throw profileError;
 
+      // Delete saved progress since onboarding is complete
+      await supabase
+        .from('onboarding_progress')
+        .delete()
+        .eq('user_id', supabaseUser.id);
+
       // Refresh user data
       await refreshUser();
 
@@ -328,10 +410,11 @@ export default function Onboarding() {
     }
   };
 
-  if (authLoading || isCheckingOnboarding) {
+  if (authLoading || isCheckingOnboarding || isLoadingProgress) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Cargando tu progreso...</p>
       </div>
     );
   }
@@ -483,9 +566,24 @@ export default function Onboarding() {
                 </div>
               ))}
             </div>
-            <p className="text-center text-sm text-muted-foreground mt-3">
-              Paso {step} de {totalSteps}
-            </p>
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <p className="text-sm text-muted-foreground">
+                Paso {step} de {totalSteps}
+              </p>
+              <AnimatePresence>
+                {isSavingProgress && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="flex items-center gap-1 text-xs text-muted-foreground"
+                  >
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Guardando...</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
           <AnimatePresence mode="wait">
             {step === 1 && (

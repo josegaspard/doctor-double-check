@@ -681,6 +681,48 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_progress: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          institution: string | null
+          license: string | null
+          selected_role: string | null
+          specialty: string | null
+          step: number
+          updated_at: string
+          user_id: string
+          year: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          institution?: string | null
+          license?: string | null
+          selected_role?: string | null
+          specialty?: string | null
+          step?: number
+          updated_at?: string
+          user_id: string
+          year?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          institution?: string | null
+          license?: string | null
+          selected_role?: string | null
+          specialty?: string | null
+          step?: number
+          updated_at?: string
+          user_id?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
