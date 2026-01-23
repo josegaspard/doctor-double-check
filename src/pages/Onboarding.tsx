@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -9,11 +9,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight } from 'lucide-react';
+import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserRole } from '@/types';
 import { AvatarUpload } from '@/components/onboarding/AvatarUpload';
 
+interface ValidationErrors {
+  specialty?: string;
+  license?: string;
+  institution?: string;
+  year?: string;
+}
 const triggerConfetti = () => {
   const duration = 3000;
   const end = Date.now() + duration;
@@ -80,6 +86,58 @@ export default function Onboarding() {
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+
+  // Validation logic
+  const validateForm = useMemo(() => {
+    const errors: ValidationErrors = {};
+    
+    if (selectedRole === 'doctor' || selectedRole === 'resident') {
+      if (!specialty.trim()) {
+        errors.specialty = 'La especialidad es obligatoria';
+      } else if (specialty.trim().length < 3) {
+        errors.specialty = 'La especialidad debe tener al menos 3 caracteres';
+      } else if (specialty.trim().length > 100) {
+        errors.specialty = 'La especialidad no puede exceder 100 caracteres';
+      }
+    }
+
+    if (selectedRole === 'doctor') {
+      if (!license.trim()) {
+        errors.license = 'El número de licencia es obligatorio';
+      } else if (license.trim().length < 5) {
+        errors.license = 'El número de licencia debe tener al menos 5 caracteres';
+      } else if (license.trim().length > 50) {
+        errors.license = 'El número de licencia no puede exceder 50 caracteres';
+      }
+    }
+
+    if (selectedRole === 'resident') {
+      if (!institution.trim()) {
+        errors.institution = 'La institución es obligatoria';
+      } else if (institution.trim().length < 3) {
+        errors.institution = 'La institución debe tener al menos 3 caracteres';
+      } else if (institution.trim().length > 150) {
+        errors.institution = 'La institución no puede exceder 150 caracteres';
+      }
+
+      if (year < 1 || year > 7) {
+        errors.year = 'El año debe estar entre 1 y 7';
+      }
+    }
+
+    return errors;
+  }, [selectedRole, specialty, license, institution, year]);
+
+  const isFormValid = Object.keys(validateForm).length === 0;
+
+  // Update validation errors when form changes (only after first submit attempt)
+  useEffect(() => {
+    if (hasAttemptedSubmit) {
+      setValidationErrors(validateForm);
+    }
+  }, [validateForm, hasAttemptedSubmit]);
 
   // Check if user needs onboarding or should be redirected
   useEffect(() => {
@@ -124,6 +182,20 @@ export default function Onboarding() {
 
   const handleSubmit = async () => {
     if (!supabaseUser) return;
+    
+    // Mark that user has attempted to submit
+    setHasAttemptedSubmit(true);
+    
+    // Validate form for doctors and residents
+    if (selectedRole !== 'patient') {
+      const errors = validateForm;
+      setValidationErrors(errors);
+      
+      if (Object.keys(errors).length > 0) {
+        toast.error('Por favor completa todos los campos obligatorios');
+        return;
+      }
+    }
     
     setIsSubmitting(true);
     
@@ -545,13 +617,27 @@ export default function Onboarding() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1, duration: 0.3 }}
                     >
-                      <Label htmlFor="specialty">Especialidad</Label>
+                      <Label htmlFor="specialty" className="flex items-center gap-1">
+                        Especialidad <span className="text-destructive">*</span>
+                      </Label>
                       <Input
                         id="specialty"
                         placeholder="Ej: Cardiología, Medicina General"
                         value={specialty}
                         onChange={(e) => setSpecialty(e.target.value)}
+                        className={validationErrors.specialty ? 'border-destructive focus-visible:ring-destructive' : ''}
+                        maxLength={100}
                       />
+                      {validationErrors.specialty && (
+                        <motion.p 
+                          className="text-sm text-destructive flex items-center gap-1"
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <AlertCircle className="w-3 h-3" />
+                          {validationErrors.specialty}
+                        </motion.p>
+                      )}
                     </motion.div>
 
                     {selectedRole === 'doctor' && (
@@ -561,13 +647,27 @@ export default function Onboarding() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.3 }}
                       >
-                        <Label htmlFor="license">Número de licencia médica</Label>
+                        <Label htmlFor="license" className="flex items-center gap-1">
+                          Número de licencia médica <span className="text-destructive">*</span>
+                        </Label>
                         <Input
                           id="license"
                           placeholder="Número de cédula profesional"
                           value={license}
                           onChange={(e) => setLicense(e.target.value)}
+                          className={validationErrors.license ? 'border-destructive focus-visible:ring-destructive' : ''}
+                          maxLength={50}
                         />
+                        {validationErrors.license && (
+                          <motion.p 
+                            className="text-sm text-destructive flex items-center gap-1"
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                          >
+                            <AlertCircle className="w-3 h-3" />
+                            {validationErrors.license}
+                          </motion.p>
+                        )}
                       </motion.div>
                     )}
 
@@ -579,13 +679,27 @@ export default function Onboarding() {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.2, duration: 0.3 }}
                         >
-                          <Label htmlFor="institution">Institución</Label>
+                          <Label htmlFor="institution" className="flex items-center gap-1">
+                            Institución <span className="text-destructive">*</span>
+                          </Label>
                           <Input
                             id="institution"
                             placeholder="Nombre del hospital o universidad"
                             value={institution}
                             onChange={(e) => setInstitution(e.target.value)}
+                            className={validationErrors.institution ? 'border-destructive focus-visible:ring-destructive' : ''}
+                            maxLength={150}
                           />
+                          {validationErrors.institution && (
+                            <motion.p 
+                              className="text-sm text-destructive flex items-center gap-1"
+                              initial={{ opacity: 0, y: -5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                            >
+                              <AlertCircle className="w-3 h-3" />
+                              {validationErrors.institution}
+                            </motion.p>
+                          )}
                         </motion.div>
                         <motion.div 
                           className="space-y-2"
@@ -593,7 +707,9 @@ export default function Onboarding() {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.3, duration: 0.3 }}
                         >
-                          <Label htmlFor="year">Año de residencia</Label>
+                          <Label htmlFor="year" className="flex items-center gap-1">
+                            Año de residencia <span className="text-destructive">*</span>
+                          </Label>
                           <Input
                             id="year"
                             type="number"
@@ -601,7 +717,18 @@ export default function Onboarding() {
                             max={7}
                             value={year}
                             onChange={(e) => setYear(parseInt(e.target.value) || 1)}
+                            className={validationErrors.year ? 'border-destructive focus-visible:ring-destructive' : ''}
                           />
+                          {validationErrors.year && (
+                            <motion.p 
+                              className="text-sm text-destructive flex items-center gap-1"
+                              initial={{ opacity: 0, y: -5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                            >
+                              <AlertCircle className="w-3 h-3" />
+                              {validationErrors.year}
+                            </motion.p>
+                          )}
                         </motion.div>
                       </>
                     )}
