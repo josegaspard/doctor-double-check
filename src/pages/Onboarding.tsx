@@ -234,6 +234,12 @@ export default function Onboarding() {
         if (savedProgress.institution) setInstitution(savedProgress.institution);
         if (savedProgress.year) setYear(savedProgress.year);
         if (savedProgress.avatar_url) setAvatarUrl(savedProgress.avatar_url);
+        
+        // Show toast when restoring previous session
+        toast.success('Continuando desde tu última sesión', {
+          duration: 3000,
+          icon: '🔄'
+        });
       }
 
       hasLoadedProgress.current = true;
