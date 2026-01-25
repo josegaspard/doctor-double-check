@@ -59,15 +59,63 @@ const triggerConfetti = () => {
 };
 
 const pageVariants = {
-  initial: { opacity: 0, x: 20 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -20 }
+  initial: { opacity: 0, x: 50, scale: 0.98 },
+  animate: { opacity: 1, x: 0, scale: 1 },
+  exit: { opacity: 0, x: -50, scale: 0.98 }
 };
 
 const pageTransition = {
-  type: "tween" as const,
-  ease: "easeInOut" as const,
-  duration: 0.3
+  type: "spring" as const,
+  stiffness: 300,
+  damping: 30,
+  mass: 0.8
+};
+
+const containerVariants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.1
+    }
+  },
+  exit: { opacity: 0 }
+};
+
+const itemVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25
+    }
+  }
+};
+
+const cardVariants = {
+  initial: { opacity: 0, y: 30, scale: 0.95 },
+  animate: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 350,
+      damping: 30
+    }
+  },
+  exit: { 
+    opacity: 0, 
+    y: -20, 
+    scale: 0.95,
+    transition: {
+      duration: 0.2
+    }
+  }
 };
 
 type OnboardingRole = Exclude<UserRole, 'visitor' | 'admin'>;
@@ -543,31 +591,63 @@ export default function Onboarding() {
       <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
         <div className="w-full max-w-lg">
           {/* Progress Indicator */}
-          <div className="mb-8">
+          <motion.div 
+            className="mb-8"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          >
             <div className="flex items-center justify-center gap-3">
               {Array.from({ length: totalSteps }, (_, i) => i + 1).map((stepNumber) => (
                 <div key={stepNumber} className="flex items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                  <motion.div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
                       step === stepNumber
                         ? 'bg-primary text-primary-foreground ring-4 ring-primary/20'
                         : step > stepNumber
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground'
                     }`}
+                    initial={false}
+                    animate={{ 
+                      scale: step === stepNumber ? 1.1 : 1,
+                    }}
+                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
                   >
-                    {step > stepNumber ? (
-                      <CheckCircle className="w-5 h-5" />
-                    ) : (
-                      stepNumber
-                    )}
-                  </div>
+                    <AnimatePresence mode="wait">
+                      {step > stepNumber ? (
+                        <motion.div
+                          key="check"
+                          initial={{ scale: 0, rotate: -180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          exit={{ scale: 0 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                        >
+                          <CheckCircle className="w-5 h-5" />
+                        </motion.div>
+                      ) : (
+                        <motion.span
+                          key="number"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                        >
+                          {stepNumber}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
                   {stepNumber < totalSteps && (
-                    <div
-                      className={`w-16 h-1 mx-2 rounded-full transition-all ${
-                        step > stepNumber ? 'bg-primary' : 'bg-muted'
-                      }`}
-                    />
+                    <motion.div
+                      className="w-16 h-1 mx-2 rounded-full bg-muted overflow-hidden"
+                    >
+                      <motion.div
+                        className="h-full bg-primary"
+                        initial={{ width: "0%" }}
+                        animate={{ width: step > stepNumber ? "100%" : "0%" }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      />
+                    </motion.div>
                   )}
                 </div>
               ))}
@@ -590,108 +670,138 @@ export default function Onboarding() {
                 )}
               </AnimatePresence>
             </div>
-          </div>
+          </motion.div>
           <AnimatePresence mode="wait">
             {step === 1 && (
               <motion.div
                 key="step1"
-                variants={pageVariants}
+                variants={cardVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={pageTransition}
               >
-                <Card>
+                <Card className="overflow-hidden">
                   <CardHeader className="text-center">
                     <motion.div 
                       className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center"
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 0.1, duration: 0.3 }}
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 260, 
+                        damping: 20,
+                        delay: 0.2 
+                      }}
                     >
-                      <Sparkles className="w-8 h-8 text-primary" />
+                      <motion.div
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ 
+                          duration: 2, 
+                          repeat: Infinity, 
+                          repeatDelay: 3,
+                          ease: "easeInOut"
+                        }}
+                      >
+                        <Sparkles className="w-8 h-8 text-primary" />
+                      </motion.div>
                     </motion.div>
                     <CardTitle className="text-2xl">¡Bienvenido a Dr Double Check!</CardTitle>
                     <CardDescription className="text-base">
                       Para personalizar tu experiencia, cuéntanos más sobre ti
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Avatar Upload */}
-                    {supabaseUser && (
-                      <AvatarUpload
-                        userId={supabaseUser.id}
-                        userName={user?.name}
-                        currentAvatarUrl={avatarUrl}
-                        onAvatarChange={setAvatarUrl}
-                      />
-                    )}
-
-                    <div className="space-y-3">
-                      <Label className="text-base font-medium">¿Cuál es tu rol?</Label>
-                      <RadioGroup 
-                        value={selectedRole} 
-                        onValueChange={(v) => handleRoleSelect(v as OnboardingRole)}
-                        className="grid gap-3"
-                      >
-                        {[
-                          { value: 'patient', icon: User, label: 'Paciente', desc: 'Accede a consultas médicas y contenido educativo' },
-                          { value: 'doctor', icon: Stethoscope, label: 'Médico', desc: 'Ofrece consultas y comparte conocimiento médico' },
-                          { value: 'resident', icon: GraduationCap, label: 'Residente', desc: 'Accede a grupos de estudio y contenido con descuento' }
-                        ].map((role, index) => (
-                          <motion.div
-                            key={role.value}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 + index * 0.1, duration: 0.3 }}
-                          >
-                            <Label
-                              htmlFor={role.value}
-                              className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                                selectedRole === role.value 
-                                  ? 'border-primary bg-primary/5' 
-                                  : 'border-border hover:border-primary/50'
-                              }`}
-                            >
-                              <RadioGroupItem value={role.value} id={role.value} className="sr-only" />
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-                                selectedRole === role.value ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                              }`}>
-                                <role.icon className="w-6 h-6" />
-                              </div>
-                              <div className="flex-1">
-                                <p className="font-medium">{role.label}</p>
-                                <p className="text-sm text-muted-foreground">{role.desc}</p>
-                              </div>
-                              <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: selectedRole === role.value ? 1 : 0 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                              >
-                                <CheckCircle className="w-5 h-5 text-primary" />
-                              </motion.div>
-                            </Label>
-                          </motion.div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.4, duration: 0.3 }}
+                  <CardContent>
+                    <motion.div 
+                      className="space-y-6"
+                      variants={containerVariants}
+                      initial="initial"
+                      animate="animate"
                     >
-                      <Button 
-                        onClick={handleContinue} 
-                        className="w-full" 
-                        size="lg"
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? (
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        ) : null}
-                        {selectedRole === 'patient' ? 'Completar registro' : 'Continuar'}
-                      </Button>
+                      {/* Avatar Upload */}
+                      {supabaseUser && (
+                        <motion.div variants={itemVariants}>
+                          <AvatarUpload
+                            userId={supabaseUser.id}
+                            userName={user?.name}
+                            currentAvatarUrl={avatarUrl}
+                            onAvatarChange={setAvatarUrl}
+                          />
+                        </motion.div>
+                      )}
+
+                      <motion.div className="space-y-3" variants={itemVariants}>
+                        <Label className="text-base font-medium">¿Cuál es tu rol?</Label>
+                        <RadioGroup 
+                          value={selectedRole} 
+                          onValueChange={(v) => handleRoleSelect(v as OnboardingRole)}
+                          className="grid gap-3"
+                        >
+                          {[
+                            { value: 'patient', icon: User, label: 'Paciente', desc: 'Accede a consultas médicas y contenido educativo' },
+                            { value: 'doctor', icon: Stethoscope, label: 'Médico', desc: 'Ofrece consultas y comparte conocimiento médico' },
+                            { value: 'resident', icon: GraduationCap, label: 'Residente', desc: 'Accede a grupos de estudio y contenido con descuento' }
+                          ].map((role, index) => (
+                            <motion.div
+                              key={role.value}
+                              variants={itemVariants}
+                              whileHover={{ scale: 1.02, x: 4 }}
+                              whileTap={{ scale: 0.98 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                            >
+                              <Label
+                                htmlFor={role.value}
+                                className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                                  selectedRole === role.value 
+                                    ? 'border-primary bg-primary/5' 
+                                    : 'border-border hover:border-primary/50'
+                                }`}
+                              >
+                                <RadioGroupItem value={role.value} id={role.value} className="sr-only" />
+                                <motion.div 
+                                  className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                    selectedRole === role.value ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                                  }`}
+                                  animate={{ 
+                                    scale: selectedRole === role.value ? 1.1 : 1,
+                                    rotate: selectedRole === role.value ? [0, -5, 5, 0] : 0
+                                  }}
+                                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                                >
+                                  <role.icon className="w-6 h-6" />
+                                </motion.div>
+                                <div className="flex-1">
+                                  <p className="font-medium">{role.label}</p>
+                                  <p className="text-sm text-muted-foreground">{role.desc}</p>
+                                </div>
+                                <motion.div
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ 
+                                    scale: selectedRole === role.value ? 1 : 0,
+                                    opacity: selectedRole === role.value ? 1 : 0
+                                  }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                                >
+                                  <CheckCircle className="w-5 h-5 text-primary" />
+                                </motion.div>
+                              </Label>
+                            </motion.div>
+                          ))}
+                        </RadioGroup>
+                      </motion.div>
+
+                      <motion.div variants={itemVariants}>
+                        <Button 
+                          onClick={handleContinue} 
+                          className="w-full" 
+                          size="lg"
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          ) : null}
+                          {selectedRole === 'patient' ? 'Completar registro' : 'Continuar'}
+                        </Button>
+                      </motion.div>
                     </motion.div>
                   </CardContent>
                 </Card>
@@ -701,165 +811,171 @@ export default function Onboarding() {
             {step === 2 && (
               <motion.div
                 key="step2"
-                variants={pageVariants}
+                variants={cardVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={pageTransition}
               >
-                <Card>
+                <Card className="overflow-hidden">
                   <CardHeader>
-                    <CardTitle>Completa tu perfil de {selectedRole === 'doctor' ? 'médico' : 'residente'}</CardTitle>
-                    <CardDescription>
-                      Esta información nos ayudará a verificar tu identidad profesional
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <motion.div 
-                      className="space-y-2"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1, duration: 0.3 }}
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     >
-                      <Label htmlFor="specialty" className="flex items-center gap-1">
-                        Especialidad <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="specialty"
-                        placeholder="Ej: Cardiología, Medicina General"
-                        value={specialty}
-                        onChange={(e) => setSpecialty(e.target.value)}
-                        className={validationErrors.specialty ? 'border-destructive focus-visible:ring-destructive' : ''}
-                        maxLength={100}
-                      />
-                      {validationErrors.specialty && (
-                        <motion.p 
-                          className="text-sm text-destructive flex items-center gap-1"
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          <AlertCircle className="w-3 h-3" />
-                          {validationErrors.specialty}
-                        </motion.p>
-                      )}
+                      <CardTitle>Completa tu perfil de {selectedRole === 'doctor' ? 'médico' : 'residente'}</CardTitle>
+                      <CardDescription>
+                        Esta información nos ayudará a verificar tu identidad profesional
+                      </CardDescription>
                     </motion.div>
-
-                    {selectedRole === 'doctor' && (
-                      <motion.div 
-                        className="space-y-2"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2, duration: 0.3 }}
-                      >
-                        <Label htmlFor="license" className="flex items-center gap-1">
-                          Número de licencia médica <span className="text-destructive">*</span>
+                  </CardHeader>
+                  <CardContent>
+                    <motion.div 
+                      className="space-y-4"
+                      variants={containerVariants}
+                      initial="initial"
+                      animate="animate"
+                    >
+                      <motion.div className="space-y-2" variants={itemVariants}>
+                        <Label htmlFor="specialty" className="flex items-center gap-1">
+                          Especialidad <span className="text-destructive">*</span>
                         </Label>
                         <Input
-                          id="license"
-                          placeholder="Número de cédula profesional"
-                          value={license}
-                          onChange={(e) => setLicense(e.target.value)}
-                          className={validationErrors.license ? 'border-destructive focus-visible:ring-destructive' : ''}
-                          maxLength={50}
+                          id="specialty"
+                          placeholder="Ej: Cardiología, Medicina General"
+                          value={specialty}
+                          onChange={(e) => setSpecialty(e.target.value)}
+                          className={validationErrors.specialty ? 'border-destructive focus-visible:ring-destructive' : ''}
+                          maxLength={100}
                         />
-                        {validationErrors.license && (
-                          <motion.p 
-                            className="text-sm text-destructive flex items-center gap-1"
-                            initial={{ opacity: 0, y: -5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                          >
-                            <AlertCircle className="w-3 h-3" />
-                            {validationErrors.license}
-                          </motion.p>
-                        )}
+                        <AnimatePresence>
+                          {validationErrors.specialty && (
+                            <motion.p 
+                              className="text-sm text-destructive flex items-center gap-1"
+                              initial={{ opacity: 0, y: -10, height: 0 }}
+                              animate={{ opacity: 1, y: 0, height: "auto" }}
+                              exit={{ opacity: 0, y: -10, height: 0 }}
+                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            >
+                              <AlertCircle className="w-3 h-3" />
+                              {validationErrors.specialty}
+                            </motion.p>
+                          )}
+                        </AnimatePresence>
                       </motion.div>
-                    )}
 
-                    {selectedRole === 'resident' && (
-                      <>
-                        <motion.div 
-                          className="space-y-2"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2, duration: 0.3 }}
-                        >
-                          <Label htmlFor="institution" className="flex items-center gap-1">
-                            Institución <span className="text-destructive">*</span>
+                      {selectedRole === 'doctor' && (
+                        <motion.div className="space-y-2" variants={itemVariants}>
+                          <Label htmlFor="license" className="flex items-center gap-1">
+                            Número de licencia médica <span className="text-destructive">*</span>
                           </Label>
                           <Input
-                            id="institution"
-                            placeholder="Nombre del hospital o universidad"
-                            value={institution}
-                            onChange={(e) => setInstitution(e.target.value)}
-                            className={validationErrors.institution ? 'border-destructive focus-visible:ring-destructive' : ''}
-                            maxLength={150}
+                            id="license"
+                            placeholder="Número de cédula profesional"
+                            value={license}
+                            onChange={(e) => setLicense(e.target.value)}
+                            className={validationErrors.license ? 'border-destructive focus-visible:ring-destructive' : ''}
+                            maxLength={50}
                           />
-                          {validationErrors.institution && (
-                            <motion.p 
-                              className="text-sm text-destructive flex items-center gap-1"
-                              initial={{ opacity: 0, y: -5 }}
-                              animate={{ opacity: 1, y: 0 }}
-                            >
-                              <AlertCircle className="w-3 h-3" />
-                              {validationErrors.institution}
-                            </motion.p>
-                          )}
+                          <AnimatePresence>
+                            {validationErrors.license && (
+                              <motion.p 
+                                className="text-sm text-destructive flex items-center gap-1"
+                                initial={{ opacity: 0, y: -10, height: 0 }}
+                                animate={{ opacity: 1, y: 0, height: "auto" }}
+                                exit={{ opacity: 0, y: -10, height: 0 }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                              >
+                                <AlertCircle className="w-3 h-3" />
+                                {validationErrors.license}
+                              </motion.p>
+                            )}
+                          </AnimatePresence>
                         </motion.div>
-                        <motion.div 
-                          className="space-y-2"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.3, duration: 0.3 }}
-                        >
-                          <Label htmlFor="year" className="flex items-center gap-1">
-                            Año de residencia <span className="text-destructive">*</span>
-                          </Label>
-                          <Input
-                            id="year"
-                            type="number"
-                            min={1}
-                            max={7}
-                            value={year}
-                            onChange={(e) => setYear(parseInt(e.target.value) || 1)}
-                            className={validationErrors.year ? 'border-destructive focus-visible:ring-destructive' : ''}
-                          />
-                          {validationErrors.year && (
-                            <motion.p 
-                              className="text-sm text-destructive flex items-center gap-1"
-                              initial={{ opacity: 0, y: -5 }}
-                              animate={{ opacity: 1, y: 0 }}
-                            >
-                              <AlertCircle className="w-3 h-3" />
-                              {validationErrors.year}
-                            </motion.p>
-                          )}
-                        </motion.div>
-                      </>
-                    )}
+                      )}
 
-                    <motion.div 
-                      className="flex gap-3 pt-4"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.4, duration: 0.3 }}
-                    >
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setStep(1)}
-                        className="flex-1"
+                      {selectedRole === 'resident' && (
+                        <>
+                          <motion.div className="space-y-2" variants={itemVariants}>
+                            <Label htmlFor="institution" className="flex items-center gap-1">
+                              Institución <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="institution"
+                              placeholder="Nombre del hospital o universidad"
+                              value={institution}
+                              onChange={(e) => setInstitution(e.target.value)}
+                              className={validationErrors.institution ? 'border-destructive focus-visible:ring-destructive' : ''}
+                              maxLength={150}
+                            />
+                            <AnimatePresence>
+                              {validationErrors.institution && (
+                                <motion.p 
+                                  className="text-sm text-destructive flex items-center gap-1"
+                                  initial={{ opacity: 0, y: -10, height: 0 }}
+                                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                                  exit={{ opacity: 0, y: -10, height: 0 }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                >
+                                  <AlertCircle className="w-3 h-3" />
+                                  {validationErrors.institution}
+                                </motion.p>
+                              )}
+                            </AnimatePresence>
+                          </motion.div>
+                          <motion.div className="space-y-2" variants={itemVariants}>
+                            <Label htmlFor="year" className="flex items-center gap-1">
+                              Año de residencia <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="year"
+                              type="number"
+                              min={1}
+                              max={7}
+                              value={year}
+                              onChange={(e) => setYear(parseInt(e.target.value) || 1)}
+                              className={validationErrors.year ? 'border-destructive focus-visible:ring-destructive' : ''}
+                            />
+                            <AnimatePresence>
+                              {validationErrors.year && (
+                                <motion.p 
+                                  className="text-sm text-destructive flex items-center gap-1"
+                                  initial={{ opacity: 0, y: -10, height: 0 }}
+                                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                                  exit={{ opacity: 0, y: -10, height: 0 }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                >
+                                  <AlertCircle className="w-3 h-3" />
+                                  {validationErrors.year}
+                                </motion.p>
+                              )}
+                            </AnimatePresence>
+                          </motion.div>
+                        </>
+                      )}
+
+                      <motion.div 
+                        className="flex gap-3 pt-4"
+                        variants={itemVariants}
                       >
-                        Atrás
-                      </Button>
-                      <Button 
-                        onClick={handleSubmit} 
-                        className="flex-1"
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? (
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        ) : null}
-                        Completar registro
-                      </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setStep(1)}
+                          className="flex-1"
+                        >
+                          Atrás
+                        </Button>
+                        <Button 
+                          onClick={handleSubmit} 
+                          className="flex-1"
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          ) : null}
+                          Completar registro
+                        </Button>
+                      </motion.div>
                     </motion.div>
                   </CardContent>
                 </Card>
