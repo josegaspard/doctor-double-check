@@ -9,10 +9,49 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserRole } from '@/types';
 import { AvatarUpload } from '@/components/onboarding/AvatarUpload';
+
+// Predefined medical specialties
+const MEDICAL_SPECIALTIES = [
+  'Medicina General',
+  'Medicina Interna',
+  'Cardiología',
+  'Dermatología',
+  'Endocrinología',
+  'Gastroenterología',
+  'Geriatría',
+  'Ginecología y Obstetricia',
+  'Hematología',
+  'Infectología',
+  'Medicina de Urgencias',
+  'Medicina Familiar',
+  'Nefrología',
+  'Neumología',
+  'Neurología',
+  'Nutriología',
+  'Oftalmología',
+  'Oncología',
+  'Ortopedia y Traumatología',
+  'Otorrinolaringología',
+  'Pediatría',
+  'Psiquiatría',
+  'Radiología',
+  'Reumatología',
+  'Urología',
+  'Cirugía General',
+  'Cirugía Cardiovascular',
+  'Cirugía Plástica',
+  'Anestesiología',
+  'Medicina del Deporte',
+  'Medicina Física y Rehabilitación',
+  'Patología',
+  'Alergología e Inmunología',
+  'Otra especialidad'
+] as const;
 
 interface ValidationErrors {
   specialty?: string;
@@ -146,12 +185,8 @@ export default function Onboarding() {
     const errors: ValidationErrors = {};
     
     if (selectedRole === 'doctor' || selectedRole === 'resident') {
-      if (!specialty.trim()) {
-        errors.specialty = 'La especialidad es obligatoria';
-      } else if (specialty.trim().length < 3) {
-        errors.specialty = 'La especialidad debe tener al menos 3 caracteres';
-      } else if (specialty.trim().length > 100) {
-        errors.specialty = 'La especialidad no puede exceder 100 caracteres';
+      if (!specialty) {
+        errors.specialty = 'Debes seleccionar una especialidad';
       }
     }
 
@@ -840,14 +875,24 @@ export default function Onboarding() {
                         <Label htmlFor="specialty" className="flex items-center gap-1">
                           Especialidad <span className="text-destructive">*</span>
                         </Label>
-                        <Input
-                          id="specialty"
-                          placeholder="Ej: Cardiología, Medicina General"
+                        <Select
                           value={specialty}
-                          onChange={(e) => setSpecialty(e.target.value)}
-                          className={validationErrors.specialty ? 'border-destructive focus-visible:ring-destructive' : ''}
-                          maxLength={100}
-                        />
+                          onValueChange={setSpecialty}
+                        >
+                          <SelectTrigger 
+                            id="specialty"
+                            className={validationErrors.specialty ? 'border-destructive focus:ring-destructive' : ''}
+                          >
+                            <SelectValue placeholder="Selecciona tu especialidad" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {MEDICAL_SPECIALTIES.map((spec) => (
+                              <SelectItem key={spec} value={spec}>
+                                {spec}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <AnimatePresence>
                           {validationErrors.specialty && (
                             <motion.p 
