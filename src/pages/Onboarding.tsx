@@ -191,12 +191,14 @@ export default function Onboarding() {
     }
 
     if (selectedRole === 'doctor') {
-      if (!license.trim()) {
-        errors.license = 'El número de licencia es obligatorio';
-      } else if (license.trim().length < 5) {
-        errors.license = 'El número de licencia debe tener al menos 5 caracteres';
-      } else if (license.trim().length > 50) {
-        errors.license = 'El número de licencia no puede exceder 50 caracteres';
+      const trimmedLicense = license.trim();
+      // Mexican cédula profesional format: 7-8 digits
+      const cedulaRegex = /^\d{7,8}$/;
+      
+      if (!trimmedLicense) {
+        errors.license = 'El número de cédula profesional es obligatorio';
+      } else if (!cedulaRegex.test(trimmedLicense)) {
+        errors.license = 'La cédula debe contener entre 7 y 8 dígitos numéricos';
       }
     }
 
