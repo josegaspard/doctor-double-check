@@ -14,6 +14,7 @@ import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkle
 import { toast } from 'sonner';
 import { UserRole } from '@/types';
 import { AvatarUpload } from '@/components/onboarding/AvatarUpload';
+import { CedulaVerificationStatus, useCedulaStatus } from '@/components/onboarding/CedulaVerificationStatus';
 
 // Predefined medical specialties
 const MEDICAL_SPECIALTIES = [
@@ -179,8 +180,9 @@ export default function Onboarding() {
   const [isSavingProgress, setIsSavingProgress] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasLoadedProgress = useRef(false);
-
-  // Validation logic
+  
+  // Cedula verification status
+  const cedulaStatus = useCedulaStatus(license);
   const validateForm = useMemo(() => {
     const errors: ValidationErrors = {};
     
@@ -912,17 +914,23 @@ export default function Onboarding() {
                       </motion.div>
 
                       {selectedRole === 'doctor' && (
-                        <motion.div className="space-y-2" variants={itemVariants}>
+                        <motion.div className="space-y-3" variants={itemVariants}>
                           <Label htmlFor="license" className="flex items-center gap-1">
-                            Número de licencia médica <span className="text-destructive">*</span>
+                            Cédula Profesional <span className="text-destructive">*</span>
                           </Label>
                           <Input
                             id="license"
-                            placeholder="Número de cédula profesional"
+                            placeholder="Ej: 1234567 o 12345678"
                             value={license}
-                            onChange={(e) => setLicense(e.target.value)}
+                            onChange={(e) => {
+                              // Only allow numeric input
+                              const value = e.target.value.replace(/\D/g, '');
+                              setLicense(value);
+                            }}
                             className={validationErrors.license ? 'border-destructive focus-visible:ring-destructive' : ''}
-                            maxLength={50}
+                            maxLength={8}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                           />
                           <AnimatePresence>
                             {validationErrors.license && (
@@ -938,6 +946,12 @@ export default function Onboarding() {
                               </motion.p>
                             )}
                           </AnimatePresence>
+                          
+                          {/* Verification Status Indicator */}
+                          <CedulaVerificationStatus 
+                            status={cedulaStatus} 
+                            cedula={license.trim()}
+                          />
                         </motion.div>
                       )}
 
