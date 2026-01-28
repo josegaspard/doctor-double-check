@@ -159,6 +159,13 @@ function AvailabilityCard({
                 Notificaciones enviadas
               </div>
             )}
+
+            {availability.reminderSent && (
+              <div className="flex items-center gap-1 mt-1 text-xs text-blue-600">
+                <Bell className="h-3 w-3" />
+                Recordatorio automático enviado
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
