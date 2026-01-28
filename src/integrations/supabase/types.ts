@@ -261,6 +261,7 @@ export type Database = {
           duration_minutes: number
           id: string
           notifications_sent: boolean
+          reminder_sent: boolean
           scheduled_at: string
           status: Database["public"]["Enums"]["availability_status"]
           title: string
@@ -274,6 +275,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           notifications_sent?: boolean
+          reminder_sent?: boolean
           scheduled_at: string
           status?: Database["public"]["Enums"]["availability_status"]
           title: string
@@ -287,6 +289,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           notifications_sent?: boolean
+          reminder_sent?: boolean
           scheduled_at?: string
           status?: Database["public"]["Enums"]["availability_status"]
           title?: string

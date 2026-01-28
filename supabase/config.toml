@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.send-push-notification]
 verify_jwt = false
+
+[functions.send-availability-reminders]
+verify_jwt = false
