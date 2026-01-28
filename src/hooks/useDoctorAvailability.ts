@@ -16,6 +16,7 @@ export interface DoctorAvailability {
   type: AvailabilityType;
   status: AvailabilityStatus;
   notificationsSent: boolean;
+  reminderSent: boolean;
   createdAt: Date;
 }
 
@@ -55,6 +56,7 @@ export function useDoctorAvailability() {
           type: a.type as AvailabilityType,
           status: a.status as AvailabilityStatus,
           notificationsSent: a.notifications_sent,
+          reminderSent: (a as any).reminder_sent ?? false,
           createdAt: new Date(a.created_at),
         }))
       );
@@ -80,6 +82,7 @@ export function useDoctorAvailability() {
             type: a.type as AvailabilityType,
             status: a.status as AvailabilityStatus,
             notificationsSent: a.notifications_sent,
+            reminderSent: (a as any).reminder_sent ?? false,
             createdAt: new Date(a.created_at),
           }))
         );
