@@ -11,6 +11,7 @@ import { ArrowLeft, Globe, Bell, Shield, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
+import { PushNotificationToggle } from '@/components/notifications/PushNotificationToggle';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -104,6 +105,11 @@ export default function Settings() {
                   onCheckedChange={(checked) => updatePreferences({ pushNotifications: checked })}
                 />
               </div>
+
+              <Separator />
+
+              {/* Push Notification Toggle - Browser-level */}
+              <PushNotificationToggle />
 
               <Separator />
 

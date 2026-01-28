@@ -202,14 +202,25 @@ export default function DoctorGoLive() {
       setRoomData(response.data.room);
       setIsLive(true);
 
-      // 4. Notify subscribers
+      // 4. Notify subscribers (in-app + push)
       try {
+        // In-app notifications
         await supabase.rpc('notify_subscribers', {
           p_doctor_id: user.id,
           p_notification_type: 'doctor_live',
           p_title: '¡En vivo ahora!',
           p_message: `${user.name || 'Un doctor que sigues'} está transmitiendo: ${title}`,
           p_data: { liveId: live.id },
+        });
+
+        // Push notifications
+        await supabase.functions.invoke('send-push-notification', {
+          body: {
+            doctorId: user.id,
+            liveId: live.id,
+            title: '¡En vivo ahora!',
+            message: `${user.name || 'Un doctor que sigues'} está transmitiendo: ${title}`,
+          },
         });
       } catch (notifyError) {
         console.warn('Failed to notify subscribers:', notifyError);
