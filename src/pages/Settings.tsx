@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Globe, Bell, Shield, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Globe, Bell, Shield, CheckCircle, Mail } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -64,23 +64,23 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* Notification Settings */}
+          {/* Email Notification Settings */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                {t('settings.notifications')}
+                <Mail className="h-5 w-5" />
+                Notificaciones por Email
               </CardTitle>
               <CardDescription>
-                Configura cómo quieres recibir notificaciones
+                Configura qué emails deseas recibir
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="email-notifications" className="flex flex-col gap-1">
-                  <span>{t('settings.emailNotifications')}</span>
+                  <span>Activar emails</span>
                   <span className="text-xs text-muted-foreground font-normal">
-                    Recibe notificaciones por correo electrónico
+                    Interruptor maestro para todas las notificaciones por email
                   </span>
                 </Label>
                 <Switch
@@ -90,8 +90,78 @@ export default function Settings() {
                 />
               </div>
 
-              <Separator />
+              {preferences?.emailNotifications && (
+                <>
+                  <Separator />
+                  <h4 className="font-medium text-sm text-muted-foreground">Tipos de email</h4>
 
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="email-live" className="flex items-center gap-2">
+                      <span className="text-destructive">🔴</span>
+                      <span className="flex flex-col">
+                        <span>Lives en vivo</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          Cuando un doctor que sigues inicie un live
+                        </span>
+                      </span>
+                    </Label>
+                    <Switch
+                      id="email-live"
+                      checked={preferences?.notifyDoctorLive ?? true}
+                      onCheckedChange={(checked) => updatePreferences({ notifyDoctorLive: checked })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="email-content" className="flex items-center gap-2">
+                      <span>📄</span>
+                      <span className="flex flex-col">
+                        <span>Nuevo contenido</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          Videos, PDFs y materiales de doctores que sigues
+                        </span>
+                      </span>
+                    </Label>
+                    <Switch
+                      id="email-content"
+                      checked={preferences?.notifyNewContent ?? true}
+                      onCheckedChange={(checked) => updatePreferences({ notifyNewContent: checked })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="email-chat" className="flex items-center gap-2">
+                      <span>💬</span>
+                      <span className="flex flex-col">
+                        <span>Mensajes de chat</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          Respuestas de doctores en consultas
+                        </span>
+                      </span>
+                    </Label>
+                    <Switch
+                      id="email-chat"
+                      checked={preferences?.notifyChatMessages ?? true}
+                      onCheckedChange={(checked) => updatePreferences({ notifyChatMessages: checked })}
+                    />
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Push & In-App Notification Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                {t('settings.notifications')}
+              </CardTitle>
+              <CardDescription>
+                Configura notificaciones push y dentro de la app
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="push-notifications" className="flex flex-col gap-1">
                   <span>{t('settings.pushNotifications')}</span>
@@ -124,46 +194,6 @@ export default function Settings() {
                   id="inapp-notifications"
                   checked={preferences?.inAppNotifications ?? true}
                   onCheckedChange={(checked) => updatePreferences({ inAppNotifications: checked })}
-                />
-              </div>
-
-              <Separator />
-
-              <h4 className="font-medium pt-2">Tipos de notificación</h4>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="notify-live" className="flex items-center gap-2">
-                  <span className="text-red-500">🔴</span>
-                  Cuando un doctor inicie un Live
-                </Label>
-                <Switch
-                  id="notify-live"
-                  checked={preferences?.notifyDoctorLive ?? true}
-                  onCheckedChange={(checked) => updatePreferences({ notifyDoctorLive: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="notify-content" className="flex items-center gap-2">
-                  <span>📄</span>
-                  Nuevo contenido de doctores que sigues
-                </Label>
-                <Switch
-                  id="notify-content"
-                  checked={preferences?.notifyNewContent ?? true}
-                  onCheckedChange={(checked) => updatePreferences({ notifyNewContent: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="notify-chat" className="flex items-center gap-2">
-                  <span>💬</span>
-                  Mensajes de chat
-                </Label>
-                <Switch
-                  id="notify-chat"
-                  checked={preferences?.notifyChatMessages ?? true}
-                  onCheckedChange={(checked) => updatePreferences({ notifyChatMessages: checked })}
                 />
               </div>
             </CardContent>
