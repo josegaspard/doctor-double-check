@@ -75,8 +75,42 @@ export default function DoctorUpload() {
   const [uploadedContent, setUploadedContent] = useState<UploadedContent[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Load existing content from Supabase
+  React.useEffect(() => {
+    const loadContent = async () => {
+      if (!user?.id) return;
+
+      const { data } = await supabase
+        .from('doctor_content')
+        .select('*')
+        .eq('creator_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setUploadedContent(data.map(c => ({
+          id: c.id,
+          type: c.type as 'video' | 'pdf' | 'image',
+          title: c.title,
+          description: c.description || '',
+          category: c.category || '',
+          isPublic: c.is_public,
+          audienceType: c.audience_type as ContentAudience,
+          uploadedAt: new Date(c.created_at),
+        })));
+      }
+    };
+
+    loadContent();
+  }, [user?.id]);
+
+  // Redirect non-doctors
+  React.useEffect(() => {
+    if (role !== 'doctor') {
+      navigate('/lives');
+    }
+  }, [role, navigate]);
+
   if (role !== 'doctor') {
-    navigate('/lives');
     return null;
   }
 
@@ -167,6 +201,7 @@ export default function DoctorUpload() {
       
       // Notify subscribers if content is public
       if (isPublic) {
+        // Send in-app notifications
         await supabase.rpc('notify_subscribers', {
           p_doctor_id: user.id,
           p_notification_type: 'new_content',
@@ -174,6 +209,18 @@ export default function DoctorUpload() {
           p_message: `${user.name} ha subido nuevo contenido en ${category}`,
           p_data: { content_id: contentData.id, type: getFileType(selectedFile) },
         });
+
+        // Send email notifications to subscribers
+        supabase.functions.invoke('send-content-notification-email', {
+          body: {
+            doctorId: user.id,
+            doctorName: user.name,
+            contentId: contentData.id,
+            contentTitle: title.trim(),
+            contentType: getFileType(selectedFile),
+            category,
+          },
+        }).catch(err => console.error('Error sending email notifications:', err));
       }
 
       toast({
@@ -209,34 +256,6 @@ export default function DoctorUpload() {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
-
-  // Load existing content from Supabase
-  React.useEffect(() => {
-    const loadContent = async () => {
-      if (!user?.id) return;
-
-      const { data } = await supabase
-        .from('doctor_content')
-        .select('*')
-        .eq('creator_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (data) {
-        setUploadedContent(data.map(c => ({
-          id: c.id,
-          type: c.type as 'video' | 'pdf' | 'image',
-          title: c.title,
-          description: c.description || '',
-          category: c.category || '',
-          isPublic: c.is_public,
-          audienceType: c.audience_type as ContentAudience,
-          uploadedAt: new Date(c.created_at),
-        })));
-      }
-    };
-
-    loadContent();
-  }, [user?.id]);
 
   return (
     <MainLayout>
