@@ -25,6 +25,7 @@ import {
   Percent,
   FileText,
   Play,
+  ArrowLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -145,6 +146,15 @@ export default function AdminPayoutSettings() {
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-2xl">
         <div className="mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/admin')}
+            className="mb-4 -ml-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            {language === 'es' ? 'Volver al panel' : 'Back to panel'}
+          </Button>
           <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
             <Settings className="w-6 h-6" />
             {language === 'es' ? 'Configuración de Pagos' : 'Payout Settings'}
