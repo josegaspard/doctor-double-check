@@ -26,3 +26,18 @@ verify_jwt = false
 
 [functions.send-content-notification-email]
 verify_jwt = false
+
+[functions.verify-cedula-sep]
+verify_jwt = false
+
+[functions.claim-cedula]
+verify_jwt = false
+
+[functions.stripe-connect-onboarding]
+verify_jwt = false
+
+[functions.check-stripe-account-status]
+verify_jwt = false
+
+[functions.process-doctor-payouts]
+verify_jwt = false
