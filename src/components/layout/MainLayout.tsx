@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
+import { useSocialLinks } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -36,6 +37,7 @@ import {
   Instagram,
   Linkedin,
   Twitter,
+  Youtube,
   Calendar,
 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -69,6 +71,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const { user, isAuthenticated, logout, role } = useAuth();
   const { balance } = useWallet();
   const { t } = useLanguage();
+  const { socialLinks } = useSocialLinks();
   
   // Enable realtime notifications
   useNotificationsRealtime();
@@ -251,18 +254,31 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               
               {/* Social Media Icons */}
               <div className="flex items-center gap-4">
-                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                  <Facebook className="w-5 h-5" />
-                </a>
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                  <Instagram className="w-5 h-5" />
-                </a>
-                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                  <Twitter className="w-5 h-5" />
-                </a>
-                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                  <Linkedin className="w-5 h-5" />
-                </a>
+                {socialLinks.facebook && (
+                  <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <Facebook className="w-5 h-5" />
+                  </a>
+                )}
+                {socialLinks.instagram && (
+                  <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <Instagram className="w-5 h-5" />
+                  </a>
+                )}
+                {socialLinks.twitter && (
+                  <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <Twitter className="w-5 h-5" />
+                  </a>
+                )}
+                {socialLinks.linkedin && (
+                  <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <Linkedin className="w-5 h-5" />
+                  </a>
+                )}
+                {socialLinks.youtube && (
+                  <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <Youtube className="w-5 h-5" />
+                  </a>
+                )}
               </div>
             </div>
             
