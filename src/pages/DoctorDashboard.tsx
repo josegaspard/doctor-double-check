@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLives } from '@/contexts/LivesContext';
 import { useVault } from '@/contexts/VaultContext';
+import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,7 +70,7 @@ export default function DoctorDashboard() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { t } = useLanguage();
-  const { getLivesByDoctor, getRecordingsByDoctor, createLive } = useLives();
+  const { getLivesByDoctor, createLive } = useLives();
   const { getAccessibleFiles } = useVault();
   const { toast } = useToast();
 
@@ -80,6 +81,25 @@ export default function DoctorDashboard() {
     specialty: '',
   });
   const [isStartingLive, setIsStartingLive] = useState(false);
+  const [recordingsCount, setRecordingsCount] = useState(0);
+
+  // Fetch recordings count directly from database
+  useEffect(() => {
+    const fetchRecordingsCount = async () => {
+      if (!user?.id) return;
+      
+      const { count, error } = await supabase
+        .from('recordings')
+        .select('*', { count: 'exact', head: true })
+        .eq('doctor_id', user.id);
+
+      if (!error && count !== null) {
+        setRecordingsCount(count);
+      }
+    };
+
+    fetchRecordingsCount();
+  }, [user?.id]);
 
   if (role !== 'doctor') {
     navigate('/lives');
@@ -88,7 +108,6 @@ export default function DoctorDashboard() {
 
   const doctorProfile = user?.doctorProfile;
   const myLives = getLivesByDoctor(user?.id || '');
-  const myRecordings = getRecordingsByDoctor(user?.id || '');
   const accessibleVaultFiles = getAccessibleFiles(user?.id || '');
 
   const isApproved = doctorProfile?.status === 'approved';
@@ -136,39 +155,43 @@ export default function DoctorDashboard() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">
+            <h1 className="font-heading text-3xl font-bold text-foreground">
               {t('dashboard.title')}
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-2 text-lg">
               {t('dashboard.welcome')}, {user?.name}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {isApproved && (
               <>
-                <Button onClick={() => navigate('/doctor/go-live')} className="gap-2 bg-red-600 hover:bg-red-700">
-                  <Radio className="w-4 h-4" />
+                <Button 
+                  onClick={() => navigate('/doctor/go-live')} 
+                  className="gap-2 bg-red-600 hover:bg-red-700 h-11 px-6"
+                  size="lg"
+                >
+                  <Radio className="w-5 h-5" />
                   {t('dashboard.startLive')}
                 </Button>
-                <Badge variant="verified" className="gap-1">
-                  <CheckCircle className="w-3 h-3" />
+                <Badge variant="verified" className="gap-1.5 px-3 py-1.5 text-sm">
+                  <CheckCircle className="w-4 h-4" />
                   {t('dashboard.verified')}
                 </Badge>
               </>
             )}
             {isPending && (
-              <Badge variant="warning" className="gap-1">
-                <Clock className="w-3 h-3" />
+              <Badge variant="warning" className="gap-1.5 px-3 py-1.5 text-sm">
+                <Clock className="w-4 h-4" />
                 {t('doctorStatus.pending')}
               </Badge>
             )}
             {isRejected && (
-              <Badge variant="destructive" className="gap-1">
-                <AlertTriangle className="w-3 h-3" />
+              <Badge variant="destructive" className="gap-1.5 px-3 py-1.5 text-sm">
+                <AlertTriangle className="w-4 h-4" />
                 {t('doctorStatus.rejected')}
               </Badge>
             )}
@@ -294,167 +317,166 @@ export default function DoctorDashboard() {
         )}
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="mb-6">
-          <TabsList className="mb-4">
-            <TabsTrigger value="overview">General</TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-1">
+        <Tabs defaultValue="overview" className="mb-8">
+          <TabsList className="mb-6">
+            <TabsTrigger value="overview" className="px-6">General</TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2 px-6">
               <BarChart3 className="w-4 h-4" />
               Analytics
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview">
+          <TabsContent value="overview" className="space-y-8">
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-live/10 flex items-center justify-center">
-                  <Radio className="w-5 h-5 text-live" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{myLives.filter(l => l.status === 'live').length}</p>
-                  <p className="text-xs text-muted-foreground">Lives Activos</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => navigate('/doctor/recordings')}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-premium/10 flex items-center justify-center">
-                  <PlayCircle className="w-5 h-5 text-premium" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{myRecordings.length}</p>
-                  <p className="text-xs text-muted-foreground">Grabaciones</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Folder className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{accessibleVaultFiles.length}</p>
-                  <p className="text-xs text-muted-foreground">Acceso Vault</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                  <Star className="w-5 h-5 text-success" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{doctorProfile?.rating || 0}</p>
-                  <p className="text-xs text-muted-foreground">Rating</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <Card className={!isApproved ? 'opacity-50 pointer-events-none' : 'hover:shadow-md transition-shadow cursor-pointer'}>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-live/10 flex items-center justify-center">
-                  <Radio className="w-6 h-6 text-live" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground mb-1">Iniciar Live</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Comienza una transmisión en vivo para tus pacientes
-                  </p>
-                  <Button 
-                    size="sm" 
-                    disabled={!isApproved}
-                    onClick={() => isApproved && navigate('/doctor/go-live')}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    {isApproved ? 'Iniciar' : 'No disponible'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className={!isApproved ? 'opacity-50 pointer-events-none' : 'hover:shadow-md transition-shadow cursor-pointer'}>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Upload className="w-6 h-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground mb-1">Subir Contenido</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Sube videos, PDFs o imágenes educativas
-                  </p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" disabled={!isApproved} onClick={() => navigate('/doctor/upload')}>
-                      {isApproved ? 'Subir' : 'No disponible'}
-                    </Button>
-                    <Button size="sm" variant="ghost" disabled={!isApproved} onClick={() => navigate('/doctor/content')}>
-                      Ver biblioteca
-                    </Button>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-live/10 flex items-center justify-center">
+                      <Radio className="w-7 h-7 text-live" />
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-foreground">{myLives.filter(l => l.status === 'live').length}</p>
+                      <p className="text-sm text-muted-foreground mt-1">Lives Activos</p>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/chat')}>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-info/10 flex items-center justify-center">
-                  <MessageSquare className="w-6 h-6 text-info" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground mb-1">Consultas</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Revisa tus chats con pacientes
-                  </p>
-                  <Button size="sm" variant="outline">
-                    Ver Chats
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              <Card 
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => navigate('/doctor/recordings')}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-premium/10 flex items-center justify-center">
+                      <PlayCircle className="w-7 h-7 text-premium" />
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-foreground">{recordingsCount}</p>
+                      <p className="text-sm text-muted-foreground mt-1">Grabaciones</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-        {/* Earnings, Stats and Office Hours Grid */}
-        <div className="grid lg:grid-cols-4 gap-6 mb-6">
-          {/* Earnings Card */}
-          <EarningsCard />
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Folder className="w-7 h-7 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-foreground">{accessibleVaultFiles.length}</p>
+                      <p className="text-sm text-muted-foreground mt-1">Acceso Vault</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Email Stats */}
-          <EmailStatsCard />
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-success/10 flex items-center justify-center">
+                      <Star className="w-7 h-7 text-success" />
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-foreground">{doctorProfile?.rating || 0}</p>
+                      <p className="text-sm text-muted-foreground mt-1">Rating</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Email Trends Chart */}
-          <EmailTrendsChart />
-          
-          {/* Office Hours Config */}
-          <OfficeHoursConfig />
-        </div>
+            {/* Quick Actions */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card className={!isApproved ? 'opacity-50 pointer-events-none' : 'hover:shadow-lg transition-all cursor-pointer border-2 hover:border-live/30'}>
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-5">
+                    <div className="w-16 h-16 rounded-2xl bg-live/10 flex items-center justify-center flex-shrink-0">
+                      <Radio className="w-8 h-8 text-live" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-foreground mb-2">Iniciar Live</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Comienza una transmisión en vivo para tus pacientes
+                      </p>
+                      <Button 
+                        disabled={!isApproved}
+                        onClick={() => isApproved && navigate('/doctor/go-live')}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        {isApproved ? 'Iniciar' : 'No disponible'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-        {/* Email History Section */}
-        <div className="mb-6">
-          <EmailHistoryCard />
-        </div>
+              <Card className={!isApproved ? 'opacity-50 pointer-events-none' : 'hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/30'}>
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-5">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Upload className="w-8 h-8 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-foreground mb-2">Subir Contenido</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Sube videos, PDFs o imágenes educativas
+                      </p>
+                      <div className="flex gap-3">
+                        <Button variant="outline" disabled={!isApproved} onClick={() => navigate('/doctor/upload')}>
+                          {isApproved ? 'Subir' : 'No disponible'}
+                        </Button>
+                        <Button variant="ghost" disabled={!isApproved} onClick={() => navigate('/doctor/content')}>
+                          Ver biblioteca
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-info/30" onClick={() => navigate('/chat')}>
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-5">
+                    <div className="w-16 h-16 rounded-2xl bg-info/10 flex items-center justify-center flex-shrink-0">
+                      <MessageSquare className="w-8 h-8 text-info" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-foreground mb-2">Consultas</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Revisa tus chats con pacientes
+                      </p>
+                      <Button variant="outline">
+                        Ver Chats
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Earnings, Stats and Office Hours Grid */}
+            <div className="grid lg:grid-cols-4 gap-6">
+              {/* Earnings Card */}
+              <EarningsCard />
+
+              {/* Email Stats */}
+              <EmailStatsCard />
+
+              {/* Email Trends Chart */}
+              <EmailTrendsChart />
+              
+              {/* Office Hours Config */}
+              <OfficeHoursConfig />
+            </div>
+
+            {/* Email History Section */}
+            <div>
+              <EmailHistoryCard />
+            </div>
 
         {/* Vault Access Section */}
         {accessibleVaultFiles.length > 0 && (
