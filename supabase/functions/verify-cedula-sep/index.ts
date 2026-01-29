@@ -6,24 +6,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface SEPResponse {
-  responseHeader: {
-    status: number;
+interface RapidAPIResponse {
+  success: boolean;
+  data?: {
+    cedula: string;
+    nombre: string;
+    paterno: string;
+    materno: string;
+    titulo: string;
+    institucion: string;
+    anioRegistro: number;
+    tipo: string;
   };
-  response: {
-    numFound: number;
-    docs: Array<{
-      nombre: string;
-      paterno: string;
-      materno: string;
-      numCedula: string;
-      titulo: string;
-      institucion: string;
-      anioRegistro: number;
-      genero: string;
-      tipo: string;
-    }>;
-  };
+  message?: string;
 }
 
 serve(async (req) => {
@@ -44,40 +39,44 @@ serve(async (req) => {
       throw new Error("Formato de cédula inválido. Debe contener 7-8 dígitos");
     }
 
-    // Query SEP API
-    const sepUrl = `http://search.sep.gob.mx/solr/cedulasCore/select?fl=%2A%2Cscore&q=${encodeURIComponent(cedula)}&start=0&rows=10&facet=true&indent=on&wt=json`;
+    const rapidApiKey = Deno.env.get("RAPIDAPI_KEY");
+    if (!rapidApiKey) {
+      throw new Error("RAPIDAPI_KEY no configurada");
+    }
+
+    // Query RapidAPI endpoint
+    const apiUrl = `https://cedulas-profesionales-sep.p.rapidapi.com/api/v1/sep/cedula?cedula=${encodeURIComponent(cedula)}`;
     
-    console.log("Querying SEP API:", sepUrl);
+    console.log("Querying RapidAPI:", apiUrl);
     
-    const sepResponse = await fetch(sepUrl, {
+    const apiResponse = await fetch(apiUrl, {
+      method: "GET",
       headers: {
-        "Accept": "application/json",
+        "x-rapidapi-host": "cedulas-profesionales-sep.p.rapidapi.com",
+        "x-rapidapi-key": rapidApiKey,
       },
     });
 
-    if (!sepResponse.ok) {
-      console.error("SEP API error:", sepResponse.status);
-      throw new Error("Error al consultar el sistema SEP");
+    if (!apiResponse.ok) {
+      console.error("RapidAPI error:", apiResponse.status, await apiResponse.text());
+      throw new Error("Error al consultar el servicio de verificación");
     }
 
-    const sepData: SEPResponse = await sepResponse.json();
-    console.log("SEP Response:", JSON.stringify(sepData, null, 2));
+    const apiData: RapidAPIResponse = await apiResponse.json();
+    console.log("RapidAPI Response:", JSON.stringify(apiData, null, 2));
 
-    // Find exact match by cedula number
-    const exactMatch = sepData.response.docs.find(
-      (doc) => doc.numCedula === cedula
-    );
-
-    if (!exactMatch) {
+    if (!apiData.success || !apiData.data) {
       return new Response(
         JSON.stringify({
           success: false,
           verified: false,
-          error: "Cédula no encontrada en el registro de la SEP",
+          error: apiData.message || "Cédula no encontrada en el registro de la SEP",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const matchedData = apiData.data;
 
     // Initialize Supabase client
     const supabaseClient = createClient(
@@ -109,15 +108,15 @@ serve(async (req) => {
     const verificationData = {
       user_id: userId,
       cedula_number: cedula,
-      nombre: exactMatch.nombre,
-      paterno: exactMatch.paterno,
-      materno: exactMatch.materno,
-      titulo: exactMatch.titulo,
-      institucion: exactMatch.institucion,
-      anio_registro: exactMatch.anioRegistro,
+      nombre: matchedData.nombre,
+      paterno: matchedData.paterno,
+      materno: matchedData.materno,
+      titulo: matchedData.titulo,
+      institucion: matchedData.institucion,
+      anio_registro: matchedData.anioRegistro,
       is_verified: true,
       verified_at: new Date().toISOString(),
-      raw_response: exactMatch,
+      raw_response: matchedData,
     };
 
     // Check if user already has a verification for this cedula
@@ -159,12 +158,12 @@ serve(async (req) => {
         verified: true,
         verificationId,
         data: {
-          nombre: exactMatch.nombre,
-          paterno: exactMatch.paterno,
-          materno: exactMatch.materno,
-          titulo: exactMatch.titulo,
-          institucion: exactMatch.institucion,
-          anioRegistro: exactMatch.anioRegistro,
+          nombre: matchedData.nombre,
+          paterno: matchedData.paterno,
+          materno: matchedData.materno,
+          titulo: matchedData.titulo,
+          institucion: matchedData.institucion,
+          anioRegistro: matchedData.anioRegistro,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
