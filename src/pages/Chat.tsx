@@ -277,7 +277,21 @@ export default function Chat() {
     );
   };
 
-  // Block unauthorized roles
+  // Show loading while auth is initializing
+  if (role === undefined || role === null) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12">
+          <Card className="max-w-lg mx-auto text-center p-8">
+            <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Cargando...</p>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Block unauthorized roles (visitors, residents for patient chat)
   if (role !== 'patient' && role !== 'doctor') {
     return (
       <MainLayout>
@@ -290,10 +304,12 @@ export default function Chat() {
               Chat 1:1
             </h2>
             <p className="text-muted-foreground mb-6">
-              El chat está disponible solo para pacientes y médicos registrados.
+              {role === 'visitor' 
+                ? 'Inicia sesión para acceder al chat con médicos.'
+                : 'El chat está disponible solo para pacientes y médicos.'}
             </p>
-            <Button onClick={() => navigate('/login')}>
-              Iniciar Sesión
+            <Button onClick={() => navigate(role === 'visitor' ? '/login' : '/lives')}>
+              {role === 'visitor' ? 'Iniciar Sesión' : 'Ir a Lives'}
             </Button>
           </Card>
         </div>
