@@ -65,7 +65,7 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(function MainLayout({ children }, ref) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout, role } = useAuth();
@@ -101,7 +101,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div ref={ref} className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container mx-auto px-4">
@@ -309,4 +309,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </footer>
     </div>
   );
-}
+});
+
+MainLayout.displayName = 'MainLayout';
+export default MainLayout;

@@ -112,7 +112,7 @@ interface Stats {
   totalResidents: number;
 }
 
-export default function AdminDashboard() {
+const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDashboard(_props, ref) {
   const navigate = useNavigate();
   const { role } = useAuth();
   const { language } = useLanguage();
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div ref={ref} className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -366,4 +366,7 @@ export default function AdminDashboard() {
       </div>
     </MainLayout>
   );
-}
+});
+
+AdminDashboard.displayName = 'AdminDashboard';
+export default AdminDashboard;

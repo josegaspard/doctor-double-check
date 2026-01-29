@@ -1739,6 +1739,14 @@ export type Database = {
         Args: { p_file_id: string; p_user_id: string }
         Returns: boolean
       }
+      user_is_clinical_session_participant: {
+        Args: { p_session_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      user_is_invitation_organizer: {
+        Args: { p_invitation_session_id: string; p_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "visitor" | "patient" | "doctor" | "resident" | "admin"
