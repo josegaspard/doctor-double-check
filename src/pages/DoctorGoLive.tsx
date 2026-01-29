@@ -175,12 +175,16 @@ export default function DoctorGoLive() {
 
       if (liveError) throw liveError;
 
-      // 2. Create Daily.co room
+      // 2. Create Daily.co room with recording option
       const { data: session } = await supabase.auth.getSession();
       if (!session.session?.access_token) throw new Error('No authenticated');
 
       const response = await supabase.functions.invoke('create-daily-room', {
-        body: { liveId: live.id, title: title.trim() },
+        body: { 
+          liveId: live.id, 
+          title: title.trim(),
+          enableRecording: enableRecording,
+        },
       });
 
       if (response.error || !response.data?.success) {
@@ -261,10 +265,14 @@ export default function DoctorGoLive() {
         })
         .eq('id', liveData.id);
 
-      // 2. End Daily.co room
+      // 2. End Daily.co room and save recording
       try {
         await supabase.functions.invoke('end-daily-room', {
-          body: { liveId: liveData.id, roomName: roomData?.name },
+          body: { 
+            liveId: liveData.id, 
+            roomName: roomData?.name,
+            saveRecording: enableRecording,
+          },
         });
       } catch (error) {
         console.warn('Error ending Daily room:', error);
