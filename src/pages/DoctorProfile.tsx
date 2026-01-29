@@ -5,10 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio } from 'lucide-react';
+import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2 } from 'lucide-react';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { supabase } from '@/integrations/supabase/client';
-
+import { useAuth } from '@/contexts/AuthContext';
+import { useChat } from '@/contexts/ChatContext';
+import { toast } from 'sonner';
 interface DoctorData {
   id: string;
   visibleId: string;
@@ -32,9 +34,12 @@ interface LiveData {
 export default function DoctorProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, role } = useAuth();
+  const { createSession } = useChat();
   const [doctor, setDoctor] = useState<DoctorData | null>(null);
   const [activeLive, setActiveLive] = useState<LiveData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
   useEffect(() => {
     const fetchDoctor = async () => {
@@ -117,6 +122,35 @@ export default function DoctorProfile() {
       supabase.removeChannel(channel);
     };
   }, [id]);
+
+  // Handle starting a consultation with this doctor
+  const handleStartConsultation = async () => {
+    if (!user?.id || !doctor) {
+      navigate('/login');
+      return;
+    }
+
+    if (role !== 'patient') {
+      toast.error('Solo los pacientes pueden iniciar consultas');
+      return;
+    }
+
+    setIsStartingChat(true);
+    try {
+      const result = await createSession(doctor.id, 'doctor', false);
+      
+      if (result.success && result.session) {
+        navigate('/chat');
+        toast.success(`Chat iniciado con ${doctor.name}`);
+      } else {
+        toast.error(result.error || 'Error al iniciar consulta');
+      }
+    } catch (error) {
+      toast.error('Error al iniciar consulta');
+    } finally {
+      setIsStartingChat(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -257,9 +291,17 @@ export default function DoctorProfile() {
 
                 <div className="flex flex-wrap gap-3">
                   <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} />
-                  <Button className="gap-2" onClick={() => navigate('/chat')}>
-                    <MessageSquare className="w-4 h-4" />
-                    Iniciar Consulta
+                  <Button 
+                    className="gap-2" 
+                    onClick={handleStartConsultation}
+                    disabled={isStartingChat}
+                  >
+                    {isStartingChat ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <MessageSquare className="w-4 h-4" />
+                    )}
+                    {isStartingChat ? 'Iniciando...' : 'Iniciar Consulta'}
                   </Button>
                   <Button variant="outline" className="gap-2" onClick={() => navigate('/lives')}>
                     <Video className="w-4 h-4" />
