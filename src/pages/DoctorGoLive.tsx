@@ -256,33 +256,49 @@ export default function DoctorGoLive() {
     setIsEnding(true);
 
     try {
-      // 1. Update live status
-      await supabase
-        .from('lives')
-        .update({
-          status: enableRecording ? 'processing_recording' : 'ended',
-          ended_at: new Date().toISOString(),
-        })
-        .eq('id', liveData.id);
+      // Call edge function to end the room and save recording
+      // The edge function handles EVERYTHING: updating status, creating recording, etc.
+      const { data, error } = await supabase.functions.invoke('end-daily-room', {
+        body: { 
+          liveId: liveData.id, 
+          roomName: roomData?.name,
+          saveRecording: enableRecording,
+        },
+      });
 
-      // 2. End Daily.co room and save recording
-      try {
-        await supabase.functions.invoke('end-daily-room', {
-          body: { 
-            liveId: liveData.id, 
-            roomName: roomData?.name,
-            saveRecording: enableRecording,
-          },
-        });
-      } catch (error) {
-        console.warn('Error ending Daily room:', error);
+      if (error) {
+        console.error('Error from end-daily-room:', error);
+        // Fallback: manually update the live status if edge function fails
+        await supabase
+          .from('lives')
+          .update({
+            status: 'ended',
+            ended_at: new Date().toISOString(),
+          })
+          .eq('id', liveData.id);
       }
 
-      toast.success('Transmisión finalizada');
-      navigate('/doctor/dashboard');
+      if (enableRecording && data?.recordingId) {
+        toast.success('¡Transmisión finalizada! La grabación está disponible.');
+        navigate('/doctor/recordings');
+      } else {
+        toast.success('Transmisión finalizada');
+        navigate('/doctor/dashboard');
+      }
     } catch (error: any) {
       console.error('Error ending live:', error);
       toast.error('Error al finalizar la transmisión');
+      
+      // Ensure we clean up the state even on error
+      try {
+        await supabase
+          .from('lives')
+          .update({
+            status: 'ended',
+            ended_at: new Date().toISOString(),
+          })
+          .eq('id', liveData.id);
+      } catch {}
     } finally {
       setIsEnding(false);
       setShowEndDialog(false);

@@ -403,9 +403,14 @@ export default function DoctorDashboard() {
                   <p className="text-sm text-muted-foreground mb-3">
                     Sube videos, PDFs o imágenes educativas
                   </p>
-                  <Button size="sm" variant="outline" disabled={!isApproved} onClick={() => navigate('/doctor/upload')}>
-                    {isApproved ? 'Subir' : 'No disponible'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" disabled={!isApproved} onClick={() => navigate('/doctor/upload')}>
+                      {isApproved ? 'Subir' : 'No disponible'}
+                    </Button>
+                    <Button size="sm" variant="ghost" disabled={!isApproved} onClick={() => navigate('/doctor/content')}>
+                      Ver biblioteca
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>

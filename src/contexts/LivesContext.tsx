@@ -265,6 +265,40 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     };
   }, []); // Empty dependency array - only run on mount
 
+  // Auto-cleanup stuck lives for the current user (doctor only)
+  useEffect(() => {
+    const cleanupStuckLives = async () => {
+      if (!user?.id || user.role !== 'doctor') return;
+      
+      try {
+        // Find lives that are stuck in 'live' status but have no daily room or are older than 6 hours
+        const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+        
+        const { data: stuckLives, error } = await supabase
+          .from('lives')
+          .select('id')
+          .eq('doctor_id', user.id)
+          .eq('status', 'live')
+          .lt('started_at', sixHoursAgo);
+        
+        if (error || !stuckLives?.length) return;
+        
+        // Clean up stuck lives
+        await supabase
+          .from('lives')
+          .update({ status: 'ended', ended_at: new Date().toISOString() })
+          .in('id', stuckLives.map(l => l.id));
+        
+        console.log(`Cleaned up ${stuckLives.length} stuck lives`);
+        fetchLives(true);
+      } catch (error) {
+        console.error('Error cleaning up stuck lives:', error);
+      }
+    };
+    
+    cleanupStuckLives();
+  }, [user?.id, user?.role]);
+
   // Realtime subscription with intelligent batching
   useEffect(() => {
     // Use a single channel with batched updates
@@ -321,6 +355,14 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         () => {
           // Only refresh liked lives for the current user, not full fetch
           fetchLikedLives();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'recordings' },
+        () => {
+          // Refresh recordings when there are changes
+          fetchRecordings();
         }
       )
       .subscribe();
