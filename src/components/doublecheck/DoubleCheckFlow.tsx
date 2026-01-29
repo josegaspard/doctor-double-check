@@ -63,6 +63,17 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
     setIsProcessing(true);
 
     try {
+      // 0. Verify doctor is approved
+      const { data: doctorProfile, error: doctorError } = await supabase
+        .from('doctor_profiles_public')
+        .select('status')
+        .eq('user_id', doctor.userId)
+        .single();
+
+      if (doctorError || doctorProfile?.status !== 'approved') {
+        throw new Error('El doctor no está disponible para Double Check');
+      }
+
       // 1. Process wallet purchase
       const { data: purchaseResult, error: purchaseError } = await supabase.rpc(
         'process_wallet_purchase',
@@ -74,7 +85,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       );
 
       if (purchaseError) throw purchaseError;
-      const result = purchaseResult as { success: boolean; error?: string } | null;
+      const result = purchaseResult as { success: boolean; error?: string; amount_charged?: number } | null;
       if (!result?.success) {
         throw new Error(result?.error || 'Error en el pago');
       }
@@ -104,6 +115,64 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       if (!chatResult.success) {
         throw new Error(chatResult.error || 'Error al crear sesión de chat');
       }
+
+      // 5. *** CRITICAL FIX: Create double_check entitlement ***
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+      
+      await supabase
+        .from('entitlements')
+        .insert({
+          user_id: user.id,
+          type: 'double_check',
+          is_active: true,
+          expires_at: expiresAt.toISOString(),
+        });
+
+      // 6. *** CRITICAL FIX: Credit doctor earnings ***
+      const amountCharged = result.amount_charged || doctor.consultationFee;
+      const { data: currentDoctorProfile } = await supabase
+        .from('doctor_profiles')
+        .select('pending_earnings')
+        .eq('user_id', doctor.userId)
+        .single();
+
+      if (currentDoctorProfile) {
+        const newPending = (currentDoctorProfile.pending_earnings || 0) + amountCharged;
+        await supabase
+          .from('doctor_profiles')
+          .update({ pending_earnings: newPending })
+          .eq('user_id', doctor.userId);
+
+        // Create earning transaction for doctor
+        await supabase
+          .from('wallet_transactions')
+          .insert({
+            user_id: doctor.userId,
+            type: 'earning',
+            amount: amountCharged,
+            description: `Ganancia por Double Check`,
+            status: 'paid',
+            metadata: { source: 'double_check', patient_id: user.id, consultation_id: consultation.id },
+          });
+      }
+
+      // 7. *** CRITICAL FIX: Notify doctor ***
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: doctor.userId,
+          type: 'chat_message',
+          title: '🔄 Nueva solicitud de Double Check',
+          message: `${user.name || 'Un paciente'} ha solicitado una segunda opinión`,
+          data: { 
+            patient_id: user.id, 
+            session_id: chatResult.session?.id,
+            consultation_id: consultation.id,
+            url: '/chat',
+            files_shared: selectedFiles.length
+          },
+        });
 
       toast.success('Double Check iniciado correctamente');
       onClose();

@@ -134,6 +134,20 @@ serve(async (req) => {
           .single();
 
         const currentTotal = currentProfile?.total_earnings || 0;
+
+        // *** CRITICAL FIX: Notify doctor about payout ***
+        await supabaseAdmin.from("notifications").insert({
+          user_id: doctor.user_id,
+          type: "system",
+          title: "💰 Pago procesado",
+          message: `Se ha iniciado una transferencia de $${payoutAmount.toFixed(2)} MXN a tu cuenta bancaria`,
+          data: {
+            amount: payoutAmount,
+            gross_amount: doctor.pending_earnings,
+            commission: doctor.pending_earnings - payoutAmount,
+            transfer_id: transfer.id,
+          },
+        });
         
         await supabaseAdmin
           .from("doctor_profiles")

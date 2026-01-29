@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useSubscriptions } from '@/hooks/useSubscriptions';
 import MainLayout from '@/components/layout/MainLayout';
 import PaywallModal from '@/components/PaywallModal';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,20 +27,47 @@ import {
   Lock,
   CheckCircle,
   Wallet,
+  Crown,
 } from 'lucide-react';
 
 export default function RecordingsGrid() {
   const navigate = useNavigate();
   const { recordings } = useLives();
-  const { user, role, isAuthenticated } = useAuth();
+  const { user, role, isAuthenticated, supabaseUser } = useAuth();
   const { t } = useLanguage();
-  const { balance, canAfford, purchase } = useWallet();
-
+  const { balance, canAfford, purchase, refreshWallet } = useWallet();
+  const { getEffectiveRecordingPrice, hasPremiumTo } = useSubscriptions();
   const [searchQuery, setSearchQuery] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
+
+  // Fetch user's purchases
+  const fetchPurchases = useCallback(async () => {
+    if (!supabaseUser?.id) {
+      setPurchasedIds(new Set());
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('purchases')
+        .select('recording_id')
+        .eq('user_id', supabaseUser.id);
+
+      if (error) throw error;
+
+      setPurchasedIds(new Set(data?.map(p => p.recording_id) || []));
+    } catch (error) {
+      console.error('Error fetching purchases:', error);
+    }
+  }, [supabaseUser?.id]);
+
+  useEffect(() => {
+    fetchPurchases();
+  }, [fetchPurchases]);
 
   // Block visitors completely
   if (!isAuthenticated || role === 'visitor') {
@@ -80,12 +109,11 @@ export default function RecordingsGrid() {
     return matchesSearch && matchesSpecialty;
   });
 
-  // Check if user owns recording - simplified check
+  // Check if user owns recording - uses real purchase data
   const ownsRecording = (recordingId: string): boolean => {
     if (!user) return false;
     if (role === 'admin' || role === 'doctor') return true;
-    // In real implementation, check purchases table
-    return false;
+    return purchasedIds.has(recordingId);
   };
 
   const handleRecordingClick = (recording: Recording) => {
@@ -98,23 +126,38 @@ export default function RecordingsGrid() {
   };
 
   const handlePurchase = async () => {
-    if (!selectedRecording) return;
+    if (!selectedRecording || !supabaseUser?.id) return;
     
     setIsPurchasing(true);
     
-    const result = await purchase(
-      selectedRecording.price,
-      `Grabación: ${selectedRecording.title}`,
-      { recordingId: selectedRecording.id }
-    );
-    
-    if (result.success) {
-      setShowPaywall(false);
-      setSelectedRecording(null);
-      navigate(`/recording/${selectedRecording.id}`);
+    try {
+      // Use the edge function that handles everything atomically
+      const { data, error } = await supabase.functions.invoke('purchase-recording-wallet', {
+        body: { recordingId: selectedRecording.id },
+      });
+
+      if (error) throw error;
+
+      if (data?.alreadyPurchased) {
+        setShowPaywall(false);
+        navigate(`/recording/${selectedRecording.id}`);
+        return;
+      }
+
+      if (data?.success) {
+        // Refresh purchases and wallet
+        await Promise.all([fetchPurchases(), refreshWallet()]);
+        setShowPaywall(false);
+        setSelectedRecording(null);
+        navigate(`/recording/${selectedRecording.id}`);
+      } else {
+        throw new Error(data?.error || 'Error en la compra');
+      }
+    } catch (error: any) {
+      console.error('Purchase error:', error);
+    } finally {
+      setIsPurchasing(false);
     }
-    
-    setIsPurchasing(false);
   };
 
   const formatDuration = (minutes: number) => {
@@ -243,9 +286,23 @@ export default function RecordingsGrid() {
                         {recording.specialty}
                       </Badge>
                       {!owned && (
-                        <span className="font-bold text-premium">
-                          ${recording.price}
-                        </span>
+                        <div className="text-right">
+                          {hasPremiumTo(recording.doctorId) ? (
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-muted-foreground line-through">
+                                ${recording.price}
+                              </span>
+                              <span className="font-bold text-success">
+                                ${getEffectiveRecordingPrice(recording.price, recording.doctorId).toFixed(0)}
+                              </span>
+                              <Crown className="w-3 h-3 text-yellow-500" />
+                            </div>
+                          ) : (
+                            <span className="font-bold text-premium">
+                              ${recording.price}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </CardContent>

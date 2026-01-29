@@ -177,6 +177,29 @@ export function useSubscriptions() {
     return subscriptions.find(s => s.creatorId === creatorId && s.isActive);
   };
 
+  // *** NEW: Check if user has Premium subscription to a creator ***
+  const hasPremiumTo = (creatorId: string) => {
+    const sub = subscriptions.find(s => s.creatorId === creatorId && s.isActive);
+    return sub?.tier === 'premium';
+  };
+
+  // *** NEW: Check if user has any Premium subscription ***
+  const hasAnyPremium = () => {
+    return subscriptions.some(s => s.tier === 'premium' && s.isActive);
+  };
+
+  // *** NEW: Get discount rate for recordings (20% for Premium) ***
+  const getRecordingDiscount = (creatorId: string): number => {
+    if (hasPremiumTo(creatorId)) return 0.2; // 20% discount
+    return 0;
+  };
+
+  // *** NEW: Calculate effective price with Premium discount ***
+  const getEffectiveRecordingPrice = (basePrice: number, creatorId: string): number => {
+    const discount = getRecordingDiscount(creatorId);
+    return basePrice * (1 - discount);
+  };
+
   return {
     subscriptions,
     subscribers,
@@ -187,6 +210,10 @@ export function useSubscriptions() {
     updateNotificationPrefs,
     isSubscribedTo,
     getSubscription,
+    hasPremiumTo,
+    hasAnyPremium,
+    getRecordingDiscount,
+    getEffectiveRecordingPrice,
     refresh: fetchSubscriptions,
   };
 }

@@ -105,18 +105,46 @@ export function useDoctorAvailability() {
   }) => {
     if (!supabaseUser?.id) return { success: false, error: 'Not authenticated' };
 
-    const { error } = await supabase.from('doctor_availability').insert({
-      doctor_id: supabaseUser.id,
-      title: data.title,
-      description: data.description,
-      scheduled_at: data.scheduledAt.toISOString(),
-      duration_minutes: data.durationMinutes,
-      type: data.type,
-      status: 'scheduled',
-    });
+    const { data: newAvail, error } = await supabase
+      .from('doctor_availability')
+      .insert({
+        doctor_id: supabaseUser.id,
+        title: data.title,
+        description: data.description,
+        scheduled_at: data.scheduledAt.toISOString(),
+        duration_minutes: data.durationMinutes,
+        type: data.type,
+        status: 'scheduled',
+      })
+      .select()
+      .single();
 
     if (error) {
       return { success: false, error: error.message };
+    }
+
+    // *** CRITICAL FIX: Auto-notify subscribers when availability is created ***
+    try {
+      const { data: notifyCount } = await supabase.rpc('notify_subscribers', {
+        p_doctor_id: supabaseUser.id,
+        p_notification_type: data.type === 'live' ? 'doctor_live' : 'doctor_availability',
+        p_title: `📅 Nueva disponibilidad: ${data.title}`,
+        p_message: `Programado para ${data.scheduledAt.toLocaleDateString()} a las ${data.scheduledAt.toLocaleTimeString()}`,
+        p_data: { availability_id: newAvail?.id, type: data.type },
+      });
+
+      // Mark as notifications sent
+      if (newAvail?.id) {
+        await supabase
+          .from('doctor_availability')
+          .update({ notifications_sent: true })
+          .eq('id', newAvail.id);
+      }
+
+      console.log(`Notified ${notifyCount} subscribers about new availability`);
+    } catch (notifyError) {
+      console.error('Failed to notify subscribers:', notifyError);
+      // Non-critical - continue
     }
 
     await fetchAvailabilities();

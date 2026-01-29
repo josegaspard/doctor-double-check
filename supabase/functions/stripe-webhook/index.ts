@@ -71,6 +71,18 @@ serve(async (req) => {
       }
     }
 
+    // *** CRITICAL FIX: Handle subscription renewals ***
+    if (event.type === "invoice.payment_succeeded") {
+      const invoice = event.data.object as Stripe.Invoice;
+      await handleInvoicePaymentSucceeded(db, invoice);
+    }
+
+    // *** CRITICAL FIX: Handle subscription cancellations ***
+    if (event.type === "customer.subscription.deleted") {
+      const subscription = event.data.object as Stripe.Subscription;
+      await handleSubscriptionDeleted(db, subscription);
+    }
+
     // Handle Stripe Connect account updates
     if (event.type === "account.updated") {
       const account = event.data.object as Stripe.Account;
@@ -507,5 +519,129 @@ async function handleTransferFailed(db: ReturnType<typeof supabaseAdmin>, transf
     logStep("Error updating payout status", { error });
   } else {
     logStep("Payout marked as failed", { transferId: transfer.id });
+  }
+}
+
+// *** NEW HANDLER: Handle subscription renewals ***
+async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin>, invoice: Stripe.Invoice) {
+  // Only handle subscription invoices (not first payment which is handled by checkout.session.completed)
+  if (!invoice.subscription || invoice.billing_reason === 'subscription_create') {
+    logStep("Skipping invoice - not a renewal", { reason: invoice.billing_reason });
+    return;
+  }
+
+  logStep("Processing subscription renewal", { 
+    subscriptionId: invoice.subscription, 
+    customerId: invoice.customer 
+  });
+
+  const customerEmail = invoice.customer_email;
+  if (!customerEmail) {
+    logStep("No customer email in invoice");
+    return;
+  }
+
+  // Find user by email
+  const { data: profile } = await db
+    .from("profiles")
+    .select("id")
+    .eq("email", customerEmail)
+    .single();
+
+  if (!profile) {
+    logStep("User not found for email", { email: customerEmail });
+    return;
+  }
+
+  const userId = profile.id;
+
+  // Find and extend the subscription
+  const { data: subscriptions, error: subError } = await db
+    .from("subscriptions")
+    .select("*")
+    .eq("subscriber_id", userId)
+    .eq("is_active", true);
+
+  if (subError || !subscriptions || subscriptions.length === 0) {
+    logStep("No active subscription found for user", { userId });
+    return;
+  }
+
+  // Extend expiration by one month
+  for (const sub of subscriptions) {
+    const newExpiresAt = new Date();
+    newExpiresAt.setMonth(newExpiresAt.getMonth() + 1);
+
+    await db
+      .from("subscriptions")
+      .update({
+        expires_at: newExpiresAt.toISOString(),
+        is_active: true,
+      })
+      .eq("id", sub.id);
+
+    logStep("Subscription renewed", { subscriptionId: sub.id, newExpiresAt });
+
+    // Credit creator earnings
+    await creditDoctorEarnings(db, sub.creator_id, sub.price_paid, "subscription_renewal", null);
+
+    // Notify creator about renewal
+    await db
+      .from("notifications")
+      .insert({
+        user_id: sub.creator_id,
+        type: "subscription_update",
+        title: "🔄 Suscripción renovada",
+        message: `Un suscriptor ha renovado su suscripción ${sub.tier}`,
+        data: { subscriber_id: userId, tier: sub.tier },
+      });
+  }
+}
+
+// *** NEW HANDLER: Handle subscription cancellations ***
+async function handleSubscriptionDeleted(db: ReturnType<typeof supabaseAdmin>, subscription: Stripe.Subscription) {
+  logStep("Processing subscription cancellation", { subscriptionId: subscription.id });
+
+  const customerEmail = (subscription.customer as any)?.email;
+  if (!customerEmail) {
+    logStep("No customer email in subscription");
+    return;
+  }
+
+  // Find user by email
+  const { data: profile } = await db
+    .from("profiles")
+    .select("id")
+    .eq("email", customerEmail)
+    .maybeSingle();
+
+  if (!profile) {
+    logStep("User not found for cancelled subscription");
+    return;
+  }
+
+  // Deactivate all subscriptions for this user
+  const { data: subs } = await db
+    .from("subscriptions")
+    .update({ is_active: false })
+    .eq("subscriber_id", profile.id)
+    .eq("is_active", true)
+    .select();
+
+  if (subs && subs.length > 0) {
+    for (const sub of subs) {
+      // Notify creator about cancellation
+      await db
+        .from("notifications")
+        .insert({
+          user_id: sub.creator_id,
+          type: "subscription_update",
+          title: "❌ Suscripción cancelada",
+          message: `Un suscriptor ha cancelado su suscripción ${sub.tier}`,
+          data: { subscriber_id: profile.id, tier: sub.tier },
+        });
+    }
+    
+    logStep("Subscriptions deactivated", { count: subs.length });
   }
 }
