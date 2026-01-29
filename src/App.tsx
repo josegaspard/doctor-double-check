@@ -53,6 +53,7 @@ import Onboarding from "./pages/Onboarding";
 import DoctorBankAccount from "./pages/DoctorBankAccount";
 import DoctorInvoices from "./pages/DoctorInvoices";
 import Contact from "./pages/Contact";
+import DoctorContentLibrary from "./pages/DoctorContentLibrary";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -86,6 +87,7 @@ const App = () => (
                       <Route path="/doctor/vault" element={<DoctorVault />} />
                       <Route path="/doctor/availability" element={<DoctorAvailability />} />
                       <Route path="/doctor/recordings" element={<DoctorRecordings />} />
+                      <Route path="/doctor/content" element={<DoctorContentLibrary />} />
                       <Route path="/doctor/go-live" element={<DoctorGoLive />} />
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />

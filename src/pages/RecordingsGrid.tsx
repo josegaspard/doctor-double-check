@@ -109,15 +109,17 @@ export default function RecordingsGrid() {
     return matchesSearch && matchesSpecialty;
   });
 
-  // Check if user owns recording - uses real purchase data
-  const ownsRecording = (recordingId: string): boolean => {
+  // Check if user owns recording or has free access
+  const ownsRecording = (recording: Recording): boolean => {
     if (!user) return false;
     if (role === 'admin' || role === 'doctor') return true;
-    return purchasedIds.has(recordingId);
+    // Free recordings are accessible to all authenticated users
+    if (recording.price === 0) return true;
+    return purchasedIds.has(recording.id);
   };
 
   const handleRecordingClick = (recording: Recording) => {
-    if (ownsRecording(recording.id)) {
+    if (ownsRecording(recording)) {
       navigate(`/recording/${recording.id}`);
     } else {
       setSelectedRecording(recording);
@@ -221,7 +223,7 @@ export default function RecordingsGrid() {
         {filteredRecordings.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredRecordings.map((recording) => {
-              const owned = ownsRecording(recording.id);
+              const owned = ownsRecording(recording);
               
               return (
                 <Card
