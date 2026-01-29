@@ -114,6 +114,57 @@ serve(async (req) => {
         is_active: true,
       });
 
+    // *** CRITICAL FIX: Credit doctor earnings ***
+    const doctorId = recording.doctor_id;
+    const amountToCredit = purchaseResult.amount_charged;
+    
+    // Get current pending earnings
+    const { data: doctorProfile } = await supabaseClient
+      .from('doctor_profiles')
+      .select('pending_earnings')
+      .eq('user_id', doctorId)
+      .single();
+
+    if (doctorProfile) {
+      const currentPending = doctorProfile.pending_earnings || 0;
+      const newPending = currentPending + amountToCredit;
+
+      // Update doctor pending earnings
+      await supabaseClient
+        .from('doctor_profiles')
+        .update({ pending_earnings: newPending })
+        .eq('user_id', doctorId);
+
+      logStep("Doctor earnings credited", { doctorId, amountToCredit, newPending });
+
+      // Create earning transaction record for doctor
+      await supabaseClient
+        .from('wallet_transactions')
+        .insert({
+          user_id: doctorId,
+          type: 'earning',
+          amount: amountToCredit,
+          description: `Ganancia por venta de grabación: ${recording.title}`,
+          status: 'paid',
+          metadata: { source: 'recording', recording_id: recordingId, buyer_id: user.id },
+        });
+    }
+
+    // Send purchase confirmation email
+    try {
+      await supabaseClient.functions.invoke('send-purchase-email', {
+        body: {
+          userId: user.id,
+          purchaseType: 'recording',
+          itemTitle: recording.title,
+          amount: purchaseResult.amount_charged,
+        },
+      });
+      logStep("Purchase confirmation email sent");
+    } catch (emailError) {
+      logStep("Email sending failed (non-critical)", { error: emailError });
+    }
+
     logStep("Purchase completed successfully");
 
     return new Response(

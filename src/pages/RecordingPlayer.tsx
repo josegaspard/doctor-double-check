@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,28 +20,81 @@ import {
   Stethoscope,
   Award,
   Lock,
+  Loader2,
 } from 'lucide-react';
 
 export default function RecordingPlayer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getRecording } = useLives();
-  const { user, role } = useAuth();
+  const { user, role, supabaseUser } = useAuth();
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(80);
   const [isMuted, setIsMuted] = useState(false);
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   
   const recording = getRecording(id || '');
 
-  // Check access - simplified
+  // Check if user has purchased this recording
+  const checkPurchase = useCallback(async () => {
+    if (!supabaseUser?.id || !id) {
+      setIsCheckingAccess(false);
+      return;
+    }
+
+    // Admins and doctors have automatic access
+    if (role === 'admin' || role === 'doctor') {
+      setHasPurchased(true);
+      setIsCheckingAccess(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('purchases')
+        .select('id')
+        .eq('user_id', supabaseUser.id)
+        .eq('recording_id', id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking purchase:', error);
+      }
+      
+      setHasPurchased(!!data);
+    } catch (error) {
+      console.error('Error checking access:', error);
+    } finally {
+      setIsCheckingAccess(false);
+    }
+  }, [supabaseUser?.id, id, role]);
+
+  useEffect(() => {
+    checkPurchase();
+  }, [checkPurchase]);
+
+  // Check access - uses real purchase verification
   const hasAccess = (): boolean => {
     if (!user) return false;
     if (role === 'admin' || role === 'doctor') return true;
-    // In real implementation, check purchases table
-    return true; // Allow access for demo
+    // Check if recording is free
+    if (recording && recording.price === 0) return true;
+    return hasPurchased;
   };
+
+  if (isCheckingAccess) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12 text-center">
+          <Loader2 className="w-16 h-16 mx-auto animate-spin text-primary mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Verificando acceso...</h2>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!recording) {
     return (
@@ -60,8 +114,11 @@ export default function RecordingPlayer() {
         <div className="container mx-auto px-4 py-12 text-center">
           <Lock className="w-16 h-16 mx-auto text-premium/50 mb-4" />
           <h2 className="text-xl font-semibold mb-2">Acceso restringido</h2>
-          <p className="text-muted-foreground mb-4">No tienes acceso a esta grabación</p>
-          <Button onClick={() => navigate('/recordings')}>Ver Catálogo</Button>
+          <p className="text-muted-foreground mb-4">No has comprado esta grabación</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button onClick={() => navigate('/recordings')}>Ver Catálogo</Button>
+            <Button variant="outline" onClick={() => navigate('/wallet')}>Recargar Wallet</Button>
+          </div>
         </div>
       </MainLayout>
     );

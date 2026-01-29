@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { usePurchases } from '@/hooks/usePurchases';
+import { useSubscriptions } from '@/hooks/useSubscriptions';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ import {
   Loader2,
   CreditCard,
   ExternalLink,
+  Crown,
 } from 'lucide-react';
 import { Recording } from '@/types';
 
@@ -48,11 +50,18 @@ export default function PaywallModal({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { purchaseWithWallet, isPurchasing: walletIsPurchasing } = usePurchases();
+  const { getEffectiveRecordingPrice, hasPremiumTo } = useSubscriptions();
   const [isStripeProcessing, setIsStripeProcessing] = useState(false);
 
   const isPurchasing = externalIsPurchasing || walletIsPurchasing;
 
   if (!recording) return null;
+
+  // Calculate effective price with Premium discount
+  const hasPremiumDiscount = recording.doctorId && hasPremiumTo(recording.doctorId);
+  const effectivePrice = recording.doctorId 
+    ? getEffectiveRecordingPrice(recording.price, recording.doctorId)
+    : recording.price;
 
   const formatDuration = (minutes: number) => {
     if (minutes < 60) return `${minutes} minutos`;
@@ -125,7 +134,20 @@ export default function PaywallModal({
           {/* Price Display */}
           <div className="text-center py-2">
             <p className="text-sm text-muted-foreground">Precio</p>
-            <p className="text-3xl font-bold text-premium">${recording.price} MXN</p>
+            {hasPremiumDiscount ? (
+              <div className="space-y-1">
+                <p className="text-lg text-muted-foreground line-through">${recording.price} MXN</p>
+                <div className="flex items-center justify-center gap-2">
+                  <p className="text-3xl font-bold text-success">${effectivePrice.toFixed(0)} MXN</p>
+                  <Badge className="bg-yellow-500/10 text-yellow-600 gap-1">
+                    <Crown className="w-3 h-3" />
+                    20% Premium
+                  </Badge>
+                </div>
+              </div>
+            ) : (
+              <p className="text-3xl font-bold text-premium">${recording.price} MXN</p>
+            )}
           </div>
 
           {/* Benefits */}

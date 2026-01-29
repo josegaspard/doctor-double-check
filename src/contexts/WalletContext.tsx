@@ -23,6 +23,7 @@ interface WalletContextType {
   topUp: (amount: number) => Promise<{ success: boolean; error?: string }>;
   purchase: (amount: number, description: string, metadata?: any) => Promise<{ success: boolean; error?: string }>;
   canAfford: (amount: number) => boolean;
+  getEffectivePrice: (amount: number) => number;
   getTransactionHistory: () => Transaction[];
   refreshWallet: () => Promise<void>;
 }
@@ -148,8 +149,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Apply 50% discount for residents when checking affordability
   const canAfford = (amount: number): boolean => {
-    return balance >= amount;
+    const effectiveAmount = user?.role === 'resident' ? amount * 0.5 : amount;
+    return balance >= effectiveAmount;
+  };
+
+  // Get effective price (with discount for residents)
+  const getEffectivePrice = (amount: number): number => {
+    return user?.role === 'resident' ? amount * 0.5 : amount;
   };
 
   const getTransactionHistory = (): Transaction[] => {
@@ -165,6 +173,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         topUp,
         purchase,
         canAfford,
+        getEffectivePrice,
         getTransactionHistory,
         refreshWallet,
       }}

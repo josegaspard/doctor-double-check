@@ -65,9 +65,12 @@ export function SubscribeButton({
 
     setIsLoading(true);
     const result = await subscribe(doctorId, 'free', 0);
-    setIsLoading(false);
-
+    
     if (result.success) {
+      // *** CRITICAL FIX: Refresh follower count after subscribe ***
+      // Force a re-fetch of subscription data
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       toast({
         title: t('subscriptions.subscribed'),
         description: `Ahora sigues a ${doctorName || 'este doctor'}`,
@@ -79,6 +82,7 @@ export function SubscribeButton({
         variant: 'destructive',
       });
     }
+    setIsLoading(false);
   };
 
   const handleUnsubscribe = async () => {
