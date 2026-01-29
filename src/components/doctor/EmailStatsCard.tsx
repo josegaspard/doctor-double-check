@@ -1,15 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Mail, Video, Radio, Calendar, CheckCircle, XCircle, TrendingUp } from 'lucide-react';
+import { Mail, Video, Radio, Calendar, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { startOfMonth, subMonths, endOfMonth, format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-interface EmailStats {
-  type: string;
+interface EmailRecord {
+  email_type: string;
+  status: string;
+  created_at: string;
+}
+
+interface MonthStats {
+  total: number;
   sent: number;
   failed: number;
-  total: number;
 }
 
 const EMAIL_TYPE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
@@ -30,19 +37,54 @@ const EMAIL_TYPE_CONFIG: Record<string, { label: string; icon: React.ReactNode; 
   },
 };
 
+function calculateChange(current: number, previous: number): { value: number; trend: 'up' | 'down' | 'neutral' } {
+  if (previous === 0) {
+    return { value: current > 0 ? 100 : 0, trend: current > 0 ? 'up' : 'neutral' };
+  }
+  const change = Math.round(((current - previous) / previous) * 100);
+  return {
+    value: Math.abs(change),
+    trend: change > 0 ? 'up' : change < 0 ? 'down' : 'neutral',
+  };
+}
+
+function TrendBadge({ current, previous, label }: { current: number; previous: number; label: string }) {
+  const { value, trend } = calculateChange(current, previous);
+  
+  if (trend === 'neutral') {
+    return (
+      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <Minus className="w-3 h-3" />
+        <span>Sin cambios</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex items-center gap-1 text-xs ${trend === 'up' ? 'text-success' : 'text-destructive'}`}>
+      {trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+      <span>{value}% vs mes anterior</span>
+    </div>
+  );
+}
+
 export function EmailStatsCard() {
   const { supabaseUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [rawEmails, setRawEmails] = useState<{ email_type: string; status: string }[]>([]);
+  const [rawEmails, setRawEmails] = useState<EmailRecord[]>([]);
 
   useEffect(() => {
     if (!supabaseUser?.id) return;
 
     const fetchEmailStats = async () => {
+      // Fetch emails from last 2 months for comparison
+      const twoMonthsAgo = startOfMonth(subMonths(new Date(), 1));
+      
       const { data, error } = await supabase
         .from('email_history')
-        .select('email_type, status')
-        .eq('doctor_id', supabaseUser.id);
+        .select('email_type, status, created_at')
+        .eq('doctor_id', supabaseUser.id)
+        .gte('created_at', twoMonthsAgo.toISOString());
 
       if (!error && data) {
         setRawEmails(data);
@@ -53,11 +95,22 @@ export function EmailStatsCard() {
     fetchEmailStats();
   }, [supabaseUser?.id]);
 
-  const stats = useMemo(() => {
-    const grouped: Record<string, EmailStats> = {};
+  const { currentMonth, previousMonth, stats, currentMonthName, previousMonthName } = useMemo(() => {
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now);
+    const currentMonthEnd = endOfMonth(now);
+    const prevMonthStart = startOfMonth(subMonths(now, 1));
+    const prevMonthEnd = endOfMonth(subMonths(now, 1));
+
+    const current: MonthStats = { total: 0, sent: 0, failed: 0 };
+    const previous: MonthStats = { total: 0, sent: 0, failed: 0 };
+    const grouped: Record<string, { type: string; sent: number; failed: number; total: number }> = {};
 
     for (const email of rawEmails) {
+      const emailDate = new Date(email.created_at);
       const type = email.email_type;
+      
+      // Group by type (all time for the type breakdown)
       if (!grouped[type]) {
         grouped[type] = { type, sent: 0, failed: 0, total: 0 };
       }
@@ -67,9 +120,35 @@ export function EmailStatsCard() {
       } else {
         grouped[type].failed++;
       }
+
+      // Current month
+      if (emailDate >= currentMonthStart && emailDate <= currentMonthEnd) {
+        current.total++;
+        if (email.status === 'sent') {
+          current.sent++;
+        } else {
+          current.failed++;
+        }
+      }
+      
+      // Previous month
+      if (emailDate >= prevMonthStart && emailDate <= prevMonthEnd) {
+        previous.total++;
+        if (email.status === 'sent') {
+          previous.sent++;
+        } else {
+          previous.failed++;
+        }
+      }
     }
 
-    return Object.values(grouped);
+    return {
+      currentMonth: current,
+      previousMonth: previous,
+      stats: Object.values(grouped),
+      currentMonthName: format(now, 'MMMM', { locale: es }),
+      previousMonthName: format(subMonths(now, 1), 'MMMM', { locale: es }),
+    };
   }, [rawEmails]);
 
   const totalSent = stats.reduce((acc, s) => acc + s.sent, 0);
@@ -125,7 +204,38 @@ export function EmailStatsCard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Summary Stats */}
+        {/* Month-over-Month Comparison */}
+        <div className="p-3 bg-muted/30 rounded-lg space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-foreground capitalize">{currentMonthName}</span>
+            <TrendBadge current={currentMonth.total} previous={previousMonth.total} label="total" />
+          </div>
+          
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-xl font-bold text-foreground">{currentMonth.total}</p>
+              <p className="text-xs text-muted-foreground">Total</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-success">{currentMonth.sent}</p>
+              <p className="text-xs text-muted-foreground">Enviados</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-destructive">{currentMonth.failed}</p>
+              <p className="text-xs text-muted-foreground">Fallidos</p>
+            </div>
+          </div>
+
+          {/* Previous month comparison */}
+          <div className="pt-2 border-t border-border/50">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="capitalize">{previousMonthName}</span>
+              <span>{previousMonth.total} emails ({previousMonth.sent} enviados)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Overall Summary Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center p-3 bg-muted/50 rounded-lg">
             <p className="text-2xl font-bold text-foreground">{totalEmails}</p>
@@ -150,7 +260,7 @@ export function EmailStatsCard() {
         {/* Success Rate */}
         <div className="p-3 bg-muted/30 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">Tasa de éxito</span>
+            <span className="text-sm text-muted-foreground">Tasa de éxito global</span>
             <span className="text-sm font-semibold text-foreground">{successRate}%</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
