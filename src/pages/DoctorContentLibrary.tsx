@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ContentPreviewModal } from '@/components/content/ContentPreviewModal';
 import { 
   FileText, 
   Image as ImageIcon, 
@@ -104,6 +105,7 @@ export default function DoctorContentLibrary() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [previewContent, setPreviewContent] = useState<DoctorContent | null>(null);
 
   const fetchContents = useCallback(async () => {
     if (!user?.id) return;
@@ -176,8 +178,7 @@ export default function DoctorContentLibrary() {
   };
 
   const handleView = (content: DoctorContent) => {
-    // Open file in new tab
-    window.open(content.file_url, '_blank');
+    setPreviewContent(content);
   };
 
   return (
@@ -379,6 +380,13 @@ export default function DoctorContentLibrary() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Content Preview Modal */}
+      <ContentPreviewModal
+        isOpen={!!previewContent}
+        onClose={() => setPreviewContent(null)}
+        content={previewContent}
+      />
     </MainLayout>
   );
 }

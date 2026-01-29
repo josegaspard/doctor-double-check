@@ -7,6 +7,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
 import { LiveChat } from '@/components/live/LiveChat';
 import { AnimatedViewerCount } from '@/components/live/AnimatedViewerCount';
+import { EndingLiveModal } from '@/components/live/EndingLiveModal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,6 +105,8 @@ export default function DoctorGoLive() {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [showEndingModal, setShowEndingModal] = useState(false);
+  const [endingStage, setEndingStage] = useState<'ending' | 'saving' | 'done'>('ending');
 
   // Real-time viewer count (owner doesn't auto-join as viewer)
   const { viewerCount, likesCount } = useViewerCount({
@@ -254,10 +257,16 @@ export default function DoctorGoLive() {
     if (!liveData?.id) return;
 
     setIsEnding(true);
+    setShowEndDialog(false);
+    setShowEndingModal(true);
+    setEndingStage('ending');
 
     try {
+      // Stage 1: Ending
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setEndingStage('saving');
+
       // Call edge function to end the room and save recording
-      // The edge function handles EVERYTHING: updating status, creating recording, etc.
       const { data, error } = await supabase.functions.invoke('end-daily-room', {
         body: { 
           liveId: liveData.id, 
@@ -278,7 +287,12 @@ export default function DoctorGoLive() {
           .eq('id', liveData.id);
       }
 
-      if (enableRecording && data?.recordingId) {
+      // Stage 2: Done
+      setEndingStage('done');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Navigate based on recording preference
+      if (enableRecording) {
         toast.success('¡Transmisión finalizada! La grabación está disponible.');
         navigate('/doctor/recordings');
       } else {
@@ -299,9 +313,11 @@ export default function DoctorGoLive() {
           })
           .eq('id', liveData.id);
       } catch {}
+      
+      navigate('/doctor/dashboard');
     } finally {
       setIsEnding(false);
-      setShowEndDialog(false);
+      setShowEndingModal(false);
     }
   };
 
@@ -442,6 +458,13 @@ export default function DoctorGoLive() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Ending modal */}
+        <EndingLiveModal 
+          isOpen={showEndingModal} 
+          stage={endingStage} 
+          enableRecording={enableRecording} 
+        />
       </MainLayout>
     );
   }

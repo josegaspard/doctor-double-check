@@ -34,6 +34,7 @@ import {
   ArrowRight,
   Info,
 } from 'lucide-react';
+import { InvoicePreviewModal } from '@/components/invoices/InvoicePreviewModal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
@@ -85,6 +86,7 @@ export default function DoctorInvoices() {
   const [periodEnd, setPeriodEnd] = useState('');
   const [amount, setAmount] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
 
   useEffect(() => {
     if (role !== 'doctor') {
@@ -453,7 +455,7 @@ export default function DoctorInvoices() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => window.open(invoice.file_url, '_blank')}
+                            onClick={() => setPreviewInvoice(invoice)}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             {language === 'es' ? 'Ver' : 'View'}
@@ -628,6 +630,13 @@ export default function DoctorInvoices() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Invoice Preview Modal */}
+        <InvoicePreviewModal
+          isOpen={!!previewInvoice}
+          onClose={() => setPreviewInvoice(null)}
+          invoice={previewInvoice}
+        />
       </div>
     </MainLayout>
   );
