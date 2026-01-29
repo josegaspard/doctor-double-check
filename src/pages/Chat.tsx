@@ -562,13 +562,13 @@ export default function Chat() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-10 max-w-5xl">
+      <div className="container mx-auto px-4 py-6 max-w-5xl">
         <h1 className="font-heading text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
           <MessageSquare className="w-6 h-6 text-primary" />
           Chat 1:1
         </h1>
 
-        <div className="grid md:grid-cols-3 gap-4 h-[calc(100vh-220px)]">
+        <div className="grid md:grid-cols-3 gap-4" style={{ height: 'calc(100vh - 240px)', minHeight: '500px' }}>
           {/* Sessions List with Tabs */}
           <Card className="md:col-span-1">
             <CardHeader className="pb-2">
@@ -595,8 +595,8 @@ export default function Chat() {
                 </TabsList>
               </Tabs>
             </CardHeader>
-            <CardContent className="p-2">
-              <ScrollArea className="h-[400px]">
+            <CardContent className="p-2 flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
                 {activeTab === 'active' ? (
                   activeSessions.length > 0 ? (
                     activeSessions.map(session => renderSessionItem(session))

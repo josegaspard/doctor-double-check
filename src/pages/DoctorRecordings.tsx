@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLives, Recording } from '@/contexts/LivesContext';
@@ -88,7 +88,10 @@ interface RecordingStats {
 export default function DoctorRecordings() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
-  const { getRecordingsByDoctor, refreshRecordings } = useLives();
+  const { refreshRecordings } = useLives();
+
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [isLoadingRecordings, setIsLoadingRecordings] = useState(true);
 
   const [recordingStats, setRecordingStats] = useState<Map<string, RecordingStats>>(new Map());
   const [isLoadingStats, setIsLoadingStats] = useState(true);
@@ -116,7 +119,53 @@ export default function DoctorRecordings() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [showFilters, setShowFilters] = useState(false);
 
-  const allRecordings = getRecordingsByDoctor(user?.id || '');
+  // Fetch recordings directly from Supabase for doctor's own recordings
+  const fetchMyRecordings = useCallback(async () => {
+    if (!user?.id) return;
+    
+    setIsLoadingRecordings(true);
+    try {
+      const { data, error } = await supabase
+        .from('recordings')
+        .select('*')
+        .eq('doctor_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching recordings:', error);
+        return;
+      }
+
+      if (data) {
+        setRecordings(data.map(r => ({
+          id: r.id,
+          liveId: r.live_id || undefined,
+          title: r.title,
+          description: r.description || undefined,
+          doctorId: r.doctor_id,
+          doctorName: user.name || 'Doctor',
+          specialty: r.specialty,
+          duration: r.duration,
+          price: Number(r.price),
+          thumbnailUrl: r.thumbnail_url || undefined,
+          videoUrl: r.video_url || undefined,
+          createdAt: new Date(r.created_at),
+          tags: r.tags || [],
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching recordings:', error);
+    } finally {
+      setIsLoadingRecordings(false);
+    }
+  }, [user?.id, user?.name]);
+
+  // Initial load + refresh
+  useEffect(() => {
+    fetchMyRecordings();
+  }, [fetchMyRecordings]);
+
+  const allRecordings = recordings;
   
   // Get unique specialties from recordings
   const specialties = [...new Set(allRecordings.map(r => r.specialty))];
@@ -130,7 +179,7 @@ export default function DoctorRecordings() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesTitle = recording.title.toLowerCase().includes(query);
-      const matchesTags = recording.tags.some(tag => tag.toLowerCase().includes(query));
+      const matchesTags = recording.tags.some((tag: string) => tag.toLowerCase().includes(query));
       if (!matchesTitle && !matchesTags) return false;
     }
     

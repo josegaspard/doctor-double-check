@@ -7,7 +7,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle, AlertCircle, Building, CreditCard, RefreshCw, ExternalLink } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, Building, CreditCard, RefreshCw, ExternalLink, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AccountStatus {
@@ -121,6 +121,17 @@ export default function DoctorBankAccount() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-2xl">
+        {/* Back button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/doctor/dashboard')}
+          className="mb-4 gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {language === 'es' ? 'Volver al panel' : 'Back to dashboard'}
+        </Button>
+
         <div className="mb-6">
           <h1 className="font-heading text-2xl font-bold text-foreground">
             {language === 'es' ? 'Cuenta Bancaria' : 'Bank Account'}
