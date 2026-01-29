@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ interface SearchResult {
 export function GlobalSearch() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { supabaseUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -78,11 +80,22 @@ export function GlobalSearch() {
         if (profiles) {
           // Get doctor profiles for matched profiles
           const userIds = profiles.map(p => p.id);
-          const { data: doctorProfiles } = await supabase
-            .from('doctor_profiles_public')
-            .select('user_id, specialty, status')
-            .in('user_id', userIds)
-            .eq('status', 'approved');
+          let doctorProfiles: Array<{ user_id: string; specialty: string; status: string }> | null = null;
+          if (supabaseUser) {
+            const { data } = await supabase
+              .from('doctor_profiles')
+              .select('user_id, specialty, status')
+              .in('user_id', userIds)
+              .eq('status', 'approved');
+            doctorProfiles = data as any;
+          } else {
+            const { data } = await supabase
+              .from('doctor_profiles_public')
+              .select('user_id, specialty, status')
+              .in('user_id', userIds)
+              .eq('status', 'approved');
+            doctorProfiles = data as any;
+          }
 
           const doctorMap = new Map(doctorProfiles?.map(d => [d.user_id, d]) || []);
 
@@ -102,12 +115,24 @@ export function GlobalSearch() {
         }
 
         // Search doctors by specialty
-        const { data: doctors } = await supabase
-          .from('doctor_profiles_public')
-          .select('user_id, specialty, status')
-          .eq('status', 'approved')
-          .ilike('specialty', `%${searchTerm}%`)
-          .limit(3);
+        let doctors: Array<{ user_id: string; specialty: string; status: string }> | null = null;
+        if (supabaseUser) {
+          const { data } = await supabase
+            .from('doctor_profiles')
+            .select('user_id, specialty, status')
+            .eq('status', 'approved')
+            .ilike('specialty', `%${searchTerm}%`)
+            .limit(3);
+          doctors = data as any;
+        } else {
+          const { data } = await supabase
+            .from('doctor_profiles_public')
+            .select('user_id, specialty, status')
+            .eq('status', 'approved')
+            .ilike('specialty', `%${searchTerm}%`)
+            .limit(3);
+          doctors = data as any;
+        }
 
         if (doctors) {
           const newDoctorIds = doctors
