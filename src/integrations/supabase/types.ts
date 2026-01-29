@@ -566,6 +566,9 @@ export type Database = {
           license: string
           location: string | null
           numero_consejo: string | null
+          office_days: string[] | null
+          office_hours_end: string | null
+          office_hours_start: string | null
           payouts_enabled: boolean | null
           pending_earnings: number | null
           rating: number
@@ -590,6 +593,9 @@ export type Database = {
           license: string
           location?: string | null
           numero_consejo?: string | null
+          office_days?: string[] | null
+          office_hours_end?: string | null
+          office_hours_start?: string | null
           payouts_enabled?: boolean | null
           pending_earnings?: number | null
           rating?: number
@@ -614,6 +620,9 @@ export type Database = {
           license?: string
           location?: string | null
           numero_consejo?: string | null
+          office_days?: string[] | null
+          office_hours_end?: string | null
+          office_hours_start?: string | null
           payouts_enabled?: boolean | null
           pending_earnings?: number | null
           rating?: number
@@ -1710,6 +1719,25 @@ export type Database = {
         Args: { p_live_id: string }
         Returns: undefined
       }
+      get_chat_session_details: {
+        Args: { p_session_id: string }
+        Returns: {
+          doctor_office_days: string[]
+          doctor_office_hours_end: string
+          doctor_office_hours_start: string
+          participant1_avatar: string
+          participant1_id: string
+          participant1_name: string
+          participant1_specialty: string
+          participant1_type: Database["public"]["Enums"]["chat_participant_type"]
+          participant2_avatar: string
+          participant2_id: string
+          participant2_name: string
+          participant2_specialty: string
+          participant2_type: Database["public"]["Enums"]["chat_participant_type"]
+          session_id: string
+        }[]
+      }
       get_doctor_public_profile: {
         Args: { p_user_id: string }
         Returns: {
@@ -1719,6 +1747,9 @@ export type Database = {
           followers_count: number
           location: string
           name: string
+          office_days: string[]
+          office_hours_end: string
+          office_hours_start: string
           profile_id: string
           rating: number
           specialty: string

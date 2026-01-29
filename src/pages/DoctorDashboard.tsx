@@ -45,6 +45,7 @@ import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
 import { EmailStatsCard } from '@/components/doctor/EmailStatsCard';
 import { EmailTrendsChart } from '@/components/doctor/EmailTrendsChart';
 import { EarningsCard } from '@/components/doctor/EarningsCard';
+import { OfficeHoursConfig } from '@/components/doctor/OfficeHoursConfig';
 
 const SPECIALTIES = [
   'Cardiología',
@@ -416,8 +417,8 @@ export default function DoctorDashboard() {
           </Card>
         </div>
 
-        {/* Earnings and Stats Grid */}
-        <div className="grid lg:grid-cols-3 gap-6 mb-6">
+        {/* Earnings, Stats and Office Hours Grid */}
+        <div className="grid lg:grid-cols-4 gap-6 mb-6">
           {/* Earnings Card */}
           <EarningsCard />
 
@@ -426,6 +427,9 @@ export default function DoctorDashboard() {
 
           {/* Email Trends Chart */}
           <EmailTrendsChart />
+          
+          {/* Office Hours Config */}
+          <OfficeHoursConfig />
         </div>
 
         {/* Email History Section */}
