@@ -40,6 +40,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
+import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
 interface NavItem {
   label: string;
@@ -109,7 +110,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </SheetTrigger>
                 <SheetContent side="left" className="w-72">
                   <div className="flex items-center gap-2 mb-6">
-                    <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+                    <img src={logoMedicalMasters} alt="Medical Masters" className="h-10 w-auto" />
                   </div>
                   <nav className="flex flex-col gap-1">
                     {filteredNavItems.map((item) => (
@@ -131,7 +132,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </Sheet>
 
               <Link to="/lives" className="flex items-center gap-2">
-                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-10 w-auto" />
               </Link>
             </div>
 
@@ -241,7 +242,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             {/* Top row */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-3">
-                <img src={logoMedicalMasters} alt="Medical Masters" className="h-6 w-auto brightness-0 invert" />
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
                 <span className="text-sm text-light">Plataforma de educación médica continua</span>
               </div>
               
