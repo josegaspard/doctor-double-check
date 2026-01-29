@@ -127,8 +127,21 @@ export function DailyVideoPlayer({
 
   const handleError = useCallback((event: DailyEventObject) => {
     console.error('Daily error:', event);
-    setError('Error de conexión');
-    toast.error('Error en la transmisión');
+    
+    // Handle specific error types with user-friendly messages
+    const errorMsg = (event as any).errorMsg || '';
+    let userMessage = 'Error de conexión';
+    
+    if (errorMsg.includes('account-missing-payment-method')) {
+      userMessage = 'Se requiere configurar un método de pago en Daily.co para transmitir';
+    } else if (errorMsg.includes('invalid-request-error')) {
+      userMessage = 'Error de configuración del servidor de video';
+    } else if (errorMsg.includes('not-allowed')) {
+      userMessage = 'Permisos de cámara/micrófono denegados';
+    }
+    
+    setError(userMessage);
+    toast.error(userMessage);
   }, []);
 
   const updateVideoElements = (participants: Record<string, DailyParticipant>) => {
