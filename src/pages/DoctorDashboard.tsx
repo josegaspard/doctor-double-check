@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
+import { EmailStatsCard } from '@/components/doctor/EmailStatsCard';
 
 const SPECIALTIES = [
   'Cardiología',
@@ -412,13 +413,17 @@ export default function DoctorDashboard() {
           </Card>
         </div>
 
-        {/* Email History and Vault Access Grid */}
-        <div className="grid md:grid-cols-2 gap-6">
+        {/* Email Stats and History Grid */}
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
+          {/* Email Stats */}
+          <EmailStatsCard />
+
           {/* Email History Section */}
           <EmailHistoryCard />
+        </div>
 
-          {/* Vault Access Section */}
-          {accessibleVaultFiles.length > 0 && (
+        {/* Vault Access Section */}
+        {accessibleVaultFiles.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -451,7 +456,6 @@ export default function DoctorDashboard() {
               </CardContent>
             </Card>
           )}
-        </div>
       </div>
     </MainLayout>
   );
