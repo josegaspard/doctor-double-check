@@ -85,10 +85,10 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           .order('started_at', { ascending: false });
         
         if (livesData) {
-          // Fetch doctor names separately
+          // Fetch doctor names from public view
           const doctorIds = [...new Set(livesData.map(l => l.doctor_id))];
           const { data: profiles } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('id, name, avatar_url')
             .in('id', doctorIds);
           
@@ -154,7 +154,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       if (recordingsData) {
         const doctorIds = [...new Set(recordingsData.map(r => r.doctor_id))];
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('id, name')
           .in('id', doctorIds);
 

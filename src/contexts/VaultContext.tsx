@@ -92,10 +92,10 @@ export function VaultProvider({ children }: { children: ReactNode }) {
             accessByFile.set(a.file_id, existing);
           });
 
-          // Get doctor names
+          // Get doctor names from public view
           const doctorIds = [...new Set(allAccess?.map(a => a.doctor_id) || [])];
           const { data: doctorProfiles } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('id, name')
             .in('id', doctorIds);
 
@@ -152,7 +152,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         if (accessData) {
           const patientIds = [...new Set(accessData.map(a => (a.vault_files as any)?.patient_id).filter(Boolean))];
           const { data: patientProfiles } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('id, name')
             .in('id', patientIds);
 

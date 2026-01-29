@@ -89,9 +89,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           participantIds.add(s.participant2_id);
         });
 
-        // Fetch participant names
+        // Fetch participant names from public view
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('id, name')
           .in('id', [...participantIds]);
 
@@ -134,7 +134,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (messagesData) {
         const senderIds = [...new Set(messagesData.map(m => m.sender_id))];
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('id, name')
           .in('id', senderIds);
 
@@ -239,7 +239,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       if (existing) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('id, name')
           .in('id', [existing.participant1_id, existing.participant2_id]);
 
