@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import webpush from "https://esm.sh/web-push@3.6.7";
-import { Resend } from "https://esm.sh/resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,7 +12,6 @@ const logStep = (step: string, details?: any) => {
   console.log(`[SEND-AVAILABILITY-REMINDERS] ${step}${detailsStr}`);
 };
 
-// Generate unsubscribe token
 const generateUnsubscribeToken = (subscriberId: string, doctorId: string, type: string): string => {
   return btoa(`${subscriberId}:${doctorId}:${type}`);
 };
@@ -29,12 +24,10 @@ serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY")!;
-    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
+    const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find availabilities starting in the next 60 minutes that haven't had reminders sent
     const now = new Date();
     const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
 
@@ -60,13 +53,11 @@ serve(async (req: Request) => {
 
     logStep("Found upcoming availabilities", { count: upcomingAvailabilities.length });
 
-    let totalNotificationsSent = 0;
     let totalEmailsSent = 0;
     const baseUrl = supabaseUrl.replace('.supabase.co', '.functions.supabase.co');
     const appUrl = "https://doc-seek-relay.lovable.app";
 
     for (const availability of upcomingAvailabilities) {
-      // Get doctor name
       const { data: doctorProfile } = await supabase
         .from("profiles")
         .select("name")
@@ -85,7 +76,6 @@ serve(async (req: Request) => {
         month: "long",
       });
 
-      // Get all subscribers of this doctor with notifications enabled
       const { data: subscribers } = await supabase
         .from("subscriptions")
         .select("subscriber_id")
@@ -104,67 +94,11 @@ serve(async (req: Request) => {
 
       const subscriberIds = subscribers.map((s) => s.subscriber_id);
 
-      // Get subscriber profiles with emails
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, email, name")
         .in("id", subscriberIds);
 
-      // Get push subscriptions for these subscribers
-      const { data: pushSubscriptions } = await supabase
-        .from("push_subscriptions")
-        .select("*")
-        .in("user_id", subscriberIds);
-
-      // Send push notifications
-      if (pushSubscriptions && pushSubscriptions.length > 0) {
-        webpush.setVapidDetails(
-          "mailto:notifications@drdoublecheck.com",
-          vapidPublicKey,
-          vapidPrivateKey
-        );
-
-        const typeLabel = availability.type === "live" ? "🔴 Live" : 
-                          availability.type === "consultation" ? "💬 Consulta" : "📅 Evento";
-
-        const payload = JSON.stringify({
-          title: `${typeLabel} en menos de 1 hora`,
-          body: `${doctorName}: ${availability.title} - ${timeString}`,
-          icon: "/favicon.ico",
-          badge: "/favicon.ico",
-          data: {
-            url: "/lives",
-            availabilityId: availability.id,
-          },
-        });
-
-        for (const subscription of pushSubscriptions) {
-          try {
-            await webpush.sendNotification(
-              {
-                endpoint: subscription.endpoint,
-                keys: {
-                  p256dh: subscription.p256dh,
-                  auth: subscription.auth,
-                },
-              },
-              payload
-            );
-            totalNotificationsSent++;
-          } catch (pushError: any) {
-            logStep("Push notification failed", { userId: subscription.user_id, error: pushError.message });
-            
-            if (pushError.statusCode === 410 || pushError.statusCode === 404) {
-              await supabase
-                .from("push_subscriptions")
-                .delete()
-                .eq("id", subscription.id);
-            }
-          }
-        }
-      }
-
-      // Send email notifications
       if (profiles && profiles.length > 0) {
         const typeIcon = availability.type === "live" ? "🔴" : 
                          availability.type === "consultation" ? "💬" : "📅";
@@ -228,7 +162,7 @@ serve(async (req: Request) => {
     
     <div style="text-align: center; padding: 24px;">
       <p style="color: #94a3b8; font-size: 12px; margin: 0 0 8px;">
-        Recibiste este email porque sigues a ${doctorName} en Dr Double Check.
+        Recibiste este email porque sigues a ${doctorName} en Medical Masters.
       </p>
       <p style="color: #94a3b8; font-size: 12px; margin: 0;">
         <a href="${baseUrl}/unsubscribe-email?token=${unsubscribeToken}" style="color: #64748b;">Desuscribirse de recordatorios</a>
@@ -242,12 +176,24 @@ serve(async (req: Request) => {
           `;
 
           try {
-            await resend.emails.send({
-              from: "Dr Double Check <onboarding@resend.dev>",
-              to: [profile.email],
-              subject,
-              html,
+            const emailResponse = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: 'Medical Masters <onboarding@resend.dev>',
+                to: [profile.email],
+                subject,
+                html,
+              }),
             });
+
+            if (!emailResponse.ok) {
+              const errorData = await emailResponse.text();
+              throw new Error(`Resend API error: ${errorData}`);
+            }
 
             await supabase.from('email_history').insert({
               doctor_id: availability.doctor_id,
@@ -280,7 +226,6 @@ serve(async (req: Request) => {
         }
       }
 
-      // Create in-app notifications for all subscribers
       const notificationType = availability.type === "live" ? "doctor_live" : "doctor_availability";
       
       await supabase.rpc("notify_subscribers", {
@@ -291,7 +236,6 @@ serve(async (req: Request) => {
         p_data: { availability_id: availability.id, type: availability.type },
       });
 
-      // Mark reminder as sent
       await supabase
         .from("doctor_availability")
         .update({ reminder_sent: true })
@@ -299,7 +243,6 @@ serve(async (req: Request) => {
 
       logStep("Processed availability", { 
         id: availability.id, 
-        pushSent: totalNotificationsSent,
         emailsSent: totalEmailsSent 
       });
     }
@@ -308,7 +251,6 @@ serve(async (req: Request) => {
       JSON.stringify({
         success: true,
         processedAvailabilities: upcomingAvailabilities.length,
-        pushNotificationsSent: totalNotificationsSent,
         emailsSent: totalEmailsSent,
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }

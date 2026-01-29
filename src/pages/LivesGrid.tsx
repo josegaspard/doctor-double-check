@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ import {
 export default function LivesGrid() {
   const { lives, isLoading, refreshLives } = useLives();
   const { role, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
 
   const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
 
@@ -48,10 +50,10 @@ export default function LivesGrid() {
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
               <Radio className="w-6 h-6 text-live animate-pulse" />
-              Transmisiones en Vivo
+              {t('lives.title')}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {activeLives.length} de 20 transmisiones activas
+              {activeLives.length} de 20 {t('lives.activeLives')}
             </p>
           </div>
           
@@ -59,7 +61,7 @@ export default function LivesGrid() {
             <div className="flex items-center gap-2 bg-accent/50 rounded-lg px-4 py-2">
               <Eye className="w-4 h-4 text-accent-foreground" />
               <span className="text-sm text-accent-foreground">
-                Modo visitante - Los lives son gratis
+                {t('lives.viewerMode')}
               </span>
             </div>
           )}
@@ -147,10 +149,10 @@ export default function LivesGrid() {
           <Card className="p-12 text-center">
             <Video className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              No hay transmisiones activas
+              {t('lives.noLives')}
             </h3>
             <p className="text-muted-foreground">
-              Vuelve más tarde para ver contenido en vivo
+              {t('lives.noLivesDescription')}
             </p>
           </Card>
         )}
@@ -162,14 +164,14 @@ export default function LivesGrid() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <Lock className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold text-foreground">¿Quieres más?</h3>
+                  <h3 className="font-semibold text-foreground">{t('lives.wantMore')}</h3>
                 </div>
                 <p className="text-muted-foreground">
-                  Regístrate para acceder a grabaciones premium, chat con médicos y tu vault médico personal.
+                  {t('lives.registerPrompt')}
                 </p>
               </div>
               <Link to="/login">
-                <Button>Crear Cuenta Gratis</Button>
+                <Button>{t('lives.createAccount')}</Button>
               </Link>
             </div>
           </Card>

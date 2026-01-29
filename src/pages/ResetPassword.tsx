@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Shield, Loader2, CheckCircle, ArrowLeft, KeyRound } from 'lucide-react';
+import { Loader2, CheckCircle, ArrowLeft, KeyRound, Facebook, Instagram, Twitter, Linkedin, Youtube } from 'lucide-react';
 import { PasswordStrength, getPasswordStrength } from '@/components/ui/password-strength';
-
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useSocialLinks } from '@/hooks/useSiteSettings';
+import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
+import logoMedicalMasters from '@/assets/logo-medical-masters.png';
+import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+  const { socialLinks } = useSocialLinks();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -35,12 +41,12 @@ export default function ResetPassword() {
     const { score } = getPasswordStrength(password);
     
     if (score < 60) {
-      setError('La contraseña debe ser al menos "Buena" para continuar');
+      setError(t('resetPassword.passwordTooWeak'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError(t('resetPassword.passwordMismatch'));
       return;
     }
 
@@ -54,14 +60,14 @@ export default function ResetPassword() {
       if (error) throw error;
 
       setIsSuccess(true);
-      toast.success('Contraseña actualizada correctamente');
+      toast.success(t('resetPassword.success'));
       
       // Redirect after 2 seconds
       setTimeout(() => {
         navigate('/login');
       }, 2000);
     } catch (error: any) {
-      setError(error.message || 'Error al actualizar la contraseña');
+      setError(error.message || t('resetPassword.error'));
     } finally {
       setIsLoading(false);
     }
@@ -69,23 +75,92 @@ export default function ResetPassword() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-success/30 bg-success/5">
-          <CardContent className="p-6 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-success" />
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Header */}
+        <header className="border-b border-border bg-card">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/login')}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <Link to="/">
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+              </Link>
             </div>
-            <h3 className="font-heading text-xl font-bold mb-2">
-              ¡Contraseña Actualizada!
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Tu contraseña ha sido cambiada correctamente. Serás redirigido al login...
-            </p>
-            <Button onClick={() => navigate('/login')}>
-              Ir al Login
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </header>
+        
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="max-w-md w-full border-success/30 bg-success/5">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-success" />
+              </div>
+              <h3 className="font-heading text-xl font-bold mb-2">
+                {t('resetPassword.successTitle')}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {t('resetPassword.successMessage')}
+              </p>
+              <Button onClick={() => navigate('/login')}>
+                {t('resetPassword.goToLogin')}
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+
+        {/* Footer */}
+        <footer className="bg-dark text-dark-foreground py-8">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-3">
+                  <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
+                  <span className="text-sm text-light">{t('footer.platform')}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  {socialLinks.facebook && (
+                    <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                      <Facebook className="w-5 h-5" />
+                    </a>
+                  )}
+                  {socialLinks.instagram && (
+                    <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                      <Instagram className="w-5 h-5" />
+                    </a>
+                  )}
+                  {socialLinks.twitter && (
+                    <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                      <Twitter className="w-5 h-5" />
+                    </a>
+                  )}
+                  {socialLinks.linkedin && (
+                    <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                      <Linkedin className="w-5 h-5" />
+                    </a>
+                  )}
+                  {socialLinks.youtube && (
+                    <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                      <Youtube className="w-5 h-5" />
+                    </a>
+                  )}
+                </div>
+              </div>
+              <div className="border-t border-light/20" />
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <nav className="flex items-center gap-6">
+                  <Link to="/terms" className="text-sm text-light/70 hover:text-light transition-colors">
+                    {t('footer.termsOfService')}
+                  </Link>
+                  <Link to="/privacy" className="text-sm text-light/70 hover:text-light transition-colors">
+                    {t('footer.privacyPolicy')}
+                  </Link>
+                </nav>
+                <p className="text-sm text-light/70">{t('footer.copyright')}</p>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
     );
   }
@@ -95,16 +170,16 @@ export default function ResetPassword() {
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/login')}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="font-heading font-bold text-foreground">Dr Double Check</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/login')}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <Link to="/">
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+              </Link>
             </div>
+            <LanguageSwitcher />
           </div>
         </div>
       </header>
@@ -116,15 +191,15 @@ export default function ResetPassword() {
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
               <KeyRound className="w-6 h-6 text-primary" />
             </div>
-            <CardTitle>Nueva Contraseña</CardTitle>
+            <CardTitle>{t('resetPassword.title')}</CardTitle>
             <CardDescription>
-              Ingresa tu nueva contraseña para recuperar el acceso a tu cuenta
+              {t('resetPassword.description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">Nueva contraseña</Label>
+                <Label htmlFor="password">{t('resetPassword.newPassword')}</Label>
                 <PasswordInput
                   id="password"
                   placeholder="••••••••"
@@ -137,7 +212,7 @@ export default function ResetPassword() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+                <Label htmlFor="confirmPassword">{t('resetPassword.confirmPassword')}</Label>
                 <PasswordInput
                   id="confirmPassword"
                   placeholder="••••••••"
@@ -155,12 +230,65 @@ export default function ResetPassword() {
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : null}
-                Actualizar Contraseña
+                {t('resetPassword.updateButton')}
               </Button>
             </form>
           </CardContent>
         </Card>
       </main>
+
+      {/* Footer */}
+      <footer className="bg-dark text-dark-foreground py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-3">
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
+                <span className="text-sm text-light">{t('footer.platform')}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                {socialLinks.facebook && (
+                  <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <Facebook className="w-5 h-5" />
+                  </a>
+                )}
+                {socialLinks.instagram && (
+                  <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <Instagram className="w-5 h-5" />
+                  </a>
+                )}
+                {socialLinks.twitter && (
+                  <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <Twitter className="w-5 h-5" />
+                  </a>
+                )}
+                {socialLinks.linkedin && (
+                  <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <Linkedin className="w-5 h-5" />
+                  </a>
+                )}
+                {socialLinks.youtube && (
+                  <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <Youtube className="w-5 h-5" />
+                  </a>
+                )}
+              </div>
+            </div>
+            <div className="border-t border-light/20" />
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <nav className="flex items-center gap-6">
+                <Link to="/terms" className="text-sm text-light/70 hover:text-light transition-colors">
+                  {t('footer.termsOfService')}
+                </Link>
+                <Link to="/privacy" className="text-sm text-light/70 hover:text-light transition-colors">
+                  {t('footer.privacyPolicy')}
+                </Link>
+              </nav>
+              <p className="text-sm text-light/70">{t('footer.copyright')}</p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
