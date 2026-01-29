@@ -8,11 +8,11 @@ import {
   User, 
   Stethoscope, 
   GraduationCap,
-  Shield,
   Heart,
   Video,
   Lock
 } from 'lucide-react';
+import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 
 const roleOptions = [
   {
@@ -72,16 +72,10 @@ export default function RoleSelector() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b border-border bg-card">
+      <header className="border-b border-border bg-dark">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <Shield className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-heading font-bold text-lg text-foreground">Dr Double Check</h1>
-              <p className="text-xs text-muted-foreground">Tu segunda opinión médica</p>
-            </div>
+          <div className="flex items-center gap-3">
+            <img src={logoMedicalMasters} alt="Medical Masters" className="h-10 w-auto" />
           </div>
         </div>
       </header>
@@ -160,10 +154,10 @@ export default function RoleSelector() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card py-4">
+      <footer className="border-t border-border bg-dark py-4">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            © 2024 Dr Double Check. Todos los derechos reservados.
+          <p className="text-xs text-dark-foreground">
+            © 2024 Medical Masters. Todos los derechos reservados.
           </p>
         </div>
       </footer>
