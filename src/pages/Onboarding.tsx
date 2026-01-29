@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { UserRole } from '@/types';
 import { AvatarUpload } from '@/components/onboarding/AvatarUpload';
 import { CedulaVerificationStatus, useCedulaStatus } from '@/components/onboarding/CedulaVerificationStatus';
+import { CedulaAutoVerify } from '@/components/onboarding/CedulaAutoVerify';
 
 // Predefined medical specialties
 const MEDICAL_SPECIALTIES = [
@@ -178,11 +179,13 @@ export default function Onboarding() {
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const [isSavingProgress, setIsSavingProgress] = useState(false);
+  const [cedulaVerified, setCedulaVerified] = useState(false);
+  const [cedulaVerificationId, setCedulaVerificationId] = useState<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasLoadedProgress = useRef(false);
   
   // Cedula verification status
-  const cedulaStatus = useCedulaStatus(license);
+  const cedulaStatus = cedulaVerified ? 'verified' : useCedulaStatus(license);
   const validateForm = useMemo(() => {
     const errors: ValidationErrors = {};
     
@@ -339,6 +342,18 @@ export default function Onboarding() {
 
   const handleRoleSelect = (role: OnboardingRole) => {
     setSelectedRole(role);
+  };
+
+  // Handle cedula verification success
+  const handleCedulaVerified = (verificationId: string) => {
+    setCedulaVerified(true);
+    setCedulaVerificationId(verificationId);
+  };
+
+  // Handle cedula claimed (auto-approved)
+  const handleCedulaClaimed = () => {
+    // Refresh user data since they may have been auto-approved
+    refreshUser();
   };
 
   const handleContinue = () => {
@@ -952,6 +967,17 @@ export default function Onboarding() {
                             status={cedulaStatus} 
                             cedula={license.trim()}
                           />
+
+                          {/* Auto Verification Component */}
+                          {supabaseUser && cedulaStatus === 'valid_pending' && !cedulaVerified && (
+                            <CedulaAutoVerify
+                              cedula={license.trim()}
+                              userId={supabaseUser.id}
+                              onVerified={handleCedulaVerified}
+                              onClaimed={handleCedulaClaimed}
+                              language="es"
+                            />
+                          )}
                         </motion.div>
                       )}
 
