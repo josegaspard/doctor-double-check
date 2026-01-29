@@ -40,6 +40,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
 
 const SPECIALTIES = [
   'Cardiología',
@@ -411,40 +412,46 @@ export default function DoctorDashboard() {
           </Card>
         </div>
 
-        {/* Vault Access Section */}
-        {accessibleVaultFiles.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Folder className="w-5 h-5 text-primary" />
-                Archivos de Pacientes con Acceso
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {accessibleVaultFiles.slice(0, 5).map(file => (
-                  <div key={file.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center">
-                      <Folder className="w-5 h-5 text-primary" />
+        {/* Email History and Vault Access Grid */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Email History Section */}
+          <EmailHistoryCard />
+
+          {/* Vault Access Section */}
+          {accessibleVaultFiles.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Folder className="w-5 h-5 text-primary" />
+                  Archivos de Pacientes con Acceso
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {accessibleVaultFiles.slice(0, 5).map(file => (
+                    <div key={file.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center">
+                        <Folder className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">{file.category}</p>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        Paciente
+                      </Badge>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{file.name}</p>
-                      <p className="text-xs text-muted-foreground">{file.category}</p>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      Paciente
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-              {accessibleVaultFiles.length > 5 && (
-                <Button variant="ghost" className="w-full mt-3" onClick={() => navigate('/doctor/vault')}>
-                  Ver todos ({accessibleVaultFiles.length})
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                  ))}
+                </div>
+                {accessibleVaultFiles.length > 5 && (
+                  <Button variant="ghost" className="w-full mt-3" onClick={() => navigate('/doctor/vault')}>
+                    Ver todos ({accessibleVaultFiles.length})
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </MainLayout>
   );

@@ -113,13 +113,14 @@ serve(async (req: Request): Promise<Response> => {
     const contentTypeLabel = getContentTypeLabel(contentType);
     const contentIcon = getContentIcon(contentType);
 
-    // Send emails to all subscribers
+    // Send emails to all subscribers and log each one
     const emailPromises = profiles.map(async (profile) => {
+      const subject = `${contentIcon} Nuevo ${contentTypeLabel.toLowerCase()} de ${doctorName}`;
       try {
         await resend.emails.send({
           from: "Dr Double Check <onboarding@resend.dev>",
           to: [profile.email],
-          subject: `${contentIcon} Nuevo ${contentTypeLabel.toLowerCase()} de ${doctorName}`,
+          subject,
           html: `
             <!DOCTYPE html>
             <html>
@@ -172,9 +173,35 @@ serve(async (req: Request): Promise<Response> => {
             </html>
           `,
         });
+
+        // Log successful email to history
+        await supabaseClient.from('email_history').insert({
+          doctor_id: doctorId,
+          recipient_email: profile.email,
+          recipient_name: profile.name,
+          email_type: 'new_content',
+          subject,
+          content_id: contentId || null,
+          content_title: contentTitle,
+          status: 'sent',
+        });
+
         logStep("Email sent", { email: profile.email });
         return { success: true, email: profile.email };
       } catch (error: any) {
+        // Log failed email to history
+        await supabaseClient.from('email_history').insert({
+          doctor_id: doctorId,
+          recipient_email: profile.email,
+          recipient_name: profile.name,
+          email_type: 'new_content',
+          subject,
+          content_id: contentId || null,
+          content_title: contentTitle,
+          status: 'failed',
+          error_message: error.message,
+        });
+
         logStep("Error sending email", { email: profile.email, error: error.message });
         return { success: false, email: profile.email, error: error.message };
       }
