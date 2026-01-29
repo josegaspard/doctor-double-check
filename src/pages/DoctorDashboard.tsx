@@ -44,6 +44,7 @@ import { useToast } from '@/hooks/use-toast';
 import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
 import { EmailStatsCard } from '@/components/doctor/EmailStatsCard';
 import { EmailTrendsChart } from '@/components/doctor/EmailTrendsChart';
+import { EarningsCard } from '@/components/doctor/EarningsCard';
 
 const SPECIALTIES = [
   'Cardiología',
@@ -415,15 +416,16 @@ export default function DoctorDashboard() {
           </Card>
         </div>
 
-        {/* Email Stats and History Grid */}
+        {/* Earnings and Stats Grid */}
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
+          {/* Earnings Card */}
+          <EarningsCard />
+
           {/* Email Stats */}
           <EmailStatsCard />
 
           {/* Email Trends Chart */}
-          <div className="lg:col-span-2">
-            <EmailTrendsChart />
-          </div>
+          <EmailTrendsChart />
         </div>
 
         {/* Email History Section */}

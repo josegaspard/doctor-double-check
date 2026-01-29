@@ -7,6 +7,12 @@ const logStep = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+const supabaseAdmin = () => createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  { auth: { persistSession: false } }
+);
+
 serve(async (req) => {
   try {
     logStep("Webhook received");
@@ -22,7 +28,6 @@ serve(async (req) => {
 
     let event: Stripe.Event;
 
-    // Verify webhook signature if secret is configured
     if (webhookSecret && signature) {
       try {
         event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
@@ -32,168 +37,50 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "Webhook signature verification failed" }), { status: 400 });
       }
     } else {
-      // For development, parse without verification
       event = JSON.parse(body);
       logStep("Webhook parsed without signature verification (dev mode)");
     }
 
     logStep("Event type", { type: event.type });
 
+    const db = supabaseAdmin();
+
     // Handle checkout.session.completed
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       logStep("Checkout session completed", { sessionId: session.id, metadata: session.metadata });
 
+      // Wallet topup
       if (session.metadata?.type === "wallet_topup" && session.payment_status === "paid") {
-        const userId = session.metadata.user_id;
-        const amount = parseFloat(session.metadata.amount);
-        
-        logStep("Processing wallet topup", { userId, amount });
-
-        // Use service role to update wallet
-        const supabaseAdmin = createClient(
-          Deno.env.get("SUPABASE_URL") ?? "",
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-          { auth: { persistSession: false } }
-        );
-
-        // Create transaction record
-        const { error: txError } = await supabaseAdmin
-          .from("wallet_transactions")
-          .insert({
-            user_id: userId,
-            type: "topup",
-            amount: amount,
-            description: `Recarga via Stripe - ${session.id}`,
-            status: "paid",
-            metadata: { stripe_session_id: session.id },
-          });
-
-        if (txError) {
-          logStep("Error creating transaction", { error: txError });
-          throw txError;
-        }
-
-        // Update wallet balance
-        const { error: walletError } = await supabaseAdmin.rpc("process_wallet_topup", {
-          p_amount: 0, // We already added the transaction, just need to update balance
-        });
-
-        // Alternative: direct update
-        const { data: currentWallet } = await supabaseAdmin
-          .from("wallets")
-          .select("balance")
-          .eq("user_id", userId)
-          .single();
-
-        if (currentWallet) {
-          const newBalance = Number(currentWallet.balance) + amount;
-          await supabaseAdmin
-            .from("wallets")
-            .update({ balance: newBalance, updated_at: new Date().toISOString() })
-            .eq("user_id", userId);
-          
-          logStep("Wallet updated successfully", { userId, newBalance });
-        }
+        await handleWalletTopup(db, session);
       }
 
+      // Recording purchase - credit doctor earnings
       if (session.metadata?.type === "recording_purchase" && session.payment_status === "paid") {
-        const userId = session.metadata.user_id;
-        const recordingId = session.metadata.recording_id;
-        const amount = parseFloat(session.metadata.amount);
-        
-        logStep("Processing recording purchase", { userId, recordingId, amount });
-
-        const supabaseAdmin = createClient(
-          Deno.env.get("SUPABASE_URL") ?? "",
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-          { auth: { persistSession: false } }
-        );
-
-        // Create purchase record
-        const { error: purchaseError } = await supabaseAdmin
-          .from("purchases")
-          .insert({
-            user_id: userId,
-            recording_id: recordingId,
-            amount: amount,
-          });
-
-        if (purchaseError) {
-          logStep("Error creating purchase", { error: purchaseError });
-        } else {
-          logStep("Purchase recorded successfully", { userId, recordingId });
-        }
+        await handleRecordingPurchase(db, session);
       }
 
-      // Handle creator subscriptions
+      // Creator subscription - credit doctor earnings
       if (session.metadata?.type === "creator_subscription" && session.payment_status === "paid") {
-        const userId = session.metadata.user_id;
-        const creatorId = session.metadata.creator_id;
-        const tier = session.metadata.tier as "basic" | "premium";
-        
-        logStep("Processing creator subscription", { userId, creatorId, tier });
-
-        const supabaseAdmin = createClient(
-          Deno.env.get("SUPABASE_URL") ?? "",
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-          { auth: { persistSession: false } }
-        );
-
-        // Check if subscription exists and update or create
-        const { data: existingSub } = await supabaseAdmin
-          .from("subscriptions")
-          .select("id")
-          .eq("subscriber_id", userId)
-          .eq("creator_id", creatorId)
-          .single();
-
-        const tierPrice = tier === "premium" ? 199 : 99;
-        const expiresAt = new Date();
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
-
-        if (existingSub) {
-          await supabaseAdmin
-            .from("subscriptions")
-            .update({
-              tier,
-              price_paid: tierPrice,
-              is_active: true,
-              expires_at: expiresAt.toISOString(),
-            })
-            .eq("id", existingSub.id);
-          logStep("Subscription upgraded", { userId, creatorId, tier });
-        } else {
-          await supabaseAdmin
-            .from("subscriptions")
-            .insert({
-              subscriber_id: userId,
-              creator_id: creatorId,
-              tier,
-              price_paid: tierPrice,
-              is_active: true,
-              expires_at: expiresAt.toISOString(),
-            });
-          logStep("Subscription created", { userId, creatorId, tier });
-        }
-
-        // Create notification for the creator
-        const { data: subscriberProfile } = await supabaseAdmin
-          .from("profiles")
-          .select("name")
-          .eq("id", userId)
-          .single();
-
-        await supabaseAdmin
-          .from("notifications")
-          .insert({
-            user_id: creatorId,
-            type: "subscription_update",
-            title: "¡Nuevo suscriptor!",
-            message: `${subscriberProfile?.name || "Un usuario"} se suscribió a tu plan ${tier}`,
-            data: { subscriber_id: userId, tier },
-          });
+        await handleCreatorSubscription(db, session);
       }
+    }
+
+    // Handle Stripe Connect account updates
+    if (event.type === "account.updated") {
+      const account = event.data.object as Stripe.Account;
+      await handleAccountUpdated(db, account);
+    }
+
+    // Handle transfer events for payouts
+    if (event.type === "transfer.paid") {
+      const transfer = event.data.object as Stripe.Transfer;
+      await handleTransferPaid(db, transfer);
+    }
+
+    if (event.type === "transfer.failed") {
+      const transfer = event.data.object as Stripe.Transfer;
+      await handleTransferFailed(db, transfer);
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -209,3 +96,275 @@ serve(async (req) => {
     });
   }
 });
+
+// Handler functions
+
+async function handleWalletTopup(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const userId = session.metadata!.user_id;
+  const amount = parseFloat(session.metadata!.amount);
+  
+  logStep("Processing wallet topup", { userId, amount });
+
+  const { error: txError } = await db
+    .from("wallet_transactions")
+    .insert({
+      user_id: userId,
+      type: "topup",
+      amount: amount,
+      description: `Recarga via Stripe - ${session.id}`,
+      status: "paid",
+      metadata: { stripe_session_id: session.id },
+    });
+
+  if (txError) {
+    logStep("Error creating transaction", { error: txError });
+    throw txError;
+  }
+
+  const { data: currentWallet } = await db
+    .from("wallets")
+    .select("balance")
+    .eq("user_id", userId)
+    .single();
+
+  if (currentWallet) {
+    const newBalance = Number(currentWallet.balance) + amount;
+    await db
+      .from("wallets")
+      .update({ balance: newBalance, updated_at: new Date().toISOString() })
+      .eq("user_id", userId);
+    
+    logStep("Wallet updated successfully", { userId, newBalance });
+  }
+}
+
+async function handleRecordingPurchase(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const userId = session.metadata!.user_id;
+  const recordingId = session.metadata!.recording_id;
+  const amount = parseFloat(session.metadata!.amount);
+  
+  logStep("Processing recording purchase", { userId, recordingId, amount });
+
+  // Create purchase record
+  const { error: purchaseError } = await db
+    .from("purchases")
+    .insert({
+      user_id: userId,
+      recording_id: recordingId,
+      amount: amount,
+    });
+
+  if (purchaseError) {
+    logStep("Error creating purchase", { error: purchaseError });
+    return;
+  }
+
+  logStep("Purchase recorded successfully", { userId, recordingId });
+
+  // Get recording to find doctor
+  const { data: recording } = await db
+    .from("recordings")
+    .select("doctor_id")
+    .eq("id", recordingId)
+    .single();
+
+  if (recording?.doctor_id) {
+    await creditDoctorEarnings(db, recording.doctor_id, amount, "recording", recordingId);
+  }
+}
+
+async function handleCreatorSubscription(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const userId = session.metadata!.user_id;
+  const creatorId = session.metadata!.creator_id;
+  const tier = session.metadata!.tier as "basic" | "premium";
+  
+  logStep("Processing creator subscription", { userId, creatorId, tier });
+
+  const tierPrice = tier === "premium" ? 199 : 99;
+  const expiresAt = new Date();
+  expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+  const { data: existingSub } = await db
+    .from("subscriptions")
+    .select("id")
+    .eq("subscriber_id", userId)
+    .eq("creator_id", creatorId)
+    .single();
+
+  if (existingSub) {
+    await db
+      .from("subscriptions")
+      .update({
+        tier,
+        price_paid: tierPrice,
+        is_active: true,
+        expires_at: expiresAt.toISOString(),
+      })
+      .eq("id", existingSub.id);
+    logStep("Subscription upgraded", { userId, creatorId, tier });
+  } else {
+    await db
+      .from("subscriptions")
+      .insert({
+        subscriber_id: userId,
+        creator_id: creatorId,
+        tier,
+        price_paid: tierPrice,
+        is_active: true,
+        expires_at: expiresAt.toISOString(),
+      });
+    logStep("Subscription created", { userId, creatorId, tier });
+  }
+
+  // Notify creator
+  const { data: subscriberProfile } = await db
+    .from("profiles")
+    .select("name")
+    .eq("id", userId)
+    .single();
+
+  await db
+    .from("notifications")
+    .insert({
+      user_id: creatorId,
+      type: "subscription_update",
+      title: "¡Nuevo suscriptor!",
+      message: `${subscriberProfile?.name || "Un usuario"} se suscribió a tu plan ${tier}`,
+      data: { subscriber_id: userId, tier },
+    });
+
+  // Credit earnings to doctor
+  await creditDoctorEarnings(db, creatorId, tierPrice, "subscription", null);
+}
+
+async function creditDoctorEarnings(
+  db: ReturnType<typeof supabaseAdmin>,
+  doctorId: string,
+  amount: number,
+  source: string,
+  referenceId: string | null
+) {
+  logStep("Crediting doctor earnings", { doctorId, amount, source });
+
+  // Get current pending earnings
+  const { data: profile } = await db
+    .from("doctor_profiles")
+    .select("pending_earnings, total_earnings")
+    .eq("user_id", doctorId)
+    .single();
+
+  if (!profile) {
+    logStep("Doctor profile not found", { doctorId });
+    return;
+  }
+
+  const currentPending = profile.pending_earnings || 0;
+  const newPending = currentPending + amount;
+
+  // Update pending earnings
+  const { error: updateError } = await db
+    .from("doctor_profiles")
+    .update({ pending_earnings: newPending })
+    .eq("user_id", doctorId);
+
+  if (updateError) {
+    logStep("Error updating earnings", { error: updateError });
+    return;
+  }
+
+  logStep("Doctor earnings credited", { doctorId, amount, newPending, source });
+
+  // Create earning transaction record
+  await db
+    .from("wallet_transactions")
+    .insert({
+      user_id: doctorId,
+      type: "earning",
+      amount: amount,
+      description: `Ganancia por ${source === "recording" ? "venta de grabación" : "suscripción"}`,
+      status: "paid",
+      metadata: { source, reference_id: referenceId },
+    });
+}
+
+async function handleAccountUpdated(db: ReturnType<typeof supabaseAdmin>, account: Stripe.Account) {
+  logStep("Account updated", { accountId: account.id, payoutsEnabled: account.payouts_enabled });
+
+  // Find doctor by stripe account id
+  const { data: bankAccount } = await db
+    .from("doctor_bank_accounts")
+    .select("doctor_id")
+    .eq("stripe_account_id", account.id)
+    .maybeSingle();
+
+  if (!bankAccount) {
+    logStep("No bank account found for Stripe account", { accountId: account.id });
+    return;
+  }
+
+  let status = "pending";
+  if (account.details_submitted && account.payouts_enabled) {
+    status = "active";
+  } else if (account.requirements?.disabled_reason) {
+    status = "restricted";
+  } else if (account.details_submitted) {
+    status = "pending_verification";
+  }
+
+  // Update bank account status
+  await db
+    .from("doctor_bank_accounts")
+    .update({
+      stripe_account_status: status,
+      payouts_enabled: account.payouts_enabled || false,
+      onboarding_completed: account.details_submitted || false,
+      is_verified: account.payouts_enabled || false,
+    })
+    .eq("stripe_account_id", account.id);
+
+  // Update doctor profile
+  await db
+    .from("doctor_profiles")
+    .update({
+      payouts_enabled: account.payouts_enabled || false,
+    })
+    .eq("user_id", bankAccount.doctor_id);
+
+  logStep("Account status updated", { doctorId: bankAccount.doctor_id, status });
+}
+
+async function handleTransferPaid(db: ReturnType<typeof supabaseAdmin>, transfer: Stripe.Transfer) {
+  logStep("Transfer paid", { transferId: transfer.id, destination: transfer.destination });
+
+  const { error } = await db
+    .from("doctor_payouts")
+    .update({
+      status: "paid",
+      paid_at: new Date().toISOString(),
+    })
+    .eq("stripe_transfer_id", transfer.id);
+
+  if (error) {
+    logStep("Error updating payout status", { error });
+  } else {
+    logStep("Payout marked as paid", { transferId: transfer.id });
+  }
+}
+
+async function handleTransferFailed(db: ReturnType<typeof supabaseAdmin>, transfer: Stripe.Transfer) {
+  logStep("Transfer failed", { transferId: transfer.id });
+
+  const { error } = await db
+    .from("doctor_payouts")
+    .update({
+      status: "failed",
+      error_message: "Transfer failed",
+    })
+    .eq("stripe_transfer_id", transfer.id);
+
+  if (error) {
+    logStep("Error updating payout status", { error });
+  } else {
+    logStep("Payout marked as failed", { transferId: transfer.id });
+  }
+}
