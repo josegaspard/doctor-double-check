@@ -39,7 +39,7 @@ interface UserData {
 export default function AdminUsers() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,15 +50,15 @@ export default function AdminUsers() {
   useEffect(() => {
     if (user?.role !== 'admin') {
       toast({ 
-        title: language === 'es' ? 'Acceso denegado' : 'Access denied', 
-        description: language === 'es' ? 'Solo administradores pueden acceder' : 'Only admins can access', 
+        title: t('admin.accessDenied'), 
+        description: t('admin.onlyAdmins'), 
         variant: 'destructive' 
       });
       navigate('/');
       return;
     }
     fetchUsers();
-  }, [user, navigate, language]);
+  }, [user, navigate]);
 
   const fetchUsers = async () => {
     try {
@@ -69,7 +69,6 @@ export default function AdminUsers() {
 
       if (error) throw error;
 
-      // Fetch roles for each user
       const usersWithRoles = await Promise.all(
         (profiles || []).map(async (profile) => {
           const { data: roleData } = await supabase
@@ -84,7 +83,7 @@ export default function AdminUsers() {
       setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast({ title: 'Error', description: 'No se pudieron cargar los usuarios', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('admin.errorLoadingUsers'), variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +121,7 @@ export default function AdminUsers() {
     return (
       <Badge variant="outline" className={colors[role] || colors.patient}>
         {getRoleIcon(role)}
-        <span className="ml-1 capitalize">{role}</span>
+        <span className="ml-1 capitalize">{t(`roles.${role}`)}</span>
       </Badge>
     );
   };
@@ -148,10 +147,10 @@ export default function AdminUsers() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Users className="h-6 w-6 text-primary" />
-              {language === 'es' ? 'Gestión de Usuarios' : 'User Management'}
+              {t('admin.userManagement')}
             </h1>
             <p className="text-muted-foreground">
-              {users.length} {language === 'es' ? 'usuarios registrados' : 'registered users'}
+              {users.length} {t('admin.registeredUsers')}
             </p>
           </div>
         </div>
@@ -167,25 +166,25 @@ export default function AdminUsers() {
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-purple-600">{userStats.admins}</p>
-              <p className="text-sm text-muted-foreground">Admins</p>
+              <p className="text-sm text-muted-foreground">{t('admin.administrators')}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-blue-600">{userStats.doctors}</p>
-              <p className="text-sm text-muted-foreground">Doctores</p>
+              <p className="text-sm text-muted-foreground">{t('admin.doctors')}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-green-600">{userStats.residents}</p>
-              <p className="text-sm text-muted-foreground">Residentes</p>
+              <p className="text-sm text-muted-foreground">{t('admin.residents')}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-gray-600">{userStats.patients}</p>
-              <p className="text-sm text-muted-foreground">Pacientes</p>
+              <p className="text-sm text-muted-foreground">{t('admin.patients')}</p>
             </CardContent>
           </Card>
         </div>
@@ -197,7 +196,7 @@ export default function AdminUsers() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por nombre o email..."
+                  placeholder={t('admin.searchByNameEmail')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -205,15 +204,15 @@ export default function AdminUsers() {
               </div>
               <Select value={roleFilter} onValueChange={setRoleFilter}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filtrar por rol" />
+                  <SelectValue placeholder={t('admin.filterByRole')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los roles</SelectItem>
-                  <SelectItem value="admin">Administradores</SelectItem>
-                  <SelectItem value="doctor">Doctores</SelectItem>
-                  <SelectItem value="resident">Residentes</SelectItem>
-                  <SelectItem value="patient">Pacientes</SelectItem>
-                  <SelectItem value="visitor">Visitantes</SelectItem>
+                  <SelectItem value="all">{t('admin.allRoles')}</SelectItem>
+                  <SelectItem value="admin">{t('admin.administrators')}</SelectItem>
+                  <SelectItem value="doctor">{t('admin.doctors')}</SelectItem>
+                  <SelectItem value="resident">{t('admin.residents')}</SelectItem>
+                  <SelectItem value="patient">{t('admin.patients')}</SelectItem>
+                  <SelectItem value="visitor">{t('admin.visitors')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -229,7 +228,7 @@ export default function AdminUsers() {
           <Card>
             <CardContent className="py-12 text-center">
               <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No se encontraron usuarios</p>
+              <p className="text-muted-foreground">{t('admin.noUsersFound')}</p>
             </CardContent>
           </Card>
         ) : (
@@ -245,11 +244,11 @@ export default function AdminUsers() {
                       </Avatar>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{userData.name || 'Sin nombre'}</h3>
+                          <h3 className="font-medium">{userData.name || t('admin.noName')}</h3>
                           {getRoleBadge(userData.role || 'patient')}
                           {userData.is_identity_verified && (
                             <Badge variant="outline" className="bg-green-100 text-green-800">
-                              Verificado
+                              {t('admin.verified')}
                             </Badge>
                           )}
                         </div>
@@ -279,8 +278,8 @@ export default function AdminUsers() {
         <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Detalles del Usuario</DialogTitle>
-              <DialogDescription>Información completa del usuario seleccionado</DialogDescription>
+              <DialogTitle>{t('admin.userDetails')}</DialogTitle>
+              <DialogDescription>{t('admin.userDetailsDescription')}</DialogDescription>
             </DialogHeader>
             {selectedUser && (
               <div className="space-y-4">
@@ -296,17 +295,17 @@ export default function AdminUsers() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Rol</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.role')}</p>
                     {getRoleBadge(selectedUser.role || 'patient')}
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Verificación</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.verification')}</p>
                     <Badge variant={selectedUser.is_identity_verified ? 'default' : 'secondary'}>
-                      {selectedUser.is_identity_verified ? 'Verificado' : 'No verificado'}
+                      {selectedUser.is_identity_verified ? t('admin.verified') : t('admin.notVerified')}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Registrado</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.registered')}</p>
                     <p className="font-medium">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
                   </div>
                   <div>
