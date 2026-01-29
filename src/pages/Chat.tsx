@@ -64,6 +64,19 @@ export default function Chat() {
   const closedSessions = allSessions.filter(s => s.status === 'closed');
   const messages = selectedSession ? getSessionMessages(selectedSession) : [];
 
+  const getDoctorIdForSession = (session: ChatSession): string | null => {
+    if (session.participant1Type === 'doctor') return session.participant1Id;
+    if (session.participant2Type === 'doctor') return session.participant2Id;
+    return null;
+  };
+
+  const goToDoctorProfile = (e: React.MouseEvent, session: ChatSession) => {
+    e.stopPropagation();
+    const doctorId = getDoctorIdForSession(session);
+    if (!doctorId) return;
+    navigate(`/doctor/${doctorId}`);
+  };
+
   // Handle consultation success from payment redirect
   useEffect(() => {
     const consultationStatus = searchParams.get('consultation');
@@ -360,6 +373,7 @@ export default function Chat() {
     const displayInfo = getSessionDisplayInfo(session);
     const officeHours = formatOfficeHours(session);
     const isAvailable = isWithinOfficeHours(session);
+    const canOpenDoctorProfile = role === 'patient' && getDoctorIdForSession(session) !== null;
     
     return (
       <div
@@ -394,9 +408,18 @@ export default function Chat() {
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
-              <p className="font-medium text-sm truncate">
-                {displayInfo.name}
-              </p>
+              {canOpenDoctorProfile ? (
+                <button
+                  type="button"
+                  onClick={(e) => goToDoctorProfile(e, session)}
+                  className="font-medium text-sm truncate text-left hover:underline focus:outline-none"
+                  title="Ver perfil del doctor"
+                >
+                  {displayInfo.name}
+                </button>
+              ) : (
+                <p className="font-medium text-sm truncate">{displayInfo.name}</p>
+              )}
               {session.isDoubleCheck && (
                 <Badge variant="outline" className="text-[10px] px-1">
                   <CheckCheck className="w-3 h-3 mr-0.5" />
@@ -407,7 +430,18 @@ export default function Chat() {
             
             {/* Specialty */}
             {displayInfo.specialty && (
-              <p className="text-xs text-primary truncate">{displayInfo.specialty}</p>
+              canOpenDoctorProfile ? (
+                <button
+                  type="button"
+                  onClick={(e) => goToDoctorProfile(e, session)}
+                  className="text-xs text-primary truncate text-left hover:underline focus:outline-none"
+                  title="Ver perfil del doctor"
+                >
+                  {displayInfo.specialty}
+                </button>
+              ) : (
+                <p className="text-xs text-primary truncate">{displayInfo.specialty}</p>
+              )
             )}
             
             {/* Last message preview */}
@@ -517,7 +551,7 @@ export default function Chat() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-5xl">
+      <div className="container mx-auto px-4 py-10 max-w-5xl">
         <h1 className="font-heading text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
           <MessageSquare className="w-6 h-6 text-primary" />
           Chat 1:1
@@ -603,9 +637,20 @@ export default function Chat() {
                       
                       <div>
                         <div className="flex items-center gap-2">
-                          <CardTitle className="text-sm">
-                            {getSessionDisplayName(selectedSessionData)}
-                          </CardTitle>
+                          {role === 'patient' && getDoctorIdForSession(selectedSessionData) ? (
+                            <button
+                              type="button"
+                              onClick={(e) => goToDoctorProfile(e, selectedSessionData)}
+                              className="text-sm font-semibold text-left hover:underline focus:outline-none"
+                              title="Ver perfil del doctor"
+                            >
+                              {getSessionDisplayName(selectedSessionData)}
+                            </button>
+                          ) : (
+                            <CardTitle className="text-sm">
+                              {getSessionDisplayName(selectedSessionData)}
+                            </CardTitle>
+                          )}
                           {selectedSessionData.isDoubleCheck && (
                             <Badge variant="outline" className="text-xs">
                               <CheckCheck className="w-3 h-3 mr-1" />
@@ -623,7 +668,18 @@ export default function Chat() {
                           return (
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               {info.specialty && (
-                                <span className="text-primary">{info.specialty}</span>
+                                role === 'patient' && getDoctorIdForSession(selectedSessionData) ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => goToDoctorProfile(e, selectedSessionData)}
+                                    className="text-primary hover:underline focus:outline-none"
+                                    title="Ver perfil del doctor"
+                                  >
+                                    {info.specialty}
+                                  </button>
+                                ) : (
+                                  <span className="text-primary">{info.specialty}</span>
+                                )
                               )}
                               {officeHours && role === 'patient' && (
                                 <>
