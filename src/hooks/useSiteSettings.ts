@@ -26,7 +26,7 @@ export function useSocialLinks() {
           .from('site_settings')
           .select('value')
           .eq('id', 'social_links')
-          .single();
+          .maybeSingle();
 
         if (data?.value && !error) {
           setSocialLinks(data.value as unknown as SocialLinks);
