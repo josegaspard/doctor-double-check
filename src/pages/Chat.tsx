@@ -72,9 +72,20 @@ export default function Chat() {
 
   const goToDoctorProfile = (e: React.MouseEvent, session: ChatSession) => {
     e.stopPropagation();
+    e.preventDefault();
     const doctorId = getDoctorIdForSession(session);
     if (!doctorId) return;
+    
+    // Store current scroll position before navigating
+    const scrollY = window.scrollY;
+    
+    // Navigate and ensure scroll to top
     navigate(`/doctor/${doctorId}`);
+    
+    // Force scroll to top after navigation
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
   };
 
   // Handle consultation success from payment redirect

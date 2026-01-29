@@ -473,17 +473,30 @@ export default function DoctorGoLive() {
 
             {/* Specialty */}
             <div className="space-y-2">
-              <Label>Especialidad *</Label>
+              <Label htmlFor="specialty">Especialidad *</Label>
               <Select value={specialty} onValueChange={setSpecialty}>
-                <SelectTrigger>
+                <SelectTrigger id="specialty" className="w-full">
                   <SelectValue placeholder="Selecciona una especialidad" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent 
+                  className="max-h-[280px] bg-popover border border-border shadow-lg z-50"
+                  position="popper"
+                  sideOffset={4}
+                >
                   {SPECIALTIES.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem 
+                      key={s} 
+                      value={s}
+                      className="cursor-pointer hover:bg-accent focus:bg-accent"
+                    >
+                      {s}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                La especialidad ayuda a los pacientes a encontrar tu transmisión
+              </p>
             </div>
 
             {/* Tags */}

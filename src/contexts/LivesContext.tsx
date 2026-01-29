@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContext } from './AuthContext';
 
@@ -59,6 +59,28 @@ interface LivesContextType {
 
 const LivesContext = createContext<LivesContextType | undefined>(undefined);
 
+// Throttle function to limit API calls
+function throttle<T extends (...args: any[]) => any>(fn: T, delay: number): T {
+  let lastCall = 0;
+  let timeoutId: NodeJS.Timeout | null = null;
+  
+  return ((...args: Parameters<T>) => {
+    const now = Date.now();
+    const remaining = delay - (now - lastCall);
+    
+    if (remaining <= 0) {
+      lastCall = now;
+      return fn(...args);
+    } else if (!timeoutId) {
+      timeoutId = setTimeout(() => {
+        lastCall = Date.now();
+        timeoutId = null;
+        fn(...args);
+      }, remaining);
+    }
+  }) as T;
+}
+
 export function LivesProvider({ children }: { children: ReactNode }) {
   const authContext = useContext(AuthContext);
   const user = authContext?.user;
@@ -66,10 +88,28 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [likedLives, setLikedLives] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Track if initial load is done
+  const initialLoadDone = useRef(false);
+  // Track last fetch time to prevent rapid re-fetches
+  const lastFetchTime = useRef<number>(0);
+  const MIN_FETCH_INTERVAL = 5000; // Minimum 5 seconds between fetches
+  
+  // Cache for doctor profiles to reduce redundant queries
+  const profileCache = useRef<Map<string, { name: string; avatar_url?: string }>>(new Map());
+  const doctorProfileCache = useRef<Map<string, { followers_count: number }>>(new Map());
 
-  const fetchLives = useCallback(async () => {
+  const fetchLives = useCallback(async (force = false) => {
+    const now = Date.now();
+    
+    // Skip if fetched recently (unless forced)
+    if (!force && now - lastFetchTime.current < MIN_FETCH_INTERVAL) {
+      return;
+    }
+    
+    lastFetchTime.current = now;
+    
     try {
-      // Fetch lives without foreign key joins to avoid 400 errors
       const { data: livesData, error } = await supabase
         .from('lives')
         .select('*')
@@ -81,30 +121,39 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       }
       
       if (livesData && livesData.length > 0) {
-        // Fetch doctor data from public views
+        // Get unique doctor IDs that aren't in cache
         const doctorIds = [...new Set(livesData.map(l => l.doctor_id))];
+        const uncachedIds = doctorIds.filter(id => !profileCache.current.has(id));
         
-        const [profilesResult, doctorProfilesResult] = await Promise.all([
-          supabase
-            .from('profiles_public')
-            .select('id, name, avatar_url')
-            .in('id', doctorIds),
-          supabase
-            .from('doctor_profiles_public')
-            .select('user_id, followers_count')
-            .in('user_id', doctorIds)
-        ]);
+        // Only fetch profiles not in cache
+        if (uncachedIds.length > 0) {
+          const [profilesResult, doctorProfilesResult] = await Promise.all([
+            supabase
+              .from('profiles_public')
+              .select('id, name, avatar_url')
+              .in('id', uncachedIds),
+            supabase
+              .from('doctor_profiles_public')
+              .select('user_id, followers_count')
+              .in('user_id', uncachedIds)
+          ]);
 
-        const profileMap = new Map(profilesResult.data?.map(p => [p.id, p]) || []);
-        const doctorMap = new Map(doctorProfilesResult.data?.map(d => [d.user_id, d]) || []);
+          // Update caches
+          profilesResult.data?.forEach(p => {
+            profileCache.current.set(p.id, { name: p.name || 'Doctor', avatar_url: p.avatar_url || undefined });
+          });
+          doctorProfilesResult.data?.forEach(d => {
+            doctorProfileCache.current.set(d.user_id, { followers_count: d.followers_count || 0 });
+          });
+        }
 
         setLives(livesData.map(l => ({
           id: l.id,
           title: l.title,
           description: l.description || undefined,
           doctorId: l.doctor_id,
-          doctorName: profileMap.get(l.doctor_id)?.name || 'Doctor',
-          doctorAvatar: profileMap.get(l.doctor_id)?.avatar_url || undefined,
+          doctorName: profileCache.current.get(l.doctor_id)?.name || 'Doctor',
+          doctorAvatar: profileCache.current.get(l.doctor_id)?.avatar_url,
           specialty: l.specialty,
           status: l.status as LiveStatus,
           viewerCount: l.viewer_count,
@@ -114,7 +163,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           thumbnailUrl: l.thumbnail_url || undefined,
           recordingPrice: l.recording_price ? Number(l.recording_price) : undefined,
           tags: l.tags || [],
-          followersCount: doctorMap.get(l.doctor_id)?.followers_count || 0,
+          followersCount: doctorProfileCache.current.get(l.doctor_id)?.followers_count || 0,
           dailyRoomName: (l as any).daily_room_name || undefined,
         })));
       } else {
@@ -134,12 +183,20 @@ export function LivesProvider({ children }: { children: ReactNode }) {
 
       if (recordingsData) {
         const doctorIds = [...new Set(recordingsData.map(r => r.doctor_id))];
-        const { data: profiles } = await supabase
-          .from('profiles_public')
-          .select('id, name')
-          .in('id', doctorIds);
+        const uncachedIds = doctorIds.filter(id => !profileCache.current.has(id));
+        
+        if (uncachedIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles_public')
+            .select('id, name')
+            .in('id', uncachedIds);
 
-        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+          profiles?.forEach(p => {
+            if (!profileCache.current.has(p.id)) {
+              profileCache.current.set(p.id, { name: p.name || 'Doctor' });
+            }
+          });
+        }
 
         setRecordings(recordingsData.map(r => ({
           id: r.id,
@@ -147,7 +204,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           title: r.title,
           description: r.description || undefined,
           doctorId: r.doctor_id,
-          doctorName: profileMap.get(r.doctor_id)?.name || 'Doctor',
+          doctorName: profileCache.current.get(r.doctor_id)?.name || 'Doctor',
           specialty: r.specialty,
           duration: r.duration,
           price: Number(r.price),
@@ -179,16 +236,25 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id, user?.role]);
 
+  // Throttled fetch for realtime updates - prevents rapid re-fetches
+  const throttledFetchLives = useMemo(
+    () => throttle(() => fetchLives(false), 3000),
+    [fetchLives]
+  );
+
   // Initial data load - only once
   useEffect(() => {
+    if (initialLoadDone.current) return;
+    
     let isMounted = true;
     
     const loadData = async () => {
       if (!isMounted) return;
       setIsLoading(true);
-      await Promise.all([fetchLives(), fetchRecordings(), fetchLikedLives()]);
+      await Promise.all([fetchLives(true), fetchRecordings(), fetchLikedLives()]);
       if (isMounted) {
         setIsLoading(false);
+        initialLoadDone.current = true;
       }
     };
 
@@ -199,22 +265,61 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     };
   }, []); // Empty dependency array - only run on mount
 
-  // Realtime subscription - separate effect with stable channel
+  // Realtime subscription with intelligent batching
   useEffect(() => {
+    // Use a single channel with batched updates
     const channel = supabase
-      .channel('lives-realtime')
+      .channel('lives-realtime-optimized')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'lives' },
-        () => {
-          fetchLives();
+        (payload) => {
+          // For INSERT/UPDATE, update state directly when possible
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const record = payload.new as any;
+            
+            setLives(prev => {
+              const existing = prev.find(l => l.id === record.id);
+              const updatedLive: Live = {
+                id: record.id,
+                title: record.title,
+                description: record.description || undefined,
+                doctorId: record.doctor_id,
+                doctorName: existing?.doctorName || profileCache.current.get(record.doctor_id)?.name || 'Doctor',
+                doctorAvatar: existing?.doctorAvatar || profileCache.current.get(record.doctor_id)?.avatar_url,
+                specialty: record.specialty,
+                status: record.status as LiveStatus,
+                viewerCount: record.viewer_count,
+                likesCount: record.likes_count,
+                startedAt: new Date(record.started_at),
+                endedAt: record.ended_at ? new Date(record.ended_at) : undefined,
+                thumbnailUrl: record.thumbnail_url || undefined,
+                recordingPrice: record.recording_price ? Number(record.recording_price) : undefined,
+                tags: record.tags || [],
+                followersCount: existing?.followersCount || doctorProfileCache.current.get(record.doctor_id)?.followers_count || 0,
+                dailyRoomName: record.daily_room_name || undefined,
+              };
+              
+              if (existing) {
+                return prev.map(l => l.id === record.id ? updatedLive : l);
+              } else {
+                // New live - fetch doctor info if not cached
+                if (!profileCache.current.has(record.doctor_id)) {
+                  throttledFetchLives();
+                }
+                return [updatedLive, ...prev];
+              }
+            });
+          } else if (payload.eventType === 'DELETE') {
+            setLives(prev => prev.filter(l => l.id !== (payload.old as any).id));
+          }
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'live_likes' },
         () => {
-          fetchLives();
+          // Only refresh liked lives for the current user, not full fetch
           fetchLikedLives();
         }
       )
@@ -223,23 +328,23 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchLives, fetchLikedLives]);
+  }, [throttledFetchLives, fetchLikedLives]);
 
-  const getLive = (id: string): Live | undefined => {
+  const getLive = useCallback((id: string): Live | undefined => {
     return lives.find(l => l.id === id);
-  };
+  }, [lives]);
 
-  const getRecording = (id: string): Recording | undefined => {
+  const getRecording = useCallback((id: string): Recording | undefined => {
     return recordings.find(r => r.id === id);
-  };
+  }, [recordings]);
 
-  const getLivesByDoctor = (doctorId: string): Live[] => {
+  const getLivesByDoctor = useCallback((doctorId: string): Live[] => {
     return lives.filter(l => l.doctorId === doctorId);
-  };
+  }, [lives]);
 
-  const getRecordingsByDoctor = (doctorId: string): Recording[] => {
+  const getRecordingsByDoctor = useCallback((doctorId: string): Recording[] => {
     return recordings.filter(r => r.doctorId === doctorId);
-  };
+  }, [recordings]);
 
   const likeLive = async (liveId: string) => {
     if (!user?.id || user.role === 'visitor') return;
@@ -275,9 +380,9 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const hasLiked = (liveId: string): boolean => {
+  const hasLiked = useCallback((liveId: string): boolean => {
     return likedLives.has(liveId);
-  };
+  }, [likedLives]);
 
   const createLive = async (data: Partial<Live>): Promise<{ success: boolean; liveId?: string; error?: string }> => {
     if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
@@ -309,7 +414,6 @@ export function LivesProvider({ children }: { children: ReactNode }) {
 
       console.log(`Notified ${notifyResult} subscribers about new live`);
 
-      await fetchLives();
       return { success: true, liveId: newLive.id };
     } catch (error: any) {
       return { success: false, error: error.message || 'Error al crear live' };
@@ -369,40 +473,41 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      await Promise.all([fetchLives(), fetchRecordings()]);
+      await Promise.all([fetchLives(true), fetchRecordings()]);
       return { success: true, recordingId };
     } catch (error: any) {
       return { success: false, error: error.message || 'Error al terminar live' };
     }
   };
 
-  const refreshLives = async () => {
-    await fetchLives();
-  };
+  const refreshLives = useCallback(async () => {
+    await fetchLives(true);
+  }, [fetchLives]);
 
-  const refreshRecordings = async () => {
+  const refreshRecordings = useCallback(async () => {
     await fetchRecordings();
-  };
+  }, [fetchRecordings]);
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    lives,
+    recordings,
+    isLoading,
+    getLive,
+    getRecording,
+    getLivesByDoctor,
+    getRecordingsByDoctor,
+    likeLive,
+    unlikeLive,
+    hasLiked,
+    createLive,
+    endLive,
+    refreshLives,
+    refreshRecordings,
+  }), [lives, recordings, isLoading, getLive, getRecording, getLivesByDoctor, getRecordingsByDoctor, hasLiked, refreshLives, refreshRecordings]);
 
   return (
-    <LivesContext.Provider
-      value={{
-        lives,
-        recordings,
-        isLoading,
-        getLive,
-        getRecording,
-        getLivesByDoctor,
-        getRecordingsByDoctor,
-        likeLive,
-        unlikeLive,
-        hasLiked,
-        createLive,
-        endLive,
-        refreshLives,
-        refreshRecordings,
-      }}
-    >
+    <LivesContext.Provider value={contextValue}>
       {children}
     </LivesContext.Provider>
   );
