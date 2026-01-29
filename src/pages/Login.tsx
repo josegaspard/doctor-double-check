@@ -15,6 +15,7 @@ import { ArrowLeft, Loader2, User, Stethoscope, GraduationCap, Mail, CheckCircle
 import { UserRole } from '@/types';
 import { toast } from 'sonner';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
+import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -129,7 +130,7 @@ export default function Login() {
             <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="text-dark-foreground hover:bg-dark/80">
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+            <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
           </div>
         </div>
       </header>
