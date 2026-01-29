@@ -406,6 +406,48 @@ export type Database = {
         }
         Relationships: []
       }
+      email_history: {
+        Row: {
+          content_id: string | null
+          content_title: string | null
+          created_at: string
+          doctor_id: string
+          email_type: string
+          error_message: string | null
+          id: string
+          recipient_email: string
+          recipient_name: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          content_id?: string | null
+          content_title?: string | null
+          created_at?: string
+          doctor_id: string
+          email_type: string
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          recipient_name?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          content_id?: string | null
+          content_title?: string | null
+          created_at?: string
+          doctor_id?: string
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          recipient_name?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       entitlements: {
         Row: {
           created_at: string
