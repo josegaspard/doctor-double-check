@@ -284,15 +284,20 @@ serve(async (req) => {
           balance: 250,
         });
 
+        // First insert, then update status (upsert doesn't override default status)
         await adminClient.from("resident_profiles").upsert({
           user_id: userId,
           specialty,
           institution,
           year,
-          status: "approved",
           titulo_medicina: `TM-${8000000 + i}`,
           cedula_profesional: `CP-${9000000 + i}`,
         });
+        
+        // Force update status to approved
+        await adminClient.from("resident_profiles")
+          .update({ status: "approved" })
+          .eq("user_id", userId);
 
         createdUsers.push({ type: "resident", email, name });
       } catch (e: any) {
