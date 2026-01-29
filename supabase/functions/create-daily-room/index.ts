@@ -26,7 +26,7 @@ serve(async (req) => {
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     // Authenticate user
@@ -77,6 +77,20 @@ serve(async (req) => {
 
     const roomData = await dailyResponse.json();
     logStep("Room created", { roomName: roomData.name, url: roomData.url });
+
+    // Save the daily_room_name to the lives table
+    const { error: updateError } = await supabaseClient
+      .from('lives')
+      .update({ daily_room_name: roomData.name })
+      .eq('id', liveId)
+      .eq('doctor_id', userId);
+
+    if (updateError) {
+      logStep("Error updating live with room name", updateError);
+      // Don't throw - room was created successfully
+    } else {
+      logStep("Saved daily_room_name to lives table", { liveId, roomName: roomData.name });
+    }
 
     // Create meeting token for the owner (doctor)
     const tokenResponse = await fetch("https://api.daily.co/v1/meeting-tokens", {

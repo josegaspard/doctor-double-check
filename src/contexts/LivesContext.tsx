@@ -21,6 +21,7 @@ export interface Live {
   recordingPrice?: number;
   tags: string[];
   followersCount?: number;
+  dailyRoomName?: string;
 }
 
 export interface Recording {
@@ -114,6 +115,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           recordingPrice: l.recording_price ? Number(l.recording_price) : undefined,
           tags: l.tags || [],
           followersCount: doctorMap.get(l.doctor_id)?.followers_count || 0,
+          dailyRoomName: (l as any).daily_room_name || undefined,
         })));
       } else {
         setLives([]);

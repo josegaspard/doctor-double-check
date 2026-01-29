@@ -101,9 +101,10 @@ export interface Live {
   tags: string[];
   started_at: string;
   ended_at?: string | null;
-  // Joined data
-  doctor?: Profile;
-  doctor_profile?: DoctorProfile;
+  daily_room_name?: string | null;
+  // Joined data (partial profile for display purposes)
+  doctor?: { id: string; name: string; avatar_url?: string | null };
+  doctor_profile?: Partial<DoctorProfile>;
 }
 
 // Live Like
@@ -147,8 +148,8 @@ export interface Recording {
   video_url?: string | null;
   tags: string[];
   created_at: string;
-  // Joined data
-  doctor?: Profile;
+  // Joined data (partial profile for display purposes)
+  doctor?: { id: string; name: string; avatar_url?: string | null };
 }
 
 // Purchase
