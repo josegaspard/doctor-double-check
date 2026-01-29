@@ -13,6 +13,7 @@ import {
   Lock
 } from 'lucide-react';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
+import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
 const roleOptions = [
   {
@@ -75,7 +76,7 @@ export default function RoleSelector() {
       <header className="border-b border-border bg-dark">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
-            <img src={logoMedicalMasters} alt="Medical Masters" className="h-10 w-auto" />
+            <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-10 w-auto" />
           </div>
         </div>
       </header>
@@ -157,7 +158,7 @@ export default function RoleSelector() {
       <footer className="border-t border-border bg-dark py-4">
         <div className="container mx-auto px-4 text-center">
           <p className="text-xs text-dark-foreground">
-            © 2024 Medical Masters. Todos los derechos reservados.
+            © 2026 Medical Masters. Todos los derechos reservados.
           </p>
         </div>
       </footer>
