@@ -116,7 +116,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </SheetTrigger>
                 <SheetContent side="left" className="w-72">
                   <div className="flex items-center gap-2 mb-6">
-                    <img src={logoMedicalMasters} alt="Medical Masters" className="h-10 w-auto" />
+                    <img src={logoMedicalMasters} alt="Medical Masters" className="h-12 w-auto" />
                   </div>
                   <nav className="flex flex-col gap-1">
                     {filteredNavItems.map((item) => (
@@ -137,7 +137,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </SheetContent>
               </Sheet>
 
-              <Link to="/lives" className="flex items-center gap-2">
+              {/* Logo - hidden on mobile, visible on desktop */}
+              <Link to="/lives" className="hidden md:flex items-center gap-2">
                 <img src={logoMedicalMasters} alt="Medical Masters" className="h-10 w-auto" />
               </Link>
             </div>
@@ -294,9 +295,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <Link to="/privacy" className="text-sm text-light/70 hover:text-light transition-colors">
                   {t('footer.privacyPolicy')}
                 </Link>
-                <a href="mailto:contacto@medicalmasters.com" className="text-sm text-light/70 hover:text-light transition-colors">
+                <Link to="/contact" className="text-sm text-light/70 hover:text-light transition-colors">
                   {t('footer.contact')}
-                </a>
+                </Link>
               </nav>
               
               <p className="text-sm text-light/70">
