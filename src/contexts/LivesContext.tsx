@@ -177,18 +177,30 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id, user?.role]);
 
+  // Initial data load - only once
   useEffect(() => {
+    let isMounted = true;
+    
     const loadData = async () => {
+      if (!isMounted) return;
       setIsLoading(true);
       await Promise.all([fetchLives(), fetchRecordings(), fetchLikedLives()]);
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     };
 
     loadData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array - only run on mount
 
-    // Set up realtime subscription for lives
+  // Realtime subscription - separate effect with stable channel
+  useEffect(() => {
     const channel = supabase
-      .channel('lives-changes')
+      .channel('lives-realtime')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'lives' },
@@ -209,7 +221,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchLives, fetchRecordings, fetchLikedLives]);
+  }, [fetchLives, fetchLikedLives]);
 
   const getLive = (id: string): Live | undefined => {
     return lives.find(l => l.id === id);
