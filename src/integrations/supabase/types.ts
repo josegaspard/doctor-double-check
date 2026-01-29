@@ -1747,6 +1747,10 @@ export type Database = {
         }
         Returns: number
       }
+      process_consultation_purchase: {
+        Args: { p_amount: number; p_doctor_id: string; p_patient_name?: string }
+        Returns: Json
+      }
       process_wallet_purchase: {
         Args: { p_amount: number; p_description: string; p_metadata?: Json }
         Returns: Json
