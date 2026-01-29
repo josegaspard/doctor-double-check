@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ import {
   Instagram,
   Linkedin,
   Twitter,
+  Calendar,
 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
@@ -43,22 +45,22 @@ import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
 interface NavItem {
-  label: string;
+  labelKey: string;
   href: string;
   icon: React.ElementType;
   roles: string[];
 }
 
 const navItems: NavItem[] = [
-  { label: 'Lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
-  { label: 'Grabaciones', href: '/recordings', icon: PlayCircle, roles: ['patient', 'doctor', 'resident', 'admin'] },
-  { label: 'Chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'doctor'] },
-  { label: 'Mi Vault', href: '/vault', icon: Folder, roles: ['patient'] },
-  { label: 'Vault Pacientes', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
-  { label: 'Mi Panel', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
-  { label: 'Disponibilidad', href: '/doctor/availability', icon: Settings, roles: ['doctor'] },
-  { label: 'Subir Contenido', href: '/doctor/upload', icon: Upload, roles: ['doctor'] },
-  { label: 'Admin', href: '/admin', icon: Settings, roles: ['admin'] },
+  { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
+  { labelKey: 'nav.recordings', href: '/recordings', icon: PlayCircle, roles: ['patient', 'doctor', 'resident', 'admin'] },
+  { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'doctor'] },
+  { labelKey: 'nav.vault', href: '/vault', icon: Folder, roles: ['patient'] },
+  { labelKey: 'nav.doctorVault', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
+  { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
+  { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'] },
+  { labelKey: 'nav.upload', href: '/doctor/upload', icon: Upload, roles: ['doctor'] },
+  { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -66,6 +68,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const location = useLocation();
   const { user, isAuthenticated, logout, role } = useAuth();
   const { balance } = useWallet();
+  const { t } = useLanguage();
   
   // Enable realtime notifications
   useNotificationsRealtime();
@@ -82,15 +85,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const getRoleBadge = () => {
     switch (role) {
       case 'doctor':
-        return <Badge variant="verified">Médico</Badge>;
+        return <Badge variant="verified">{t('roles.doctor')}</Badge>;
       case 'patient':
-        return <Badge variant="info">Paciente</Badge>;
+        return <Badge variant="info">{t('roles.patient')}</Badge>;
       case 'resident':
-        return <Badge variant="warning">Residente</Badge>;
+        return <Badge variant="warning">{t('roles.resident')}</Badge>;
       case 'admin':
-        return <Badge variant="destructive">Admin</Badge>;
+        return <Badge variant="destructive">{t('roles.admin')}</Badge>;
       default:
-        return <Badge variant="secondary">Visitante</Badge>;
+        return <Badge variant="secondary">{t('roles.visitor')}</Badge>;
     }
   };
 
@@ -124,7 +127,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                         }`}
                       >
                         <item.icon className="w-5 h-5" />
-                        {item.label}
+                        {t(item.labelKey)}
                       </Link>
                     ))}
                   </nav>
@@ -149,7 +152,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                   }`}
                 >
                   <item.icon className="w-4 h-4" />
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               ))}
             </nav>
@@ -201,28 +204,28 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/profile')}>
                       <User className="w-4 h-4 mr-2" />
-                      Mi Perfil
+                      {t('nav.profile')}
                     </DropdownMenuItem>
                     {(role === 'patient' || role === 'resident') && (
                       <DropdownMenuItem onClick={() => navigate('/wallet')}>
                         <Wallet className="w-4 h-4 mr-2" />
-                        Mi Wallet
+                        {t('nav.wallet')}
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => navigate('/settings')}>
                       <Settings className="w-4 h-4 mr-2" />
-                      Configuración
+                      {t('nav.settings')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                       <LogOut className="w-4 h-4 mr-2" />
-                      Cerrar Sesión
+                      {t('nav.logout')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
                 <Button onClick={() => navigate('/login')} size="sm">
-                  Iniciar Sesión
+                  {t('nav.login')}
                 </Button>
               )}
             </div>
@@ -243,7 +246,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-3">
                 <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
-                <span className="text-sm text-light">Plataforma de educación médica continua</span>
+                <span className="text-sm text-light">{t('footer.platform')}</span>
               </div>
               
               {/* Social Media Icons */}
@@ -270,18 +273,18 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <nav className="flex items-center gap-6">
                 <Link to="/terms" className="text-sm text-light/70 hover:text-light transition-colors">
-                  Términos de Servicio
+                  {t('footer.termsOfService')}
                 </Link>
                 <Link to="/privacy" className="text-sm text-light/70 hover:text-light transition-colors">
-                  Política de Privacidad
+                  {t('footer.privacyPolicy')}
                 </Link>
                 <a href="mailto:contacto@medicalmasters.com" className="text-sm text-light/70 hover:text-light transition-colors">
-                  Contacto
+                  {t('footer.contact')}
                 </a>
               </nav>
               
               <p className="text-sm text-light/70">
-                © 2026 Medical Masters. Todos los derechos reservados.
+                {t('footer.copyright')}
               </p>
             </div>
           </div>
