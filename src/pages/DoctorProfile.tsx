@@ -214,6 +214,7 @@ export default function DoctorProfile() {
     setIsProcessingPayment(true);
     try {
       // Use the secure server-side function that handles everything atomically
+      // This creates chat session, consultation record, entitlement, and notifies doctor
       const { data, error } = await supabase.rpc('process_consultation_purchase', {
         p_doctor_id: doctor.id,
         p_amount: doctor.consultationFee,
@@ -226,12 +227,19 @@ export default function DoctorProfile() {
         return;
       }
 
-      const result = data as { success: boolean; error?: string; amount_charged?: number };
+      const result = data as { 
+        success: boolean; 
+        error?: string; 
+        amount_charged?: number;
+        session_id?: string;
+        consultation_id?: string;
+      };
 
       if (result.success) {
         setShowPaymentModal(false);
-        await startChatSession();
         toast.success('¡Pago exitoso!');
+        // Navigate directly to chat - session was already created by RPC
+        navigate('/chat');
       } else {
         toast.error(result.error || 'Error al procesar el pago');
       }
