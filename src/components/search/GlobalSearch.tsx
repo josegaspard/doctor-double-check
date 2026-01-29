@@ -70,75 +70,26 @@ export function GlobalSearch() {
         const searchResults: SearchResult[] = [];
         const searchTerm = debouncedQuery.toLowerCase();
 
-        // Search by doctor name first (most common search)
-        const { data: profiles } = await supabase
-          .from('profiles_public')
-          .select('id, name, avatar_url')
-          .ilike('name', `%${searchTerm}%`)
-          .limit(5);
+        // Use secure RPC function for doctor search (works for anon & authenticated)
+        const { data: doctors, error: rpcError } = await supabase.rpc(
+          'search_doctors_public',
+          { p_term: searchTerm, p_limit: 8 }
+        );
 
-        if (profiles) {
-          // Get doctor profiles for matched profiles (always use public view for search)
-          const userIds = profiles.map(p => p.id);
-          const { data: doctorProfiles } = await supabase
-            .from('doctor_profiles_public')
-            .select('user_id, specialty, status')
-            .in('user_id', userIds)
-            .eq('status', 'approved');
-
-          const doctorMap = new Map(doctorProfiles?.map(d => [d.user_id, d]) || []);
-
-          for (const profile of profiles) {
-            const docProfile = doctorMap.get(profile.id);
-            if (docProfile) {
-              searchResults.push({
-                id: profile.id,
-                type: 'doctor',
-                title: profile.name || 'Doctor',
-                subtitle: docProfile.specialty,
-                specialty: docProfile.specialty,
-                avatarUrl: profile.avatar_url || undefined,
-              });
-            }
-          }
+        if (rpcError) {
+          console.error('search_doctors_public error:', rpcError);
         }
 
-        // Search doctors by specialty (always use public view)
-        const { data: doctors } = await supabase
-          .from('doctor_profiles_public')
-          .select('user_id, specialty, status')
-          .eq('status', 'approved')
-          .ilike('specialty', `%${searchTerm}%`)
-          .limit(3);
-
-        if (doctors) {
-          const newDoctorIds = doctors
-            .filter(d => !searchResults.find(r => r.id === d.user_id))
-            .map(d => d.user_id);
-
-          if (newDoctorIds.length > 0) {
-            const { data: doctorProfiles } = await supabase
-              .from('profiles_public')
-              .select('id, name, avatar_url')
-              .in('id', newDoctorIds);
-
-            const profileMap = new Map(doctorProfiles?.map(p => [p.id, p]) || []);
-
-            for (const doc of doctors) {
-              if (!searchResults.find(r => r.id === doc.user_id)) {
-                const profile = profileMap.get(doc.user_id);
-                if (profile) {
-                  searchResults.push({
-                    id: doc.user_id,
-                    type: 'doctor',
-                    title: profile.name || 'Doctor',
-                    subtitle: doc.specialty,
-                    specialty: doc.specialty,
-                    avatarUrl: profile.avatar_url || undefined,
-                  });
-                }
-              }
-            }
+        if (doctors && doctors.length > 0) {
+          for (const doc of doctors) {
+            searchResults.push({
+              id: doc.user_id,
+              type: 'doctor',
+              title: doc.name || 'Doctor',
+              subtitle: doc.specialty,
+              specialty: doc.specialty,
+              avatarUrl: doc.avatar_url || undefined,
+            });
           }
         }
 
