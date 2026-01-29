@@ -333,14 +333,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const session = sessions.find(s => s.id === sessionId);
       if (session) {
         const isParticipant1 = session.participant1Id === user.id;
+        
+        // Get current unread counts from DB to ensure accuracy
+        const { data: currentSession } = await supabase
+          .from('chat_sessions')
+          .select('unread_count_1, unread_count_2')
+          .eq('id', sessionId)
+          .single();
+        
+        const unread1 = currentSession?.unread_count_1 || 0;
+        const unread2 = currentSession?.unread_count_2 || 0;
+        
         await supabase
           .from('chat_sessions')
           .update({
             last_message: previewMessage,
             last_message_at: new Date().toISOString(),
+            // Increment the OTHER participant's unread count
             ...(isParticipant1 
-              ? { unread_count_2: (session.unreadCount || 0) + 1 }
-              : { unread_count_1: (session.unreadCount || 0) + 1 }
+              ? { unread_count_2: unread2 + 1 }
+              : { unread_count_1: unread1 + 1 }
             ),
           })
           .eq('id', sessionId);

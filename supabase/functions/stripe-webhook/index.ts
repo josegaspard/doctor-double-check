@@ -268,6 +268,65 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
     logStep("Chat entitlement created", { userId, expiresAt });
   }
 
+  // Get patient user role
+  const { data: patientRole } = await db
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .single();
+
+  // Check if a chat session already exists
+  const { data: existingSession } = await db
+    .from("chat_sessions")
+    .select("id")
+    .or(`and(participant1_id.eq.${userId},participant2_id.eq.${doctorId}),and(participant1_id.eq.${doctorId},participant2_id.eq.${userId})`)
+    .eq("status", "active")
+    .eq("is_double_check", false)
+    .maybeSingle();
+
+  let chatSessionId = existingSession?.id;
+
+  // Create chat session if it doesn't exist
+  if (!chatSessionId) {
+    const { data: newSession, error: sessionError } = await db
+      .from("chat_sessions")
+      .insert({
+        participant1_id: userId,
+        participant1_type: patientRole?.role || "patient",
+        participant2_id: doctorId,
+        participant2_type: "doctor",
+        status: "active",
+        is_double_check: false,
+      })
+      .select()
+      .single();
+
+    if (sessionError) {
+      logStep("Error creating chat session", { error: sessionError });
+    } else {
+      chatSessionId = newSession.id;
+      logStep("Chat session created", { sessionId: chatSessionId });
+    }
+  }
+
+  // Create consultation record for ratings and history
+  const { data: consultation, error: consultationError } = await db
+    .from("consultations")
+    .insert({
+      patient_id: userId,
+      doctor_id: doctorId,
+      chat_session_id: chatSessionId,
+      status: "active",
+    })
+    .select()
+    .single();
+
+  if (consultationError) {
+    logStep("Error creating consultation record", { error: consultationError });
+  } else {
+    logStep("Consultation record created", { consultationId: consultation.id });
+  }
+
   // Credit doctor earnings
   await creditDoctorEarnings(db, doctorId, finalFee, "consultation", null);
 
@@ -280,8 +339,15 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
       amount: -finalFee,
       description: "Consulta médica por chat",
       status: "paid",
-      metadata: { doctor_id: doctorId, stripe_session_id: session.id },
+      metadata: { doctor_id: doctorId, stripe_session_id: session.id, consultation_id: consultation?.id },
     });
+
+  // Get patient name for notification
+  const { data: patientProfile } = await db
+    .from("profiles")
+    .select("name")
+    .eq("id", userId)
+    .single();
 
   // Notify the patient that the payment was successful
   await db
@@ -291,10 +357,25 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
       type: "system",
       title: "Pago exitoso",
       message: "Tu consulta ha sido pagada. Ya puedes iniciar el chat con tu médico.",
-      data: { doctor_id: doctorId },
+      data: { doctor_id: doctorId, session_id: chatSessionId },
     });
 
-  logStep("Consultation payment processed successfully", { userId, doctorId });
+  // Notify the doctor about the new consultation
+  await db
+    .from("notifications")
+    .insert({
+      user_id: doctorId,
+      type: "chat_message",
+      title: "💬 Nueva consulta pagada",
+      message: `${patientProfile?.name || "Un paciente"} ha pagado una consulta contigo`,
+      data: { 
+        patient_id: userId, 
+        session_id: chatSessionId,
+        url: "/chat"
+      },
+    });
+
+  logStep("Consultation payment processed successfully", { userId, doctorId, chatSessionId });
 }
 
 async function creditDoctorEarnings(
@@ -341,7 +422,7 @@ async function creditDoctorEarnings(
       user_id: doctorId,
       type: "earning",
       amount: amount,
-      description: `Ganancia por ${source === "recording" ? "venta de grabación" : "suscripción"}`,
+      description: `Ganancia por ${source === "recording" ? "venta de grabación" : source === "consultation" ? "consulta médica" : "suscripción"}`,
       status: "paid",
       metadata: { source, reference_id: referenceId },
     });
