@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const logStep = (step: string, details?: any) => {
@@ -46,7 +46,7 @@ serve(async (req) => {
     logStep("User authenticated", { userId });
 
     // Parse request body
-    const { liveId, roomName, saveRecording = true } = await req.json();
+    const { liveId, roomName, saveRecording = false } = await req.json();
     if (!liveId) throw new Error("liveId is required");
 
     logStep("Ending live", { liveId, roomName, saveRecording });
@@ -81,8 +81,8 @@ serve(async (req) => {
         if (deleteResponse.ok) {
           logStep("Daily.co room deleted", { roomName });
         } else {
-          const errorData = await deleteResponse.json().catch(() => ({}));
-          logStep("Warning: Could not delete room", { roomName, error: errorData });
+          const errorText = await deleteResponse.text();
+          logStep("Warning: Could not delete room", { roomName, error: errorText });
         }
       } catch (roomError) {
         logStep("Warning: Error deleting room", { error: String(roomError) });
@@ -90,11 +90,14 @@ serve(async (req) => {
     }
 
     // Get recordings from Daily.co if saving is enabled
+    // NOTE: Recording only works with paid Daily.co plans
     let recordingUrl: string | null = null;
     let recordingDuration = 0;
 
     if (saveRecording && roomName) {
       try {
+        logStep("Checking for recordings", { roomName });
+        
         // List recordings for this room
         const recordingsResponse = await fetch(
           `https://api.daily.co/v1/recordings?room_name=${roomName}`,
@@ -107,7 +110,8 @@ serve(async (req) => {
 
         if (recordingsResponse.ok) {
           const recordingsData = await recordingsResponse.json();
-          logStep("Recordings fetched", { count: recordingsData.data?.length || 0 });
+          const recordingsCount = recordingsData.data?.length || 0;
+          logStep("Recordings fetched", { count: recordingsCount });
 
           if (recordingsData.data && recordingsData.data.length > 0) {
             // Get the most recent recording
@@ -128,13 +132,25 @@ serve(async (req) => {
               const downloadData = await downloadResponse.json();
               recordingUrl = downloadData.download_link;
               logStep("Recording URL obtained", { duration: recordingDuration });
+            } else {
+              logStep("Could not get recording access link");
             }
+          } else {
+            logStep("No recordings found for this room");
           }
+        } else {
+          const errorText = await recordingsResponse.text();
+          logStep("Could not fetch recordings", { error: errorText });
         }
       } catch (recError) {
         logStep("Warning: Error fetching recordings", { error: String(recError) });
       }
     }
+
+    // Calculate duration from start time
+    const startedAt = new Date(live.started_at);
+    const endedAt = new Date();
+    const durationMinutes = Math.round((endedAt.getTime() - startedAt.getTime()) / 60000);
 
     // Update live status
     const newStatus = saveRecording ? (recordingUrl ? "recording_ready" : "processing_recording") : "ended";
@@ -142,7 +158,7 @@ serve(async (req) => {
       .from("lives")
       .update({
         status: newStatus,
-        ended_at: new Date().toISOString(),
+        ended_at: endedAt.toISOString(),
         viewer_count: 0, // Reset viewer count
       })
       .eq("id", liveId);
@@ -152,9 +168,9 @@ serve(async (req) => {
       throw new Error("Failed to update live status");
     }
 
-    logStep("Live status updated", { newStatus });
+    logStep("Live status updated", { newStatus, durationMinutes });
 
-    // Create recording entry if we have a recording or if recording was enabled
+    // Create recording entry if saving is enabled
     let recordingId: string | null = null;
     if (saveRecording) {
       const { data: newRecording, error: recordingError } = await supabaseAdmin
@@ -167,8 +183,8 @@ serve(async (req) => {
           specialty: live.specialty,
           tags: live.tags || [],
           thumbnail_url: live.thumbnail_url,
-          video_url: recordingUrl,
-          duration: recordingDuration,
+          video_url: recordingUrl, // May be null if recording not available
+          duration: recordingDuration || durationMinutes, // Use calculated duration if no recording
           price: live.recording_price || 0,
         })
         .select("id")
@@ -178,9 +194,9 @@ serve(async (req) => {
         logStep("Warning: Error creating recording", { error: recordingError.message });
       } else {
         recordingId = newRecording.id;
-        logStep("Recording created", { recordingId });
+        logStep("Recording created", { recordingId, hasVideoUrl: !!recordingUrl });
 
-        // Update live status to recording_ready if we created a recording
+        // Update live status to recording_ready
         await supabaseAdmin
           .from("lives")
           .update({ status: "recording_ready" })
@@ -195,6 +211,7 @@ serve(async (req) => {
         status: newStatus,
         recordingId,
         hasRecording: !!recordingUrl,
+        durationMinutes,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
