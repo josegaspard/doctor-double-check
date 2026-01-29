@@ -65,7 +65,7 @@ export function useNotifications() {
       .from('notification_preferences')
       .select('*')
       .eq('user_id', supabaseUser.id)
-      .single();
+      .maybeSingle();
 
     if (data) {
       setPreferences({
@@ -78,13 +78,13 @@ export function useNotifications() {
         notifyNewContent: data.notify_new_content,
         notifyChatMessages: data.notify_chat_messages,
       });
-    } else if (error?.code === 'PGRST116') {
+    } else if (!data && !error) {
       // No preferences found, create default
       const { data: newPrefs } = await supabase
         .from('notification_preferences')
         .insert({ user_id: supabaseUser.id })
         .select()
-        .single();
+        .maybeSingle();
 
       if (newPrefs) {
         setPreferences({

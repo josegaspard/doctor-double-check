@@ -79,7 +79,7 @@ export function GlobalSearch() {
           // Get doctor profiles for matched profiles
           const userIds = profiles.map(p => p.id);
           const { data: doctorProfiles } = await supabase
-            .from('doctor_profiles')
+            .from('doctor_profiles_public')
             .select('user_id, specialty, status')
             .in('user_id', userIds)
             .eq('status', 'approved');
@@ -103,7 +103,7 @@ export function GlobalSearch() {
 
         // Search doctors by specialty
         const { data: doctors } = await supabase
-          .from('doctor_profiles')
+          .from('doctor_profiles_public')
           .select('user_id, specialty, status')
           .eq('status', 'approved')
           .ilike('specialty', `%${searchTerm}%`)

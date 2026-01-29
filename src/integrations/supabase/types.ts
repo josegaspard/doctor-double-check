@@ -1735,6 +1735,10 @@ export type Database = {
         Returns: Json
       }
       process_wallet_topup: { Args: { p_amount: number }; Returns: Json }
+      user_has_vault_access: {
+        Args: { p_file_id: string; p_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "visitor" | "patient" | "doctor" | "resident" | "admin"
