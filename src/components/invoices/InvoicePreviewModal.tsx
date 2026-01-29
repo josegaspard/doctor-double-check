@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,9 +7,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Download, ExternalLink, Calendar, DollarSign, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { FileText, Download, ExternalLink, Calendar, DollarSign, CheckCircle, Clock, XCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Invoice {
   id: string;
@@ -31,6 +32,50 @@ interface InvoicePreviewModalProps {
 }
 
 export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreviewModalProps) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getSignedUrl = async () => {
+      if (!invoice?.file_url || !isOpen) return;
+
+      // If it's already a signed URL (contains 'token='), use it directly
+      if (invoice.file_url.includes('token=')) {
+        setSignedUrl(invoice.file_url);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // Extract path from the URL if it's a full URL
+        let filePath = invoice.file_url;
+        if (filePath.includes('/doctor-invoices/')) {
+          const parts = filePath.split('/doctor-invoices/');
+          filePath = parts[parts.length - 1];
+        }
+
+        const { data, error: urlError } = await supabase.storage
+          .from('doctor-invoices')
+          .createSignedUrl(filePath, 60 * 60); // 1 hour
+
+        if (urlError) throw urlError;
+        setSignedUrl(data?.signedUrl || null);
+      } catch (err) {
+        console.error('Error getting signed URL:', err);
+        setError('Error al cargar el archivo');
+        // Fallback to original URL
+        setSignedUrl(invoice.file_url);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getSignedUrl();
+  }, [invoice?.file_url, isOpen]);
+
   if (!invoice) return null;
 
   const formatCurrency = (amount: number) => {
@@ -110,16 +155,25 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
 
           {/* File preview */}
           <div className="border rounded-lg overflow-hidden">
-            {isPdf ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center h-[50vh] bg-muted">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : error || !signedUrl ? (
+              <div className="flex flex-col items-center justify-center h-48 bg-muted">
+                <FileText className="w-12 h-12 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">{error || 'No se pudo cargar el archivo'}</p>
+              </div>
+            ) : isPdf ? (
               <iframe
-                src={`${invoice.file_url}#toolbar=0`}
+                src={`${signedUrl}#toolbar=0`}
                 className="w-full h-[50vh]"
                 title={invoice.invoice_number}
               />
             ) : (
               <div className="flex items-center justify-center bg-muted">
                 <img 
-                  src={invoice.file_url} 
+                  src={signedUrl} 
                   alt={invoice.invoice_number}
                   className="max-h-[50vh] object-contain"
                 />
@@ -130,7 +184,8 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
           {/* Actions */}
           <div className="flex gap-2 pt-2">
             <Button 
-              onClick={() => window.open(invoice.file_url, '_blank')}
+              onClick={() => signedUrl && window.open(signedUrl, '_blank')}
+              disabled={!signedUrl}
               className="flex-1 gap-2"
             >
               <ExternalLink className="w-4 h-4" />
@@ -138,9 +193,11 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
             </Button>
             <Button 
               variant="outline"
+              disabled={!signedUrl}
               onClick={() => {
+                if (!signedUrl) return;
                 const a = document.createElement('a');
-                a.href = invoice.file_url;
+                a.href = signedUrl;
                 a.download = invoice.file_name;
                 a.click();
               }}

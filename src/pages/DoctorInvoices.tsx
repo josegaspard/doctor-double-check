@@ -171,12 +171,15 @@ export default function DoctorInvoices() {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
+      // Get signed URL for private bucket (1 year expiry)
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('doctor-invoices')
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 60 * 60 * 24 * 365);
 
-      // Create invoice record
+      if (urlError || !urlData?.signedUrl) {
+        throw new Error('Error getting file URL');
+      }
+
       const { error: insertError } = await supabase
         .from('doctor_invoices')
         .insert({
@@ -185,11 +188,10 @@ export default function DoctorInvoices() {
           period_start: periodStart,
           period_end: periodEnd,
           amount: parseFloat(amount),
-          file_url: urlData.publicUrl,
+          file_url: urlData.signedUrl,
           file_name: selectedFile.name,
           status: 'pending',
         });
-
       if (insertError) throw insertError;
 
       toast.success(language === 'es' ? 'Factura subida exitosamente' : 'Invoice uploaded successfully');
