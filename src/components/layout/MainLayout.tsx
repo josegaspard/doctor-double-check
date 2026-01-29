@@ -229,6 +229,21 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <main className="flex-1">
         {children}
       </main>
+
+      {/* Footer */}
+      <footer className="bg-dark text-dark-foreground py-6 mt-auto">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img src={logoMedicalMasters} alt="Medical Masters" className="h-6 w-auto brightness-0 invert" />
+              <span className="text-sm text-light">Plataforma de educación médica continua</span>
+            </div>
+            <p className="text-sm text-light/70">
+              © 2026 Medical Masters. Todos los derechos reservados.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
