@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,13 +16,14 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Loader2, User, Stethoscope, GraduationCap, Mail, CheckCircle } from 'lucide-react';
 import { UserRole } from '@/types';
 import { toast } from 'sonner';
-import logoMedicalMasters from '@/assets/logo-medical-masters.png';
+import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, register, isLoading, resetPassword } = useAuth();
+  const { t } = useLanguage();
   
   const preferredRole = (location.state as any)?.preferredRole || 'patient';
   
@@ -124,11 +126,14 @@ export default function Login() {
       {/* Header */}
       <header className="border-b border-border bg-dark">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="text-dark-foreground hover:bg-dark/80">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="text-dark-foreground hover:bg-dark/80">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
+            </div>
+            <LanguageSwitcher />
           </div>
         </div>
       </header>
@@ -138,21 +143,21 @@ export default function Login() {
         <div className="w-full max-w-md">
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-              <TabsTrigger value="register">Registrarse</TabsTrigger>
+              <TabsTrigger value="login">{t('login.loginTab')}</TabsTrigger>
+              <TabsTrigger value="register">{t('login.registerTab')}</TabsTrigger>
             </TabsList>
 
             {/* Login Tab */}
             <TabsContent value="login">
               <Card>
                 <CardHeader>
-                  <CardTitle>Bienvenido de vuelta</CardTitle>
-                  <CardDescription>Ingresa tus credenciales para acceder</CardDescription>
+                  <CardTitle>{t('login.title')}</CardTitle>
+                  <CardDescription>{t('login.email')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email">Correo electrónico</Label>
+                      <Label htmlFor="email">{t('login.email')}</Label>
                       <Input
                         id="email"
                         type="email"
@@ -163,7 +168,7 @@ export default function Login() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="password">Contraseña</Label>
+                      <Label htmlFor="password">{t('login.password')}</Label>
                       <PasswordInput
                         id="password"
                         placeholder="••••••••"
@@ -180,15 +185,15 @@ export default function Login() {
                     {resetEmailSent && (
                       <Alert className="border-success/30 bg-success/5">
                         <CheckCircle className="h-4 w-4 text-success" />
-                        <AlertTitle>Correo enviado</AlertTitle>
+                        <AlertTitle>{t('login.checkEmail')}</AlertTitle>
                         <AlertDescription>
-                          Revisa tu bandeja de entrada para restablecer tu contraseña.
+                          {t('login.resetEmailSent')}
                         </AlertDescription>
                       </Alert>
                     )}
                     
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Iniciar Sesión'}
+                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('login.loginTab')}
                     </Button>
                     
                     <Button 
@@ -199,14 +204,14 @@ export default function Login() {
                       disabled={resetLoading}
                     >
                       {resetLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      ¿Olvidaste tu contraseña?
+                      {t('login.forgotPassword')}
                     </Button>
                   </form>
                   
                   <div className="relative my-6">
                     <Separator />
                     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                      o continúa con
+                      {t('login.orContinueWith')}
                     </span>
                   </div>
                   
@@ -238,7 +243,7 @@ export default function Login() {
                         />
                       </svg>
                     )}
-                    Continuar con Google
+                    {t('login.continueWithGoogle')}
                   </Button>
                 </CardContent>
               </Card>
@@ -291,13 +296,13 @@ export default function Login() {
               ) : (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Crear cuenta</CardTitle>
-                    <CardDescription>Únete a la plataforma médica</CardDescription>
+                    <CardTitle>{t('login.createAccount')}</CardTitle>
+                    <CardDescription>{t('login.registerTab')}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleRegister} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Nombre completo</Label>
+                        <Label htmlFor="name">{t('login.name')}</Label>
                         <Input
                           id="name"
                           placeholder="Dr. Juan Pérez"
@@ -308,7 +313,7 @@ export default function Login() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="reg-email">Correo electrónico</Label>
+                        <Label htmlFor="reg-email">{t('login.email')}</Label>
                         <Input
                           id="reg-email"
                           type="email"
@@ -320,7 +325,7 @@ export default function Login() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="reg-password">Contraseña</Label>
+                        <Label htmlFor="reg-password">{t('login.password')}</Label>
                         <PasswordInput
                           id="reg-password"
                           placeholder="••••••••"
@@ -331,22 +336,22 @@ export default function Login() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label>Tipo de cuenta</Label>
+                        <Label>{t('login.role')}</Label>
                         <Select value={registerRole} onValueChange={(v) => setRegisterRole(v as any)}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="patient">Paciente</SelectItem>
-                            <SelectItem value="doctor">Médico</SelectItem>
-                            <SelectItem value="resident">Residente</SelectItem>
+                            <SelectItem value="patient">{t('roles.patient')}</SelectItem>
+                            <SelectItem value="doctor">{t('roles.doctor')}</SelectItem>
+                            <SelectItem value="resident">{t('roles.resident')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       
                       {(registerRole === 'doctor' || registerRole === 'resident') && (
                         <div className="space-y-2">
-                          <Label>Especialidad</Label>
+                          <Label>{t('login.specialty')}</Label>
                           <Input
                             placeholder="Ej: Cardiología"
                             value={registerSpecialty}
@@ -357,9 +362,9 @@ export default function Login() {
                       
                       {registerRole === 'resident' && (
                         <div className="space-y-2">
-                          <Label>Institución</Label>
+                          <Label>{t('login.institution')}</Label>
                           <Input
-                            placeholder="Nombre del hospital o universidad"
+                            placeholder="Ej: Hospital General"
                             value={registerInstitution}
                             onChange={(e) => setRegisterInstitution(e.target.value)}
                           />
@@ -371,14 +376,14 @@ export default function Login() {
                       )}
                       
                       <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Crear Cuenta'}
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('login.createAccount')}
                       </Button>
                     </form>
                     
                     <div className="relative my-6">
                       <Separator />
                       <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                        o regístrate con
+                        {t('login.orContinueWith')}
                       </span>
                     </div>
                     
@@ -410,7 +415,7 @@ export default function Login() {
                           />
                         </svg>
                       )}
-                      Continuar con Google
+                      {t('login.continueWithGoogle')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -426,14 +431,14 @@ export default function Login() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <nav className="flex items-center gap-6">
               <Link to="/terms" className="text-sm text-dark-foreground/70 hover:text-dark-foreground transition-colors">
-                Términos de Servicio
+                {t('footer.termsOfService')}
               </Link>
               <Link to="/privacy" className="text-sm text-dark-foreground/70 hover:text-dark-foreground transition-colors">
-                Política de Privacidad
+                {t('footer.privacyPolicy')}
               </Link>
             </nav>
             <p className="text-sm text-dark-foreground/70">
-              © 2026 Medical Masters. Todos los derechos reservados.
+              {t('footer.copyright')}
             </p>
           </div>
         </div>
