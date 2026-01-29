@@ -38,11 +38,8 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
 
   useEffect(() => {
     const getSignedUrl = async () => {
-      if (!invoice?.file_url || !isOpen) return;
-
-      // If it's already a signed URL (contains 'token='), use it directly
-      if (invoice.file_url.includes('token=')) {
-        setSignedUrl(invoice.file_url);
+      if (!invoice?.file_url || !isOpen) {
+        setSignedUrl(null);
         return;
       }
 
@@ -50,24 +47,40 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
       setError(null);
       
       try {
-        // Extract path from the URL if it's a full URL
+        // Extract the file path - handle both old format (full URL) and new format (just path)
         let filePath = invoice.file_url;
-        if (filePath.includes('/doctor-invoices/')) {
-          const parts = filePath.split('/doctor-invoices/');
-          filePath = parts[parts.length - 1];
+        
+        // If it's a full URL, extract just the path
+        if (filePath.startsWith('http')) {
+          // Handle both /object/public/ and /object/sign/ URL formats
+          const match = filePath.match(/\/doctor-invoices\/(.+?)(?:\?|$)/);
+          if (match) {
+            filePath = match[1];
+          } else {
+            // Try extracting after the bucket name
+            const parts = filePath.split('/doctor-invoices/');
+            if (parts.length > 1) {
+              filePath = parts[parts.length - 1].split('?')[0];
+            }
+          }
         }
+
+        console.log('Getting signed URL for path:', filePath);
 
         const { data, error: urlError } = await supabase.storage
           .from('doctor-invoices')
           .createSignedUrl(filePath, 60 * 60); // 1 hour
 
-        if (urlError) throw urlError;
+        if (urlError) {
+          console.error('Signed URL error:', urlError);
+          throw urlError;
+        }
+        
         setSignedUrl(data?.signedUrl || null);
       } catch (err) {
         console.error('Error getting signed URL:', err);
-        setError('Error al cargar el archivo');
-        // Fallback to original URL
-        setSignedUrl(invoice.file_url);
+        setError('Error al cargar el archivo. Verifica que el archivo existe.');
+        setSignedUrl(null);
       } finally {
         setIsLoading(false);
       }
