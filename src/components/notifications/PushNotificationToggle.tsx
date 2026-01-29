@@ -1,5 +1,6 @@
 import React from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Bell, BellOff, Loader2, AlertCircle } from 'lucide-react';
@@ -7,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 
 export function PushNotificationToggle() {
   const { isSupported, isSubscribed, isLoading, permission, subscribe, unsubscribe } = usePushNotifications();
+  const { language } = useLanguage();
 
   const handleToggle = async (checked: boolean) => {
     if (checked) {
@@ -22,13 +24,13 @@ export function PushNotificationToggle() {
         <Label className="flex flex-col gap-1">
           <span className="flex items-center gap-2">
             <BellOff className="h-4 w-4" />
-            Notificaciones Push
+            {language === 'es' ? 'Notificaciones Push' : 'Push Notifications'}
           </span>
           <span className="text-xs text-muted-foreground font-normal">
-            No disponible en este navegador
+            {language === 'es' ? 'No disponible en este navegador' : 'Not available in this browser'}
           </span>
         </Label>
-        <Badge variant="secondary">No soportado</Badge>
+        <Badge variant="secondary">{language === 'es' ? 'No soportado' : 'Not supported'}</Badge>
       </div>
     );
   }
@@ -39,13 +41,13 @@ export function PushNotificationToggle() {
         <Label className="flex flex-col gap-1">
           <span className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-destructive" />
-            Notificaciones Push
+            {language === 'es' ? 'Notificaciones Push' : 'Push Notifications'}
           </span>
           <span className="text-xs text-muted-foreground font-normal">
-            Bloqueadas por el navegador. Habilita desde configuración.
+            {language === 'es' ? 'Bloqueadas por el navegador. Habilita desde configuración.' : 'Blocked by browser. Enable in settings.'}
           </span>
         </Label>
-        <Badge variant="destructive">Bloqueado</Badge>
+        <Badge variant="destructive">{language === 'es' ? 'Bloqueado' : 'Blocked'}</Badge>
       </div>
     );
   }
@@ -59,12 +61,12 @@ export function PushNotificationToggle() {
           ) : (
             <BellOff className="h-4 w-4" />
           )}
-          Notificaciones Push
+          {language === 'es' ? 'Notificaciones Push' : 'Push Notifications'}
         </span>
         <span className="text-xs text-muted-foreground font-normal">
           {isSubscribed 
-            ? 'Recibirás alertas cuando un doctor inicie un live'
-            : 'Activa para recibir alertas en tiempo real'
+            ? (language === 'es' ? 'Recibirás alertas cuando un doctor inicie un live' : 'You will receive alerts when a doctor starts a live')
+            : (language === 'es' ? 'Activa para recibir alertas en tiempo real' : 'Enable to receive real-time alerts')
           }
         </span>
       </Label>

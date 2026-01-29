@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,6 +39,7 @@ interface UserData {
 export default function AdminUsers() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,12 +49,16 @@ export default function AdminUsers() {
 
   useEffect(() => {
     if (user?.role !== 'admin') {
-      toast({ title: 'Acceso denegado', description: 'Solo administradores pueden acceder', variant: 'destructive' });
+      toast({ 
+        title: language === 'es' ? 'Acceso denegado' : 'Access denied', 
+        description: language === 'es' ? 'Solo administradores pueden acceder' : 'Only admins can access', 
+        variant: 'destructive' 
+      });
       navigate('/');
       return;
     }
     fetchUsers();
-  }, [user, navigate]);
+  }, [user, navigate, language]);
 
   const fetchUsers = async () => {
     try {
@@ -142,9 +148,11 @@ export default function AdminUsers() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Users className="h-6 w-6 text-primary" />
-              Gestión de Usuarios
+              {language === 'es' ? 'Gestión de Usuarios' : 'User Management'}
             </h1>
-            <p className="text-muted-foreground">{users.length} usuarios registrados</p>
+            <p className="text-muted-foreground">
+              {users.length} {language === 'es' ? 'usuarios registrados' : 'registered users'}
+            </p>
           </div>
         </div>
 

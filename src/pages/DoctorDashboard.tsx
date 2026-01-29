@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useLives } from '@/contexts/LivesContext';
 import { useVault } from '@/contexts/VaultContext';
 import MainLayout from '@/components/layout/MainLayout';
@@ -62,6 +63,7 @@ const SPECIALTIES = [
 export default function DoctorDashboard() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const { getLivesByDoctor, getRecordingsByDoctor, createLive } = useLives();
   const { getAccessibleFiles } = useVault();
   const { toast } = useToast();
@@ -91,8 +93,8 @@ export default function DoctorDashboard() {
   const handleStartLive = async () => {
     if (!liveForm.title.trim() || !liveForm.specialty) {
       toast({
-        title: 'Campos requeridos',
-        description: 'El título y la especialidad son obligatorios',
+        title: t('common.required'),
+        description: t('dashboard.startLive'),
         variant: 'destructive',
       });
       return;
@@ -110,18 +112,17 @@ export default function DoctorDashboard() {
 
     if (result.success) {
       toast({
-        title: '🔴 Live iniciado',
-        description: 'Se notificó a tus suscriptores',
+        title: `🔴 ${t('dashboard.liveStarted')}`,
+        description: t('dashboard.subscribersNotifiedSuccess'),
       });
       setIsLiveDialogOpen(false);
       setLiveForm({ title: '', description: '', specialty: '' });
-      // Navigate to the live
       if (result.liveId) {
         navigate(`/live/${result.liveId}`);
       }
     } else {
       toast({
-        title: 'Error',
+        title: t('common.error'),
         description: result.error,
         variant: 'destructive',
       });
@@ -135,10 +136,10 @@ export default function DoctorDashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground">
-              Panel de Médico
+              {t('dashboard.title')}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Bienvenido, {user?.name}
+              {t('dashboard.welcome')}, {user?.name}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -146,24 +147,24 @@ export default function DoctorDashboard() {
               <>
                 <Button onClick={() => navigate('/doctor/go-live')} className="gap-2 bg-red-600 hover:bg-red-700">
                   <Radio className="w-4 h-4" />
-                  Iniciar Live
+                  {t('dashboard.startLive')}
                 </Button>
                 <Badge variant="verified" className="gap-1">
                   <CheckCircle className="w-3 h-3" />
-                  Verificado
+                  {t('dashboard.verified')}
                 </Badge>
               </>
             )}
             {isPending && (
               <Badge variant="warning" className="gap-1">
                 <Clock className="w-3 h-3" />
-                Verificación Pendiente
+                {t('doctorStatus.pending')}
               </Badge>
             )}
             {isRejected && (
               <Badge variant="destructive" className="gap-1">
                 <AlertTriangle className="w-3 h-3" />
-                Verificación Rechazada
+                {t('doctorStatus.rejected')}
               </Badge>
             )}
           </div>

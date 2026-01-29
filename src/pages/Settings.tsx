@@ -41,7 +41,7 @@ export default function Settings() {
                 {t('settings.language')}
               </CardTitle>
               <CardDescription>
-                Selecciona el idioma de la aplicación
+                {t('settings.selectAppLanguage')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -69,18 +69,18 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Mail className="h-5 w-5" />
-                Notificaciones por Email
+                {t('settings.emailTitle')}
               </CardTitle>
               <CardDescription>
-                Configura qué emails deseas recibir
+                {t('settings.emailDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="email-notifications" className="flex flex-col gap-1">
-                  <span>Activar emails</span>
+                  <span>{t('settings.enableEmails')}</span>
                   <span className="text-xs text-muted-foreground font-normal">
-                    Interruptor maestro para todas las notificaciones por email
+                    {t('settings.masterSwitch')}
                   </span>
                 </Label>
                 <Switch
@@ -93,15 +93,15 @@ export default function Settings() {
               {preferences?.emailNotifications && (
                 <>
                   <Separator />
-                  <h4 className="font-medium text-sm text-muted-foreground">Tipos de email</h4>
+                  <h4 className="font-medium text-sm text-muted-foreground">{t('settings.emailTypes')}</h4>
 
                   <div className="flex items-center justify-between">
                     <Label htmlFor="email-live" className="flex items-center gap-2">
                       <span className="text-destructive">🔴</span>
                       <span className="flex flex-col">
-                        <span>Lives en vivo</span>
+                        <span>{t('settings.livesEmail')}</span>
                         <span className="text-xs text-muted-foreground font-normal">
-                          Cuando un doctor que sigues inicie un live
+                          {t('settings.livesEmailDescription')}
                         </span>
                       </span>
                     </Label>
@@ -116,9 +116,9 @@ export default function Settings() {
                     <Label htmlFor="email-content" className="flex items-center gap-2">
                       <span>📄</span>
                       <span className="flex flex-col">
-                        <span>Nuevo contenido</span>
+                        <span>{t('settings.contentEmail')}</span>
                         <span className="text-xs text-muted-foreground font-normal">
-                          Videos, PDFs y materiales de doctores que sigues
+                          {t('settings.contentEmailDescription')}
                         </span>
                       </span>
                     </Label>
@@ -133,9 +133,9 @@ export default function Settings() {
                     <Label htmlFor="email-chat" className="flex items-center gap-2">
                       <span>💬</span>
                       <span className="flex flex-col">
-                        <span>Mensajes de chat</span>
+                        <span>{t('settings.chatEmail')}</span>
                         <span className="text-xs text-muted-foreground font-normal">
-                          Respuestas de doctores en consultas
+                          {t('settings.chatEmailDescription')}
                         </span>
                       </span>
                     </Label>
@@ -158,7 +158,7 @@ export default function Settings() {
                 {t('settings.notifications')}
               </CardTitle>
               <CardDescription>
-                Configura notificaciones push y dentro de la app
+                {t('settings.pushDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -166,7 +166,7 @@ export default function Settings() {
                 <Label htmlFor="push-notifications" className="flex flex-col gap-1">
                   <span>{t('settings.pushNotifications')}</span>
                   <span className="text-xs text-muted-foreground font-normal">
-                    Recibe notificaciones push en tu dispositivo
+                    {t('settings.pushDescription')}
                   </span>
                 </Label>
                 <Switch
@@ -187,7 +187,7 @@ export default function Settings() {
                 <Label htmlFor="inapp-notifications" className="flex flex-col gap-1">
                   <span>{t('settings.inAppNotifications')}</span>
                   <span className="text-xs text-muted-foreground font-normal">
-                    Muestra notificaciones dentro de la app
+                    {t('settings.inAppDescription')}
                   </span>
                 </Label>
                 <Switch
@@ -239,7 +239,7 @@ export default function Settings() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-4">
-                La verificación de identidad está disponible próximamente. Te notificaremos cuando esté lista.
+                {t('settings.verificationComingSoon')}
               </p>
             </CardContent>
           </Card>

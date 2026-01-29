@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
 import MainLayout from '@/components/layout/MainLayout';
 import PaywallModal from '@/components/PaywallModal';
@@ -30,6 +31,7 @@ export default function RecordingsGrid() {
   const navigate = useNavigate();
   const { recordings } = useLives();
   const { user, role, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const { balance, canAfford, purchase } = useWallet();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,17 +50,17 @@ export default function RecordingsGrid() {
               <Lock className="w-8 h-8 text-premium" />
             </div>
             <h2 className="font-heading text-xl font-bold text-foreground mb-2">
-              Contenido Premium
+              {t('recordings.premiumContent')}
             </h2>
             <p className="text-muted-foreground mb-6">
-              Las grabaciones son contenido premium. Inicia sesión o crea una cuenta para acceder al catálogo.
+              {t('lives.registerPrompt')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button onClick={() => navigate('/login')}>
-                Iniciar Sesión
+                {t('nav.login')}
               </Button>
               <Button variant="outline" onClick={() => navigate('/lives')}>
-                Ver Lives Gratis
+                {t('chat.goToLives')}
               </Button>
             </div>
           </Card>
@@ -130,10 +132,10 @@ export default function RecordingsGrid() {
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
               <PlayCircle className="w-6 h-6 text-premium" />
-              Grabaciones Premium
+              {t('recordings.premiumContent')}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {recordings.length} grabaciones disponibles
+              {recordings.length} {t('recordings.title').toLowerCase()}
             </p>
           </div>
           
@@ -141,7 +143,7 @@ export default function RecordingsGrid() {
             <Link to="/wallet">
               <Button variant="outline" className="gap-2">
                 <Wallet className="w-4 h-4" />
-                Saldo: ${balance.toLocaleString()}
+                {t('wallet.balance')}: ${balance.toLocaleString()}
               </Button>
             </Link>
           )}
@@ -152,7 +154,7 @@ export default function RecordingsGrid() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar grabaciones..."
+              placeholder={t('common.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -161,10 +163,10 @@ export default function RecordingsGrid() {
           <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
             <SelectTrigger className="w-full sm:w-48">
               <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Especialidad" />
+              <SelectValue placeholder={t('recordings.specialty')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="all">{t('recordings.allSpecialties')}</SelectItem>
               {specialties.map(spec => (
                 <SelectItem key={spec} value={spec}>{spec}</SelectItem>
               ))}
@@ -197,12 +199,12 @@ export default function RecordingsGrid() {
                       {owned ? (
                         <Badge variant="secondary" className="gap-1">
                           <CheckCircle className="w-3 h-3" />
-                          Comprado
+                          {t('recordings.purchased')}
                         </Badge>
                       ) : (
                         <Badge variant="secondary" className="gap-1">
                           <Lock className="w-3 h-3" />
-                          Premium
+                          {t('recordings.premiumContent')}
                         </Badge>
                       )}
                     </div>
@@ -255,10 +257,10 @@ export default function RecordingsGrid() {
           <Card className="p-12 text-center">
             <PlayCircle className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              No se encontraron grabaciones
+              {t('recordings.noRecordings')}
             </h3>
             <p className="text-muted-foreground">
-              Intenta con otros términos de búsqueda
+              {t('common.noResults')}
             </p>
           </Card>
         )}
