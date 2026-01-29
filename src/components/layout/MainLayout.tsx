@@ -237,31 +237,52 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Footer */}
       <footer className="bg-dark text-dark-foreground py-8 mt-auto">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <img src={logoMedicalMasters} alt="Medical Masters" className="h-6 w-auto brightness-0 invert" />
-              <span className="text-sm text-light">Plataforma de educación médica continua</span>
+          <div className="flex flex-col gap-6">
+            {/* Top row */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-3">
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-6 w-auto brightness-0 invert" />
+                <span className="text-sm text-light">Plataforma de educación médica continua</span>
+              </div>
+              
+              {/* Social Media Icons */}
+              <div className="flex items-center gap-4">
+                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                  <Facebook className="w-5 h-5" />
+                </a>
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                  <Instagram className="w-5 h-5" />
+                </a>
+                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                  <Twitter className="w-5 h-5" />
+                </a>
+                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                  <Linkedin className="w-5 h-5" />
+                </a>
+              </div>
             </div>
             
-            {/* Social Media Icons */}
-            <div className="flex items-center gap-4">
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                <Linkedin className="w-5 h-5" />
-              </a>
-            </div>
+            {/* Divider */}
+            <div className="border-t border-light/20" />
             
-            <p className="text-sm text-light/70">
-              © 2026 Medical Masters. Todos los derechos reservados.
-            </p>
+            {/* Bottom row */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <nav className="flex items-center gap-6">
+                <Link to="/terms" className="text-sm text-light/70 hover:text-light transition-colors">
+                  Términos de Servicio
+                </Link>
+                <Link to="/privacy" className="text-sm text-light/70 hover:text-light transition-colors">
+                  Política de Privacidad
+                </Link>
+                <a href="mailto:contacto@medicalmasters.com" className="text-sm text-light/70 hover:text-light transition-colors">
+                  Contacto
+                </a>
+              </nav>
+              
+              <p className="text-sm text-light/70">
+                © 2026 Medical Masters. Todos los derechos reservados.
+              </p>
+            </div>
           </div>
         </div>
       </footer>
