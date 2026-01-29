@@ -18,30 +18,33 @@ export function useLives() {
 
       if (livesError) {
         console.error('Error fetching lives:', livesError);
-      } else {
-        // Enrich with doctor data
-        const enrichedLives = await Promise.all(
-          (livesData || []).map(async (live) => {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', live.doctor_id)
-              .single();
-            
-            const { data: doctorProfile } = await supabase
-              .from('doctor_profiles')
-              .select('*')
-              .eq('user_id', live.doctor_id)
-              .single();
+        setLives([]);
+      } else if (livesData && livesData.length > 0) {
+        // Get unique doctor IDs
+        const doctorIds = [...new Set(livesData.map(l => l.doctor_id))];
+        
+        // Batch fetch profiles from public views (no RLS issues)
+        const [profilesResult, doctorProfilesResult] = await Promise.all([
+          supabase
+            .from('profiles_public')
+            .select('id, name, avatar_url')
+            .in('id', doctorIds),
+          supabase
+            .from('doctor_profiles_public')
+            .select('user_id, specialty, bio, followers_count')
+            .in('user_id', doctorIds)
+        ]);
 
-            return {
-              ...live,
-              doctor: profile || undefined,
-              doctor_profile: doctorProfile || undefined,
-            } as Live;
-          })
-        );
-        setLives(enrichedLives);
+        const profileMap = new Map(profilesResult.data?.map(p => [p.id, p]) || []);
+        const doctorProfileMap = new Map(doctorProfilesResult.data?.map(d => [d.user_id, d]) || []);
+
+        setLives(livesData.map(live => ({
+          ...live,
+          doctor: profileMap.get(live.doctor_id) || undefined,
+          doctor_profile: doctorProfileMap.get(live.doctor_id) || undefined,
+        } as Live)));
+      } else {
+        setLives([]);
       }
 
       // Fetch recordings
@@ -52,23 +55,25 @@ export function useLives() {
 
       if (recordingsError) {
         console.error('Error fetching recordings:', recordingsError);
-      } else {
-        // Enrich with doctor data
-        const enrichedRecordings = await Promise.all(
-          (recordingsData || []).map(async (rec) => {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', rec.doctor_id)
-              .single();
+        setRecordings([]);
+      } else if (recordingsData && recordingsData.length > 0) {
+        // Get unique doctor IDs
+        const doctorIds = [...new Set(recordingsData.map(r => r.doctor_id))];
+        
+        // Batch fetch profiles from public view
+        const { data: profiles } = await supabase
+          .from('profiles_public')
+          .select('id, name, avatar_url')
+          .in('id', doctorIds);
 
-            return {
-              ...rec,
-              doctor: profile || undefined,
-            } as Recording;
-          })
-        );
-        setRecordings(enrichedRecordings);
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+        setRecordings(recordingsData.map(rec => ({
+          ...rec,
+          doctor: profileMap.get(rec.doctor_id) || undefined,
+        } as Recording)));
+      } else {
+        setRecordings([]);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
