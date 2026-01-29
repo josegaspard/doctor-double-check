@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      cedula_verifications: {
+        Row: {
+          anio_registro: number | null
+          cedula_number: string
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          id: string
+          institucion: string | null
+          is_claimed: boolean | null
+          is_verified: boolean | null
+          materno: string | null
+          nombre: string | null
+          paterno: string | null
+          raw_response: Json | null
+          titulo: string | null
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          anio_registro?: number | null
+          cedula_number: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          id?: string
+          institucion?: string | null
+          is_claimed?: boolean | null
+          is_verified?: boolean | null
+          materno?: string | null
+          nombre?: string | null
+          paterno?: string | null
+          raw_response?: Json | null
+          titulo?: string | null
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          anio_registro?: number | null
+          cedula_number?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          id?: string
+          institucion?: string | null
+          is_claimed?: boolean | null
+          is_verified?: boolean | null
+          materno?: string | null
+          nombre?: string | null
+          paterno?: string | null
+          raw_response?: Json | null
+          titulo?: string | null
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -298,6 +355,51 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_bank_accounts: {
+        Row: {
+          account_holder_name: string | null
+          bank_name: string | null
+          clabe_last4: string | null
+          created_at: string
+          doctor_id: string
+          id: string
+          is_verified: boolean | null
+          onboarding_completed: boolean | null
+          payouts_enabled: boolean | null
+          stripe_account_id: string | null
+          stripe_account_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_holder_name?: string | null
+          bank_name?: string | null
+          clabe_last4?: string | null
+          created_at?: string
+          doctor_id: string
+          id?: string
+          is_verified?: boolean | null
+          onboarding_completed?: boolean | null
+          payouts_enabled?: boolean | null
+          stripe_account_id?: string | null
+          stripe_account_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_holder_name?: string | null
+          bank_name?: string | null
+          clabe_last4?: string | null
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          is_verified?: boolean | null
+          onboarding_completed?: boolean | null
+          payouts_enabled?: boolean | null
+          stripe_account_id?: string | null
+          stripe_account_status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       doctor_content: {
         Row: {
           audience_type: Database["public"]["Enums"]["content_audience"]
@@ -346,12 +448,117 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_invoices: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string
+          doctor_id: string
+          file_name: string
+          file_url: string
+          id: string
+          invoice_number: string
+          period_end: string
+          period_start: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string
+          doctor_id: string
+          file_name: string
+          file_url: string
+          id?: string
+          invoice_number: string
+          period_end: string
+          period_start: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          doctor_id?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          invoice_number?: string
+          period_end?: string
+          period_start?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      doctor_payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          doctor_id: string
+          error_message: string | null
+          id: string
+          invoice_id: string | null
+          paid_at: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string | null
+          stripe_payout_id: string | null
+          stripe_transfer_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          doctor_id: string
+          error_message?: string | null
+          id?: string
+          invoice_id?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          stripe_payout_id?: string | null
+          stripe_transfer_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          doctor_id?: string
+          error_message?: string | null
+          id?: string
+          invoice_id?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          stripe_payout_id?: string | null
+          stripe_transfer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_payouts_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "doctor_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctor_profiles: {
         Row: {
           available_for_clinical_sessions: boolean
           available_for_double_check: boolean
           bio: string | null
           cedula_profesional: string | null
+          cedula_verification_id: string | null
           consultation_fee: number
           created_at: string
           followers_count: number
@@ -359,10 +566,14 @@ export type Database = {
           license: string
           location: string | null
           numero_consejo: string | null
+          payouts_enabled: boolean | null
+          pending_earnings: number | null
           rating: number
           specialty: string
           status: Database["public"]["Enums"]["doctor_status"]
+          stripe_account_id: string | null
           total_consultations: number
+          total_earnings: number | null
           updated_at: string
           user_id: string
         }
@@ -371,6 +582,7 @@ export type Database = {
           available_for_double_check?: boolean
           bio?: string | null
           cedula_profesional?: string | null
+          cedula_verification_id?: string | null
           consultation_fee?: number
           created_at?: string
           followers_count?: number
@@ -378,10 +590,14 @@ export type Database = {
           license: string
           location?: string | null
           numero_consejo?: string | null
+          payouts_enabled?: boolean | null
+          pending_earnings?: number | null
           rating?: number
           specialty: string
           status?: Database["public"]["Enums"]["doctor_status"]
+          stripe_account_id?: string | null
           total_consultations?: number
+          total_earnings?: number | null
           updated_at?: string
           user_id: string
         }
@@ -390,6 +606,7 @@ export type Database = {
           available_for_double_check?: boolean
           bio?: string | null
           cedula_profesional?: string | null
+          cedula_verification_id?: string | null
           consultation_fee?: number
           created_at?: string
           followers_count?: number
@@ -397,14 +614,26 @@ export type Database = {
           license?: string
           location?: string | null
           numero_consejo?: string | null
+          payouts_enabled?: boolean | null
+          pending_earnings?: number | null
           rating?: number
           specialty?: string
           status?: Database["public"]["Enums"]["doctor_status"]
+          stripe_account_id?: string | null
           total_consultations?: number
+          total_earnings?: number | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "doctor_profiles_cedula_verification_id_fkey"
+            columns: ["cedula_verification_id"]
+            isOneToOne: false
+            referencedRelation: "cedula_verifications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_history: {
         Row: {
@@ -765,6 +994,42 @@ export type Database = {
           updated_at?: string
           user_id?: string
           year?: number | null
+        }
+        Relationships: []
+      }
+      payout_settings: {
+        Row: {
+          auto_payout_enabled: boolean | null
+          commission_percentage: number | null
+          id: string
+          minimum_payout_amount: number | null
+          payout_day: number | null
+          payout_frequency: string | null
+          require_invoice: boolean | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          auto_payout_enabled?: boolean | null
+          commission_percentage?: number | null
+          id?: string
+          minimum_payout_amount?: number | null
+          payout_day?: number | null
+          payout_frequency?: string | null
+          require_invoice?: boolean | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          auto_payout_enabled?: boolean | null
+          commission_percentage?: number | null
+          id?: string
+          minimum_payout_amount?: number | null
+          payout_day?: number | null
+          payout_frequency?: string | null
+          require_invoice?: boolean | null
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }

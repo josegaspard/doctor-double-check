@@ -41,6 +41,16 @@ const adminModules: AdminModule[] = [
     color: 'text-primary',
   },
   {
+    id: 'payout-settings',
+    title: 'Configuración de Pagos',
+    titleEn: 'Payout Settings',
+    description: 'Configura comisiones, frecuencia de pagos y procesa payouts',
+    descriptionEn: 'Configure commissions, payment frequency and process payouts',
+    icon: Settings,
+    href: '/admin/payout-settings',
+    color: 'text-emerald-500',
+  },
+  {
     id: 'site-settings',
     title: 'Configuración del Sitio',
     titleEn: 'Site Settings',
