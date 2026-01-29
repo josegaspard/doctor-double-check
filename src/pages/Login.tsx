@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
@@ -418,6 +419,25 @@ export default function Login() {
           </Tabs>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-dark py-4">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <nav className="flex items-center gap-6">
+              <Link to="/terms" className="text-sm text-dark-foreground/70 hover:text-dark-foreground transition-colors">
+                Términos de Servicio
+              </Link>
+              <Link to="/privacy" className="text-sm text-dark-foreground/70 hover:text-dark-foreground transition-colors">
+                Política de Privacidad
+              </Link>
+            </nav>
+            <p className="text-sm text-dark-foreground/70">
+              © 2026 Medical Masters. Todos los derechos reservados.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
