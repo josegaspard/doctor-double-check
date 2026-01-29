@@ -15,6 +15,7 @@ import {
   ArrowRight,
   LayoutDashboard,
   Loader2,
+  Settings,
 } from 'lucide-react';
 
 interface AdminModule {
@@ -38,6 +39,16 @@ const adminModules: AdminModule[] = [
     icon: LayoutDashboard,
     href: '/admin/analytics',
     color: 'text-primary',
+  },
+  {
+    id: 'site-settings',
+    title: 'Configuración del Sitio',
+    titleEn: 'Site Settings',
+    description: 'Redes sociales, términos de servicio y política de privacidad',
+    descriptionEn: 'Social media, terms of service and privacy policy',
+    icon: Settings,
+    href: '/admin/site-settings',
+    color: 'text-cyan-500',
   },
   {
     id: 'verifications',

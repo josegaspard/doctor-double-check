@@ -46,6 +46,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import AdminReports from "./pages/AdminReports";
+import AdminSiteSettings from "./pages/AdminSiteSettings";
 import Onboarding from "./pages/Onboarding";
 const queryClient = new QueryClient();
 
@@ -92,6 +93,7 @@ const App = () => (
                       <Route path="/admin/users" element={<AdminUsers />} />
                       <Route path="/admin/analytics" element={<AdminAnalytics />} />
                       <Route path="/admin/reports" element={<AdminReports />} />
+                      <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
                       <Route path="/verification-pending" element={<VerificationPending />} />
                       <Route path="/doctors" element={<Doctors />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
