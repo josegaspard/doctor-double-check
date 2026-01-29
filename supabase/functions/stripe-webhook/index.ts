@@ -64,6 +64,11 @@ serve(async (req) => {
       if (session.metadata?.type === "creator_subscription" && session.payment_status === "paid") {
         await handleCreatorSubscription(db, session);
       }
+
+      // Consultation payment - create entitlement and credit doctor
+      if (session.metadata?.type === "consultation_payment" && session.payment_status === "paid") {
+        await handleConsultationPayment(db, session);
+      }
     }
 
     // Handle Stripe Connect account updates
@@ -235,6 +240,61 @@ async function handleCreatorSubscription(db: ReturnType<typeof supabaseAdmin>, s
 
   // Credit earnings to doctor
   await creditDoctorEarnings(db, creatorId, tierPrice, "subscription", null);
+}
+
+async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const userId = session.metadata!.user_id;
+  const doctorId = session.metadata!.doctor_id;
+  const finalFee = parseFloat(session.metadata!.final_fee);
+  
+  logStep("Processing consultation payment", { userId, doctorId, finalFee });
+
+  // Create chat entitlement for the patient (valid for 30 days)
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30);
+
+  const { error: entitlementError } = await db
+    .from("entitlements")
+    .insert({
+      user_id: userId,
+      type: "chat",
+      is_active: true,
+      expires_at: expiresAt.toISOString(),
+    });
+
+  if (entitlementError) {
+    logStep("Error creating entitlement", { error: entitlementError });
+  } else {
+    logStep("Chat entitlement created", { userId, expiresAt });
+  }
+
+  // Credit doctor earnings
+  await creditDoctorEarnings(db, doctorId, finalFee, "consultation", null);
+
+  // Create a wallet transaction record for the patient
+  await db
+    .from("wallet_transactions")
+    .insert({
+      user_id: userId,
+      type: "purchase",
+      amount: -finalFee,
+      description: "Consulta médica por chat",
+      status: "paid",
+      metadata: { doctor_id: doctorId, stripe_session_id: session.id },
+    });
+
+  // Notify the patient that the payment was successful
+  await db
+    .from("notifications")
+    .insert({
+      user_id: userId,
+      type: "system",
+      title: "Pago exitoso",
+      message: "Tu consulta ha sido pagada. Ya puedes iniciar el chat con tu médico.",
+      data: { doctor_id: doctorId },
+    });
+
+  logStep("Consultation payment processed successfully", { userId, doctorId });
 }
 
 async function creditDoctorEarnings(

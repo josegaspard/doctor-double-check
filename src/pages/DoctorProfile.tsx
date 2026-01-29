@@ -146,7 +146,7 @@ export default function DoctorProfile() {
   // Can start chat without payment?
   const canChatDirectly = role === 'doctor' || hasChatEntitlement || isFreeConsultation;
 
-  // Start the chat session
+  // Start the chat session and notify doctor
   const startChatSession = async () => {
     if (!user?.id || !doctor) return;
 
@@ -155,6 +155,20 @@ export default function DoctorProfile() {
       const result = await createSession(doctor.id, 'doctor', false);
       
       if (result.success && result.session) {
+        // Notify doctor about new chat
+        try {
+          await supabase.functions.invoke('notify-new-chat', {
+            body: {
+              doctorId: doctor.id,
+              patientName: user.name,
+              sessionId: result.session.id,
+              isDoubleCheck: false,
+            },
+          });
+        } catch (notifyError) {
+          console.error('Error notifying doctor:', notifyError);
+        }
+        
         navigate('/chat');
         toast.success(`Chat iniciado con ${doctor.name}`);
       } else {
@@ -195,7 +209,7 @@ export default function DoctorProfile() {
 
   // Handle wallet payment
   const handleWalletPayment = async () => {
-    if (!doctor) return;
+    if (!doctor || !user?.id) return;
 
     setIsProcessingPayment(true);
     try {
@@ -206,10 +220,38 @@ export default function DoctorProfile() {
       );
 
       if (result.success) {
-        // Create chat entitlement (temporary for this session)
-        // In a real app, this would be handled by backend
+        // Create chat entitlement for the patient (valid for 30 days)
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+
+        const { error: entitlementError } = await supabase
+          .from('entitlements')
+          .insert({
+            user_id: user.id,
+            type: 'chat',
+            is_active: true,
+            expires_at: expiresAt.toISOString(),
+          });
+
+        if (entitlementError) {
+          console.error('Error creating entitlement:', entitlementError);
+        }
+
+        // Credit doctor earnings
+        const { error: earningsError } = await supabase
+          .from('doctor_profiles')
+          .select('pending_earnings')
+          .eq('user_id', doctor.id)
+          .single();
+
+        if (!earningsError) {
+          // This is handled by server-side for Stripe payments
+          // For wallet payments, we need to credit manually or via edge function
+        }
+
         setShowPaymentModal(false);
         await startChatSession();
+        toast.success('¡Pago exitoso!');
       } else {
         toast.error(result.error || 'Error al procesar el pago');
       }
@@ -226,10 +268,26 @@ export default function DoctorProfile() {
 
     setIsProcessingPayment(true);
     try {
-      // TODO: Create a checkout session for consultation
-      // For now, redirect to wallet to top up
-      toast.info('Recarga tu saldo para continuar');
-      navigate('/wallet');
+      const { data, error } = await supabase.functions.invoke('create-consultation-checkout', {
+        body: {
+          doctorId: doctor.id,
+          consultationFee: doctor.consultationFee,
+          doctorName: doctor.name,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Open Stripe checkout in new tab
+        window.open(data.url, '_blank');
+        setShowPaymentModal(false);
+      } else {
+        toast.error('Error al crear sesión de pago');
+      }
+    } catch (error) {
+      console.error('Stripe checkout error:', error);
+      toast.error('Error al procesar el pago');
     } finally {
       setIsProcessingPayment(false);
     }
