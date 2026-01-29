@@ -238,12 +238,78 @@ export default function Chat() {
     await sendMessage(selectedSession, fileMessage);
   };
 
-  // Get display name for session
-  const getSessionDisplayName = (session: ChatSession) => {
+  // Get display info for session
+  const getSessionDisplayInfo = (session: ChatSession) => {
     if (role === 'patient') {
-      return session.participant2Name || 'Doctor';
+      // Patient sees doctor info
+      return {
+        name: session.participant2Name || 'Médico',
+        specialty: session.participant2Specialty,
+        avatar: session.participant2Avatar,
+        type: session.participant2Type,
+      };
     }
-    return session.participant1Name || 'Paciente';
+    // Doctor sees patient info
+    return {
+      name: session.participant1Name || 'Paciente',
+      specialty: session.participant1Specialty,
+      avatar: session.participant1Avatar,
+      type: session.participant1Type,
+    };
+  };
+
+  // Get display name for session (backwards compatible)
+  const getSessionDisplayName = (session: ChatSession) => {
+    return getSessionDisplayInfo(session).name;
+  };
+
+  // Format office hours for display
+  const formatOfficeHours = (session: ChatSession) => {
+    if (!session.officeHoursStart || !session.officeHoursEnd) return null;
+    
+    const startHour = session.officeHoursStart.slice(0, 5);
+    const endHour = session.officeHoursEnd.slice(0, 5);
+    
+    const dayNames: Record<string, string> = {
+      monday: 'Lun',
+      tuesday: 'Mar',
+      wednesday: 'Mié',
+      thursday: 'Jue',
+      friday: 'Vie',
+      saturday: 'Sáb',
+      sunday: 'Dom',
+    };
+    
+    const days = session.officeDays?.map(d => dayNames[d] || d).join(', ') || 'Lun-Vie';
+    
+    return `${startHour} - ${endHour} | ${days}`;
+  };
+
+  // Check if currently within office hours
+  const isWithinOfficeHours = (session: ChatSession) => {
+    if (!session.officeHoursStart || !session.officeHoursEnd) return true; // Assume available if no hours set
+    
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
+    
+    // Check if today is a work day
+    if (session.officeDays && !session.officeDays.includes(currentDay)) {
+      return false;
+    }
+    
+    const startParts = session.officeHoursStart.split(':');
+    const endParts = session.officeHoursEnd.split(':');
+    
+    const startHour = parseInt(startParts[0]);
+    const endHour = parseInt(endParts[0]);
+    
+    const currentTime = currentHour * 60 + currentMinute;
+    const startTime = startHour * 60;
+    const endTime = endHour * 60;
+    
+    return currentTime >= startTime && currentTime <= endTime;
   };
 
   // Render message content (with file support)
@@ -291,6 +357,9 @@ export default function Chat() {
   // Render session item
   const renderSessionItem = (session: ChatSession) => {
     const isClosed = session.status === 'closed';
+    const displayInfo = getSessionDisplayInfo(session);
+    const officeHours = formatOfficeHours(session);
+    const isAvailable = isWithinOfficeHours(session);
     
     return (
       <div
@@ -304,19 +373,29 @@ export default function Chat() {
               : 'hover:bg-muted'
         }`}
       >
-        <div className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-            isClosed ? 'bg-muted' : 'bg-primary/10'
-          }`}>
-            {role === 'patient' 
-              ? <Stethoscope className={`w-4 h-4 ${isClosed ? 'text-muted-foreground' : 'text-primary'}`} /> 
-              : <User className={`w-4 h-4 ${isClosed ? 'text-muted-foreground' : 'text-primary'}`} />
-            }
-          </div>
+        <div className="flex items-start gap-2">
+          {/* Avatar */}
+          {displayInfo.avatar ? (
+            <img 
+              src={displayInfo.avatar} 
+              alt={displayInfo.name}
+              className={`w-10 h-10 rounded-full object-cover ${isClosed ? 'opacity-75' : ''}`}
+            />
+          ) : (
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              isClosed ? 'bg-muted' : 'bg-primary/10'
+            }`}>
+              {displayInfo.type === 'doctor' || displayInfo.type === 'resident'
+                ? <Stethoscope className={`w-5 h-5 ${isClosed ? 'text-muted-foreground' : 'text-primary'}`} /> 
+                : <User className={`w-5 h-5 ${isClosed ? 'text-muted-foreground' : 'text-primary'}`} />
+              }
+            </div>
+          )}
+          
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
               <p className="font-medium text-sm truncate">
-                {getSessionDisplayName(session)}
+                {displayInfo.name}
               </p>
               {session.isDoubleCheck && (
                 <Badge variant="outline" className="text-[10px] px-1">
@@ -325,18 +404,37 @@ export default function Chat() {
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground truncate">{session.lastMessage}</p>
-            {isClosed && session.lastMessageAt && (
+            
+            {/* Specialty */}
+            {displayInfo.specialty && (
+              <p className="text-xs text-primary truncate">{displayInfo.specialty}</p>
+            )}
+            
+            {/* Last message preview */}
+            <p className="text-xs text-muted-foreground truncate mt-0.5">{session.lastMessage || 'Sin mensajes'}</p>
+            
+            {/* Office hours or closed date */}
+            {isClosed && session.lastMessageAt ? (
               <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
                 <Clock className="w-3 h-3" />
                 Cerrada {format(session.lastMessageAt, 'dd MMM yyyy', { locale: es })}
               </p>
-            )}
+            ) : officeHours && role === 'patient' ? (
+              <p className={`text-[10px] flex items-center gap-1 mt-0.5 ${isAvailable ? 'text-success' : 'text-warning'}`}>
+                <Clock className="w-3 h-3" />
+                {officeHours}
+                {!isAvailable && ' (Fuera de horario)'}
+              </p>
+            ) : null}
           </div>
-          {!isClosed && session.unreadCount > 0 && (
-            <Badge variant="destructive" className="text-xs">{session.unreadCount}</Badge>
-          )}
-          {isClosed && <Lock className="w-3 h-3 text-muted-foreground" />}
+          
+          {/* Unread badge or lock icon */}
+          <div className="flex flex-col items-end gap-1">
+            {!isClosed && session.unreadCount > 0 && (
+              <Badge variant="destructive" className="text-xs">{session.unreadCount}</Badge>
+            )}
+            {isClosed && <Lock className="w-3 h-3 text-muted-foreground" />}
+          </div>
         </div>
       </div>
     );
@@ -483,16 +581,63 @@ export default function Chat() {
               <>
                 <CardHeader className="pb-2 border-b">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-sm">
-                        {getSessionDisplayName(selectedSessionData)}
-                      </CardTitle>
-                      {selectedSessionData.isDoubleCheck && (
-                        <Badge variant="outline" className="text-xs">
-                          <CheckCheck className="w-3 h-3 mr-1" />
-                          Double Check
-                        </Badge>
-                      )}
+                    <div className="flex items-center gap-3">
+                      {/* Avatar */}
+                      {(() => {
+                        const info = getSessionDisplayInfo(selectedSessionData);
+                        return info.avatar ? (
+                          <img 
+                            src={info.avatar} 
+                            alt={info.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            {info.type === 'doctor' || info.type === 'resident' 
+                              ? <Stethoscope className="w-5 h-5 text-primary" />
+                              : <User className="w-5 h-5 text-primary" />
+                            }
+                          </div>
+                        );
+                      })()}
+                      
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-sm">
+                            {getSessionDisplayName(selectedSessionData)}
+                          </CardTitle>
+                          {selectedSessionData.isDoubleCheck && (
+                            <Badge variant="outline" className="text-xs">
+                              <CheckCheck className="w-3 h-3 mr-1" />
+                              2nd
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {/* Specialty and office hours */}
+                        {(() => {
+                          const info = getSessionDisplayInfo(selectedSessionData);
+                          const officeHours = formatOfficeHours(selectedSessionData);
+                          const isAvailable = isWithinOfficeHours(selectedSessionData);
+                          
+                          return (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              {info.specialty && (
+                                <span className="text-primary">{info.specialty}</span>
+                              )}
+                              {officeHours && role === 'patient' && (
+                                <>
+                                  <span>•</span>
+                                  <span className={isAvailable ? 'text-success' : 'text-warning'}>
+                                    <Clock className="w-3 h-3 inline mr-1" />
+                                    {isAvailable ? 'Disponible' : 'Fuera de horario'}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {isSessionClosed ? (

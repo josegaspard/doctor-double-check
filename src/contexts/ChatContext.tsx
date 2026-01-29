@@ -10,9 +10,13 @@ export interface ChatSession {
   participant1Id: string;
   participant1Type: ChatParticipantType;
   participant1Name?: string;
+  participant1Specialty?: string;
+  participant1Avatar?: string;
   participant2Id: string;
   participant2Type: ChatParticipantType;
   participant2Name?: string;
+  participant2Specialty?: string;
+  participant2Avatar?: string;
   lastMessage?: string;
   lastMessageAt?: Date;
   unreadCount: number;
@@ -20,6 +24,10 @@ export interface ChatSession {
   isDoubleCheck: boolean;
   originalConsultationId?: string;
   createdAt: Date;
+  // Office hours (from doctor)
+  officeHoursStart?: string;
+  officeHoursEnd?: string;
+  officeDays?: string[];
 }
 
 export interface ChatMessage {
@@ -60,6 +68,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [isLoading, setIsLoading] = useState(false);
   const subscriptionRef = useRef<any>(null);
+  const fetchingRef = useRef(false);
 
   const getUserType = (): ChatParticipantType | null => {
     if (!user) return null;
@@ -70,8 +79,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchSessions = useCallback(async () => {
-    if (!user?.id || user.role === 'visitor') return;
+    if (!user?.id || user.role === 'visitor' || fetchingRef.current) return;
 
+    fetchingRef.current = true;
     try {
       const { data: sessionsData, error } = await supabase
         .from('chat_sessions')
@@ -89,33 +99,89 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           participantIds.add(s.participant2_id);
         });
 
-        // Fetch participant names from public view
+        // Fetch participant names and avatars from public view
         const { data: profiles } = await supabase
           .from('profiles_public')
-          .select('id, name')
+          .select('id, name, avatar_url')
           .in('id', [...participantIds]);
 
-        const profileMap = new Map(profiles?.map(p => [p.id, p.name]) || []);
+        const profileMap = new Map(profiles?.map(p => [p.id, { name: p.name, avatar: p.avatar_url }]) || []);
 
-        setSessions(sessionsData.map(s => ({
-          id: s.id,
-          participant1Id: s.participant1_id,
-          participant1Type: s.participant1_type as ChatParticipantType,
-          participant1Name: profileMap.get(s.participant1_id),
-          participant2Id: s.participant2_id,
-          participant2Type: s.participant2_type as ChatParticipantType,
-          participant2Name: profileMap.get(s.participant2_id),
-          lastMessage: s.last_message || undefined,
-          lastMessageAt: s.last_message_at ? new Date(s.last_message_at) : undefined,
-          unreadCount: s.participant1_id === user.id ? s.unread_count_1 : s.unread_count_2,
-          status: s.status as ChatStatus,
-          isDoubleCheck: s.is_double_check,
-          originalConsultationId: s.original_consultation_id || undefined,
-          createdAt: new Date(s.created_at),
-        })));
+        // Fetch doctor specialties and office hours
+        const { data: doctorProfiles } = await supabase
+          .from('doctor_profiles_public')
+          .select('user_id, specialty')
+          .in('user_id', [...participantIds]);
+
+        const doctorMap = new Map(doctorProfiles?.map(d => [d.user_id, d.specialty]) || []);
+
+        // Fetch resident specialties
+        const { data: residentProfiles } = await supabase
+          .from('resident_profiles_public')
+          .select('user_id, specialty')
+          .in('user_id', [...participantIds]);
+
+        const residentMap = new Map(residentProfiles?.map(r => [r.user_id, r.specialty]) || []);
+
+        // For doctor office hours, we need to query the doctor_profiles table for our own sessions
+        const doctorIds = [...participantIds].filter(id => doctorMap.has(id));
+        let officeHoursMap = new Map<string, { start: string; end: string; days: string[] }>();
+        
+        if (doctorIds.length > 0) {
+          // Use RPC to get office hours securely
+          for (const doctorId of doctorIds) {
+            const { data: doctorData } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctorId });
+            if (doctorData && Array.isArray(doctorData) && doctorData.length > 0) {
+              const doc = doctorData[0];
+              officeHoursMap.set(doctorId, {
+                start: doc.office_hours_start || '08:00:00',
+                end: doc.office_hours_end || '20:00:00',
+                days: doc.office_days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+              });
+            }
+          }
+        }
+
+        setSessions(sessionsData.map(s => {
+          const p1Profile = profileMap.get(s.participant1_id);
+          const p2Profile = profileMap.get(s.participant2_id);
+          const p1Specialty = doctorMap.get(s.participant1_id) || residentMap.get(s.participant1_id);
+          const p2Specialty = doctorMap.get(s.participant2_id) || residentMap.get(s.participant2_id);
+          
+          // Get office hours from the doctor participant
+          const doctorId = s.participant1_type === 'doctor' ? s.participant1_id : 
+                          s.participant2_type === 'doctor' ? s.participant2_id : null;
+          const officeHours = doctorId ? officeHoursMap.get(doctorId) : null;
+
+          return {
+            id: s.id,
+            participant1Id: s.participant1_id,
+            participant1Type: s.participant1_type as ChatParticipantType,
+            participant1Name: p1Profile?.name,
+            participant1Specialty: p1Specialty,
+            participant1Avatar: p1Profile?.avatar,
+            participant2Id: s.participant2_id,
+            participant2Type: s.participant2_type as ChatParticipantType,
+            participant2Name: p2Profile?.name,
+            participant2Specialty: p2Specialty,
+            participant2Avatar: p2Profile?.avatar,
+            lastMessage: s.last_message || undefined,
+            lastMessageAt: s.last_message_at ? new Date(s.last_message_at) : undefined,
+            unreadCount: s.participant1_id === user.id ? s.unread_count_1 : s.unread_count_2,
+            status: s.status as ChatStatus,
+            isDoubleCheck: s.is_double_check,
+            originalConsultationId: s.original_consultation_id || undefined,
+            createdAt: new Date(s.created_at),
+            officeHoursStart: officeHours?.start,
+            officeHoursEnd: officeHours?.end,
+            officeDays: officeHours?.days,
+          };
+        }));
       }
     } catch (error) {
       console.error('Error fetching sessions:', error);
+    } finally {
+      fetchingRef.current = false;
     }
   }, [user?.id, user?.role]);
 
@@ -240,10 +306,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (existing) {
         const { data: profiles } = await supabase
           .from('profiles_public')
-          .select('id, name')
+          .select('id, name, avatar_url')
           .in('id', [existing.participant1_id, existing.participant2_id]);
 
-        const profileMap = new Map(profiles?.map(p => [p.id, p.name]) || []);
+        const profileMap = new Map(profiles?.map(p => [p.id, { name: p.name, avatar: p.avatar_url }]) || []);
 
         return {
           success: true,
@@ -251,10 +317,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             id: existing.id,
             participant1Id: existing.participant1_id,
             participant1Type: existing.participant1_type as ChatParticipantType,
-            participant1Name: profileMap.get(existing.participant1_id),
+            participant1Name: profileMap.get(existing.participant1_id)?.name,
+            participant1Avatar: profileMap.get(existing.participant1_id)?.avatar,
             participant2Id: existing.participant2_id,
             participant2Type: existing.participant2_type as ChatParticipantType,
-            participant2Name: profileMap.get(existing.participant2_id),
+            participant2Name: profileMap.get(existing.participant2_id)?.name,
+            participant2Avatar: profileMap.get(existing.participant2_id)?.avatar,
             lastMessage: existing.last_message || undefined,
             lastMessageAt: existing.last_message_at ? new Date(existing.last_message_at) : undefined,
             unreadCount: existing.participant1_id === user.id ? existing.unread_count_1 : existing.unread_count_2,
