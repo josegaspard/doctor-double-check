@@ -9,6 +9,7 @@ import { WalletProvider } from "@/contexts/WalletContext";
 import { LivesProvider } from "@/contexts/LivesContext";
 import { VaultProvider } from "@/contexts/VaultContext";
 import { ChatProvider } from "@/contexts/ChatContext";
+import { PostConsultationRatingProvider } from "@/components/ratings/PostConsultationRatingProvider";
 
 import RoleSelector from "./pages/RoleSelector";
 import Login from "./pages/Login";
@@ -62,10 +63,11 @@ const App = () => (
           <LivesProvider>
             <VaultProvider>
               <ChatProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
+                <PostConsultationRatingProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
                     <Routes>
                       <Route path="/" element={<RoleSelector />} />
                       <Route path="/login" element={<Login />} />
@@ -113,7 +115,8 @@ const App = () => (
                     </Routes>
                   </BrowserRouter>
                 </TooltipProvider>
-              </ChatProvider>
+              </PostConsultationRatingProvider>
+            </ChatProvider>
             </VaultProvider>
           </LivesProvider>
         </WalletProvider>

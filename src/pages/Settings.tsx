@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { PushNotificationToggle } from '@/components/notifications/PushNotificationToggle';
+import { MySubscriptions } from '@/components/subscriptions/MySubscriptions';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -243,6 +244,9 @@ export default function Settings() {
               </p>
             </CardContent>
           </Card>
+
+          {/* My Subscriptions */}
+          <MySubscriptions />
         </div>
       </div>
     </MainLayout>

@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Wallet as WalletIcon, Plus, CreditCard, ArrowUpRight, ArrowDownLeft, Loader2, ExternalLink } from 'lucide-react';
+import { Wallet as WalletIcon, Plus, CreditCard, Loader2, ExternalLink } from 'lucide-react';
+import { TransactionHistory } from '@/components/wallet/TransactionHistory';
 
 const TOPUP_AMOUNTS = [100, 250, 500, 1000];
 
@@ -169,48 +170,10 @@ export default function Wallet() {
           </Card>
         </div>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-lg">{t('wallet.transactions')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : transactions.length > 0 ? (
-              <div className="space-y-3">
-                {transactions.slice(0, 10).map(tx => (
-                  <div key={tx.id} className="flex items-center gap-3 py-2 border-b last:border-0">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.amount > 0 ? 'bg-success/20' : 'bg-muted'}`}>
-                      {tx.amount > 0 ? (
-                        <ArrowDownLeft className="w-5 h-5 text-success" />
-                      ) : (
-                        <ArrowUpRight className="w-5 h-5 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{tx.description}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(tx.createdAt)}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className={`font-semibold ${tx.amount > 0 ? 'text-success' : 'text-foreground'}`}>
-                        {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString()}
-                      </span>
-                      <p className="text-xs text-muted-foreground">{tx.status === 'paid' ? `✓ ${t('wallet.completed')}` : tx.status}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <WalletIcon className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-muted-foreground">{t('wallet.noTransactions')}</p>
-                <p className="text-sm text-muted-foreground">{t('wallet.topUpPrompt')}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Detailed Transaction History */}
+        <div className="mt-6">
+          <TransactionHistory />
+        </div>
       </div>
     </MainLayout>
   );
