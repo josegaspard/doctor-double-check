@@ -68,65 +68,42 @@ export function LivesProvider({ children }: { children: ReactNode }) {
 
   const fetchLives = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch lives without foreign key joins to avoid 400 errors
+      const { data: livesData, error } = await supabase
         .from('lives')
-        .select(`
-          *,
-          profiles!lives_doctor_id_fkey (name, avatar_url),
-          doctor_profiles!lives_doctor_id_fkey (followers_count)
-        `)
+        .select('*')
         .order('started_at', { ascending: false });
 
       if (error) {
-        // Fallback query without joins if foreign key doesn't exist
-        const { data: livesData } = await supabase
-          .from('lives')
-          .select('*')
-          .order('started_at', { ascending: false });
+        console.error('Error fetching lives:', error);
+        return;
+      }
+      
+      if (livesData && livesData.length > 0) {
+        // Fetch doctor data from public views
+        const doctorIds = [...new Set(livesData.map(l => l.doctor_id))];
         
-        if (livesData) {
-          // Fetch doctor names from public view
-          const doctorIds = [...new Set(livesData.map(l => l.doctor_id))];
-          const { data: profiles } = await supabase
+        const [profilesResult, doctorProfilesResult] = await Promise.all([
+          supabase
             .from('profiles_public')
             .select('id, name, avatar_url')
-            .in('id', doctorIds);
-          
-          const { data: doctorProfiles } = await supabase
-            .from('doctor_profiles')
+            .in('id', doctorIds),
+          supabase
+            .from('doctor_profiles_public')
             .select('user_id, followers_count')
-            .in('user_id', doctorIds);
+            .in('user_id', doctorIds)
+        ]);
 
-          const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-          const doctorMap = new Map(doctorProfiles?.map(d => [d.user_id, d]) || []);
+        const profileMap = new Map(profilesResult.data?.map(p => [p.id, p]) || []);
+        const doctorMap = new Map(doctorProfilesResult.data?.map(d => [d.user_id, d]) || []);
 
-          setLives(livesData.map(l => ({
-            id: l.id,
-            title: l.title,
-            description: l.description || undefined,
-            doctorId: l.doctor_id,
-            doctorName: profileMap.get(l.doctor_id)?.name || 'Doctor',
-            doctorAvatar: profileMap.get(l.doctor_id)?.avatar_url || undefined,
-            specialty: l.specialty,
-            status: l.status as LiveStatus,
-            viewerCount: l.viewer_count,
-            likesCount: l.likes_count,
-            startedAt: new Date(l.started_at),
-            endedAt: l.ended_at ? new Date(l.ended_at) : undefined,
-            thumbnailUrl: l.thumbnail_url || undefined,
-            recordingPrice: l.recording_price ? Number(l.recording_price) : undefined,
-            tags: l.tags || [],
-            followersCount: doctorMap.get(l.doctor_id)?.followers_count || 0,
-          })));
-        }
-      } else if (data) {
-        setLives(data.map((l: any) => ({
+        setLives(livesData.map(l => ({
           id: l.id,
           title: l.title,
           description: l.description || undefined,
           doctorId: l.doctor_id,
-          doctorName: l.profiles?.name || 'Doctor',
-          doctorAvatar: l.profiles?.avatar_url || undefined,
+          doctorName: profileMap.get(l.doctor_id)?.name || 'Doctor',
+          doctorAvatar: profileMap.get(l.doctor_id)?.avatar_url || undefined,
           specialty: l.specialty,
           status: l.status as LiveStatus,
           viewerCount: l.viewer_count,
@@ -136,8 +113,10 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           thumbnailUrl: l.thumbnail_url || undefined,
           recordingPrice: l.recording_price ? Number(l.recording_price) : undefined,
           tags: l.tags || [],
-          followersCount: l.doctor_profiles?.followers_count || 0,
+          followersCount: doctorMap.get(l.doctor_id)?.followers_count || 0,
         })));
+      } else {
+        setLives([]);
       }
     } catch (error) {
       console.error('Error fetching lives:', error);
