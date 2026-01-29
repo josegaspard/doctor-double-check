@@ -5,12 +5,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2 } from 'lucide-react';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard } from 'lucide-react';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
+import { useWallet } from '@/contexts/WalletContext';
 import { toast } from 'sonner';
+
 interface DoctorData {
   id: string;
   visibleId: string;
@@ -34,12 +44,15 @@ interface LiveData {
 export default function DoctorProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, role } = useAuth();
+  const { user, role, isAuthenticated } = useAuth();
   const { createSession } = useChat();
+  const { balance, purchase, canAfford } = useWallet();
   const [doctor, setDoctor] = useState<DoctorData | null>(null);
   const [activeLive, setActiveLive] = useState<LiveData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isStartingChat, setIsStartingChat] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   useEffect(() => {
     const fetchDoctor = async () => {
@@ -124,17 +137,18 @@ export default function DoctorProfile() {
     };
   }, [id]);
 
-  // Handle starting a consultation with this doctor
-  const handleStartConsultation = async () => {
-    if (!user?.id || !doctor) {
-      navigate('/login');
-      return;
-    }
+  // Check if user has chat entitlement
+  const hasChatEntitlement = user?.entitlements?.some(e => e.type === 'chat' && e.isActive) ?? false;
+  
+  // Check if consultation is free
+  const isFreeConsultation = doctor?.consultationFee === 0;
+  
+  // Can start chat without payment?
+  const canChatDirectly = role === 'doctor' || hasChatEntitlement || isFreeConsultation;
 
-    if (role !== 'patient') {
-      toast.error('Solo los pacientes pueden iniciar consultas');
-      return;
-    }
+  // Start the chat session
+  const startChatSession = async () => {
+    if (!user?.id || !doctor) return;
 
     setIsStartingChat(true);
     try {
@@ -150,6 +164,74 @@ export default function DoctorProfile() {
       toast.error('Error al iniciar consulta');
     } finally {
       setIsStartingChat(false);
+    }
+  };
+
+  // Handle starting a consultation with this doctor
+  const handleStartConsultation = async () => {
+    // Not authenticated - redirect to login
+    if (!isAuthenticated || !user?.id) {
+      navigate('/login');
+      return;
+    }
+
+    // Only patients can start consultations
+    if (role !== 'patient') {
+      toast.error('Solo los pacientes pueden iniciar consultas');
+      return;
+    }
+
+    if (!doctor) return;
+
+    // If can chat directly (free or has entitlement), start chat
+    if (canChatDirectly) {
+      await startChatSession();
+      return;
+    }
+
+    // Otherwise, show payment modal
+    setShowPaymentModal(true);
+  };
+
+  // Handle wallet payment
+  const handleWalletPayment = async () => {
+    if (!doctor) return;
+
+    setIsProcessingPayment(true);
+    try {
+      const result = await purchase(
+        doctor.consultationFee,
+        `Consulta con ${doctor.name}`,
+        { doctor_id: doctor.id, type: 'consultation' }
+      );
+
+      if (result.success) {
+        // Create chat entitlement (temporary for this session)
+        // In a real app, this would be handled by backend
+        setShowPaymentModal(false);
+        await startChatSession();
+      } else {
+        toast.error(result.error || 'Error al procesar el pago');
+      }
+    } catch (error) {
+      toast.error('Error al procesar el pago');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  // Handle Stripe payment (redirect to checkout)
+  const handleStripePayment = async () => {
+    if (!doctor) return;
+
+    setIsProcessingPayment(true);
+    try {
+      // TODO: Create a checkout session for consultation
+      // For now, redirect to wallet to top up
+      toast.info('Recarga tu saldo para continuar');
+      navigate('/wallet');
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -279,7 +361,11 @@ export default function DoctorProfile() {
                     <p className="text-xs text-muted-foreground">Consultas</p>
                   </div>
                   <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <p className="text-xl font-bold text-premium">${doctor.consultationFee}</p>
+                    {isFreeConsultation ? (
+                      <p className="text-xl font-bold text-success">Gratis</p>
+                    ) : (
+                      <p className="text-xl font-bold text-premium">${doctor.consultationFee}</p>
+                    )}
                     <p className="text-xs text-muted-foreground">Consulta</p>
                   </div>
                   {doctor.location && (
@@ -296,13 +382,21 @@ export default function DoctorProfile() {
                     className="gap-2" 
                     onClick={handleStartConsultation}
                     disabled={isStartingChat}
+                    variant={isFreeConsultation ? 'default' : canChatDirectly ? 'default' : 'secondary'}
                   >
                     {isStartingChat ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <MessageSquare className="w-4 h-4" />
                     )}
-                    {isStartingChat ? 'Iniciando...' : 'Iniciar Consulta'}
+                    {isStartingChat 
+                      ? 'Iniciando...' 
+                      : isFreeConsultation 
+                        ? 'Consulta Gratis'
+                        : canChatDirectly 
+                          ? 'Iniciar Consulta'
+                          : `Consultar ($${doctor.consultationFee})`
+                    }
                   </Button>
                   <Button variant="outline" className="gap-2" onClick={() => navigate('/lives')}>
                     <Video className="w-4 h-4" />
@@ -313,6 +407,90 @@ export default function DoctorProfile() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Payment Modal */}
+        <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-primary" />
+                Iniciar Consulta
+              </DialogTitle>
+              <DialogDescription>
+                Consulta con {doctor.name} - ${doctor.consultationFee} MXN
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* Wallet Payment Option */}
+              <Card 
+                className={`cursor-pointer transition-colors ${
+                  canAfford(doctor.consultationFee) 
+                    ? 'hover:border-primary' 
+                    : 'opacity-60'
+                }`}
+                onClick={() => canAfford(doctor.consultationFee) && handleWalletPayment()}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Wallet className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Pagar con Saldo</p>
+                        <p className="text-sm text-muted-foreground">
+                          Saldo disponible: ${balance.toFixed(2)} MXN
+                        </p>
+                      </div>
+                    </div>
+                    {canAfford(doctor.consultationFee) ? (
+                      <Badge variant="secondary">Disponible</Badge>
+                    ) : (
+                      <Badge variant="outline">Saldo insuficiente</Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card Payment Option */}
+              <Card 
+                className="cursor-pointer hover:border-primary transition-colors"
+                onClick={handleStripePayment}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-secondary/50 flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Pagar con Tarjeta</p>
+                        <p className="text-sm text-muted-foreground">
+                          Visa, Mastercard, AMEX
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline">Stripe</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {isProcessingPayment && (
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Procesando pago...
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowPaymentModal(false)}>
+                Cancelar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
