@@ -126,12 +126,20 @@ serve(async (req) => {
           period_end: new Date().toISOString().split("T")[0],
         });
 
-        // Update doctor pending earnings
+        // Update doctor pending earnings - add to total, reset pending
+        const { data: currentProfile } = await supabaseAdmin
+          .from("doctor_profiles")
+          .select("total_earnings")
+          .eq("user_id", doctor.user_id)
+          .single();
+
+        const currentTotal = currentProfile?.total_earnings || 0;
+        
         await supabaseAdmin
           .from("doctor_profiles")
           .update({
             pending_earnings: 0,
-            total_earnings: doctor.pending_earnings,
+            total_earnings: currentTotal + doctor.pending_earnings,
           })
           .eq("user_id", doctor.user_id);
 
