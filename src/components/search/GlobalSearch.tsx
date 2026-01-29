@@ -212,9 +212,9 @@ export function GlobalSearch() {
   const getIcon = (type: string) => {
     switch (type) {
       case 'doctor':
-        return <Stethoscope className="w-4 h-4 text-primary" />;
+        return <Stethoscope className="w-4 h-4 text-secondary" />;
       case 'recording':
-        return <PlayCircle className="w-4 h-4 text-purple-500" />;
+        return <PlayCircle className="w-4 h-4 text-accent" />;
       case 'live':
         return <Video className="w-4 h-4 text-live" />;
       default:
@@ -289,51 +289,59 @@ export function GlobalSearch() {
                   const typeResults = results.filter(r => r.type === type);
                   if (typeResults.length === 0) return null;
                   
-                  return (
-                    <CommandGroup 
-                      key={type} 
-                      heading={getGroupHeading(type)}
-                    >
-                      {typeResults.map(result => (
-                        <CommandItem
-                          key={`${result.type}-${result.id}`}
-                          onSelect={() => handleSelect(result)}
-                          className="flex items-center gap-3 cursor-pointer p-2"
-                        >
-                          {result.type === 'doctor' ? (
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={result.avatarUrl} alt={result.title} />
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                {result.title.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          ) : result.thumbnailUrl ? (
-                            <div className="h-8 w-12 rounded overflow-hidden bg-muted flex-shrink-0">
-                              <img 
-                                src={result.thumbnailUrl} 
-                                alt={result.title}
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-                          ) : (
-                            <div className="h-8 w-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                              {getIcon(result.type)}
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate text-sm">{result.title}</p>
-                            {result.subtitle && (
-                              <p className="text-xs text-muted-foreground truncate">{result.subtitle}</p>
+                    return (
+                      <CommandGroup 
+                        key={type} 
+                        heading={getGroupHeading(type)}
+                        className="[&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-secondary"
+                      >
+                        {typeResults.map(result => (
+                          <CommandItem
+                            key={`${result.type}-${result.id}`}
+                            onSelect={() => handleSelect(result)}
+                            className="flex items-center gap-3 cursor-pointer p-2.5 rounded-lg mx-1 aria-selected:bg-secondary/10 aria-selected:text-foreground hover:bg-muted"
+                          >
+                            {result.type === 'doctor' ? (
+                              <Avatar className="h-9 w-9 ring-2 ring-secondary/20">
+                                <AvatarImage src={result.avatarUrl} alt={result.title} />
+                                <AvatarFallback className="bg-secondary/10 text-secondary text-sm font-semibold">
+                                  {result.title.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                            ) : result.thumbnailUrl ? (
+                              <div className="h-9 w-14 rounded-md overflow-hidden bg-muted flex-shrink-0 ring-1 ring-border">
+                                <img 
+                                  src={result.thumbnailUrl} 
+                                  alt={result.title}
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                {getIcon(result.type)}
+                              </div>
                             )}
-                          </div>
-                          {result.type === 'live' && (
-                            <Badge variant="destructive" className="text-xs animate-pulse">
-                              {t('lives.live')}
-                            </Badge>
-                          )}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate text-sm text-foreground">{result.title}</p>
+                              {result.subtitle && (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
+                                    {result.subtitle}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                            {result.type === 'live' && (
+                              <Badge variant="live" className="text-[10px] px-2">
+                                {t('lives.live')}
+                              </Badge>
+                            )}
+                            {result.type === 'doctor' && (
+                              <Stethoscope className="w-4 h-4 text-secondary/50" />
+                            )}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
                   );
                 })}
               </>
