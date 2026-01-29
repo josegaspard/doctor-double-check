@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -42,7 +42,7 @@ interface DoctorRequest {
 export default function AdminDoctors() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [doctors, setDoctors] = useState<DoctorRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,15 +57,15 @@ export default function AdminDoctors() {
   useEffect(() => {
     if (user?.role !== 'admin') {
       toast({ 
-        title: language === 'es' ? 'Acceso denegado' : 'Access denied', 
-        description: language === 'es' ? 'Solo administradores pueden acceder' : 'Only admins can access', 
+        title: t('admin.accessDenied'), 
+        description: t('admin.onlyAdmins'), 
         variant: 'destructive' 
       });
       navigate('/');
       return;
     }
     fetchDoctors();
-  }, [user, navigate, language]);
+  }, [user, navigate]);
 
   const fetchDoctors = async () => {
     try {
@@ -76,7 +76,6 @@ export default function AdminDoctors() {
 
       if (error) throw error;
 
-      // Fetch profiles for each doctor
       const doctorsWithProfiles = await Promise.all(
         (doctorProfiles || []).map(async (doc) => {
           const { data: profile } = await supabase
@@ -91,7 +90,7 @@ export default function AdminDoctors() {
       setDoctors(doctorsWithProfiles);
     } catch (error) {
       console.error('Error fetching doctors:', error);
-      toast({ title: 'Error', description: 'No se pudieron cargar los doctores', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('admin.errorLoadingDoctors'), variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -110,14 +109,14 @@ export default function AdminDoctors() {
       if (error) throw error;
 
       toast({
-        title: actionDialog.action === 'approve' ? 'Doctor aprobado' : 'Doctor rechazado',
-        description: `${actionDialog.doctor.profile?.name} ha sido ${newStatus === 'approved' ? 'aprobado' : 'rechazado'}`,
+        title: actionDialog.action === 'approve' ? t('admin.doctorApproved') : t('admin.doctorRejected'),
+        description: `${actionDialog.doctor.profile?.name} ${newStatus === 'approved' ? t('admin.hasBeenApproved') : t('admin.hasBeenRejected')}`,
       });
 
       fetchDoctors();
     } catch (error) {
       console.error('Error updating doctor:', error);
-      toast({ title: 'Error', description: 'No se pudo actualizar el estado', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('admin.errorUpdatingStatus'), variant: 'destructive' });
     } finally {
       setActionDialog({ open: false, doctor: null, action: 'approve' });
     }
@@ -159,10 +158,10 @@ export default function AdminDoctors() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Stethoscope className="h-6 w-6 text-primary" />
-              {language === 'es' ? 'Gestión de Doctores' : 'Doctor Management'}
+              {t('admin.doctorManagement')}
             </h1>
             <p className="text-muted-foreground">
-              {pendingCount} {language === 'es' ? 'solicitudes pendientes de revisión' : 'pending requests'}
+              {pendingCount} {t('admin.pendingRequests')}
             </p>
           </div>
         </div>
@@ -174,7 +173,7 @@ export default function AdminDoctors() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por nombre, especialidad o email..."
+                  placeholder={t('admin.searchByNameEmailSpecialty')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -188,7 +187,7 @@ export default function AdminDoctors() {
                     size="sm"
                     onClick={() => setStatusFilter(status)}
                   >
-                    {status === 'all' ? 'Todos' : status === 'pending' ? 'Pendientes' : status === 'approved' ? 'Aprobados' : 'Rechazados'}
+                    {status === 'all' ? t('admin.all') : t(`admin.${status}`)}
                   </Button>
                 ))}
               </div>
@@ -205,7 +204,7 @@ export default function AdminDoctors() {
           <Card>
             <CardContent className="py-12 text-center">
               <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No se encontraron doctores</p>
+              <p className="text-muted-foreground">{t('admin.noDoctorsFound')}</p>
             </CardContent>
           </Card>
         ) : (
@@ -221,26 +220,26 @@ export default function AdminDoctors() {
                       </Avatar>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{doctor.profile?.name || 'Sin nombre'}</h3>
+                          <h3 className="font-semibold">{doctor.profile?.name || t('admin.noName')}</h3>
                           {getStatusBadge(doctor.status)}
                         </div>
                         <p className="text-sm text-muted-foreground">{doctor.profile?.email}</p>
                         <div className="flex flex-wrap gap-2 mt-2">
                           <Badge variant="secondary">{doctor.specialty}</Badge>
                           <span className="text-xs text-muted-foreground">
-                            Licencia: {doctor.license || 'No especificada'}
+                            {t('admin.license')}: {doctor.license || t('admin.notSpecified')}
                           </span>
                         </div>
                         {doctor.cedula_profesional && (
                           <p className="text-xs text-muted-foreground">
-                            Cédula: {doctor.cedula_profesional}
+                            {t('admin.cedula')}: {doctor.cedula_profesional}
                           </p>
                         )}
                         {doctor.bio && (
                           <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{doctor.bio}</p>
                         )}
                         <p className="text-xs text-muted-foreground">
-                          Registrado: {new Date(doctor.created_at).toLocaleDateString()}
+                          {t('admin.registered')}: {new Date(doctor.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -253,7 +252,7 @@ export default function AdminDoctors() {
                           onClick={() => setActionDialog({ open: true, doctor, action: 'approve' })}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
-                          Aprobar
+                          {t('admin.approve')}
                         </Button>
                         <Button
                           size="sm"
@@ -261,7 +260,7 @@ export default function AdminDoctors() {
                           onClick={() => setActionDialog({ open: true, doctor, action: 'reject' })}
                         >
                           <XCircle className="w-4 h-4 mr-1" />
-                          Rechazar
+                          {t('admin.reject')}
                         </Button>
                       </div>
                     )}
@@ -277,21 +276,21 @@ export default function AdminDoctors() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {actionDialog.action === 'approve' ? '¿Aprobar doctor?' : '¿Rechazar doctor?'}
+                {actionDialog.action === 'approve' ? t('admin.approveDoctor2') : t('admin.rejectDoctor2')}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {actionDialog.action === 'approve'
-                  ? `${actionDialog.doctor?.profile?.name} podrá ejercer como doctor verificado en la plataforma.`
-                  : `${actionDialog.doctor?.profile?.name} no podrá ejercer como doctor en la plataforma.`}
+                  ? `${actionDialog.doctor?.profile?.name} ${t('admin.doctorApproveMessage')}`
+                  : `${actionDialog.doctor?.profile?.name} ${t('admin.doctorRejectMessage')}`}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel>{t('admin.cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleAction}
                 className={actionDialog.action === 'approve' ? 'bg-green-600 hover:bg-green-700' : ''}
               >
-                {actionDialog.action === 'approve' ? 'Aprobar' : 'Rechazar'}
+                {actionDialog.action === 'approve' ? t('admin.approve') : t('admin.reject')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
