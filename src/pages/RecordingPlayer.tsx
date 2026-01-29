@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
@@ -23,10 +22,24 @@ import {
   Loader2,
 } from 'lucide-react';
 
+interface Recording {
+  id: string;
+  title: string;
+  description?: string;
+  doctorId: string;
+  doctorName: string;
+  specialty: string;
+  duration: number;
+  price: number;
+  thumbnailUrl?: string;
+  videoUrl?: string;
+  createdAt: Date;
+  tags: string[];
+}
+
 export default function RecordingPlayer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getRecording } = useLives();
   const { user, role, supabaseUser } = useAuth();
   
   const [isPlaying, setIsPlaying] = useState(false);
@@ -35,8 +48,60 @@ export default function RecordingPlayer() {
   const [isMuted, setIsMuted] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
-  
-  const recording = getRecording(id || '');
+  const [recording, setRecording] = useState<Recording | null>(null);
+  const [isLoadingRecording, setIsLoadingRecording] = useState(true);
+
+  // Fetch recording directly from database
+  useEffect(() => {
+    const fetchRecording = async () => {
+      if (!id) {
+        setIsLoadingRecording(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('recordings')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error || !data) {
+          console.error('Error fetching recording:', error);
+          setIsLoadingRecording(false);
+          return;
+        }
+
+        // Get doctor name
+        const { data: profile } = await supabase
+          .from('profiles_public')
+          .select('name')
+          .eq('id', data.doctor_id)
+          .single();
+
+        setRecording({
+          id: data.id,
+          title: data.title,
+          description: data.description || undefined,
+          doctorId: data.doctor_id,
+          doctorName: profile?.name || 'Doctor',
+          specialty: data.specialty,
+          duration: data.duration,
+          price: Number(data.price),
+          thumbnailUrl: data.thumbnail_url || undefined,
+          videoUrl: data.video_url || undefined,
+          createdAt: new Date(data.created_at),
+          tags: data.tags || [],
+        });
+      } catch (error) {
+        console.error('Error fetching recording:', error);
+      } finally {
+        setIsLoadingRecording(false);
+      }
+    };
+
+    fetchRecording();
+  }, [id]);
 
   // Check if user has purchased this recording
   const checkPurchase = useCallback(async () => {
@@ -85,12 +150,14 @@ export default function RecordingPlayer() {
     return hasPurchased;
   };
 
-  if (isCheckingAccess) {
+  if (isLoadingRecording || isCheckingAccess) {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-12 text-center">
           <Loader2 className="w-16 h-16 mx-auto animate-spin text-primary mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Verificando acceso...</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            {isLoadingRecording ? 'Cargando grabación...' : 'Verificando acceso...'}
+          </h2>
         </div>
       </MainLayout>
     );
@@ -102,6 +169,7 @@ export default function RecordingPlayer() {
         <div className="container mx-auto px-4 py-12 text-center">
           <PlayCircle className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
           <h2 className="text-xl font-semibold mb-2">Grabación no encontrada</h2>
+          <p className="text-muted-foreground mb-4">Es posible que la grabación no exista o no tengas acceso.</p>
           <Button onClick={() => navigate('/recordings')}>Volver a Grabaciones</Button>
         </div>
       </MainLayout>
@@ -271,7 +339,7 @@ export default function RecordingPlayer() {
                 
                 <Separator className="my-4" />
                 
-                <Button className="w-full" onClick={() => navigate(`/doctor/${recording.doctorId}`)}>
+                <Button className="w-full" onClick={() => navigate(`/profile/${recording.doctorId}`)}>
                   Ver Perfil
                 </Button>
               </CardContent>
