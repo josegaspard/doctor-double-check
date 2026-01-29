@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Video, Image as ImageIcon, Download, ExternalLink, X } from 'lucide-react';
+import { FileText, Video, Image as ImageIcon, Download, ExternalLink, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ContentPreviewModalProps {
   isOpen: boolean;
@@ -25,6 +26,42 @@ interface ContentPreviewModalProps {
 }
 
 export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreviewModalProps) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getSignedUrl = async () => {
+      if (!content?.file_url || !isOpen) return;
+
+      // Check if it's already a full URL (starts with http)
+      if (content.file_url.startsWith('http')) {
+        setSignedUrl(content.file_url);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const { data, error: urlError } = await supabase.storage
+          .from('doctor-content')
+          .createSignedUrl(content.file_url, 60 * 60); // 1 hour
+
+        if (urlError) throw urlError;
+        setSignedUrl(data?.signedUrl || null);
+      } catch (err) {
+        console.error('Error getting signed URL:', err);
+        setError('Error al cargar el archivo');
+        setSignedUrl(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getSignedUrl();
+  }, [content?.file_url, isOpen]);
+
   if (!content) return null;
 
   const getTypeIcon = () => {
@@ -41,12 +78,29 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
   };
 
   const renderPreview = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center h-48 bg-muted rounded-lg">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    if (error || !signedUrl) {
+      return (
+        <div className="flex flex-col items-center justify-center h-48 bg-muted rounded-lg">
+          <FileText className="w-12 h-12 text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">{error || 'No se pudo cargar el archivo'}</p>
+        </div>
+      );
+    }
+
     switch (content.type) {
       case 'image':
         return (
           <div className="relative w-full max-h-[60vh] overflow-hidden rounded-lg bg-muted">
             <img 
-              src={content.file_url} 
+              src={signedUrl} 
               alt={content.title}
               className="w-full h-full object-contain"
               onError={(e) => {
@@ -59,7 +113,7 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
         return (
           <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
             <video 
-              src={content.file_url}
+              src={signedUrl}
               controls
               className="w-full h-full"
               poster={content.thumbnail_url || undefined}
@@ -72,7 +126,7 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
         return (
           <div className="relative w-full h-[60vh] rounded-lg overflow-hidden border">
             <iframe
-              src={`${content.file_url}#toolbar=0`}
+              src={`${signedUrl}#toolbar=0`}
               className="w-full h-full"
               title={content.title}
             />
@@ -111,7 +165,8 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
 
           <div className="flex gap-2 pt-2">
             <Button 
-              onClick={() => window.open(content.file_url, '_blank')}
+              onClick={() => signedUrl && window.open(signedUrl, '_blank')}
+              disabled={!signedUrl}
               className="flex-1 gap-2"
             >
               <ExternalLink className="w-4 h-4" />
@@ -119,9 +174,11 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
             </Button>
             <Button 
               variant="outline"
+              disabled={!signedUrl}
               onClick={() => {
+                if (!signedUrl) return;
                 const a = document.createElement('a');
-                a.href = content.file_url;
+                a.href = signedUrl;
                 a.download = content.title;
                 a.click();
               }}

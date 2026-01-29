@@ -176,6 +176,9 @@ export default function RecordingPlayer() {
     );
   }
 
+  // Show message if video is not available (Daily.co needs paid plan)
+  const videoNotAvailable = !recording.videoUrl;
+
   if (!hasAccess()) {
     return (
       <MainLayout>
@@ -229,6 +232,32 @@ export default function RecordingPlayer() {
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
             <div className="relative aspect-video bg-black rounded-xl overflow-hidden no-context-menu">
+            {videoNotAvailable ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-warning/10 to-muted/30">
+                <div className="text-center p-6">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-warning/20 flex items-center justify-center">
+                    <Clock className="w-8 h-8 text-warning" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Video no disponible
+                  </h3>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    La grabación de este live no está disponible. Para habilitar grabaciones de videos, 
+                    se requiere un plan de pago de Daily.co.
+                  </p>
+                </div>
+              </div>
+            ) : recording.videoUrl ? (
+              <video
+                src={recording.videoUrl}
+                className="w-full h-full object-contain"
+                controls
+                autoPlay={isPlaying}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+              />
+            ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-premium/10 to-primary/20">
                 <div className="text-center">
                   <div 
@@ -243,6 +272,7 @@ export default function RecordingPlayer() {
                   </div>
                 </div>
               </div>
+            )}
               
               <Watermark />
               
