@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const logStep = (step: string, details?: any) => {
@@ -51,7 +51,21 @@ serve(async (req) => {
     const { roomName, isOwner = false } = await req.json();
     if (!roomName) throw new Error("roomName is required");
 
-    logStep("Creating viewer token", { roomName, isOwner });
+    logStep("Creating viewer token", { roomName, isOwner, userName: profile?.name });
+
+    // Configure token properties for viewer
+    // Viewers have limited permissions compared to owners
+    const tokenProperties: Record<string, any> = {
+      room_name: roomName,
+      is_owner: isOwner,
+      user_id: userId,
+      user_name: profile?.name || "Usuario",
+      // Token expires in 24 hours
+      exp: Math.floor(Date.now() / 1000) + 86400,
+      // Viewers start with video/audio off to reduce bandwidth
+      start_video_off: true,
+      start_audio_off: true,
+    };
 
     // Create meeting token for the viewer
     const tokenResponse = await fetch("https://api.daily.co/v1/meeting-tokens", {
@@ -61,24 +75,18 @@ serve(async (req) => {
         "Authorization": `Bearer ${dailyApiKey}`,
       },
       body: JSON.stringify({
-        properties: {
-          room_name: roomName,
-          is_owner: isOwner,
-          user_id: userId,
-          user_name: profile?.name || "Usuario",
-          exp: Math.floor(Date.now() / 1000) + 86400,
-        },
+        properties: tokenProperties,
       }),
     });
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json();
       logStep("Token creation failed", errorData);
-      throw new Error("Failed to create meeting token");
+      throw new Error(`Failed to create meeting token: ${errorData.error || "Unknown error"}`);
     }
 
     const tokenData = await tokenResponse.json();
-    logStep("Viewer token created");
+    logStep("Viewer token created successfully");
 
     return new Response(
       JSON.stringify({
