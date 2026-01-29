@@ -207,48 +207,28 @@ export default function DoctorProfile() {
     setShowPaymentModal(true);
   };
 
-  // Handle wallet payment
+  // Handle wallet payment using secure RPC
   const handleWalletPayment = async () => {
     if (!doctor || !user?.id) return;
 
     setIsProcessingPayment(true);
     try {
-      const result = await purchase(
-        doctor.consultationFee,
-        `Consulta con ${doctor.name}`,
-        { doctor_id: doctor.id, type: 'consultation' }
-      );
+      // Use the secure server-side function that handles everything atomically
+      const { data, error } = await supabase.rpc('process_consultation_purchase', {
+        p_doctor_id: doctor.id,
+        p_amount: doctor.consultationFee,
+        p_patient_name: user.name || 'Paciente',
+      });
+
+      if (error) {
+        console.error('Consultation purchase error:', error);
+        toast.error(error.message || 'Error al procesar el pago');
+        return;
+      }
+
+      const result = data as { success: boolean; error?: string; amount_charged?: number };
 
       if (result.success) {
-        // Create chat entitlement for the patient (valid for 30 days)
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 30);
-
-        const { error: entitlementError } = await supabase
-          .from('entitlements')
-          .insert({
-            user_id: user.id,
-            type: 'chat',
-            is_active: true,
-            expires_at: expiresAt.toISOString(),
-          });
-
-        if (entitlementError) {
-          console.error('Error creating entitlement:', entitlementError);
-        }
-
-        // Credit doctor earnings
-        const { error: earningsError } = await supabase
-          .from('doctor_profiles')
-          .select('pending_earnings')
-          .eq('user_id', doctor.id)
-          .single();
-
-        if (!earningsError) {
-          // This is handled by server-side for Stripe payments
-          // For wallet payments, we need to credit manually or via edge function
-        }
-
         setShowPaymentModal(false);
         await startChatSession();
         toast.success('¡Pago exitoso!');
@@ -256,6 +236,7 @@ export default function DoctorProfile() {
         toast.error(result.error || 'Error al procesar el pago');
       }
     } catch (error) {
+      console.error('Payment error:', error);
       toast.error('Error al procesar el pago');
     } finally {
       setIsProcessingPayment(false);

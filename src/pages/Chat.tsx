@@ -383,7 +383,11 @@ export default function Chat() {
   }
 
   // Check entitlement for patients
-  const hasEntitlement = role === 'doctor' || user?.entitlements?.some(e => e.type === 'chat' && e.isActive);
+  // Allow access if: user is doctor, has chat entitlement, has active sessions, or just paid
+  const hasEntitlement = role === 'doctor' || 
+    user?.entitlements?.some(e => e.type === 'chat' && e.isActive) ||
+    activeSessions.length > 0 ||
+    isCreatingSession;
 
   if (role === 'patient' && !hasEntitlement) {
     return (
