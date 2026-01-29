@@ -19,7 +19,6 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {
-  Shield,
   Menu,
   Video,
   PlayCircle,
@@ -36,6 +35,7 @@ import {
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
+import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 
 interface NavItem {
   label: string;
@@ -105,10 +105,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </SheetTrigger>
                 <SheetContent side="left" className="w-72">
                   <div className="flex items-center gap-2 mb-6">
-                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                      <Shield className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                    <span className="font-heading font-bold">Dr Double Check</span>
+                    <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
                   </div>
                   <nav className="flex flex-col gap-1">
                     {filteredNavItems.map((item) => (
@@ -130,10 +127,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </Sheet>
 
               <Link to="/lives" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <span className="font-heading font-bold text-foreground hidden sm:block">Dr Double Check</span>
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
               </Link>
             </div>
 
