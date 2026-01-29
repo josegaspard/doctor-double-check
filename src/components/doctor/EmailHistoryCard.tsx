@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Mail, CheckCircle, XCircle, Video, Calendar as CalendarIcon, ChevronDown, ChevronUp, Filter, X, Clock } from 'lucide-react';
+import { Mail, CheckCircle, XCircle, Video, Calendar as CalendarIcon, ChevronDown, ChevronUp, Filter, X, Clock, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
@@ -159,6 +159,34 @@ export function EmailHistoryCard() {
   const sentCount = filteredEmails.filter(e => e.status === 'sent').length;
   const failedCount = filteredEmails.filter(e => e.status === 'failed').length;
 
+  const exportToCSV = () => {
+    const headers = ['Fecha', 'Destinatario', 'Email', 'Tipo', 'Contenido', 'Estado', 'Error'];
+    const rows = filteredEmails.map(email => [
+      format(email.createdAt, "yyyy-MM-dd HH:mm:ss"),
+      email.recipientName || '',
+      email.recipientEmail,
+      getEmailTypeLabel(email.emailType),
+      email.contentTitle || '',
+      email.status === 'sent' ? 'Enviado' : 'Fallido',
+      email.errorMessage || ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `historial-emails-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -210,6 +238,18 @@ export function EmailHistoryCard() {
             Historial de Emails
           </CardTitle>
           <div className="flex items-center gap-2">
+            {filteredEmails.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportToCSV}
+                className="gap-1"
+                title="Exportar a CSV"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">CSV</span>
+              </Button>
+            )}
             <Button
               variant={showFilters ? "secondary" : "ghost"}
               size="sm"
@@ -222,7 +262,7 @@ export function EmailHistoryCard() {
               )}
             </Button>
             <Badge variant="secondary" className="gap-1">
-              <CheckCircle className="w-3 h-3 text-green-500" />
+              <CheckCircle className="w-3 h-3 text-success" />
               {sentCount}
             </Badge>
             {failedCount > 0 && (
@@ -382,7 +422,7 @@ export function EmailHistoryCard() {
                           {getEmailTypeLabel(email.emailType)}
                         </Badge>
                         {email.status === 'sent' ? (
-                          <CheckCircle className="w-3 h-3 text-green-500" />
+                          <CheckCircle className="w-3 h-3 text-success" />
                         ) : (
                           <XCircle className="w-3 h-3 text-destructive" />
                         )}
