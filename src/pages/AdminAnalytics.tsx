@@ -86,14 +86,14 @@ export default function AdminAnalytics() {
       
       setIsLoading(true);
       try {
-        // Fetch total revenue from wallet transactions
+        // Fetch all wallet transactions for revenue calculations
         const { data: transactions } = await supabase
           .from('wallet_transactions')
-          .select('amount, type, created_at')
+          .select('amount, type, created_at, status')
           .eq('status', 'paid');
 
         const totalRevenue = transactions?.reduce((sum, t) => {
-          return t.type === 'topup' ? sum + t.amount : sum;
+          return t.type === 'topup' ? sum + Number(t.amount) : sum;
         }, 0) || 0;
 
         // Fetch users count
@@ -153,18 +153,58 @@ export default function AdminAnalytics() {
           }));
         }
 
-        // Generate monthly data (mock for demo)
-        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
-        const revenueByMonth = months.map((month, i) => ({
-          month,
-          revenue: Math.floor(Math.random() * 50000) + 10000,
-          transactions: Math.floor(Math.random() * 100) + 20,
-        }));
+        // Calculate REAL revenue by month from transactions
+        const revenueByMonth: { month: string; revenue: number; transactions: number }[] = [];
+        const livesByMonth: { month: string; count: number }[] = [];
+        
+        const monthNames = language === 'es' 
+          ? ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+          : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        const livesByMonth = months.map((month) => ({
-          month,
-          count: Math.floor(Math.random() * 30) + 5,
-        }));
+        // Get last 6 months
+        const now = new Date();
+        for (let i = 5; i >= 0; i--) {
+          const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          const monthLabel = monthNames[date.getMonth()];
+          
+          // Calculate revenue for this month
+          const monthTransactions = transactions?.filter(t => {
+            const txDate = new Date(t.created_at);
+            return txDate.getFullYear() === date.getFullYear() && 
+                   txDate.getMonth() === date.getMonth() &&
+                   t.type === 'topup';
+          }) || [];
+          
+          const monthRevenue = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
+          
+          revenueByMonth.push({
+            month: monthLabel,
+            revenue: monthRevenue,
+            transactions: monthTransactions.length,
+          });
+        }
+
+        // Fetch lives data for chart
+        const { data: livesData } = await supabase
+          .from('lives')
+          .select('id, started_at');
+
+        for (let i = 5; i >= 0; i--) {
+          const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const monthLabel = monthNames[date.getMonth()];
+          
+          const monthLives = livesData?.filter(l => {
+            const liveDate = new Date(l.started_at);
+            return liveDate.getFullYear() === date.getFullYear() && 
+                   liveDate.getMonth() === date.getMonth();
+          }) || [];
+          
+          livesByMonth.push({
+            month: monthLabel,
+            count: monthLives.length,
+          });
+        }
 
         setAnalytics({
           totalRevenue,
