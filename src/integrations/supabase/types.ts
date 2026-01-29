@@ -795,6 +795,7 @@ export type Database = {
       }
       lives: {
         Row: {
+          daily_room_name: string | null
           description: string | null
           doctor_id: string
           ended_at: string | null
@@ -810,6 +811,7 @@ export type Database = {
           viewer_count: number
         }
         Insert: {
+          daily_room_name?: string | null
           description?: string | null
           doctor_id: string
           ended_at?: string | null
@@ -825,6 +827,7 @@ export type Database = {
           viewer_count?: number
         }
         Update: {
+          daily_room_name?: string | null
           description?: string | null
           doctor_id?: string
           ended_at?: string | null
@@ -1703,6 +1706,10 @@ export type Database = {
       }
     }
     Functions: {
+      decrement_viewer_count: {
+        Args: { p_live_id: string }
+        Returns: undefined
+      }
       get_doctor_public_profile: {
         Args: { p_user_id: string }
         Returns: {
@@ -1734,6 +1741,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_viewer_count: {
+        Args: { p_live_id: string }
+        Returns: undefined
       }
       is_approved_doctor: { Args: { _user_id: string }; Returns: boolean }
       is_approved_resident: { Args: { _user_id: string }; Returns: boolean }

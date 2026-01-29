@@ -11,6 +11,38 @@ const logStep = (step: string, details?: any) => {
   console.log(`[DAILY-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Helper function to find a live by room name
+async function findLiveByRoomName(supabaseClient: any, roomName: string) {
+  if (!roomName) return null;
+
+  // First try direct match on daily_room_name
+  const { data: directMatch } = await supabaseClient
+    .from('lives')
+    .select('*')
+    .eq('daily_room_name', roomName)
+    .limit(1);
+
+  if (directMatch && directMatch.length > 0) {
+    return directMatch[0];
+  }
+
+  // Fallback: parse liveId from room name pattern: live-{liveId.slice(0,8)}-{timestamp}
+  const liveIdPrefix = roomName?.split('-')[1];
+  if (liveIdPrefix) {
+    const { data: prefixMatch } = await supabaseClient
+      .from('lives')
+      .select('*')
+      .ilike('id', `${liveIdPrefix}%`)
+      .limit(1);
+
+    if (prefixMatch && prefixMatch.length > 0) {
+      return prefixMatch[0];
+    }
+  }
+
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -34,20 +66,9 @@ serve(async (req) => {
         const roomName = payload.room_name;
         logStep("Recording started", { roomName });
 
-        // Find live by room name pattern: live-{liveId.slice(0,8)}-{timestamp}
-        const liveIdPrefix = roomName?.split('-')[1];
-        if (liveIdPrefix) {
-          const { data: lives } = await supabaseClient
-            .from('lives')
-            .select('id')
-            .ilike('id', `${liveIdPrefix}%`)
-            .eq('status', 'live')
-            .limit(1);
-
-          if (lives && lives.length > 0) {
-            logStep("Found live, updating status", { liveId: lives[0].id });
-            // No status change needed, just log
-          }
+        const live = await findLiveByRoomName(supabaseClient, roomName);
+        if (live) {
+          logStep("Found live for recording.started", { liveId: live.id });
         }
         break;
       }
@@ -57,21 +78,13 @@ serve(async (req) => {
         const recordingId = payload.recording_id;
         logStep("Recording stopped", { roomName, recordingId });
 
-        const liveIdPrefix = roomName?.split('-')[1];
-        if (liveIdPrefix) {
-          const { data: lives } = await supabaseClient
+        const live = await findLiveByRoomName(supabaseClient, roomName);
+        if (live) {
+          await supabaseClient
             .from('lives')
-            .select('id')
-            .ilike('id', `${liveIdPrefix}%`)
-            .limit(1);
-
-          if (lives && lives.length > 0) {
-            await supabaseClient
-              .from('lives')
-              .update({ status: 'processing_recording' })
-              .eq('id', lives[0].id);
-            logStep("Updated live to processing_recording", { liveId: lives[0].id });
-          }
+            .update({ status: 'processing_recording' })
+            .eq('id', live.id);
+          logStep("Updated live to processing_recording", { liveId: live.id });
         }
         break;
       }
@@ -82,57 +95,47 @@ serve(async (req) => {
         const downloadLink = payload.download_link;
         const duration = payload.duration || 0;
         
-        logStep("Recording ready", { roomName, recordingId, duration });
+        logStep("Recording ready", { roomName, recordingId, duration, downloadLink });
 
-        const liveIdPrefix = roomName?.split('-')[1];
-        if (liveIdPrefix) {
-          const { data: lives } = await supabaseClient
+        const live = await findLiveByRoomName(supabaseClient, roomName);
+        if (live) {
+          // Update live status
+          await supabaseClient
             .from('lives')
-            .select('*')
-            .ilike('id', `${liveIdPrefix}%`)
-            .limit(1);
+            .update({ status: 'recording_ready' })
+            .eq('id', live.id);
 
-          if (lives && lives.length > 0) {
-            const live = lives[0];
-            
-            // Update live status
+          // Check if recording already exists
+          const { data: existingRecording } = await supabaseClient
+            .from('recordings')
+            .select('id')
+            .eq('live_id', live.id)
+            .maybeSingle();
+
+          if (!existingRecording) {
+            // Create recording entry
             await supabaseClient
-              .from('lives')
-              .update({ status: 'recording_ready' })
-              .eq('id', live.id);
-
-            // Check if recording already exists
-            const { data: existingRecording } = await supabaseClient
               .from('recordings')
-              .select('id')
-              .eq('live_id', live.id)
-              .single();
-
-            if (!existingRecording) {
-              // Create recording entry
-              await supabaseClient
-                .from('recordings')
-                .insert({
-                  live_id: live.id,
-                  doctor_id: live.doctor_id,
-                  title: live.title,
-                  description: live.description,
-                  specialty: live.specialty,
-                  tags: live.tags,
-                  duration: Math.ceil(duration / 60), // Convert seconds to minutes
-                  price: live.recording_price || 99,
-                  video_url: downloadLink,
-                  thumbnail_url: live.thumbnail_url,
-                });
-              logStep("Recording created", { liveId: live.id });
-            } else {
-              // Update existing recording with video URL
-              await supabaseClient
-                .from('recordings')
-                .update({ video_url: downloadLink })
-                .eq('id', existingRecording.id);
-              logStep("Recording updated with video URL", { recordingId: existingRecording.id });
-            }
+              .insert({
+                live_id: live.id,
+                doctor_id: live.doctor_id,
+                title: live.title,
+                description: live.description,
+                specialty: live.specialty,
+                tags: live.tags,
+                duration: Math.ceil(duration / 60), // Convert seconds to minutes
+                price: live.recording_price || 99,
+                video_url: downloadLink,
+                thumbnail_url: live.thumbnail_url,
+              });
+            logStep("Recording created", { liveId: live.id });
+          } else {
+            // Update existing recording with video URL
+            await supabaseClient
+              .from('recordings')
+              .update({ video_url: downloadLink })
+              .eq('id', existingRecording.id);
+            logStep("Recording updated with video URL", { recordingId: existingRecording.id });
           }
         }
         break;
@@ -144,21 +147,12 @@ serve(async (req) => {
         logStep("Participant joined", { roomName, isOwner });
 
         if (!isOwner) {
-          const liveIdPrefix = roomName?.split('-')[1];
-          if (liveIdPrefix) {
-            const { data: lives } = await supabaseClient
+          const live = await findLiveByRoomName(supabaseClient, roomName);
+          if (live && live.status === 'live') {
+            await supabaseClient
               .from('lives')
-              .select('id, viewer_count')
-              .ilike('id', `${liveIdPrefix}%`)
-              .eq('status', 'live')
-              .limit(1);
-
-            if (lives && lives.length > 0) {
-              await supabaseClient
-                .from('lives')
-                .update({ viewer_count: (lives[0].viewer_count || 0) + 1 })
-                .eq('id', lives[0].id);
-            }
+              .update({ viewer_count: (live.viewer_count || 0) + 1 })
+              .eq('id', live.id);
           }
         }
         break;
@@ -170,22 +164,13 @@ serve(async (req) => {
         logStep("Participant left", { roomName, isOwner });
 
         if (!isOwner) {
-          const liveIdPrefix = roomName?.split('-')[1];
-          if (liveIdPrefix) {
-            const { data: lives } = await supabaseClient
+          const live = await findLiveByRoomName(supabaseClient, roomName);
+          if (live && live.status === 'live') {
+            const newCount = Math.max(0, (live.viewer_count || 1) - 1);
+            await supabaseClient
               .from('lives')
-              .select('id, viewer_count')
-              .ilike('id', `${liveIdPrefix}%`)
-              .eq('status', 'live')
-              .limit(1);
-
-            if (lives && lives.length > 0) {
-              const newCount = Math.max(0, (lives[0].viewer_count || 1) - 1);
-              await supabaseClient
-                .from('lives')
-                .update({ viewer_count: newCount })
-                .eq('id', lives[0].id);
-            }
+              .update({ viewer_count: newCount })
+              .eq('id', live.id);
           }
         }
         break;

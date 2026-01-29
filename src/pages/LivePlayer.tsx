@@ -76,8 +76,12 @@ export default function LivePlayer() {
       if (!live || !isLiveActive) return;
       if (roomUrl && token) return; // Already joined
       
-      // Check if live has a daily room name (stored in description or separate field)
-      const dailyRoomName = (live as any).dailyRoomName || `live-${live.id}`;
+      // Use the daily_room_name from the database
+      const dailyRoomName = live.dailyRoomName;
+      if (!dailyRoomName) {
+        console.error('No daily room name found for live:', live.id);
+        return;
+      }
       
       setIsJoiningStream(true);
       try {

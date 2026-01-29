@@ -192,7 +192,7 @@ export default function Chat() {
       loadMessages(selectedSession);
       markAsRead(selectedSession);
     }
-  }, [selectedSession]);
+  }, [selectedSession, loadMessages, markAsRead]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

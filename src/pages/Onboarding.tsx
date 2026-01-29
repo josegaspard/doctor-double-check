@@ -394,14 +394,31 @@ export default function Onboarding() {
 
       // Create role-specific profile if needed
       if (selectedRole === 'doctor') {
+        // Create wallet for doctor (for pending_earnings tracking)
+        const { error: walletError } = await supabase
+          .from('wallets')
+          .insert({ user_id: supabaseUser.id, balance: 0 });
+        
+        if (walletError && !walletError.message.includes('duplicate')) {
+          console.error('Wallet creation error:', walletError);
+        }
+
+        // Build doctor profile data, including cedula_verification_id if verified
+        const doctorProfileData: any = {
+          user_id: supabaseUser.id,
+          specialty: specialty || 'General',
+          license: license || '',
+          status: 'pending',
+        };
+
+        // Link cedula verification if available
+        if (cedulaVerificationId) {
+          doctorProfileData.cedula_verification_id = cedulaVerificationId;
+        }
+
         const { error: doctorError } = await supabase
           .from('doctor_profiles')
-          .insert({
-            user_id: supabaseUser.id,
-            specialty: specialty || 'General',
-            license: license || '',
-            status: 'pending',
-          });
+          .insert(doctorProfileData);
         
         if (doctorError && !doctorError.message.includes('duplicate')) {
           throw doctorError;
