@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useChat, ChatSession } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -44,7 +44,8 @@ import { toast } from 'sonner';
 
 export default function Chat() {
   const navigate = useNavigate();
-  const { getSessionsByUser, getSessionMessages, sendMessage, markAsRead, loadMessages, closeSession } = useChat();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { getSessionsByUser, getSessionMessages, sendMessage, markAsRead, loadMessages, closeSession, createSession, refreshSessions } = useChat();
   const { user, role } = useAuth();
   const { t, language } = useLanguage();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
@@ -56,11 +57,75 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dateLocale = language === 'es' ? es : enUS;
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
 
   const allSessions = getSessionsByUser();
   const activeSessions = allSessions.filter(s => s.status === 'active');
   const closedSessions = allSessions.filter(s => s.status === 'closed');
   const messages = selectedSession ? getSessionMessages(selectedSession) : [];
+
+  // Handle consultation success from payment redirect
+  useEffect(() => {
+    const consultationStatus = searchParams.get('consultation');
+    const doctorId = searchParams.get('doctor');
+    
+    if (consultationStatus === 'success' && doctorId && user?.id && role === 'patient' && !isCreatingSession) {
+      // Clear search params immediately
+      setSearchParams({});
+      
+      setIsCreatingSession(true);
+      
+      // Auto-create chat session after successful payment
+      const initSession = async () => {
+        try {
+          // Refresh sessions first to get latest entitlements
+          await refreshSessions();
+          
+          // Check if session already exists
+          const existingSession = allSessions.find(s => 
+            (s.participant1Id === doctorId || s.participant2Id === doctorId) && 
+            s.status === 'active'
+          );
+          
+          if (existingSession) {
+            setSelectedSession(existingSession.id);
+            toast.success('Consulta lista - puedes comenzar a chatear');
+          } else {
+            // Create new session
+            const result = await createSession(doctorId, 'doctor', false);
+            
+            if (result.success && result.session) {
+              // Notify doctor
+              try {
+                await supabase.functions.invoke('notify-new-chat', {
+                  body: {
+                    doctorId: doctorId,
+                    patientName: user.name,
+                    sessionId: result.session.id,
+                    isDoubleCheck: false,
+                  },
+                });
+              } catch (e) {
+                console.error('Error notifying doctor:', e);
+              }
+              
+              setSelectedSession(result.session.id);
+              toast.success('¡Pago exitoso! Ya puedes chatear con tu médico');
+            } else {
+              toast.error(result.error || 'Error al crear sesión de chat');
+            }
+          }
+        } catch (error) {
+          console.error('Error creating session after payment:', error);
+          toast.error('Error al iniciar el chat');
+        } finally {
+          setIsCreatingSession(false);
+        }
+      };
+      
+      initSession();
+    }
+  }, [searchParams, user?.id, role]);
 
   // Get the selected session data
   const selectedSessionData = allSessions.find(s => s.id === selectedSession);
