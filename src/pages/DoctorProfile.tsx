@@ -45,25 +45,26 @@ export default function DoctorProfile() {
     const fetchDoctor = async () => {
       if (!id) return;
 
-      // Try to fetch by user_id first, then by profile id
-      const { data: doctorProfile } = await supabase
-        .from('doctor_profiles')
-        .select('*')
-        .or(`user_id.eq.${id},id.eq.${id}`)
-        .single();
+      // Use the secure RPC function to get doctor's public profile
+      const { data: doctorData, error } = await supabase.rpc(
+        'get_doctor_public_profile',
+        { p_user_id: id }
+      );
+
+      if (error) {
+        console.error('Error fetching doctor profile:', error);
+        setIsLoading(false);
+        return;
+      }
+
+      // The RPC returns an array, get first result
+      const doctorProfile = Array.isArray(doctorData) ? doctorData[0] : doctorData;
 
       if (doctorProfile) {
-        // Fetch user profile for name and avatar
-        const { data: profile } = await supabase
-          .from('profiles_public')
-          .select('id, name, avatar_url')
-          .eq('id', doctorProfile.user_id)
-          .single();
-
         setDoctor({
           id: doctorProfile.user_id,
-          visibleId: doctorProfile.id,
-          name: profile?.name || 'Doctor',
+          visibleId: doctorProfile.profile_id,
+          name: doctorProfile.name || 'Doctor',
           specialty: doctorProfile.specialty,
           bio: doctorProfile.bio || undefined,
           rating: Number(doctorProfile.rating),
@@ -71,7 +72,7 @@ export default function DoctorProfile() {
           consultationFee: Number(doctorProfile.consultation_fee),
           location: doctorProfile.location || undefined,
           followersCount: doctorProfile.followers_count,
-          avatarUrl: profile?.avatar_url || undefined,
+          avatarUrl: doctorProfile.avatar_url || undefined,
         });
 
         // Check if doctor has an active live

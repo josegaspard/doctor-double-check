@@ -1703,6 +1703,23 @@ export type Database = {
       }
     }
     Functions: {
+      get_doctor_public_profile: {
+        Args: { p_user_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          consultation_fee: number
+          followers_count: number
+          location: string
+          name: string
+          profile_id: string
+          rating: number
+          specialty: string
+          status: Database["public"]["Enums"]["doctor_status"]
+          total_consultations: number
+          user_id: string
+        }[]
+      }
       get_price_for_user: {
         Args: { _base_price: number; _user_id: string }
         Returns: number
