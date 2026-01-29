@@ -58,7 +58,7 @@ serve(async (req) => {
       body: JSON.stringify({
         name: roomName,
         properties: {
-          max_participants: 100,
+          max_participants: 10, // Reduced for free Daily.co plan
           enable_chat: true,
           enable_screenshare: true,
           enable_recording: "cloud",
