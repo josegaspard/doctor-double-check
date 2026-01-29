@@ -112,10 +112,21 @@ serve(async (req: Request): Promise<Response> => {
 
     const contentTypeLabel = getContentTypeLabel(contentType);
     const contentIcon = getContentIcon(contentType);
+    
+    // Generate unsubscribe URL base
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || '';
+    const functionsUrl = supabaseUrl.replace('.supabase.co', '.functions.supabase.co');
 
     // Send emails to all subscribers and log each one
     const emailPromises = profiles.map(async (profile) => {
       const subject = `${contentIcon} Nuevo ${contentTypeLabel.toLowerCase()} de ${doctorName}`;
+      
+      // Generate unsubscribe token (base64 encoded: subscriberId:doctorId:type)
+      const unsubscribeToken = btoa(`${profile.id}:${doctorId}:content`);
+      const unsubscribeUrl = `${functionsUrl}/unsubscribe-email?token=${unsubscribeToken}`;
+      const unsubscribeAllToken = btoa(`${profile.id}:${doctorId}:all`);
+      const unsubscribeAllUrl = `${functionsUrl}/unsubscribe-email?token=${unsubscribeAllToken}`;
+      
       try {
         await resend.emails.send({
           from: "Dr Double Check <onboarding@resend.dev>",
@@ -166,6 +177,10 @@ serve(async (req: Request): Promise<Response> => {
                 </div>
                 <div style="background: #f1f5f9; padding: 16px; text-align: center; color: #64748b; font-size: 12px;">
                   <p style="margin: 0 0 8px;">Recibes este email porque sigues a ${doctorName}.</p>
+                  <p style="margin: 0 0 8px;">
+                    <a href="${unsubscribeUrl}" style="color: #64748b; text-decoration: underline;">Desuscribirse de emails de contenido</a> · 
+                    <a href="${unsubscribeAllUrl}" style="color: #64748b; text-decoration: underline;">Desuscribirse de todos los emails</a>
+                  </p>
                   <p style="margin: 0;">© 2026 Dr Double Check. Todos los derechos reservados.</p>
                 </div>
               </div>
