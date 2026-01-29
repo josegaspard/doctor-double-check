@@ -92,14 +92,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       if (sessionsData) {
-        // Use the RPC function to get complete session details with names, specialties, etc.
-        const enrichedSessions: ChatSession[] = [];
-        
-        for (const s of sessionsData) {
-          // Call the secure RPC to get participant details
-          const { data: detailsData, error: detailsError } = await supabase
-            .rpc('get_chat_session_details', { p_session_id: s.id });
-          
+        const enrichOne = async (s: any): Promise<ChatSession> => {
+          // Defaults
           let participant1Name: string | undefined;
           let participant1Specialty: string | undefined;
           let participant1Avatar: string | undefined;
@@ -109,83 +103,91 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           let officeHoursStart: string | undefined;
           let officeHoursEnd: string | undefined;
           let officeDays: string[] | undefined;
-          
-          if (!detailsError && detailsData && detailsData.length > 0) {
-            const details = detailsData[0];
-            participant1Name = details.participant1_name;
-            participant1Specialty = details.participant1_specialty;
-            participant1Avatar = details.participant1_avatar;
-            participant2Name = details.participant2_name;
-            participant2Specialty = details.participant2_specialty;
-            participant2Avatar = details.participant2_avatar;
-            officeHoursStart = details.doctor_office_hours_start;
-            officeHoursEnd = details.doctor_office_hours_end;
-            officeDays = details.doctor_office_days;
-          } else {
-            // Fallback: fetch from profiles directly using the main profiles table
-            const { data: p1Profile } = await supabase
-              .from('profiles')
-              .select('name, avatar_url')
-              .eq('id', s.participant1_id)
-              .maybeSingle();
-            
-            const { data: p2Profile } = await supabase
-              .from('profiles')
-              .select('name, avatar_url')
-              .eq('id', s.participant2_id)
-              .maybeSingle();
-            
-            participant1Name = p1Profile?.name;
-            participant1Avatar = p1Profile?.avatar_url;
-            participant2Name = p2Profile?.name;
-            participant2Avatar = p2Profile?.avatar_url;
-            
-            // Try to get doctor specialty and office hours
-            if (s.participant1_type === 'doctor') {
-              const { data: docProfile } = await supabase
-                .from('doctor_profiles')
-                .select('specialty, office_hours_start, office_hours_end, office_days')
-                .eq('user_id', s.participant1_id)
-                .maybeSingle();
-              if (docProfile) {
-                participant1Specialty = docProfile.specialty;
-                officeHoursStart = docProfile.office_hours_start;
-                officeHoursEnd = docProfile.office_hours_end;
-                officeDays = docProfile.office_days;
+
+          // 1) Preferred: secure RPC with everything (name/specialty/avatar/hours)
+          try {
+            const { data: detailsData, error: detailsError } = await supabase
+              .rpc('get_chat_session_details', { p_session_id: s.id });
+
+            if (!detailsError && detailsData && detailsData.length > 0) {
+              const details = detailsData[0];
+              participant1Name = details.participant1_name;
+              participant1Specialty = details.participant1_specialty;
+              participant1Avatar = details.participant1_avatar;
+              participant2Name = details.participant2_name;
+              participant2Specialty = details.participant2_specialty;
+              participant2Avatar = details.participant2_avatar;
+              officeHoursStart = details.doctor_office_hours_start;
+              officeHoursEnd = details.doctor_office_hours_end;
+              officeDays = details.doctor_office_days;
+            }
+          } catch {
+            // ignore
+          }
+
+          // 2) Fallbacks (avoid private tables; use public views / RPCs)
+          if (!participant1Name || !participant2Name) {
+            const participantIds = [s.participant1_id, s.participant2_id];
+            const { data: profilesPublic } = await supabase
+              .from('profiles_public')
+              .select('id, name, avatar_url')
+              .in('id', participantIds);
+
+            const profileMap = new Map(
+              (profilesPublic || []).map((p: any) => [p.id, { name: p.name as string | null, avatar: p.avatar_url as string | null }])
+            );
+
+            participant1Name = participant1Name ?? profileMap.get(s.participant1_id)?.name ?? undefined;
+            participant1Avatar = participant1Avatar ?? profileMap.get(s.participant1_id)?.avatar ?? undefined;
+            participant2Name = participant2Name ?? profileMap.get(s.participant2_id)?.name ?? undefined;
+            participant2Avatar = participant2Avatar ?? profileMap.get(s.participant2_id)?.avatar ?? undefined;
+
+            // Resident specialty (public view)
+            const residentIds = [
+              ...(s.participant1_type === 'resident' ? [s.participant1_id] : []),
+              ...(s.participant2_type === 'resident' ? [s.participant2_id] : []),
+            ];
+            if (residentIds.length > 0) {
+              const { data: residentPublic } = await supabase
+                .from('resident_profiles_public')
+                .select('user_id, specialty')
+                .in('user_id', residentIds);
+              const resMap = new Map((residentPublic || []).map((r: any) => [r.user_id, r.specialty]));
+              if (s.participant1_type === 'resident') participant1Specialty = participant1Specialty ?? resMap.get(s.participant1_id) ?? undefined;
+              if (s.participant2_type === 'resident') participant2Specialty = participant2Specialty ?? resMap.get(s.participant2_id) ?? undefined;
+            }
+
+            // Doctor details (public RPC already used elsewhere)
+            const doctorId = s.participant1_type === 'doctor'
+              ? s.participant1_id
+              : s.participant2_type === 'doctor'
+                ? s.participant2_id
+                : null;
+
+            if (doctorId && (!officeHoursStart || !officeHoursEnd || !participant1Specialty || !participant2Specialty)) {
+              const { data: docData } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctorId });
+              const doc = Array.isArray(docData) ? docData[0] : docData;
+              if (doc) {
+                // Ensure we set the correct participant's specialty/name/avatar
+                if (s.participant1_type === 'doctor') {
+                  participant1Name = participant1Name ?? doc.name ?? undefined;
+                  participant1Avatar = participant1Avatar ?? doc.avatar_url ?? undefined;
+                  participant1Specialty = participant1Specialty ?? doc.specialty ?? undefined;
+                }
+                if (s.participant2_type === 'doctor') {
+                  participant2Name = participant2Name ?? doc.name ?? undefined;
+                  participant2Avatar = participant2Avatar ?? doc.avatar_url ?? undefined;
+                  participant2Specialty = participant2Specialty ?? doc.specialty ?? undefined;
+                }
+
+                officeHoursStart = officeHoursStart ?? doc.office_hours_start ?? undefined;
+                officeHoursEnd = officeHoursEnd ?? doc.office_hours_end ?? undefined;
+                officeDays = officeDays ?? doc.office_days ?? undefined;
               }
-            }
-            if (s.participant2_type === 'doctor') {
-              const { data: docProfile } = await supabase
-                .from('doctor_profiles')
-                .select('specialty, office_hours_start, office_hours_end, office_days')
-                .eq('user_id', s.participant2_id)
-                .maybeSingle();
-              if (docProfile) {
-                participant2Specialty = docProfile.specialty;
-                officeHoursStart = docProfile.office_hours_start;
-                officeHoursEnd = docProfile.office_hours_end;
-                officeDays = docProfile.office_days;
-              }
-            }
-            if (s.participant1_type === 'resident') {
-              const { data: resProfile } = await supabase
-                .from('resident_profiles')
-                .select('specialty')
-                .eq('user_id', s.participant1_id)
-                .maybeSingle();
-              if (resProfile) participant1Specialty = resProfile.specialty;
-            }
-            if (s.participant2_type === 'resident') {
-              const { data: resProfile } = await supabase
-                .from('resident_profiles')
-                .select('specialty')
-                .eq('user_id', s.participant2_id)
-                .maybeSingle();
-              if (resProfile) participant2Specialty = resProfile.specialty;
             }
           }
 
-          enrichedSessions.push({
+          return {
             id: s.id,
             participant1Id: s.participant1_id,
             participant1Type: s.participant1_type as ChatParticipantType,
@@ -207,9 +209,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             officeHoursStart,
             officeHoursEnd,
             officeDays,
-          });
-        }
-        
+          };
+        };
+
+        const enrichedSessions = await Promise.all(sessionsData.map(enrichOne));
         setSessions(enrichedSessions);
       }
     } catch (error) {
