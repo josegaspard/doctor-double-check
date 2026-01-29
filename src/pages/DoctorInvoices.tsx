@@ -163,23 +163,15 @@ export default function DoctorInvoices() {
     try {
       // Upload file to storage
       const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+      const filePath = `${user?.id}/${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('doctor-invoices')
-        .upload(fileName, selectedFile);
+        .upload(filePath, selectedFile);
 
       if (uploadError) throw uploadError;
 
-      // Get signed URL for private bucket (1 year expiry)
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from('doctor-invoices')
-        .createSignedUrl(fileName, 60 * 60 * 24 * 365);
-
-      if (urlError || !urlData?.signedUrl) {
-        throw new Error('Error getting file URL');
-      }
-
+      // Store only the file path - we'll generate signed URLs when viewing
       const { error: insertError } = await supabase
         .from('doctor_invoices')
         .insert({
@@ -188,7 +180,7 @@ export default function DoctorInvoices() {
           period_start: periodStart,
           period_end: periodEnd,
           amount: parseFloat(amount),
-          file_url: urlData.signedUrl,
+          file_url: filePath, // Store path, not signed URL (they expire)
           file_name: selectedFile.name,
           status: 'pending',
         });
