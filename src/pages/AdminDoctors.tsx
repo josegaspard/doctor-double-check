@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +42,7 @@ interface DoctorRequest {
 export default function AdminDoctors() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const [doctors, setDoctors] = useState<DoctorRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,12 +56,16 @@ export default function AdminDoctors() {
 
   useEffect(() => {
     if (user?.role !== 'admin') {
-      toast({ title: 'Acceso denegado', description: 'Solo administradores pueden acceder', variant: 'destructive' });
+      toast({ 
+        title: language === 'es' ? 'Acceso denegado' : 'Access denied', 
+        description: language === 'es' ? 'Solo administradores pueden acceder' : 'Only admins can access', 
+        variant: 'destructive' 
+      });
       navigate('/');
       return;
     }
     fetchDoctors();
-  }, [user, navigate]);
+  }, [user, navigate, language]);
 
   const fetchDoctors = async () => {
     try {
@@ -129,11 +135,11 @@ export default function AdminDoctors() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" /> Pendiente</Badge>;
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" /> {t('admin.pending')}</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" /> Aprobado</Badge>;
+        return <Badge variant="outline" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" /> {t('admin.approved')}</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" /> Rechazado</Badge>;
+        return <Badge variant="outline" className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" /> {t('admin.rejected')}</Badge>;
       default:
         return null;
     }
@@ -146,7 +152,6 @@ export default function AdminDoctors() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
             <ArrowLeft className="h-5 w-5" />
@@ -154,10 +159,10 @@ export default function AdminDoctors() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Stethoscope className="h-6 w-6 text-primary" />
-              Gestión de Doctores
+              {language === 'es' ? 'Gestión de Doctores' : 'Doctor Management'}
             </h1>
             <p className="text-muted-foreground">
-              {pendingCount} solicitudes pendientes de revisión
+              {pendingCount} {language === 'es' ? 'solicitudes pendientes de revisión' : 'pending requests'}
             </p>
           </div>
         </div>

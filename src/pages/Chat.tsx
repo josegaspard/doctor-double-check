@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChat, ChatSession } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,13 +39,14 @@ import {
   Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 export default function Chat() {
   const navigate = useNavigate();
   const { getSessionsByUser, getSessionMessages, sendMessage, markAsRead, loadMessages, closeSession } = useChat();
   const { user, role } = useAuth();
+  const { t, language } = useLanguage();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -53,6 +55,7 @@ export default function Chat() {
   const [isClosingSession, setIsClosingSession] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const dateLocale = language === 'es' ? es : enUS;
 
   const allSessions = getSessionsByUser();
   const activeSessions = allSessions.filter(s => s.status === 'active');

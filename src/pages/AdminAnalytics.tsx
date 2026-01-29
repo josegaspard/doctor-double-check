@@ -208,9 +208,9 @@ export default function AdminAnalytics() {
           </div>
           <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
             <TabsList>
-              <TabsTrigger value="week">Semana</TabsTrigger>
-              <TabsTrigger value="month">Mes</TabsTrigger>
-              <TabsTrigger value="year">Año</TabsTrigger>
+              <TabsTrigger value="week">{language === 'es' ? 'Semana' : 'Week'}</TabsTrigger>
+              <TabsTrigger value="month">{language === 'es' ? 'Mes' : 'Month'}</TabsTrigger>
+              <TabsTrigger value="year">{language === 'es' ? 'Año' : 'Year'}</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -236,7 +236,9 @@ export default function AdminAnalytics() {
                       <p className="text-2xl font-bold text-foreground">
                         ${analytics.totalRevenue.toLocaleString()}
                       </p>
-                      <p className="text-xs text-muted-foreground">Ingresos totales</p>
+                      <p className="text-xs text-muted-foreground">
+                        {language === 'es' ? 'Ingresos totales' : 'Total revenue'}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -249,7 +251,9 @@ export default function AdminAnalytics() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{analytics.totalUsers}</p>
-                      <p className="text-xs text-muted-foreground">Usuarios</p>
+                      <p className="text-xs text-muted-foreground">
+                        {language === 'es' ? 'Usuarios' : 'Users'}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -262,7 +266,9 @@ export default function AdminAnalytics() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{analytics.totalDoctors}</p>
-                      <p className="text-xs text-muted-foreground">Médicos verificados</p>
+                      <p className="text-xs text-muted-foreground">
+                        {language === 'es' ? 'Médicos verificados' : 'Verified doctors'}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -275,7 +281,9 @@ export default function AdminAnalytics() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{analytics.totalLives}</p>
-                      <p className="text-xs text-muted-foreground">Lives totales</p>
+                      <p className="text-xs text-muted-foreground">
+                        {language === 'es' ? 'Lives totales' : 'Total lives'}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -289,7 +297,7 @@ export default function AdminAnalytics() {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <TrendingUp className="w-5 h-5" />
-                    Ingresos por Mes
+                    {language === 'es' ? 'Ingresos por Mes' : 'Revenue by Month'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -316,7 +324,7 @@ export default function AdminAnalytics() {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Users className="w-5 h-5" />
-                    Usuarios por Rol
+                    {language === 'es' ? 'Usuarios por Rol' : 'Users by Role'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -343,12 +351,11 @@ export default function AdminAnalytics() {
                 </CardContent>
               </Card>
 
-              {/* Lives Chart */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Video className="w-5 h-5" />
-                    Lives por Mes
+                    {language === 'es' ? 'Lives por Mes' : 'Lives by Month'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -369,7 +376,7 @@ export default function AdminAnalytics() {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Star className="w-5 h-5" />
-                    Top Médicos
+                    {language === 'es' ? 'Top Médicos' : 'Top Doctors'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -383,7 +390,7 @@ export default function AdminAnalytics() {
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{doctor.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {doctor.consultations} consultas
+                              {doctor.consultations} {language === 'es' ? 'consultas' : 'consultations'}
                             </p>
                           </div>
                           <div className="text-right">
@@ -400,7 +407,7 @@ export default function AdminAnalytics() {
                     </div>
                   ) : (
                     <p className="text-center text-muted-foreground py-8">
-                      No hay datos de médicos
+                      {language === 'es' ? 'No hay datos de médicos' : 'No doctor data'}
                     </p>
                   )}
                 </CardContent>

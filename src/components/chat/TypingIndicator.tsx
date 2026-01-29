@@ -1,10 +1,13 @@
 import React from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TypingIndicatorProps {
   userName?: string;
 }
 
 export function TypingIndicator({ userName }: TypingIndicatorProps) {
+  const { t } = useLanguage();
+  
   return (
     <div className="flex items-center gap-2 text-muted-foreground text-sm py-2">
       <div className="flex gap-1">
@@ -13,7 +16,7 @@ export function TypingIndicator({ userName }: TypingIndicatorProps) {
         <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
       </div>
       <span className="text-xs">
-        {userName ? `${userName} está escribiendo...` : 'Escribiendo...'}
+        {userName ? `${userName} ${t('chat.typing')}` : t('chat.typing')}
       </span>
     </div>
   );
