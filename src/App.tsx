@@ -51,6 +51,7 @@ import AdminPayoutSettings from "./pages/AdminPayoutSettings";
 import Onboarding from "./pages/Onboarding";
 import DoctorBankAccount from "./pages/DoctorBankAccount";
 import DoctorInvoices from "./pages/DoctorInvoices";
+import Contact from "./pages/Contact";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -106,6 +107,8 @@ const App = () => (
                       <Route path="/doctor/invoices" element={<DoctorInvoices />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="*" element={<NotFound />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>

@@ -444,10 +444,7 @@ export default function UserProfile() {
         {/* Profile Card */}
         <motion.div variants={cardVariants}>
           <Card className="mb-6 overflow-hidden">
-            {/* Cover gradient */}
-            <div className="h-24 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5" />
-            
-            <CardContent className="p-6 -mt-12">
+            <CardContent className="p-6 pt-8">
               <div className="flex flex-col md:flex-row items-center gap-6">
                 {/* Avatar */}
                 <motion.div 

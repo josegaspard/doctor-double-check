@@ -25,6 +25,7 @@ import {
   Shield,
   Loader2,
   Save,
+  Mail,
 } from 'lucide-react';
 
 interface SocialLinks {
@@ -38,6 +39,13 @@ interface SocialLinks {
 interface LegalContent {
   content: string;
   lastUpdated: string | null;
+}
+
+interface ContactInfo {
+  email: string;
+  phone: string;
+  address: string;
+  content: string;
 }
 
 export default function AdminSiteSettings() {
@@ -57,6 +65,12 @@ export default function AdminSiteSettings() {
 
   const [termsContent, setTermsContent] = useState('');
   const [privacyContent, setPrivacyContent] = useState('');
+  const [contactInfo, setContactInfo] = useState<ContactInfo>({
+    email: 'contacto@medicalmasters.com',
+    phone: '+52 55 1234 5678',
+    address: 'Ciudad de México, México',
+    content: '',
+  });
 
   useEffect(() => {
     if (role && role !== 'admin') {
@@ -103,6 +117,17 @@ export default function AdminSiteSettings() {
         if (privacyData?.value) {
           const privacy = privacyData.value as unknown as LegalContent;
           setPrivacyContent(privacy.content || '');
+        }
+
+        // Fetch contact info
+        const { data: contactData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'contact_info')
+          .single();
+
+        if (contactData?.value) {
+          setContactInfo(contactData.value as unknown as ContactInfo);
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -183,6 +208,28 @@ export default function AdminSiteSettings() {
     }
   };
 
+  const handleSaveContact = async () => {
+    setIsSaving(true);
+    try {
+      // First try to update, if it fails (not exists), insert
+      const { error: updateError } = await supabase
+        .from('site_settings')
+        .upsert({
+          id: 'contact_info',
+          value: contactInfo as unknown as Json,
+          updated_by: supabaseUser?.id,
+        });
+
+      if (updateError) throw updateError;
+      toast.success(language === 'es' ? 'Información de contacto actualizada' : 'Contact info updated');
+    } catch (error) {
+      console.error('Error saving contact:', error);
+      toast.error(language === 'es' ? 'Error al guardar' : 'Error saving');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (role !== 'admin') return null;
 
   return (
@@ -198,10 +245,10 @@ export default function AdminSiteSettings() {
               <Settings className="w-6 h-6 text-primary" />
               {language === 'es' ? 'Configuración del Sitio' : 'Site Settings'}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {language === 'es' 
-                ? 'Administra redes sociales, términos y privacidad' 
-                : 'Manage social links, terms and privacy'}
+                ? 'Administra redes sociales, términos, privacidad y contacto' 
+                : 'Manage social links, terms, privacy and contact'}
             </p>
           </div>
         </div>
@@ -212,18 +259,22 @@ export default function AdminSiteSettings() {
           </div>
         ) : (
           <Tabs defaultValue="social" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="social" className="gap-2">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="social" className="gap-2 text-xs">
                 <Globe className="w-4 h-4" />
-                {language === 'es' ? 'Redes Sociales' : 'Social'}
+                <span className="hidden sm:inline">{language === 'es' ? 'Redes' : 'Social'}</span>
               </TabsTrigger>
-              <TabsTrigger value="terms" className="gap-2">
+              <TabsTrigger value="terms" className="gap-2 text-xs">
                 <FileText className="w-4 h-4" />
-                {language === 'es' ? 'Términos' : 'Terms'}
+                <span className="hidden sm:inline">{language === 'es' ? 'Términos' : 'Terms'}</span>
               </TabsTrigger>
-              <TabsTrigger value="privacy" className="gap-2">
+              <TabsTrigger value="privacy" className="gap-2 text-xs">
                 <Shield className="w-4 h-4" />
-                {language === 'es' ? 'Privacidad' : 'Privacy'}
+                <span className="hidden sm:inline">{language === 'es' ? 'Privacidad' : 'Privacy'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="contact" className="gap-2 text-xs">
+                <Mail className="w-4 h-4" />
+                <span className="hidden sm:inline">{language === 'es' ? 'Contacto' : 'Contact'}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -231,11 +282,11 @@ export default function AdminSiteSettings() {
             <TabsContent value="social">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
                     <Globe className="w-5 h-5" />
                     {language === 'es' ? 'Redes Sociales' : 'Social Media Links'}
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-xs">
                     {language === 'es' 
                       ? 'Configura los enlaces de redes sociales que aparecen en el footer' 
                       : 'Configure social media links shown in the footer'}
@@ -248,12 +299,13 @@ export default function AdminSiteSettings() {
                         <Facebook className="w-5 h-5 text-blue-500" />
                       </div>
                       <div className="flex-1">
-                        <Label htmlFor="facebook">Facebook</Label>
+                        <Label htmlFor="facebook" className="text-xs">Facebook</Label>
                         <Input
                           id="facebook"
                           placeholder="https://facebook.com/medicalmasters"
                           value={socialLinks.facebook}
                           onChange={(e) => setSocialLinks({ ...socialLinks, facebook: e.target.value })}
+                          className="text-sm"
                         />
                       </div>
                     </div>
@@ -263,12 +315,13 @@ export default function AdminSiteSettings() {
                         <Instagram className="w-5 h-5 text-pink-500" />
                       </div>
                       <div className="flex-1">
-                        <Label htmlFor="instagram">Instagram</Label>
+                        <Label htmlFor="instagram" className="text-xs">Instagram</Label>
                         <Input
                           id="instagram"
                           placeholder="https://instagram.com/medicalmasters"
                           value={socialLinks.instagram}
                           onChange={(e) => setSocialLinks({ ...socialLinks, instagram: e.target.value })}
+                          className="text-sm"
                         />
                       </div>
                     </div>
@@ -278,12 +331,13 @@ export default function AdminSiteSettings() {
                         <Twitter className="w-5 h-5 text-sky-500" />
                       </div>
                       <div className="flex-1">
-                        <Label htmlFor="twitter">Twitter / X</Label>
+                        <Label htmlFor="twitter" className="text-xs">Twitter / X</Label>
                         <Input
                           id="twitter"
                           placeholder="https://twitter.com/medicalmasters"
                           value={socialLinks.twitter}
                           onChange={(e) => setSocialLinks({ ...socialLinks, twitter: e.target.value })}
+                          className="text-sm"
                         />
                       </div>
                     </div>
@@ -293,12 +347,13 @@ export default function AdminSiteSettings() {
                         <Linkedin className="w-5 h-5 text-blue-700" />
                       </div>
                       <div className="flex-1">
-                        <Label htmlFor="linkedin">LinkedIn</Label>
+                        <Label htmlFor="linkedin" className="text-xs">LinkedIn</Label>
                         <Input
                           id="linkedin"
                           placeholder="https://linkedin.com/company/medicalmasters"
                           value={socialLinks.linkedin}
                           onChange={(e) => setSocialLinks({ ...socialLinks, linkedin: e.target.value })}
+                          className="text-sm"
                         />
                       </div>
                     </div>
@@ -308,12 +363,13 @@ export default function AdminSiteSettings() {
                         <Youtube className="w-5 h-5 text-red-500" />
                       </div>
                       <div className="flex-1">
-                        <Label htmlFor="youtube">YouTube</Label>
+                        <Label htmlFor="youtube" className="text-xs">YouTube</Label>
                         <Input
                           id="youtube"
                           placeholder="https://youtube.com/@medicalmasters"
                           value={socialLinks.youtube}
                           onChange={(e) => setSocialLinks({ ...socialLinks, youtube: e.target.value })}
+                          className="text-sm"
                         />
                       </div>
                     </div>
@@ -335,14 +391,14 @@ export default function AdminSiteSettings() {
             <TabsContent value="terms">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
                     <FileText className="w-5 h-5" />
                     {language === 'es' ? 'Términos de Servicio' : 'Terms of Service'}
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-xs">
                     {language === 'es' 
-                      ? 'Edita el contenido de la página de términos de servicio (soporta Markdown)' 
-                      : 'Edit the terms of service page content (supports Markdown)'}
+                      ? 'Edita el contenido de la página de términos de servicio' 
+                      : 'Edit the terms of service page content'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -352,7 +408,7 @@ export default function AdminSiteSettings() {
                       : 'Write terms of service here...'}
                     value={termsContent}
                     onChange={(e) => setTermsContent(e.target.value)}
-                    className="min-h-[400px] font-mono text-sm"
+                    className="min-h-[300px] font-mono text-xs"
                   />
                   <Button onClick={handleSaveTerms} disabled={isSaving} className="w-full">
                     {isSaving ? (
@@ -370,14 +426,14 @@ export default function AdminSiteSettings() {
             <TabsContent value="privacy">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
                     <Shield className="w-5 h-5" />
                     {language === 'es' ? 'Política de Privacidad' : 'Privacy Policy'}
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-xs">
                     {language === 'es' 
-                      ? 'Edita el contenido de la página de política de privacidad (soporta Markdown)' 
-                      : 'Edit the privacy policy page content (supports Markdown)'}
+                      ? 'Edita el contenido de la página de política de privacidad' 
+                      : 'Edit the privacy policy page content'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -387,7 +443,7 @@ export default function AdminSiteSettings() {
                       : 'Write privacy policy here...'}
                     value={privacyContent}
                     onChange={(e) => setPrivacyContent(e.target.value)}
-                    className="min-h-[400px] font-mono text-sm"
+                    className="min-h-[300px] font-mono text-xs"
                   />
                   <Button onClick={handleSavePrivacy} disabled={isSaving} className="w-full">
                     {isSaving ? (
@@ -396,6 +452,85 @@ export default function AdminSiteSettings() {
                       <Save className="w-4 h-4 mr-2" />
                     )}
                     {language === 'es' ? 'Guardar Privacidad' : 'Save Privacy'}
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Contact Tab */}
+            <TabsContent value="contact">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Mail className="w-5 h-5" />
+                    {language === 'es' ? 'Información de Contacto' : 'Contact Information'}
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {language === 'es' 
+                      ? 'Configura la información que aparece en la página de contacto' 
+                      : 'Configure information shown on the contact page'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact-email" className="text-xs">Email</Label>
+                      <Input
+                        id="contact-email"
+                        type="email"
+                        placeholder="contacto@medicalmasters.com"
+                        value={contactInfo.email}
+                        onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact-phone" className="text-xs">
+                        {language === 'es' ? 'Teléfono' : 'Phone'}
+                      </Label>
+                      <Input
+                        id="contact-phone"
+                        placeholder="+52 55 1234 5678"
+                        value={contactInfo.phone}
+                        onChange={(e) => setContactInfo({ ...contactInfo, phone: e.target.value })}
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact-address" className="text-xs">
+                        {language === 'es' ? 'Dirección' : 'Address'}
+                      </Label>
+                      <Input
+                        id="contact-address"
+                        placeholder="Ciudad de México, México"
+                        value={contactInfo.address}
+                        onChange={(e) => setContactInfo({ ...contactInfo, address: e.target.value })}
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact-content" className="text-xs">
+                        {language === 'es' ? 'Contenido adicional' : 'Additional content'}
+                      </Label>
+                      <Textarea
+                        id="contact-content"
+                        placeholder={language === 'es' 
+                          ? 'Horario de atención, información adicional...' 
+                          : 'Business hours, additional information...'}
+                        value={contactInfo.content}
+                        onChange={(e) => setContactInfo({ ...contactInfo, content: e.target.value })}
+                        className="min-h-[100px] text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <Button onClick={handleSaveContact} disabled={isSaving} className="w-full">
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    {language === 'es' ? 'Guardar Contacto' : 'Save Contact'}
                   </Button>
                 </CardContent>
               </Card>
