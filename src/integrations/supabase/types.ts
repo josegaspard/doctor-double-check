@@ -1735,6 +1735,20 @@ export type Database = {
         Returns: Json
       }
       process_wallet_topup: { Args: { p_amount: number }; Returns: Json }
+      search_doctors_public: {
+        Args: { p_limit?: number; p_term: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          followers_count: number
+          location: string
+          name: string
+          rating: number
+          specialty: string
+          status: Database["public"]["Enums"]["doctor_status"]
+          user_id: string
+        }[]
+      }
       user_has_vault_access: {
         Args: { p_file_id: string; p_user_id: string }
         Returns: boolean
