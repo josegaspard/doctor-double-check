@@ -118,6 +118,7 @@ export type Database = {
           participant1_type: Database["public"]["Enums"]["chat_participant_type"]
           participant2_id: string
           participant2_type: Database["public"]["Enums"]["chat_participant_type"]
+          priority_score: number | null
           status: Database["public"]["Enums"]["chat_status"]
           unread_count_1: number
           unread_count_2: number
@@ -133,6 +134,7 @@ export type Database = {
           participant1_type: Database["public"]["Enums"]["chat_participant_type"]
           participant2_id: string
           participant2_type: Database["public"]["Enums"]["chat_participant_type"]
+          priority_score?: number | null
           status?: Database["public"]["Enums"]["chat_status"]
           unread_count_1?: number
           unread_count_2?: number
@@ -148,6 +150,7 @@ export type Database = {
           participant1_type?: Database["public"]["Enums"]["chat_participant_type"]
           participant2_id?: string
           participant2_type?: Database["public"]["Enums"]["chat_participant_type"]
+          priority_score?: number | null
           status?: Database["public"]["Enums"]["chat_status"]
           unread_count_1?: number
           unread_count_2?: number
@@ -1760,6 +1763,10 @@ export type Database = {
       }
       get_price_for_user: {
         Args: { _base_price: number; _user_id: string }
+        Returns: number
+      }
+      get_subscription_priority: {
+        Args: { p_creator_id: string; p_subscriber_id: string }
         Returns: number
       }
       get_user_role: {

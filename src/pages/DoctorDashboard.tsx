@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ import {
   Star,
   Users,
   Loader2,
+  BarChart3,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
@@ -46,6 +48,7 @@ import { EmailStatsCard } from '@/components/doctor/EmailStatsCard';
 import { EmailTrendsChart } from '@/components/doctor/EmailTrendsChart';
 import { EarningsCard } from '@/components/doctor/EarningsCard';
 import { OfficeHoursConfig } from '@/components/doctor/OfficeHoursConfig';
+import { DoctorAnalytics } from '@/components/doctor/DoctorAnalytics';
 
 const SPECIALTIES = [
   'Cardiología',
@@ -290,8 +293,19 @@ export default function DoctorDashboard() {
           </Card>
         )}
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="overview" className="mb-6">
+          <TabsList className="mb-4">
+            <TabsTrigger value="overview">General</TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-1">
+              <BarChart3 className="w-4 h-4" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -471,6 +485,12 @@ export default function DoctorDashboard() {
               </CardContent>
             </Card>
           )}
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <DoctorAnalytics />
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );
