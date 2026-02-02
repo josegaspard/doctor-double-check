@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDaily } from '@/hooks/useDaily';
+import { useCloudflareStream } from '@/hooks/useCloudflareStream';
 import { useViewerCount } from '@/hooks/useViewerCount';
 import MainLayout from '@/components/layout/MainLayout';
-import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
+import { CloudflareStreamPlayer } from '@/components/live/CloudflareStreamPlayer';
 import { LiveChat } from '@/components/live/LiveChat';
 import { AnimatedViewerCount } from '@/components/live/AnimatedViewerCount';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ export default function LivePlayer() {
   const navigate = useNavigate();
   const { getLive, likeLive, unlikeLive, hasLiked, endLive, isLoading, refreshLives } = useLives();
   const { user, role } = useAuth();
-  const { getViewerToken, createRoom, isLoading: isDailyLoading } = useDaily();
+  const { getPlaybackUrl, isLoading: isStreamLoading } = useCloudflareStream();
   
   const [isLiking, setIsLiking] = useState(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
@@ -53,9 +53,8 @@ export default function LivePlayer() {
   const [isEnding, setIsEnding] = useState(false);
   const [showChat, setShowChat] = useState(true);
   
-  // Daily.co state
-  const [roomUrl, setRoomUrl] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  // Cloudflare Stream state
+  const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
   const [isJoiningStream, setIsJoiningStream] = useState(false);
   
   const live = getLive(id || '');
@@ -70,35 +69,34 @@ export default function LivePlayer() {
   
   const isLiked = live ? hasLiked(live.id) : false;
 
-  // Join the stream when component mounts and live is active
+  // Get playback URL when component mounts and live is active
   useEffect(() => {
-    const joinStream = async () => {
+    const getStreamUrl = async () => {
       if (!live || !isLiveActive) return;
-      if (roomUrl && token) return; // Already joined
+      if (playbackUrl) return; // Already have URL
       
-      // Use the daily_room_name from the database
-      const dailyRoomName = live.dailyRoomName;
-      if (!dailyRoomName) {
-        console.error('No daily room name found for live:', live.id);
+      // Use the stream UID from the database (stored in daily_room_name column)
+      const streamUid = live.dailyRoomName;
+      if (!streamUid) {
+        console.error('No stream UID found for live:', live.id);
         return;
       }
       
       setIsJoiningStream(true);
       try {
-        const viewerToken = await getViewerToken(dailyRoomName);
-        if (viewerToken) {
-          setRoomUrl(`https://doctordoublecheck.daily.co/${dailyRoomName}`);
-          setToken(viewerToken);
+        const url = await getPlaybackUrl(streamUid, 'live');
+        if (url) {
+          setPlaybackUrl(url);
         }
       } catch (error) {
-        console.error('Error joining stream:', error);
+        console.error('Error getting stream URL:', error);
       } finally {
         setIsJoiningStream(false);
       }
     };
 
-    joinStream();
-  }, [live, isLiveActive, getViewerToken, roomUrl, token]);
+    getStreamUrl();
+  }, [live, isLiveActive, getPlaybackUrl, playbackUrl]);
 
   if (isLoading) {
     return (
@@ -213,15 +211,12 @@ export default function LivePlayer() {
           {/* Video Player */}
           <div className="lg:col-span-2 space-y-4">
             {/* Player Container */}
-            {roomUrl && token ? (
-              <DailyVideoPlayer
-                roomUrl={roomUrl}
-                token={token}
+            {playbackUrl ? (
+              <CloudflareStreamPlayer
+                playbackUrl={playbackUrl}
                 isOwner={isOwner}
                 onLeave={() => navigate('/lives')}
-                onParticipantCountChange={(count) => {
-                  // Could update viewer count here
-                }}
+                viewerCount={viewerCount || live.viewerCount}
               />
             ) : (
               <div className="relative aspect-video bg-black rounded-xl overflow-hidden no-context-menu">
