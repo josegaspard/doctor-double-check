@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useViewerCount } from '@/hooks/useViewerCount';
+import { useCloudflareStream } from '@/hooks/useCloudflareStream';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
-import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
+import { CloudflareStreamPlayer } from '@/components/live/CloudflareStreamPlayer';
 import { LiveChat } from '@/components/live/LiveChat';
 import { AnimatedViewerCount } from '@/components/live/AnimatedViewerCount';
 import { EndingLiveModal } from '@/components/live/EndingLiveModal';
@@ -77,10 +78,10 @@ interface LiveData {
   startedAt: Date;
 }
 
-interface RoomData {
-  name: string;
-  url: string;
-  ownerToken: string;
+interface StreamData {
+  uid: string;
+  webRTCUrl: string;
+  playbackUrl: string;
 }
 
 export default function DoctorGoLive() {
@@ -100,12 +101,23 @@ export default function DoctorGoLive() {
   const [isCreating, setIsCreating] = useState(false);
   const [isLive, setIsLive] = useState(false);
   const [liveData, setLiveData] = useState<LiveData | null>(null);
-  const [roomData, setRoomData] = useState<RoomData | null>(null);
+  const [streamData, setStreamData] = useState<StreamData | null>(null);
   const [showChat, setShowChat] = useState(true);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showEndingModal, setShowEndingModal] = useState(false);
+  
+  // Cloudflare Stream hook
+  const { 
+    createStream, 
+    startBroadcast, 
+    endStream, 
+    toggleMute, 
+    toggleVideo, 
+    getLocalStream,
+    isLoading: isStreamLoading,
+  } = useCloudflareStream();
   const [endingStage, setEndingStage] = useState<'ending' | 'saving' | 'done'>('ending');
 
   // Real-time viewer count (owner doesn't auto-join as viewer)
@@ -151,7 +163,7 @@ export default function DoctorGoLive() {
     setTags(tags.filter(t => t !== tagToRemove));
   };
 
-  // Start live
+  // Start live - Using Cloudflare Stream
   const handleStartLive = async () => {
     if (!user?.id || !title.trim() || !specialty) {
       toast.error('Por favor completa el título y la especialidad');
@@ -178,25 +190,24 @@ export default function DoctorGoLive() {
 
       if (liveError) throw liveError;
 
-      // 2. Create Daily.co room with recording option
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session?.access_token) throw new Error('No authenticated');
-
-      const response = await supabase.functions.invoke('create-daily-room', {
-        body: { 
-          liveId: live.id, 
-          title: title.trim(),
-          enableRecording: enableRecording,
-        },
-      });
-
-      if (response.error || !response.data?.success) {
+      // 2. Create Cloudflare Stream live input
+      const stream = await createStream(live.id, title.trim(), enableRecording);
+      
+      if (!stream) {
         // Rollback: delete live record
         await supabase.from('lives').delete().eq('id', live.id);
-        throw new Error(response.data?.error || 'Error creating room');
+        throw new Error('Error creating stream');
       }
 
-      // 3. Set live state
+      // 3. Start WebRTC broadcast from browser
+      const broadcastStarted = await startBroadcast(stream.webRTCUrl);
+      
+      if (!broadcastStarted) {
+        await supabase.from('lives').delete().eq('id', live.id);
+        throw new Error('Error starting broadcast');
+      }
+
+      // 4. Set live state
       setLiveData({
         id: live.id,
         title: live.title,
@@ -206,10 +217,14 @@ export default function DoctorGoLive() {
         likesCount: 0,
         startedAt: new Date(live.started_at),
       });
-      setRoomData(response.data.room);
+      setStreamData({
+        uid: stream.uid,
+        webRTCUrl: stream.webRTCUrl,
+        playbackUrl: stream.playbackUrl,
+      });
       setIsLive(true);
 
-      // 4. Notify subscribers (in-app + push + email)
+      // 5. Notify subscribers (in-app + push + email)
       try {
         // In-app notifications
         await supabase.rpc('notify_subscribers', {
@@ -252,7 +267,7 @@ export default function DoctorGoLive() {
     }
   };
 
-  // End live
+  // End live - Using Cloudflare Stream
   const handleEndLive = async () => {
     if (!liveData?.id) return;
 
@@ -266,17 +281,11 @@ export default function DoctorGoLive() {
       await new Promise(resolve => setTimeout(resolve, 500));
       setEndingStage('saving');
 
-      // Call edge function to end the room and save recording
-      const { data, error } = await supabase.functions.invoke('end-daily-room', {
-        body: { 
-          liveId: liveData.id, 
-          roomName: roomData?.name,
-          saveRecording: enableRecording,
-        },
-      });
+      // End the Cloudflare Stream and save recording
+      const result = await endStream(liveData.id, streamData?.uid, enableRecording);
 
-      if (error) {
-        console.error('Error from end-daily-room:', error);
+      if (!result.success) {
+        console.error('Error from end-cloudflare-stream');
         // Fallback: manually update the live status if edge function fails
         await supabase
           .from('lives')
@@ -346,7 +355,7 @@ export default function DoctorGoLive() {
   }
 
   // Live streaming view
-  if (isLive && roomData && liveData) {
+  if (isLive && streamData && liveData) {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-4">
@@ -409,10 +418,13 @@ export default function DoctorGoLive() {
           {/* Video + Chat */}
           <div className="grid lg:grid-cols-4 gap-4">
             <div className={showChat ? 'lg:col-span-3' : 'lg:col-span-4'}>
-              <DailyVideoPlayer
-                roomUrl={roomData.url}
-                token={roomData.ownerToken}
+              <CloudflareStreamPlayer
+                localStream={getLocalStream()}
                 isOwner={true}
+                onToggleMute={toggleMute}
+                onToggleVideo={toggleVideo}
+                onLeave={() => setShowEndDialog(true)}
+                viewerCount={viewerCount || liveData.viewerCount}
               />
             </div>
 
