@@ -7,13 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Slider } from '@/components/ui/slider';
+import { CloudflareRecordingPlayer } from '@/components/recordings/CloudflareRecordingPlayer';
 import {
   PlayCircle,
-  Pause,
-  Volume2,
-  VolumeX,
-  Maximize,
   ArrowLeft,
   Clock,
   Stethoscope,
@@ -42,10 +38,6 @@ export default function RecordingPlayer() {
   const navigate = useNavigate();
   const { user, role, supabaseUser } = useAuth();
   
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [volume, setVolume] = useState(80);
-  const [isMuted, setIsMuted] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const [recording, setRecording] = useState<Recording | null>(null);
@@ -150,6 +142,13 @@ export default function RecordingPlayer() {
     return hasPurchased;
   };
 
+  // Handle duration update from player
+  const handleDurationUpdate = (newDuration: number) => {
+    if (recording && recording.duration !== newDuration) {
+      setRecording(prev => prev ? { ...prev, duration: newDuration } : null);
+    }
+  };
+
   if (isLoadingRecording || isCheckingAccess) {
     return (
       <MainLayout>
@@ -176,9 +175,6 @@ export default function RecordingPlayer() {
     );
   }
 
-  // Show message if video is not available (Daily.co needs paid plan)
-  const videoNotAvailable = !recording.videoUrl;
-
   if (!hasAccess()) {
     return (
       <MainLayout>
@@ -194,14 +190,6 @@ export default function RecordingPlayer() {
       </MainLayout>
     );
   }
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const totalSeconds = recording.duration * 60;
 
   const Watermark = () => {
     if (!user) return null;
@@ -231,102 +219,25 @@ export default function RecordingPlayer() {
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            <div className="relative aspect-video bg-black rounded-xl overflow-hidden no-context-menu">
-            {videoNotAvailable ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-warning/10 to-muted/30">
-                <div className="text-center p-6">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-warning/20 flex items-center justify-center">
-                    <Clock className="w-8 h-8 text-warning" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Video no disponible
-                  </h3>
-                  <p className="text-sm text-muted-foreground max-w-md">
-                    La grabación de este live no está disponible. Para habilitar grabaciones de videos, 
-                    se requiere un plan de pago de Daily.co.
-                  </p>
-                </div>
-              </div>
-            ) : recording.videoUrl ? (
-              <video
-                src={recording.videoUrl}
-                className="w-full h-full object-contain"
-                controls
-                autoPlay={isPlaying}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-premium/10 to-primary/20">
-                <div className="text-center">
-                  <div 
-                    className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center cursor-pointer transition-colors"
-                    onClick={() => setIsPlaying(!isPlaying)}
-                  >
-                    {isPlaying ? (
-                      <Pause className="w-10 h-10 text-white" />
-                    ) : (
-                      <PlayCircle className="w-10 h-10 text-white" />
-                    )}
+            <div className="relative no-context-menu">
+              {recording.videoUrl ? (
+                <CloudflareRecordingPlayer
+                  videoUrl={recording.videoUrl}
+                  recordingId={recording.id}
+                  onDurationUpdate={handleDurationUpdate}
+                />
+              ) : (
+                <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
+                  <div className="text-center p-6">
+                    <Clock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Video no disponible</h3>
+                    <p className="text-sm text-muted-foreground">
+                      La grabación aún no está disponible.
+                    </p>
                   </div>
                 </div>
-              </div>
-            )}
-              
+              )}
               <Watermark />
-              
-              <div className="absolute top-4 left-4">
-                <Badge variant="secondary" className="gap-1">
-                  <Award className="w-3 h-3" />
-                  Premium
-                </Badge>
-              </div>
-              
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                <div className="mb-3">
-                  <Slider
-                    value={[currentTime]}
-                    max={totalSeconds}
-                    step={1}
-                    onValueChange={(v) => setCurrentTime(v[0])}
-                    className="cursor-pointer"
-                  />
-                  <div className="flex justify-between text-xs text-white/70 mt-1">
-                    <span>{formatTime(currentTime)}</span>
-                    <span>{formatTime(totalSeconds)}</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={() => setIsPlaying(!isPlaying)}>
-                      {isPlaying ? <Pause className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
-                    </Button>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={() => setIsMuted(!isMuted)}>
-                        {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                      </Button>
-                      <div className="w-24 hidden sm:block">
-                        <Slider
-                          value={[isMuted ? 0 : volume]}
-                          max={100}
-                          step={1}
-                          onValueChange={(v) => {
-                            setVolume(v[0]);
-                            if (v[0] > 0) setIsMuted(false);
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                    <Maximize className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
             </div>
 
             <div>
@@ -337,7 +248,7 @@ export default function RecordingPlayer() {
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 <Badge variant="outline" className="gap-1">
                   <Clock className="w-3 h-3" />
-                  {recording.duration} min
+                  {recording.duration > 0 ? `${Math.floor(recording.duration / 60)} min` : 'Procesando...'}
                 </Badge>
                 {recording.tags.map((tag) => (
                   <Badge key={tag} variant="secondary">{tag}</Badge>

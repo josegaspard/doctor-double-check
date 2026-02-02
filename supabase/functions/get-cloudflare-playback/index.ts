@@ -43,15 +43,17 @@ serve(async (req) => {
     logStep("User authenticated", { userId });
 
     // Parse request body
-    const { videoUid, liveInputUid, type = "recording" } = await req.json();
+    const { videoUid, liveInputUid, type = "recording", recordingId } = await req.json();
     
     if (!videoUid && !liveInputUid) {
       throw new Error("videoUid or liveInputUid is required");
     }
 
+    // Helper to get account subdomain
+    const getSubdomain = () => `customer-${cfAccountId.slice(0, 8)}`;
+
+    // For live streams
     if (type === "live" && liveInputUid) {
-      // For live streams, return the playback URL directly
-      // Get the subdomain from the account
       const accountResponse = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream/live_inputs/${liveInputUid}`,
         {
@@ -74,8 +76,8 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           type: "live",
-          playbackUrl: `https://customer-${cfAccountId.slice(0, 8)}.cloudflarestream.com/${input.uid}/manifest/video.m3u8`,
-          iframeUrl: `https://customer-${cfAccountId.slice(0, 8)}.cloudflarestream.com/${input.uid}/iframe`,
+          playbackUrl: `https://${getSubdomain()}.cloudflarestream.com/${input.uid}/manifest/video.m3u8`,
+          iframeUrl: `https://${getSubdomain()}.cloudflarestream.com/${input.uid}/iframe`,
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -84,11 +86,128 @@ serve(async (req) => {
       );
     }
 
-    // For recordings, generate a signed URL for secure playback
-    logStep("Generating signed URL for recording", { videoUid });
-
     // Check if the video UID is a pending marker
-    if (videoUid.startsWith("pending:")) {
+    const isPending = videoUid && videoUid.startsWith("pending:");
+    const actualVideoUid = isPending ? videoUid.replace("pending:", "") : videoUid;
+
+    if (isPending) {
+      logStep("Recording is pending, checking live input outputs", { liveInputUid: actualVideoUid });
+      
+      // First, try to get the live input's outputs (recordings)
+      const liveInputResponse = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream/live_inputs/${actualVideoUid}/videos`,
+        {
+          headers: {
+            "Authorization": `Bearer ${cfApiToken}`,
+          },
+        }
+      );
+
+      let videos: any[] = [];
+      
+      if (liveInputResponse.ok) {
+        const liveInputData = await liveInputResponse.json();
+        videos = liveInputData.result || [];
+        logStep("Live input videos found", { count: videos.length });
+      } else {
+        // Fallback: search all videos
+        logStep("Live input lookup failed, searching all videos");
+        const searchResponse = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream`,
+          {
+            headers: {
+              "Authorization": `Bearer ${cfApiToken}`,
+            },
+          }
+        );
+
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          videos = (searchData.result || []).filter((v: any) => 
+            v.liveInput === actualVideoUid
+          );
+          logStep("Fallback search results", { count: videos.length });
+        }
+      }
+
+      // Log all found videos for debugging
+      if (videos.length > 0) {
+        logStep("Videos found", videos.map((v: any) => ({ 
+          uid: v.uid, 
+          status: v.status?.state, 
+          duration: v.duration,
+          liveInput: v.liveInput,
+        })));
+      }
+
+      // Find a ready video
+      const readyVideo = videos.find((v: any) => v.status?.state === "ready");
+
+      if (readyVideo) {
+        logStep("Found ready video!", { 
+          uid: readyVideo.uid, 
+          duration: readyVideo.duration 
+        });
+
+        // Update the recording in database if recordingId provided
+        if (recordingId) {
+          const { error: updateError } = await supabaseClient
+            .from('recordings')
+            .update({
+              video_url: readyVideo.uid,
+              duration: Math.floor(readyVideo.duration || 0),
+              thumbnail_url: readyVideo.thumbnail || null,
+            })
+            .eq('id', recordingId);
+
+          if (updateError) {
+            logStep("Error updating recording", updateError);
+          } else {
+            logStep("Recording updated successfully");
+          }
+        }
+
+        const playbackUrl = `https://${getSubdomain()}.cloudflarestream.com/${readyVideo.uid}/manifest/video.m3u8`;
+        
+        return new Response(
+          JSON.stringify({
+            success: true,
+            type: "recording",
+            playbackUrl,
+            thumbnailUrl: readyVideo.thumbnail,
+            duration: readyVideo.duration,
+            status: "ready",
+            videoUid: readyVideo.uid,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+
+      // Check if there's a video still processing
+      const processingVideo = videos.find((v: any) => 
+        v.status?.state !== "ready" && v.status?.state !== "error"
+      );
+
+      if (processingVideo) {
+        logStep("Video still processing", { state: processingVideo.status?.state });
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Recording is still processing",
+            status: processingVideo.status?.state || "processing",
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 202,
+          }
+        );
+      }
+
+      // No video found yet - might still be processing at Cloudflare
+      logStep("No video found for this live input yet");
       return new Response(
         JSON.stringify({
           success: false,
@@ -102,9 +221,11 @@ serve(async (req) => {
       );
     }
 
-    // Get video details
+    // For ready recordings (non-pending), get video details directly
+    logStep("Getting video details", { videoUid: actualVideoUid });
+
     const videoResponse = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream/${videoUid}`,
+      `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream/${actualVideoUid}`,
       {
         headers: {
           "Authorization": `Bearer ${cfApiToken}`,
@@ -127,13 +248,8 @@ serve(async (req) => {
       status: video.status?.state 
     });
 
-    // Generate a signed token for playback (expires in 2 hours)
-    // This requires Cloudflare Stream signing keys to be configured
-    // For now, we'll use the public playback URL with requireSignedURLs = false
-    // In production, you should enable signed URLs for better security
-
     const playbackUrl = video.playback?.hls || 
-      `https://customer-${cfAccountId.slice(0, 8)}.cloudflarestream.com/${video.uid}/manifest/video.m3u8`;
+      `https://${getSubdomain()}.cloudflarestream.com/${video.uid}/manifest/video.m3u8`;
 
     return new Response(
       JSON.stringify({
