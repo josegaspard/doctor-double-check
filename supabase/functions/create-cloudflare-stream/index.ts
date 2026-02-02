@@ -63,11 +63,8 @@ serve(async (req) => {
             name: title || `Live ${liveId}`,
             liveId: liveId,
           },
-          // Recording is automatically enabled in Cloudflare Stream
           recording: {
             mode: enableRecording ? "automatic" : "off",
-            // Keep recordings for 30 days
-            timeoutSeconds: 60 * 60 * 24 * 30,
           },
         }),
       }
