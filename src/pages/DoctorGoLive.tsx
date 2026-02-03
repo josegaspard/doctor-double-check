@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useViewerCount } from '@/hooks/useViewerCount';
-import { useCloudflareStream, checkH264Support } from '@/hooks/cloudflare';
+import { useCloudflareStream, checkH264Support, useLocalRecording } from '@/hooks/cloudflare';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { CloudflareStreamPlayer } from '@/components/live/CloudflareStreamPlayer';
@@ -124,7 +124,11 @@ export default function DoctorGoLive() {
     isLoading: isStreamLoading,
     negotiatedCodec,
   } = useCloudflareStream();
-  const [endingStage, setEndingStage] = useState<'ending' | 'saving' | 'done'>('ending');
+  
+  // Local recording as fallback
+  const localRecording = useLocalRecording();
+  
+  const [endingStage, setEndingStage] = useState<'ending' | 'saving' | 'uploading' | 'done'>('ending');
   
   // Codec support check
   const [codecCheck, setCodecCheck] = useState<{
@@ -233,7 +237,23 @@ export default function DoctorGoLive() {
         throw new Error('Error starting broadcast');
       }
 
-      // 4. Set live state
+      // 4. Start local recording as fallback (if recording is enabled)
+      if (enableRecording) {
+        // Give a moment for getLocalStream to be populated
+        setTimeout(() => {
+          const localStream = getLocalStream();
+          if (localStream) {
+            const started = localRecording.startRecording(localStream);
+            if (started) {
+              console.log('[GoLive] Local backup recording started');
+            } else {
+              console.warn('[GoLive] Failed to start local backup recording');
+            }
+          }
+        }, 1000);
+      }
+
+      // 5. Set live state
       setLiveData({
         id: live.id,
         title: live.title,
@@ -250,7 +270,7 @@ export default function DoctorGoLive() {
       });
       setIsLive(true);
 
-      // 5. Notify subscribers (in-app + push + email)
+      // 6. Notify subscribers (in-app + push + email)
       try {
         // In-app notifications
         await supabase.rpc('notify_subscribers', {
@@ -293,9 +313,9 @@ export default function DoctorGoLive() {
     }
   };
 
-  // End live - Using Cloudflare Stream
+  // End live - Using Cloudflare Stream with local fallback
   const handleEndLive = async () => {
-    if (!liveData?.id) return;
+    if (!liveData?.id || !user?.id) return;
 
     setIsEnding(true);
     setShowEndDialog(false);
@@ -303,16 +323,46 @@ export default function DoctorGoLive() {
     setEndingStage('ending');
 
     try {
-      // Stage 1: Ending
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setEndingStage('saving');
+      // Stage 1: Stop local recording first (if active)
+      if (localRecording.isRecording) {
+        console.log('[GoLive] Stopping local backup recording...');
+        localRecording.stopRecording();
+        // Give it a moment to finalize chunks
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
 
-      // End the Cloudflare Stream and save recording
+      // Stage 2: End Cloudflare stream
+      setEndingStage('saving');
       const result = await endStream(liveData.id, streamData?.uid, enableRecording);
 
+      let recordingCreated = !!(result.success && result.recordingId);
+      console.log('[GoLive] Cloudflare end result:', { success: result.success, recordingId: result.recordingId });
+
+      // Stage 3: If Cloudflare didn't create a recording, use local backup
+      if (enableRecording && !recordingCreated && localRecording.hasRecording) {
+        console.log('[GoLive] Cloudflare recording failed, using local backup...');
+        setEndingStage('uploading');
+        
+        const uploadResult = await localRecording.uploadRecording({
+          liveId: liveData.id,
+          doctorId: user.id,
+          title: liveData.title,
+          description: liveData.description,
+          specialty: liveData.specialty,
+          tags: tags,
+          price: recordingPrice,
+        });
+
+        if (uploadResult.success) {
+          recordingCreated = true;
+          console.log('[GoLive] ✅ Local recording uploaded successfully');
+        } else {
+          console.error('[GoLive] ❌ Local recording upload failed');
+        }
+      }
+
+      // Fallback: manually update the live status if edge function fails
       if (!result.success) {
-        console.error('Error from end-cloudflare-stream');
-        // Fallback: manually update the live status if edge function fails
         await supabase
           .from('lives')
           .update({
@@ -322,14 +372,20 @@ export default function DoctorGoLive() {
           .eq('id', liveData.id);
       }
 
-      // Stage 2: Done
+      // Cleanup local recording
+      localRecording.cleanup();
+
+      // Stage 4: Done
       setEndingStage('done');
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Navigate based on recording preference
-      if (enableRecording) {
+      if (enableRecording && recordingCreated) {
         toast.success('¡Transmisión finalizada! La grabación está disponible.');
         navigate('/doctor/recordings');
+      } else if (enableRecording) {
+        toast.warning('La transmisión finalizó pero no se pudo guardar la grabación.');
+        navigate('/doctor/dashboard');
       } else {
         toast.success('Transmisión finalizada');
         navigate('/doctor/dashboard');
@@ -337,6 +393,9 @@ export default function DoctorGoLive() {
     } catch (error: any) {
       console.error('Error ending live:', error);
       toast.error('Error al finalizar la transmisión');
+      
+      // Cleanup
+      localRecording.cleanup();
       
       // Ensure we clean up the state even on error
       try {
@@ -501,7 +560,8 @@ export default function DoctorGoLive() {
         <EndingLiveModal 
           isOpen={showEndingModal} 
           stage={endingStage} 
-          enableRecording={enableRecording} 
+          enableRecording={enableRecording}
+          uploadProgress={localRecording.uploadProgress}
         />
       </MainLayout>
     );

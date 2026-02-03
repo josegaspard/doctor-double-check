@@ -1,8 +1,9 @@
 import { useCloudflareAPI } from './useCloudflareAPI';
 import { useCloudflareWebRTC } from './useCloudflareWebRTC';
+import { useLocalRecording } from './useLocalRecording';
 import { checkH264Support, CloudflareStream, CodecSupportResult } from './useCloudflareStream';
 
-export { checkH264Support };
+export { checkH264Support, useLocalRecording };
 export type { CloudflareStream, CodecSupportResult };
 
 /**

@@ -10,11 +10,12 @@ import { Loader2, CheckCircle } from 'lucide-react';
 
 interface EndingLiveModalProps {
   isOpen: boolean;
-  stage: 'ending' | 'saving' | 'done';
+  stage: 'ending' | 'saving' | 'uploading' | 'done';
   enableRecording: boolean;
+  uploadProgress?: number;
 }
 
-export function EndingLiveModal({ isOpen, stage, enableRecording }: EndingLiveModalProps) {
+export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress = 0 }: EndingLiveModalProps) {
   const getContent = () => {
     switch (stage) {
       case 'ending':
@@ -29,6 +30,12 @@ export function EndingLiveModal({ isOpen, stage, enableRecording }: EndingLiveMo
           description: enableRecording 
             ? 'Tu grabación se está guardando. Esto puede tomar unos segundos.'
             : 'Limpiando recursos de la transmisión.',
+          icon: <Loader2 className="w-8 h-8 animate-spin text-primary" />,
+        };
+      case 'uploading':
+        return {
+          title: 'Subiendo grabación local...',
+          description: `La grabación de respaldo se está subiendo. ${uploadProgress}% completado.`,
           icon: <Loader2 className="w-8 h-8 animate-spin text-primary" />,
         };
       case 'done':
