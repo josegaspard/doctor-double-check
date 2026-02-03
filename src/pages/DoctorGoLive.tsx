@@ -332,9 +332,14 @@ export default function DoctorGoLive() {
       console.log('[GoLive] Cloudflare end result:', { success: result.success, recordingId: result.recordingId });
 
       // Stage 3: Always upload local backup (if we have it) so the video is available "sí o sí"
+      // IMPORTANT: we must NOT rely on `localRecording.hasRecording` here.
+      // React state updates are async; right after `await stopRecording()` it can still be false.
+      // Instead, check the underlying buffered data via `getRecordingBlob()`.
+      const localBlob = enableRecording ? localRecording.getRecordingBlob() : null;
+
       // - If Cloudflare created a recording row, we UPDATE it with the storage-backed video.
       // - If not, we create a new recording row.
-      if (enableRecording && localRecording.hasRecording) {
+      if (enableRecording && localBlob && localBlob.size > 0) {
         console.log('[GoLive] Uploading local backup recording to guarantee availability...');
         setEndingStage('uploading');
         
@@ -355,6 +360,8 @@ export default function DoctorGoLive() {
         } else {
           console.error('[GoLive] ❌ Local recording upload failed');
         }
+      } else if (enableRecording) {
+        console.warn('[GoLive] No local backup blob available, skipping upload');
       }
 
       // Fallback: manually update the live status if edge function fails
