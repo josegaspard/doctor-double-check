@@ -26,7 +26,9 @@ import {
   Trash2,
   Image as ImageIcon,
   FileSpreadsheet,
+  Download,
 } from 'lucide-react';
+import { exportMedicalHistoryToPDF } from '@/lib/exportMedicalHistoryPDF';
 import { toast } from 'sonner';
 
 const CATEGORIES = [
@@ -137,22 +139,57 @@ export default function MedicalHistory() {
     }).format(date);
   };
 
+const handleExportPDF = () => {
+    if (medicalHistory.length === 0) {
+      toast.error('No hay estudios para exportar');
+      return;
+    }
+
+    exportMedicalHistoryToPDF(
+      medicalHistory.map(item => ({
+        id: item.id,
+        title: item.title,
+        category: item.category,
+        description: item.description,
+        dateOfStudy: item.dateOfStudy,
+        fileType: item.fileType,
+        fileSize: item.fileSize,
+        createdAt: item.createdAt,
+      })),
+      {
+        name: user?.name || 'Paciente',
+        email: user?.email || '',
+      }
+    );
+    toast.success('Generando PDF...');
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <FileText className="w-5 h-5 text-primary" />
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <FileText className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="font-heading text-2xl font-bold text-foreground">
+                Historial Médico
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Almacena tus estudios clínicos de forma segura
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">
-              Historial Médico
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              Almacena tus estudios clínicos de forma segura
-            </p>
-          </div>
+          
+          {/* Export Button */}
+          {medicalHistory.length > 0 && (
+            <Button variant="outline" onClick={handleExportPDF} className="gap-2">
+              <Download className="w-4 h-4" />
+              Exportar PDF
+            </Button>
+          )}
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
