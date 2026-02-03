@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CloudflareRecordingPlayer } from '@/components/recordings/CloudflareRecordingPlayer';
+import { RecordingVideoPlayer } from '@/components/recordings/RecordingVideoPlayer';
 import {
   PlayCircle,
   ArrowLeft,
@@ -221,7 +221,7 @@ export default function RecordingPlayer() {
           <div className="lg:col-span-2 space-y-4">
             <div className="relative no-context-menu">
               {recording.videoUrl ? (
-                <CloudflareRecordingPlayer
+                <RecordingVideoPlayer
                   videoUrl={recording.videoUrl}
                   recordingId={recording.id}
                   onDurationUpdate={handleDurationUpdate}
