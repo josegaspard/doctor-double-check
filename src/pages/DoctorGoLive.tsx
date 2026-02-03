@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useViewerCount } from '@/hooks/useViewerCount';
-import { useCloudflareStream } from '@/hooks/useCloudflareStream';
+import { useCloudflareStream, checkH264Support } from '@/hooks/cloudflare';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { CloudflareStreamPlayer } from '@/components/live/CloudflareStreamPlayer';
@@ -44,9 +44,14 @@ import {
   Clock,
   MessageSquare,
   StopCircle,
-  AlertTriangle
+  AlertTriangle,
+  Copy,
+  ExternalLink,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -117,8 +122,29 @@ export default function DoctorGoLive() {
     toggleVideo, 
     getLocalStream,
     isLoading: isStreamLoading,
+    negotiatedCodec,
   } = useCloudflareStream();
   const [endingStage, setEndingStage] = useState<'ending' | 'saving' | 'done'>('ending');
+  
+  // Codec support check
+  const [codecCheck, setCodecCheck] = useState<{
+    checked: boolean;
+    h264Supported: boolean;
+    availableCodecs: string[];
+  }>({ checked: false, h264Supported: false, availableCodecs: [] });
+  const [showRtmpsInfo, setShowRtmpsInfo] = useState(false);
+  
+  // Check H.264 support on mount
+  useEffect(() => {
+    checkH264Support().then(result => {
+      setCodecCheck({
+        checked: true,
+        h264Supported: result.h264Supported,
+        availableCodecs: result.availableCodecs,
+      });
+      console.log('[GoLive] Codec check result:', result);
+    });
+  }, []);
 
   // Real-time viewer count (owner doesn't auto-join as viewer)
   const { viewerCount, likesCount } = useViewerCount({
@@ -621,6 +647,67 @@ export default function DoctorGoLive() {
                 </div>
               )}
             </div>
+
+            {/* Codec compatibility warning */}
+            {codecCheck.checked && enableRecording && !codecCheck.h264Supported && (
+              <Alert variant="destructive">
+                <XCircle className="h-4 w-4" />
+                <AlertTitle>Tu navegador no soporta grabaciones</AlertTitle>
+                <AlertDescription className="space-y-2">
+                  <p>
+                    Tu navegador solo soporta: {codecCheck.availableCodecs.join(', ') || 'VP8'}. 
+                    Cloudflare requiere <strong>H.264</strong> para generar grabaciones.
+                  </p>
+                  <p className="font-medium">Opciones:</p>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    <li>Usa <strong>Google Chrome</strong> (mejor soporte H.264)</li>
+                    <li>Usa <strong>OBS con RTMPS</strong> para transmitir</li>
+                  </ul>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => setShowRtmpsInfo(!showRtmpsInfo)}
+                  >
+                    {showRtmpsInfo ? 'Ocultar info RTMPS' : 'Ver cómo usar OBS'}
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {codecCheck.checked && enableRecording && codecCheck.h264Supported && (
+              <Alert className="border-primary/50 bg-primary/5">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+                <AlertTitle>Navegador compatible</AlertTitle>
+                <AlertDescription className="text-muted-foreground">
+                  Tu navegador soporta H.264. Las grabaciones funcionarán correctamente.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* RTMPS info for OBS */}
+            {showRtmpsInfo && (
+              <Card className="bg-muted/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4" />
+                    Transmitir con OBS
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <p>Puedes usar OBS Studio (gratuito) para transmitir con mejor calidad:</p>
+                  <ol className="list-decimal list-inside space-y-2">
+                    <li>Descarga <a href="https://obsproject.com" target="_blank" rel="noopener" className="text-primary underline">OBS Studio</a></li>
+                    <li>Ve a <strong>Configuración → Stream</strong></li>
+                    <li>Selecciona <strong>Servicio: Personalizado</strong></li>
+                    <li>La URL y clave se generarán al iniciar</li>
+                  </ol>
+                  <p className="text-xs text-muted-foreground">
+                    Nota: Primero inicia la transmisión aquí, luego usa los datos RTMPS que aparecerán.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Submit */}
             <Button

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCloudflareStream } from '@/hooks/useCloudflareStream';
+import { useCloudflareStream } from '@/hooks/cloudflare';
 import { useViewerCount } from '@/hooks/useViewerCount';
 import MainLayout from '@/components/layout/MainLayout';
 import { CloudflareStreamPlayer } from '@/components/live/CloudflareStreamPlayer';
