@@ -1405,6 +1405,7 @@ export type Database = {
         Row: {
           created_at: string
           creator_id: string
+          early_access_minutes: number | null
           expires_at: string | null
           id: string
           is_active: boolean
@@ -1418,6 +1419,7 @@ export type Database = {
         Insert: {
           created_at?: string
           creator_id: string
+          early_access_minutes?: number | null
           expires_at?: string | null
           id?: string
           is_active?: boolean
@@ -1431,6 +1433,7 @@ export type Database = {
         Update: {
           created_at?: string
           creator_id?: string
+          early_access_minutes?: number | null
           expires_at?: string | null
           id?: string
           is_active?: boolean
@@ -1860,6 +1863,7 @@ export type Database = {
         | "subscription_update"
         | "chat_message"
         | "system"
+        | "rating_request"
       subscription_tier: "free" | "basic" | "premium"
       supported_language: "es" | "en"
       transaction_status: "initiated" | "paid" | "failed"
@@ -2026,6 +2030,7 @@ export const Constants = {
         "subscription_update",
         "chat_message",
         "system",
+        "rating_request",
       ],
       subscription_tier: ["free", "basic", "premium"],
       supported_language: ["es", "en"],
