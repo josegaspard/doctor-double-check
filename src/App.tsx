@@ -113,7 +113,6 @@ const App = () => (
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/contact" element={<Contact />} />
                       <Route path="*" element={<NotFound />} />
-                      <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>
                 </TooltipProvider>

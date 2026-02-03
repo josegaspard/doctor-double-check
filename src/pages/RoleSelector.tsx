@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -18,8 +18,37 @@ import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
 export default function RoleSelector() {
   const navigate = useNavigate();
-  const { loginAsVisitor } = useAuth();
+  const { loginAsVisitor, user, role, isAuthenticated, isLoading } = useAuth();
   const { t, translations } = useLanguage();
+
+  // If user is already logged in, never show RoleSelector again.
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated || !user) return;
+
+    if (role === 'doctor') {
+      navigate('/doctor/dashboard', { replace: true });
+      return;
+    }
+    if (role === 'admin') {
+      navigate('/admin', { replace: true });
+      return;
+    }
+
+    // patient / resident / visitor
+    navigate('/lives', { replace: true });
+  }, [isLoading, isAuthenticated, user?.id, role, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+          <span>Cargando...</span>
+        </div>
+      </div>
+    );
+  }
 
   const roleOptions = [
     {

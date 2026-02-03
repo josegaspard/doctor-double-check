@@ -280,7 +280,7 @@ export default function RecordingPlayer() {
                 
                 <Separator className="my-4" />
                 
-                <Button className="w-full" onClick={() => navigate(`/profile/${recording.doctorId}`)}>
+                <Button className="w-full" onClick={() => navigate(`/doctor/${recording.doctorId}`)}>
                   Ver Perfil
                 </Button>
               </CardContent>
