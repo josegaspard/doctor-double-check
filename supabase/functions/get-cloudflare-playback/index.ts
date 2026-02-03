@@ -11,6 +11,9 @@ const logStep = (step: string, details?: any) => {
   console.log(`[GET-CLOUDFLARE-PLAYBACK] ${step}${detailsStr}`);
 };
 
+// Customer subdomain for playback URLs
+const CUSTOMER_SUBDOMAIN = "customer-3afz9zesalmyroc9.cloudflarestream.com";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -49,8 +52,7 @@ serve(async (req) => {
       throw new Error("videoUid or liveInputUid is required");
     }
 
-    // Helper to get account subdomain
-    const getSubdomain = () => `customer-${cfAccountId.slice(0, 8)}`;
+    // Use the constant subdomain
 
     // For live streams
     if (type === "live" && liveInputUid) {
@@ -76,8 +78,8 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           type: "live",
-          playbackUrl: `https://${getSubdomain()}.cloudflarestream.com/${input.uid}/manifest/video.m3u8`,
-          iframeUrl: `https://${getSubdomain()}.cloudflarestream.com/${input.uid}/iframe`,
+          playbackUrl: `https://${CUSTOMER_SUBDOMAIN}/${input.uid}/manifest/video.m3u8`,
+          iframeUrl: `https://${CUSTOMER_SUBDOMAIN}/${input.uid}/iframe`,
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -187,7 +189,7 @@ serve(async (req) => {
           }
         }
 
-        const playbackUrl = `https://${getSubdomain()}.cloudflarestream.com/${readyVideo.uid}/manifest/video.m3u8`;
+        const playbackUrl = `https://${CUSTOMER_SUBDOMAIN}/${readyVideo.uid}/manifest/video.m3u8`;
         
         return new Response(
           JSON.stringify({
@@ -287,7 +289,7 @@ serve(async (req) => {
 
     const playbackUrl =
       video.playback?.hls ||
-      `https://${getSubdomain()}.cloudflarestream.com/${video.uid}/manifest/video.m3u8`;
+      `https://${CUSTOMER_SUBDOMAIN}/${video.uid}/manifest/video.m3u8`;
 
     return new Response(
       JSON.stringify({
