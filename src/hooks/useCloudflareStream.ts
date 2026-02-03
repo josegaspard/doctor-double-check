@@ -11,6 +11,46 @@ interface CloudflareStream {
   iframeUrl: string;
 }
 
+// Cloudflare Stream ingest commonly expects H.264 for video. Browsers often prefer VP8.
+// SDP "munging" here prioritizes H.264 payload types in the m=video line.
+const preferH264InSdp = (sdp: string) => {
+  try {
+    const lines = sdp.split(/\r?\n/);
+    const mLineIndex = lines.findIndex((l) => l.startsWith('m=video '));
+    if (mLineIndex === -1) return sdp;
+
+    const h264Pts = new Set<string>();
+    for (const l of lines) {
+      // a=rtpmap:96 H264/90000
+      if (l.startsWith('a=rtpmap:') && l.toUpperCase().includes(' H264/90000')) {
+        const pt = l.split(':')[1]?.split(' ')[0];
+        if (pt) h264Pts.add(pt.trim());
+      }
+    }
+
+    if (h264Pts.size === 0) return sdp;
+
+    const mLineParts = lines[mLineIndex].trim().split(' ');
+    // m=video <port> <proto> <fmt list...>
+    const header = mLineParts.slice(0, 3);
+    const payloads = mLineParts.slice(3);
+    if (payloads.length === 0) return sdp;
+
+    const preferred = payloads.filter((pt) => h264Pts.has(pt));
+    const rest = payloads.filter((pt) => !h264Pts.has(pt));
+    const nextPayloads = [...preferred, ...rest];
+
+    // Only rewrite if it actually changes ordering
+    if (nextPayloads.join(' ') !== payloads.join(' ')) {
+      lines[mLineIndex] = [...header, ...nextPayloads].join(' ');
+    }
+
+    return lines.join('\r\n');
+  } catch {
+    return sdp;
+  }
+};
+
 export function useCloudflareStream() {
   const [isLoading, setIsLoading] = useState(false);
   const [stream, setStream] = useState<CloudflareStream | null>(null);
@@ -162,7 +202,11 @@ export function useCloudflareStream() {
       });
       
       console.log('[Cloudflare] Setting local description...');
-      await pc.setLocalDescription(offer);
+      const mungedSdp = offer.sdp ? preferH264InSdp(offer.sdp) : offer.sdp;
+      if (offer.sdp && mungedSdp !== offer.sdp) {
+        console.log('[Cloudflare] SDP munged: prioritizing H.264');
+      }
+      await pc.setLocalDescription({ type: 'offer', sdp: mungedSdp });
 
       // Wait for ICE gathering to complete with timeout
       console.log('[Cloudflare] Waiting for ICE gathering...');
