@@ -64,11 +64,21 @@ serve(async (req) => {
 
     if (pendingRecordings && pendingRecordings.length > 0) {
       for (const recording of pendingRecordings) {
+        const currentVideoUrl = recording.video_url ?? '';
+        const hasLocalBackup = currentVideoUrl.startsWith('storage:');
+
         // Only update if the video is ready
         if (readyToStream || statusState === 'ready') {
-          const updateData: any = {
-            video_url: uid, // Store Cloudflare video UID
-          };
+          // IMPORTANT:
+          // If we already uploaded a guaranteed local backup to Storage (storage:...),
+          // DO NOT overwrite it with Cloudflare UID. Cloudflare VOD might still be processing
+          // or may never become ready (codec issues). This was causing the UI to get stuck
+          // on “Procesando grabación…”.
+          const updateData: any = {};
+
+          if (!hasLocalBackup) {
+            updateData.video_url = uid; // Store Cloudflare video UID
+          }
           
           if (duration && duration > 0) {
             updateData.duration = Math.floor(duration);
@@ -76,6 +86,15 @@ serve(async (req) => {
           
           if (thumbnail) {
             updateData.thumbnail_url = thumbnail;
+          }
+
+          // If there's nothing to update (e.g., local backup exists and no duration/thumbnail), skip.
+          if (Object.keys(updateData).length === 0) {
+            logStep('Recording already has local backup, skipping update', {
+              recordingId: recording.id,
+              uid,
+            });
+            continue;
           }
 
           const { error: updateError } = await supabaseClient
@@ -86,7 +105,7 @@ serve(async (req) => {
           if (updateError) {
             logStep("Error updating recording", { recordingId: recording.id, error: updateError });
           } else {
-            logStep("Recording updated successfully", { recordingId: recording.id, uid });
+            logStep("Recording updated successfully", { recordingId: recording.id, uid, hasLocalBackup });
           }
         } else if (statusState === 'error') {
           logStep("Video processing failed", { uid, recordingId: recording.id });
@@ -100,21 +119,35 @@ serve(async (req) => {
       if (meta?.liveId) {
         const { data: liveRecording } = await supabaseClient
           .from('recordings')
-          .select('id')
+          .select('id, video_url')
           .eq('live_id', meta.liveId)
           .single();
 
         if (liveRecording) {
-          const updateData: any = { video_url: uid };
+          const currentVideoUrl = liveRecording.video_url ?? '';
+          const hasLocalBackup = currentVideoUrl.startsWith('storage:');
+
+          const updateData: any = {};
+          if (!hasLocalBackup) {
+            updateData.video_url = uid;
+          }
           if (duration) updateData.duration = Math.floor(duration);
           if (thumbnail) updateData.thumbnail_url = thumbnail;
 
-          await supabaseClient
-            .from('recordings')
-            .update(updateData)
-            .eq('id', liveRecording.id);
+          if (Object.keys(updateData).length === 0) {
+            logStep('Recording already has local backup, skipping update via liveId', {
+              recordingId: liveRecording.id,
+              uid,
+            });
+          } else {
 
-          logStep("Updated recording via liveId metadata", { recordingId: liveRecording.id });
+            await supabaseClient
+              .from('recordings')
+              .update(updateData)
+              .eq('id', liveRecording.id);
+
+            logStep("Updated recording via liveId metadata", { recordingId: liveRecording.id, hasLocalBackup });
+          }
         }
       }
     }
