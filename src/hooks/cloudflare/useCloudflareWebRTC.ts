@@ -1,92 +1,16 @@
-import { useState, useCallback, useRef } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { preferH264InSdp, getNegotiatedCodec } from './useCloudflareStream';
 
-interface CloudflareStream {
-  uid: string;
-  webRTCUrl: string;
-  rtmpsUrl: string;
-  rtmpsStreamKey: string;
-  playbackUrl: string;
-  iframeUrl: string;
-}
-
-// Cloudflare Stream ingest commonly expects H.264 for video. Browsers often prefer VP8.
-// SDP "munging" here prioritizes H.264 payload types in the m=video line.
-const preferH264InSdp = (sdp: string) => {
-  try {
-    const lines = sdp.split(/\r?\n/);
-    const mLineIndex = lines.findIndex((l) => l.startsWith('m=video '));
-    if (mLineIndex === -1) return sdp;
-
-    const h264Pts = new Set<string>();
-    for (const l of lines) {
-      // a=rtpmap:96 H264/90000
-      if (l.startsWith('a=rtpmap:') && l.toUpperCase().includes(' H264/90000')) {
-        const pt = l.split(':')[1]?.split(' ')[0];
-        if (pt) h264Pts.add(pt.trim());
-      }
-    }
-
-    if (h264Pts.size === 0) return sdp;
-
-    const mLineParts = lines[mLineIndex].trim().split(' ');
-    // m=video <port> <proto> <fmt list...>
-    const header = mLineParts.slice(0, 3);
-    const payloads = mLineParts.slice(3);
-    if (payloads.length === 0) return sdp;
-
-    const preferred = payloads.filter((pt) => h264Pts.has(pt));
-    const rest = payloads.filter((pt) => !h264Pts.has(pt));
-    const nextPayloads = [...preferred, ...rest];
-
-    // Only rewrite if it actually changes ordering
-    if (nextPayloads.join(' ') !== payloads.join(' ')) {
-      lines[mLineIndex] = [...header, ...nextPayloads].join(' ');
-    }
-
-    return lines.join('\r\n');
-  } catch {
-    return sdp;
-  }
-};
-
-export function useCloudflareStream() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [stream, setStream] = useState<CloudflareStream | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export function useCloudflareWebRTC() {
   const [connectionState, setConnectionState] = useState<string>('new');
+  const [negotiatedCodec, setNegotiatedCodec] = useState<string | null>(null);
+  
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  // WHIP spec: server responds with a resource URL (Location). Deleting it signals end-of-publish.
   const whipResourceUrlRef = useRef<string | null>(null);
-
-  const createStream = useCallback(async (liveId: string, title: string, enableRecording = true): Promise<CloudflareStream | null> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      console.log('[Cloudflare] Creating stream...', { liveId, title, enableRecording });
-      
-      const { data, error } = await supabase.functions.invoke('create-cloudflare-stream', {
-        body: { liveId, title, enableRecording },
-      });
-
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
-
-      console.log('[Cloudflare] Stream created:', data.stream);
-      setStream(data.stream);
-      return data.stream;
-    } catch (err: any) {
-      console.error('[Cloudflare] Error creating stream:', err);
-      setError(err.message || 'Error al crear transmisión');
-      toast.error('Error al crear sala de transmisión');
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const startBroadcast = useCallback(async (webRTCUrl: string): Promise<boolean> => {
     try {
@@ -94,6 +18,7 @@ export function useCloudflareStream() {
 
       // Reset any previous WHIP resource
       whipResourceUrlRef.current = null;
+      setNegotiatedCodec(null);
       
       // Request camera and microphone access
       console.log('[Cloudflare] Requesting media devices...');
@@ -132,9 +57,9 @@ export function useCloudflareStream() {
 
       // Monitor bytes sent to verify data is flowing
       let lastBytesSent = 0;
-      const statsInterval = setInterval(async () => {
+      statsIntervalRef.current = setInterval(async () => {
         if (!pc || pc.connectionState === 'closed') {
-          clearInterval(statsInterval);
+          if (statsIntervalRef.current) clearInterval(statsIntervalRef.current);
           return;
         }
         try {
@@ -163,13 +88,13 @@ export function useCloudflareStream() {
         setConnectionState(pc.connectionState);
         
         if (pc.connectionState === 'failed') {
-          clearInterval(statsInterval);
+          if (statsIntervalRef.current) clearInterval(statsIntervalRef.current);
           console.error('[Cloudflare] ❌ Connection FAILED! Media never reached Cloudflare.');
           toast.error('La conexión con el servidor de streaming falló');
         } else if (pc.connectionState === 'connected') {
           console.log('[Cloudflare] ✅ Connected! Now verifying data is flowing...');
         } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
-          clearInterval(statsInterval);
+          if (statsIntervalRef.current) clearInterval(statsIntervalRef.current);
         }
       };
 
@@ -188,19 +113,20 @@ export function useCloudflareStream() {
         console.log('[Cloudflare] ICE gathering state:', pc.iceGatheringState);
       };
 
-      // Add all tracks to the peer connection with proper transceivers
+      // Add all tracks to the peer connection
       mediaStream.getTracks().forEach(track => {
         console.log('[Cloudflare] Adding track:', track.kind, track.label, 'enabled:', track.enabled, 'readyState:', track.readyState);
         pc.addTrack(track, mediaStream);
       });
 
-      // Create offer with specific options for better compatibility
+      // Create offer
       console.log('[Cloudflare] Creating offer...');
       const offer = await pc.createOffer({
         offerToReceiveAudio: false,
         offerToReceiveVideo: false,
       });
       
+      // Prioritize H.264 in SDP
       console.log('[Cloudflare] Setting local description...');
       const mungedSdp = offer.sdp ? preferH264InSdp(offer.sdp) : offer.sdp;
       if (offer.sdp && mungedSdp !== offer.sdp) {
@@ -210,7 +136,7 @@ export function useCloudflareStream() {
 
       // Wait for ICE gathering to complete with timeout
       console.log('[Cloudflare] Waiting for ICE gathering...');
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const timeout = setTimeout(() => {
           console.warn('[Cloudflare] ICE gathering timeout, proceeding anyway');
           resolve();
@@ -232,8 +158,7 @@ export function useCloudflareStream() {
       console.log('[Cloudflare] ICE candidates gathered, sending to WHIP endpoint...');
       console.log('[Cloudflare] SDP offer length:', pc.localDescription?.sdp?.length);
 
-      // IMPORTANT: In browsers, the WHIP Location header is often NOT readable due to CORS.
-      // We proxy WHIP through a backend function so we can capture Location and later DELETE it.
+      // Send to WHIP via backend proxy (to capture Location header)
       const { data: whipData, error: whipError } = await supabase.functions.invoke('cloudflare-whip', {
         body: {
           action: 'post',
@@ -261,11 +186,18 @@ export function useCloudflareStream() {
       console.log('[Cloudflare] Answer SDP received, length:', answerSdp.length);
       
       // Log negotiated video codec from answer SDP
-      const videoCodecMatch = answerSdp.match(/a=rtpmap:\d+ (H264|VP8|VP9|AV1)/i);
-      const negotiatedCodec = videoCodecMatch ? videoCodecMatch[1].toUpperCase() : 'unknown';
-      console.log('[Cloudflare] 🎥 Negotiated video codec:', negotiatedCodec);
-      if (negotiatedCodec !== 'H264') {
-        console.warn('[Cloudflare] ⚠️ WARNING: Cloudflare VOD requires H.264! Current codec:', negotiatedCodec);
+      const codec = getNegotiatedCodec(answerSdp);
+      setNegotiatedCodec(codec);
+      console.log('[Cloudflare] 🎥 Negotiated video codec:', codec);
+      
+      if (codec !== 'H264') {
+        console.warn('[Cloudflare] ⚠️ WARNING: Cloudflare VOD requires H.264! Current codec:', codec);
+        toast.warning(`Códec negociado: ${codec}. La grabación puede no funcionar.`, {
+          description: 'Cloudflare requiere H.264. Considera usar OBS con RTMPS.',
+          duration: 10000,
+        });
+      } else {
+        console.log('[Cloudflare] ✅ H.264 codec confirmed - recording should work!');
       }
       
       await pc.setRemoteDescription({
@@ -289,9 +221,9 @@ export function useCloudflareStream() {
       return true;
     } catch (err: any) {
       console.error('[Cloudflare] Error starting broadcast:', err);
-      setError(err.message || 'Error al iniciar transmisión');
       
       // Clean up on error
+      if (statsIntervalRef.current) clearInterval(statsIntervalRef.current);
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop());
         mediaStreamRef.current = null;
@@ -309,8 +241,13 @@ export function useCloudflareStream() {
   const stopBroadcast = useCallback(async () => {
     console.log('[Cloudflare] Stopping broadcast...');
 
+    // Clear stats interval
+    if (statsIntervalRef.current) {
+      clearInterval(statsIntervalRef.current);
+      statsIntervalRef.current = null;
+    }
+
     // CRITICAL: Send WHIP DELETE BEFORE closing local connection!
-    // Cloudflare needs the session to still exist to finalize the recording.
     const whipResourceUrl = whipResourceUrlRef.current;
     if (whipResourceUrl) {
       console.log('[Cloudflare] Sending WHIP DELETE to finalize recording (waiting for response)...');
@@ -331,7 +268,6 @@ export function useCloudflareStream() {
     }
 
     // Now it's safe to close local resources
-    // Stop all media tracks
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => {
         console.log('[Cloudflare] Stopping track:', track.kind);
@@ -340,7 +276,6 @@ export function useCloudflareStream() {
       mediaStreamRef.current = null;
     }
 
-    // Close peer connection
     if (peerConnectionRef.current) {
       console.log('[Cloudflare] Closing peer connection, state:', peerConnectionRef.current.connectionState);
       peerConnectionRef.current.close();
@@ -348,64 +283,7 @@ export function useCloudflareStream() {
     }
     
     setConnectionState('closed');
-  }, []);
-
-  const endStream = useCallback(async (liveId: string, streamUid?: string, saveRecording = true): Promise<{ success: boolean; recordingId?: string }> => {
-    setIsLoading(true);
-    
-    try {
-      console.log('[Cloudflare] Ending stream...', { liveId, streamUid, saveRecording });
-      
-      // First stop the broadcast (now async - waits for WHIP DELETE)
-      await stopBroadcast();
-
-      // Give Cloudflare a moment to process (recording finalization can take a few seconds)
-      console.log('[Cloudflare] Waiting for Cloudflare to process recording...');
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Then notify the backend
-      const { data, error } = await supabase.functions.invoke('end-cloudflare-stream', {
-        body: { liveId, streamUid, saveRecording },
-      });
-
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
-
-      console.log('[Cloudflare] Stream ended successfully:', data);
-      setStream(null);
-      return { success: true, recordingId: data.recordingId };
-    } catch (err: any) {
-      console.error('[Cloudflare] Error ending stream:', err);
-      toast.error('Error al finalizar transmisión');
-      return { success: false };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [stopBroadcast]);
-
-  const getPlaybackUrl = useCallback(async (videoUid: string, type: 'live' | 'recording' = 'recording'): Promise<string | null> => {
-    try {
-      const { data, error } = await supabase.functions.invoke('get-cloudflare-playback', {
-        body: { 
-          videoUid: type === 'recording' ? videoUid : undefined,
-          liveInputUid: type === 'live' ? videoUid : undefined,
-          type,
-        },
-      });
-
-      if (error) throw error;
-      if (!data.success) {
-        if (data.status === 'processing') {
-          return null; // Still processing
-        }
-        throw new Error(data.error);
-      }
-
-      return data.playbackUrl;
-    } catch (err: any) {
-      console.error('[Cloudflare] Error getting playback URL:', err);
-      return null;
-    }
+    setNegotiatedCodec(null);
   }, []);
 
   const toggleMute = useCallback((muted: boolean) => {
@@ -435,15 +313,10 @@ export function useCloudflareStream() {
   }, [connectionState]);
 
   return {
-    isLoading,
-    stream,
-    error,
     connectionState,
-    createStream,
+    negotiatedCodec,
     startBroadcast,
     stopBroadcast,
-    endStream,
-    getPlaybackUrl,
     toggleMute,
     toggleVideo,
     getLocalStream,
