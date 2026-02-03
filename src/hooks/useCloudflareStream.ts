@@ -188,39 +188,32 @@ export function useCloudflareStream() {
       console.log('[Cloudflare] ICE candidates gathered, sending to WHIP endpoint...');
       console.log('[Cloudflare] SDP offer length:', pc.localDescription?.sdp?.length);
 
-      // Send offer to Cloudflare's WHIP endpoint
-      const response = await fetch(webRTCUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/sdp',
+      // IMPORTANT: In browsers, the WHIP Location header is often NOT readable due to CORS.
+      // We proxy WHIP through a backend function so we can capture Location and later DELETE it.
+      const { data: whipData, error: whipError } = await supabase.functions.invoke('cloudflare-whip', {
+        body: {
+          action: 'post',
+          url: webRTCUrl,
+          sdp: pc.localDescription?.sdp,
         },
-        body: pc.localDescription?.sdp,
       });
 
-      console.log('[Cloudflare] WHIP response status:', response.status);
-
-      // WHIP: save session resource URL so we can DELETE it on stop (helps finalize recordings)
-      const locationHeader = response.headers.get('Location') || response.headers.get('location');
-      if (locationHeader) {
-        try {
-          const absolute = new URL(locationHeader, webRTCUrl).toString();
-          whipResourceUrlRef.current = absolute;
-          console.log('[Cloudflare] WHIP resource Location saved:', absolute);
-        } catch (e) {
-          console.warn('[Cloudflare] WHIP Location header is not a valid URL:', locationHeader);
-        }
-      } else {
-        console.warn('[Cloudflare] WHIP response missing Location header (may affect recording finalization).');
+      if (whipError) throw whipError;
+      if (!whipData?.success) {
+        const status = whipData?.status;
+        const errorBody = whipData?.errorBody;
+        throw new Error(`WHIP error: ${status ?? 'unknown'} - ${errorBody ? String(errorBody).slice(0, 200) : (whipData?.error || 'unknown')}`);
       }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[Cloudflare] WHIP error response:', errorText);
-        throw new Error(`WHIP error: ${response.status} - ${errorText}`);
+      if (whipData?.resourceUrl) {
+        whipResourceUrlRef.current = whipData.resourceUrl;
+        console.log('[Cloudflare] WHIP resource saved (from backend):', whipData.resourceUrl);
+      } else {
+        console.warn('[Cloudflare] WHIP resource URL missing (recording finalization may fail).');
       }
 
       // Set remote description from Cloudflare's answer
-      const answerSdp = await response.text();
+      const answerSdp = whipData.answerSdp as string;
       console.log('[Cloudflare] Answer SDP received, length:', answerSdp.length);
       
       await pc.setRemoteDescription({
@@ -269,10 +262,11 @@ export function useCloudflareStream() {
     if (whipResourceUrl) {
       console.log('[Cloudflare] Sending WHIP DELETE to finalize recording...');
       // Fire-and-forget: we don't block UI teardown
-      fetch(whipResourceUrl, { method: 'DELETE' })
-        .then(async (res) => {
-          const text = await res.text().catch(() => '');
-          console.log('[Cloudflare] WHIP DELETE status:', res.status, text ? { body: text.slice(0, 200) } : undefined);
+      supabase.functions
+        .invoke('cloudflare-whip', { body: { action: 'delete', url: whipResourceUrl } })
+        .then(({ data, error }) => {
+          if (error) throw error;
+          console.log('[Cloudflare] WHIP DELETE result:', data?.status, data?.success);
         })
         .catch((e) => console.warn('[Cloudflare] WHIP DELETE failed:', e))
         .finally(() => {
