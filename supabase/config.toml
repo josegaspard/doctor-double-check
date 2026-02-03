@@ -75,6 +75,9 @@ verify_jwt = false
 [functions.cloudflare-webhook]
 verify_jwt = false
 
+[functions.setup-cloudflare-webhook]
+verify_jwt = false
+
 [functions.check-subscription]
 verify_jwt = false
 
