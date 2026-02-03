@@ -470,49 +470,35 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       const live = lives.find(l => l.id === liveId);
       if (!live) return { success: false, error: 'Live no encontrado' };
 
-      // Update live status
-      const newStatus = saveAsRecording ? 'processing_recording' : 'ended';
-      const { error } = await supabase
-        .from('lives')
-        .update({ status: newStatus, ended_at: new Date().toISOString() })
-        .eq('id', liveId)
-        .eq('doctor_id', user.id);
-
-      if (error) throw error;
-
       let recordingId: string | undefined;
 
-      // Create recording if requested
       if (saveAsRecording) {
-        const duration = Math.floor((Date.now() - live.startedAt.getTime()) / 60000); // Duration in minutes
-        
-        const { data: newRecording, error: recordingError } = await supabase
-          .from('recordings')
-          .insert({
-            live_id: liveId,
-            doctor_id: user.id,
-            title: live.title,
-            description: live.description,
-            specialty: live.specialty,
-            duration: duration,
-            price: live.recordingPrice || 0,
-            tags: live.tags,
-            thumbnail_url: live.thumbnailUrl,
-          })
-          .select()
-          .single();
-
-        if (recordingError) {
-          console.error('Error creating recording:', recordingError);
-        } else {
-          recordingId = newRecording.id;
-          
-          // Update live status to recording_ready
-          await supabase
-            .from('lives')
-            .update({ status: 'recording_ready' })
-            .eq('id', liveId);
+        // End the Cloudflare stream and create/update the recording via backend
+        if (!live.dailyRoomName) {
+          return { success: false, error: 'No se encontró el stream UID para este live' };
         }
+
+        const { data, error: fnError } = await supabase.functions.invoke('end-cloudflare-stream', {
+          body: {
+            liveId,
+            streamUid: live.dailyRoomName,
+            saveRecording: true,
+          },
+        });
+
+        if (fnError) throw fnError;
+        if (!data?.success) throw new Error(data?.error || 'Error al finalizar y guardar la grabación');
+
+        recordingId = data.recordingId || undefined;
+      } else {
+        // Just end the live in DB
+        const { error } = await supabase
+          .from('lives')
+          .update({ status: 'ended', ended_at: new Date().toISOString() })
+          .eq('id', liveId)
+          .eq('doctor_id', user.id);
+
+        if (error) throw error;
       }
 
       await Promise.all([fetchLives(true), fetchRecordings()]);

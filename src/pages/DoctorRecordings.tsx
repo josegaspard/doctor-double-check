@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLives, Recording } from '@/contexts/LivesContext';
@@ -119,6 +119,9 @@ export default function DoctorRecordings() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Avoid applying an accidental default price filter when maxPrice > 1000
+  const priceRangeInitializedRef = useRef(false);
+
   // Fetch recordings directly from Supabase for doctor's own recordings
   const fetchMyRecordings = useCallback(async () => {
     if (!user?.id) return;
@@ -172,6 +175,14 @@ export default function DoctorRecordings() {
   
   // Get max price for slider
   const maxPrice = Math.max(...allRecordings.map(r => r.price), 1000);
+
+  // Initialize price range to the real max price once we have data
+  useEffect(() => {
+    if (priceRangeInitializedRef.current) return;
+    if (allRecordings.length === 0) return;
+    setPriceRange([0, maxPrice]);
+    priceRangeInitializedRef.current = true;
+  }, [allRecordings.length, maxPrice]);
 
   // Apply filters
   const myRecordings = allRecordings.filter(recording => {
@@ -636,7 +647,15 @@ export default function DoctorRecordings() {
                           <TableCell>
                             <Badge variant="secondary">{recording.specialty}</Badge>
                           </TableCell>
-                          <TableCell>{formatDuration(recording.duration)}</TableCell>
+                           <TableCell>
+                             {recording.videoUrl?.startsWith('pending:') ? (
+                               <Badge variant="pending">Procesando…</Badge>
+                             ) : !recording.videoUrl ? (
+                               <Badge variant="outline">Sin video</Badge>
+                             ) : (
+                               formatDuration(recording.duration)
+                             )}
+                           </TableCell>
                           <TableCell>
                             {recording.price === 0 ? (
                               <Badge variant="success">Gratis</Badge>
