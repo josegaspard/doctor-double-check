@@ -58,11 +58,38 @@ serve(async (req) => {
         created: li.created,
         meta: li.meta,
         recording: li.recording,
+        status: li.status,
       })),
     };
 
-    // 3) For the most recent live input, check its videos
+    // 2.1) Fetch the most recent live input details (includes recording + status fields)
     const recentLiveInput = liveInputsData.result?.[0];
+    if (recentLiveInput?.uid) {
+      const recentDetailsRes = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream/live_inputs/${recentLiveInput.uid}`,
+        { headers: { "Authorization": `Bearer ${cfApiToken}` } }
+      );
+      const recentDetailsData = await recentDetailsRes.json();
+
+      results.recentLiveInputDetails = {
+        requestedUid: recentLiveInput.uid,
+        success: recentDetailsData.success,
+        errors: recentDetailsData.errors,
+        result: recentDetailsData.result
+          ? {
+              uid: recentDetailsData.result.uid,
+              created: recentDetailsData.result.created,
+              meta: recentDetailsData.result.meta,
+              recording: recentDetailsData.result.recording,
+              status: recentDetailsData.result.status,
+              rtmps: recentDetailsData.result.rtmps,
+              webRTC: recentDetailsData.result.webRTC,
+            }
+          : null,
+      };
+    }
+
+    // 3) For the most recent live input, check its videos
     if (recentLiveInput) {
       const liVideosRes = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream/live_inputs/${recentLiveInput.uid}/videos?per_page=20`,
