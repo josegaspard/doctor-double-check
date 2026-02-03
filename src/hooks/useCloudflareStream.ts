@@ -254,26 +254,31 @@ export function useCloudflareStream() {
     }
   }, []);
 
-  const stopBroadcast = useCallback(() => {
+  const stopBroadcast = useCallback(async () => {
     console.log('[Cloudflare] Stopping broadcast...');
 
-    // WHIP: explicitly terminate publish session (helps Cloudflare finalize a recording)
+    // CRITICAL: Send WHIP DELETE BEFORE closing local connection!
+    // Cloudflare needs the session to still exist to finalize the recording.
     const whipResourceUrl = whipResourceUrlRef.current;
     if (whipResourceUrl) {
-      console.log('[Cloudflare] Sending WHIP DELETE to finalize recording...');
-      // Fire-and-forget: we don't block UI teardown
-      supabase.functions
-        .invoke('cloudflare-whip', { body: { action: 'delete', url: whipResourceUrl } })
-        .then(({ data, error }) => {
-          if (error) throw error;
-          console.log('[Cloudflare] WHIP DELETE result:', data?.status, data?.success);
-        })
-        .catch((e) => console.warn('[Cloudflare] WHIP DELETE failed:', e))
-        .finally(() => {
-          whipResourceUrlRef.current = null;
+      console.log('[Cloudflare] Sending WHIP DELETE to finalize recording (waiting for response)...');
+      try {
+        const { data, error } = await supabase.functions.invoke('cloudflare-whip', {
+          body: { action: 'delete', url: whipResourceUrl },
         });
+        if (error) {
+          console.warn('[Cloudflare] WHIP DELETE error:', error);
+        } else {
+          console.log('[Cloudflare] WHIP DELETE result:', data?.status, data?.success);
+        }
+      } catch (e) {
+        console.warn('[Cloudflare] WHIP DELETE failed:', e);
+      } finally {
+        whipResourceUrlRef.current = null;
+      }
     }
-    
+
+    // Now it's safe to close local resources
     // Stop all media tracks
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => {
@@ -299,8 +304,12 @@ export function useCloudflareStream() {
     try {
       console.log('[Cloudflare] Ending stream...', { liveId, streamUid, saveRecording });
       
-      // First stop the broadcast
-      stopBroadcast();
+      // First stop the broadcast (now async - waits for WHIP DELETE)
+      await stopBroadcast();
+
+      // Give Cloudflare a moment to process (recording finalization can take a few seconds)
+      console.log('[Cloudflare] Waiting for Cloudflare to process recording...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
       // Then notify the backend
       const { data, error } = await supabase.functions.invoke('end-cloudflare-stream', {
