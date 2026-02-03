@@ -17,13 +17,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -91,7 +84,7 @@ interface StreamData {
 
 export default function DoctorGoLive() {
   const navigate = useNavigate();
-  const { user, role } = useAuth();
+  const { user, role, isLoading: isAuthLoading } = useAuth();
   
   // Form state
   const [title, setTitle] = useState('');
@@ -418,6 +411,20 @@ export default function DoctorGoLive() {
     }
   };
 
+  // Wait for auth to resolve to avoid flickers/false negatives that can “break” the view
+  if (isAuthLoading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12">
+          <div className="flex items-center justify-center gap-3 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Cargando...</span>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   // Block non-doctors
   if (role !== 'doctor') {
     return (
@@ -622,23 +629,25 @@ export default function DoctorGoLive() {
             {/* Specialty */}
             <div className="space-y-2">
               <Label htmlFor="specialty">Especialidad *</Label>
-              <Select value={specialty} onValueChange={setSpecialty}>
-                <SelectTrigger id="specialty" className="w-full">
-                  <SelectValue placeholder="Selecciona una especialidad" />
-                </SelectTrigger>
-                <SelectContent 
-                  className="max-h-[280px] bg-popover border border-border shadow-lg z-[100]"
-                  position="popper"
-                  sideOffset={4}
-                  onCloseAutoFocus={(e) => e.preventDefault()}
-                >
-                  {SPECIALTIES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/*
+                NOTE: Usamos <select> nativo aquí porque Radix Select estaba generando
+                warnings de refs y en algunos navegadores/estados terminaba “rompiendo” la vista.
+              */}
+              <select
+                id="specialty"
+                value={specialty}
+                onChange={(e) => setSpecialty(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="" disabled>
+                  Selecciona una especialidad
+                </option>
+                {SPECIALTIES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
               <p className="text-xs text-muted-foreground">
                 La especialidad ayuda a los pacientes a encontrar tu transmisión
               </p>
