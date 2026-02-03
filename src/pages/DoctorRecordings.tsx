@@ -121,6 +121,7 @@ export default function DoctorRecordings() {
 
   // Avoid applying an accidental default price filter when maxPrice > 1000
   const priceRangeInitializedRef = useRef(false);
+  const [isPriceRangeReady, setIsPriceRangeReady] = useState(false);
 
   // Fetch recordings directly from Supabase for doctor's own recordings
   const fetchMyRecordings = useCallback(async () => {
@@ -174,7 +175,10 @@ export default function DoctorRecordings() {
   const specialties = [...new Set(allRecordings.map(r => r.specialty))];
   
   // Get max price for slider
-  const maxPrice = Math.max(...allRecordings.map(r => r.price), 1000);
+  const numericPrices = allRecordings
+    .map(r => Number(r.price))
+    .filter((p) => Number.isFinite(p));
+  const maxPrice = numericPrices.length > 0 ? Math.max(...numericPrices) : 1000;
 
   // Initialize price range to the real max price once we have data
   useEffect(() => {
@@ -182,6 +186,7 @@ export default function DoctorRecordings() {
     if (allRecordings.length === 0) return;
     setPriceRange([0, maxPrice]);
     priceRangeInitializedRef.current = true;
+    setIsPriceRangeReady(true);
   }, [allRecordings.length, maxPrice]);
 
   // Apply filters
@@ -212,14 +217,22 @@ export default function DoctorRecordings() {
     }
     
     // Price range filter
-    if (recording.price < priceRange[0] || recording.price > priceRange[1]) {
-      return false;
+    // IMPORTANT: don't apply the default [0,1000] range until we know the real max
+    if (isPriceRangeReady) {
+      if (recording.price < priceRange[0] || recording.price > priceRange[1]) {
+        return false;
+      }
     }
     
     return true;
   });
 
-  const hasActiveFilters = searchQuery || specialtyFilter !== 'all' || dateFrom || dateTo || priceRange[0] > 0 || priceRange[1] < maxPrice;
+  const hasActiveFilters =
+    searchQuery ||
+    specialtyFilter !== 'all' ||
+    dateFrom ||
+    dateTo ||
+    (isPriceRangeReady ? (priceRange[0] > 0 || priceRange[1] < maxPrice) : false);
 
   const clearFilters = () => {
     setSearchQuery('');
