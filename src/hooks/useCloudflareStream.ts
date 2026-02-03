@@ -260,6 +260,14 @@ export function useCloudflareStream() {
       const answerSdp = whipData.answerSdp as string;
       console.log('[Cloudflare] Answer SDP received, length:', answerSdp.length);
       
+      // Log negotiated video codec from answer SDP
+      const videoCodecMatch = answerSdp.match(/a=rtpmap:\d+ (H264|VP8|VP9|AV1)/i);
+      const negotiatedCodec = videoCodecMatch ? videoCodecMatch[1].toUpperCase() : 'unknown';
+      console.log('[Cloudflare] 🎥 Negotiated video codec:', negotiatedCodec);
+      if (negotiatedCodec !== 'H264') {
+        console.warn('[Cloudflare] ⚠️ WARNING: Cloudflare VOD requires H.264! Current codec:', negotiatedCodec);
+      }
+      
       await pc.setRemoteDescription({
         type: 'answer',
         sdp: answerSdp,
