@@ -65,7 +65,11 @@ serve(async (req) => {
           },
           recording: {
             mode: enableRecording ? "automatic" : "off",
+            timeoutSeconds: 60, // Auto-stop after 60s of no data
+            requireSignedURLs: false,
           },
+          // Enable live playback
+          defaultCreator: "medical-masters",
         }),
       }
     );
@@ -101,6 +105,9 @@ serve(async (req) => {
       logStep("Saved stream ID to lives table", { liveId, streamId: liveInput.uid });
     }
 
+    // Use the correct customer subdomain for playback
+    const customerSubdomain = "customer-3afz9zesalmyroc9.cloudflarestream.com";
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -112,9 +119,9 @@ serve(async (req) => {
           rtmpsUrl: liveInput.rtmps?.url,
           rtmpsStreamKey: liveInput.rtmps?.streamKey,
           // Playback URL for viewers (HLS)
-          playbackUrl: `https://customer-${cfAccountId.slice(0, 8)}.cloudflarestream.com/${liveInput.uid}/manifest/video.m3u8`,
+          playbackUrl: `https://${customerSubdomain}/${liveInput.uid}/manifest/video.m3u8`,
           // Iframe embed URL
-          iframeUrl: `https://customer-${cfAccountId.slice(0, 8)}.cloudflarestream.com/${liveInput.uid}/iframe`,
+          iframeUrl: `https://${customerSubdomain}/${liveInput.uid}/iframe`,
         },
       }),
       {
