@@ -4,7 +4,14 @@ import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-const DropdownMenu = DropdownMenuPrimitive.Root;
+type DropdownMenuProps = React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root>;
+
+// Default `modal={false}` to avoid focus/overlay side-effects that can visually break layouts.
+// ForwardRef wrapper prevents React "function components cannot be given refs" warnings.
+const DropdownMenu = React.forwardRef<unknown, DropdownMenuProps>(({ modal = false, ...props }, _ref) => (
+  <DropdownMenuPrimitive.Root modal={modal} {...props} />
+));
+DropdownMenu.displayName = "DropdownMenu";
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 
