@@ -20,13 +20,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -175,7 +168,7 @@ function AvailabilityCard({
 
 export default function DoctorAvailabilityPage() {
   const navigate = useNavigate();
-  const { user, role } = useAuth();
+  const { user, role, isLoading: isAuthLoading } = useAuth();
   const { language, t } = useLanguage();
   const { toast } = useToast();
   const {
@@ -198,6 +191,20 @@ export default function DoctorAvailabilityPage() {
     duration: 60,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Wait for auth to resolve to avoid flicker/redirect loops that feel like “se rompió”
+  if (isAuthLoading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12">
+          <div className="flex items-center justify-center gap-3 text-muted-foreground">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+            <span>Cargando...</span>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   // Redirect non-doctors
   if (role !== 'doctor') {
@@ -311,24 +318,19 @@ export default function DoctorAvailabilityPage() {
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipo</Label>
-                  <Select
+                  {/* Native select to avoid Radix focus issues inside Dialog */}
+                  <select
+                    id="type"
                     value={formData.type}
-                    onValueChange={(v) => setFormData(prev => ({ ...prev, type: v as AvailabilityType }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value as AvailabilityType }))}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availabilityTypes.map(type => (
-                        <SelectItem key={type.value} value={type.value}>
-                          <div className="flex items-center gap-2">
-                            <type.icon className="h-4 w-4" />
-                            {type.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {availabilityTypes.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="space-y-2">
@@ -387,22 +389,20 @@ export default function DoctorAvailabilityPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="duration">Duración (minutos)</Label>
-                  <Select
-                    value={formData.duration.toString()}
-                    onValueChange={(v) => setFormData(prev => ({ ...prev, duration: parseInt(v) }))}
+                  {/* Native select to avoid Radix focus issues inside Dialog */}
+                  <select
+                    id="duration"
+                    value={String(formData.duration)}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, duration: parseInt(e.target.value, 10) }))}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="15">15 min</SelectItem>
-                      <SelectItem value="30">30 min</SelectItem>
-                      <SelectItem value="45">45 min</SelectItem>
-                      <SelectItem value="60">1 hora</SelectItem>
-                      <SelectItem value="90">1.5 horas</SelectItem>
-                      <SelectItem value="120">2 horas</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <option value="15">15 min</option>
+                    <option value="30">30 min</option>
+                    <option value="45">45 min</option>
+                    <option value="60">1 hora</option>
+                    <option value="90">1.5 horas</option>
+                    <option value="120">2 horas</option>
+                  </select>
                 </div>
               </div>
 
