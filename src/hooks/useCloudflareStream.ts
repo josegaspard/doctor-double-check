@@ -85,16 +85,46 @@ export function useCloudflareStream() {
 
       peerConnectionRef.current = pc;
 
+      // Monitor bytes sent to verify data is flowing
+      let lastBytesSent = 0;
+      const statsInterval = setInterval(async () => {
+        if (!pc || pc.connectionState === 'closed') {
+          clearInterval(statsInterval);
+          return;
+        }
+        try {
+          const stats = await pc.getStats();
+          let totalBytesSent = 0;
+          stats.forEach((report) => {
+            if (report.type === 'outbound-rtp') {
+              totalBytesSent += report.bytesSent || 0;
+            }
+          });
+          const bytesPerSecond = totalBytesSent - lastBytesSent;
+          if (bytesPerSecond > 0) {
+            console.log(`[Cloudflare] 📊 Data flowing: ${(bytesPerSecond / 1024).toFixed(1)} KB/s sent (total: ${(totalBytesSent / 1024 / 1024).toFixed(2)} MB)`);
+          } else if (pc.connectionState === 'connected') {
+            console.warn('[Cloudflare] ⚠️ Connection says connected but NO DATA being sent!');
+          }
+          lastBytesSent = totalBytesSent;
+        } catch (e) {
+          // Stats not available yet
+        }
+      }, 2000);
+
       // Monitor connection state changes
       pc.onconnectionstatechange = () => {
         console.log('[Cloudflare] Connection state:', pc.connectionState);
         setConnectionState(pc.connectionState);
         
         if (pc.connectionState === 'failed') {
-          console.error('[Cloudflare] Connection failed!');
+          clearInterval(statsInterval);
+          console.error('[Cloudflare] ❌ Connection FAILED! Media never reached Cloudflare.');
           toast.error('La conexión con el servidor de streaming falló');
         } else if (pc.connectionState === 'connected') {
-          console.log('[Cloudflare] ✅ Connected and streaming!');
+          console.log('[Cloudflare] ✅ Connected! Now verifying data is flowing...');
+        } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
+          clearInterval(statsInterval);
         }
       };
 
@@ -102,8 +132,10 @@ export function useCloudflareStream() {
         console.log('[Cloudflare] ICE connection state:', pc.iceConnectionState);
         
         if (pc.iceConnectionState === 'failed') {
-          console.error('[Cloudflare] ICE connection failed - trying to restart');
+          console.error('[Cloudflare] ❌ ICE connection failed - network issue');
           pc.restartIce();
+        } else if (pc.iceConnectionState === 'disconnected') {
+          console.warn('[Cloudflare] ⚠️ ICE disconnected - may reconnect...');
         }
       };
 
@@ -113,7 +145,7 @@ export function useCloudflareStream() {
 
       // Add all tracks to the peer connection with proper transceivers
       mediaStream.getTracks().forEach(track => {
-        console.log('[Cloudflare] Adding track:', track.kind, track.label);
+        console.log('[Cloudflare] Adding track:', track.kind, track.label, 'enabled:', track.enabled, 'readyState:', track.readyState);
         pc.addTrack(track, mediaStream);
       });
 
