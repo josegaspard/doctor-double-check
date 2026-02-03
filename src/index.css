@@ -165,6 +165,21 @@
   html {
     /* Prevent layout shift when Radix components lock/unlock scroll */
     scrollbar-gutter: stable;
+    overflow-x: hidden;
+  }
+
+  /* CRITICAL: Prevent Radix portals from breaking layout when opened */
+  body[data-scroll-locked] {
+    overflow: hidden !important;
+    /* Maintain layout when scroll is locked */
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Ensure Radix portals don't affect parent layout */
+  [data-radix-popper-content-wrapper] {
+    position: fixed !important;
+    z-index: 50 !important;
   }
 
   body {
