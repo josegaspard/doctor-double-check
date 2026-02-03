@@ -28,6 +28,7 @@ export function useLocalRecording() {
   const recordedChunksRef = useRef<Blob[]>([]);
   const startTimeRef = useRef<number>(0);
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const stopPromiseResolveRef = useRef<(() => void) | null>(null);
 
   /**
    * Inicia la grabación local del stream
@@ -97,6 +98,11 @@ export function useLocalRecording() {
           clearInterval(durationIntervalRef.current);
           durationIntervalRef.current = null;
         }
+
+        if (stopPromiseResolveRef.current) {
+          stopPromiseResolveRef.current();
+          stopPromiseResolveRef.current = null;
+        }
       };
 
       mediaRecorder.onerror = (event) => {
@@ -134,15 +140,23 @@ export function useLocalRecording() {
    * Detiene la grabación local
    */
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      console.log('[LocalRecording] Stopping recording...');
-      mediaRecorderRef.current.stop();
-    }
+    return new Promise<void>((resolve) => {
+      // Always clear interval immediately
+      if (durationIntervalRef.current) {
+        clearInterval(durationIntervalRef.current);
+        durationIntervalRef.current = null;
+      }
 
-    if (durationIntervalRef.current) {
-      clearInterval(durationIntervalRef.current);
-      durationIntervalRef.current = null;
-    }
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') {
+        console.log('[LocalRecording] Stopping recording...');
+        stopPromiseResolveRef.current = resolve;
+        recorder.stop();
+        return;
+      }
+
+      resolve();
+    });
   }, []);
 
   /**
@@ -168,6 +182,7 @@ export function useLocalRecording() {
     specialty: string;
     tags?: string[];
     price: number;
+    recordingId?: string; // si existe, actualiza este registro en lugar de crear uno nuevo
   }): Promise<{ success: boolean; recordingId?: string }> => {
     const blob = getRecordingBlob();
     
@@ -203,36 +218,44 @@ export function useLocalRecording() {
 
       setState(prev => ({ ...prev, uploadProgress: 50 }));
 
-      // Obtener URL pública
-      const { data: urlData } = supabase.storage
-        .from('recordings')
-        .getPublicUrl(filePath);
-
-      const videoUrl = urlData.publicUrl;
-      console.log('[LocalRecording] Video URL:', videoUrl);
+      // Guardamos únicamente la ruta (no URL firmada) para poder generar URLs firmadas al reproducir
+      const videoRef = `storage:${filePath}`;
+      console.log('[LocalRecording] Video stored at path:', filePath);
 
       setState(prev => ({ ...prev, uploadProgress: 75 }));
 
       // Calcular duración
       const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
-      // Crear registro en la tabla recordings
-      const { data: recording, error: dbError } = await supabase
-        .from('recordings')
-        .insert({
-          live_id: params.liveId,
-          doctor_id: params.doctorId,
-          title: params.title,
-          description: params.description || null,
-          specialty: params.specialty,
-          tags: params.tags || [],
-          price: params.price,
-          duration,
-          video_url: videoUrl,
-          thumbnail_url: null, // TODO: Generar thumbnail
-        })
-        .select()
-        .single();
+      // Crear o actualizar registro en la tabla recordings
+      const payload = {
+        live_id: params.liveId,
+        doctor_id: params.doctorId,
+        title: params.title,
+        description: params.description || null,
+        specialty: params.specialty,
+        tags: params.tags || [],
+        price: params.price,
+        duration,
+        video_url: videoRef,
+        thumbnail_url: null as string | null,
+      };
+
+      const query = params.recordingId
+        ? supabase
+            .from('recordings')
+            .update(payload)
+            .eq('id', params.recordingId)
+            .eq('doctor_id', params.doctorId)
+            .select()
+            .single()
+        : supabase
+            .from('recordings')
+            .insert(payload)
+            .select()
+            .single();
+
+      const { data: recording, error: dbError } = await query;
 
       if (dbError) {
         console.error('[LocalRecording] DB insert error:', dbError);

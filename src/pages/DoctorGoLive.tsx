@@ -316,6 +316,7 @@ export default function DoctorGoLive() {
   // End live - Using Cloudflare Stream with local fallback
   const handleEndLive = async () => {
     if (!liveData?.id || !user?.id) return;
+    if (isEnding) return;
 
     setIsEnding(true);
     setShowEndDialog(false);
@@ -326,21 +327,22 @@ export default function DoctorGoLive() {
       // Stage 1: Stop local recording first (if active)
       if (localRecording.isRecording) {
         console.log('[GoLive] Stopping local backup recording...');
-        localRecording.stopRecording();
-        // Give it a moment to finalize chunks
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await localRecording.stopRecording();
       }
 
       // Stage 2: End Cloudflare stream
       setEndingStage('saving');
       const result = await endStream(liveData.id, streamData?.uid, enableRecording);
 
-      let recordingCreated = !!(result.success && result.recordingId);
+      const cloudflareRecordingId = result.success ? result.recordingId : undefined;
+      let recordingCreated = !!cloudflareRecordingId;
       console.log('[GoLive] Cloudflare end result:', { success: result.success, recordingId: result.recordingId });
 
-      // Stage 3: If Cloudflare didn't create a recording, use local backup
-      if (enableRecording && !recordingCreated && localRecording.hasRecording) {
-        console.log('[GoLive] Cloudflare recording failed, using local backup...');
+      // Stage 3: Always upload local backup (if we have it) so the video is available "sí o sí"
+      // - If Cloudflare created a recording row, we UPDATE it with the storage-backed video.
+      // - If not, we create a new recording row.
+      if (enableRecording && localRecording.hasRecording) {
+        console.log('[GoLive] Uploading local backup recording to guarantee availability...');
         setEndingStage('uploading');
         
         const uploadResult = await localRecording.uploadRecording({
@@ -351,6 +353,7 @@ export default function DoctorGoLive() {
           specialty: liveData.specialty,
           tags: tags,
           price: recordingPrice,
+          recordingId: cloudflareRecordingId,
         });
 
         if (uploadResult.success) {
@@ -619,30 +622,18 @@ export default function DoctorGoLive() {
             {/* Specialty */}
             <div className="space-y-2">
               <Label htmlFor="specialty">Especialidad *</Label>
-              <Select 
-                value={specialty} 
-                onValueChange={(value) => {
-                  setSpecialty(value);
-                }}
-              >
-                <SelectTrigger 
-                  id="specialty" 
-                  className="w-full"
-                  onClick={(e) => e.stopPropagation()}
-                >
+              <Select value={specialty} onValueChange={setSpecialty}>
+                <SelectTrigger id="specialty" className="w-full">
                   <SelectValue placeholder="Selecciona una especialidad" />
                 </SelectTrigger>
                 <SelectContent 
-                  className="max-h-[280px] z-[100]"
+                  className="max-h-[280px] bg-popover border border-border shadow-lg z-[100]"
                   position="popper"
                   sideOffset={4}
                   onCloseAutoFocus={(e) => e.preventDefault()}
                 >
                   {SPECIALTIES.map((s) => (
-                    <SelectItem 
-                      key={s} 
-                      value={s}
-                    >
+                    <SelectItem key={s} value={s}>
                       {s}
                     </SelectItem>
                   ))}
