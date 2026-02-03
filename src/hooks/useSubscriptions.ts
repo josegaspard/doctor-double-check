@@ -133,18 +133,31 @@ export function useSubscriptions() {
   const unsubscribe = async (creatorId: string) => {
     if (!supabaseUser?.id) return { success: false, error: 'Not authenticated' };
 
-    const { error } = await supabase
-      .from('subscriptions')
-      .update({ is_active: false })
-      .eq('subscriber_id', supabaseUser.id)
-      .eq('creator_id', creatorId);
+    try {
+      // Call edge function to handle Stripe cancellation for paid subs
+      const { data, error: fnError } = await supabase.functions.invoke('cancel-subscription', {
+        body: { creator_id: creatorId }
+      });
 
-    if (error) {
-      return { success: false, error: error.message };
+      if (fnError) {
+        console.error('Error calling cancel-subscription:', fnError);
+        // Fallback to local cancellation
+        const { error } = await supabase
+          .from('subscriptions')
+          .update({ is_active: false })
+          .eq('subscriber_id', supabaseUser.id)
+          .eq('creator_id', creatorId);
+
+        if (error) {
+          return { success: false, error: error.message };
+        }
+      }
+
+      await fetchSubscriptions();
+      return { success: true, message: data?.message };
+    } catch (err: any) {
+      return { success: false, error: err.message };
     }
-
-    await fetchSubscriptions();
-    return { success: true };
   };
 
   const updateNotificationPrefs = async (
