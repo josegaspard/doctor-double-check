@@ -18,6 +18,8 @@ export function useCloudflareStream() {
   const [connectionState, setConnectionState] = useState<string>('new');
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  // WHIP spec: server responds with a resource URL (Location). Deleting it signals end-of-publish.
+  const whipResourceUrlRef = useRef<string | null>(null);
 
   const createStream = useCallback(async (liveId: string, title: string, enableRecording = true): Promise<CloudflareStream | null> => {
     setIsLoading(true);
@@ -49,6 +51,9 @@ export function useCloudflareStream() {
   const startBroadcast = useCallback(async (webRTCUrl: string): Promise<boolean> => {
     try {
       console.log('[Cloudflare] Starting broadcast to:', webRTCUrl);
+
+      // Reset any previous WHIP resource
+      whipResourceUrlRef.current = null;
       
       // Request camera and microphone access
       console.log('[Cloudflare] Requesting media devices...');
@@ -194,6 +199,20 @@ export function useCloudflareStream() {
 
       console.log('[Cloudflare] WHIP response status:', response.status);
 
+      // WHIP: save session resource URL so we can DELETE it on stop (helps finalize recordings)
+      const locationHeader = response.headers.get('Location') || response.headers.get('location');
+      if (locationHeader) {
+        try {
+          const absolute = new URL(locationHeader, webRTCUrl).toString();
+          whipResourceUrlRef.current = absolute;
+          console.log('[Cloudflare] WHIP resource Location saved:', absolute);
+        } catch (e) {
+          console.warn('[Cloudflare] WHIP Location header is not a valid URL:', locationHeader);
+        }
+      } else {
+        console.warn('[Cloudflare] WHIP response missing Location header (may affect recording finalization).');
+      }
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[Cloudflare] WHIP error response:', errorText);
@@ -244,6 +263,22 @@ export function useCloudflareStream() {
 
   const stopBroadcast = useCallback(() => {
     console.log('[Cloudflare] Stopping broadcast...');
+
+    // WHIP: explicitly terminate publish session (helps Cloudflare finalize a recording)
+    const whipResourceUrl = whipResourceUrlRef.current;
+    if (whipResourceUrl) {
+      console.log('[Cloudflare] Sending WHIP DELETE to finalize recording...');
+      // Fire-and-forget: we don't block UI teardown
+      fetch(whipResourceUrl, { method: 'DELETE' })
+        .then(async (res) => {
+          const text = await res.text().catch(() => '');
+          console.log('[Cloudflare] WHIP DELETE status:', res.status, text ? { body: text.slice(0, 200) } : undefined);
+        })
+        .catch((e) => console.warn('[Cloudflare] WHIP DELETE failed:', e))
+        .finally(() => {
+          whipResourceUrlRef.current = null;
+        });
+    }
     
     // Stop all media tracks
     if (mediaStreamRef.current) {
