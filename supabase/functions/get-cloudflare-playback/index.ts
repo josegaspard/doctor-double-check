@@ -14,6 +14,30 @@ const logStep = (step: string, details?: any) => {
 // Customer subdomain for playback URLs
 const CUSTOMER_SUBDOMAIN = "customer-3afz9zesalmyroc9.cloudflarestream.com";
 
+type CloudflareVideo = {
+  uid: string;
+  duration?: number;
+  thumbnail?: string | null;
+  status?: { state?: string };
+  liveInput?: string | { uid?: string } | null;
+  meta?: Record<string, unknown> | null;
+  created?: string;
+};
+
+const getLiveInputUidFromVideo = (video: CloudflareVideo): string | null => {
+  if (!video.liveInput) return null;
+  if (typeof video.liveInput === "string") return video.liveInput;
+  return video.liveInput.uid ?? null;
+};
+
+const sortNewestFirst = (videos: CloudflareVideo[]) => {
+  return [...videos].sort((a, b) => {
+    const aTime = a.created ? Date.parse(a.created) : 0;
+    const bTime = b.created ? Date.parse(b.created) : 0;
+    return bTime - aTime;
+  });
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -95,9 +119,9 @@ serve(async (req) => {
     if (isPending) {
       logStep("Recording is pending, checking live input outputs", { liveInputUid: actualVideoUid });
       
-      // Cloudflare recordings are stored as regular videos. We'll paginate through the videos list
-      // and match by liveInput UID and/or the liveId stored in our DB metadata.
-      let videos: any[] = [];
+      // Cloudflare recordings are stored as regular videos.
+      // IMPORTANT: The reliable way is listing videos for a given live input.
+      let videos: CloudflareVideo[] = [];
 
       // Optional: fetch liveId from DB to increase match accuracy
       let liveIdFromDb: string | null = null;
@@ -113,9 +137,10 @@ serve(async (req) => {
       }
 
       const MAX_PAGES = 10;
+      // 1) Preferred: list videos attached to this live input directly
       for (let page = 1; page <= MAX_PAGES; page++) {
         const listResponse = await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream?per_page=100&page=${page}`,
+          `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream/live_inputs/${actualVideoUid}/videos?per_page=100&page=${page}`,
           {
             headers: {
               "Authorization": `Bearer ${cfApiToken}`,
@@ -124,33 +149,62 @@ serve(async (req) => {
         );
 
         if (!listResponse.ok) {
-          logStep("Videos list failed", { status: listResponse.status, page });
+          logStep("Live input videos endpoint failed", { status: listResponse.status, page });
           break;
         }
 
         const listData = await listResponse.json();
-        const candidates = listData.result || [];
-        const matched = candidates.filter((v: any) =>
-          v.liveInput === actualVideoUid ||
-          (liveIdFromDb && v.meta?.liveId === liveIdFromDb)
-        );
-
-        if (matched.length > 0) {
-          videos = matched;
-          logStep("Videos matched", { page, matched: matched.length, candidates: candidates.length, liveIdFromDb });
-          break;
-        }
-
-        // Stop if this is the last page (Cloudflare returns empty results)
+        const candidates: CloudflareVideo[] = listData.result || [];
         if (candidates.length === 0) {
-          logStep("No more candidates", { page });
+          logStep("No more candidates", { page, endpoint: "live_inputs/:uid/videos" });
           break;
         }
 
-        if (page === 1) {
-          logStep("First page scanned - no match", { candidates: candidates.length, liveIdFromDb });
+        videos.push(...candidates);
+      }
+
+      // 2) Fallback: scan global videos list and match by liveInput/meta (older behavior)
+      if (videos.length === 0) {
+        for (let page = 1; page <= MAX_PAGES; page++) {
+          const listResponse = await fetch(
+            `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream?per_page=100&page=${page}`,
+            {
+              headers: {
+                "Authorization": `Bearer ${cfApiToken}`,
+              },
+            }
+          );
+
+          if (!listResponse.ok) {
+            logStep("Videos list failed", { status: listResponse.status, page });
+            break;
+          }
+
+          const listData = await listResponse.json();
+          const candidates: CloudflareVideo[] = listData.result || [];
+
+          const matched = candidates.filter((v) => {
+            const liveInputUid = getLiveInputUidFromVideo(v);
+            return (
+              liveInputUid === actualVideoUid ||
+              (liveIdFromDb && (v.meta as any)?.liveId === liveIdFromDb)
+            );
+          });
+
+          if (matched.length > 0) {
+            videos = matched;
+            logStep("Videos matched via fallback scan", { page, matched: matched.length, candidates: candidates.length, liveIdFromDb });
+            break;
+          }
+
+          if (candidates.length === 0) {
+            logStep("No more candidates", { page, endpoint: "/stream" });
+            break;
+          }
         }
       }
+
+      videos = sortNewestFirst(videos);
 
       // Log all found videos for debugging
       if (videos.length > 0) {

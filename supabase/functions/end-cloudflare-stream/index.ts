@@ -87,15 +87,29 @@ serve(async (req) => {
       // Give Cloudflare a moment to finalize the recording
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Get videos associated with this live input
-      const videosResponse = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream?search=${actualStreamUid}`,
+      // Get videos associated with this live input (reliable endpoint)
+      // NOTE: Using /stream?search=<uid> is not reliable because it may not match by liveInput.
+      let videosResponse = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream/live_inputs/${actualStreamUid}/videos?per_page=100&page=1`,
         {
           headers: {
             "Authorization": `Bearer ${cfApiToken}`,
           },
         }
       );
+
+      // Fallback for older accounts/APIs
+      if (!videosResponse.ok) {
+        logStep("Live input videos endpoint failed, falling back to search", { status: videosResponse.status });
+        videosResponse = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream?per_page=100&page=1&search=${actualStreamUid}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${cfApiToken}`,
+            },
+          }
+        );
+      }
 
       if (videosResponse.ok) {
         const videosData = await videosResponse.json();
@@ -104,10 +118,16 @@ serve(async (req) => {
         logStep("Found videos from stream", { count: videos.length });
 
         // Get the most recent video for this live input
-        const recording = videos.find((v: any) => 
-          v.liveInput === actualStreamUid || 
-          v.meta?.liveId === liveId
-        );
+        const recording = videos
+          .filter((v: any) => {
+            const liveInputUid = typeof v.liveInput === 'string' ? v.liveInput : v.liveInput?.uid;
+            return liveInputUid === actualStreamUid || v.meta?.liveId === liveId;
+          })
+          .sort((a: any, b: any) => {
+            const aTime = a.created ? Date.parse(a.created) : 0;
+            const bTime = b.created ? Date.parse(b.created) : 0;
+            return bTime - aTime;
+          })[0];
 
         if (recording) {
           logStep("Recording found", { 
