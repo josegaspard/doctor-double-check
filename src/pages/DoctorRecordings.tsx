@@ -348,9 +348,14 @@ export default function DoctorRecordings() {
 
       if (error) throw error;
 
+      // Update local state immediately for instant UI feedback
+      setRecordings(prev => prev.filter(r => r.id !== deletingRecording.id));
+      
       toast.success('Grabación eliminada correctamente');
       setDeleteDialogOpen(false);
       setDeletingRecording(null);
+      
+      // Also refresh global context for other pages
       await refreshRecordings();
     } catch (error: any) {
       toast.error(error.message || 'Error al eliminar la grabación');
