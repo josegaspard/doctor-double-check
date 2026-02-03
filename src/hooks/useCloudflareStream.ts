@@ -15,6 +15,7 @@ export function useCloudflareStream() {
   const [isLoading, setIsLoading] = useState(false);
   const [stream, setStream] = useState<CloudflareStream | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [connectionState, setConnectionState] = useState<string>('new');
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
 
@@ -23,6 +24,8 @@ export function useCloudflareStream() {
     setError(null);
     
     try {
+      console.log('[Cloudflare] Creating stream...', { liveId, title, enableRecording });
+      
       const { data, error } = await supabase.functions.invoke('create-cloudflare-stream', {
         body: { liveId, title, enableRecording },
       });
@@ -30,10 +33,11 @@ export function useCloudflareStream() {
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
 
+      console.log('[Cloudflare] Stream created:', data.stream);
       setStream(data.stream);
       return data.stream;
     } catch (err: any) {
-      console.error('Error creating Cloudflare stream:', err);
+      console.error('[Cloudflare] Error creating stream:', err);
       setError(err.message || 'Error al crear transmisión');
       toast.error('Error al crear sala de transmisión');
       return null;
@@ -44,50 +48,108 @@ export function useCloudflareStream() {
 
   const startBroadcast = useCallback(async (webRTCUrl: string): Promise<boolean> => {
     try {
+      console.log('[Cloudflare] Starting broadcast to:', webRTCUrl);
+      
       // Request camera and microphone access
+      console.log('[Cloudflare] Requesting media devices...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          frameRate: { ideal: 30 },
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+          frameRate: { ideal: 30, max: 30 },
         },
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
+          autoGainControl: true,
         },
+      });
+
+      console.log('[Cloudflare] Media stream obtained:', {
+        videoTracks: mediaStream.getVideoTracks().length,
+        audioTracks: mediaStream.getAudioTracks().length,
+        videoSettings: mediaStream.getVideoTracks()[0]?.getSettings(),
       });
 
       mediaStreamRef.current = mediaStream;
 
       // Create RTCPeerConnection for WHIP
       const pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
+        iceServers: [
+          { urls: 'stun:stun.cloudflare.com:3478' },
+          { urls: 'stun:stun.l.google.com:19302' },
+        ],
         bundlePolicy: 'max-bundle',
+        rtcpMuxPolicy: 'require',
       });
 
       peerConnectionRef.current = pc;
 
-      // Add all tracks to the peer connection
+      // Monitor connection state changes
+      pc.onconnectionstatechange = () => {
+        console.log('[Cloudflare] Connection state:', pc.connectionState);
+        setConnectionState(pc.connectionState);
+        
+        if (pc.connectionState === 'failed') {
+          console.error('[Cloudflare] Connection failed!');
+          toast.error('La conexión con el servidor de streaming falló');
+        } else if (pc.connectionState === 'connected') {
+          console.log('[Cloudflare] ✅ Connected and streaming!');
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        console.log('[Cloudflare] ICE connection state:', pc.iceConnectionState);
+        
+        if (pc.iceConnectionState === 'failed') {
+          console.error('[Cloudflare] ICE connection failed - trying to restart');
+          pc.restartIce();
+        }
+      };
+
+      pc.onicegatheringstatechange = () => {
+        console.log('[Cloudflare] ICE gathering state:', pc.iceGatheringState);
+      };
+
+      // Add all tracks to the peer connection with proper transceivers
       mediaStream.getTracks().forEach(track => {
+        console.log('[Cloudflare] Adding track:', track.kind, track.label);
         pc.addTrack(track, mediaStream);
       });
 
-      // Create offer
-      const offer = await pc.createOffer();
+      // Create offer with specific options for better compatibility
+      console.log('[Cloudflare] Creating offer...');
+      const offer = await pc.createOffer({
+        offerToReceiveAudio: false,
+        offerToReceiveVideo: false,
+      });
+      
+      console.log('[Cloudflare] Setting local description...');
       await pc.setLocalDescription(offer);
 
-      // Wait for ICE gathering to complete
-      await new Promise<void>((resolve) => {
+      // Wait for ICE gathering to complete with timeout
+      console.log('[Cloudflare] Waiting for ICE gathering...');
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          console.warn('[Cloudflare] ICE gathering timeout, proceeding anyway');
+          resolve();
+        }, 5000);
+
         if (pc.iceGatheringState === 'complete') {
+          clearTimeout(timeout);
           resolve();
         } else {
           pc.onicegatheringstatechange = () => {
             if (pc.iceGatheringState === 'complete') {
+              clearTimeout(timeout);
               resolve();
             }
           };
         }
       });
+
+      console.log('[Cloudflare] ICE candidates gathered, sending to WHIP endpoint...');
+      console.log('[Cloudflare] SDP offer length:', pc.localDescription?.sdp?.length);
 
       // Send offer to Cloudflare's WHIP endpoint
       const response = await fetch(webRTCUrl, {
@@ -98,45 +160,84 @@ export function useCloudflareStream() {
         body: pc.localDescription?.sdp,
       });
 
+      console.log('[Cloudflare] WHIP response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`WHIP error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('[Cloudflare] WHIP error response:', errorText);
+        throw new Error(`WHIP error: ${response.status} - ${errorText}`);
       }
 
       // Set remote description from Cloudflare's answer
       const answerSdp = await response.text();
+      console.log('[Cloudflare] Answer SDP received, length:', answerSdp.length);
+      
       await pc.setRemoteDescription({
         type: 'answer',
         sdp: answerSdp,
       });
 
-      console.log('WebRTC broadcast started successfully');
+      console.log('[Cloudflare] ✅ WebRTC broadcast setup complete!');
+      console.log('[Cloudflare] Current connection state:', pc.connectionState);
+      console.log('[Cloudflare] Current ICE state:', pc.iceConnectionState);
+      
+      // Verify tracks are sending
+      const senders = pc.getSenders();
+      console.log('[Cloudflare] Active senders:', senders.map(s => ({
+        kind: s.track?.kind,
+        enabled: s.track?.enabled,
+        readyState: s.track?.readyState,
+      })));
+
+      toast.success('¡Conexión establecida! Transmitiendo...');
       return true;
     } catch (err: any) {
-      console.error('Error starting broadcast:', err);
+      console.error('[Cloudflare] Error starting broadcast:', err);
       setError(err.message || 'Error al iniciar transmisión');
-      toast.error('Error al acceder a cámara/micrófono');
+      
+      // Clean up on error
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
+      }
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
+      
+      toast.error('Error al iniciar transmisión: ' + (err.message || 'Error desconocido'));
       return false;
     }
   }, []);
 
   const stopBroadcast = useCallback(() => {
+    console.log('[Cloudflare] Stopping broadcast...');
+    
     // Stop all media tracks
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current.getTracks().forEach(track => {
+        console.log('[Cloudflare] Stopping track:', track.kind);
+        track.stop();
+      });
       mediaStreamRef.current = null;
     }
 
     // Close peer connection
     if (peerConnectionRef.current) {
+      console.log('[Cloudflare] Closing peer connection, state:', peerConnectionRef.current.connectionState);
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
+    
+    setConnectionState('closed');
   }, []);
 
   const endStream = useCallback(async (liveId: string, streamUid?: string, saveRecording = true): Promise<{ success: boolean; recordingId?: string }> => {
     setIsLoading(true);
     
     try {
+      console.log('[Cloudflare] Ending stream...', { liveId, streamUid, saveRecording });
+      
       // First stop the broadcast
       stopBroadcast();
 
@@ -148,10 +249,11 @@ export function useCloudflareStream() {
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
 
+      console.log('[Cloudflare] Stream ended successfully:', data);
       setStream(null);
       return { success: true, recordingId: data.recordingId };
     } catch (err: any) {
-      console.error('Error ending stream:', err);
+      console.error('[Cloudflare] Error ending stream:', err);
       toast.error('Error al finalizar transmisión');
       return { success: false };
     } finally {
@@ -179,7 +281,7 @@ export function useCloudflareStream() {
 
       return data.playbackUrl;
     } catch (err: any) {
-      console.error('Error getting playback URL:', err);
+      console.error('[Cloudflare] Error getting playback URL:', err);
       return null;
     }
   }, []);
@@ -188,6 +290,7 @@ export function useCloudflareStream() {
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getAudioTracks().forEach(track => {
         track.enabled = !muted;
+        console.log('[Cloudflare] Audio track enabled:', track.enabled);
       });
     }
   }, []);
@@ -196,6 +299,7 @@ export function useCloudflareStream() {
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getVideoTracks().forEach(track => {
         track.enabled = !videoOff;
+        console.log('[Cloudflare] Video track enabled:', track.enabled);
       });
     }
   }, []);
@@ -204,10 +308,15 @@ export function useCloudflareStream() {
     return mediaStreamRef.current;
   }, []);
 
+  const getConnectionState = useCallback(() => {
+    return peerConnectionRef.current?.connectionState || connectionState;
+  }, [connectionState]);
+
   return {
     isLoading,
     stream,
     error,
+    connectionState,
     createStream,
     startBroadcast,
     stopBroadcast,
@@ -216,5 +325,6 @@ export function useCloudflareStream() {
     toggleMute,
     toggleVideo,
     getLocalStream,
+    getConnectionState,
   };
 }
