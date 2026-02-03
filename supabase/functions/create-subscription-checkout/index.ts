@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const logStep = (step: string, details?: any) => {
@@ -12,17 +12,17 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-SUBSCRIPTION-CHECKOUT] ${step}${detailsStr}`);
 };
 
-// Subscription tiers with prices (in MXN cents)
+// Subscription tiers with Stripe price IDs
 const SUBSCRIPTION_TIERS = {
   basic: {
     name: "Suscripción Básica",
     description: "Acceso a contenido exclusivo y notificaciones",
-    price: 9900, // $99 MXN
+    priceId: "price_1SwpRUDYtkQ07Jnnrvm7dwW5", // $99 MXN/month
   },
   premium: {
     name: "Suscripción Premium",
     description: "Todo lo básico + descuentos en grabaciones y chats prioritarios",
-    price: 19900, // $199 MXN
+    priceId: "price_1SwpRzDYtkQ07JnnFmwmpCru", // $199 MXN/month
   },
 };
 
@@ -59,7 +59,7 @@ serve(async (req) => {
     if (!tier || !['basic', 'premium'].includes(tier)) throw new Error("Invalid tier. Use 'basic' or 'premium'");
 
     const tierConfig = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS];
-    logStep("Subscription request", { creatorId, tier, price: tierConfig.price });
+    logStep("Subscription request", { creatorId, tier, priceId: tierConfig.priceId });
 
     // Get creator info
     const { data: creatorProfile } = await supabaseClient
@@ -78,23 +78,13 @@ serve(async (req) => {
       logStep("Existing customer found", { customerId });
     }
 
-    // Create checkout session for subscription
+    // Create checkout session using real Stripe price ID
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price_data: {
-            currency: "mxn",
-            product_data: {
-              name: `${tierConfig.name} - ${creatorProfile?.name || 'Doctor'}`,
-              description: tierConfig.description,
-            },
-            unit_amount: tierConfig.price,
-            recurring: {
-              interval: "month",
-            },
-          },
+          price: tierConfig.priceId,
           quantity: 1,
         },
       ],
@@ -106,6 +96,13 @@ serve(async (req) => {
         creator_id: creatorId,
         tier: tier,
         type: "creator_subscription",
+      },
+      subscription_data: {
+        metadata: {
+          user_id: user.id,
+          creator_id: creatorId,
+          tier: tier,
+        },
       },
     });
 

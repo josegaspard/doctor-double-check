@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,18 +7,39 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Globe, Bell, Shield, CheckCircle, Mail } from 'lucide-react';
+import { ArrowLeft, Globe, Bell, Shield, CheckCircle, Mail, CreditCard, Loader2, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { PushNotificationToggle } from '@/components/notifications/PushNotificationToggle';
 import { MySubscriptions } from '@/components/subscriptions/MySubscriptions';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function Settings() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const { preferences, updatePreferences } = useNotifications();
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+
+  const handleManageSubscriptions = async () => {
+    setIsLoadingPortal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      } else {
+        toast.error('No tienes suscripciones activas para gestionar');
+      }
+    } catch (error: any) {
+      console.error('Error opening portal:', error);
+      toast.error(error.message || 'Error al abrir el portal de suscripciones');
+    } finally {
+      setIsLoadingPortal(false);
+    }
+  };
 
   return (
     <MainLayout>
@@ -241,6 +262,36 @@ export default function Settings() {
               </div>
               <p className="text-xs text-muted-foreground mt-4">
                 {t('settings.verificationComingSoon')}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Subscription Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Gestionar Pagos
+              </CardTitle>
+              <CardDescription>
+                Administra tus suscripciones, métodos de pago y facturación
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={handleManageSubscriptions} 
+                disabled={isLoadingPortal}
+                className="w-full gap-2"
+              >
+                {isLoadingPortal ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-4 w-4" />
+                )}
+                Abrir Portal de Pagos
+              </Button>
+              <p className="text-xs text-muted-foreground mt-3 text-center">
+                Serás redirigido a Stripe para gestionar tus suscripciones
               </p>
             </CardContent>
           </Card>
