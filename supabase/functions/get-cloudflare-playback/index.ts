@@ -93,27 +93,27 @@ serve(async (req) => {
     if (isPending) {
       logStep("Recording is pending, checking live input outputs", { liveInputUid: actualVideoUid });
       
-      // First, try to get the live input's outputs (recordings)
-      const liveInputResponse = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream/live_inputs/${actualVideoUid}/videos`,
-        {
-          headers: {
-            "Authorization": `Bearer ${cfApiToken}`,
-          },
-        }
-      );
-
+      // Cloudflare recordings are stored as regular videos. We'll paginate through the videos list
+      // and match by liveInput UID and/or the liveId stored in our DB metadata.
       let videos: any[] = [];
-      
-      if (liveInputResponse.ok) {
-        const liveInputData = await liveInputResponse.json();
-        videos = liveInputData.result || [];
-        logStep("Live input videos found", { count: videos.length });
-      } else {
-        // Fallback: search all videos
-        logStep("Live input lookup failed, searching all videos");
-        const searchResponse = await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream`,
+
+      // Optional: fetch liveId from DB to increase match accuracy
+      let liveIdFromDb: string | null = null;
+      if (recordingId) {
+        const { data: recRow, error: recErr } = await supabaseClient
+          .from('recordings')
+          .select('live_id')
+          .eq('id', recordingId)
+          .maybeSingle();
+        if (!recErr && recRow?.live_id) {
+          liveIdFromDb = recRow.live_id;
+        }
+      }
+
+      const MAX_PAGES = 10;
+      for (let page = 1; page <= MAX_PAGES; page++) {
+        const listResponse = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream?per_page=100&page=${page}`,
           {
             headers: {
               "Authorization": `Bearer ${cfApiToken}`,
@@ -121,12 +121,32 @@ serve(async (req) => {
           }
         );
 
-        if (searchResponse.ok) {
-          const searchData = await searchResponse.json();
-          videos = (searchData.result || []).filter((v: any) => 
-            v.liveInput === actualVideoUid
-          );
-          logStep("Fallback search results", { count: videos.length });
+        if (!listResponse.ok) {
+          logStep("Videos list failed", { status: listResponse.status, page });
+          break;
+        }
+
+        const listData = await listResponse.json();
+        const candidates = listData.result || [];
+        const matched = candidates.filter((v: any) =>
+          v.liveInput === actualVideoUid ||
+          (liveIdFromDb && v.meta?.liveId === liveIdFromDb)
+        );
+
+        if (matched.length > 0) {
+          videos = matched;
+          logStep("Videos matched", { page, matched: matched.length, candidates: candidates.length, liveIdFromDb });
+          break;
+        }
+
+        // Stop if this is the last page (Cloudflare returns empty results)
+        if (candidates.length === 0) {
+          logStep("No more candidates", { page });
+          break;
+        }
+
+        if (page === 1) {
+          logStep("First page scanned - no match", { candidates: candidates.length, liveIdFromDb });
         }
       }
 
@@ -248,7 +268,25 @@ serve(async (req) => {
       status: video.status?.state 
     });
 
-    const playbackUrl = video.playback?.hls || 
+    // If the video isn't ready yet, report as processing so the client can poll.
+    const state = video.status?.state;
+    if (state && state !== "ready") {
+      logStep("Video not ready yet", { uid: video.uid, state });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Recording is still processing",
+          status: state,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 202,
+        }
+      );
+    }
+
+    const playbackUrl =
+      video.playback?.hls ||
       `https://${getSubdomain()}.cloudflarestream.com/${video.uid}/manifest/video.m3u8`;
 
     return new Response(

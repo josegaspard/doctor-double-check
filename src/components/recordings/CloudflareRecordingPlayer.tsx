@@ -56,8 +56,9 @@ export function CloudflareRecordingPlayer({
 
       if (fnError) throw fnError;
 
-      if (!data.success) {
-        if (data.status === 'processing' || data.status === 'queued' || data.status === 'downloading') {
+       if (!data.success) {
+         // Any non-ready status should be treated as processing (Cloudflare uses multiple states)
+         if (data.status && data.status !== 'error') {
           setIsProcessing(true);
           setError('La grabación aún se está procesando. Esto puede tomar unos minutos.');
           return null;
@@ -99,7 +100,6 @@ export function CloudflareRecordingPlayer({
       video.src = playbackUrl;
       video.addEventListener('loadedmetadata', () => {
         setIsLoading(false);
-        setDuration(video.duration);
       });
       video.addEventListener('error', () => {
         setError('Error al cargar el video');
@@ -121,7 +121,10 @@ export function CloudflareRecordingPlayer({
       });
 
       hls.on(Hls.Events.LEVEL_LOADED, (_, data) => {
-        setDuration(data.details.totalduration);
+        const total = data.details.totalduration;
+        if (Number.isFinite(total) && total > 0) {
+          setDuration(total);
+        }
       });
       
       hls.on(Hls.Events.ERROR, (event, data) => {
@@ -157,6 +160,26 @@ export function CloudflareRecordingPlayer({
       }
     };
   }, [initPlayer]);
+
+  // Keep duration in sync (prevents UI showing 0:00 when metadata arrives late)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const syncDurationFromElement = () => {
+      const d = video.duration;
+      if (Number.isFinite(d) && d > 0) {
+        setDuration(d);
+      }
+    };
+
+    video.addEventListener('loadedmetadata', syncDurationFromElement);
+    video.addEventListener('durationchange', syncDurationFromElement);
+    return () => {
+      video.removeEventListener('loadedmetadata', syncDurationFromElement);
+      video.removeEventListener('durationchange', syncDurationFromElement);
+    };
+  }, []);
 
   // Retry mechanism for processing videos
   useEffect(() => {
