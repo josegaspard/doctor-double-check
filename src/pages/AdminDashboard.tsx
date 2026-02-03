@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   Loader2,
   Settings,
+  RefreshCcw,
 } from 'lucide-react';
 
 interface AdminModule {
@@ -99,6 +100,16 @@ const adminModules: AdminModule[] = [
     icon: Users,
     href: '/admin/users',
     color: 'text-orange-500',
+  },
+  {
+    id: 'refunds',
+    title: 'Gestión de Reembolsos',
+    titleEn: 'Refund Management',
+    description: 'Procesa reembolsos y gestiona disputas de usuarios',
+    descriptionEn: 'Process refunds and manage user disputes',
+    icon: RefreshCcw,
+    href: '/admin/refunds',
+    color: 'text-destructive',
   },
 ];
 

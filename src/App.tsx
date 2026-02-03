@@ -48,12 +48,14 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import AdminReports from "./pages/AdminReports";
 import AdminSiteSettings from "./pages/AdminSiteSettings";
+import AdminRefunds from "./pages/AdminRefunds";
 import AdminPayoutSettings from "./pages/AdminPayoutSettings";
 import Onboarding from "./pages/Onboarding";
 import DoctorBankAccount from "./pages/DoctorBankAccount";
 import DoctorInvoices from "./pages/DoctorInvoices";
 import Contact from "./pages/Contact";
 import DoctorContentLibrary from "./pages/DoctorContentLibrary";
+import DoctorEarnings from "./pages/DoctorEarnings";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -102,6 +104,7 @@ const App = () => (
                       <Route path="/admin/analytics" element={<AdminAnalytics />} />
                       <Route path="/admin/reports" element={<AdminReports />} />
                       <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
+                      <Route path="/admin/refunds" element={<AdminRefunds />} />
                       <Route path="/admin/payout-settings" element={<AdminPayoutSettings />} />
                       <Route path="/verification-pending" element={<VerificationPending />} />
                       <Route path="/doctors" element={<Doctors />} />
@@ -109,6 +112,7 @@ const App = () => (
                       <Route path="/onboarding" element={<Onboarding />} />
                       <Route path="/doctor/bank-account" element={<DoctorBankAccount />} />
                       <Route path="/doctor/invoices" element={<DoctorInvoices />} />
+                      <Route path="/doctor/earnings" element={<DoctorEarnings />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/contact" element={<Contact />} />
