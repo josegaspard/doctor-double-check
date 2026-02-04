@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useVault, VaultFile } from '@/contexts/VaultContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,32 +33,91 @@ import {
   Calendar,
   Stethoscope,
   CheckCircle,
+  Search,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const CATEGORIES = ['Laboratorios', 'Imagenología', 'Estudios Cardíacos', 'Recetas', 'Otros'];
 
-// Mock doctors for permission management
-const AVAILABLE_DOCTORS = [
-  { id: 'doctor-001', name: 'Dr. Carlos Mendoza', specialty: 'Cardiología' },
-  { id: 'doctor-002', name: 'Dra. Laura Jiménez', specialty: 'Medicina del Dolor' },
-  { id: 'doctor-003', name: 'Dr. Roberto Sánchez', specialty: 'Endocrinología' },
-];
+interface AvailableDoctor {
+  id: string;
+  name: string;
+  specialty: string;
+  avatarUrl?: string;
+}
 
 export default function Vault() {
-  const { files, uploadFile, deleteFile, grantAccess, revokeAccess, uploadProgress, isLoading } = useVault();
+  const { files, uploadFile, deleteFile, grantAccess, revokeAccess, uploadProgress, isLoading, refreshVault } = useVault();
   const { role } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedCategory, setSelectedCategory] = useState('Otros');
   const [description, setDescription] = useState('');
   const [permissionFile, setPermissionFile] = useState<VaultFile | null>(null);
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
+  const [availableDoctors, setAvailableDoctors] = useState<AvailableDoctor[]>([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+  const [doctorSearch, setDoctorSearch] = useState('');
+  const [grantingAccess, setGrantingAccess] = useState<string | null>(null);
+  const [revokingAccess, setRevokingAccess] = useState<string | null>(null);
+
+  // Fetch approved doctors from database
+  const fetchAvailableDoctors = async () => {
+    setLoadingDoctors(true);
+    try {
+      // Get approved doctors from the public view
+      const { data: doctorProfiles, error } = await supabase
+        .from('doctor_profiles_public')
+        .select('user_id, specialty')
+        .eq('status', 'approved');
+
+      if (error) throw error;
+
+      if (doctorProfiles && doctorProfiles.length > 0) {
+        // Get doctor names from profiles_public
+        const doctorIds = doctorProfiles.map(d => d.user_id).filter(Boolean);
+        const { data: profiles } = await supabase
+          .from('profiles_public')
+          .select('id, name, avatar_url')
+          .in('id', doctorIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.id, { name: p.name, avatar_url: p.avatar_url }]) || []);
+
+        const doctors: AvailableDoctor[] = doctorProfiles
+          .filter(d => d.user_id)
+          .map(d => ({
+            id: d.user_id!,
+            name: profileMap.get(d.user_id!)?.name || 'Doctor',
+            specialty: d.specialty || 'Medicina General',
+            avatarUrl: profileMap.get(d.user_id!)?.avatar_url || undefined,
+          }));
+
+        setAvailableDoctors(doctors);
+      }
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+      toast.error('Error al cargar los médicos disponibles');
+    } finally {
+      setLoadingDoctors(false);
+    }
+  };
+
+  useEffect(() => {
+    if (role === 'patient') {
+      fetchAvailableDoctors();
+    }
+  }, [role]);
 
   if (role !== 'patient') return null;
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    await uploadFile(file, selectedCategory, description);
+    const result = await uploadFile(file, selectedCategory, description);
+    if (result.success) {
+      toast.success('Archivo subido correctamente');
+    } else {
+      toast.error(result.error || 'Error al subir archivo');
+    }
     setDescription('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -75,24 +135,60 @@ export default function Vault() {
 
   const handleGrantAccess = async (doctorId: string) => {
     if (!permissionFile) return;
-    await grantAccess(permissionFile.id, doctorId);
-    const updatedFiles = files.find(f => f.id === permissionFile.id);
-    if (updatedFiles) setPermissionFile(updatedFiles);
+    
+    setGrantingAccess(doctorId);
+    try {
+      const result = await grantAccess(permissionFile.id, doctorId);
+      if (result.success) {
+        toast.success('Acceso otorgado correctamente');
+        // Refresh the permission file state
+        await refreshVault();
+      } else {
+        toast.error(result.error || 'Error al dar acceso');
+      }
+    } catch (error) {
+      toast.error('Error al dar acceso');
+    } finally {
+      setGrantingAccess(null);
+    }
   };
 
   const handleRevokeAccess = async (doctorId: string) => {
     if (!permissionFile) return;
-    await revokeAccess(permissionFile.id, doctorId);
-    const updatedFiles = files.find(f => f.id === permissionFile.id);
-    if (updatedFiles) setPermissionFile(updatedFiles);
+    
+    setRevokingAccess(doctorId);
+    try {
+      const result = await revokeAccess(permissionFile.id, doctorId);
+      if (result.success) {
+        toast.success('Acceso revocado correctamente');
+        await refreshVault();
+      } else {
+        toast.error(result.error || 'Error al revocar acceso');
+      }
+    } catch (error) {
+      toast.error('Error al revocar acceso');
+    } finally {
+      setRevokingAccess(null);
+    }
   };
 
   const openPermissions = (file: VaultFile) => {
     setPermissionFile(file);
     setShowPermissionDialog(true);
+    setDoctorSearch('');
   };
 
+  // Get the current state of the permission file from files array
   const currentPermissionFile = permissionFile ? files.find(f => f.id === permissionFile.id) : null;
+
+  // Filter doctors based on search and exclude those who already have access
+  const filteredDoctors = availableDoctors.filter(doctor => {
+    const hasAccess = currentPermissionFile?.permissions?.some(p => p.doctorId === doctor.id);
+    const matchesSearch = !doctorSearch || 
+      doctor.name.toLowerCase().includes(doctorSearch.toLowerCase()) ||
+      doctor.specialty.toLowerCase().includes(doctorSearch.toLowerCase());
+    return !hasAccess && matchesSearch;
+  });
 
   return (
     <MainLayout>
@@ -223,13 +319,13 @@ export default function Vault() {
         </Card>
 
         <Dialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Share2 className="w-5 h-5 text-primary" />
                 Gestionar Permisos
               </DialogTitle>
-              <DialogDescription>{currentPermissionFile?.name}</DialogDescription>
+              <DialogDescription className="truncate">{currentPermissionFile?.name}</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-4">
@@ -250,8 +346,18 @@ export default function Vault() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={() => handleRevokeAccess(perm.doctorId)} className="text-destructive hover:text-destructive gap-1">
-                          <UserMinus className="w-4 h-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleRevokeAccess(perm.doctorId)} 
+                          disabled={revokingAccess === perm.doctorId}
+                          className="text-destructive hover:text-destructive gap-1"
+                        >
+                          {revokingAccess === perm.doctorId ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <UserMinus className="w-4 h-4" />
+                          )}
                           Revocar
                         </Button>
                       </div>
@@ -264,36 +370,71 @@ export default function Vault() {
 
               <div>
                 <h4 className="text-sm font-medium text-foreground mb-3">Dar acceso a:</h4>
-                <div className="space-y-2">
-                  {AVAILABLE_DOCTORS.filter(
-                    doc => !currentPermissionFile?.permissions?.some(p => p.doctorId === doc.id)
-                  ).map(doctor => (
-                    <div key={doctor.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Stethoscope className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{doctor.name}</p>
-                          <p className="text-xs text-muted-foreground">{doctor.specialty}</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm" onClick={() => handleGrantAccess(doctor.id)} className="gap-1">
-                        <UserPlus className="w-4 h-4" />
-                        Dar acceso
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {AVAILABLE_DOCTORS.filter(
-                    doc => !currentPermissionFile?.permissions?.some(p => p.doctorId === doc.id)
-                  ).length === 0 && (
-                    <div className="text-center py-4 text-muted-foreground text-sm">
-                      <CheckCircle className="w-8 h-8 mx-auto mb-2 text-success" />
-                      Todos los médicos disponibles ya tienen acceso
-                    </div>
-                  )}
+                
+                {/* Search input for doctors */}
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar médico por nombre o especialidad..."
+                    value={doctorSearch}
+                    onChange={(e) => setDoctorSearch(e.target.value)}
+                    className="pl-9 h-9"
+                  />
                 </div>
+
+                {loadingDoctors ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                    {filteredDoctors.length > 0 ? (
+                      filteredDoctors.map(doctor => (
+                        <div key={doctor.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                              {doctor.avatarUrl ? (
+                                <img src={doctor.avatarUrl} alt={doctor.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <Stethoscope className="w-4 h-4 text-primary" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{doctor.name}</p>
+                              <p className="text-xs text-muted-foreground">{doctor.specialty}</p>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleGrantAccess(doctor.id)} 
+                            disabled={grantingAccess === doctor.id}
+                            className="gap-1"
+                          >
+                            {grantingAccess === doctor.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <UserPlus className="w-4 h-4" />
+                            )}
+                            Dar acceso
+                          </Button>
+                        </div>
+                      ))
+                    ) : availableDoctors.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        <Stethoscope className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        No hay médicos verificados disponibles
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground text-sm">
+                        <CheckCircle className="w-8 h-8 mx-auto mb-2 text-success" />
+                        {doctorSearch 
+                          ? 'No se encontraron médicos con ese criterio'
+                          : 'Todos los médicos disponibles ya tienen acceso'}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
