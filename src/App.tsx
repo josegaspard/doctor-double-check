@@ -12,6 +12,7 @@ import { ChatProvider } from "@/contexts/ChatContext";
 import { PostConsultationRatingProvider } from "@/components/ratings/PostConsultationRatingProvider";
 
 import RoleSelector from "./pages/RoleSelector";
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import LivesGrid from "./pages/LivesGrid";
 import LivePlayer from "./pages/LivePlayer";
@@ -72,7 +73,8 @@ const App = () => (
                     <Sonner />
                     <BrowserRouter>
                     <Routes>
-                      <Route path="/" element={<RoleSelector />} />
+                      <Route path="/" element={<Landing />} />
+                      <Route path="/app" element={<RoleSelector />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/lives" element={<LivesGrid />} />
                       <Route path="/live/:id" element={<LivePlayer />} />
