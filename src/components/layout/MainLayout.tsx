@@ -56,6 +56,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.recordings', href: '/recordings', icon: PlayCircle, roles: ['patient', 'doctor', 'resident', 'admin'] },
+  { labelKey: 'nav.content', href: '/content', icon: Folder, roles: ['patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'doctor'] },
   { labelKey: 'nav.vault', href: '/vault', icon: Folder, roles: ['patient'] },
   { labelKey: 'nav.doctorVault', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
