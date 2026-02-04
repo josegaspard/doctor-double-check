@@ -1,0 +1,227 @@
+import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { 
+  Stethoscope, 
+  User, 
+  CheckCheck, 
+  Lock, 
+  Clock,
+  XCircle,
+  Loader2,
+  GraduationCap,
+  ArrowLeft
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { ChatSession } from '@/contexts/ChatContext';
+
+interface SessionDisplayInfo {
+  name: string;
+  specialty?: string;
+  avatar?: string;
+  type: string;
+}
+
+interface ChatHeaderProps {
+  session: ChatSession;
+  displayInfo: SessionDisplayInfo;
+  officeHours: string | null;
+  isAvailable: boolean;
+  isClosed: boolean;
+  isClosing: boolean;
+  userRole: string | null;
+  canOpenDoctorProfile: boolean;
+  onDoctorProfileClick: (e: React.MouseEvent) => void;
+  onCloseSession: () => void;
+  onBack?: () => void;
+}
+
+export function ChatHeader({
+  session,
+  displayInfo,
+  officeHours,
+  isAvailable,
+  isClosed,
+  isClosing,
+  userRole,
+  canOpenDoctorProfile,
+  onDoctorProfileClick,
+  onCloseSession,
+  onBack,
+}: ChatHeaderProps) {
+  const getParticipantIcon = () => {
+    if (displayInfo.type === 'doctor') {
+      return <Stethoscope className="w-5 h-5 text-primary" />;
+    }
+    if (displayInfo.type === 'resident') {
+      return <GraduationCap className="w-5 h-5 text-secondary-foreground" />;
+    }
+    return <User className="w-5 h-5 text-muted-foreground" />;
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  return (
+    <div className="px-4 py-3 border-b bg-card/50 backdrop-blur-sm">
+      <div className="flex items-center gap-3">
+        {/* Back button for mobile */}
+        {onBack && (
+          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden -ml-2">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        )}
+        
+        {/* Avatar */}
+        <div className="relative">
+          <Avatar className="w-11 h-11 ring-2 ring-background">
+            <AvatarImage src={displayInfo.avatar} alt={displayInfo.name} />
+            <AvatarFallback className={`
+              ${displayInfo.type === 'doctor' 
+                ? 'bg-gradient-to-br from-primary/20 to-primary/10' 
+                : displayInfo.type === 'resident'
+                  ? 'bg-gradient-to-br from-secondary/30 to-secondary/10'
+                  : 'bg-gradient-to-br from-muted to-muted/50'
+              }
+            `}>
+              {displayInfo.avatar ? getParticipantIcon() : getInitials(displayInfo.name)}
+            </AvatarFallback>
+          </Avatar>
+          {!isClosed && displayInfo.type === 'doctor' && userRole === 'patient' && (
+            <span className={`
+              absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background
+              ${isAvailable ? 'bg-success' : 'bg-warning'}
+            `} />
+          )}
+        </div>
+        
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            {canOpenDoctorProfile ? (
+              <button
+                type="button"
+                onClick={onDoctorProfileClick}
+                className="text-sm font-semibold text-left hover:text-primary transition-colors focus:outline-none truncate"
+                title="Ver perfil del doctor"
+              >
+                {displayInfo.name}
+              </button>
+            ) : (
+              <span className="text-sm font-semibold truncate">{displayInfo.name}</span>
+            )}
+            {session.isDoubleCheck && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-0.5">
+                <CheckCheck className="w-3 h-3" />
+                2nd
+              </Badge>
+            )}
+            {displayInfo.type === 'resident' && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+                Residente
+              </Badge>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {displayInfo.specialty && (
+              canOpenDoctorProfile ? (
+                <button
+                  type="button"
+                  onClick={onDoctorProfileClick}
+                  className="text-primary hover:underline focus:outline-none font-medium"
+                  title="Ver perfil del doctor"
+                >
+                  {displayInfo.specialty}
+                </button>
+              ) : (
+                <span className="text-primary font-medium">{displayInfo.specialty}</span>
+              )
+            )}
+            {officeHours && userRole === 'patient' && (
+              <>
+                {displayInfo.specialty && <span className="text-muted-foreground/50">•</span>}
+                <span className={`flex items-center gap-1 ${isAvailable ? 'text-success' : 'text-warning'}`}>
+                  <Clock className="w-3 h-3" />
+                  {isAvailable ? 'Disponible' : 'Fuera de horario'}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+        
+        {/* Actions */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isClosed ? (
+            <Badge variant="secondary" className="gap-1.5 bg-muted text-muted-foreground">
+              <Lock className="w-3 h-3" />
+              <span className="hidden sm:inline">Cerrada</span>
+            </Badge>
+          ) : (
+            userRole === 'doctor' && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <XCircle className="w-4 h-4" />
+                    <span className="hidden sm:inline">Cerrar</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Cerrar esta consulta?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Al cerrar la consulta, el paciente ya no podrá enviar más mensajes. 
+                      El historial de la conversación se mantendrá disponible para ambas partes.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={onCloseSession}
+                      disabled={isClosing}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isClosing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Cerrando...
+                        </>
+                      ) : (
+                        'Sí, cerrar'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )
+          )}
+        </div>
+      </div>
+      
+      {isClosed && session.createdAt && (
+        <p className="text-[11px] text-muted-foreground mt-2 pl-14">
+          Consulta del {format(session.createdAt, 'dd MMMM yyyy', { locale: es })}
+        </p>
+      )}
+    </div>
+  );
+}
