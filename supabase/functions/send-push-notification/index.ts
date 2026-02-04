@@ -93,6 +93,34 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
+    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+
+    // Authentication check - verify the caller
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'No authorization header provided' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+    
+    if (userError || !userData.user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const authenticatedUserId = userData.user.id;
+
     const { doctorId, liveId, title, message } = await req.json();
 
     if (!doctorId) {
@@ -102,10 +130,25 @@ serve(async (req) => {
       );
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
-    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+    // Authorization check - only allow doctors to send notifications for themselves
+    // or admins to send for any doctor
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Check if user is admin
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', authenticatedUserId)
+      .single();
+
+    const isAdmin = userRole?.role === 'admin';
+
+    if (authenticatedUserId !== doctorId && !isAdmin) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Can only send notifications for your own account' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!vapidPublicKey || !vapidPrivateKey) {
       console.warn('VAPID keys not configured, skipping push notifications');
@@ -115,10 +158,8 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     // Get all subscribers who follow this doctor and have push enabled
-    const { data: subscriptions, error: subsError } = await supabase
+    const { data: subscriptions, error: subsError } = await supabaseAdmin
       .from('subscriptions')
       .select('subscriber_id')
       .eq('creator_id', doctorId)
@@ -143,7 +184,7 @@ serve(async (req) => {
     const subscriberIds = subscriptions.map(s => s.subscriber_id);
 
     // Get push subscriptions for these users
-    const { data: pushSubs, error: pushError } = await supabase
+    const { data: pushSubs, error: pushError } = await supabaseAdmin
       .from('push_subscriptions')
       .select('*')
       .in('user_id', subscriberIds);
@@ -187,7 +228,7 @@ serve(async (req) => {
           sentCount++;
         } else if (response.status === 410 || response.status === 404) {
           // Subscription is no longer valid, remove it
-          await supabase
+          await supabaseAdmin
             .from('push_subscriptions')
             .delete()
             .eq('id', sub.id);
