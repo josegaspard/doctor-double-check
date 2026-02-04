@@ -7,6 +7,7 @@ export const translations = {
     nav: {
       lives: 'Lives',
       recordings: 'Grabaciones',
+      content: 'Archivos',
       chat: 'Chat',
       vault: 'Mi Vault',
       doctorVault: 'Vault Pacientes',
@@ -405,6 +406,7 @@ export const translations = {
     nav: {
       lives: 'Lives',
       recordings: 'Recordings',
+      content: 'Files',
       chat: 'Chat',
       vault: 'My Vault',
       doctorVault: 'Patient Vault',
