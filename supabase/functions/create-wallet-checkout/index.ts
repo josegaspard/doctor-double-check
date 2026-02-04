@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const logStep = (step: string, details?: any) => {
@@ -40,8 +40,32 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { amount } = await req.json();
-    if (!amount || amount < 50) throw new Error("Minimum amount is 50 MXN");
+    const body = await req.json().catch(() => ({}));
+    const amountRaw = body?.amount;
+    const amount = typeof amountRaw === 'string' ? Number.parseInt(amountRaw, 10) : Number(amountRaw);
+
+    if (!Number.isFinite(amount)) {
+      return new Response(JSON.stringify({ error: "Monto inválido" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
+    if (amount < 50) {
+      return new Response(JSON.stringify({ error: "El monto mínimo es 50 MXN" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
+    // Stripe Checkout: total <= 999,999.99 (moneda). Para MXN entero -> <= 999,999.
+    if (amount > 999999) {
+      return new Response(JSON.stringify({ error: "El monto máximo por recarga es 999,999 MXN" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
     logStep("Amount received", { amount });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
@@ -66,7 +90,7 @@ serve(async (req) => {
               name: "Recarga de Wallet",
               description: `Recarga de $${amount} MXN a tu wallet de Dr Double Check`,
             },
-            unit_amount: amount * 100, // Stripe uses cents
+             unit_amount: Math.round(amount * 100), // Stripe uses cents
           },
           quantity: 1,
         },

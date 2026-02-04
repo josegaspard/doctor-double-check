@@ -13,6 +13,10 @@ import { Wallet as WalletIcon, Plus, CreditCard, Loader2, ExternalLink } from 'l
 import { TransactionHistory } from '@/components/wallet/TransactionHistory';
 
 const TOPUP_AMOUNTS = [100, 250, 500, 1000];
+const MIN_TOPUP_AMOUNT = 50;
+// Stripe Checkout limita el total a 999,999.99 en la moneda.
+// Usamos entero MXN para recargas.
+const MAX_TOPUP_AMOUNT = 999999;
 
 export default function Wallet() {
   const navigate = useNavigate();
@@ -53,11 +57,20 @@ export default function Wallet() {
   }
 
   const handleStripeCheckout = async () => {
-    const amount = selectedAmount || parseInt(customAmount);
-    if (!amount || amount < 50) {
+    const amount = selectedAmount ?? Number.parseInt(customAmount, 10);
+    if (!Number.isFinite(amount) || amount < MIN_TOPUP_AMOUNT) {
       toast({
         title: t('wallet.invalidAmount'),
         description: t('wallet.minAmount'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (amount > MAX_TOPUP_AMOUNT) {
+      toast({
+        title: t('wallet.invalidAmount'),
+        description: `El monto máximo por recarga es $${MAX_TOPUP_AMOUNT.toLocaleString()} MXN`,
         variant: 'destructive',
       });
       return;
@@ -139,7 +152,8 @@ export default function Wallet() {
                   value={customAmount}
                   onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
                   className="pl-7 h-10"
-                  min={50}
+                  min={MIN_TOPUP_AMOUNT}
+                  max={MAX_TOPUP_AMOUNT}
                 />
               </div>
 
