@@ -27,10 +27,31 @@ serve(async (req) => {
   }
 
   try {
-    const { cedula, userId } = await req.json();
+    // AUTHENTICATE USER FIRST - Fix for security vulnerability
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("No authorization header");
+    }
 
-    if (!cedula || !userId) {
-      throw new Error("Cédula y userId son requeridos");
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    
+    if (userError || !userData.user) {
+      throw new Error("Usuario no autenticado");
+    }
+
+    // USE AUTHENTICATED USER ID - DO NOT ACCEPT FROM CLIENT
+    const userId = userData.user.id;
+    const { cedula } = await req.json();
+
+    if (!cedula) {
+      throw new Error("Cédula es requerida");
     }
 
     // Validate cedula format (7-8 digits)
@@ -78,14 +99,14 @@ serve(async (req) => {
 
     const matchedData = apiData.data;
 
-    // Initialize Supabase client
-    const supabaseClient = createClient(
+    // Initialize Supabase admin client for database operations
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     // Check if cedula is already claimed by someone else
-    const { data: existingClaim } = await supabaseClient
+    const { data: existingClaim } = await supabaseAdmin
       .from("cedula_verifications")
       .select("*")
       .eq("cedula_number", cedula)
@@ -120,7 +141,7 @@ serve(async (req) => {
     };
 
     // Check if user already has a verification for this cedula
-    const { data: existingVerification } = await supabaseClient
+    const { data: existingVerification } = await supabaseAdmin
       .from("cedula_verifications")
       .select("id")
       .eq("user_id", userId)
@@ -131,7 +152,7 @@ serve(async (req) => {
 
     if (existingVerification) {
       // Update existing
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabaseAdmin
         .from("cedula_verifications")
         .update(verificationData)
         .eq("id", existingVerification.id)
@@ -142,7 +163,7 @@ serve(async (req) => {
       verificationId = data.id;
     } else {
       // Insert new
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabaseAdmin
         .from("cedula_verifications")
         .insert(verificationData)
         .select()

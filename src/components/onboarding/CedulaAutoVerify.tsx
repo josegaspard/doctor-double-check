@@ -62,8 +62,9 @@ export function CedulaAutoVerify({
     setVerificationResult(null);
 
     try {
+      // userId is now extracted from auth token on server side - do not send from client
       const { data, error } = await supabase.functions.invoke('verify-cedula-sep', {
-        body: { cedula: cedula.trim(), userId }
+        body: { cedula: cedula.trim() }
       });
 
       if (error) throw error;
