@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVault } from '@/contexts/VaultContext';
 import MainLayout from '@/components/layout/MainLayout';
+import { VaultFilePreviewModal } from '@/components/vault/VaultFilePreviewModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,8 @@ export default function DoctorVault() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { getAccessibleFiles } = useVault();
+  const [selectedFile, setSelectedFile] = useState<VaultFile | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   if (role !== 'doctor') {
     navigate('/lives');
@@ -41,12 +44,17 @@ export default function DoctorVault() {
     return <FileText className="w-5 h-5 text-primary" />;
   };
 
+  const handleViewFile = (file: VaultFile) => {
+    setSelectedFile(file);
+    setIsPreviewOpen(true);
+  };
+
   // Group files by patient
   const filesByPatient: Record<string, { patientName: string; files: VaultFile[] }> = {};
   accessibleFiles.forEach(file => {
     if (!filesByPatient[file.patientId]) {
       filesByPatient[file.patientId] = {
-        patientName: `Paciente ${file.patientId.slice(-3)}`,
+        patientName: file.patientName || `Paciente ${file.patientId.slice(-3)}`,
         files: [],
       };
     }
@@ -100,7 +108,11 @@ export default function DoctorVault() {
                 <CardContent>
                   <div className="space-y-2">
                     {files.map(file => (
-                      <div key={file.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <div 
+                        key={file.id} 
+                        className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors"
+                        onClick={() => handleViewFile(file)}
+                      >
                         <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center">
                           {getIcon(file.type)}
                         </div>
@@ -117,7 +129,15 @@ export default function DoctorVault() {
                             <Calendar className="w-3 h-3" />
                             {new Date(file.uploadedAt).toLocaleDateString('es-MX')}
                           </span>
-                          <Button variant="ghost" size="icon" title="Ver archivo">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title="Ver archivo"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewFile(file);
+                            }}
+                          >
                             <Eye className="w-4 h-4" />
                           </Button>
                         </div>
@@ -141,6 +161,16 @@ export default function DoctorVault() {
           </Card>
         )}
       </div>
+
+      {/* File Preview Modal */}
+      <VaultFilePreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setSelectedFile(null);
+        }}
+        file={selectedFile}
+      />
     </MainLayout>
   );
 }
