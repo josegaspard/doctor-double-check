@@ -3,43 +3,28 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useChat, ChatSession } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChatFileUpload } from '@/components/chat/ChatFileUpload';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { ChatSessionItem } from '@/components/chat/ChatSessionItem';
+import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
+import { ChatHeader } from '@/components/chat/ChatHeader';
+import { EmptyState } from '@/components/chat/EmptyState';
 import { 
   MessageSquare, 
   Send, 
-  User, 
-  Stethoscope, 
-  FileText, 
-  Image, 
   History,
-  CheckCheck,
   Lock,
-  Clock,
-  XCircle,
   Loader2
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { es, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 export default function Chat() {
@@ -48,6 +33,7 @@ export default function Chat() {
   const { getSessionsByUser, getSessionMessages, sendMessage, markAsRead, loadMessages, closeSession, createSession, refreshSessions } = useChat();
   const { user, role } = useAuth();
   const { t, language } = useLanguage();
+  const isMobile = useIsMobile();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -56,7 +42,6 @@ export default function Chat() {
   const [isClosingSession, setIsClosingSession] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const dateLocale = language === 'es' ? es : enUS;
   const [isCreatingSession, setIsCreatingSession] = useState(false);
 
   const allSessions = getSessionsByUser();
@@ -75,14 +60,7 @@ export default function Chat() {
     e.preventDefault();
     const doctorId = getDoctorIdForSession(session);
     if (!doctorId) return;
-    
-    // Store current scroll position before navigating
-    const scrollY = window.scrollY;
-    
-    // Navigate and ensure scroll to top
     navigate(`/doctor/${doctorId}`);
-    
-    // Force scroll to top after navigation
     requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: 'instant' });
     });
@@ -94,18 +72,12 @@ export default function Chat() {
     const doctorId = searchParams.get('doctor');
     
     if (consultationStatus === 'success' && doctorId && user?.id && role === 'patient' && !isCreatingSession) {
-      // Clear search params immediately
       setSearchParams({});
-      
       setIsCreatingSession(true);
       
-      // Auto-create chat session after successful payment
       const initSession = async () => {
         try {
-          // Refresh sessions first to get latest entitlements
           await refreshSessions();
-          
-          // Check if session already exists
           const existingSession = allSessions.find(s => 
             (s.participant1Id === doctorId || s.participant2Id === doctorId) && 
             s.status === 'active'
@@ -115,11 +87,9 @@ export default function Chat() {
             setSelectedSession(existingSession.id);
             toast.success('Consulta lista - puedes comenzar a chatear');
           } else {
-            // Create new session
             const result = await createSession(doctorId, 'doctor', false);
             
             if (result.success && result.session) {
-              // Notify doctor
               try {
                 await supabase.functions.invoke('notify-new-chat', {
                   body: {
@@ -151,16 +121,10 @@ export default function Chat() {
     }
   }, [searchParams, user?.id, role]);
 
-  // Get the selected session data
   const selectedSessionData = allSessions.find(s => s.id === selectedSession);
   const isSessionClosed = selectedSessionData?.status === 'closed';
 
-  // Get the other participant's name for the selected session
-  const otherUserName = selectedSessionData 
-    ? (role === 'patient' ? selectedSessionData.participant2Name : selectedSessionData.participant1Name)
-    : null;
-
-  // Subscribe to typing indicators via Supabase Realtime
+  // Subscribe to typing indicators
   useEffect(() => {
     if (!selectedSession || !user?.id || isSessionClosed) return;
 
@@ -168,7 +132,6 @@ export default function Chat() {
       .on('broadcast', { event: 'typing' }, (payload) => {
         if (payload.payload.userId !== user.id) {
           setOtherUserTyping(payload.payload.userName);
-          // Clear after 3 seconds
           setTimeout(() => setOtherUserTyping(null), 3000);
         }
       })
@@ -179,10 +142,8 @@ export default function Chat() {
     };
   }, [selectedSession, user?.id, isSessionClosed]);
 
-  // Broadcast typing status
   const broadcastTyping = useCallback(() => {
     if (!selectedSession || !user || isSessionClosed) return;
-
     supabase.channel(`typing:${selectedSession}`)
       .send({
         type: 'broadcast',
@@ -191,7 +152,6 @@ export default function Chat() {
       });
   }, [selectedSession, user, isSessionClosed]);
 
-  // Handle input change with typing indicator
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
     
@@ -200,12 +160,10 @@ export default function Chat() {
       broadcastTyping();
     }
 
-    // Clear previous timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Set new timeout to stop typing
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
     }, 2000);
@@ -218,12 +176,6 @@ export default function Chat() {
     }
   }, [selectedSession, loadMessages, markAsRead]);
 
-  // REMOVED: Auto-scroll to bottom - user should control their own scroll
-  // useEffect(() => {
-  //   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  // }, [messages]);
-
-  // Reset selected session when changing tabs
   useEffect(() => {
     setSelectedSession(null);
   }, [activeTab]);
@@ -235,7 +187,6 @@ export default function Chat() {
     setIsTyping(false);
   };
 
-  // Handle closing session
   const handleCloseSession = async () => {
     if (!selectedSession) return;
     
@@ -252,7 +203,6 @@ export default function Chat() {
     }
   };
 
-  // Handle file upload - send as a message with file info
   const handleFileUploaded = async (fileUrl: string, fileName: string, fileType: string) => {
     if (!selectedSession || isSessionClosed) return;
     
@@ -263,10 +213,8 @@ export default function Chat() {
     await sendMessage(selectedSession, fileMessage);
   };
 
-  // Get display info for session
   const getSessionDisplayInfo = (session: ChatSession) => {
     if (role === 'patient') {
-      // Patient sees doctor info
       return {
         name: session.participant2Name || 'Médico',
         specialty: session.participant2Specialty,
@@ -274,7 +222,6 @@ export default function Chat() {
         type: session.participant2Type,
       };
     }
-    // Doctor sees patient info
     return {
       name: session.participant1Name || 'Paciente',
       specialty: session.participant1Specialty,
@@ -283,12 +230,6 @@ export default function Chat() {
     };
   };
 
-  // Get display name for session (backwards compatible)
-  const getSessionDisplayName = (session: ChatSession) => {
-    return getSessionDisplayInfo(session).name;
-  };
-
-  // Format office hours for display
   const formatOfficeHours = (session: ChatSession) => {
     if (!session.officeHoursStart || !session.officeHoursEnd) return null;
     
@@ -296,30 +237,22 @@ export default function Chat() {
     const endHour = session.officeHoursEnd.slice(0, 5);
     
     const dayNames: Record<string, string> = {
-      monday: 'Lun',
-      tuesday: 'Mar',
-      wednesday: 'Mié',
-      thursday: 'Jue',
-      friday: 'Vie',
-      saturday: 'Sáb',
-      sunday: 'Dom',
+      monday: 'Lun', tuesday: 'Mar', wednesday: 'Mié',
+      thursday: 'Jue', friday: 'Vie', saturday: 'Sáb', sunday: 'Dom',
     };
     
     const days = session.officeDays?.map(d => dayNames[d] || d).join(', ') || 'Lun-Vie';
-    
     return `${startHour} - ${endHour} | ${days}`;
   };
 
-  // Check if currently within office hours
   const isWithinOfficeHours = (session: ChatSession) => {
-    if (!session.officeHoursStart || !session.officeHoursEnd) return true; // Assume available if no hours set
+    if (!session.officeHoursStart || !session.officeHoursEnd) return true;
     
     const now = new Date();
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     const currentDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
     
-    // Check if today is a work day
     if (session.officeDays && !session.officeDays.includes(currentDay)) {
       return false;
     }
@@ -337,156 +270,7 @@ export default function Chat() {
     return currentTime >= startTime && currentTime <= endTime;
   };
 
-  // Render message content (with file support)
-  const renderMessageContent = (content: string) => {
-    // Check if it's a file message
-    const imageMatch = content.match(/📷 \[Imagen: (.+?)\]\n(https?:\/\/.+)/);
-    const fileMatch = content.match(/📎 \[Archivo: (.+?)\]\n(https?:\/\/.+)/);
-
-    if (imageMatch) {
-      const [, fileName, url] = imageMatch;
-      return (
-        <div className="space-y-2">
-          <img 
-            src={url} 
-            alt={fileName} 
-            className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => window.open(url, '_blank')}
-          />
-          <p className="text-xs opacity-70 flex items-center gap-1">
-            <Image className="w-3 h-3" />
-            {fileName}
-          </p>
-        </div>
-      );
-    }
-
-    if (fileMatch) {
-      const [, fileName, url] = fileMatch;
-      return (
-        <a 
-          href={url} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 p-2 bg-background/20 rounded-lg hover:bg-background/30 transition-colors"
-        >
-          <FileText className="w-5 h-5" />
-          <span className="text-sm underline">{fileName}</span>
-        </a>
-      );
-    }
-
-    return <p className="text-sm whitespace-pre-wrap">{content}</p>;
-  };
-
-  // Render session item
-  const renderSessionItem = (session: ChatSession) => {
-    const isClosed = session.status === 'closed';
-    const displayInfo = getSessionDisplayInfo(session);
-    const officeHours = formatOfficeHours(session);
-    const isAvailable = isWithinOfficeHours(session);
-    const canOpenDoctorProfile = role === 'patient' && getDoctorIdForSession(session) !== null;
-    
-    return (
-      <div
-        key={session.id}
-        onClick={() => setSelectedSession(session.id)}
-        className={`p-3 rounded-lg cursor-pointer mb-2 transition-colors ${
-          selectedSession === session.id 
-            ? 'bg-accent' 
-            : isClosed 
-              ? 'hover:bg-muted/50 opacity-75' 
-              : 'hover:bg-muted'
-        }`}
-      >
-        <div className="flex items-start gap-2">
-          {/* Avatar */}
-          {displayInfo.avatar ? (
-            <img 
-              src={displayInfo.avatar} 
-              alt={displayInfo.name}
-              className={`w-10 h-10 rounded-full object-cover ${isClosed ? 'opacity-75' : ''}`}
-            />
-          ) : (
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              isClosed ? 'bg-muted' : 'bg-primary/10'
-            }`}>
-              {displayInfo.type === 'doctor' || displayInfo.type === 'resident'
-                ? <Stethoscope className={`w-5 h-5 ${isClosed ? 'text-muted-foreground' : 'text-primary'}`} /> 
-                : <User className={`w-5 h-5 ${isClosed ? 'text-muted-foreground' : 'text-primary'}`} />
-              }
-            </div>
-          )}
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1">
-              {canOpenDoctorProfile ? (
-                <button
-                  type="button"
-                  onClick={(e) => goToDoctorProfile(e, session)}
-                  className="font-medium text-sm truncate text-left hover:underline focus:outline-none"
-                  title="Ver perfil del doctor"
-                >
-                  {displayInfo.name}
-                </button>
-              ) : (
-                <p className="font-medium text-sm truncate">{displayInfo.name}</p>
-              )}
-              {session.isDoubleCheck && (
-                <Badge variant="outline" className="text-[10px] px-1">
-                  <CheckCheck className="w-3 h-3 mr-0.5" />
-                  2nd
-                </Badge>
-              )}
-            </div>
-            
-            {/* Specialty */}
-            {displayInfo.specialty && (
-              canOpenDoctorProfile ? (
-                <button
-                  type="button"
-                  onClick={(e) => goToDoctorProfile(e, session)}
-                  className="text-xs text-primary truncate text-left hover:underline focus:outline-none"
-                  title="Ver perfil del doctor"
-                >
-                  {displayInfo.specialty}
-                </button>
-              ) : (
-                <p className="text-xs text-primary truncate">{displayInfo.specialty}</p>
-              )
-            )}
-            
-            {/* Last message preview */}
-            <p className="text-xs text-muted-foreground truncate mt-0.5">{session.lastMessage || 'Sin mensajes'}</p>
-            
-            {/* Office hours or closed date */}
-            {isClosed && session.lastMessageAt ? (
-              <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                <Clock className="w-3 h-3" />
-                Cerrada {format(session.lastMessageAt, 'dd MMM yyyy', { locale: es })}
-              </p>
-            ) : officeHours && role === 'patient' ? (
-              <p className={`text-[10px] flex items-center gap-1 mt-0.5 ${isAvailable ? 'text-success' : 'text-warning'}`}>
-                <Clock className="w-3 h-3" />
-                {officeHours}
-                {!isAvailable && ' (Fuera de horario)'}
-              </p>
-            ) : null}
-          </div>
-          
-          {/* Unread badge or lock icon */}
-          <div className="flex flex-col items-end gap-1">
-            {!isClosed && session.unreadCount > 0 && (
-              <Badge variant="destructive" className="text-xs">{session.unreadCount}</Badge>
-            )}
-            {isClosed && <Lock className="w-3 h-3 text-muted-foreground" />}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Show loading while auth is initializing
+  // Show loading
   if (role === undefined || role === null) {
     return (
       <MainLayout>
@@ -500,7 +284,7 @@ export default function Chat() {
     );
   }
 
-  // Block unauthorized roles (visitors, residents for patient chat)
+  // Block unauthorized
   if (role !== 'patient' && role !== 'doctor') {
     return (
       <MainLayout>
@@ -509,9 +293,7 @@ export default function Chat() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
               <MessageSquare className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h2 className="font-heading text-xl font-bold text-foreground mb-2">
-              Chat 1:1
-            </h2>
+            <h2 className="font-heading text-xl font-bold text-foreground mb-2">Chat 1:1</h2>
             <p className="text-muted-foreground mb-6">
               {role === 'visitor' 
                 ? 'Inicia sesión para acceder al chat con médicos.'
@@ -526,8 +308,7 @@ export default function Chat() {
     );
   }
 
-  // Check entitlement for patients
-  // Allow access if: user is doctor, has chat entitlement, has active sessions, or just paid
+  // Check entitlement
   const hasEntitlement = role === 'doctor' || 
     user?.entitlements?.some(e => e.type === 'chat' && e.isActive) ||
     activeSessions.length > 0 ||
@@ -541,19 +322,13 @@ export default function Chat() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-premium/10 flex items-center justify-center">
               <MessageSquare className="w-8 h-8 text-premium" />
             </div>
-            <h2 className="font-heading text-xl font-bold text-foreground mb-2">
-              Activa el Chat 1:1
-            </h2>
+            <h2 className="font-heading text-xl font-bold text-foreground mb-2">Activa el Chat 1:1</h2>
             <p className="text-muted-foreground mb-6">
               El chat con médicos es un servicio premium. Adquiere el servicio para comunicarte directamente con profesionales de la salud.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button onClick={() => navigate('/wallet')}>
-                Ver Opciones
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/lives')}>
-                Ir a Lives
-              </Button>
+              <Button onClick={() => navigate('/wallet')}>Ver Opciones</Button>
+              <Button variant="outline" onClick={() => navigate('/lives')}>Ir a Lives</Button>
             </div>
           </Card>
         </div>
@@ -561,34 +336,53 @@ export default function Chat() {
     );
   }
 
+  // Mobile: show only list or chat
+  const showMobileChat = isMobile && selectedSession;
+  const showMobileList = isMobile && !selectedSession;
+
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-4 sm:py-6 max-w-5xl flex flex-col h-[calc(100vh-theme(spacing.14)-theme(spacing.32))] sm:h-[calc(100vh-theme(spacing.14)-theme(spacing.40))]">
-        <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6 flex items-center gap-2 flex-shrink-0">
-          <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-          Chat 1:1
-        </h1>
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-6xl flex flex-col h-[calc(100vh-theme(spacing.14)-theme(spacing.20))] sm:h-[calc(100vh-theme(spacing.14)-theme(spacing.24))]">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0 px-2 sm:px-0">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+              <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+            </div>
+            <span>Chat 1:1</span>
+          </h1>
+          
+          {/* Stats */}
+          <div className="flex items-center gap-2">
+            {activeSessions.length > 0 && (
+              <Badge variant="secondary" className="gap-1">
+                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                {activeSessions.length} activa{activeSessions.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
+        </div>
 
-        <div className="grid md:grid-cols-3 gap-3 sm:gap-4 flex-1 min-h-0 overflow-hidden">
-          {/* Sessions List with Tabs */}
-          <Card className="md:col-span-1 flex flex-col min-h-0 max-h-full overflow-hidden">
-            <CardHeader className="pb-2 flex-shrink-0">
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'active' | 'history')}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="active" className="flex-1 gap-1 text-xs sm:text-sm">
-                    <MessageSquare className="w-3 h-3" />
-                    <span className="hidden xs:inline">Activas</span>
+        <div className="grid md:grid-cols-[340px,1fr] gap-3 sm:gap-4 flex-1 min-h-0 overflow-hidden">
+          {/* Sessions List */}
+          <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg ${showMobileChat ? 'hidden md:flex' : 'flex'}`}>
+            <CardHeader className="pb-3 pt-4 px-3 flex-shrink-0 space-y-3">
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'active' | 'history')} className="w-full">
+                <TabsList className="w-full grid grid-cols-2 h-11">
+                  <TabsTrigger value="active" className="gap-1.5 data-[state=active]:shadow-sm">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Activas</span>
                     {activeSessions.length > 0 && (
-                      <Badge variant="secondary" className="text-[10px] sm:text-xs ml-1">
+                      <Badge className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">
                         {activeSessions.length}
                       </Badge>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="history" className="flex-1 gap-1 text-xs sm:text-sm">
-                    <History className="w-3 h-3" />
-                    <span className="hidden xs:inline">Historial</span>
+                  <TabsTrigger value="history" className="gap-1.5 data-[state=active]:shadow-sm">
+                    <History className="w-4 h-4" />
+                    <span>Historial</span>
                     {closedSessions.length > 0 && (
-                      <Badge variant="outline" className="text-[10px] sm:text-xs ml-1">
+                      <Badge variant="outline" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">
                         {closedSessions.length}
                       </Badge>
                     )}
@@ -596,193 +390,98 @@ export default function Chat() {
                 </TabsList>
               </Tabs>
             </CardHeader>
+            
             <CardContent className="p-2 flex-1 min-h-0 overflow-hidden">
               <ScrollArea className="h-full">
-                {activeTab === 'active' ? (
-                  activeSessions.length > 0 ? (
-                    activeSessions.map(session => renderSessionItem(session))
+                <div className="space-y-1 pr-2">
+                  {activeTab === 'active' ? (
+                    activeSessions.length > 0 ? (
+                      activeSessions.map(session => {
+                        const displayInfo = getSessionDisplayInfo(session);
+                        const officeHours = formatOfficeHours(session);
+                        const isAvailable = isWithinOfficeHours(session);
+                        const canOpenDoctorProfile = role === 'patient' && getDoctorIdForSession(session) !== null;
+                        
+                        return (
+                          <ChatSessionItem
+                            key={session.id}
+                            session={session}
+                            isSelected={selectedSession === session.id}
+                            displayInfo={displayInfo}
+                            officeHours={officeHours}
+                            isAvailable={isAvailable}
+                            canOpenDoctorProfile={canOpenDoctorProfile}
+                            userRole={role}
+                            onClick={() => setSelectedSession(session.id)}
+                            onDoctorProfileClick={(e) => goToDoctorProfile(e, session)}
+                          />
+                        );
+                      })
+                    ) : (
+                      <EmptyState type="no-sessions" activeTab="active" />
+                    )
                   ) : (
-                    <div className="text-center py-6 sm:py-8">
-                      <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground text-xs sm:text-sm">No hay conversaciones activas</p>
-                    </div>
-                  )
-                ) : (
-                  closedSessions.length > 0 ? (
-                    closedSessions.map(session => renderSessionItem(session))
-                  ) : (
-                    <div className="text-center py-6 sm:py-8">
-                      <History className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground text-xs sm:text-sm">No hay consultas anteriores</p>
-                    </div>
-                  )
-                )}
+                    closedSessions.length > 0 ? (
+                      closedSessions.map(session => {
+                        const displayInfo = getSessionDisplayInfo(session);
+                        const officeHours = formatOfficeHours(session);
+                        const isAvailable = isWithinOfficeHours(session);
+                        const canOpenDoctorProfile = role === 'patient' && getDoctorIdForSession(session) !== null;
+                        
+                        return (
+                          <ChatSessionItem
+                            key={session.id}
+                            session={session}
+                            isSelected={selectedSession === session.id}
+                            displayInfo={displayInfo}
+                            officeHours={officeHours}
+                            isAvailable={isAvailable}
+                            canOpenDoctorProfile={canOpenDoctorProfile}
+                            userRole={role}
+                            onClick={() => setSelectedSession(session.id)}
+                            onDoctorProfileClick={(e) => goToDoctorProfile(e, session)}
+                          />
+                        );
+                      })
+                    ) : (
+                      <EmptyState type="no-sessions" activeTab="history" />
+                    )
+                  )}
+                </div>
               </ScrollArea>
             </CardContent>
           </Card>
 
-          {/* Messages */}
-          <Card className="md:col-span-2 flex flex-col min-h-0 max-h-full overflow-hidden">
+          {/* Messages Panel */}
+          <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg ${showMobileList ? 'hidden md:flex' : 'flex'}`}>
             {selectedSession && selectedSessionData ? (
               <>
-                <CardHeader className="pb-2 border-b flex-shrink-0">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {/* Avatar */}
-                      {(() => {
-                        const info = getSessionDisplayInfo(selectedSessionData);
-                        return info.avatar ? (
-                          <img 
-                            src={info.avatar} 
-                            alt={info.name}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            {info.type === 'doctor' || info.type === 'resident' 
-                              ? <Stethoscope className="w-5 h-5 text-primary" />
-                              : <User className="w-5 h-5 text-primary" />
-                            }
-                          </div>
-                        );
-                      })()}
-                      
-                      <div>
-                        <div className="flex items-center gap-2">
-                          {role === 'patient' && getDoctorIdForSession(selectedSessionData) ? (
-                            <button
-                              type="button"
-                              onClick={(e) => goToDoctorProfile(e, selectedSessionData)}
-                              className="text-sm font-semibold text-left hover:underline focus:outline-none"
-                              title="Ver perfil del doctor"
-                            >
-                              {getSessionDisplayName(selectedSessionData)}
-                            </button>
-                          ) : (
-                            <CardTitle className="text-sm">
-                              {getSessionDisplayName(selectedSessionData)}
-                            </CardTitle>
-                          )}
-                          {selectedSessionData.isDoubleCheck && (
-                            <Badge variant="outline" className="text-xs">
-                              <CheckCheck className="w-3 h-3 mr-1" />
-                              2nd
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        {/* Specialty and office hours */}
-                        {(() => {
-                          const info = getSessionDisplayInfo(selectedSessionData);
-                          const officeHours = formatOfficeHours(selectedSessionData);
-                          const isAvailable = isWithinOfficeHours(selectedSessionData);
-                          
-                          return (
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              {info.specialty && (
-                                role === 'patient' && getDoctorIdForSession(selectedSessionData) ? (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => goToDoctorProfile(e, selectedSessionData)}
-                                    className="text-primary hover:underline focus:outline-none"
-                                    title="Ver perfil del doctor"
-                                  >
-                                    {info.specialty}
-                                  </button>
-                                ) : (
-                                  <span className="text-primary">{info.specialty}</span>
-                                )
-                              )}
-                              {officeHours && role === 'patient' && (
-                                <>
-                                  <span>•</span>
-                                  <span className={isAvailable ? 'text-success' : 'text-warning'}>
-                                    <Clock className="w-3 h-3 inline mr-1" />
-                                    {isAvailable ? 'Disponible' : 'Fuera de horario'}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isSessionClosed ? (
-                        <Badge variant="secondary" className="gap-1">
-                          <Lock className="w-3 h-3" />
-                          Consulta cerrada
-                        </Badge>
-                      ) : (
-                        role === 'doctor' && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="gap-1 text-destructive hover:text-destructive">
-                                <XCircle className="w-4 h-4" />
-                                Cerrar consulta
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>¿Cerrar esta consulta?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Al cerrar la consulta, el paciente ya no podrá enviar más mensajes. 
-                                  El historial de la conversación se mantendrá disponible para ambas partes.
-                                  Esta acción no se puede deshacer.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={handleCloseSession}
-                                  disabled={isClosingSession}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  {isClosingSession ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                      Cerrando...
-                                    </>
-                                  ) : (
-                                    'Sí, cerrar consulta'
-                                  )}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )
-                      )}
-                    </div>
-                  </div>
-                  {isSessionClosed && selectedSessionData.createdAt && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Consulta del {format(selectedSessionData.createdAt, 'dd MMMM yyyy', { locale: es })}
-                    </p>
-                  )}
-                </CardHeader>
-                <CardContent className="flex-1 p-0 flex flex-col min-h-0 overflow-hidden">
-                  <ScrollArea className="flex-1 min-h-0 p-3 sm:p-4">
-                    <div className="space-y-2 sm:space-y-3">
+                <ChatHeader
+                  session={selectedSessionData}
+                  displayInfo={getSessionDisplayInfo(selectedSessionData)}
+                  officeHours={formatOfficeHours(selectedSessionData)}
+                  isAvailable={isWithinOfficeHours(selectedSessionData)}
+                  isClosed={isSessionClosed || false}
+                  isClosing={isClosingSession}
+                  userRole={role}
+                  canOpenDoctorProfile={role === 'patient' && getDoctorIdForSession(selectedSessionData) !== null}
+                  onDoctorProfileClick={(e) => goToDoctorProfile(e, selectedSessionData)}
+                  onCloseSession={handleCloseSession}
+                  onBack={isMobile ? () => setSelectedSession(null) : undefined}
+                />
+                
+                <CardContent className="flex-1 p-0 flex flex-col min-h-0 overflow-hidden bg-gradient-to-b from-muted/20 to-background">
+                  <ScrollArea className="flex-1 min-h-0 px-3 sm:px-4 py-4">
+                    <div className="space-y-3">
                       {messages.map(msg => (
-                        <div key={msg.id} className={`flex ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[85%] sm:max-w-[70%] p-2 sm:p-3 rounded-lg ${
-                            msg.senderId === user?.id 
-                              ? isSessionClosed 
-                                ? 'bg-primary/70 text-primary-foreground' 
-                                : 'bg-primary text-primary-foreground' 
-                              : isSessionClosed 
-                                ? 'bg-muted/70' 
-                                : 'bg-muted'
-                          }`}>
-                            {renderMessageContent(msg.content)}
-                            <p className={`text-xs mt-1 ${msg.senderId === user?.id ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                              {format(msg.createdAt, 'dd MMM, HH:mm', { locale: es })}
-                            </p>
-                          </div>
-                        </div>
+                        <ChatMessageBubble
+                          key={msg.id}
+                          message={msg}
+                          isOwn={msg.senderId === user?.id}
+                          isSessionClosed={isSessionClosed || false}
+                        />
                       ))}
                       
-                      {/* Typing Indicator */}
                       {otherUserTyping && !isSessionClosed && (
                         <div className="flex justify-start">
                           <TypingIndicator userName={otherUserTyping} />
@@ -793,16 +492,16 @@ export default function Chat() {
                     </div>
                   </ScrollArea>
                   
-                  {/* Input area with file upload - only for active sessions */}
+                  {/* Input area */}
                   {isSessionClosed ? (
-                    <div className="p-3 sm:p-4 border-t bg-muted/30 flex-shrink-0">
+                    <div className="p-4 border-t bg-muted/30 flex-shrink-0">
                       <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                        <Lock className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <p className="text-xs sm:text-sm text-center">Esta consulta ha sido cerrada. Solo puedes ver el historial.</p>
+                        <Lock className="w-4 h-4" />
+                        <p className="text-sm">Esta consulta ha sido cerrada</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="p-2 sm:p-4 border-t flex-shrink-0">
+                    <div className="p-3 sm:p-4 border-t bg-card flex-shrink-0">
                       <div className="flex gap-2 items-center">
                         <ChatFileUpload 
                           sessionId={selectedSession} 
@@ -813,9 +512,14 @@ export default function Chat() {
                           value={newMessage}
                           onChange={handleInputChange}
                           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                          className="flex-1 text-sm"
+                          className="flex-1 h-11 bg-muted/50 border-0 focus-visible:ring-1"
                         />
-                        <Button onClick={handleSend} size="icon" disabled={!newMessage.trim()} className="flex-shrink-0">
+                        <Button 
+                          onClick={handleSend} 
+                          size="icon" 
+                          disabled={!newMessage.trim()} 
+                          className="h-11 w-11 rounded-xl flex-shrink-0"
+                        >
                           <Send className="w-4 h-4" />
                         </Button>
                       </div>
@@ -824,19 +528,7 @@ export default function Chat() {
                 </CardContent>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-4 sm:p-8">
-                {activeTab === 'active' ? (
-                  <>
-                    <MessageSquare className="w-8 h-8 sm:w-12 sm:h-12 mb-3 opacity-50" />
-                    <p className="text-center text-sm sm:text-base">Selecciona una conversación para comenzar</p>
-                  </>
-                ) : (
-                  <>
-                    <History className="w-8 h-8 sm:w-12 sm:h-12 mb-3 opacity-50" />
-                    <p className="text-center text-sm sm:text-base">Selecciona una consulta anterior para ver el historial</p>
-                  </>
-                )}
-              </div>
+              <EmptyState type="no-selection" activeTab={activeTab} />
             )}
           </Card>
         </div>
