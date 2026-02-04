@@ -195,19 +195,19 @@ export default function LivePlayer() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-4 max-w-6xl">
+      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 max-w-6xl">
         {/* Back button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate('/lives')}
-          className="mb-4"
+          className="mb-3 sm:mb-4 h-8 text-xs sm:text-sm"
         >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+          <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
           Volver a Lives
         </Button>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Video Player */}
           <div className="lg:col-span-2 space-y-4">
             {/* Player Container */}
@@ -267,19 +267,19 @@ export default function LivePlayer() {
 
             {/* Video Info */}
             <div>
-              <h1 className="font-heading text-xl md:text-2xl font-bold text-foreground mb-3">
+              <h1 className="font-heading text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-2 sm:mb-3">
                 {live.title}
               </h1>
               
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {live.tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
+                  <Badge key={tag} variant="outline" className="text-xs">
                     {tag}
                   </Badge>
                 ))}
               </div>
               
-              <Separator className="my-4" />
+              <Separator className="my-3 sm:my-4" />
               
               {/* Actions */}
               <div className="flex flex-wrap gap-2">
@@ -288,40 +288,40 @@ export default function LivePlayer() {
                   size="sm"
                   onClick={handleLike}
                   disabled={role === 'visitor' || isLiking}
-                  className="gap-2"
+                  className="gap-1 sm:gap-2 h-8 text-xs sm:text-sm"
                 >
-                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                  {realtimeLikesCount || live.likesCount} Me gusta
+                  <Heart className={`w-3 h-3 sm:w-4 sm:h-4 ${isLiked ? 'fill-current' : ''}`} />
+                  <span className="hidden xs:inline">{realtimeLikesCount || live.likesCount}</span> Me gusta
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Share2 className="w-4 h-4" />
-                  Compartir
+                <Button variant="outline" size="sm" className="gap-1 sm:gap-2 h-8 text-xs sm:text-sm">
+                  <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Compartir</span>
                 </Button>
                 {role !== 'visitor' && (
                   <Button 
                     variant={showChat ? "default" : "outline"} 
                     size="sm" 
-                    className="gap-2"
+                    className="gap-1 sm:gap-2 h-8 text-xs sm:text-sm lg:hidden"
                     onClick={() => setShowChat(!showChat)}
                   >
-                    <MessageSquare className="w-4 h-4" />
+                    <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />
                     Chat
                   </Button>
                 )}
               </div>
               
-              <Separator className="my-4" />
+              <Separator className="my-3 sm:my-4" />
               
               {/* Description */}
-              <p className="text-muted-foreground">{live.description}</p>
+              <p className="text-muted-foreground text-sm">{live.description}</p>
             </div>
           </div>
 
           {/* Sidebar - Doctor Info & Chat */}
-          <div className="space-y-4">
-            {/* Live Chat */}
+          <div className="space-y-3 sm:space-y-4">
+            {/* Live Chat - Always visible on desktop, toggleable on mobile */}
             {showChat && role !== 'visitor' && (
-              <div className="h-[350px]">
+              <div className="h-[280px] sm:h-[350px]">
                 <LiveChat liveId={live.id} isOwner={isOwner} />
               </div>
             )}

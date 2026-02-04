@@ -86,49 +86,45 @@ export default function Wallet() {
     }
   };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-MX', {
-      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-    }).format(date);
-  };
-
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <h1 className="font-heading text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
-          <WalletIcon className="w-6 h-6 text-primary" />
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
+        <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
+          <WalletIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
           {t('wallet.title')}
         </h1>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+          {/* Balance Card */}
           <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
-            <CardContent className="p-6">
-              <p className="text-primary-foreground/80 text-sm mb-1">{t('wallet.balance')}</p>
-              <p className="text-4xl font-bold">${balance.toLocaleString()} MXN</p>
-              <p className="text-primary-foreground/60 text-xs mt-2">{user?.name}</p>
+            <CardContent className="p-4 sm:p-6">
+              <p className="text-primary-foreground/80 text-xs sm:text-sm mb-1">{t('wallet.balance')}</p>
+              <p className="text-3xl sm:text-4xl font-bold">${balance.toLocaleString()} MXN</p>
+              <p className="text-primary-foreground/60 text-xs mt-2 truncate">{user?.name}</p>
               {role === 'resident' && (
-                <div className="mt-3 px-2 py-1 bg-white/20 rounded-full text-xs inline-block">
+                <div className="mt-2 sm:mt-3 px-2 py-1 bg-white/20 rounded-full text-xs inline-block">
                   🎓 {t('wallet.residentDiscount')}
                 </div>
               )}
             </CardContent>
           </Card>
 
+          {/* Top Up Card */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Plus className="w-5 h-5" />
+            <CardHeader className="pb-2 sm:pb-3 px-4 sm:px-6">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 {t('wallet.topUp')}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
               <div className="grid grid-cols-2 gap-2">
                 {TOPUP_AMOUNTS.map(amount => (
                   <Button
                     key={amount}
                     variant={selectedAmount === amount ? "default" : "outline"}
                     onClick={() => { setSelectedAmount(amount); setCustomAmount(''); }}
-                    className="h-12"
+                    className="h-10 sm:h-12 text-sm"
                   >
                     ${amount} MXN
                   </Button>
@@ -136,13 +132,13 @@ export default function Wallet() {
               </div>
               
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
                 <Input
                   type="number"
                   placeholder={t('wallet.otherAmount')}
                   value={customAmount}
                   onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
-                  className="pl-7"
+                  className="pl-7 h-10"
                   min={50}
                 />
               </div>
@@ -150,7 +146,7 @@ export default function Wallet() {
               <Button 
                 onClick={handleStripeCheckout} 
                 disabled={isProcessing || (!selectedAmount && !customAmount)}
-                className="w-full h-12 gap-2"
+                className="w-full h-10 sm:h-12 gap-2 text-sm"
               >
                 {isProcessing ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -171,7 +167,7 @@ export default function Wallet() {
         </div>
 
         {/* Detailed Transaction History */}
-        <div className="mt-6">
+        <div className="mt-4 sm:mt-6">
           <TransactionHistory />
         </div>
       </div>

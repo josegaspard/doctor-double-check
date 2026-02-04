@@ -184,17 +184,17 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
               {/* User Menu */}
               {isAuthenticated && user ? (
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="gap-2">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Button variant="ghost" size="sm" className="gap-1 sm:gap-2 px-2 sm:px-3">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                         {role === 'doctor' ? (
                           <Stethoscope className="w-4 h-4 text-primary" />
                         ) : (
                           <User className="w-4 h-4 text-primary" />
                         )}
                       </div>
-                      <span className="hidden sm:block text-sm">{user.name.split(' ')[0]}</span>
+                      <span className="text-xs sm:text-sm max-w-[60px] sm:max-w-none truncate">{user.name.split(' ')[0]}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">

@@ -96,12 +96,12 @@ export default function Vault() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <h1 className="font-heading text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
-          <Folder className="w-6 h-6 text-primary" />
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
+        <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
+          <Folder className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
           Mi Vault Médico
         </h1>
-        <p className="text-muted-foreground mb-6">
+        <p className="text-muted-foreground text-sm mb-4 sm:mb-6">
           Guarda tus estudios de forma segura y controla quién puede verlos
         </p>
 
@@ -126,15 +126,15 @@ export default function Vault() {
               Subir Archivo
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-3">
+          <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Input placeholder="Descripción (opcional)" value={description} onChange={e => setDescription(e.target.value)} />
+              <Input placeholder="Descripción" value={description} onChange={e => setDescription(e.target.value)} className="h-10" />
             </div>
             <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleUpload} />
             <Button onClick={() => fileInputRef.current?.click()} disabled={isLoading} className="w-full">
@@ -159,48 +159,50 @@ export default function Vault() {
           </CardHeader>
           <CardContent>
             {files.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {files.map(file => (
-                  <div key={file.id} className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
-                    <div className="w-12 h-12 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
-                      {getIcon(file.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{file.name}</p>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <span>{file.category}</span>
-                        <span>•</span>
-                        <span>{formatSize(file.size)}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(file.uploadedAt).toLocaleDateString('es-MX')}
-                        </span>
+                  <div key={file.id} className="flex flex-col sm:flex-row sm:items-start gap-3 p-3 sm:p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
+                        {getIcon(file.type)}
                       </div>
-                      
-                      <div className="flex items-center flex-wrap gap-2 mt-3">
-                        {file.permissions.length > 0 ? (
-                          file.permissions.map(perm => (
-                            <Badge key={perm.doctorId} variant="secondary" className="text-xs gap-1">
-                              <Stethoscope className="w-3 h-3" />
-                              {perm.doctorName || 'Doctor'}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{file.name}</p>
+                        <div className="flex items-center flex-wrap gap-1 sm:gap-2 mt-1 text-xs text-muted-foreground">
+                          <span>{file.category}</span>
+                          <span>•</span>
+                          <span>{formatSize(file.size)}</span>
+                          <span className="hidden sm:inline">•</span>
+                          <span className="hidden sm:flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(file.uploadedAt).toLocaleDateString('es-MX')}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center flex-wrap gap-1 sm:gap-2 mt-2 sm:mt-3">
+                          {file.permissions.length > 0 ? (
+                            file.permissions.map(perm => (
+                              <Badge key={perm.doctorId} variant="secondary" className="text-xs gap-1">
+                                <Stethoscope className="w-3 h-3" />
+                                <span className="truncate max-w-[80px]">{perm.doctorName || 'Doctor'}</span>
+                              </Badge>
+                            ))
+                          ) : (
+                            <Badge variant="secondary" className="text-xs gap-1">
+                              <Lock className="w-3 h-3" />
+                              Sin accesos
                             </Badge>
-                          ))
-                        ) : (
-                          <Badge variant="secondary" className="text-xs gap-1">
-                            <Lock className="w-3 h-3" />
-                            Sin accesos
-                          </Badge>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="flex flex-col gap-1">
-                      <Button variant="outline" size="sm" onClick={() => openPermissions(file)} className="gap-1">
+                    <div className="flex sm:flex-col gap-2 sm:gap-1 mt-2 sm:mt-0">
+                      <Button variant="outline" size="sm" onClick={() => openPermissions(file)} className="gap-1 flex-1 sm:flex-none h-8 text-xs">
                         <Share2 className="w-3 h-3" />
                         Permisos
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteFile(file.id)} className="text-destructive hover:text-destructive">
+                      <Button variant="ghost" size="sm" onClick={() => deleteFile(file.id)} className="text-destructive hover:text-destructive flex-1 sm:flex-none h-8 text-xs">
                         <Trash2 className="w-3 h-3 mr-1" />
                         Eliminar
                       </Button>

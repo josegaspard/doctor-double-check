@@ -144,21 +144,21 @@ export default function DoubleCheck() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-info flex items-center justify-center">
-            <CheckCheck className="w-6 h-6 text-white" />
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-info flex items-center justify-center flex-shrink-0">
+            <CheckCheck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+          <div className="min-w-0">
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2 flex-wrap">
               Double Check
               <Badge variant="verified" className="gap-1">
                 <CheckCheck className="w-3 h-3" />
                 Verificado
               </Badge>
             </h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-xs sm:text-sm">
               Segunda opinión médica por especialistas verificados
             </p>
           </div>
