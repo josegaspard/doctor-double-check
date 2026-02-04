@@ -107,10 +107,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         <div className="container mx-auto px-4">
           <div className="flex h-14 items-center justify-between">
             {/* Logo & Mobile Menu */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden">
+                  <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
@@ -118,6 +118,27 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <div className="flex items-center gap-2 mb-6">
                     <img src={logoMedicalMasters} alt="Medical Masters" className="h-12 w-auto" />
                   </div>
+                  
+                  {/* User Info in Mobile Menu */}
+                  {isAuthenticated && user && (
+                    <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          {role === 'doctor' ? (
+                            <Stethoscope className="w-5 h-5 text-primary" />
+                          ) : (
+                            <User className="w-5 h-5 text-primary" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{user.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2">{getRoleBadge()}</div>
+                    </div>
+                  )}
+                  
                   <nav className="flex flex-col gap-1">
                     {filteredNavItems.map((item) => (
                       <Link
@@ -133,6 +154,55 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         {t(item.labelKey)}
                       </Link>
                     ))}
+                    
+                    {/* Mobile-only menu items */}
+                    {isAuthenticated && (
+                      <>
+                        <div className="my-2 border-t border-border" />
+                        <Link
+                          to="/profile"
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                            location.pathname === '/profile'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          }`}
+                        >
+                          <User className="w-5 h-5" />
+                          {t('nav.profile')}
+                        </Link>
+                        {(role === 'patient' || role === 'resident') && (
+                          <Link
+                            to="/wallet"
+                            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                              location.pathname === '/wallet'
+                                ? 'bg-accent text-accent-foreground'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            }`}
+                          >
+                            <Wallet className="w-5 h-5" />
+                            {t('nav.wallet')} (${balance.toLocaleString()})
+                          </Link>
+                        )}
+                        <Link
+                          to="/settings"
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                            location.pathname === '/settings'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          }`}
+                        >
+                          <Settings className="w-5 h-5" />
+                          {t('nav.settings')}
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-destructive hover:bg-destructive/10 w-full text-left"
+                        >
+                          <LogOut className="w-5 h-5" />
+                          {t('nav.logout')}
+                        </button>
+                      </>
+                    )}
                   </nav>
                 </SheetContent>
               </Sheet>

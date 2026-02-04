@@ -49,13 +49,53 @@ function NotificationItem({
       onMarkAsRead();
     }
 
-    // Navigate based on notification type
-    if (notification.type === 'doctor_live' && notification.data.live_id) {
-      navigate(`/live/${notification.data.live_id}`);
-    } else if (notification.type === 'new_content' && notification.data.content_id) {
-      navigate(`/recording/${notification.data.content_id}`);
-    } else if (notification.type === 'chat_message') {
-      navigate('/chat');
+    // Navigate based on notification type and data
+    const data = notification.data || {};
+    
+    switch (notification.type) {
+      case 'doctor_live':
+        if (data.live_id || data.liveId) {
+          navigate(`/live/${data.live_id || data.liveId}`);
+        } else {
+          navigate('/lives');
+        }
+        break;
+      case 'new_content':
+        if (data.content_id || data.contentId) {
+          navigate(`/recording/${data.content_id || data.contentId}`);
+        } else {
+          navigate('/recordings');
+        }
+        break;
+      case 'chat_message':
+        if (data.session_id || data.sessionId) {
+          navigate(`/chat?session=${data.session_id || data.sessionId}`);
+        } else {
+          navigate('/chat');
+        }
+        break;
+      case 'doctor_availability':
+        if (data.doctor_id || data.doctorId) {
+          navigate(`/doctor/${data.doctor_id || data.doctorId}`);
+        } else {
+          navigate('/doctors');
+        }
+        break;
+      case 'subscription_update':
+        navigate('/settings');
+        break;
+      case 'system':
+        // System notifications - check for URL in data
+        if (data.url) {
+          navigate(data.url);
+        }
+        break;
+      default:
+        // For any other type, try to use URL from data or stay on current page
+        if (data.url) {
+          navigate(data.url);
+        }
+        break;
     }
   };
 
