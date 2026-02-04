@@ -1617,6 +1617,9 @@ export type Database = {
           followers_count: number | null
           id: string | null
           location: string | null
+          office_days: string[] | null
+          office_hours_end: string | null
+          office_hours_start: string | null
           rating: number | null
           specialty: string | null
           status: Database["public"]["Enums"]["doctor_status"] | null
@@ -1632,6 +1635,9 @@ export type Database = {
           followers_count?: number | null
           id?: string | null
           location?: string | null
+          office_days?: string[] | null
+          office_hours_end?: string | null
+          office_hours_start?: string | null
           rating?: number | null
           specialty?: string | null
           status?: Database["public"]["Enums"]["doctor_status"] | null
@@ -1647,6 +1653,9 @@ export type Database = {
           followers_count?: number | null
           id?: string | null
           location?: string | null
+          office_days?: string[] | null
+          office_hours_end?: string | null
+          office_hours_start?: string | null
           rating?: number | null
           specialty?: string | null
           status?: Database["public"]["Enums"]["doctor_status"] | null
