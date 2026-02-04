@@ -83,41 +83,41 @@ export function LiveChat({ liveId, isOwner = false }: LiveChatProps) {
   const isDisabled = role === 'visitor' || !user;
 
   return (
-    <div className="flex flex-col h-full bg-card rounded-lg border">
+    <div className="flex flex-col h-full min-h-0 max-h-full bg-card rounded-lg border overflow-hidden">
       {/* Header */}
-      <div className="p-3 border-b flex items-center justify-between">
+      <div className="p-2 sm:p-3 border-b flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-primary" />
-          <span className="font-medium text-sm">Chat en vivo</span>
+          <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+          <span className="font-medium text-xs sm:text-sm">Chat en vivo</span>
         </div>
-        <Badge variant="secondary" className="text-xs">
+        <Badge variant="secondary" className="text-[10px] sm:text-xs">
           {messages.length} mensajes
         </Badge>
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-3">
-        <div className="space-y-3">
+      <ScrollArea className="flex-1 min-h-0 p-2 sm:p-3">
+        <div className="space-y-2 sm:space-y-3">
           {messages.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
+            <div className="text-center py-6 sm:py-8 text-muted-foreground text-xs sm:text-sm">
               Sé el primero en enviar un mensaje
             </div>
           ) : (
             messages.map((msg) => (
               <div key={msg.id} className="flex gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <User className="w-3 h-3 text-primary" />
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-medium text-xs text-foreground truncate">
+                  <div className="flex items-baseline gap-1 sm:gap-2 flex-wrap">
+                    <span className="font-medium text-[10px] sm:text-xs text-foreground truncate max-w-[100px] sm:max-w-[150px]">
                       {msg.userName}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-[9px] sm:text-[10px] text-muted-foreground">
                       {msg.createdAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-sm text-foreground/90 break-words">
+                  <p className="text-xs sm:text-sm text-foreground/90 break-words">
                     {msg.content}
                   </p>
                 </div>
@@ -129,28 +129,29 @@ export function LiveChat({ liveId, isOwner = false }: LiveChatProps) {
       </ScrollArea>
 
       {/* Input */}
-      <div className="p-3 border-t">
+      <div className="p-2 sm:p-3 border-t flex-shrink-0">
         {isDisabled ? (
-          <div className="text-center text-xs text-muted-foreground py-2">
+          <div className="text-center text-[10px] sm:text-xs text-muted-foreground py-1 sm:py-2">
             Inicia sesión para participar en el chat
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2">
             <Input
               placeholder="Escribe un mensaje..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               disabled={isSending}
-              className="text-sm"
+              className="text-xs sm:text-sm"
               maxLength={500}
             />
             <Button 
               size="icon" 
               onClick={handleSend} 
               disabled={isSending || !newMessage.trim()}
+              className="flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           </div>
         )}
