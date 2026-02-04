@@ -12,6 +12,7 @@ export function useAuthState() {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] Event:', event);
       setSupabaseUser(session?.user ?? null);
       
       if (session?.user) {
@@ -20,6 +21,30 @@ export function useAuthState() {
           const profile = await fetchUserProfile(session.user.id);
           setUser(profile);
           setIsLoading(false);
+          
+          // Handle OAuth redirect - if user just signed in with OAuth and hasn't completed onboarding
+          if (event === 'SIGNED_IN' && profile) {
+            const isOAuthProvider = session.user.app_metadata?.provider !== 'email';
+            
+            // If it's an OAuth user and onboarding not completed, redirect to onboarding
+            if (isOAuthProvider && !profile.onboardingCompleted) {
+              // Only redirect if we're on the root page (just came back from OAuth)
+              if (window.location.pathname === '/' || window.location.pathname === '/login') {
+                window.location.href = '/onboarding';
+              }
+            } else if (isOAuthProvider && profile.onboardingCompleted) {
+              // If onboarding is complete, redirect to the appropriate page
+              if (window.location.pathname === '/' || window.location.pathname === '/login') {
+                if (profile.role === 'doctor') {
+                  window.location.href = '/doctor/dashboard';
+                } else if (profile.role === 'admin') {
+                  window.location.href = '/admin';
+                } else {
+                  window.location.href = '/lives';
+                }
+              }
+            }
+          }
         }, 0);
       } else {
         // Check for visitor session

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Mail, MapPin, Phone, Send, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { LandingFooter } from '@/components/landing/LandingFooter';
 import { toast } from 'sonner';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 
@@ -20,7 +21,7 @@ interface ContactInfo {
 
 export default function Contact() {
   const navigate = useNavigate();
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [contactInfo, setContactInfo] = useState<ContactInfo>({
@@ -81,73 +82,73 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <div className="container mx-auto px-4 py-3 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="flex-shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+              <img src={logoMedicalMasters} alt="Medical Masters" className="h-7 sm:h-8 w-auto" />
             </div>
           </div>
         </div>
       </header>
 
       {/* Content */}
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold mb-2">
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-4xl">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl font-bold mb-2">
             {language === 'es' ? 'Contacto' : 'Contact'}
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground px-4">
             {language === 'es' 
               ? 'Estamos aquí para ayudarte. Envíanos un mensaje y te responderemos lo antes posible.' 
               : "We're here to help. Send us a message and we'll respond as soon as possible."}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
           {/* Contact Info Cards */}
-          <div className="md:col-span-1 space-y-4">
+          <div className="md:col-span-1 space-y-3 sm:space-y-4">
             <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-5 h-5 text-primary" />
+              <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-muted-foreground">Email</p>
-                  <p className="text-sm font-medium truncate">{contactInfo.email}</p>
+                  <p className="text-xs sm:text-sm font-medium truncate">{contactInfo.email}</p>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Phone className="w-5 h-5 text-primary" />
+              <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-muted-foreground">
                     {language === 'es' ? 'Teléfono' : 'Phone'}
                   </p>
-                  <p className="text-sm font-medium">{contactInfo.phone}</p>
+                  <p className="text-xs sm:text-sm font-medium">{contactInfo.phone}</p>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-5 h-5 text-primary" />
+              <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-muted-foreground">
                     {language === 'es' ? 'Ubicación' : 'Location'}
                   </p>
-                  <p className="text-sm font-medium">{contactInfo.address}</p>
+                  <p className="text-xs sm:text-sm font-medium">{contactInfo.address}</p>
                 </div>
               </CardContent>
             </Card>
@@ -155,7 +156,7 @@ export default function Contact() {
             {/* Dynamic content from admin */}
             {contactInfo.content && (
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-3 sm:p-4">
                   <p className="text-xs text-muted-foreground whitespace-pre-wrap">{contactInfo.content}</p>
                 </CardContent>
               </Card>
@@ -164,8 +165,8 @@ export default function Contact() {
 
           {/* Contact Form */}
           <Card className="md:col-span-2">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg">
+            <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
+              <CardTitle className="text-base sm:text-lg">
                 {language === 'es' ? 'Envíanos un mensaje' : 'Send us a message'}
               </CardTitle>
               <CardDescription className="text-xs">
@@ -174,9 +175,9 @@ export default function Contact() {
                   : "Fill out the form and we'll get back to you."}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 sm:px-6">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="name" className="text-xs">
                       {language === 'es' ? 'Nombre' : 'Name'} *
@@ -186,7 +187,7 @@ export default function Contact() {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder={language === 'es' ? 'Tu nombre' : 'Your name'}
-                      className="text-sm"
+                      className="text-sm h-10"
                       required
                     />
                   </div>
@@ -198,7 +199,7 @@ export default function Contact() {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder={language === 'es' ? 'tu@email.com' : 'your@email.com'}
-                      className="text-sm"
+                      className="text-sm h-10"
                       required
                     />
                   </div>
@@ -213,7 +214,7 @@ export default function Contact() {
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     placeholder={language === 'es' ? '¿En qué podemos ayudarte?' : 'How can we help you?'}
-                    className="text-sm"
+                    className="text-sm h-10"
                   />
                 </div>
 
@@ -226,12 +227,12 @@ export default function Contact() {
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     placeholder={language === 'es' ? 'Escribe tu mensaje aquí...' : 'Write your message here...'}
-                    className="min-h-[120px] text-sm"
+                    className="min-h-[100px] sm:min-h-[120px] text-sm"
                     required
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isSending}>
+                <Button type="submit" className="w-full h-10 sm:h-11" disabled={isSending}>
                   {isSending ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : (
@@ -246,6 +247,8 @@ export default function Contact() {
           </Card>
         </div>
       </main>
+
+      <LandingFooter />
     </div>
   );
 }

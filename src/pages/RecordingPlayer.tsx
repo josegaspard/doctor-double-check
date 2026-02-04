@@ -211,14 +211,14 @@ export default function RecordingPlayer() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-4 max-w-6xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/recordings')} className="mb-4">
-          <ArrowLeft className="w-4 h-4 mr-2" />
+      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 max-w-6xl">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/recordings')} className="mb-3 sm:mb-4 h-8 text-xs sm:text-sm">
+          <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
           Volver a Grabaciones
         </Button>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-2 space-y-3 sm:space-y-4">
             <div className="relative no-context-menu">
               {recording.videoUrl ? (
                 <RecordingVideoPlayer
@@ -241,59 +241,59 @@ export default function RecordingPlayer() {
             </div>
 
             <div>
-              <h1 className="font-heading text-xl md:text-2xl font-bold text-foreground mb-3">
+              <h1 className="font-heading text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-2 sm:mb-3">
                 {recording.title}
               </h1>
               
-              <div className="flex flex-wrap items-center gap-3 mb-4">
-                <Badge variant="outline" className="gap-1">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <Badge variant="outline" className="gap-1 text-xs">
                   <Clock className="w-3 h-3" />
                   {recording.duration > 0 ? `${Math.floor(recording.duration / 60)} min` : 'Procesando...'}
                 </Badge>
                 {recording.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">{tag}</Badge>
+                  <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
                 ))}
               </div>
               
-              <Separator className="my-4" />
+              <Separator className="my-3 sm:my-4" />
               
-              <p className="text-muted-foreground">{recording.description}</p>
+              <p className="text-muted-foreground text-sm">{recording.description}</p>
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Stethoscope className="w-7 h-7 text-primary" />
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Stethoscope className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground">{recording.doctorName}</h3>
-                    <p className="text-sm text-muted-foreground">{recording.specialty}</p>
-                    <Badge variant="secondary" className="mt-2 gap-1">
+                    <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{recording.doctorName}</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">{recording.specialty}</p>
+                    <Badge variant="secondary" className="mt-2 gap-1 text-xs">
                       <Award className="w-3 h-3" />
                       Verificado
                     </Badge>
                   </div>
                 </div>
                 
-                <Separator className="my-4" />
+                <Separator className="my-3 sm:my-4" />
                 
-                <Button className="w-full" onClick={() => navigate(`/doctor/${recording.doctorId}`)}>
+                <Button className="w-full h-9 text-sm" onClick={() => navigate(`/doctor/${recording.doctorId}`)}>
                   Ver Perfil
                 </Button>
               </CardContent>
             </Card>
 
             <Card className="bg-success/5 border-success/20">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
-                    <Award className="w-5 h-5 text-success" />
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
+                    <Award className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-foreground text-sm">Acceso Ilimitado</h4>
+                    <h4 className="font-semibold text-foreground text-xs sm:text-sm">Acceso Ilimitado</h4>
                     <p className="text-xs text-muted-foreground mt-1">
                       Puedes ver esta grabación las veces que quieras.
                     </p>
@@ -303,7 +303,7 @@ export default function RecordingPlayer() {
             </Card>
 
             <Card className="bg-muted/50">
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-start gap-3">
                   <Lock className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                   <p className="text-xs text-muted-foreground">
