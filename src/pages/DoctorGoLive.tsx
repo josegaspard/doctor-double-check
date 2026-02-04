@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useBlocker } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useViewerCount } from '@/hooks/useViewerCount';
 import { useCloudflareStream, checkH264Support, useLocalRecording } from '@/hooks/cloudflare';
@@ -105,6 +105,8 @@ export default function DoctorGoLive() {
   const [isEnding, setIsEnding] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showEndingModal, setShowEndingModal] = useState(false);
+  const [showNavigationWarning, setShowNavigationWarning] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   
   // Cloudflare Stream hook
   const { 
@@ -160,6 +162,50 @@ export default function DoctorGoLive() {
     }
     return () => clearInterval(interval);
   }, [isLive, liveData?.startedAt]);
+
+  // Navigation blocker - warn user when trying to leave during live
+  const blocker = useBlocker(
+    useCallback(() => isLive && !isEnding, [isLive, isEnding])
+  );
+
+  // Handle blocker state changes
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      setShowNavigationWarning(true);
+      setPendingNavigation(() => blocker.proceed);
+    }
+  }, [blocker.state]);
+
+  // Browser/tab close warning
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isLive && !isEnding) {
+        e.preventDefault();
+        e.returnValue = 'Tienes una transmisión en vivo. ¿Seguro que quieres salir?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isLive, isEnding]);
+
+  // Handle navigation confirmation - end live and proceed
+  const handleConfirmNavigation = async () => {
+    setShowNavigationWarning(false);
+    // End the live stream first
+    await handleEndLive();
+    // The handleEndLive already navigates to recordings, so we don't need to proceed
+  };
+
+  // Cancel navigation
+  const handleCancelNavigation = () => {
+    setShowNavigationWarning(false);
+    setPendingNavigation(null);
+    if (blocker.state === 'blocked') {
+      blocker.reset();
+    }
+  };
 
   // Format elapsed time
   const formatTime = (seconds: number) => {
@@ -580,6 +626,41 @@ export default function DoctorGoLive() {
           enableRecording={enableRecording}
           uploadProgress={localRecording.uploadProgress}
         />
+
+        {/* Navigation warning dialog */}
+        <AlertDialog open={showNavigationWarning} onOpenChange={setShowNavigationWarning}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-warning" />
+                ¡Transmisión en curso!
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Si sales de esta página, tu transmisión en vivo terminará automáticamente.
+                {enableRecording && ' La grabación se guardará y estará disponible en tu biblioteca.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleCancelNavigation} disabled={isEnding}>
+                Continuar transmitiendo
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmNavigation}
+                disabled={isEnding}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isEnding ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Finalizando...
+                  </>
+                ) : (
+                  'Terminar y salir'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </MainLayout>
     );
   }
