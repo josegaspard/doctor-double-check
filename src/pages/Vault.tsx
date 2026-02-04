@@ -44,11 +44,12 @@ interface AvailableDoctor {
   name: string;
   specialty: string;
   avatarUrl?: string;
+  relationshipType?: 'subscription' | 'chat' | 'consultation';
 }
 
 export default function Vault() {
   const { files, uploadFile, deleteFile, grantAccess, revokeAccess, uploadProgress, isLoading, refreshVault } = useVault();
-  const { role } = useAuth();
+  const { role, supabaseUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedCategory, setSelectedCategory] = useState('Otros');
   const [description, setDescription] = useState('');
@@ -60,27 +61,80 @@ export default function Vault() {
   const [grantingAccess, setGrantingAccess] = useState<string | null>(null);
   const [revokingAccess, setRevokingAccess] = useState<string | null>(null);
 
-  // Fetch approved doctors from database
-  const fetchAvailableDoctors = async () => {
+  // Fetch doctors the patient has a relationship with (subscriptions, chats, consultations)
+  const fetchRelatedDoctors = async () => {
+    if (!supabaseUser?.id) return;
+    
     setLoadingDoctors(true);
     try {
-      // Get approved doctors from the public view
-      const { data: doctorProfiles, error } = await supabase
+      const doctorMap = new Map<string, 'subscription' | 'chat' | 'consultation'>();
+
+      // 1. Get doctors from subscriptions (free follows + paid)
+      const { data: subscriptions } = await supabase
+        .from('subscriptions')
+        .select('creator_id')
+        .eq('subscriber_id', supabaseUser.id)
+        .eq('is_active', true);
+
+      subscriptions?.forEach(s => {
+        if (s.creator_id && !doctorMap.has(s.creator_id)) {
+          doctorMap.set(s.creator_id, 'subscription');
+        }
+      });
+
+      // 2. Get doctors from chat sessions
+      const { data: chatSessions } = await supabase
+        .from('chat_sessions')
+        .select('participant1_id, participant1_type, participant2_id, participant2_type')
+        .or(`participant1_id.eq.${supabaseUser.id},participant2_id.eq.${supabaseUser.id}`)
+        .eq('status', 'active');
+
+      chatSessions?.forEach(cs => {
+        let doctorId: string | null = null;
+        if (cs.participant1_id === supabaseUser.id && cs.participant2_type === 'doctor') {
+          doctorId = cs.participant2_id;
+        } else if (cs.participant2_id === supabaseUser.id && cs.participant1_type === 'doctor') {
+          doctorId = cs.participant1_id;
+        }
+        if (doctorId && !doctorMap.has(doctorId)) {
+          doctorMap.set(doctorId, 'chat');
+        }
+      });
+
+      // 3. Get doctors from consultations
+      const { data: consultations } = await supabase
+        .from('consultations')
+        .select('doctor_id')
+        .eq('patient_id', supabaseUser.id);
+
+      consultations?.forEach(c => {
+        if (c.doctor_id && !doctorMap.has(c.doctor_id)) {
+          doctorMap.set(c.doctor_id, 'consultation');
+        }
+      });
+
+      if (doctorMap.size === 0) {
+        setAvailableDoctors([]);
+        setLoadingDoctors(false);
+        return;
+      }
+
+      // Get doctor profiles for these IDs
+      const doctorIdsArray = Array.from(doctorMap.keys());
+      const { data: doctorProfiles } = await supabase
         .from('doctor_profiles_public')
         .select('user_id, specialty')
+        .in('user_id', doctorIdsArray)
         .eq('status', 'approved');
 
-      if (error) throw error;
-
       if (doctorProfiles && doctorProfiles.length > 0) {
-        // Get doctor names from profiles_public
-        const doctorIds = doctorProfiles.map(d => d.user_id).filter(Boolean);
+        const userIds = doctorProfiles.map(d => d.user_id).filter(Boolean) as string[];
         const { data: profiles } = await supabase
           .from('profiles_public')
           .select('id, name, avatar_url')
-          .in('id', doctorIds);
+          .in('id', userIds);
 
-        const profileMap = new Map(profiles?.map(p => [p.id, { name: p.name, avatar_url: p.avatar_url }]) || []);
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
         const doctors: AvailableDoctor[] = doctorProfiles
           .filter(d => d.user_id)
@@ -89,23 +143,26 @@ export default function Vault() {
             name: profileMap.get(d.user_id!)?.name || 'Doctor',
             specialty: d.specialty || 'Medicina General',
             avatarUrl: profileMap.get(d.user_id!)?.avatar_url || undefined,
+            relationshipType: doctorMap.get(d.user_id!),
           }));
 
         setAvailableDoctors(doctors);
+      } else {
+        setAvailableDoctors([]);
       }
     } catch (error) {
-      console.error('Error fetching doctors:', error);
-      toast.error('Error al cargar los médicos disponibles');
+      console.error('Error fetching related doctors:', error);
+      toast.error('Error al cargar los médicos');
     } finally {
       setLoadingDoctors(false);
     }
   };
 
   useEffect(() => {
-    if (role === 'patient') {
-      fetchAvailableDoctors();
+    if (role === 'patient' && supabaseUser?.id) {
+      fetchRelatedDoctors();
     }
-  }, [role]);
+  }, [role, supabaseUser?.id]);
 
   if (role !== 'patient') return null;
 
@@ -369,7 +426,10 @@ export default function Vault() {
               <Separator />
 
               <div>
-                <h4 className="text-sm font-medium text-foreground mb-3">Dar acceso a:</h4>
+                <h4 className="text-sm font-medium text-foreground mb-2">Dar acceso a:</h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Solo aparecen médicos que sigues, con los que tienes consultas o chats activos.
+                </p>
                 
                 {/* Search input for doctors */}
                 <div className="relative mb-3">
@@ -401,7 +461,16 @@ export default function Vault() {
                             </div>
                             <div>
                               <p className="font-medium text-sm">{doctor.name}</p>
-                              <p className="text-xs text-muted-foreground">{doctor.specialty}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-muted-foreground">{doctor.specialty}</p>
+                                {doctor.relationshipType && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                    {doctor.relationshipType === 'subscription' && 'Siguiendo'}
+                                    {doctor.relationshipType === 'chat' && 'Chat'}
+                                    {doctor.relationshipType === 'consultation' && 'Consulta'}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <Button 
@@ -422,8 +491,11 @@ export default function Vault() {
                       ))
                     ) : availableDoctors.length === 0 ? (
                       <div className="text-center py-6 text-muted-foreground text-sm">
-                        <Stethoscope className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        No hay médicos verificados disponibles
+                        <Stethoscope className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                        <p className="font-medium">No hay médicos disponibles</p>
+                        <p className="text-xs mt-1">
+                          Suscríbete a un médico o inicia una consulta para poder compartir archivos.
+                        </p>
                       </div>
                     ) : (
                       <div className="text-center py-4 text-muted-foreground text-sm">
