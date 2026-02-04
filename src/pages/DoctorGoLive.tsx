@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useBlocker } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useViewerCount } from '@/hooks/useViewerCount';
 import { useCloudflareStream, checkH264Support, useLocalRecording } from '@/hooks/cloudflare';
@@ -106,7 +106,6 @@ export default function DoctorGoLive() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showEndingModal, setShowEndingModal] = useState(false);
   const [showNavigationWarning, setShowNavigationWarning] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   
   // Cloudflare Stream hook
   const { 
@@ -163,18 +162,38 @@ export default function DoctorGoLive() {
     return () => clearInterval(interval);
   }, [isLive, liveData?.startedAt]);
 
-  // Navigation blocker - warn user when trying to leave during live
-  const blocker = useBlocker(
-    useCallback(() => isLive && !isEnding, [isLive, isEnding])
-  );
-
-  // Handle blocker state changes
+  // Custom navigation blocker using history and popstate event
+  // (useBlocker requires data router which is not compatible with BrowserRouter)
+  const location = useLocation();
+  const isLiveRef = useRef(isLive);
+  const isEndingRef = useRef(isEnding);
+  
+  // Keep refs in sync
   useEffect(() => {
-    if (blocker.state === 'blocked') {
-      setShowNavigationWarning(true);
-      setPendingNavigation(() => blocker.proceed);
-    }
-  }, [blocker.state]);
+    isLiveRef.current = isLive;
+    isEndingRef.current = isEnding;
+  }, [isLive, isEnding]);
+  
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    if (!isLive || isEnding) return;
+    
+    // Push a dummy state to detect navigation
+    window.history.pushState({ isLiveGuard: true }, '');
+    
+    const handlePopState = (e: PopStateEvent) => {
+      if (isLiveRef.current && !isEndingRef.current) {
+        // Prevent navigation by pushing state back
+        window.history.pushState({ isLiveGuard: true }, '');
+        setShowNavigationWarning(true);
+      }
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isLive, isEnding]);
 
   // Browser/tab close warning
   useEffect(() => {
@@ -201,10 +220,6 @@ export default function DoctorGoLive() {
   // Cancel navigation
   const handleCancelNavigation = () => {
     setShowNavigationWarning(false);
-    setPendingNavigation(null);
-    if (blocker.state === 'blocked') {
-      blocker.reset();
-    }
   };
 
   // Format elapsed time
