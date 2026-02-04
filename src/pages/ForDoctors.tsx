@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Stethoscope, DollarSign, Calendar, Video, MessageSquare, Users, TrendingUp, Shield, CheckCircle } from 'lucide-react';
-import logoWhite from '@/assets/logo-medical-masters-white.png';
 import logoBlue from '@/assets/logo-medical-masters.png';
+import { LandingFooter } from '@/components/landing/LandingFooter';
 
 const benefits = [
   {
@@ -51,7 +51,7 @@ export default function ForDoctors() {
       {/* Navigation */}
       <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-lg shadow-sm border-b border-gray-100">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-          <div className="flex justify-between items-center h-16 sm:h-20">
+          <div className="flex justify-between items-center h-14 sm:h-20">
             <Link to="/" className="flex items-center gap-2">
               <img src={logoBlue} alt="Logo" className="h-8 sm:h-10 object-contain" />
             </Link>
@@ -68,22 +68,22 @@ export default function ForDoctors() {
       </nav>
 
       {/* Hero */}
-      <header className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 bg-gradient-to-br from-[#0b1d45] via-[#163a83] to-[#00768b]">
+      <header className="relative pt-20 sm:pt-32 pb-12 sm:pb-24 bg-gradient-to-br from-[#0b1d45] via-[#163a83] to-[#00768b]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-6">
-              <Stethoscope className="w-4 h-4 text-[#aed3d9]" />
-              <span className="text-xs font-bold uppercase tracking-widest text-[#aed3d9]">Para Médicos</span>
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
+              <Stethoscope className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#aed3d9]" />
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#aed3d9]">Para Médicos</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
               Expande tu <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] to-white">práctica médica</span>
             </h1>
-            <p className="text-base sm:text-lg text-slate-300 max-w-xl mx-auto mb-8">
+            <p className="text-sm sm:text-lg text-slate-300 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
               Únete a la plataforma líder de telemedicina y conecta con pacientes de todo el país mientras generas ingresos adicionales.
             </p>
             <Link 
               to="/app" 
-              className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-[#163a83] bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-[#163a83] bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
               Registrarme como Médico
             </Link>
@@ -92,23 +92,23 @@ export default function ForDoctors() {
       </header>
 
       {/* Benefits */}
-      <section className="py-16 sm:py-24">
+      <section className="py-12 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-4">
+          <h2 className="text-xl sm:text-3xl font-bold text-center text-gray-800 mb-3 sm:mb-4">
             ¿Por qué unirte?
           </h2>
-          <p className="text-gray-600 text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+          <p className="text-gray-600 text-center max-w-2xl mx-auto mb-6 sm:mb-12 text-sm sm:text-base">
             Descubre las ventajas de ser parte de nuestra comunidad de profesionales de la salud.
           </p>
           
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {benefits.map((benefit, index) => (
-              <div key={index} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#163a83] to-[#00768b] flex items-center justify-center mb-4">
-                  <benefit.icon className="w-6 h-6 text-white" />
+              <div key={index} className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-shadow">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#163a83] to-[#00768b] flex items-center justify-center mb-3 sm:mb-4">
+                  <benefit.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 mb-2">{benefit.title}</h3>
-                <p className="text-gray-600 text-sm">{benefit.description}</p>
+                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2">{benefit.title}</h3>
+                <p className="text-gray-600 text-xs sm:text-sm">{benefit.description}</p>
               </div>
             ))}
           </div>
@@ -116,33 +116,33 @@ export default function ForDoctors() {
       </section>
 
       {/* Features List */}
-      <section className="py-16 sm:py-24 bg-white">
+      <section className="py-12 sm:py-24 bg-white">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-8 sm:gap-12 items-center">
+            <div className="grid md:grid-cols-2 gap-6 sm:gap-12 items-center">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">
+                <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">
                   Todo lo que necesitas para crecer
                 </h2>
-                <ul className="space-y-4">
+                <ul className="space-y-3 sm:space-y-4">
                   {features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
+                    <li key={index} className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
                       </div>
-                      <span className="text-gray-700">{feature}</span>
+                      <span className="text-gray-700 text-sm sm:text-base">{feature}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="bg-gradient-to-br from-[#163a83] to-[#00768b] p-6 sm:p-8 rounded-2xl text-white">
-                <Shield className="w-12 h-12 mb-4 text-[#aed3d9]" />
-                <h3 className="text-xl font-bold mb-3">100% Verificado</h3>
-                <p className="text-slate-300 text-sm mb-6">
+              <div className="bg-gradient-to-br from-[#163a83] to-[#00768b] p-5 sm:p-8 rounded-xl sm:rounded-2xl text-white">
+                <Shield className="w-10 h-10 sm:w-12 sm:h-12 mb-3 sm:mb-4 text-[#aed3d9]" />
+                <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">100% Verificado</h3>
+                <p className="text-slate-300 text-xs sm:text-sm mb-4 sm:mb-6">
                   Todos los médicos en nuestra plataforma son verificados a través de su cédula profesional con la SEP, garantizando confianza para los pacientes.
                 </p>
-                <div className="flex items-center gap-2 text-sm text-[#aed3d9]">
-                  <CheckCircle className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-[#aed3d9]">
+                  <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span>Verificación automática en minutos</span>
                 </div>
               </div>
@@ -152,22 +152,22 @@ export default function ForDoctors() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 sm:py-24 bg-gradient-to-br from-[#163a83] to-[#00768b]">
+      <section className="py-12 sm:py-24 bg-gradient-to-br from-[#163a83] to-[#00768b]">
         <div className="container mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">¿Listo para comenzar?</h2>
-          <p className="text-slate-300 mb-8 max-w-xl mx-auto">
+          <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">¿Listo para comenzar?</h2>
+          <p className="text-slate-300 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
             Regístrate hoy y comienza a ofrecer tus servicios a miles de pacientes.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link 
               to="/app" 
-              className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-[#163a83] bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-[#163a83] bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
               Crear mi Cuenta
             </Link>
             <Link 
               to="/contact" 
-              className="inline-flex items-center justify-center px-8 py-4 text-base font-medium text-white border border-white/30 rounded-xl hover:bg-white/10 transition-all"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-white border border-white/30 rounded-xl hover:bg-white/10 transition-all"
             >
               Hablar con Ventas
             </Link>
@@ -175,13 +175,7 @@ export default function ForDoctors() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#0b1d45] py-8">
-        <div className="container mx-auto px-4 sm:px-6 text-center">
-          <img src={logoWhite} alt="Logo" className="h-8 mx-auto mb-4" />
-          <p className="text-slate-400 text-sm">© 2026 Medical Platform Inc. All rights reserved.</p>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

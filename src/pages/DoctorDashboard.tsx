@@ -155,43 +155,44 @@ export default function DoctorDashboard() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div className="flex flex-col gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="font-heading text-3xl font-bold text-foreground">
+            <h1 className="font-heading text-xl sm:text-3xl font-bold text-foreground">
               {t('dashboard.title')}
             </h1>
-            <p className="text-muted-foreground mt-2 text-lg">
-              {t('dashboard.welcome')}, {user?.name}
+            <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-lg truncate">
+              {t('dashboard.welcome')}, {user?.name?.split(' ')[0]}
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             {isApproved && (
               <>
                 <Button 
                   onClick={() => navigate('/doctor/go-live')} 
-                  className="gap-2 bg-red-600 hover:bg-red-700 h-11 px-6"
-                  size="lg"
+                  className="gap-1.5 sm:gap-2 bg-red-600 hover:bg-red-700 h-9 sm:h-11 px-3 sm:px-6 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
-                  <Radio className="w-5 h-5" />
-                  {t('dashboard.startLive')}
+                  <Radio className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden xs:inline">{t('dashboard.startLive')}</span>
+                  <span className="xs:hidden">Live</span>
                 </Button>
-                <Badge variant="verified" className="gap-1.5 px-3 py-1.5 text-sm">
-                  <CheckCircle className="w-4 h-4" />
-                  {t('dashboard.verified')}
+                <Badge variant="verified" className="gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-sm">
+                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">{t('dashboard.verified')}</span>
+                  <span className="sm:hidden">✓</span>
                 </Badge>
               </>
             )}
             {isPending && (
-              <Badge variant="warning" className="gap-1.5 px-3 py-1.5 text-sm">
-                <Clock className="w-4 h-4" />
+              <Badge variant="warning" className="gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-sm">
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                 {t('doctorStatus.pending')}
               </Badge>
             )}
             {isRejected && (
-              <Badge variant="destructive" className="gap-1.5 px-3 py-1.5 text-sm">
-                <AlertTriangle className="w-4 h-4" />
+              <Badge variant="destructive" className="gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-sm">
+                <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
                 {t('doctorStatus.rejected')}
               </Badge>
             )}
@@ -317,27 +318,27 @@ export default function DoctorDashboard() {
         )}
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="mb-8">
-          <TabsList className="mb-6">
-            <TabsTrigger value="overview" className="px-6">General</TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2 px-6">
-              <BarChart3 className="w-4 h-4" />
+        <Tabs defaultValue="overview" className="mb-6 sm:mb-8">
+          <TabsList className="mb-4 sm:mb-6 w-full sm:w-auto grid grid-cols-2 sm:flex">
+            <TabsTrigger value="overview" className="px-3 sm:px-6 text-xs sm:text-sm">General</TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-1.5 sm:gap-2 px-3 sm:px-6 text-xs sm:text-sm">
+              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Analytics
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-8">
+          <TabsContent value="overview" className="space-y-4 sm:space-y-8">
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 gap-2 sm:gap-6 lg:grid-cols-4">
               <Card className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-live/10 flex items-center justify-center">
-                      <Radio className="w-7 h-7 text-live" />
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-live/10 flex items-center justify-center flex-shrink-0">
+                      <Radio className="w-5 h-5 sm:w-7 sm:h-7 text-live" />
                     </div>
-                    <div>
-                      <p className="text-3xl font-bold text-foreground">{myLives.filter(l => l.status === 'live').length}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Lives Activos</p>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-3xl font-bold text-foreground">{myLives.filter(l => l.status === 'live').length}</p>
+                      <p className="text-[10px] sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 truncate">Lives Activos</p>
                     </div>
                   </div>
                 </CardContent>
@@ -347,42 +348,42 @@ export default function DoctorDashboard() {
                 className="hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => navigate('/doctor/recordings')}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-premium/10 flex items-center justify-center">
-                      <PlayCircle className="w-7 h-7 text-premium" />
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-premium/10 flex items-center justify-center flex-shrink-0">
+                      <PlayCircle className="w-5 h-5 sm:w-7 sm:h-7 text-premium" />
                     </div>
-                    <div>
-                      <p className="text-3xl font-bold text-foreground">{recordingsCount}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Grabaciones</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Folder className="w-7 h-7 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-3xl font-bold text-foreground">{accessibleVaultFiles.length}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Acceso Vault</p>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-3xl font-bold text-foreground">{recordingsCount}</p>
+                      <p className="text-[10px] sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 truncate">Grabaciones</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-success/10 flex items-center justify-center">
-                      <Star className="w-7 h-7 text-success" />
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Folder className="w-5 h-5 sm:w-7 sm:h-7 text-primary" />
                     </div>
-                    <div>
-                      <p className="text-3xl font-bold text-foreground">{doctorProfile?.rating || 0}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Rating</p>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-3xl font-bold text-foreground">{accessibleVaultFiles.length}</p>
+                      <p className="text-[10px] sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 truncate">Acceso Vault</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
+                      <Star className="w-5 h-5 sm:w-7 sm:h-7 text-success" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-3xl font-bold text-foreground">{doctorProfile?.rating || 0}</p>
+                      <p className="text-[10px] sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 truncate">Rating</p>
                     </div>
                   </div>
                 </CardContent>
@@ -390,22 +391,22 @@ export default function DoctorDashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
               <Card className={!isApproved ? 'opacity-50 pointer-events-none' : 'hover:shadow-lg transition-all cursor-pointer border-2 hover:border-live/30'}>
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-5">
-                    <div className="w-16 h-16 rounded-2xl bg-live/10 flex items-center justify-center flex-shrink-0">
-                      <Radio className="w-8 h-8 text-live" />
+                <CardContent className="p-4 sm:p-8">
+                  <div className="flex items-start gap-3 sm:gap-5">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-live/10 flex items-center justify-center flex-shrink-0">
+                      <Radio className="w-6 h-6 sm:w-8 sm:h-8 text-live" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-foreground mb-2">Iniciar Live</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Comienza una transmisión en vivo para tus pacientes
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm sm:text-lg text-foreground mb-1 sm:mb-2">Iniciar Live</h3>
+                      <p className="text-muted-foreground mb-2 sm:mb-4 text-xs sm:text-sm line-clamp-2">
+                        Comienza una transmisión en vivo
                       </p>
                       <Button 
                         disabled={!isApproved}
                         onClick={() => isApproved && navigate('/doctor/go-live')}
-                        className="bg-red-600 hover:bg-red-700"
+                        className="bg-red-600 hover:bg-red-700 h-8 sm:h-10 text-xs sm:text-sm px-3 sm:px-4"
                       >
                         {isApproved ? 'Iniciar' : 'No disponible'}
                       </Button>
@@ -415,22 +416,22 @@ export default function DoctorDashboard() {
               </Card>
 
               <Card className={!isApproved ? 'opacity-50 pointer-events-none' : 'hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/30'}>
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-5">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Upload className="w-8 h-8 text-primary" />
+                <CardContent className="p-4 sm:p-8">
+                  <div className="flex items-start gap-3 sm:gap-5">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-foreground mb-2">Subir Contenido</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Sube videos, PDFs o imágenes educativas
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm sm:text-lg text-foreground mb-1 sm:mb-2">Subir Contenido</h3>
+                      <p className="text-muted-foreground mb-2 sm:mb-4 text-xs sm:text-sm line-clamp-2">
+                        Sube videos, PDFs o imágenes
                       </p>
-                      <div className="flex gap-3">
-                        <Button variant="outline" disabled={!isApproved} onClick={() => navigate('/doctor/upload')}>
+                      <div className="flex flex-wrap gap-2 sm:gap-3">
+                        <Button variant="outline" disabled={!isApproved} onClick={() => navigate('/doctor/upload')} className="h-8 sm:h-10 text-xs sm:text-sm px-2 sm:px-4">
                           {isApproved ? 'Subir' : 'No disponible'}
                         </Button>
-                        <Button variant="ghost" disabled={!isApproved} onClick={() => navigate('/doctor/content')}>
-                          Ver biblioteca
+                        <Button variant="ghost" disabled={!isApproved} onClick={() => navigate('/doctor/content')} className="h-8 sm:h-10 text-xs sm:text-sm px-2 sm:px-4">
+                          Biblioteca
                         </Button>
                       </div>
                     </div>
@@ -438,18 +439,18 @@ export default function DoctorDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-info/30" onClick={() => navigate('/chat')}>
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-5">
-                    <div className="w-16 h-16 rounded-2xl bg-info/10 flex items-center justify-center flex-shrink-0">
-                      <MessageSquare className="w-8 h-8 text-info" />
+              <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-info/30 md:col-span-2 lg:col-span-1" onClick={() => navigate('/chat')}>
+                <CardContent className="p-4 sm:p-8">
+                  <div className="flex items-start gap-3 sm:gap-5">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-info/10 flex items-center justify-center flex-shrink-0">
+                      <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 text-info" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-foreground mb-2">Consultas</h3>
-                      <p className="text-muted-foreground mb-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm sm:text-lg text-foreground mb-1 sm:mb-2">Consultas</h3>
+                      <p className="text-muted-foreground mb-2 sm:mb-4 text-xs sm:text-sm line-clamp-2">
                         Revisa tus chats con pacientes
                       </p>
-                      <Button variant="outline">
+                      <Button variant="outline" className="h-8 sm:h-10 text-xs sm:text-sm px-3 sm:px-4">
                         Ver Chats
                       </Button>
                     </div>
@@ -459,7 +460,7 @@ export default function DoctorDashboard() {
             </div>
 
             {/* Earnings, Stats and Office Hours Grid */}
-            <div className="grid lg:grid-cols-4 gap-6">
+            <div className="grid gap-3 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {/* Earnings Card */}
               <EarningsCard />
 
