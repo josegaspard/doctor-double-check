@@ -63,18 +63,25 @@ export default function Vault() {
 
   // Fetch doctors the patient has a relationship with (subscriptions, chats, consultations)
   const fetchRelatedDoctors = async () => {
-    if (!supabaseUser?.id) return;
+    if (!supabaseUser?.id) {
+      console.log('No user ID available');
+      return;
+    }
     
     setLoadingDoctors(true);
+    console.log('Fetching related doctors for user:', supabaseUser.id);
+    
     try {
       const doctorMap = new Map<string, 'subscription' | 'chat' | 'consultation'>();
 
       // 1. Get doctors from subscriptions (free follows + paid)
-      const { data: subscriptions } = await supabase
+      const { data: subscriptions, error: subError } = await supabase
         .from('subscriptions')
         .select('creator_id')
         .eq('subscriber_id', supabaseUser.id)
         .eq('is_active', true);
+
+      console.log('Subscriptions found:', subscriptions?.length, subError);
 
       subscriptions?.forEach(s => {
         if (s.creator_id && !doctorMap.has(s.creator_id)) {
@@ -82,14 +89,15 @@ export default function Vault() {
         }
       });
 
-      // 2. Get doctors from chat sessions
-      const { data: chatSessions } = await supabase
+      // 2. Get doctors from chat sessions - fetch ALL user's sessions first
+      const { data: chatSessions, error: chatError } = await supabase
         .from('chat_sessions')
-        .select('participant1_id, participant1_type, participant2_id, participant2_type')
-        .or(`participant1_id.eq.${supabaseUser.id},participant2_id.eq.${supabaseUser.id}`)
-        .eq('status', 'active');
+        .select('participant1_id, participant1_type, participant2_id, participant2_type, status');
 
-      chatSessions?.forEach(cs => {
+      console.log('Chat sessions found:', chatSessions?.length, chatError);
+
+      // Filter locally for active sessions where user is participant
+      chatSessions?.filter(cs => cs.status === 'active')?.forEach(cs => {
         let doctorId: string | null = null;
         if (cs.participant1_id === supabaseUser.id && cs.participant2_type === 'doctor') {
           doctorId = cs.participant2_id;
@@ -102,10 +110,12 @@ export default function Vault() {
       });
 
       // 3. Get doctors from consultations
-      const { data: consultations } = await supabase
+      const { data: consultations, error: consError } = await supabase
         .from('consultations')
         .select('doctor_id')
         .eq('patient_id', supabaseUser.id);
+
+      console.log('Consultations found:', consultations?.length, consError);
 
       consultations?.forEach(c => {
         if (c.doctor_id && !doctorMap.has(c.doctor_id)) {
@@ -113,41 +123,59 @@ export default function Vault() {
         }
       });
 
+      console.log('Total unique doctors found:', doctorMap.size, Array.from(doctorMap.keys()));
+
       if (doctorMap.size === 0) {
         setAvailableDoctors([]);
         setLoadingDoctors(false);
         return;
       }
 
-      // Get doctor profiles for these IDs
+      // Get doctor profiles for these IDs using direct query to profiles_public (no RLS issues)
       const doctorIdsArray = Array.from(doctorMap.keys());
-      const { data: doctorProfiles } = await supabase
-        .from('doctor_profiles_public')
-        .select('user_id, specialty')
-        .in('user_id', doctorIdsArray)
-        .eq('status', 'approved');
+      console.log('Looking up doctor profiles for IDs:', doctorIdsArray);
+      
+      // Get profiles first (profiles_public doesn't have security_invoker)
+      const { data: profiles, error: profError } = await supabase
+        .from('profiles_public')
+        .select('id, name, avatar_url')
+        .in('id', doctorIdsArray);
 
-      if (doctorProfiles && doctorProfiles.length > 0) {
-        const userIds = doctorProfiles.map(d => d.user_id).filter(Boolean) as string[];
-        const { data: profiles } = await supabase
-          .from('profiles_public')
-          .select('id, name, avatar_url')
-          .in('id', userIds);
+      console.log('Profiles found:', profiles?.length, profError);
 
-        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      // For specialty info, we'll use the get_doctor_public_profile RPC for each doctor
+      // Or we can get it from subscriptions/chats metadata - but let's try a different approach
+      // Using doctor_profiles_public with explicit select
+      
+      // Actually let's try fetching from the base table if we're an authenticated user
+      // The issue is security_invoker on the view - let's work around it
+      
+      if (profiles && profiles.length > 0) {
+        // Get specialty from any source we can
+        const doctors: AvailableDoctor[] = [];
+        
+        for (const profile of profiles) {
+          if (profile.id) {
+            // Try to get specialty via RPC call
+            const { data: doctorData } = await supabase
+              .rpc('get_doctor_public_profile', { p_user_id: profile.id });
+            
+            const specialty = doctorData?.[0]?.specialty || 'Medicina General';
+            
+            doctors.push({
+              id: profile.id,
+              name: profile.name || 'Doctor',
+              specialty,
+              avatarUrl: profile.avatar_url || undefined,
+              relationshipType: doctorMap.get(profile.id),
+            });
+          }
+        }
 
-        const doctors: AvailableDoctor[] = doctorProfiles
-          .filter(d => d.user_id)
-          .map(d => ({
-            id: d.user_id!,
-            name: profileMap.get(d.user_id!)?.name || 'Doctor',
-            specialty: d.specialty || 'Medicina General',
-            avatarUrl: profileMap.get(d.user_id!)?.avatar_url || undefined,
-            relationshipType: doctorMap.get(d.user_id!),
-          }));
-
+        console.log('Final doctors list:', doctors);
         setAvailableDoctors(doctors);
       } else {
+        console.log('No profiles found for doctors');
         setAvailableDoctors([]);
       }
     } catch (error) {
