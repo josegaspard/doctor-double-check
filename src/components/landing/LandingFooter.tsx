@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { ScrollToTopLink } from './ScrollToTopLink';
 import logoWhite from '@/assets/logo-medical-masters-white.png';
 
 export function LandingFooter() {
@@ -29,9 +29,9 @@ export function LandingFooter() {
           <div>
             <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">Plataforma</h4>
             <ul className="space-y-2 sm:space-y-4 text-xs sm:text-sm">
-              <li><Link to="/for-doctors" className="hover:text-[#aed3d9] transition-colors">Para Médicos</Link></li>
-              <li><Link to="/for-patients" className="hover:text-[#aed3d9] transition-colors">Para Pacientes</Link></li>
-              <li><Link to="/enterprise" className="hover:text-[#aed3d9] transition-colors">Enterprise</Link></li>
+              <li><ScrollToTopLink to="/for-doctors" className="hover:text-[#aed3d9] transition-colors">Para Médicos</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/for-patients" className="hover:text-[#aed3d9] transition-colors">Para Pacientes</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/enterprise" className="hover:text-[#aed3d9] transition-colors">Enterprise</ScrollToTopLink></li>
             </ul>
           </div>
 
@@ -39,9 +39,9 @@ export function LandingFooter() {
           <div>
             <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">Recursos</h4>
             <ul className="space-y-2 sm:space-y-4 text-xs sm:text-sm">
-              <li><Link to="/success-stories" className="hover:text-[#aed3d9] transition-colors">Casos de Éxito</Link></li>
-              <li><Link to="/help" className="hover:text-[#aed3d9] transition-colors">Ayuda</Link></li>
-              <li><Link to="/contact" className="hover:text-[#aed3d9] transition-colors">Contacto</Link></li>
+              <li><ScrollToTopLink to="/success-stories" className="hover:text-[#aed3d9] transition-colors">Casos de Éxito</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/help" className="hover:text-[#aed3d9] transition-colors">Ayuda</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/contact" className="hover:text-[#aed3d9] transition-colors">Contacto</ScrollToTopLink></li>
             </ul>
           </div>
 
@@ -49,10 +49,10 @@ export function LandingFooter() {
           <div>
             <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">Legal</h4>
             <ul className="space-y-2 sm:space-y-4 text-xs sm:text-sm">
-              <li><Link to="/privacy" className="hover:text-[#aed3d9] transition-colors">Privacidad</Link></li>
-              <li><Link to="/terms" className="hover:text-[#aed3d9] transition-colors">Términos</Link></li>
-              <li><Link to="/security" className="hover:text-[#aed3d9] transition-colors">Seguridad</Link></li>
-              <li><Link to="/compliance" className="hover:text-[#aed3d9] transition-colors">Compliance</Link></li>
+              <li><ScrollToTopLink to="/privacy" className="hover:text-[#aed3d9] transition-colors">Privacidad</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/terms" className="hover:text-[#aed3d9] transition-colors">Términos</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/security" className="hover:text-[#aed3d9] transition-colors">Seguridad</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/compliance" className="hover:text-[#aed3d9] transition-colors">Compliance</ScrollToTopLink></li>
             </ul>
           </div>
         </div>

@@ -35,12 +35,16 @@ export function useAuthActions(
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    sessionStorage.removeItem('drDoubleCheck_visitor');
+    // Clear state immediately for faster perceived logout
     setUser(null);
     setSupabaseUser(null);
-    // Redirect to /lives after logout
-    window.location.href = '/lives';
+    sessionStorage.removeItem('drDoubleCheck_visitor');
+    
+    // Navigate immediately, sign out in background
+    window.location.replace('/lives');
+    
+    // Sign out from Supabase (will complete after redirect starts)
+    supabase.auth.signOut();
   };
 
   const loginAsVisitor = () => {
