@@ -1656,6 +1656,21 @@ export type Database = {
         }
         Relationships: []
       }
+      payout_settings_public: {
+        Row: {
+          commission_percentage: number | null
+          payout_frequency: string | null
+        }
+        Insert: {
+          commission_percentage?: number | null
+          payout_frequency?: string | null
+        }
+        Update: {
+          commission_percentage?: number | null
+          payout_frequency?: string | null
+        }
+        Relationships: []
+      }
       profiles_public: {
         Row: {
           avatar_url: string | null
