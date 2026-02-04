@@ -138,16 +138,16 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 p-0 mx-2 sm:mx-0" align="end">
         <div className="flex items-center justify-between p-3 border-b border-border">
-          <h3 className="font-semibold">{t('notifications.title')}</h3>
+          <h3 className="font-semibold text-sm sm:text-base">{t('notifications.title')}</h3>
           {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={markAllAsRead}>
+            <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs sm:text-sm h-8">
               {t('notifications.markAllAsRead')}
             </Button>
           )}
         </div>
-        <ScrollArea className="h-[400px]">
+        <ScrollArea className="h-[60vh] sm:h-[400px]">
           {isLoading ? (
             <div className="p-4 text-center text-muted-foreground">
               {t('common.loading')}

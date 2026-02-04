@@ -86,21 +86,21 @@ function AvailabilityCard({
       isPast && 'opacity-60',
       availability.status === 'cancelled' && 'border-destructive/50'
     )}>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-4">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex items-start gap-3 sm:gap-4">
           <div className={cn(
-            'p-3 rounded-lg',
+            'p-2 sm:p-3 rounded-lg flex-shrink-0',
             availability.type === 'live' ? 'bg-red-500/10 text-red-500' :
             availability.type === 'consultation' ? 'bg-blue-500/10 text-blue-500' :
             'bg-muted text-muted-foreground'
           )}>
-            <Icon className="h-6 w-6" />
+            <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <h3 className="font-semibold truncate">{availability.title}</h3>
-                <p className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="font-semibold truncate text-sm sm:text-base">{availability.title}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {format(availability.scheduledAt, "EEEE d 'de' MMMM, HH:mm", {
                     locale: language === 'es' ? es : enUS,
                   })}
@@ -109,28 +109,30 @@ function AvailabilityCard({
                   Duración: {availability.durationMinutes} min
                 </p>
               </div>
-              {getStatusBadge()}
+              <div className="flex-shrink-0">
+                {getStatusBadge()}
+              </div>
             </div>
             
             {availability.description && (
-              <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-2">
                 {availability.description}
               </p>
             )}
 
             {availability.status === 'scheduled' && !isPast && (
               <div className="flex flex-wrap gap-2 mt-3">
-                <Button size="sm" variant="default" onClick={onConfirm}>
-                  <CheckCircle className="h-4 w-4 mr-1" />
+                <Button size="sm" variant="default" onClick={onConfirm} className="h-8 text-xs sm:text-sm">
+                  <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                   Confirmar
                 </Button>
-                <Button size="sm" variant="outline" onClick={onCancel}>
-                  <XCircle className="h-4 w-4 mr-1" />
+                <Button size="sm" variant="outline" onClick={onCancel} className="h-8 text-xs sm:text-sm">
+                  <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                   Cancelar
                 </Button>
                 {!availability.notificationsSent && (
-                  <Button size="sm" variant="secondary" onClick={onNotify}>
-                    <Bell className="h-4 w-4 mr-1" />
+                  <Button size="sm" variant="secondary" onClick={onNotify} className="h-8 text-xs sm:text-sm">
+                    <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                     Notificar
                   </Button>
                 )}
@@ -139,8 +141,8 @@ function AvailabilityCard({
 
             {availability.status === 'confirmed' && !isPast && !availability.notificationsSent && (
               <div className="mt-3">
-                <Button size="sm" variant="secondary" onClick={onNotify}>
-                  <Bell className="h-4 w-4 mr-1" />
+                <Button size="sm" variant="secondary" onClick={onNotify} className="h-8 text-xs sm:text-sm">
+                  <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                   Notificar suscriptores
                 </Button>
               </div>
@@ -285,29 +287,29 @@ export default function DoctorAvailabilityPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-5 w-5" />
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/lives')} className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold">{t('availability.title')}</h1>
-              <p className="text-muted-foreground flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                {subscriberCount} suscriptores recibirán tus notificaciones
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold truncate">{t('availability.title')}</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="truncate">{subscriberCount} suscriptores</span>
               </p>
             </div>
           </div>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Programar
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto">
               <DialogHeader>
                 <DialogTitle>Programar disponibilidad</DialogTitle>
                 <DialogDescription>

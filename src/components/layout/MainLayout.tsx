@@ -137,7 +137,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 </SheetContent>
               </Sheet>
 
-              {/* Logo - hidden on mobile, visible on desktop */}
+              {/* Logo - links to /lives for authenticated users */}
               <Link to="/lives" className="hidden md:flex items-center gap-2">
                 <img src={logoMedicalMasters} alt="Medical Masters" className="h-10 w-auto" />
               </Link>
