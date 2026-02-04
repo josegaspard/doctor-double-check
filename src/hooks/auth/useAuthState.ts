@@ -12,7 +12,7 @@ export function useAuthState() {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth] Event:', event);
+      console.log('[Auth] Event:', event, 'Provider:', session?.user?.app_metadata?.provider);
       setSupabaseUser(session?.user ?? null);
       
       if (session?.user) {
@@ -22,24 +22,32 @@ export function useAuthState() {
           setUser(profile);
           setIsLoading(false);
           
-          // Handle OAuth redirect - if user just signed in with OAuth and hasn't completed onboarding
-          if (event === 'SIGNED_IN' && profile) {
-            const isOAuthProvider = session.user.app_metadata?.provider !== 'email';
+          // Handle OAuth redirect - if user just signed in with OAuth
+          if (event === 'SIGNED_IN') {
+            const provider = session.user.app_metadata?.provider;
+            const isOAuthProvider = provider && provider !== 'email';
             
-            // If it's an OAuth user and onboarding not completed, redirect to onboarding
-            if (isOAuthProvider && !profile.onboardingCompleted) {
-              // Only redirect if we're on the root page (just came back from OAuth)
-              if (window.location.pathname === '/' || window.location.pathname === '/login') {
+            console.log('[Auth] OAuth check - Provider:', provider, 'IsOAuth:', isOAuthProvider, 'OnboardingCompleted:', profile?.onboardingCompleted);
+            
+            // Only redirect if we're on the root page or login (just came back from OAuth)
+            const currentPath = window.location.pathname;
+            const shouldRedirect = currentPath === '/' || currentPath === '/login';
+            
+            if (isOAuthProvider && shouldRedirect) {
+              if (!profile?.onboardingCompleted) {
+                // New OAuth user - go to onboarding to select role
+                console.log('[Auth] Redirecting to onboarding');
                 window.location.href = '/onboarding';
-              }
-            } else if (isOAuthProvider && profile.onboardingCompleted) {
-              // If onboarding is complete, redirect to the appropriate page
-              if (window.location.pathname === '/' || window.location.pathname === '/login') {
-                if (profile.role === 'doctor') {
+              } else {
+                // Existing OAuth user with completed onboarding - go to appropriate dashboard
+                console.log('[Auth] Redirecting based on role:', profile?.role);
+                if (profile?.role === 'doctor') {
+                  // Doctors go to dashboard (they may need verification)
                   window.location.href = '/doctor/dashboard';
-                } else if (profile.role === 'admin') {
+                } else if (profile?.role === 'admin') {
                   window.location.href = '/admin';
                 } else {
+                  // Patients and residents go to lives
                   window.location.href = '/lives';
                 }
               }
