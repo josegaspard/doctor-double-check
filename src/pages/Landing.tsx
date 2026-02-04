@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { DemoVideoModal } from '@/components/landing/DemoVideoModal';
 import logoWhite from '@/assets/logo-medical-masters-white.png';
 import logoBlue from '@/assets/logo-medical-masters.png';
 
@@ -8,8 +9,8 @@ export default function Landing() {
   const navigate = useNavigate();
   const { user, role, isAuthenticated, isLoading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [billingMode, setBillingMode] = useState<'monthly' | 'annual'>('monthly');
+  const [showDemoModal, setShowDemoModal] = useState(false);
 
   // If user is already logged in, redirect to app
   useEffect(() => {
@@ -45,6 +46,9 @@ export default function Landing() {
 
   return (
     <div className="font-sans text-slate-800 bg-slate-50 overflow-x-hidden relative selection:bg-[#00768b] selection:text-white">
+      {/* Demo Video Modal */}
+      <DemoVideoModal open={showDemoModal} onOpenChange={setShowDemoModal} />
+
       {/* Background Blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#aed3d9]/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" />
@@ -52,14 +56,14 @@ export default function Landing() {
         <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-[#00768b]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '4s' }} />
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - Simplified, no mobile menu */}
       <nav className={`fixed w-full z-50 transition-all duration-500 top-0 border-b ${scrolled ? 'border-gray-100' : 'border-transparent'}`}>
         <div className={`absolute inset-0 transition-all duration-500 ${scrolled ? 'bg-white/90 backdrop-blur-lg shadow-sm' : 'bg-transparent'}`} />
-        <div className="container mx-auto px-6 lg:px-12 relative z-10">
-          <div className="flex justify-between items-center h-20 md:h-24">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
+          <div className="flex justify-between items-center h-16 sm:h-20 md:h-24">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 group">
-              <div className="relative h-10 md:h-12 overflow-hidden">
+              <div className="relative h-8 sm:h-10 md:h-12 overflow-hidden">
                 <img 
                   src={logoWhite} 
                   alt="Logo" 
@@ -92,25 +96,18 @@ export default function Landing() {
               </Link>
             </div>
 
-            {/* Mobile Trigger */}
-            <button 
-              className={`lg:hidden text-3xl focus:outline-none relative z-[60] ${mobileMenuOpen ? 'text-white' : scrolled ? 'text-[#163a83]' : 'text-white'}`}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            {/* Mobile CTA - Simple button instead of menu */}
+            <Link 
+              to="/app" 
+              className={`lg:hidden font-bold py-2 px-4 sm:px-6 rounded-full transition-all duration-300 text-sm ${
+                scrolled 
+                  ? 'bg-[#00768b] text-white' 
+                  : 'bg-white/20 backdrop-blur-md text-white border border-white/30'
+              }`}
             >
-              <i className={mobileMenuOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars-staggered'} />
-            </button>
+              Entrar
+            </Link>
           </div>
-        </div>
-
-        {/* Mobile Menu */}
-        <div className={`fixed inset-0 bg-[#0b1d45]/95 backdrop-blur-xl z-40 transform transition-transform duration-500 flex flex-col items-center justify-center space-y-8 ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-          <a href="#ecosistema" onClick={() => setMobileMenuOpen(false)} className="text-3xl text-white font-light hover:text-[#aed3d9] transition-colors">Ecosistema</a>
-          <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-3xl text-white font-light hover:text-[#aed3d9] transition-colors">Módulos</a>
-          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-3xl text-white font-light hover:text-[#aed3d9] transition-colors">Planes</a>
-          <hr className="w-24 border-white/20" />
-          <Link to="/app" className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] to-white">
-            Acceder a Plataforma
-          </Link>
         </div>
       </nav>
 
@@ -172,7 +169,10 @@ export default function Landing() {
                   <i className="fa-solid fa-arrow-right ml-3" />
                 </Link>
                 
-                <button className="inline-flex items-center justify-center px-8 py-4 text-base font-medium text-white border border-white/20 rounded-xl hover:bg-white/10 transition-all backdrop-blur-md group">
+                <button 
+                  onClick={() => setShowDemoModal(true)}
+                  className="inline-flex items-center justify-center px-8 py-4 text-base font-medium text-white border border-white/20 rounded-xl hover:bg-white/10 transition-all backdrop-blur-md group"
+                >
                   <i className="fa-solid fa-circle-play mr-3 text-[#aed3d9] group-hover:scale-110 transition-transform" />
                   Demo Interactiva
                 </button>
@@ -561,9 +561,9 @@ export default function Landing() {
             <div>
               <h4 className="text-white font-bold mb-6">Plataforma</h4>
               <ul className="space-y-4">
-                <li><Link to="/app" className="hover:text-[#aed3d9] transition-colors">Para Médicos</Link></li>
-                <li><Link to="/app" className="hover:text-[#aed3d9] transition-colors">Para Pacientes</Link></li>
-                <li><Link to="/contact" className="hover:text-[#aed3d9] transition-colors">Enterprise</Link></li>
+                <li><Link to="/for-doctors" className="hover:text-[#aed3d9] transition-colors">Para Médicos</Link></li>
+                <li><Link to="/for-patients" className="hover:text-[#aed3d9] transition-colors">Para Pacientes</Link></li>
+                <li><Link to="/enterprise" className="hover:text-[#aed3d9] transition-colors">Enterprise</Link></li>
                 <li><a href="#pricing" className="hover:text-[#aed3d9] transition-colors">Precios</a></li>
               </ul>
             </div>
@@ -571,10 +571,9 @@ export default function Landing() {
             <div>
               <h4 className="text-white font-bold mb-6">Recursos</h4>
               <ul className="space-y-4">
-                <li><a href="#" className="hover:text-[#aed3d9] transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-[#aed3d9] transition-colors">Casos de Éxito</a></li>
-                <li><Link to="/contact" className="hover:text-[#aed3d9] transition-colors">Ayuda</Link></li>
-                <li><a href="#" className="hover:text-[#aed3d9] transition-colors">API Docs</a></li>
+                <li><Link to="/success-stories" className="hover:text-[#aed3d9] transition-colors">Casos de Éxito</Link></li>
+                <li><Link to="/help" className="hover:text-[#aed3d9] transition-colors">Ayuda</Link></li>
+                <li><Link to="/contact" className="hover:text-[#aed3d9] transition-colors">Contacto</Link></li>
               </ul>
             </div>
 
@@ -583,8 +582,8 @@ export default function Landing() {
               <ul className="space-y-4">
                 <li><Link to="/privacy" className="hover:text-[#aed3d9] transition-colors">Privacidad</Link></li>
                 <li><Link to="/terms" className="hover:text-[#aed3d9] transition-colors">Términos</Link></li>
-                <li><a href="#" className="hover:text-[#aed3d9] transition-colors">Seguridad</a></li>
-                <li><a href="#" className="hover:text-[#aed3d9] transition-colors">Compliance</a></li>
+                <li><Link to="/security" className="hover:text-[#aed3d9] transition-colors">Seguridad</Link></li>
+                <li><Link to="/compliance" className="hover:text-[#aed3d9] transition-colors">Compliance</Link></li>
               </ul>
             </div>
           </div>

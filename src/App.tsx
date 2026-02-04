@@ -57,6 +57,14 @@ import DoctorInvoices from "./pages/DoctorInvoices";
 import Contact from "./pages/Contact";
 import DoctorContentLibrary from "./pages/DoctorContentLibrary";
 import DoctorEarnings from "./pages/DoctorEarnings";
+import SuccessStories from "./pages/SuccessStories";
+import Help from "./pages/Help";
+import Security from "./pages/Security";
+import Compliance from "./pages/Compliance";
+import ForDoctors from "./pages/ForDoctors";
+import ForPatients from "./pages/ForPatients";
+import Enterprise from "./pages/Enterprise";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -118,6 +126,13 @@ const App = () => (
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/contact" element={<Contact />} />
+                      <Route path="/success-stories" element={<SuccessStories />} />
+                      <Route path="/help" element={<Help />} />
+                      <Route path="/security" element={<Security />} />
+                      <Route path="/compliance" element={<Compliance />} />
+                      <Route path="/for-doctors" element={<ForDoctors />} />
+                      <Route path="/for-patients" element={<ForPatients />} />
+                      <Route path="/enterprise" element={<Enterprise />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>
