@@ -384,17 +384,17 @@ export default function AdminVerifications() {
                             variant="outline"
                             size="sm"
                             onClick={async () => {
-                              // Load document URLs
+                              setSelectedVerification(verification);
+                              // Preload document URLs
                               if (verification.metadata?.front_url) {
-                                await getDocumentUrl(verification.metadata.front_url);
+                                getDocumentUrl(verification.metadata.front_url);
                               }
                               if (verification.metadata?.back_url) {
-                                await getDocumentUrl(verification.metadata.back_url);
+                                getDocumentUrl(verification.metadata.back_url);
                               }
                               if (verification.metadata?.selfie_url) {
-                                await getDocumentUrl(verification.metadata.selfie_url);
+                                getDocumentUrl(verification.metadata.selfie_url);
                               }
-                              setSelectedVerification(verification);
                             }}
                           >
                             <Eye className="w-4 h-4 mr-1" />
@@ -449,7 +449,7 @@ export default function AdminVerifications() {
                 {/* Document Type */}
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">
-                    {selectedVerification.metadata?.document_type || 'ID oficial'}
+                    {selectedVerification.metadata?.document_type || (language === 'es' ? 'ID oficial' : 'Official ID')}
                   </Badge>
                   {getStatusBadge(selectedVerification.status)}
                 </div>
@@ -460,15 +460,18 @@ export default function AdminVerifications() {
                     <h4 className="font-medium mb-2">
                       {language === 'es' ? 'Frente del documento' : 'Document Front'}
                     </h4>
-                    <div className="border rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={documentUrls[selectedVerification.metadata.front_url] || ''}
-                        alt="Front"
-                        className="max-h-64 mx-auto object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder.svg';
-                        }}
-                      />
+                    <div className="border rounded-lg overflow-hidden bg-muted p-2">
+                      {documentUrls[selectedVerification.metadata.front_url] ? (
+                        <img
+                          src={documentUrls[selectedVerification.metadata.front_url]}
+                          alt="Front"
+                          className="max-h-64 mx-auto object-contain rounded"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-32 text-muted-foreground">
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -479,15 +482,18 @@ export default function AdminVerifications() {
                     <h4 className="font-medium mb-2">
                       {language === 'es' ? 'Reverso del documento' : 'Document Back'}
                     </h4>
-                    <div className="border rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={documentUrls[selectedVerification.metadata.back_url] || ''}
-                        alt="Back"
-                        className="max-h-64 mx-auto object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder.svg';
-                        }}
-                      />
+                    <div className="border rounded-lg overflow-hidden bg-muted p-2">
+                      {documentUrls[selectedVerification.metadata.back_url] ? (
+                        <img
+                          src={documentUrls[selectedVerification.metadata.back_url]}
+                          alt="Back"
+                          className="max-h-64 mx-auto object-contain rounded"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-32 text-muted-foreground">
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -498,15 +504,18 @@ export default function AdminVerifications() {
                     <h4 className="font-medium mb-2">
                       {language === 'es' ? 'Selfie con documento' : 'Selfie with document'}
                     </h4>
-                    <div className="border rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={documentUrls[selectedVerification.metadata.selfie_url] || ''}
-                        alt="Selfie"
-                        className="max-h-64 mx-auto object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder.svg';
-                        }}
-                      />
+                    <div className="border rounded-lg overflow-hidden bg-muted p-2">
+                      {documentUrls[selectedVerification.metadata.selfie_url] ? (
+                        <img
+                          src={documentUrls[selectedVerification.metadata.selfie_url]}
+                          alt="Selfie"
+                          className="max-h-64 mx-auto object-contain rounded"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-32 text-muted-foreground">
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

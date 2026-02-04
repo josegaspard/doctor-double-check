@@ -82,6 +82,45 @@ serve(async (req) => {
       }
     }
 
+    // Check if this was an earning from a consultation - reverse doctor pending earnings
+    const { data: originalTx } = await supabaseAdmin
+      .from("wallet_transactions")
+      .select("metadata")
+      .eq("id", transaction_id)
+      .single();
+
+    if (originalTx?.metadata?.type === 'consultation' && originalTx?.metadata?.doctor_id) {
+      const doctorId = originalTx.metadata.doctor_id;
+      
+      // Reduce doctor pending earnings
+      const { data: doctorProfile } = await supabaseAdmin
+        .from("doctor_profiles")
+        .select("pending_earnings")
+        .eq("user_id", doctorId)
+        .single();
+
+      if (doctorProfile) {
+        const newPendingEarnings = Math.max(0, (doctorProfile.pending_earnings || 0) - amount);
+        await supabaseAdmin
+          .from("doctor_profiles")
+          .update({ pending_earnings: newPendingEarnings })
+          .eq("user_id", doctorId);
+
+        logStep("Reversed doctor earnings", { doctorId, amount, newPendingEarnings });
+        
+        // Notify doctor about the refund
+        await supabaseAdmin
+          .from("notifications")
+          .insert({
+            user_id: doctorId,
+            type: "system",
+            title: "Reembolso procesado",
+            message: `Se ha revertido una ganancia de $${amount.toFixed(2)} por un reembolso.`,
+            data: { amount, reason },
+          });
+      }
+    }
+
     // Credit user's wallet
     const { data: wallet } = await supabaseAdmin
       .from("wallets")

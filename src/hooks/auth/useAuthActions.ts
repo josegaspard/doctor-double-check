@@ -39,6 +39,8 @@ export function useAuthActions(
     sessionStorage.removeItem('drDoubleCheck_visitor');
     setUser(null);
     setSupabaseUser(null);
+    // Redirect to /lives after logout
+    window.location.href = '/lives';
   };
 
   const loginAsVisitor = () => {

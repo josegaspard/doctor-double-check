@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Users, ArrowLeft, Shield, User, Stethoscope, GraduationCap, Eye } from 'lucide-react';
+import { Search, Users, ArrowLeft, Shield, User, Stethoscope, GraduationCap, Settings2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -18,13 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 
 interface UserData {
   id: string;
@@ -33,6 +27,7 @@ interface UserData {
   avatar_url: string | null;
   created_at: string;
   is_identity_verified: boolean;
+  onboarding_completed: boolean;
   role?: string;
 }
 
@@ -76,7 +71,11 @@ export default function AdminUsers() {
             .select('role')
             .eq('user_id', profile.id)
             .single();
-          return { ...profile, role: roleData?.role || 'patient' } as UserData;
+          return { 
+            ...profile, 
+            role: roleData?.role || 'patient',
+            onboarding_completed: profile.onboarding_completed || false,
+          } as UserData;
         })
       );
 
@@ -261,10 +260,11 @@ export default function AdminUsers() {
                       </span>
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="outline"
                         onClick={() => setSelectedUser(userData)}
                       >
-                        <Eye className="h-4 w-4" />
+                        <Settings2 className="h-4 w-4 mr-1" />
+                        {t('admin.manage')}
                       </Button>
                     </div>
                   </div>
@@ -274,49 +274,13 @@ export default function AdminUsers() {
           </div>
         )}
 
-        {/* User Detail Dialog */}
-        <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t('admin.userDetails')}</DialogTitle>
-              <DialogDescription>{t('admin.userDetailsDescription')}</DialogDescription>
-            </DialogHeader>
-            {selectedUser && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={selectedUser.avatar_url || ''} />
-                    <AvatarFallback className="text-xl">{selectedUser.name?.[0] || 'U'}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold text-lg">{selectedUser.name}</h3>
-                    <p className="text-muted-foreground">{selectedUser.email}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t('admin.role')}</p>
-                    {getRoleBadge(selectedUser.role || 'patient')}
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t('admin.verification')}</p>
-                    <Badge variant={selectedUser.is_identity_verified ? 'default' : 'secondary'}>
-                      {selectedUser.is_identity_verified ? t('admin.verified') : t('admin.notVerified')}
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t('admin.registered')}</p>
-                    <p className="font-medium">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">ID</p>
-                    <p className="font-mono text-xs truncate">{selectedUser.id}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        {/* User Management Dialog */}
+        <UserManagementDialog
+          user={selectedUser}
+          isOpen={!!selectedUser}
+          onClose={() => setSelectedUser(null)}
+          onUserUpdated={fetchUsers}
+        />
       </div>
     </MainLayout>
   );
