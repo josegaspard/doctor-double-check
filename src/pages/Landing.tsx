@@ -250,19 +250,19 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Ticker */}
-      <div className="bg-white border-b border-gray-100 py-6 overflow-hidden relative">
-        <div className="absolute left-0 top-0 h-full w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-        <div className="flex w-[200%] animate-scroll">
+      {/* Ticker - Brand logos */}
+      <div className="bg-white border-b border-gray-100 py-4 sm:py-6 overflow-hidden relative">
+        <div className="absolute left-0 top-0 h-full w-8 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 h-full w-8 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+        <div className="flex w-[300%] sm:w-[200%] animate-scroll">
           {[1, 2].map((i) => (
-            <div key={i} className="flex w-1/2 justify-around items-center">
-              <span className="text-xl font-bold text-gray-400 flex items-center gap-2 grayscale hover:grayscale-0 transition-all"><i className="fa-solid fa-hospital" /> Mayo Clinic</span>
-              <span className="text-xl font-bold text-gray-400 flex items-center gap-2 grayscale hover:grayscale-0 transition-all"><i className="fa-solid fa-staff-snake" /> Johns Hopkins</span>
-              <span className="text-xl font-bold text-gray-400 flex items-center gap-2 grayscale hover:grayscale-0 transition-all"><i className="fa-solid fa-user-doctor" /> Cleveland Clinic</span>
-              <span className="text-xl font-bold text-gray-400 flex items-center gap-2 grayscale hover:grayscale-0 transition-all"><i className="fa-solid fa-heart-pulse" /> Cedars-Sinai</span>
-              <span className="text-xl font-bold text-gray-400 flex items-center gap-2 grayscale hover:grayscale-0 transition-all"><i className="fa-solid fa-dna" /> Stanford Med</span>
-              <span className="text-xl font-bold text-gray-400 flex items-center gap-2 grayscale hover:grayscale-0 transition-all"><i className="fa-solid fa-hospital-user" /> Mass General</span>
+            <div key={i} className="flex w-1/2 justify-around items-center gap-4 sm:gap-0 px-4 sm:px-0">
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-hospital text-[10px] sm:text-base" /> <span className="hidden xs:inline">Mayo</span> Clinic</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-staff-snake text-[10px] sm:text-base" /> Johns Hopkins</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-user-doctor text-[10px] sm:text-base" /> Cleveland</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-heart-pulse text-[10px] sm:text-base" /> Cedars-Sinai</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-dna text-[10px] sm:text-base" /> Stanford</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-hospital-user text-[10px] sm:text-base" /> Mass General</span>
             </div>
           ))}
         </div>
