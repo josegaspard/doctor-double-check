@@ -218,9 +218,10 @@ export default function Chat() {
     }
   }, [selectedSession, loadMessages, markAsRead]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // REMOVED: Auto-scroll to bottom - user should control their own scroll
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // }, [messages]);
 
   // Reset selected session when changing tabs
   useEffect(() => {
@@ -562,32 +563,32 @@ export default function Chat() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-5xl">
-        <h1 className="font-heading text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
-          <MessageSquare className="w-6 h-6 text-primary" />
+      <div className="container mx-auto px-4 py-4 sm:py-6 max-w-5xl flex flex-col h-[calc(100vh-theme(spacing.14)-theme(spacing.32))] sm:h-[calc(100vh-theme(spacing.14)-theme(spacing.40))]">
+        <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6 flex items-center gap-2 flex-shrink-0">
+          <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
           Chat 1:1
         </h1>
 
-        <div className="grid md:grid-cols-3 gap-4" style={{ height: 'calc(100vh - 240px)', minHeight: '500px' }}>
+        <div className="grid md:grid-cols-3 gap-3 sm:gap-4 flex-1 min-h-0 overflow-hidden">
           {/* Sessions List with Tabs */}
-          <Card className="md:col-span-1">
-            <CardHeader className="pb-2">
+          <Card className="md:col-span-1 flex flex-col min-h-0 max-h-full overflow-hidden">
+            <CardHeader className="pb-2 flex-shrink-0">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'active' | 'history')}>
                 <TabsList className="w-full">
-                  <TabsTrigger value="active" className="flex-1 gap-1">
+                  <TabsTrigger value="active" className="flex-1 gap-1 text-xs sm:text-sm">
                     <MessageSquare className="w-3 h-3" />
-                    Activas
+                    <span className="hidden xs:inline">Activas</span>
                     {activeSessions.length > 0 && (
-                      <Badge variant="secondary" className="text-xs ml-1">
+                      <Badge variant="secondary" className="text-[10px] sm:text-xs ml-1">
                         {activeSessions.length}
                       </Badge>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="history" className="flex-1 gap-1">
+                  <TabsTrigger value="history" className="flex-1 gap-1 text-xs sm:text-sm">
                     <History className="w-3 h-3" />
-                    Historial
+                    <span className="hidden xs:inline">Historial</span>
                     {closedSessions.length > 0 && (
-                      <Badge variant="outline" className="text-xs ml-1">
+                      <Badge variant="outline" className="text-[10px] sm:text-xs ml-1">
                         {closedSessions.length}
                       </Badge>
                     )}
@@ -595,24 +596,24 @@ export default function Chat() {
                 </TabsList>
               </Tabs>
             </CardHeader>
-            <CardContent className="p-2 flex-1 overflow-hidden">
+            <CardContent className="p-2 flex-1 min-h-0 overflow-hidden">
               <ScrollArea className="h-full">
                 {activeTab === 'active' ? (
                   activeSessions.length > 0 ? (
                     activeSessions.map(session => renderSessionItem(session))
                   ) : (
-                    <div className="text-center py-8">
-                      <MessageSquare className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground text-sm">No hay conversaciones activas</p>
+                    <div className="text-center py-6 sm:py-8">
+                      <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground text-xs sm:text-sm">No hay conversaciones activas</p>
                     </div>
                   )
                 ) : (
                   closedSessions.length > 0 ? (
                     closedSessions.map(session => renderSessionItem(session))
                   ) : (
-                    <div className="text-center py-8">
-                      <History className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground text-sm">No hay consultas anteriores</p>
+                    <div className="text-center py-6 sm:py-8">
+                      <History className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground text-xs sm:text-sm">No hay consultas anteriores</p>
                     </div>
                   )
                 )}
@@ -621,10 +622,10 @@ export default function Chat() {
           </Card>
 
           {/* Messages */}
-          <Card className="md:col-span-2 flex flex-col">
+          <Card className="md:col-span-2 flex flex-col min-h-0 max-h-full overflow-hidden">
             {selectedSession && selectedSessionData ? (
               <>
-                <CardHeader className="pb-2 border-b">
+                <CardHeader className="pb-2 border-b flex-shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {/* Avatar */}
@@ -759,12 +760,12 @@ export default function Chat() {
                     </p>
                   )}
                 </CardHeader>
-                <CardContent className="flex-1 p-0 flex flex-col">
-                  <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-3">
+                <CardContent className="flex-1 p-0 flex flex-col min-h-0 overflow-hidden">
+                  <ScrollArea className="flex-1 min-h-0 p-3 sm:p-4">
+                    <div className="space-y-2 sm:space-y-3">
                       {messages.map(msg => (
                         <div key={msg.id} className={`flex ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[70%] p-3 rounded-lg ${
+                          <div className={`max-w-[85%] sm:max-w-[70%] p-2 sm:p-3 rounded-lg ${
                             msg.senderId === user?.id 
                               ? isSessionClosed 
                                 ? 'bg-primary/70 text-primary-foreground' 
@@ -794,14 +795,14 @@ export default function Chat() {
                   
                   {/* Input area with file upload - only for active sessions */}
                   {isSessionClosed ? (
-                    <div className="p-4 border-t bg-muted/30">
+                    <div className="p-3 sm:p-4 border-t bg-muted/30 flex-shrink-0">
                       <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                        <Lock className="w-4 h-4" />
-                        <p className="text-sm">Esta consulta ha sido cerrada. Solo puedes ver el historial.</p>
+                        <Lock className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <p className="text-xs sm:text-sm text-center">Esta consulta ha sido cerrada. Solo puedes ver el historial.</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="p-4 border-t space-y-2">
+                    <div className="p-2 sm:p-4 border-t flex-shrink-0">
                       <div className="flex gap-2 items-center">
                         <ChatFileUpload 
                           sessionId={selectedSession} 
@@ -812,9 +813,9 @@ export default function Chat() {
                           value={newMessage}
                           onChange={handleInputChange}
                           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                          className="flex-1"
+                          className="flex-1 text-sm"
                         />
-                        <Button onClick={handleSend} size="icon" disabled={!newMessage.trim()}>
+                        <Button onClick={handleSend} size="icon" disabled={!newMessage.trim()} className="flex-shrink-0">
                           <Send className="w-4 h-4" />
                         </Button>
                       </div>
@@ -823,16 +824,16 @@ export default function Chat() {
                 </CardContent>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8">
+              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-4 sm:p-8">
                 {activeTab === 'active' ? (
                   <>
-                    <MessageSquare className="w-12 h-12 mb-3 opacity-50" />
-                    <p className="text-center">Selecciona una conversación para comenzar</p>
+                    <MessageSquare className="w-8 h-8 sm:w-12 sm:h-12 mb-3 opacity-50" />
+                    <p className="text-center text-sm sm:text-base">Selecciona una conversación para comenzar</p>
                   </>
                 ) : (
                   <>
-                    <History className="w-12 h-12 mb-3 opacity-50" />
-                    <p className="text-center">Selecciona una consulta anterior para ver el historial</p>
+                    <History className="w-8 h-8 sm:w-12 sm:h-12 mb-3 opacity-50" />
+                    <p className="text-center text-sm sm:text-base">Selecciona una consulta anterior para ver el historial</p>
                   </>
                 )}
               </div>
