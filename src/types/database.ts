@@ -11,7 +11,7 @@ export type ContentType = 'video' | 'pdf' | 'image';
 export type ClinicalSessionStatus = 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
 export type ChatParticipantType = 'patient' | 'doctor' | 'resident';
 
-// Profile
+// Profile (full - only accessible for own profile)
 export interface Profile {
   id: string;
   email: string;
@@ -19,6 +19,14 @@ export interface Profile {
   avatar_url?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// Public Profile (safe subset - used for displaying other users)
+export interface PublicProfile {
+  id: string;
+  name: string;
+  avatar_url?: string | null;
+  is_identity_verified?: boolean;
 }
 
 // User Role
@@ -225,9 +233,9 @@ export interface ChatSession {
   is_double_check: boolean;
   original_consultation_id?: string | null;
   created_at: string;
-  // Joined data
-  participant1?: Profile;
-  participant2?: Profile;
+  // Joined data (uses PublicProfile to avoid exposing emails)
+  participant1?: PublicProfile;
+  participant2?: PublicProfile;
 }
 
 // Chat Message
@@ -238,8 +246,8 @@ export interface ChatMessage {
   content: string;
   is_read: boolean;
   created_at: string;
-  // Joined data
-  sender?: Profile;
+  // Joined data (uses PublicProfile to avoid exposing emails)
+  sender?: PublicProfile;
 }
 
 // Resident Group

@@ -114,15 +114,15 @@ export default function ContentGallery() {
       // Get unique creator IDs
       const creatorIds = [...new Set((data || []).map(c => c.creator_id))];
       
-      // Fetch creator profiles
+      // Use public views to avoid exposing sensitive data
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('id, name, avatar_url')
         .in('id', creatorIds);
       
-      // Fetch doctor specialties
+      // Use public view for doctor specialties
       const { data: doctorProfiles } = await supabase
-        .from('doctor_profiles')
+        .from('doctor_profiles_public')
         .select('user_id, specialty')
         .in('user_id', creatorIds);
 

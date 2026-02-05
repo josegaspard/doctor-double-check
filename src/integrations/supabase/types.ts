@@ -1613,6 +1613,7 @@ export type Database = {
           available_for_clinical_sessions: boolean | null
           available_for_double_check: boolean | null
           bio: string | null
+          consultation_fee: number | null
           created_at: string | null
           followers_count: number | null
           id: string | null
@@ -1631,6 +1632,7 @@ export type Database = {
           available_for_clinical_sessions?: boolean | null
           available_for_double_check?: boolean | null
           bio?: string | null
+          consultation_fee?: number | null
           created_at?: string | null
           followers_count?: number | null
           id?: string | null
@@ -1649,6 +1651,7 @@ export type Database = {
           available_for_clinical_sessions?: boolean | null
           available_for_double_check?: boolean | null
           bio?: string | null
+          consultation_fee?: number | null
           created_at?: string | null
           followers_count?: number | null
           id?: string | null
