@@ -47,56 +47,37 @@ export default function DoubleCheck() {
 
   const fetchDoubleCheckDoctors = async () => {
     try {
+      // Use public view - no sensitive financial data exposed
       const { data: doctorProfiles } = await supabase
-        .from('doctor_profiles')
-        .select('*, profiles!doctor_profiles_user_id_fkey (name, avatar_url)')
+        .from('doctor_profiles_public')
+        .select('id, user_id, specialty, rating, total_consultations, consultation_fee, followers_count, available_for_double_check')
         .eq('available_for_double_check', true)
-        .eq('status', 'approved')
         .order('rating', { ascending: false });
 
       if (doctorProfiles) {
-        setDoctors(doctorProfiles.map((d: any) => ({
-          id: d.id,
-          userId: d.user_id,
-          name: d.profiles?.name || 'Doctor',
-          avatarUrl: d.profiles?.avatar_url || undefined,
-          specialty: d.specialty,
-          rating: Number(d.rating),
-          totalConsultations: d.total_consultations,
-          consultationFee: Number(d.consultation_fee),
-          followersCount: d.followers_count,
-        })));
-      }
-    } catch (error) {
-      // Fallback without join
-      const { data: doctorProfiles } = await supabase
-        .from('doctor_profiles')
-        .select('*')
-        .eq('available_for_double_check', true)
-        .eq('status', 'approved')
-        .order('rating', { ascending: false });
-
-      if (doctorProfiles) {
-        const userIds = doctorProfiles.map(d => d.user_id);
+        // Use profiles_public view instead of profiles table
+        const userIds = doctorProfiles.map(d => d.user_id).filter(Boolean) as string[];
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('id, name, avatar_url')
           .in('id', userIds);
 
         const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
         setDoctors(doctorProfiles.map(d => ({
-          id: d.id,
-          userId: d.user_id,
-          name: profileMap.get(d.user_id)?.name || 'Doctor',
-          avatarUrl: profileMap.get(d.user_id)?.avatar_url || undefined,
-          specialty: d.specialty,
+          id: d.id!,
+          userId: d.user_id!,
+          name: profileMap.get(d.user_id!)?.name || 'Doctor',
+          avatarUrl: profileMap.get(d.user_id!)?.avatar_url || undefined,
+          specialty: d.specialty!,
           rating: Number(d.rating),
-          totalConsultations: d.total_consultations,
+          totalConsultations: d.total_consultations || 0,
           consultationFee: Number(d.consultation_fee),
-          followersCount: d.followers_count,
+          followersCount: d.followers_count || 0,
         })));
       }
+    } catch (error) {
+      console.error('Error fetching double check doctors:', error);
     } finally {
       setIsLoading(false);
     }

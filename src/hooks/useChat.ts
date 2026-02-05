@@ -25,27 +25,25 @@ export function useChat(userId: string | undefined, userRole: string | undefined
         console.error('Error fetching sessions:', error);
       } else {
         // Enrich with participant data
-        const enrichedSessions = await Promise.all(
-          (data || []).map(async (session) => {
-            const { data: p1 } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.participant1_id)
-              .single();
-            
-            const { data: p2 } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.participant2_id)
-              .single();
+        // Use profiles_public view to avoid exposing emails/sensitive data
+        const participantIds = [...new Set((data || []).flatMap(s => [s.participant1_id, s.participant2_id]))];
+        const { data: allProfiles } = await supabase
+          .from('profiles_public')
+          .select('id, name, avatar_url, is_identity_verified')
+          .in('id', participantIds);
+
+        const profileMap = new Map(allProfiles?.map(p => [p.id, p]) || []);
+
+        const enrichedSessions = (data || []).map((session) => {
+            const p1 = profileMap.get(session.participant1_id);
+            const p2 = profileMap.get(session.participant2_id);
 
             return {
               ...session,
               participant1: p1 || undefined,
               participant2: p2 || undefined,
             } as ChatSession;
-          })
-        );
+          });
         setSessions(enrichedSessions);
       }
     } catch (error) {
@@ -90,21 +88,19 @@ export function useChat(userId: string | undefined, userRole: string | undefined
       return [];
     }
 
-    // Enrich with sender data
-    const enrichedMessages = await Promise.all(
-      (data || []).map(async (msg) => {
-        const { data: sender } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', msg.sender_id)
-          .single();
+    // Use profiles_public view to avoid exposing sensitive data
+    const senderIds = [...new Set((data || []).map(m => m.sender_id))];
+    const { data: senderProfiles } = await supabase
+      .from('profiles_public')
+      .select('id, name, avatar_url, is_identity_verified')
+      .in('id', senderIds);
 
-        return {
-          ...msg,
-          sender: sender || undefined,
-        } as ChatMessage;
-      })
-    );
+    const senderMap = new Map(senderProfiles?.map(p => [p.id, p]) || []);
+
+    const enrichedMessages = (data || []).map((msg) => ({
+        ...msg,
+        sender: senderMap.get(msg.sender_id) || undefined,
+      } as ChatMessage));
 
     return enrichedMessages;
   };

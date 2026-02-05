@@ -87,8 +87,9 @@ export default function Doctors() {
 
   const fetchDoctors = async () => {
     try {
+      // Use the public view which only exposes non-sensitive columns
       const { data, error } = await supabase
-        .from('doctor_profiles')
+        .from('doctor_profiles_public')
         .select(`
           id,
           user_id,
@@ -100,13 +101,12 @@ export default function Doctors() {
           location,
           available_for_double_check
         `)
-        .eq('status', 'approved')
         .order('rating', { ascending: false });
 
       if (error) throw error;
 
-      // Fetch profiles separately
-      const userIds = data?.map(d => d.user_id) || [];
+      // Fetch profiles from public view (no emails exposed)
+      const userIds = data?.map(d => d.user_id).filter(Boolean) as string[] || [];
       const { data: profiles } = await supabase
         .from('profiles_public')
         .select('id, name, avatar_url, is_identity_verified')
