@@ -215,19 +215,19 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             </div>
 
             {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center gap-0.5 lg:gap-1">
               {filteredNavItems.map((item) => (
                 <Link
                   key={item.href}
                   to={item.href}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-1 lg:gap-1.5 px-2 lg:px-2.5 py-1.5 rounded-md text-xs lg:text-sm font-medium transition-colors ${
                     location.pathname === item.href
                       ? 'bg-accent text-accent-foreground'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
                 >
-                  <item.icon className="w-4 h-4" />
-                  {t(item.labelKey)}
+                  <item.icon className="w-3.5 h-3.5 lg:w-4 lg:h-4 flex-shrink-0" />
+                  <span className="whitespace-nowrap">{t(item.labelKey)}</span>
                 </Link>
               ))}
             </nav>
