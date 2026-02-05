@@ -214,22 +214,24 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               </Link>
             </div>
 
-            {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center gap-0.5 lg:gap-1">
-              {filteredNavItems.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`flex items-center gap-1 lg:gap-1.5 px-2 lg:px-2.5 py-1.5 rounded-md text-xs lg:text-sm font-medium transition-colors ${
-                    location.pathname === item.href
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <item.icon className="w-3.5 h-3.5 lg:w-4 lg:h-4 flex-shrink-0" />
-                  <span className="whitespace-nowrap">{t(item.labelKey)}</span>
-                </Link>
-              ))}
+            {/* Desktop Nav - scrollable on tablet, full on desktop */}
+            <nav className="hidden md:flex items-center overflow-x-auto scrollbar-hide max-w-[calc(100vw-400px)] lg:max-w-none">
+              <div className="flex items-center gap-0.5">
+                {filteredNavItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={`flex items-center gap-1 px-1.5 lg:px-2.5 py-1.5 rounded-md text-[11px] lg:text-xs xl:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                      location.pathname === item.href
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    <item.icon className="w-3 h-3 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4 flex-shrink-0" />
+                    <span>{t(item.labelKey)}</span>
+                  </Link>
+                ))}
+              </div>
             </nav>
 
             {/* Right Side */}
