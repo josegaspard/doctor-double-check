@@ -129,7 +129,7 @@ serve(async (req: Request): Promise<Response> => {
       
       try {
         await resend.emails.send({
-          from: "Dr Double Check <onboarding@resend.dev>",
+          from: "Cirugía Estética Uribe <noreply@cirugiaesteticauribe.com>",
           to: [profile.email],
           subject,
           html: `
@@ -170,7 +170,7 @@ serve(async (req: Request): Promise<Response> => {
                   </p>
                   
                   <div style="margin-top: 24px; text-align: center;">
-                    <a href="https://doc-seek-relay.lovable.app/doctor/${doctorId}" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    <a href="https://cirugiaesteticauribe.com/doctor/${doctorId}" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
                       Ver Contenido
                     </a>
                   </div>
@@ -181,7 +181,7 @@ serve(async (req: Request): Promise<Response> => {
                     <a href="${unsubscribeUrl}" style="color: #64748b; text-decoration: underline;">Desuscribirse de emails de contenido</a> · 
                     <a href="${unsubscribeAllUrl}" style="color: #64748b; text-decoration: underline;">Desuscribirse de todos los emails</a>
                   </p>
-                  <p style="margin: 0;">© 2026 Dr Double Check. Todos los derechos reservados.</p>
+                  <p style="margin: 0;">© 2026 Cirugía Estética Uribe. Todos los derechos reservados.</p>
                 </div>
               </div>
             </body>

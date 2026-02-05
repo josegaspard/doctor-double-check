@@ -30,9 +30,9 @@ const handler = async (req: Request): Promise<Response> => {
     }).format(amount);
 
     const emailResponse = await resend.emails.send({
-      from: "Dr Double Check <onboarding@resend.dev>",
+      from: "Cirugía Estética Uribe <noreply@cirugiaesteticauribe.com>",
       to: [email],
-      subject: `Compra exitosa - ${productName}`,
+      subject: `Compra exitosa - ${productName} | Cirugía Estética Uribe`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -69,13 +69,13 @@ const handler = async (req: Request): Promise<Response> => {
               </p>
               
               <div style="margin-top: 24px; text-align: center;">
-                <a href="https://doc-seek-relay.lovable.app/recordings" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                <a href="https://cirugiaesteticauribe.com/recordings" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
                   Ver mis compras
                 </a>
               </div>
             </div>
             <div style="background: #f1f5f9; padding: 16px; text-align: center; color: #64748b; font-size: 12px;">
-              <p style="margin: 0;">© 2026 Dr Double Check. Todos los derechos reservados.</p>
+              <p style="margin: 0;">© 2026 Cirugía Estética Uribe. Todos los derechos reservados.</p>
             </div>
           </div>
         </body>

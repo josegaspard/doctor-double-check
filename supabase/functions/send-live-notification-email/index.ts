@@ -101,7 +101,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const baseUrl = Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.functions.supabase.co') || '';
-    const appUrl = "https://doc-seek-relay.lovable.app";
+    const appUrl = "https://cirugiaesteticauribe.com";
 
     let sentCount = 0;
     let failedCount = 0;
@@ -159,7 +159,7 @@ serve(async (req: Request): Promise<Response> => {
     
     <div style="text-align: center; padding: 24px;">
       <p style="color: #94a3b8; font-size: 12px; margin: 0 0 8px;">
-        Recibiste este email porque sigues a ${doctorName} en Dr Double Check.
+        Recibiste este email porque sigues a ${doctorName} en Cirugía Estética Uribe.
       </p>
       <p style="color: #94a3b8; font-size: 12px; margin: 0;">
         <a href="${baseUrl}/unsubscribe-email?token=${unsubscribeLiveToken}" style="color: #64748b;">Desuscribirse de notificaciones de lives</a>
@@ -174,7 +174,7 @@ serve(async (req: Request): Promise<Response> => {
 
       try {
         await resend.emails.send({
-          from: "Dr Double Check <onboarding@resend.dev>",
+          from: "Cirugía Estética Uribe <noreply@cirugiaesteticauribe.com>",
           to: [profile.email],
           subject,
           html,
