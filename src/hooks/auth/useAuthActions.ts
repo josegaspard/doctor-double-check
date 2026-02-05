@@ -83,12 +83,14 @@ export function useAuthActions(
         return { success: false, error: authError.message };
       }
 
-      if (authData.user) {
+      // If email confirmation is required, Supabase returns user but NO session.
+      // Only set the authenticated state when we actually have a session.
+      if (authData.session?.user) {
         // Wait a bit for the trigger to create the profile
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const profile = await fetchUserProfile(authData.user.id);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const profile = await fetchUserProfile(authData.session.user.id);
         setUser(profile);
-        setSupabaseUser(authData.user);
+        setSupabaseUser(authData.session.user);
       }
 
       setIsLoading(false);

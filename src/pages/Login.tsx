@@ -98,7 +98,7 @@ export default function Login() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterError('');
-    
+
     const result = await register({
       email: registerEmail,
       password: registerPassword,
@@ -107,18 +107,15 @@ export default function Login() {
       specialty: registerSpecialty,
       institution: registerInstitution,
     });
-    
+
     if (result.success) {
-      // For patients, redirect directly to lives
-      if (registerRole === 'patient') {
-        navigate('/lives');
-      } else {
-        // For doctors/residents, redirect to verification pending page
-        navigate('/verification-pending');
-      }
-    } else {
-      setRegisterError(result.error || 'Error al registrarse');
+      // Email/password signups must confirm their email before proceeding.
+      // After confirming, they'll be able to sign in normally.
+      setShowEmailConfirmation(true);
+      return;
     }
+
+    setRegisterError(result.error || 'Error al registrarse');
   };
 
   return (
