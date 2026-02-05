@@ -194,18 +194,20 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
     if (!user || !deleteConfirm) return;
     setIsProcessing(true);
     try {
-      // This requires service role - should be done via edge function in production
-      // For now, we'll just mark the profile
-      await supabase
-        .from('profiles')
-        .update({ name: '[DELETED]', email: `deleted-${user.id}@deleted.local` })
-        .eq('id', user.id);
+      // Call edge function to delete user completely from auth.users
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: user.id }
+      });
 
-      toast.success(language === 'es' ? 'Usuario eliminado' : 'User deleted');
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success(language === 'es' ? 'Usuario eliminado completamente' : 'User completely deleted');
       onUserUpdated();
       onClose();
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('Delete user error:', error);
+      toast.error(error.message || (language === 'es' ? 'Error al eliminar usuario' : 'Error deleting user'));
     } finally {
       setIsProcessing(false);
       setDeleteConfirm(false);

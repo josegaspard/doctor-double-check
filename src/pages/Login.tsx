@@ -141,7 +141,7 @@ export default function Login() {
       {/* Main */}
       <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
         <div className="w-full max-w-md">
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs defaultValue={preferredRole !== 'patient' || location.state ? "register" : "login"} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login">{t('login.loginTab')}</TabsTrigger>
               <TabsTrigger value="register">{t('login.registerTab')}</TabsTrigger>
