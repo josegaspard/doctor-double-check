@@ -83,7 +83,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    // Note: logout() handles the navigation internally to /lives
   };
 
   const getRoleBadge = () => {
