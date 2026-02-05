@@ -208,27 +208,27 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 </SheetContent>
               </Sheet>
 
-              {/* Logo - links to /lives for authenticated users */}
-              <Link to="/lives" className="hidden md:flex items-center gap-2">
-                <img src={logoMedicalMasters} alt="Medical Masters" className="h-10 w-auto" />
+              {/* Logo - hidden on md, visible on lg+ to save space on tablets */}
+              <Link to="/lives" className="hidden lg:flex items-center">
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 xl:h-10 w-auto" />
               </Link>
             </div>
 
-            {/* Desktop Nav - scrollable on tablet, full on desktop */}
-            <nav className="hidden md:flex items-center overflow-x-auto scrollbar-hide max-w-[calc(100vw-400px)] lg:max-w-none">
-              <div className="flex items-center gap-0.5">
+            {/* Desktop Nav - compact on tablet, full on desktop */}
+            <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-0.5 lg:gap-1">
                 {filteredNavItems.map((item) => (
                   <Link
                     key={item.href}
                     to={item.href}
-                    className={`flex items-center gap-1 px-1.5 lg:px-2.5 py-1.5 rounded-md text-[11px] lg:text-xs xl:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                    className={`flex items-center gap-1 px-1.5 md:px-2 lg:px-2.5 py-1.5 rounded-md text-[10px] md:text-[11px] lg:text-xs xl:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                       location.pathname === item.href
                         ? 'bg-accent text-accent-foreground'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                   >
                     <item.icon className="w-3 h-3 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4 flex-shrink-0" />
-                    <span>{t(item.labelKey)}</span>
+                    <span className="hidden md:inline">{t(item.labelKey)}</span>
                   </Link>
                 ))}
               </div>

@@ -1,5 +1,3 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -10,7 +8,7 @@ const logStep = (step: string, details?: any) => {
   console.log(`[SETUP-CLOUDFLARE-WEBHOOK] ${step}${detailsStr}`);
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
