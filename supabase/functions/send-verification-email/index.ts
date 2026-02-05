@@ -60,7 +60,7 @@ const getEmailContent = (status: string, name: string) => {
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 24px;">DocSeek</h1>
+            <h1 style="color: white; margin: 0; font-size: 24px;">Cirugía Estética Uribe</h1>
           </div>
           <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; border-top: none;">
             <h2 style="color: #1e293b; margin-top: 0;">${content.title}</h2>
@@ -121,7 +121,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "DocSeek <onboarding@resend.dev>",
+        from: "Cirugía Estética Uribe <noreply@cirugiaesteticauribe.com>",
         to: [email],
         subject,
         html,
