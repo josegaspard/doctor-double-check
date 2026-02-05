@@ -78,10 +78,46 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq('user_id', userId)
       .single();
 
-    // Delete related data first (order matters due to foreign keys)
-    // Most tables will cascade delete from auth.users, but some may not
+    // Purge user data from public tables (best-effort) BEFORE removing auth user.
+    // We intentionally do not delete shared conversation/session tables here to avoid
+    // accidentally deleting other users' records without an explicit policy decision.
+    const purge = async (label: string, fn: Promise<{ error: any }>) => {
+      const { error } = await fn;
+      if (error) {
+        console.error(`[delete-user] purge ${label} error:`, error);
+      }
+    };
 
-    // Delete from auth.users - this will cascade to profiles and other tables with ON DELETE CASCADE
+    await purge('notification_preferences', supabaseAdmin.from('notification_preferences').delete().eq('user_id', userId));
+    await purge('push_subscriptions', supabaseAdmin.from('push_subscriptions').delete().eq('user_id', userId));
+    await purge('notifications', supabaseAdmin.from('notifications').delete().eq('user_id', userId));
+    await purge('onboarding_progress', supabaseAdmin.from('onboarding_progress').delete().eq('user_id', userId));
+    await purge('entitlements', supabaseAdmin.from('entitlements').delete().eq('user_id', userId));
+
+    await purge('wallet_transactions', supabaseAdmin.from('wallet_transactions').delete().eq('user_id', userId));
+    await purge('wallets', supabaseAdmin.from('wallets').delete().eq('user_id', userId));
+
+    await purge('purchases', supabaseAdmin.from('purchases').delete().eq('user_id', userId));
+    await purge('subscriptions_subscriber', supabaseAdmin.from('subscriptions').delete().eq('subscriber_id', userId));
+    await purge('subscriptions_creator', supabaseAdmin.from('subscriptions').delete().eq('creator_id', userId));
+
+    await purge('doctor_availability', supabaseAdmin.from('doctor_availability').delete().eq('doctor_id', userId));
+    await purge('doctor_bank_accounts', supabaseAdmin.from('doctor_bank_accounts').delete().eq('doctor_id', userId));
+    await purge('doctor_invoices', supabaseAdmin.from('doctor_invoices').delete().eq('doctor_id', userId));
+    await purge('email_history', supabaseAdmin.from('email_history').delete().eq('doctor_id', userId));
+
+    await purge('resident_profiles', supabaseAdmin.from('resident_profiles').delete().eq('user_id', userId));
+    await purge('doctor_profiles', supabaseAdmin.from('doctor_profiles').delete().eq('user_id', userId));
+
+    await purge('followers_follower', supabaseAdmin.from('followers').delete().eq('follower_id', userId));
+    await purge('followers_followed', supabaseAdmin.from('followers').delete().eq('followed_id', userId));
+    await purge('live_likes', supabaseAdmin.from('live_likes').delete().eq('user_id', userId));
+
+    // Finally remove profile + role rows (if they don't cascade)
+    await purge('user_roles', supabaseAdmin.from('user_roles').delete().eq('user_id', userId));
+    await purge('profiles', supabaseAdmin.from('profiles').delete().eq('id', userId));
+
+    // Delete from auth.users - this will cascade where FKs exist
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (deleteError) {
