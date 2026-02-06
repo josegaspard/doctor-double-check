@@ -48,6 +48,7 @@ import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
 import { EmailStatsCard } from '@/components/doctor/EmailStatsCard';
 import { EmailTrendsChart } from '@/components/doctor/EmailTrendsChart';
 import { EarningsCard } from '@/components/doctor/EarningsCard';
+import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { OfficeHoursConfig } from '@/components/doctor/OfficeHoursConfig';
 import { DoctorAnalytics } from '@/components/doctor/DoctorAnalytics';
 
@@ -329,7 +330,7 @@ export default function DoctorDashboard() {
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-8">
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-6 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-6 lg:grid-cols-5">
               <Card className="hover:shadow-md transition-shadow">
                 <CardContent className="p-3 sm:p-6">
                   <div className="flex items-center gap-2 sm:gap-4">
@@ -386,6 +387,13 @@ export default function DoctorDashboard() {
                       <p className="text-[10px] sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 truncate">Rating</p>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Consultation Fee Card - Editable */}
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="p-3 sm:p-6">
+                  <ConsultationFeeEditor variant="card" />
                 </CardContent>
               </Card>
             </div>
