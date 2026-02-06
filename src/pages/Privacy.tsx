@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
+import DOMPurify from 'dompurify';
 
 interface LegalContent {
   content: string;
@@ -171,7 +172,7 @@ Para ejercer sus derechos o realizar consultas sobre privacidad, contáctenos en
             {customContent ? (
               <div className="whitespace-pre-wrap">{customContent}</div>
             ) : (
-              <div dangerouslySetInnerHTML={{ __html: defaultContent.replace(/\n/g, '<br/>').replace(/## /g, '<h2 class="text-base font-semibold mt-6 mb-2">').replace(/<br\/><h2/g, '</h2><h2').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/- /g, '• ') }} />
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(defaultContent.replace(/\n/g, '<br/>').replace(/## /g, '<h2 class="text-base font-semibold mt-6 mb-2">').replace(/<br\/><h2/g, '</h2><h2').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/- /g, '• ')) }} />
             )}
           </CardContent>
         </Card>
