@@ -215,19 +215,19 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             </div>
 
             {/* Desktop Nav - compact on tablet, full on desktop */}
-            <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start overflow-x-auto scrollbar-hide">
-              <div className="flex items-center gap-0.5 lg:gap-1">
+            <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start overflow-x-auto scrollbar-hide mx-2">
+              <div className="flex items-center gap-0.5">
                 {filteredNavItems.map((item) => (
                   <Link
                     key={item.href}
                     to={item.href}
-                    className={`flex items-center gap-1 px-1.5 md:px-2 lg:px-2.5 py-1.5 rounded-md text-[10px] md:text-[11px] lg:text-xs xl:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                    className={`flex items-center gap-0.5 px-1.5 lg:px-2 py-1 rounded-md text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                       location.pathname === item.href
                         ? 'bg-accent text-accent-foreground'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                   >
-                    <item.icon className="w-3 h-3 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4 flex-shrink-0" />
+                    <item.icon className="w-2.5 h-2.5 lg:w-3 lg:h-3 xl:w-3.5 xl:h-3.5 flex-shrink-0" />
                     <span className="hidden md:inline">{t(item.labelKey)}</span>
                   </Link>
                 ))}
@@ -235,7 +235,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             </nav>
 
             {/* Right Side */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {/* Global Search */}
               <GlobalSearch />
               

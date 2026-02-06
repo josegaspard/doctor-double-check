@@ -154,7 +154,7 @@ export function EarningsCard() {
           <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-warning" />
-              <p className="text-sm text-warning-foreground">
+              <p className="text-sm text-foreground">
                 {language === 'es' 
                   ? 'Configura tu cuenta bancaria para recibir pagos'
                   : 'Set up your bank account to receive payments'}

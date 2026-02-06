@@ -159,10 +159,10 @@ function NotificationItem({
 }
 
 export function NotificationBell() {
+  const navigate = useNavigate();
   const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, isLoading } =
     useNotifications();
   const { language, t } = useLanguage();
-
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -197,7 +197,7 @@ export function NotificationBell() {
               {t('notifications.noNotifications')}
             </div>
           ) : (
-            notifications.map((notification) => (
+            notifications.slice(0, 10).map((notification) => (
               <NotificationItem
                 key={notification.id}
                 notification={notification}
@@ -208,6 +208,18 @@ export function NotificationBell() {
             ))
           )}
         </ScrollArea>
+        {notifications.length > 0 && (
+          <div className="p-2 border-t border-border">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-primary text-sm"
+              onClick={() => navigate('/notifications')}
+            >
+              {language === 'es' ? 'Ver todas las notificaciones' : 'View all notifications'}
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
