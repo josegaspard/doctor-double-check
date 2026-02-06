@@ -184,11 +184,11 @@ export function EarningsCard() {
         )}
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex-1"
+            className="w-full justify-start"
             onClick={() => navigate('/doctor/bank-account')}
           >
             <CreditCard className="w-4 h-4 mr-2" />
@@ -197,11 +197,11 @@ export function EarningsCard() {
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex-1"
+            className="w-full justify-between"
             onClick={() => navigate('/doctor/invoices')}
           >
-            {language === 'es' ? 'Facturas' : 'Invoices'}
-            <ArrowRight className="w-4 h-4 ml-2" />
+            <span>{language === 'es' ? 'Facturas y pagos' : 'Invoices & payments'}</span>
+            <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
       </CardContent>

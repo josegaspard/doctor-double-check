@@ -53,6 +53,7 @@ import {
   Award,
   X,
 } from 'lucide-react';
+import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 
 type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired' | null;
 
@@ -687,6 +688,14 @@ export default function UserProfile() {
                 </div>
                 <Separator />
 
+                {/* Consultation Fee - Editable */}
+                <ConsultationFeeEditor 
+                  initialFee={doctorProfile.consultation_fee} 
+                  onFeeChanged={(newFee) => setDoctorProfile(prev => prev ? { ...prev, consultation_fee: newFee } : null)}
+                  variant="inline"
+                />
+                <Separator />
+
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-4 pt-2">
                   <div className="text-center p-3 rounded-lg bg-muted/50">
@@ -703,13 +712,11 @@ export default function UserProfile() {
                     </div>
                     <p className="text-xs text-muted-foreground">Seguidores</p>
                   </div>
-                  <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Wallet className="w-4 h-4 text-emerald-500" />
-                      <span className="font-semibold">${doctorProfile.consultation_fee}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Consulta</p>
-                  </div>
+                  <ConsultationFeeEditor 
+                    initialFee={doctorProfile.consultation_fee} 
+                    onFeeChanged={(newFee) => setDoctorProfile(prev => prev ? { ...prev, consultation_fee: newFee } : null)}
+                    variant="card"
+                  />
                 </div>
               </CardContent>
             </Card>
