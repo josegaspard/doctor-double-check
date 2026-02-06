@@ -146,12 +146,14 @@ export function UpcomingAvailabilities() {
             ))}
             
             {/* View all card */}
-            <Card className="min-w-[140px] max-w-[140px] flex items-center justify-center bg-muted/30 border-dashed hover:bg-muted/50 transition-colors cursor-pointer">
-              <CardContent className="p-4 text-center">
-                <ChevronRight className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">Ver todos</p>
-              </CardContent>
-            </Card>
+            <Link to="/doctor/availability">
+              <Card className="min-w-[140px] max-w-[140px] flex items-center justify-center bg-muted/30 border-dashed hover:bg-muted/50 transition-colors cursor-pointer">
+                <CardContent className="p-4 text-center">
+                  <ChevronRight className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">Ver todos</p>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>

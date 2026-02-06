@@ -65,7 +65,7 @@ import ForDoctors from "./pages/ForDoctors";
 import ForPatients from "./pages/ForPatients";
 import Enterprise from "./pages/Enterprise";
 import ContentGallery from "./pages/ContentGallery";
-
+import Notifications from "./pages/Notifications";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -135,6 +135,7 @@ const App = () => (
                       <Route path="/for-patients" element={<ForPatients />} />
                       <Route path="/enterprise" element={<Enterprise />} />
                       <Route path="/content" element={<ContentGallery />} />
+                      <Route path="/notifications" element={<Notifications />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>

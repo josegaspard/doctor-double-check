@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Mail, CheckCircle, XCircle, Video, Calendar as CalendarIcon, ChevronDown, ChevronUp, Filter, X, Clock, Download } from 'lucide-react';
+import { Mail, CheckCircle, XCircle, Video, Calendar as CalendarIcon, ChevronDown, ChevronUp, Filter, X, Clock, Download, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
@@ -77,6 +77,8 @@ export function EmailHistoryCard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Filter states
   const [typeFilter, setTypeFilter] = useState<EmailTypeFilter>('all');
@@ -154,6 +156,43 @@ export function EmailHistoryCard() {
     setDateFilter('all');
     setCustomDateFrom(undefined);
     setCustomDateTo(undefined);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (selectedIds.size === filteredEmails.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredEmails.map(e => e.id)));
+    }
+  };
+
+  const deleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    setIsDeleting(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const { error } = await supabase
+        .from('email_history')
+        .delete()
+        .in('id', ids);
+      if (!error) {
+        setEmails(prev => prev.filter(e => !selectedIds.has(e.id)));
+        setSelectedIds(new Set());
+      }
+    } catch (error) {
+      console.error('Error deleting emails:', error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const sentCount = filteredEmails.filter(e => e.status === 'sent').length;
@@ -238,6 +277,26 @@ export function EmailHistoryCard() {
             Historial de Emails
           </CardTitle>
           <div className="flex items-center gap-2">
+            {selectedIds.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={deleteSelected}
+                disabled={isDeleting}
+                className="gap-1"
+              >
+                <Trash2 className="w-4 h-4" />
+                {isDeleting ? '...' : `Eliminar (${selectedIds.size})`}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={selectAll}
+              className="gap-1 text-xs"
+            >
+              {selectedIds.size === filteredEmails.length ? 'Deseleccionar' : 'Seleccionar todo'}
+            </Button>
             {filteredEmails.length > 0 && (
               <Button
                 variant="outline"
@@ -408,8 +467,16 @@ export function EmailHistoryCard() {
                 {displayedEmails.map(email => (
                   <div
                     key={email.id}
-                    className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+                    className={`flex items-start gap-3 p-3 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer ${selectedIds.has(email.id) ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-muted/50'}`}
+                    onClick={() => toggleSelect(email.id)}
                   >
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(email.id)}
+                      onChange={() => toggleSelect(email.id)}
+                      className="mt-2 accent-primary flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    />
                     <div className="w-8 h-8 rounded-full bg-background flex items-center justify-center flex-shrink-0">
                       {getEmailTypeIcon(email.emailType)}
                     </div>

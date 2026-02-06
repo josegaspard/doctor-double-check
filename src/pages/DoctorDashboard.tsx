@@ -491,7 +491,11 @@ export default function DoctorDashboard() {
               <CardContent>
                 <div className="space-y-3">
                   {accessibleVaultFiles.slice(0, 5).map(file => (
-                    <div key={file.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <div 
+                      key={file.id} 
+                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
+                      onClick={() => navigate('/doctor/vault')}
+                    >
                       <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center">
                         <Folder className="w-5 h-5 text-primary" />
                       </div>
