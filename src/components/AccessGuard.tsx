@@ -31,7 +31,9 @@ export default function AccessGuard({
   let hasEntitlement = true;
   if (requiresEntitlement && user) {
     if (requiresEntitlement === 'chat') {
-      hasEntitlement = (user as any)?.entitlements?.chat === true;
+      hasEntitlement = !!user.entitlements?.some(
+        (e) => e.type === 'chat' && e.isActive && (!e.expiresAt || new Date(e.expiresAt) > new Date())
+      );
     } else if (requiresEntitlement === 'recordings') {
       // Recordings require either being a paying role or having purchased
       hasEntitlement = role === 'doctor' || role === 'admin';

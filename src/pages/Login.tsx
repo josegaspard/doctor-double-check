@@ -17,6 +17,7 @@ import { ArrowLeft, Loader2, User, Stethoscope, GraduationCap, Mail, CheckCircle
 import { UserRole } from '@/types';
 import { toast } from 'sonner';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
+import { PasswordStrength, getPasswordStrength } from '@/components/ui/password-strength';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
 export default function Login() {
@@ -98,6 +99,13 @@ export default function Login() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterError('');
+
+    // Validate password strength before submitting
+    const { score } = getPasswordStrength(registerPassword);
+    if (score < 60) {
+      setRegisterError('La contraseña es demasiado débil. Cumple con los requisitos indicados.');
+      return;
+    }
 
     const result = await register({
       email: registerEmail,
@@ -329,7 +337,9 @@ export default function Login() {
                           value={registerPassword}
                           onChange={(e) => setRegisterPassword(e.target.value)}
                           required
+                          minLength={8}
                         />
+                        <PasswordStrength password={registerPassword} />
                       </div>
                       
                       <div className="space-y-2">
