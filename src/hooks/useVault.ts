@@ -103,13 +103,9 @@ export function useVault(userId: string | undefined, userRole: string | undefine
         return { success: false, error: uploadError.message };
       }
 
-      // Get signed URL for private bucket (1 year expiration for storage reference)
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(fileName, 31536000); // 1 year expiration
-
-      if (urlError) throw urlError;
-      const fileUrl = urlData?.signedUrl || '';
+      // Store the raw storage path (bucket/filePath) instead of a signed URL
+      // This prevents links from expiring. Generate signed URLs on-demand when viewing.
+      const fileUrl = `${bucket}/${fileName}`;
 
       // Save to medical history if requested
       let medicalHistoryId: string | null = null;

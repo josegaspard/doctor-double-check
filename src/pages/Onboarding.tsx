@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { UserRole } from '@/types';
+import { AppRole as UserRole } from '@/types/database';
 import { AvatarUpload } from '@/components/onboarding/AvatarUpload';
 import { CedulaVerificationStatus, useCedulaStatus } from '@/components/onboarding/CedulaVerificationStatus';
 import { CedulaAutoVerify } from '@/components/onboarding/CedulaAutoVerify';

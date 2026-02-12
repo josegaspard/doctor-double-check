@@ -259,9 +259,10 @@ export function useChat(userId: string | undefined, userRole: string | undefined
             .single();
 
           if (msg) {
+            // Use profiles_public view to avoid exposing sensitive data
             const { data: sender } = await supabase
-              .from('profiles')
-              .select('*')
+              .from('profiles_public')
+              .select('id, name, avatar_url, is_identity_verified')
               .eq('id', msg.sender_id)
               .single();
 
