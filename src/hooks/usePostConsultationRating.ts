@@ -18,12 +18,12 @@ export function usePostConsultationRating() {
     if (!user?.id || role !== 'patient') return;
 
     try {
-      // Find consultations that are closed and don't have a rating yet
+      // Find consultations that ended (closed or with ended_at set) and don't have a rating yet
       const { data: closedConsultations } = await supabase
         .from('consultations')
         .select('id, doctor_id, ended_at')
         .eq('patient_id', user.id)
-        .eq('status', 'closed')
+        .not('ended_at', 'is', null)
         .order('ended_at', { ascending: false })
         .limit(5);
 
