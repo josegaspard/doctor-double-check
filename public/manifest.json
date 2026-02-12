@@ -1,6 +1,6 @@
 {
-  "name": "Dr Double Check",
-  "short_name": "DrDC",
+  "name": "Medical Masters",
+  "short_name": "MedMasters",
   "description": "Plataforma médica de consultas, transmisiones en vivo y educación",
   "start_url": "/",
   "display": "standalone",

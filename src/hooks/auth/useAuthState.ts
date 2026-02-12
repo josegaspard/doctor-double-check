@@ -110,29 +110,12 @@ export function useAuthState() {
       }, 0);
     });
 
-    // THEN check current session
+    // THEN check current session — only set loading false if onAuthStateChange hasn't fired yet
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const stillValid = await validateAuthSession();
-        if (!stillValid) return;
-
-        setSupabaseUser(session.user);
-        const profile = await fetchUserProfile(session.user.id);
-        if (!profile) {
-          try {
-            await supabase.auth.signOut();
-          } catch {
-            // ignore
-          }
-          forceSignedOutState();
-          return;
-        }
-
-        setUser(profile);
-        setIsLoading(false);
-      } else {
+      if (!session?.user) {
         forceSignedOutState();
       }
+      // If session exists, onAuthStateChange will handle it — avoid duplicate fetchUserProfile calls
     });
 
     // Extra safety: validate on focus + periodically

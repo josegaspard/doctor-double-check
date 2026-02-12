@@ -80,8 +80,8 @@ export async function fetchUserProfile(userId: string): Promise<ExtendedUser | n
       }
     }
 
-    // Fetch wallet for patients and residents
-    if (role === 'patient' || role === 'resident') {
+    // Fetch wallet for patients, residents and doctors
+    if (role === 'patient' || role === 'resident' || role === 'doctor') {
       const { data: wallet } = await supabase
         .from('wallets')
         .select('*')
