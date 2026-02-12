@@ -222,17 +222,10 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
       if (uploadError) throw uploadError;
 
-      // Get signed URL for private bucket (1 year expiration for storage reference)
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from('vault-files')
-        .createSignedUrl(filePath, 31536000); // 1 year expiration
-      
-      if (urlError) throw urlError;
-
       const fileType = file.type.includes('pdf') ? 'pdf' : 
                        file.type.includes('image') ? 'image' : 'study';
 
-      // Create vault file record
+      // Store the storage path instead of a signed URL to avoid expiration issues
       const { error: dbError } = await supabase
         .from('vault_files')
         .insert({
@@ -240,7 +233,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           name: file.name,
           file_type: fileType,
           file_size: file.size,
-          file_url: urlData?.signedUrl || '',
+          file_url: filePath,
           description,
           category,
         });
@@ -288,16 +281,10 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
       if (uploadError) throw uploadError;
 
-      // Get signed URL for private bucket (1 year expiration for storage reference)
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from('medical-history')
-        .createSignedUrl(filePath, 31536000); // 1 year expiration
-      
-      if (urlError) throw urlError;
-
       const fileType = file.type.includes('pdf') ? 'pdf' : 
                        file.type.includes('image') ? 'image' : 'study';
 
+      // Store the storage path instead of a signed URL to avoid expiration issues
       const { error: dbError } = await supabase
         .from('medical_history')
         .insert({
@@ -306,7 +293,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           description,
           category,
           file_type: fileType,
-          file_url: urlData?.signedUrl || '',
+          file_url: filePath,
           file_size: file.size,
           date_of_study: dateOfStudy?.toISOString(),
         });
