@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Loader2, User, Stethoscope, GraduationCap, Mail, CheckCircle } from 'lucide-react';
-import { UserRole } from '@/types';
+import { AppRole as UserRole } from '@/types/database';
 import { toast } from 'sonner';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { PasswordStrength, getPasswordStrength } from '@/components/ui/password-strength';

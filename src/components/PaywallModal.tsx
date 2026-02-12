@@ -26,7 +26,7 @@ import {
   ExternalLink,
   Crown,
 } from 'lucide-react';
-import { Recording } from '@/types';
+import { Recording } from '@/types/database';
 
 interface PaywallModalProps {
   open: boolean;
@@ -58,9 +58,9 @@ export default function PaywallModal({
   if (!recording) return null;
 
   // Calculate effective price with Premium discount
-  const hasPremiumDiscount = recording.doctorId && hasPremiumTo(recording.doctorId);
-  const effectivePrice = recording.doctorId 
-    ? getEffectiveRecordingPrice(recording.price, recording.doctorId)
+  const hasPremiumDiscount = recording.doctor_id && hasPremiumTo(recording.doctor_id);
+  const effectivePrice = recording.doctor_id 
+    ? getEffectiveRecordingPrice(recording.price, recording.doctor_id)
     : recording.price;
 
   const formatDuration = (minutes: number) => {
@@ -119,7 +119,7 @@ export default function PaywallModal({
                 <PlayCircle className="w-8 h-8 text-premium/60" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-muted-foreground">{recording.doctorName}</p>
+                <p className="text-sm text-muted-foreground">{recording.doctor?.name || 'Doctor'}</p>
                 <p className="text-sm text-muted-foreground">{recording.specialty}</p>
                 <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                   <Clock className="w-3 h-3" />
