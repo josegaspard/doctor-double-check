@@ -112,7 +112,7 @@ export default function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <header className="relative min-h-screen flex items-end pt-20 overflow-hidden bg-[#163a83]">
+      <header className="relative min-h-screen flex items-end pt-20 overflow-hidden bg-[#163a83] mb-[-1px]">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d45] via-[#163a83] to-[#00768b] opacity-90" />
           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%23163a83' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E\")" }} />
