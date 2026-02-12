@@ -111,165 +111,162 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* Hero + Ticker Wrapper - keeps image flush with ticker */}
-      <div className="relative">
-        {/* Hero Section */}
-        <header className="relative min-h-screen flex items-end pt-20 overflow-hidden bg-[#163a83]">
-          <div className="absolute inset-0 z-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d45] via-[#163a83] to-[#00768b] opacity-90" />
-            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%23163a83' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E\")" }} />
-            <video autoPlay muted loop playsInline className="w-full h-full object-cover opacity-20 mix-blend-overlay">
-              <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-glitch-heart-heartbeat-32454-large.mp4" type="video/mp4" />
-            </video>
-          </div>
+      {/* Hero Section */}
+      <header className="relative min-h-screen flex items-end pt-20 overflow-hidden bg-[#163a83]">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d45] via-[#163a83] to-[#00768b] opacity-90" />
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%23163a83' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E\")" }} />
+          <video autoPlay muted loop playsInline className="w-full h-full object-cover opacity-20 mix-blend-overlay">
+            <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-glitch-heart-heartbeat-32454-large.mp4" type="video/mp4" />
+          </video>
+        </div>
 
-          <div className="container mx-auto px-6 lg:px-12 relative z-10 h-full">
-            <div className="flex flex-col lg:flex-row items-center h-full">
-              {/* Left Content */}
-              <div className="w-full lg:w-1/2 space-y-8 py-12 lg:py-24 animate-fade-in relative z-20">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
-                  <span className="flex h-2 w-2 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#aed3d9]">v4.0 Live System</span>
+        <div className="container mx-auto px-6 lg:px-12 relative z-10 h-full">
+          <div className="flex flex-col lg:flex-row items-center h-full">
+            {/* Left Content */}
+            <div className="w-full lg:w-1/2 space-y-8 py-12 lg:py-24 animate-fade-in relative z-20">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                </span>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#aed3d9]">v4.0 Live System</span>
+              </div>
+
+              <h1 className="text-5xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight">
+                Siempre una <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] via-white to-[#839ed5]">Segunda Opinión.</span>
+              </h1>
+
+              <p className="text-lg lg:text-xl text-slate-300 font-light max-w-xl leading-relaxed">
+                Orquestación clínica inteligente. Conectamos talento médico, datos de pacientes y flujos financieros en una única interfaz segura y elegante.
+              </p>
+
+              {/* Social Proof */}
+              <div className="flex items-center gap-4 pt-2 pb-2">
+                <div className="flex -space-x-3">
+                  <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop" alt="User 1" />
+                  <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop" alt="User 2" />
+                  <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop" alt="User 3" />
+                  <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://randomuser.me/api/portraits/men/32.jpg" alt="User 4" />
+                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-[#00768b] text-white flex items-center justify-center text-xs font-bold">+5k</div>
                 </div>
-
-                <h1 className="text-5xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight">
-                  Siempre una <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] via-white to-[#839ed5]">Segunda Opinión.</span>
-                </h1>
-
-                <p className="text-lg lg:text-xl text-slate-300 font-light max-w-xl leading-relaxed">
-                  Orquestación clínica inteligente. Conectamos talento médico, datos de pacientes y flujos financieros en una única interfaz segura y elegante.
-                </p>
-
-                {/* Social Proof */}
-                <div className="flex items-center gap-4 pt-2 pb-2">
-                  <div className="flex -space-x-3">
-                    <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop" alt="User 1" />
-                    <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop" alt="User 2" />
-                    <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop" alt="User 3" />
-                    <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://randomuser.me/api/portraits/men/32.jpg" alt="User 4" />
-                    <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-[#00768b] text-white flex items-center justify-center text-xs font-bold">+5k</div>
+                <div className="flex flex-col">
+                  <div className="flex text-yellow-400 text-[10px] gap-0.5">
+                    <i className="fa-solid fa-star" /><i className="fa-solid fa-star" /><i className="fa-solid fa-star" /><i className="fa-solid fa-star" /><i className="fa-solid fa-star" />
                   </div>
-                  <div className="flex flex-col">
-                    <div className="flex text-yellow-400 text-[10px] gap-0.5">
-                      <i className="fa-solid fa-star" /><i className="fa-solid fa-star" /><i className="fa-solid fa-star" /><i className="fa-solid fa-star" /><i className="fa-solid fa-star" />
-                    </div>
-                    <span className="text-sm font-medium text-white">Usuarios activos</span>
-                  </div>
-                </div>
-
-                {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row gap-5 pt-4">
-                  <Link 
-                    to="/app" 
-                    className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-[#163a83] bg-white rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:-translate-y-1 transition-all duration-300"
-                  >
-                    <span>Entrar a la aplicación</span>
-                    <i className="fa-solid fa-arrow-right ml-3" />
-                  </Link>
-                  
-                  <button 
-                    onClick={() => setShowDemoModal(true)}
-                    className="inline-flex items-center justify-center px-8 py-4 text-base font-medium text-white border border-white/20 rounded-xl hover:bg-white/10 transition-all backdrop-blur-md group"
-                  >
-                    <i className="fa-solid fa-circle-play mr-3 text-[#aed3d9] group-hover:scale-110 transition-transform" />
-                    Demo Interactiva
-                  </button>
-                </div>
-
-                {/* Stats */}
-                <div className="pt-8 flex gap-8 border-t border-white/10">
-                  <div>
-                    <p className="text-3xl font-bold text-white">98<span className="text-[#aed3d9] text-xl">%</span></p>
-                    <p className="text-xs text-slate-400 uppercase tracking-wider">Precisión Dx</p>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold text-white">15<span className="text-[#aed3d9] text-xl">m+</span></p>
-                    <p className="text-xs text-slate-400 uppercase tracking-wider">Pacientes</p>
-                  </div>
+                  <span className="text-sm font-medium text-white">Usuarios activos</span>
                 </div>
               </div>
 
-              {/* Right Content - spacer for floating cards only */}
-              <div className="w-full lg:w-1/2 relative h-[600px] lg:h-screen flex items-end justify-center lg:justify-end">
-                <div className="absolute bottom-0 right-10 w-[80%] h-[70%] bg-[#00768b]/20 rounded-full filter blur-[100px] animate-pulse" />
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-5 pt-4">
+                <Link 
+                  to="/app" 
+                  className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-[#163a83] bg-white rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:-translate-y-1 transition-all duration-300"
+                >
+                  <span>Entrar a la aplicación</span>
+                  <i className="fa-solid fa-arrow-right ml-3" />
+                </Link>
                 
-                <div className="relative z-10 w-full h-full flex items-end justify-center lg:justify-end">
-                  {/* Floating Card - Heart Rate */}
-                  <div className="absolute top-[30%] left-0 lg:left-0 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-20 max-w-[160px] border border-white/50 shadow-xl animate-bounce" style={{ animationDuration: '6s' }}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="p-2 bg-red-100 rounded-lg text-red-500"><i className="fa-solid fa-heart-pulse" /></div>
-                      <span className="text-xs font-bold text-gray-500">Live</span>
-                    </div>
-                    <p className="text-xl font-bold text-gray-800">72 <span className="text-sm font-normal text-gray-500">bpm</span></p>
-                    <svg className="w-full h-8 text-red-400" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
-                    </svg>
-                  </div>
+                <button 
+                  onClick={() => setShowDemoModal(true)}
+                  className="inline-flex items-center justify-center px-8 py-4 text-base font-medium text-white border border-white/20 rounded-xl hover:bg-white/10 transition-all backdrop-blur-md group"
+                >
+                  <i className="fa-solid fa-circle-play mr-3 text-[#aed3d9] group-hover:scale-110 transition-transform" />
+                  Demo Interactiva
+                </button>
+              </div>
 
-                  {/* Floating Card - Record Ready */}
-                  <div className="absolute bottom-24 right-4 lg:right-12 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-30 flex items-center gap-3 border-l-4 border-green-500 shadow-2xl animate-bounce" style={{ animationDuration: '4s' }}>
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
-                      <i className="fa-solid fa-check" />
+              {/* Stats */}
+              <div className="pt-8 flex gap-8 border-t border-white/10">
+                <div>
+                  <p className="text-3xl font-bold text-white">98<span className="text-[#aed3d9] text-xl">%</span></p>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider">Precisión Dx</p>
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-white">15<span className="text-[#aed3d9] text-xl">m+</span></p>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider">Pacientes</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Content - Hero Image */}
+            <div className="w-full lg:w-1/2 relative h-[600px] lg:h-screen flex items-end justify-center lg:justify-end">
+              <div className="absolute bottom-0 right-10 w-[80%] h-[70%] bg-[#00768b]/20 rounded-full filter blur-[100px] animate-pulse" />
+              
+              <div className="relative z-10 w-full h-full flex items-end justify-center lg:justify-end">
+                {/* Doctor image - fills entire right column, bottom aligned to hero edge */}
+                <img 
+                  src="https://i.imgur.com/YqgQSDV.png" 
+                  alt="Doctora Especialista" 
+                  className="absolute bottom-0 right-0 lg:-right-10 h-full max-h-[100%] w-auto object-contain object-bottom drop-shadow-2xl z-10 pointer-events-none"
+                />
+
+                {/* Floating Card - Heart Rate */}
+                <div className="absolute top-[30%] left-0 lg:left-0 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-20 max-w-[160px] border border-white/50 shadow-xl animate-bounce" style={{ animationDuration: '6s' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="p-2 bg-red-100 rounded-lg text-red-500"><i className="fa-solid fa-heart-pulse" /></div>
+                    <span className="text-xs font-bold text-gray-500">Live</span>
+                  </div>
+                  <p className="text-xl font-bold text-gray-800">72 <span className="text-sm font-normal text-gray-500">bpm</span></p>
+                  <svg className="w-full h-8 text-red-400" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
+                  </svg>
+                </div>
+
+                {/* Floating Card - Record Ready */}
+                <div className="absolute bottom-24 right-4 lg:right-12 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-30 flex items-center gap-3 border-l-4 border-green-500 shadow-2xl animate-bounce" style={{ animationDuration: '4s' }}>
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                    <i className="fa-solid fa-check" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-800">Expediente Listo</p>
+                    <p className="text-xs text-gray-500">Sincronizado</p>
+                  </div>
+                </div>
+
+                {/* Floating Card - App Status */}
+                <div className="absolute top-[20%] right-0 lg:-right-8 bg-white/65 backdrop-blur-xl p-3 rounded-xl z-20 flex flex-col gap-2 border border-white/50 shadow-lg animate-bounce" style={{ animationDuration: '5s' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#163a83] flex items-center justify-center text-white shadow-md">
+                      <i className="fa-solid fa-mobile-screen-button" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-gray-800">Expediente Listo</p>
-                      <p className="text-xs text-gray-500">Sincronizado</p>
+                      <p className="text-xs font-bold text-gray-800">Medical App</p>
+                      <p className="text-[10px] text-green-600 font-bold"><span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block mr-1" />Activa</p>
                     </div>
                   </div>
-
-                  {/* Floating Card - App Status */}
-                  <div className="absolute top-[20%] right-0 lg:-right-8 bg-white/65 backdrop-blur-xl p-3 rounded-xl z-20 flex flex-col gap-2 border border-white/50 shadow-lg animate-bounce" style={{ animationDuration: '5s' }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#163a83] flex items-center justify-center text-white shadow-md">
-                        <i className="fa-solid fa-mobile-screen-button" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-gray-800">Medical App</p>
-                        <p className="text-[10px] text-green-600 font-bold"><span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block mr-1" />Activa</p>
-                      </div>
-                    </div>
-                    <div className="flex items-end justify-between h-6 w-full gap-1 mt-1 px-1">
-                      <div className="w-1.5 bg-blue-200 h-[40%] rounded-t-sm" />
-                      <div className="w-1.5 bg-blue-300 h-[70%] rounded-t-sm" />
-                      <div className="w-1.5 bg-[#00768b] h-[50%] rounded-t-sm" />
-                      <div className="w-1.5 bg-[#163a83] h-[90%] rounded-t-sm" />
-                      <div className="w-1.5 bg-blue-300 h-[60%] rounded-t-sm" />
-                    </div>
+                  <div className="flex items-end justify-between h-6 w-full gap-1 mt-1 px-1">
+                    <div className="w-1.5 bg-blue-200 h-[40%] rounded-t-sm" />
+                    <div className="w-1.5 bg-blue-300 h-[70%] rounded-t-sm" />
+                    <div className="w-1.5 bg-[#00768b] h-[50%] rounded-t-sm" />
+                    <div className="w-1.5 bg-[#163a83] h-[90%] rounded-t-sm" />
+                    <div className="w-1.5 bg-blue-300 h-[60%] rounded-t-sm" />
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </header>
-
-        {/* Ticker - Brand logos — flush against hero */}
-        <div className="bg-white border-b border-gray-100 py-4 sm:py-6 overflow-hidden relative z-20">
-          <div className="absolute left-0 top-0 h-full w-8 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 h-full w-8 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-          <div className="flex w-[300%] sm:w-[200%] animate-scroll">
-            {[1, 2].map((i) => (
-              <div key={i} className="flex w-1/2 justify-around items-center gap-4 sm:gap-0 px-4 sm:px-0">
-                <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-hospital text-[10px] sm:text-base" /> <span className="hidden xs:inline">Mayo</span> Clinic</span>
-                <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-staff-snake text-[10px] sm:text-base" /> Johns Hopkins</span>
-                <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-user-doctor text-[10px] sm:text-base" /> Cleveland</span>
-                <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-heart-pulse text-[10px] sm:text-base" /> Cedars-Sinai</span>
-                <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-dna text-[10px] sm:text-base" /> Stanford</span>
-                <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-hospital-user text-[10px] sm:text-base" /> Mass General</span>
-              </div>
-            ))}
-          </div>
         </div>
+      </header>
 
-        {/* Doctor image — absolutely positioned spanning hero+ticker, outside overflow-hidden */}
-        <img 
-          src="https://i.imgur.com/YqgQSDV.png" 
-          alt="Doctora Especialista" 
-          className="absolute bottom-0 right-0 lg:right-[5%] h-auto w-auto max-h-[85vh] lg:max-h-[115vh] object-contain drop-shadow-2xl z-30 pointer-events-none"
-        />
+      {/* Ticker - Brand logos */}
+      <div className="bg-white border-b border-gray-100 py-4 sm:py-6 overflow-hidden relative">
+        <div className="absolute left-0 top-0 h-full w-8 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 h-full w-8 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+        <div className="flex w-[300%] sm:w-[200%] animate-scroll">
+          {[1, 2].map((i) => (
+            <div key={i} className="flex w-1/2 justify-around items-center gap-4 sm:gap-0 px-4 sm:px-0">
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-hospital text-[10px] sm:text-base" /> <span className="hidden xs:inline">Mayo</span> Clinic</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-staff-snake text-[10px] sm:text-base" /> Johns Hopkins</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-user-doctor text-[10px] sm:text-base" /> Cleveland</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-heart-pulse text-[10px] sm:text-base" /> Cedars-Sinai</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-dna text-[10px] sm:text-base" /> Stanford</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-hospital-user text-[10px] sm:text-base" /> Mass General</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Main Content */}
