@@ -332,7 +332,7 @@ export default function NewsArticle() {
           <Card className="mb-6">
             <CardContent className="p-4">
               <div className="flex items-start gap-4">
-                <Link to={`/profile/${authorProfile.id}`}>
+                <Link to={`/doctor/${authorProfile.id}`}>
                   <Avatar className="w-14 h-14 border-2 border-primary/20">
                     <AvatarImage src={authorProfile.avatar_url || ''} />
                     <AvatarFallback className="text-lg">{authorProfile.name?.charAt(0) || 'A'}</AvatarFallback>
@@ -340,7 +340,7 @@ export default function NewsArticle() {
                 </Link>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <Link to={`/profile/${authorProfile.id}`} className="font-semibold text-foreground hover:underline text-base">
+                    <Link to={`/doctor/${authorProfile.id}`} className="font-semibold text-foreground hover:underline text-base">
                       {authorProfile.name}
                     </Link>
                     <Badge variant="outline" className="text-[10px]">Autor</Badge>
@@ -411,7 +411,7 @@ export default function NewsArticle() {
 
                   {/* View profile button */}
                   <div className="mt-2">
-                    <Link to={`/profile/${authorProfile.id}`}>
+                    <Link to={`/doctor/${authorProfile.id}`}>
                       <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
                         <User className="w-3 h-3" /> Ver perfil
                       </Button>
