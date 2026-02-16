@@ -92,16 +92,25 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       if (sessionsData) {
-        // Batch fetch all session details via RPC (one call per session, but in parallel)
+        // Batch fetch session details via RPC (limit concurrency to avoid N+1 overload)
         const sessionIds = sessionsData.map(s => s.id);
-        const detailsResults = await Promise.all(
-          sessionIds.map(id => supabase.rpc('get_chat_session_details', { p_session_id: id }))
-        );
+        const BATCH_SIZE = 10;
+        const detailsResults: Awaited<ReturnType<typeof supabase.rpc>>[] = [];
+        for (let i = 0; i < sessionIds.length; i += BATCH_SIZE) {
+          const batch = sessionIds.slice(i, i + BATCH_SIZE);
+          const batchResults = await Promise.all(
+            batch.map(id => supabase.rpc('get_chat_session_details', { p_session_id: id }))
+          );
+          detailsResults.push(...batchResults);
+        }
         
         const detailsMap = new Map<string, any>();
         detailsResults.forEach((result, i) => {
-          if (!result.error && result.data && result.data.length > 0) {
-            detailsMap.set(sessionIds[i], result.data[0]);
+          if (!result.error && result.data) {
+            const dataArr = Array.isArray(result.data) ? result.data : [result.data];
+            if (dataArr.length > 0) {
+              detailsMap.set(sessionIds[i], dataArr[0]);
+            }
           }
         });
 
@@ -162,14 +171,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             id: s.id,
             participant1Id: s.participant1_id,
             participant1Type: s.participant1_type as ChatParticipantType,
-            participant1Name: details?.participant1_name ?? fb1?.name ?? (s.participant1_type === 'doctor' && doc?.name) ?? undefined,
-            participant1Specialty: details?.participant1_specialty ?? (s.participant1_type === 'doctor' && doc?.specialty) ?? undefined,
-            participant1Avatar: details?.participant1_avatar ?? fb1?.avatar ?? (s.participant1_type === 'doctor' && doc?.avatar_url) ?? undefined,
+            participant1Name: details?.participant1_name || fb1?.name || (s.participant1_type === 'doctor' ? doc?.name : undefined) || undefined,
+            participant1Specialty: details?.participant1_specialty || (s.participant1_type === 'doctor' ? doc?.specialty : undefined) || undefined,
+            participant1Avatar: details?.participant1_avatar || fb1?.avatar || (s.participant1_type === 'doctor' ? doc?.avatar_url : undefined) || undefined,
             participant2Id: s.participant2_id,
             participant2Type: s.participant2_type as ChatParticipantType,
-            participant2Name: details?.participant2_name ?? fb2?.name ?? (s.participant2_type === 'doctor' && doc?.name) ?? undefined,
-            participant2Specialty: details?.participant2_specialty ?? (s.participant2_type === 'doctor' && doc?.specialty) ?? undefined,
-            participant2Avatar: details?.participant2_avatar ?? fb2?.avatar ?? (s.participant2_type === 'doctor' && doc?.avatar_url) ?? undefined,
+            participant2Name: details?.participant2_name || fb2?.name || (s.participant2_type === 'doctor' ? doc?.name : undefined) || undefined,
+            participant2Specialty: details?.participant2_specialty || (s.participant2_type === 'doctor' ? doc?.specialty : undefined) || undefined,
+            participant2Avatar: details?.participant2_avatar || fb2?.avatar || (s.participant2_type === 'doctor' ? doc?.avatar_url : undefined) || undefined,
             lastMessage: s.last_message || undefined,
             lastMessageAt: s.last_message_at ? new Date(s.last_message_at) : undefined,
             unreadCount: s.participant1_id === user.id ? s.unread_count_1 : s.unread_count_2,

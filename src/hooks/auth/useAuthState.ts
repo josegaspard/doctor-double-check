@@ -117,16 +117,14 @@ export function useAuthState() {
       // If session exists, onAuthStateChange will handle it — avoid duplicate fetchUserProfile calls
     });
 
-    // Extra safety: validate on focus + periodically
+    // Extra safety: validate on focus (no constant polling to save resources)
     const onFocus = () => {
       validateAuthSession();
     };
     window.addEventListener('focus', onFocus);
-    const intervalId = window.setInterval(validateAuthSession, 60_000);
 
     return () => {
       window.removeEventListener('focus', onFocus);
-      window.clearInterval(intervalId);
       subscription.unsubscribe();
     };
   }, []);

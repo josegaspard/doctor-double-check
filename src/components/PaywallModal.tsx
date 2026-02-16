@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Dialog,
   DialogContent,
@@ -49,6 +50,7 @@ export default function PaywallModal({
 }: PaywallModalProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const { purchaseWithWallet, isPurchasing: walletIsPurchasing } = usePurchases();
   const { getEffectiveRecordingPrice, hasPremiumTo } = useSubscriptions();
   const [isStripeProcessing, setIsStripeProcessing] = useState(false);
@@ -64,7 +66,7 @@ export default function PaywallModal({
     : recording.price;
 
   const formatDuration = (minutes: number) => {
-    if (minutes < 60) return `${minutes} minutos`;
+    if (minutes < 60) return `${minutes} ${t('paywall.minutes')}`;
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
@@ -86,8 +88,8 @@ export default function PaywallModal({
     } catch (error: any) {
       console.error('Checkout error:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'No se pudo iniciar el proceso de pago',
+        title: t('common.error'),
+        description: error.message || t('paywall.checkoutError'),
         variant: 'destructive',
       });
     } finally {
@@ -103,11 +105,11 @@ export default function PaywallModal({
             <div className="w-10 h-10 rounded-full bg-premium/10 flex items-center justify-center">
               <Lock className="w-5 h-5 text-premium" />
             </div>
-            <Badge variant="premium">Contenido Premium</Badge>
+            <Badge variant="premium">{t('paywall.premiumContent')}</Badge>
           </div>
           <DialogTitle className="text-xl">{recording.title}</DialogTitle>
           <DialogDescription>
-            Elige cómo deseas adquirir esta grabación
+            {t('paywall.chooseMethod')}
           </DialogDescription>
         </DialogHeader>
 
@@ -133,15 +135,15 @@ export default function PaywallModal({
 
           {/* Price Display */}
           <div className="text-center py-2">
-            <p className="text-sm text-muted-foreground">Precio</p>
+            <p className="text-sm text-muted-foreground">{t('paywall.price')}</p>
             {hasPremiumDiscount ? (
               <div className="space-y-1">
                 <p className="text-lg text-muted-foreground line-through">${recording.price} MXN</p>
                 <div className="flex items-center justify-center gap-2">
                   <p className="text-3xl font-bold text-success">${effectivePrice.toFixed(0)} MXN</p>
-                  <Badge className="bg-yellow-500/10 text-yellow-600 gap-1">
+                  <Badge className="bg-warning/10 text-warning gap-1">
                     <Crown className="w-3 h-3" />
-                    20% Premium
+                    {t('paywall.premiumDiscount')}
                   </Badge>
                 </div>
               </div>
@@ -155,15 +157,15 @@ export default function PaywallModal({
             <ul className="space-y-1">
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CheckCircle className="w-4 h-4 text-success" />
-                Acceso ilimitado a la grabación
+                {t('paywall.unlimitedAccess')}
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CheckCircle className="w-4 h-4 text-success" />
-                Reproducción en cualquier dispositivo
+                {t('paywall.anyDevice')}
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CheckCircle className="w-4 h-4 text-success" />
-                Sin fecha de expiración
+                {t('paywall.noExpiration')}
               </li>
             </ul>
           </div>
@@ -184,7 +186,7 @@ export default function PaywallModal({
               ) : (
                 <>
                   <CreditCard className="w-4 h-4" />
-                  Pagar con Tarjeta
+                  {t('paywall.payWithCard')}
                   <ExternalLink className="w-3 h-3 ml-1" />
                 </>
               )}
@@ -196,7 +198,7 @@ export default function PaywallModal({
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">o usa tu wallet</span>
+                <span className="bg-background px-2 text-muted-foreground">{t('paywall.orUseWallet')}</span>
               </div>
             </div>
 
@@ -218,23 +220,23 @@ export default function PaywallModal({
                 {isPurchasing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Procesando...
+                    {t('paywall.processing')}
                   </>
                 ) : (
                   <>
                     <Wallet className="w-4 h-4 mr-2" />
-                    Pagar con Wallet (Saldo: ${balance.toLocaleString()})
+                    {t('paywall.payWithWallet')} ({t('paywall.walletBalance')}: ${balance.toLocaleString()})
                   </>
                 )}
               </Button>
             ) : (
               <div className="space-y-2">
-                <div className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2 p-3 bg-warning/10 rounded-lg border border-warning/30">
+                  <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
                   <div className="text-sm">
-                    <p className="font-medium text-yellow-800 dark:text-yellow-200">Saldo insuficiente</p>
-                     <p className="text-yellow-700 dark:text-yellow-300 text-xs">
-                       Tienes ${balance.toLocaleString()} - Necesitas ${(effectivePrice - balance).toLocaleString()} más
+                    <p className="font-medium text-warning">{t('paywall.insufficientBalance')}</p>
+                     <p className="text-warning/80 text-xs">
+                       {t('paywall.youHave')} ${balance.toLocaleString()} - {t('paywall.needMore')} ${(effectivePrice - balance).toLocaleString()} {t('paywall.more')}
                      </p>
                   </div>
                 </div>
@@ -244,7 +246,7 @@ export default function PaywallModal({
                   variant="outline"
                 >
                   <Wallet className="w-4 h-4 mr-2" />
-                  Recargar Wallet
+                  {t('paywall.rechargeWallet')}
                 </Button>
               </div>
             )}
@@ -252,7 +254,7 @@ export default function PaywallModal({
         </div>
 
         <Button variant="ghost" onClick={onClose} className="w-full">
-          Cancelar
+          {t('paywall.cancel')}
         </Button>
       </DialogContent>
     </Dialog>

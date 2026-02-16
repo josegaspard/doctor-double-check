@@ -19,7 +19,8 @@ export function useNotificationsRealtime() {
           action: {
             label: 'Ver',
             onClick: () => {
-              const liveId = notification.data?.liveId;
+              // Support both snake_case (from DB) and camelCase
+              const liveId = notification.data?.live_id || notification.data?.liveId;
               if (liveId) navigate(`/live/${liveId}`);
             },
           },
