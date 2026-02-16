@@ -14,7 +14,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   ArrowLeft, Clock, Share2, MessageCircle, Send, Loader2,
-  Trash2, Stethoscope, User, GraduationCap, Facebook, Twitter, Link as LinkIcon
+  Trash2, Stethoscope, User, GraduationCap, Facebook, Twitter, Link as LinkIcon,
+  Edit, Globe, Instagram, Linkedin, Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -32,6 +33,8 @@ export default function NewsArticle() {
   const { slug } = useParams();
   const { user, role, isAuthenticated } = useAuth();
   const [article, setArticle] = useState<any>(null);
+  const [authorProfile, setAuthorProfile] = useState<any>(null);
+  const [editorProfile, setEditorProfile] = useState<any>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +49,27 @@ export default function NewsArticle() {
         .eq('is_published', true)
         .maybeSingle();
       setArticle(data);
-      if (data) fetchComments(data.id);
+      if (data) {
+        fetchComments(data.id);
+        // Fetch author profile
+        const { data: authorP } = await supabase
+          .from('profiles')
+          .select('id, name, avatar_url')
+          .eq('id', data.created_by)
+          .maybeSingle();
+        setAuthorProfile(authorP);
+        // Fetch editor profile if edited
+        if (data.last_edited_by && data.last_edited_by !== data.created_by) {
+          const { data: editorP } = await supabase
+            .from('profiles')
+            .select('id, name, avatar_url')
+            .eq('id', data.last_edited_by)
+            .maybeSingle();
+          setEditorProfile(editorP);
+        } else if (data.last_edited_by) {
+          setEditorProfile(authorP);
+        }
+      }
       setIsLoading(false);
     };
     if (slug) fetchArticle();
@@ -67,7 +90,6 @@ export default function NewsArticle() {
       .select('id, name, avatar_url')
       .in('id', userIds);
 
-    // Get roles
     const { data: roles } = await supabase
       .from('user_roles' as any)
       .select('user_id, role')
@@ -112,6 +134,7 @@ export default function NewsArticle() {
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareTitle = article?.title || '';
+  const authorSocial = article?.author_social || {};
 
   if (isLoading) {
     return <MainLayout><div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
@@ -154,6 +177,64 @@ export default function NewsArticle() {
         {/* Title */}
         <h1 className="text-3xl font-bold text-foreground mb-3">{article.title}</h1>
         {article.summary && <p className="text-lg text-muted-foreground mb-6">{article.summary}</p>}
+
+        {/* Edit History Badge */}
+        {article.last_edited_at && (
+          <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 border">
+            <Pencil className="w-3 h-3" />
+            <span>
+              Editado el {format(new Date(article.last_edited_at), "d 'de' MMMM yyyy, HH:mm", { locale: es })}
+              {editorProfile && <> por <strong className="text-foreground">{editorProfile.name}</strong></>}
+            </span>
+          </div>
+        )}
+
+        {/* Author Card */}
+        {authorProfile && (
+          <Card className="mb-6">
+            <CardContent className="flex items-start gap-4 p-4">
+              <Avatar className="w-12 h-12">
+                <AvatarImage src={authorProfile.avatar_url || ''} />
+                <AvatarFallback>{authorProfile.name?.charAt(0) || 'A'}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Link to={`/profile/${authorProfile.id}`} className="font-semibold text-foreground hover:underline">
+                    {authorProfile.name}
+                  </Link>
+                  <Badge variant="outline" className="text-[10px]">Autor</Badge>
+                </div>
+                {article.author_bio && (
+                  <p className="text-sm text-muted-foreground mb-2">{article.author_bio}</p>
+                )}
+                {(authorSocial.website || authorSocial.twitter || authorSocial.linkedin || authorSocial.instagram) && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {authorSocial.website && (
+                      <a href={authorSocial.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                        <Globe className="w-3 h-3" /> Web
+                      </a>
+                    )}
+                    {authorSocial.twitter && (
+                      <a href={authorSocial.twitter.startsWith('http') ? authorSocial.twitter : `https://twitter.com/${authorSocial.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                        <Twitter className="w-3 h-3" /> Twitter
+                      </a>
+                    )}
+                    {authorSocial.linkedin && (
+                      <a href={authorSocial.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                        <Linkedin className="w-3 h-3" /> LinkedIn
+                      </a>
+                    )}
+                    {authorSocial.instagram && (
+                      <a href={authorSocial.instagram.startsWith('http') ? authorSocial.instagram : `https://instagram.com/${authorSocial.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                        <Instagram className="w-3 h-3" /> Instagram
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Share Buttons */}
         <div className="flex items-center gap-2 mb-6">

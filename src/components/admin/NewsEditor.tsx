@@ -9,6 +9,7 @@ import Underline from '@tiptap/extension-underline';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,6 +37,8 @@ interface NewsEditorProps {
     category: string;
     is_published: boolean;
     slug: string;
+    author_bio?: string;
+    author_social?: { website?: string; twitter?: string; linkedin?: string; instagram?: string };
   };
   onSaved?: () => void;
 }
@@ -57,6 +60,10 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
   const [isPublished, setIsPublished] = useState(initialData?.is_published || false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [authorBio, setAuthorBio] = useState(initialData?.author_bio || '');
+  const [authorSocial, setAuthorSocial] = useState<{ website?: string; twitter?: string; linkedin?: string; instagram?: string }>(
+    initialData?.author_social || {}
+  );
 
   const editor = useEditor({
     extensions: [
@@ -144,7 +151,7 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
       if (!user) throw new Error('No authenticated');
 
       const slug = initialData?.id ? (initialData.slug || generateSlug(title)) : generateSlug(title);
-      const payload = {
+      const payload: any = {
         title: title.trim(),
         summary: summary.trim() || null,
         content: editor.getHTML(),
@@ -153,14 +160,19 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
         is_published: publish,
         published_at: publish ? new Date().toISOString() : null,
         slug,
-        created_by: user.id,
+        author_bio: authorBio.trim() || null,
+        author_social: authorSocial,
       };
 
       if (initialData?.id) {
+        // Editing existing article - track edit
+        payload.last_edited_at = new Date().toISOString();
+        payload.last_edited_by = user.id;
         const { error } = await supabase.from('medical_news').update(payload).eq('id', initialData.id);
         if (error) throw error;
-        toast.success(publish ? 'Noticia publicada' : 'Borrador guardado');
+        toast.success(publish ? 'Noticia actualizada y publicada' : 'Borrador actualizado');
       } else {
+        payload.created_by = user.id;
         const { error } = await supabase.from('medical_news').insert(payload);
         if (error) throw error;
         toast.success(publish ? 'Noticia publicada' : 'Borrador creado');
@@ -233,6 +245,56 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
           <img src={imageUrl} alt="Portada" className="w-full h-full object-cover" />
         </div>
       )}
+
+      {/* Author Info Section */}
+      <Separator />
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-foreground">Información del autor</h3>
+        <div className="space-y-2">
+          <Label>Bio del autor (aparece al final del artículo)</Label>
+          <Textarea
+            value={authorBio}
+            onChange={(e) => setAuthorBio(e.target.value)}
+            placeholder="Ej: Cardiólogo con 15 años de experiencia, investigador en la UNAM..."
+            rows={2}
+            maxLength={500}
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Sitio web</Label>
+            <Input
+              value={authorSocial.website || ''}
+              onChange={(e) => setAuthorSocial(prev => ({ ...prev, website: e.target.value }))}
+              placeholder="https://..."
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Twitter / X</Label>
+            <Input
+              value={authorSocial.twitter || ''}
+              onChange={(e) => setAuthorSocial(prev => ({ ...prev, twitter: e.target.value }))}
+              placeholder="@usuario"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">LinkedIn</Label>
+            <Input
+              value={authorSocial.linkedin || ''}
+              onChange={(e) => setAuthorSocial(prev => ({ ...prev, linkedin: e.target.value }))}
+              placeholder="URL de LinkedIn"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Instagram</Label>
+            <Input
+              value={authorSocial.instagram || ''}
+              onChange={(e) => setAuthorSocial(prev => ({ ...prev, instagram: e.target.value }))}
+              placeholder="@usuario"
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Toolbar */}
       <div className="border rounded-lg overflow-hidden">

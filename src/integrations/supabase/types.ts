@@ -1137,6 +1137,8 @@ export type Database = {
       }
       medical_news: {
         Row: {
+          author_bio: string | null
+          author_social: Json | null
           category: string
           content: string
           created_at: string
@@ -1144,6 +1146,8 @@ export type Database = {
           id: string
           image_url: string | null
           is_published: boolean
+          last_edited_at: string | null
+          last_edited_by: string | null
           published_at: string | null
           slug: string | null
           source_url: string | null
@@ -1152,6 +1156,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          author_bio?: string | null
+          author_social?: Json | null
           category?: string
           content: string
           created_at?: string
@@ -1159,6 +1165,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_published?: boolean
+          last_edited_at?: string | null
+          last_edited_by?: string | null
           published_at?: string | null
           slug?: string | null
           source_url?: string | null
@@ -1167,6 +1175,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          author_bio?: string | null
+          author_social?: Json | null
           category?: string
           content?: string
           created_at?: string
@@ -1174,6 +1184,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_published?: boolean
+          last_edited_at?: string | null
+          last_edited_by?: string | null
           published_at?: string | null
           slug?: string | null
           source_url?: string | null
