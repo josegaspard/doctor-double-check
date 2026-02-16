@@ -7,12 +7,13 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Globe, Bell, Shield, CheckCircle, Mail, CreditCard, Loader2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Globe, Bell, Shield, CheckCircle, Mail, CreditCard, Loader2, ExternalLink, Gift } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { PushNotificationToggle } from '@/components/notifications/PushNotificationToggle';
 import { MySubscriptions } from '@/components/subscriptions/MySubscriptions';
+import { ReferralProgram } from '@/components/referrals/ReferralProgram';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -317,6 +318,9 @@ export default function Settings() {
 
           {/* My Subscriptions */}
           <MySubscriptions />
+
+          {/* Referral Program */}
+          <ReferralProgram />
         </div>
       </div>
     </MainLayout>

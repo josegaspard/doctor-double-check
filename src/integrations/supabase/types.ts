@@ -1419,6 +1419,74 @@ export type Database = {
         }
         Relationships: []
       }
+      prescriptions: {
+        Row: {
+          consultation_id: string | null
+          created_at: string
+          diagnosis: string | null
+          doctor_cedula: string | null
+          doctor_id: string
+          doctor_license: string
+          doctor_name: string
+          doctor_specialty: string
+          id: string
+          instructions: string | null
+          medications: Json
+          notes: string | null
+          patient_age: string | null
+          patient_id: string
+          patient_name: string
+          signed_at: string
+          updated_at: string
+        }
+        Insert: {
+          consultation_id?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          doctor_cedula?: string | null
+          doctor_id: string
+          doctor_license: string
+          doctor_name: string
+          doctor_specialty: string
+          id?: string
+          instructions?: string | null
+          medications?: Json
+          notes?: string | null
+          patient_age?: string | null
+          patient_id: string
+          patient_name: string
+          signed_at?: string
+          updated_at?: string
+        }
+        Update: {
+          consultation_id?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          doctor_cedula?: string | null
+          doctor_id?: string
+          doctor_license?: string
+          doctor_name?: string
+          doctor_specialty?: string
+          id?: string
+          instructions?: string | null
+          medications?: Json
+          notes?: string | null
+          patient_age?: string | null
+          patient_id?: string
+          patient_name?: string
+          signed_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_consultation_id_fkey"
+            columns: ["consultation_id"]
+            isOneToOne: false
+            referencedRelation: "consultations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1572,6 +1640,74 @@ export type Database = {
             columns: ["live_id"]
             isOneToOne: false
             referencedRelation: "lives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          discount_percentage: number
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          user_id: string
+          uses_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_percentage?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          user_id: string
+          uses_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_percentage?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          user_id?: string
+          uses_count?: number
+        }
+        Relationships: []
+      }
+      referral_redemptions: {
+        Row: {
+          created_at: string
+          discount_applied: number
+          id: string
+          referral_code_id: string
+          referred_user_id: string
+          referrer_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          discount_applied?: number
+          id?: string
+          referral_code_id: string
+          referred_user_id: string
+          referrer_user_id: string
+        }
+        Update: {
+          created_at?: string
+          discount_applied?: number
+          id?: string
+          referral_code_id?: string
+          referred_user_id?: string
+          referrer_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_redemptions_referral_code_id_fkey"
+            columns: ["referral_code_id"]
+            isOneToOne: false
+            referencedRelation: "referral_codes"
             referencedColumns: ["id"]
           },
         ]
@@ -2248,6 +2384,7 @@ export type Database = {
         Returns: Json
       }
       process_wallet_topup: { Args: { p_amount: number }; Returns: Json }
+      redeem_referral_code: { Args: { p_code: string }; Returns: Json }
       search_doctors_public: {
         Args: { p_limit?: number; p_term: string }
         Returns: {

@@ -73,6 +73,7 @@ import NewsArticle from "./pages/NewsArticle";
 import VideoCall from "./pages/VideoCall";
 import AdminCredentials from "./pages/AdminCredentials";
 import AdminNews from "./pages/AdminNews";
+import Prescriptions from "./pages/Prescriptions";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -150,6 +151,7 @@ const App = () => (
                       <Route path="/news" element={<MedicalNews />} />
                       <Route path="/news/:slug" element={<NewsArticle />} />
                       <Route path="/video-call" element={<VideoCall />} />
+                      <Route path="/prescriptions" element={<Prescriptions />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>
