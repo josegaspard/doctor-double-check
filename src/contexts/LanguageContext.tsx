@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { AuthContext } from '@/contexts/AuthContext';
 import { SupportedLanguage, getTranslations, t as translate } from '@/lib/i18n';
 
 interface LanguageContextType {
@@ -13,7 +13,8 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const { user, supabaseUser } = useAuth();
+  const authContext = useContext(AuthContext);
+  const supabaseUser = authContext?.supabaseUser ?? null;
   const [language, setLanguageState] = useState<SupportedLanguage>('es');
 
   // Load user's language preference on mount

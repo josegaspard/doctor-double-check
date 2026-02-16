@@ -102,9 +102,6 @@ export function useDoctorAvailability() {
     setIsLoading(false);
   }, [supabaseUser?.id, role]);
 
-  // Note: useChat.ts and useVault.ts hooks exist as standalone alternatives
-  // but primary usage should be through ChatContext and VaultContext respectively
-
   useEffect(() => {
     fetchAvailabilities();
   }, [fetchAvailabilities]);
