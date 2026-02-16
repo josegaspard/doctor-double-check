@@ -4,6 +4,7 @@ import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCloudflareStream } from '@/hooks/cloudflare';
 import { useViewerCount } from '@/hooks/useViewerCount';
+import { useSubscriptions } from '@/hooks/useSubscriptions';
 import MainLayout from '@/components/layout/MainLayout';
 import { CloudflareStreamPlayer } from '@/components/live/CloudflareStreamPlayer';
 import { LiveChat } from '@/components/live/LiveChat';
@@ -45,6 +46,7 @@ export default function LivePlayer() {
   const navigate = useNavigate();
   const { getLive, likeLive, unlikeLive, hasLiked, endLive, isLoading, refreshLives } = useLives();
   const { user, role } = useAuth();
+  const { getSubscription } = useSubscriptions();
   const { getPlaybackUrl, isLoading: isStreamLoading } = useCloudflareStream();
   
   const [isLiking, setIsLiking] = useState(false);
@@ -52,6 +54,7 @@ export default function LivePlayer() {
   const [saveAsRecording, setSaveAsRecording] = useState(true);
   const [isEnding, setIsEnding] = useState(false);
   const [showChat, setShowChat] = useState(true);
+  const [isInEarlyAccessWindow, setIsInEarlyAccessWindow] = useState(false);
   
   // Cloudflare Stream state
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
@@ -60,6 +63,8 @@ export default function LivePlayer() {
   const live = getLive(id || '');
   const isOwner = user?.id === live?.doctorId;
   const isLiveActive = live?.status === 'live';
+  const mySubToDoctor = live?.doctorId ? getSubscription(live.doctorId) : undefined;
+  const earlyMinutes = mySubToDoctor?.tier === 'premium' ? (mySubToDoctor.earlyAccessMinutes ?? 0) : 0;
 
   // Real-time viewer count hook
   const { viewerCount, likesCount: realtimeLikesCount } = useViewerCount({
