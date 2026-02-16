@@ -49,46 +49,36 @@ Deno.serve(async (req) => {
       const session = event.data.object as Stripe.Checkout.Session;
       logStep("Checkout session completed", { sessionId: session.id, metadata: session.metadata });
 
-      // Wallet topup
       if (session.metadata?.type === "wallet_topup" && session.payment_status === "paid") {
         await handleWalletTopup(db, session);
       }
-
-      // Recording purchase - credit doctor earnings
       if (session.metadata?.type === "recording_purchase" && session.payment_status === "paid") {
         await handleRecordingPurchase(db, session);
       }
-
-      // Creator subscription - credit doctor earnings
       if (session.metadata?.type === "creator_subscription" && session.payment_status === "paid") {
         await handleCreatorSubscription(db, session);
       }
-
-      // Consultation payment - create entitlement and credit doctor
       if (session.metadata?.type === "consultation_payment" && session.payment_status === "paid") {
         await handleConsultationPayment(db, session);
       }
     }
 
-    // *** CRITICAL FIX: Handle subscription renewals ***
     if (event.type === "invoice.payment_succeeded") {
       const invoice = event.data.object as Stripe.Invoice;
       await handleInvoicePaymentSucceeded(db, invoice);
     }
 
-    // *** CRITICAL FIX: Handle subscription cancellations ***
+    // FIX #2: Handle subscription cancellations - fetch customer from Stripe API
     if (event.type === "customer.subscription.deleted") {
       const subscription = event.data.object as Stripe.Subscription;
-      await handleSubscriptionDeleted(db, subscription);
+      await handleSubscriptionDeleted(db, stripe, subscription);
     }
 
-    // Handle Stripe Connect account updates
     if (event.type === "account.updated") {
       const account = event.data.object as Stripe.Account;
       await handleAccountUpdated(db, account);
     }
 
-    // Handle transfer events for payouts
     if (event.type === "transfer.paid") {
       const transfer = event.data.object as Stripe.Transfer;
       await handleTransferPaid(db, transfer);
@@ -161,7 +151,6 @@ async function handleRecordingPurchase(db: ReturnType<typeof supabaseAdmin>, ses
   
   logStep("Processing recording purchase", { userId, recordingId, amount });
 
-  // Create purchase record
   const { error: purchaseError } = await db
     .from("purchases")
     .insert({
@@ -177,7 +166,6 @@ async function handleRecordingPurchase(db: ReturnType<typeof supabaseAdmin>, ses
 
   logStep("Purchase recorded successfully", { userId, recordingId });
 
-  // Get recording to find doctor
   const { data: recording } = await db
     .from("recordings")
     .select("doctor_id")
@@ -185,7 +173,8 @@ async function handleRecordingPurchase(db: ReturnType<typeof supabaseAdmin>, ses
     .single();
 
   if (recording?.doctor_id) {
-    await creditDoctorEarnings(db, recording.doctor_id, amount, "recording", recordingId);
+    // FIX #1: Use atomic credit function
+    await creditDoctorEarningsAtomic(db, recording.doctor_id, amount, "recording", recordingId);
   }
 }
 
@@ -232,7 +221,6 @@ async function handleCreatorSubscription(db: ReturnType<typeof supabaseAdmin>, s
     logStep("Subscription created", { userId, creatorId, tier });
   }
 
-  // Notify creator
   const { data: subscriberProfile } = await db
     .from("profiles")
     .select("name")
@@ -249,8 +237,8 @@ async function handleCreatorSubscription(db: ReturnType<typeof supabaseAdmin>, s
       data: { subscriber_id: userId, tier },
     });
 
-  // Credit earnings to doctor
-  await creditDoctorEarnings(db, creatorId, tierPrice, "subscription", null);
+  // FIX #1: Use atomic credit function
+  await creditDoctorEarningsAtomic(db, creatorId, tierPrice, "subscription", null);
 }
 
 async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
@@ -260,7 +248,6 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
   
   logStep("Processing consultation payment", { userId, doctorId, finalFee });
 
-  // Create chat entitlement for the patient (valid for 30 days)
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30);
 
@@ -279,14 +266,12 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
     logStep("Chat entitlement created", { userId, expiresAt });
   }
 
-  // Get patient user role
   const { data: patientRole } = await db
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .single();
 
-  // Check if a chat session already exists
   const { data: existingSession } = await db
     .from("chat_sessions")
     .select("id")
@@ -297,7 +282,6 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
 
   let chatSessionId = existingSession?.id;
 
-  // Create chat session if it doesn't exist
   if (!chatSessionId) {
     const { data: newSession, error: sessionError } = await db
       .from("chat_sessions")
@@ -320,7 +304,6 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
     }
   }
 
-  // Create consultation record for ratings and history
   const { data: consultation, error: consultationError } = await db
     .from("consultations")
     .insert({
@@ -338,10 +321,9 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
     logStep("Consultation record created", { consultationId: consultation.id });
   }
 
-  // Credit doctor earnings
-  await creditDoctorEarnings(db, doctorId, finalFee, "consultation", null);
+  // FIX #1: Use atomic credit function
+  await creditDoctorEarningsAtomic(db, doctorId, finalFee, "consultation", null);
 
-  // Create a wallet transaction record for the patient
   await db
     .from("wallet_transactions")
     .insert({
@@ -353,14 +335,12 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
       metadata: { doctor_id: doctorId, stripe_session_id: session.id, consultation_id: consultation?.id },
     });
 
-  // Get patient name for notification
   const { data: patientProfile } = await db
     .from("profiles")
     .select("name")
     .eq("id", userId)
     .single();
 
-  // Notify the patient that the payment was successful
   await db
     .from("notifications")
     .insert({
@@ -371,7 +351,6 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
       data: { doctor_id: doctorId, session_id: chatSessionId },
     });
 
-  // Notify the doctor about the new consultation
   await db
     .from("notifications")
     .insert({
@@ -389,42 +368,28 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
   logStep("Consultation payment processed successfully", { userId, doctorId, chatSessionId });
 }
 
-async function creditDoctorEarnings(
+// FIX #1: Atomic credit function using DB function to prevent race conditions
+async function creditDoctorEarningsAtomic(
   db: ReturnType<typeof supabaseAdmin>,
   doctorId: string,
   amount: number,
   source: string,
   referenceId: string | null
 ) {
-  logStep("Crediting doctor earnings", { doctorId, amount, source });
+  logStep("Crediting doctor earnings (atomic)", { doctorId, amount, source });
 
-  // Get current pending earnings
-  const { data: profile } = await db
-    .from("doctor_profiles")
-    .select("pending_earnings, total_earnings")
-    .eq("user_id", doctorId)
-    .single();
+  // Use the atomic DB function instead of read-then-write
+  const { data: newPending, error: rpcError } = await db.rpc("credit_doctor_earnings", {
+    p_doctor_id: doctorId,
+    p_amount: amount,
+  });
 
-  if (!profile) {
-    logStep("Doctor profile not found", { doctorId });
+  if (rpcError || newPending === -1) {
+    logStep("Error crediting earnings atomically", { error: rpcError, doctorId });
     return;
   }
 
-  const currentPending = profile.pending_earnings || 0;
-  const newPending = currentPending + amount;
-
-  // Update pending earnings
-  const { error: updateError } = await db
-    .from("doctor_profiles")
-    .update({ pending_earnings: newPending })
-    .eq("user_id", doctorId);
-
-  if (updateError) {
-    logStep("Error updating earnings", { error: updateError });
-    return;
-  }
-
-  logStep("Doctor earnings credited", { doctorId, amount, newPending, source });
+  logStep("Doctor earnings credited atomically", { doctorId, amount, newPending, source });
 
   // Create earning transaction record
   await db
@@ -433,7 +398,7 @@ async function creditDoctorEarnings(
       user_id: doctorId,
       type: "earning",
       amount: amount,
-      description: `Ganancia por ${source === "recording" ? "venta de grabación" : source === "consultation" ? "consulta médica" : "suscripción"}`,
+      description: `Ganancia por ${source === "recording" ? "venta de grabación" : source === "consultation" ? "consulta médica" : source === "subscription_renewal" ? "renovación de suscripción" : "suscripción"}`,
       status: "paid",
       metadata: { source, reference_id: referenceId },
     });
@@ -442,7 +407,6 @@ async function creditDoctorEarnings(
 async function handleAccountUpdated(db: ReturnType<typeof supabaseAdmin>, account: Stripe.Account) {
   logStep("Account updated", { accountId: account.id, payoutsEnabled: account.payouts_enabled });
 
-  // Find doctor by stripe account id
   const { data: bankAccount } = await db
     .from("doctor_bank_accounts")
     .select("doctor_id")
@@ -463,7 +427,6 @@ async function handleAccountUpdated(db: ReturnType<typeof supabaseAdmin>, accoun
     status = "pending_verification";
   }
 
-  // Update bank account status
   await db
     .from("doctor_bank_accounts")
     .update({
@@ -474,7 +437,6 @@ async function handleAccountUpdated(db: ReturnType<typeof supabaseAdmin>, accoun
     })
     .eq("stripe_account_id", account.id);
 
-  // Update doctor profile
   await db
     .from("doctor_profiles")
     .update({
@@ -506,6 +468,34 @@ async function handleTransferPaid(db: ReturnType<typeof supabaseAdmin>, transfer
 async function handleTransferFailed(db: ReturnType<typeof supabaseAdmin>, transfer: Stripe.Transfer) {
   logStep("Transfer failed", { transferId: transfer.id });
 
+  // Reverse the earnings: add back to pending, subtract from total
+  const doctorId = transfer.metadata?.doctor_id;
+  if (doctorId) {
+    const grossAmount = parseFloat(transfer.metadata?.gross_amount || "0");
+    if (grossAmount > 0) {
+      await db.rpc("credit_doctor_earnings", {
+        p_doctor_id: doctorId,
+        p_amount: grossAmount,
+      });
+      
+      // Subtract from total_earnings since we added it during payout
+      const { data: profile } = await db
+        .from("doctor_profiles")
+        .select("total_earnings")
+        .eq("user_id", doctorId)
+        .single();
+      
+      if (profile) {
+        await db
+          .from("doctor_profiles")
+          .update({ total_earnings: Math.max(0, (profile.total_earnings || 0) - grossAmount) })
+          .eq("user_id", doctorId);
+      }
+
+      logStep("Reversed earnings for failed transfer", { doctorId, grossAmount });
+    }
+  }
+
   const { error } = await db
     .from("doctor_payouts")
     .update({
@@ -521,9 +511,7 @@ async function handleTransferFailed(db: ReturnType<typeof supabaseAdmin>, transf
   }
 }
 
-// *** NEW HANDLER: Handle subscription renewals ***
 async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin>, invoice: Stripe.Invoice) {
-  // Only handle subscription invoices (not first payment which is handled by checkout.session.completed)
   if (!invoice.subscription || invoice.billing_reason === 'subscription_create') {
     logStep("Skipping invoice - not a renewal", { reason: invoice.billing_reason });
     return;
@@ -540,7 +528,6 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
     return;
   }
 
-  // Find user by email
   const { data: profile } = await db
     .from("profiles")
     .select("id")
@@ -554,7 +541,6 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
 
   const userId = profile.id;
 
-  // Find and extend the subscription
   const { data: subscriptions, error: subError } = await db
     .from("subscriptions")
     .select("*")
@@ -566,7 +552,6 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
     return;
   }
 
-  // Extend expiration by one month
   for (const sub of subscriptions) {
     const newExpiresAt = new Date();
     newExpiresAt.setMonth(newExpiresAt.getMonth() + 1);
@@ -581,10 +566,9 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
 
     logStep("Subscription renewed", { subscriptionId: sub.id, newExpiresAt });
 
-    // Credit creator earnings
-    await creditDoctorEarnings(db, sub.creator_id, sub.price_paid, "subscription_renewal", null);
+    // FIX #1: Use atomic credit
+    await creditDoctorEarningsAtomic(db, sub.creator_id, sub.price_paid, "subscription_renewal", null);
 
-    // Notify creator about renewal
     await db
       .from("notifications")
       .insert({
@@ -597,13 +581,36 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
   }
 }
 
-// *** NEW HANDLER: Handle subscription cancellations ***
-async function handleSubscriptionDeleted(db: ReturnType<typeof supabaseAdmin>, subscription: Stripe.Subscription) {
+// FIX #2: Properly fetch customer email from Stripe API instead of accessing .email on string ID
+async function handleSubscriptionDeleted(
+  db: ReturnType<typeof supabaseAdmin>,
+  stripe: Stripe,
+  subscription: Stripe.Subscription
+) {
   logStep("Processing subscription cancellation", { subscriptionId: subscription.id });
 
-  const customerEmail = (subscription.customer as any)?.email;
+  // subscription.customer is a string ID, NOT an object with .email
+  // We must fetch the customer from Stripe to get the email
+  let customerEmail: string | null = null;
+  
+  try {
+    const customerId = typeof subscription.customer === 'string' 
+      ? subscription.customer 
+      : subscription.customer.id;
+    
+    const customer = await stripe.customers.retrieve(customerId);
+    if (customer.deleted) {
+      logStep("Customer was deleted", { customerId });
+      return;
+    }
+    customerEmail = customer.email;
+  } catch (err) {
+    logStep("Error fetching customer from Stripe", { error: err });
+    return;
+  }
+
   if (!customerEmail) {
-    logStep("No customer email in subscription");
+    logStep("No customer email found for cancelled subscription");
     return;
   }
 
@@ -615,21 +622,27 @@ async function handleSubscriptionDeleted(db: ReturnType<typeof supabaseAdmin>, s
     .maybeSingle();
 
   if (!profile) {
-    logStep("User not found for cancelled subscription");
+    logStep("User not found for cancelled subscription", { email: customerEmail });
     return;
   }
 
-  // Deactivate all subscriptions for this user
-  const { data: subs } = await db
+  // Also match by creator_id from subscription metadata if available
+  const creatorId = subscription.metadata?.creator_id;
+  
+  let query = db
     .from("subscriptions")
     .update({ is_active: false })
     .eq("subscriber_id", profile.id)
-    .eq("is_active", true)
-    .select();
+    .eq("is_active", true);
+  
+  if (creatorId) {
+    query = query.eq("creator_id", creatorId);
+  }
+
+  const { data: subs } = await query.select();
 
   if (subs && subs.length > 0) {
     for (const sub of subs) {
-      // Notify creator about cancellation
       await db
         .from("notifications")
         .insert({
@@ -641,6 +654,6 @@ async function handleSubscriptionDeleted(db: ReturnType<typeof supabaseAdmin>, s
         });
     }
     
-    logStep("Subscriptions deactivated", { count: subs.length });
+    logStep("Subscriptions deactivated", { count: subs.length, userId: profile.id });
   }
 }
