@@ -332,17 +332,28 @@ export default function NewsArticle() {
           <Card className="mb-6">
             <CardContent className="p-4">
               <div className="flex items-start gap-4">
-                <Link to={`/doctor/${authorProfile.id}`}>
+                {authorDoctorProfile ? (
+                  <Link to={`/doctor/${authorProfile.id}`}>
+                    <Avatar className="w-14 h-14 border-2 border-primary/20">
+                      <AvatarImage src={authorProfile.avatar_url || ''} />
+                      <AvatarFallback className="text-lg">{authorProfile.name?.charAt(0) || 'A'}</AvatarFallback>
+                    </Avatar>
+                  </Link>
+                ) : (
                   <Avatar className="w-14 h-14 border-2 border-primary/20">
                     <AvatarImage src={authorProfile.avatar_url || ''} />
                     <AvatarFallback className="text-lg">{authorProfile.name?.charAt(0) || 'A'}</AvatarFallback>
                   </Avatar>
-                </Link>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <Link to={`/doctor/${authorProfile.id}`} className="font-semibold text-foreground hover:underline text-base">
-                      {authorProfile.name}
-                    </Link>
+                    {authorDoctorProfile ? (
+                      <Link to={`/doctor/${authorProfile.id}`} className="font-semibold text-foreground hover:underline text-base">
+                        {authorProfile.name}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-foreground text-base">{authorProfile.name}</span>
+                    )}
                     <Badge variant="outline" className="text-[10px]">Autor</Badge>
                   </div>
 
@@ -409,14 +420,16 @@ export default function NewsArticle() {
                     </div>
                   )}
 
-                  {/* View profile button */}
-                  <div className="mt-2">
-                    <Link to={`/doctor/${authorProfile.id}`}>
-                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                        <User className="w-3 h-3" /> Ver perfil
-                      </Button>
-                    </Link>
-                  </div>
+                  {/* View profile button - only for approved doctors */}
+                  {authorDoctorProfile && (
+                    <div className="mt-2">
+                      <Link to={`/doctor/${authorProfile.id}`}>
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                          <User className="w-3 h-3" /> Ver perfil
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
