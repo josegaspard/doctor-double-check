@@ -19,6 +19,8 @@ import {
   RefreshCcw,
   Banknote,
   FileText,
+  Newspaper,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface AdminModule {
@@ -132,6 +134,26 @@ const adminModules: AdminModule[] = [
     icon: RefreshCcw,
     href: '/admin/refunds',
     color: 'text-destructive',
+  },
+  {
+    id: 'news',
+    title: 'Noticias y Blog Médico',
+    titleEn: 'Medical News & Blog',
+    description: 'Crea, edita y publica artículos y noticias médicas para la comunidad',
+    descriptionEn: 'Create, edit and publish medical articles and news for the community',
+    icon: Newspaper,
+    href: '/admin/news',
+    color: 'text-pink-500',
+  },
+  {
+    id: 'credentials',
+    title: 'Credenciales de Doctores',
+    titleEn: 'Doctor Credentials',
+    description: 'Revisa y aprueba la educación, certificaciones y experiencia de los médicos',
+    descriptionEn: 'Review and approve doctors education, certifications and experience',
+    icon: ShieldCheck,
+    href: '/admin/credentials',
+    color: 'text-indigo-500',
   },
 ];
 

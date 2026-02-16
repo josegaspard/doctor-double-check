@@ -42,6 +42,8 @@ import {
   Users,
   Loader2,
   BarChart3,
+  Newspaper,
+  UserCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
@@ -445,6 +447,26 @@ export default function DoctorDashboard() {
                           Biblioteca
                         </Button>
                       </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Professional Profile Card */}
+              <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-accent/30" onClick={() => navigate(`/doctor/${user?.id}`)}>
+                <CardContent className="p-4 sm:p-8">
+                  <div className="flex items-start gap-3 sm:gap-5">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                      <UserCircle className="w-6 h-6 sm:w-8 sm:h-8 text-accent" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm sm:text-lg text-foreground mb-1 sm:mb-2">Mi Perfil Profesional</h3>
+                      <p className="text-muted-foreground mb-2 sm:mb-4 text-xs sm:text-sm line-clamp-2">
+                        Edita tu educación, certificaciones y experiencia — tu CV profesional visible para pacientes
+                      </p>
+                      <Button variant="outline" className="h-8 sm:h-10 text-xs sm:text-sm px-3 sm:px-4">
+                        Ver y editar perfil
+                      </Button>
                     </div>
                   </div>
                 </CardContent>

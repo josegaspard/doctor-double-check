@@ -19,7 +19,7 @@ interface NewsItem {
   slug: string | null;
 }
 
-export function NewsFeed() {
+export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(_props, ref) {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -40,7 +40,7 @@ export function NewsFeed() {
   if (isLoading || news.length === 0) return null;
 
   return (
-    <section className="mt-8">
+    <section ref={ref} className="mt-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
           <Newspaper className="w-5 h-5 text-primary" />
@@ -88,4 +88,4 @@ export function NewsFeed() {
       </div>
     </section>
   );
-}
+});

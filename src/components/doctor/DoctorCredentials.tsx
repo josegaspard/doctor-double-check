@@ -234,6 +234,11 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
           <GraduationCap className="w-5 h-5 text-primary" />
           Perfil Académico y Profesional
         </CardTitle>
+        {isOwner && (
+          <p className="text-xs text-muted-foreground mt-1">
+            💡 Agrega tu educación, certificaciones y experiencia para que los pacientes conozcan tu trayectoria profesional. Cada entrada será revisada y aprobada por un administrador antes de ser visible públicamente.
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="education" className="space-y-4">
@@ -255,14 +260,23 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
           {/* Education */}
           <TabsContent value="education" className="space-y-3">
             {isOwner && (
-              <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowEduDialog(true)}>
-                <Plus className="w-4 h-4" /> Agregar Educación
-              </Button>
+              <div className="space-y-2">
+                <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowEduDialog(true)}>
+                  <Plus className="w-4 h-4" /> Agregar Educación
+                </Button>
+                {visibleEdu.length === 0 && (
+                  <div className="text-center py-4 border border-dashed rounded-lg">
+                    <GraduationCap className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">Agrega tu formación académica</p>
+                    <p className="text-xs text-muted-foreground/70">Universidades, posgrados, maestrías, doctorados...</p>
+                  </div>
+                )}
+              </div>
             )}
-            {visibleEdu.length === 0 ? (
+            {!isOwner && visibleEdu.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Sin educación registrada</p>
-            ) : (
-              visibleEdu.map(edu => (
+            )}
+            {visibleEdu.map(edu => (
                 <div key={edu.id} className="border rounded-lg p-3 space-y-1">
                   <div className="flex items-start justify-between">
                     <div>
@@ -284,20 +298,29 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                     </div>
                   </div>
                 </div>
-              ))
-            )}
+              ))}
           </TabsContent>
 
           {/* Certifications */}
           <TabsContent value="certifications" className="space-y-3">
             {isOwner && (
-              <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowCertDialog(true)}>
-                <Plus className="w-4 h-4" /> Agregar Certificación
-              </Button>
+              <div className="space-y-2">
+                <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowCertDialog(true)}>
+                  <Plus className="w-4 h-4" /> Agregar Certificación
+                </Button>
+                {visibleCert.length === 0 && (
+                  <div className="text-center py-4 border border-dashed rounded-lg">
+                    <Award className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">Agrega tus certificaciones</p>
+                    <p className="text-xs text-muted-foreground/70">Especialidades, diplomados, cursos acreditados...</p>
+                  </div>
+                )}
+              </div>
             )}
-            {visibleCert.length === 0 ? (
+            {!isOwner && visibleCert.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Sin certificaciones registradas</p>
-            ) : (
+            )}
+            {visibleCert.length > 0 && (
               visibleCert.map(cert => (
                 <div key={cert.id} className="border rounded-lg p-3 space-y-1">
                   <div className="flex items-start justify-between">
@@ -325,13 +348,23 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
           {/* Experience */}
           <TabsContent value="experience" className="space-y-3">
             {isOwner && (
-              <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowExpDialog(true)}>
-                <Plus className="w-4 h-4" /> Agregar Experiencia
-              </Button>
+              <div className="space-y-2">
+                <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowExpDialog(true)}>
+                  <Plus className="w-4 h-4" /> Agregar Experiencia
+                </Button>
+                {visibleExp.length === 0 && (
+                  <div className="text-center py-4 border border-dashed rounded-lg">
+                    <Briefcase className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">Agrega tu experiencia profesional</p>
+                    <p className="text-xs text-muted-foreground/70">Hospitales, clínicas, consultorios privados...</p>
+                  </div>
+                )}
+              </div>
             )}
-            {visibleExp.length === 0 ? (
+            {!isOwner && visibleExp.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Sin experiencia registrada</p>
-            ) : (
+            )}
+            {visibleExp.length > 0 && (
               visibleExp.map(exp => (
                 <div key={exp.id} className="border rounded-lg p-3 space-y-1">
                   <div className="flex items-start justify-between">
