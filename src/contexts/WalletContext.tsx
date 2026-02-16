@@ -78,7 +78,33 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchWalletData();
-  }, [fetchWalletData]);
+
+    // Realtime subscription for wallet balance changes
+    if (!user?.id || user.role === 'visitor') return;
+    
+    const channel = supabase
+      .channel(`wallet-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'wallets', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const newBalance = Number((payload.new as any).balance);
+          setBalance(newBalance);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'wallet_transactions', filter: `user_id=eq.${user.id}` },
+        () => {
+          fetchWalletData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchWalletData, user?.id, user?.role]);
 
   const refreshWallet = async () => {
     await fetchWalletData();

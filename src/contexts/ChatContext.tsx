@@ -92,113 +92,84 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       if (sessionsData) {
-        const enrichOne = async (s: any): Promise<ChatSession> => {
-          // Defaults
-          let participant1Name: string | undefined;
-          let participant1Specialty: string | undefined;
-          let participant1Avatar: string | undefined;
-          let participant2Name: string | undefined;
-          let participant2Specialty: string | undefined;
-          let participant2Avatar: string | undefined;
-          let officeHoursStart: string | undefined;
-          let officeHoursEnd: string | undefined;
-          let officeDays: string[] | undefined;
-
-          // 1) Preferred: secure RPC with everything (name/specialty/avatar/hours)
-          try {
-            const { data: detailsData, error: detailsError } = await supabase
-              .rpc('get_chat_session_details', { p_session_id: s.id });
-
-            if (!detailsError && detailsData && detailsData.length > 0) {
-              const details = detailsData[0];
-              participant1Name = details.participant1_name;
-              participant1Specialty = details.participant1_specialty;
-              participant1Avatar = details.participant1_avatar;
-              participant2Name = details.participant2_name;
-              participant2Specialty = details.participant2_specialty;
-              participant2Avatar = details.participant2_avatar;
-              officeHoursStart = details.doctor_office_hours_start;
-              officeHoursEnd = details.doctor_office_hours_end;
-              officeDays = details.doctor_office_days;
-            }
-          } catch {
-            // ignore
+        // Batch fetch all session details via RPC (one call per session, but in parallel)
+        const sessionIds = sessionsData.map(s => s.id);
+        const detailsResults = await Promise.all(
+          sessionIds.map(id => supabase.rpc('get_chat_session_details', { p_session_id: id }))
+        );
+        
+        const detailsMap = new Map<string, any>();
+        detailsResults.forEach((result, i) => {
+          if (!result.error && result.data && result.data.length > 0) {
+            detailsMap.set(sessionIds[i], result.data[0]);
           }
+        });
 
-          // 2) Fallbacks (avoid private tables; use public views / RPCs)
-          if (!participant1Name || !participant2Name) {
-            const participantIds = [s.participant1_id, s.participant2_id];
-            const { data: profilesPublic } = await supabase
-              .from('profiles_public')
-              .select('id, name, avatar_url')
-              .in('id', participantIds);
+        // Collect participant IDs that need fallback profile data
+        const needsFallbackIds = new Set<string>();
+        sessionsData.forEach(s => {
+          const details = detailsMap.get(s.id);
+          if (!details?.participant1_name) needsFallbackIds.add(s.participant1_id);
+          if (!details?.participant2_name) needsFallbackIds.add(s.participant2_id);
+        });
 
-            const profileMap = new Map(
-              (profilesPublic || []).map((p: any) => [p.id, { name: p.name as string | null, avatar: p.avatar_url as string | null }])
-            );
+        // Batch fetch fallback profiles
+        let fallbackProfileMap = new Map<string, { name: string | null; avatar: string | null }>();
+        if (needsFallbackIds.size > 0) {
+          const { data: profilesPublic } = await supabase
+            .from('profiles_public')
+            .select('id, name, avatar_url')
+            .in('id', Array.from(needsFallbackIds));
+          
+          (profilesPublic || []).forEach((p: any) => {
+            fallbackProfileMap.set(p.id, { name: p.name, avatar: p.avatar_url });
+          });
+        }
 
-            participant1Name = participant1Name ?? profileMap.get(s.participant1_id)?.name ?? undefined;
-            participant1Avatar = participant1Avatar ?? profileMap.get(s.participant1_id)?.avatar ?? undefined;
-            participant2Name = participant2Name ?? profileMap.get(s.participant2_id)?.name ?? undefined;
-            participant2Avatar = participant2Avatar ?? profileMap.get(s.participant2_id)?.avatar ?? undefined;
-
-            // Resident specialty (public view)
-            const residentIds = [
-              ...(s.participant1_type === 'resident' ? [s.participant1_id] : []),
-              ...(s.participant2_type === 'resident' ? [s.participant2_id] : []),
-            ];
-            if (residentIds.length > 0) {
-              const { data: residentPublic } = await supabase
-                .from('resident_profiles_public')
-                .select('user_id, specialty')
-                .in('user_id', residentIds);
-              const resMap = new Map((residentPublic || []).map((r: any) => [r.user_id, r.specialty]));
-              if (s.participant1_type === 'resident') participant1Specialty = participant1Specialty ?? resMap.get(s.participant1_id) ?? undefined;
-              if (s.participant2_type === 'resident') participant2Specialty = participant2Specialty ?? resMap.get(s.participant2_id) ?? undefined;
-            }
-
-            // Doctor details (public RPC already used elsewhere)
-            const doctorId = s.participant1_type === 'doctor'
-              ? s.participant1_id
-              : s.participant2_type === 'doctor'
-                ? s.participant2_id
-                : null;
-
-            if (doctorId && (!officeHoursStart || !officeHoursEnd || !participant1Specialty || !participant2Specialty)) {
-              const { data: docData } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctorId });
-              const doc = Array.isArray(docData) ? docData[0] : docData;
-              if (doc) {
-                // Ensure we set the correct participant's specialty/name/avatar
-                if (s.participant1_type === 'doctor') {
-                  participant1Name = participant1Name ?? doc.name ?? undefined;
-                  participant1Avatar = participant1Avatar ?? doc.avatar_url ?? undefined;
-                  participant1Specialty = participant1Specialty ?? doc.specialty ?? undefined;
-                }
-                if (s.participant2_type === 'doctor') {
-                  participant2Name = participant2Name ?? doc.name ?? undefined;
-                  participant2Avatar = participant2Avatar ?? doc.avatar_url ?? undefined;
-                  participant2Specialty = participant2Specialty ?? doc.specialty ?? undefined;
-                }
-
-                officeHoursStart = officeHoursStart ?? doc.office_hours_start ?? undefined;
-                officeHoursEnd = officeHoursEnd ?? doc.office_hours_end ?? undefined;
-                officeDays = officeDays ?? doc.office_days ?? undefined;
-              }
-            }
+        // Batch fetch doctor profiles for office hours (only for sessions missing details)
+        const doctorIdsForHours = new Set<string>();
+        sessionsData.forEach(s => {
+          const details = detailsMap.get(s.id);
+          if (!details?.doctor_office_hours_start) {
+            const doctorId = s.participant1_type === 'doctor' ? s.participant1_id
+              : s.participant2_type === 'doctor' ? s.participant2_id : null;
+            if (doctorId) doctorIdsForHours.add(doctorId);
           }
+        });
+
+        let doctorProfileMap = new Map<string, any>();
+        if (doctorIdsForHours.size > 0) {
+          const docResults = await Promise.all(
+            Array.from(doctorIdsForHours).map(id => supabase.rpc('get_doctor_public_profile', { p_user_id: id }))
+          );
+          Array.from(doctorIdsForHours).forEach((id, i) => {
+            const data = docResults[i].data;
+            const doc = Array.isArray(data) ? data[0] : data;
+            if (doc) doctorProfileMap.set(id, doc);
+          });
+        }
+
+        const enrichedSessions = sessionsData.map((s): ChatSession => {
+          const details = detailsMap.get(s.id);
+          const fb1 = fallbackProfileMap.get(s.participant1_id);
+          const fb2 = fallbackProfileMap.get(s.participant2_id);
+          
+          const doctorId = s.participant1_type === 'doctor' ? s.participant1_id
+            : s.participant2_type === 'doctor' ? s.participant2_id : null;
+          const doc = doctorId ? doctorProfileMap.get(doctorId) : null;
 
           return {
             id: s.id,
             participant1Id: s.participant1_id,
             participant1Type: s.participant1_type as ChatParticipantType,
-            participant1Name,
-            participant1Specialty,
-            participant1Avatar,
+            participant1Name: details?.participant1_name ?? fb1?.name ?? (s.participant1_type === 'doctor' && doc?.name) ?? undefined,
+            participant1Specialty: details?.participant1_specialty ?? (s.participant1_type === 'doctor' && doc?.specialty) ?? undefined,
+            participant1Avatar: details?.participant1_avatar ?? fb1?.avatar ?? (s.participant1_type === 'doctor' && doc?.avatar_url) ?? undefined,
             participant2Id: s.participant2_id,
             participant2Type: s.participant2_type as ChatParticipantType,
-            participant2Name,
-            participant2Specialty,
-            participant2Avatar,
+            participant2Name: details?.participant2_name ?? fb2?.name ?? (s.participant2_type === 'doctor' && doc?.name) ?? undefined,
+            participant2Specialty: details?.participant2_specialty ?? (s.participant2_type === 'doctor' && doc?.specialty) ?? undefined,
+            participant2Avatar: details?.participant2_avatar ?? fb2?.avatar ?? (s.participant2_type === 'doctor' && doc?.avatar_url) ?? undefined,
             lastMessage: s.last_message || undefined,
             lastMessageAt: s.last_message_at ? new Date(s.last_message_at) : undefined,
             unreadCount: s.participant1_id === user.id ? s.unread_count_1 : s.unread_count_2,
@@ -206,13 +177,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             isDoubleCheck: s.is_double_check,
             originalConsultationId: s.original_consultation_id || undefined,
             createdAt: new Date(s.created_at),
-            officeHoursStart,
-            officeHoursEnd,
-            officeDays,
+            officeHoursStart: details?.doctor_office_hours_start ?? doc?.office_hours_start ?? undefined,
+            officeHoursEnd: details?.doctor_office_hours_end ?? doc?.office_hours_end ?? undefined,
+            officeDays: details?.doctor_office_days ?? doc?.office_days ?? undefined,
           };
-        };
-
-        const enrichedSessions = await Promise.all(sessionsData.map(enrichOne));
+        });
         setSessions(enrichedSessions);
       }
     } catch (error) {
@@ -268,7 +237,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     // Set up realtime subscription
     const channel = supabase
-      .channel('chat-changes')
+      .channel(`chat-changes-${user.id}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'chat_sessions' },
@@ -279,8 +248,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },
-        (payload) => {
+        async (payload) => {
           const newMessage = payload.new as any;
+          
+          // Fetch sender name for the new message
+          let senderName: string | undefined;
+          try {
+            const { data: senderProfile } = await supabase
+              .from('profiles_public')
+              .select('name')
+              .eq('id', newMessage.sender_id)
+              .single();
+            senderName = senderProfile?.name ?? undefined;
+          } catch {}
+
           setMessages(prev => {
             const existing = prev[newMessage.session_id] || [];
             // Avoid duplicates
@@ -291,6 +272,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 id: newMessage.id,
                 sessionId: newMessage.session_id,
                 senderId: newMessage.sender_id,
+                senderName,
                 content: newMessage.content,
                 isRead: newMessage.is_read,
                 createdAt: new Date(newMessage.created_at),

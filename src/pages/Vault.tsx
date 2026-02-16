@@ -111,7 +111,7 @@ export default function Vault() {
   const isStorageNearFull = storagePercentage >= 85;
 
   // Fetch doctors the patient has a relationship with (subscriptions, chats, consultations)
-  const fetchRelatedDoctors = async () => {
+  const fetchRelatedDoctors = useCallback(async () => {
     if (!supabaseUser?.id) return;
     
     setLoadingDoctors(true);
@@ -207,13 +207,13 @@ export default function Vault() {
     } finally {
       setLoadingDoctors(false);
     }
-  };
+  }, [supabaseUser?.id]);
 
   useEffect(() => {
     if (role === 'patient' && supabaseUser?.id) {
       fetchRelatedDoctors();
     }
-  }, [role, supabaseUser?.id]);
+  }, [role, supabaseUser?.id, fetchRelatedDoctors]);
 
   if (role !== 'patient') return null;
 

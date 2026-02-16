@@ -224,13 +224,13 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <Link
                     key={item.href}
                     to={item.href}
-                    className={`flex items-center gap-0.5 px-1 lg:px-1.5 xl:px-2 py-1 rounded-md text-[8px] lg:text-[9px] xl:text-[11px] font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                    className={`flex items-center gap-1 px-1.5 lg:px-2 xl:px-2.5 py-1.5 rounded-md text-[10px] lg:text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                       location.pathname === item.href
                         ? 'bg-accent text-accent-foreground'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                   >
-                    <item.icon className="w-2.5 h-2.5 xl:w-3 xl:h-3 flex-shrink-0" />
+                    <item.icon className="w-3 h-3 lg:w-3.5 lg:h-3.5 flex-shrink-0" />
                     <span className="hidden md:inline">{t(item.labelKey)}</span>
                   </Link>
                 ))}
@@ -248,9 +248,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               {/* Notifications */}
               {isAuthenticated && <NotificationBell />}
               
-              {/* Wallet (for patients/residents) */}
+              {/* Wallet (for patients/residents) - hidden on small screens, visible in mobile menu */}
               {(role === 'patient' || role === 'resident') && (
-                <Link to="/wallet">
+                <Link to="/wallet" className="hidden sm:block">
                   <Button variant="outline" size="sm" className="gap-2">
                     <Wallet className="w-4 h-4" />
                     <span className="font-semibold">${balance.toLocaleString()}</span>
