@@ -409,6 +409,57 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_certifications: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          credential_id: string | null
+          doctor_id: string
+          document_url: string | null
+          expiry_date: string | null
+          id: string
+          issue_date: string | null
+          issuing_organization: string
+          name: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          credential_id?: string | null
+          doctor_id: string
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_organization: string
+          name: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          credential_id?: string | null
+          doctor_id?: string
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_organization?: string
+          name?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       doctor_content: {
         Row: {
           audience_type: Database["public"]["Enums"]["content_audience"]
@@ -453,6 +504,114 @@ export type Database = {
           thumbnail_url?: string | null
           title?: string
           type?: Database["public"]["Enums"]["content_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      doctor_education: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          degree: string
+          description: string | null
+          doctor_id: string
+          document_url: string | null
+          end_year: number | null
+          field_of_study: string | null
+          id: string
+          institution: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          start_year: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          degree: string
+          description?: string | null
+          doctor_id: string
+          document_url?: string | null
+          end_year?: number | null
+          field_of_study?: string | null
+          id?: string
+          institution: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_year?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          degree?: string
+          description?: string | null
+          doctor_id?: string
+          document_url?: string | null
+          end_year?: number | null
+          field_of_study?: string | null
+          id?: string
+          institution?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_year?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      doctor_experience: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          description: string | null
+          doctor_id: string
+          end_date: string | null
+          id: string
+          is_current: boolean | null
+          location: string | null
+          organization: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          start_date: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string | null
+          doctor_id: string
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          location?: string | null
+          organization: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string | null
+          doctor_id?: string
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          location?: string | null
+          organization?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string
           updated_at?: string
         }
         Relationships: []
