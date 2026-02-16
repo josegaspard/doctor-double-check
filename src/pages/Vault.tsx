@@ -34,8 +34,12 @@ import {
   Stethoscope,
   CheckCircle,
   Search,
+  HardDrive,
+  Zap,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const CATEGORIES = ['Laboratorios', 'Imagenología', 'Estudios Cardíacos', 'Recetas', 'Otros'];
 
@@ -50,6 +54,7 @@ interface AvailableDoctor {
 export default function Vault() {
   const { files, uploadFile, deleteFile, grantAccess, revokeAccess, uploadProgress, isLoading, refreshVault } = useVault();
   const { role, supabaseUser } = useAuth();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedCategory, setSelectedCategory] = useState('Otros');
   const [description, setDescription] = useState('');
@@ -60,6 +65,31 @@ export default function Vault() {
   const [doctorSearch, setDoctorSearch] = useState('');
   const [grantingAccess, setGrantingAccess] = useState<string | null>(null);
   const [revokingAccess, setRevokingAccess] = useState<string | null>(null);
+  const [storageUsed, setStorageUsed] = useState(0);
+  const [storageLimit, setStorageLimit] = useState(1073741824); // 1GB default
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
+  // Fetch storage usage
+  useEffect(() => {
+    const fetchStorage = async () => {
+      if (!supabaseUser?.id) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('storage_used_bytes, storage_limit_bytes')
+        .eq('id', supabaseUser.id)
+        .single();
+      if (data) {
+        setStorageUsed(data.storage_used_bytes || 0);
+        setStorageLimit(data.storage_limit_bytes || 1073741824);
+      }
+    };
+    fetchStorage();
+  }, [supabaseUser?.id, files]);
+
+  const storagePercentage = Math.min((storageUsed / storageLimit) * 100, 100);
+  const isStorageFull = storageUsed >= storageLimit;
+  const isStorageNearFull = storagePercentage >= 80;
 
   // Fetch doctors the patient has a relationship with (subscriptions, chats, consultations)
   const fetchRelatedDoctors = async () => {
@@ -170,9 +200,24 @@ export default function Vault() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Check storage limit
+    if (storageUsed + file.size > storageLimit) {
+      setShowUpgradeDialog(true);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     const result = await uploadFile(file, selectedCategory, description);
     if (result.success) {
       toast.success('Archivo subido correctamente');
+      // Update storage used
+      const newUsed = storageUsed + file.size;
+      setStorageUsed(newUsed);
+      await supabase
+        .from('profiles')
+        .update({ storage_used_bytes: newUsed })
+        .eq('id', supabaseUser!.id);
     } else {
       toast.error(result.error || 'Error al subir archivo');
     }
@@ -180,10 +225,62 @@ export default function Vault() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleUpgradeStorage = async (extraGB: number) => {
+    if (!supabaseUser?.id) return;
+    setIsUpgrading(true);
+
+    const costPerGB = 49; // $49 MXN per GB
+    const totalCost = extraGB * costPerGB;
+
+    try {
+      const { data, error } = await supabase.rpc('process_wallet_purchase', {
+        p_amount: totalCost,
+        p_description: `Expansión de almacenamiento: +${extraGB}GB`,
+        p_metadata: { type: 'storage_upgrade', extra_gb: extraGB },
+      });
+
+      if (error) throw error;
+      const result = data as any;
+
+      if (!result?.success) {
+        if (result?.error === 'Insufficient balance') {
+          toast.error('Saldo insuficiente. Recarga tu billetera primero.');
+          navigate('/wallet');
+        } else {
+          toast.error(result?.error || 'Error al procesar la compra');
+        }
+        return;
+      }
+
+      // Update storage limit
+      const newLimit = storageLimit + (extraGB * 1073741824);
+      await supabase
+        .from('profiles')
+        .update({ storage_limit_bytes: newLimit })
+        .eq('id', supabaseUser.id);
+      
+      setStorageLimit(newLimit);
+      setShowUpgradeDialog(false);
+      toast.success(`¡Almacenamiento ampliado a ${formatStorageSize(newLimit)}!`);
+    } catch (error) {
+      console.error('Upgrade error:', error);
+      toast.error('Error al ampliar almacenamiento');
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const formatStorageSize = (bytes: number) => {
+    const gb = bytes / (1024 * 1024 * 1024);
+    if (gb >= 1) return `${gb.toFixed(gb % 1 === 0 ? 0 : 1)} GB`;
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(0)} MB`;
   };
 
   const getIcon = (type: string) => {
@@ -259,6 +356,46 @@ export default function Vault() {
           Guarda tus estudios de forma segura y controla quién puede verlos
         </p>
 
+        {/* Storage Usage Bar */}
+        <Card className={`mb-6 ${isStorageFull ? 'border-destructive/50 bg-destructive/5' : isStorageNearFull ? 'border-warning/50 bg-warning/5' : 'border-border'}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <HardDrive className={`w-4 h-4 ${isStorageFull ? 'text-destructive' : isStorageNearFull ? 'text-warning' : 'text-primary'}`} />
+                <span className="text-sm font-medium text-foreground">Almacenamiento</span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {formatStorageSize(storageUsed)} de {formatStorageSize(storageLimit)}
+              </span>
+            </div>
+            <Progress 
+              value={storagePercentage} 
+              className={`h-2.5 ${isStorageFull ? '[&>div]:bg-destructive' : isStorageNearFull ? '[&>div]:bg-warning' : ''}`} 
+            />
+            {isStorageFull && (
+              <div className="flex items-center justify-between mt-3">
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Almacenamiento lleno
+                </p>
+                <Button size="sm" variant="default" className="gap-1 h-7 text-xs" onClick={() => setShowUpgradeDialog(true)}>
+                  <Zap className="w-3 h-3" />
+                  Ampliar
+                </Button>
+              </div>
+            )}
+            {!isStorageFull && isStorageNearFull && (
+              <div className="flex items-center justify-between mt-3">
+                <p className="text-xs text-warning">Casi lleno — considera ampliar tu espacio</p>
+                <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setShowUpgradeDialog(true)}>
+                  <Zap className="w-3 h-3" />
+                  Ampliar
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="mb-6 bg-primary/5 border-primary/20">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
@@ -291,9 +428,14 @@ export default function Vault() {
               <Input placeholder="Descripción" value={description} onChange={e => setDescription(e.target.value)} className="h-10" />
             </div>
             <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleUpload} />
-            <Button onClick={() => fileInputRef.current?.click()} disabled={isLoading} className="w-full">
-              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              Seleccionar Archivo
+            <Button 
+              onClick={() => isStorageFull ? setShowUpgradeDialog(true) : fileInputRef.current?.click()} 
+              disabled={isLoading} 
+              variant={isStorageFull ? 'outline' : 'default'}
+              className="w-full"
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : isStorageFull ? <Lock className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+              {isStorageFull ? 'Almacenamiento lleno — Ampliar' : 'Seleccionar Archivo'}
             </Button>
             {uploadProgress !== null && (
               <div className="space-y-2">
@@ -514,6 +656,57 @@ export default function Vault() {
             <Button variant="outline" onClick={() => setShowPermissionDialog(false)} className="w-full">
               Cerrar
             </Button>
+          </DialogContent>
+        </Dialog>
+
+        {/* Storage Upgrade Dialog */}
+        <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <HardDrive className="w-5 h-5 text-primary" />
+                Ampliar Almacenamiento
+              </DialogTitle>
+              <DialogDescription>
+                Tu almacenamiento actual: {formatStorageSize(storageUsed)} de {formatStorageSize(storageLimit)} usado.
+                Selecciona cuánto espacio adicional necesitas.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-3 mt-2">
+              {[
+                { gb: 1, price: 49, label: '+1 GB' },
+                { gb: 5, price: 245, label: '+5 GB', badge: 'Popular' },
+                { gb: 10, price: 490, label: '+10 GB', badge: 'Mejor valor' },
+              ].map(plan => (
+                <button
+                  key={plan.gb}
+                  onClick={() => handleUpgradeStorage(plan.gb)}
+                  disabled={isUpgrading}
+                  className="w-full flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <HardDrive className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">{plan.label}</p>
+                      <p className="text-xs text-muted-foreground">Total: {formatStorageSize(storageLimit + plan.gb * 1073741824)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex items-center gap-2">
+                    {plan.badge && (
+                      <Badge variant="secondary" className="text-[10px]">{plan.badge}</Badge>
+                    )}
+                    <span className="font-bold text-foreground">${plan.price} MXN</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Se descontará de tu billetera. Residentes reciben 50% de descuento automático.
+            </p>
           </DialogContent>
         </Dialog>
       </div>

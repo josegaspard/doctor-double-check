@@ -365,7 +365,7 @@ export default function Chat() {
 
         <div className="grid md:grid-cols-[340px,1fr] gap-3 sm:gap-4 flex-1 min-h-0 overflow-hidden">
           {/* Sessions List */}
-          <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-gradient-to-b from-primary/[0.03] to-transparent ${showMobileChat ? 'hidden md:flex' : 'flex'}`}>
+          <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-gradient-to-b from-blue-50/70 to-sky-50/30 dark:from-primary/[0.06] dark:to-transparent ${showMobileChat ? 'hidden md:flex' : 'flex'}`}>
             <CardHeader className="pb-3 pt-4 px-3 flex-shrink-0 space-y-3">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'active' | 'history')} className="w-full">
                 <TabsList className="w-full grid grid-cols-2 h-11">
@@ -453,7 +453,7 @@ export default function Chat() {
           </Card>
 
           {/* Messages Panel */}
-          <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-gradient-to-b from-primary/[0.02] to-secondary/[0.02] ${showMobileList ? 'hidden md:flex' : 'flex'}`}>
+          <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-gradient-to-b from-blue-50/50 to-sky-50/30 dark:from-primary/[0.06] dark:to-secondary/[0.04] ${showMobileList ? 'hidden md:flex' : 'flex'}`}>
             {selectedSession && selectedSessionData ? (
               <>
                 <ChatHeader
@@ -470,7 +470,7 @@ export default function Chat() {
                   onBack={isMobile ? () => setSelectedSession(null) : undefined}
                 />
                 
-                <CardContent className="flex-1 p-0 flex flex-col min-h-0 overflow-hidden bg-gradient-to-b from-primary/5 via-secondary/3 to-primary/5">
+                <CardContent className="flex-1 p-0 flex flex-col min-h-0 overflow-hidden bg-gradient-to-b from-sky-100/60 via-blue-50/40 to-sky-100/50 dark:from-primary/15 dark:via-secondary/10 dark:to-primary/15">
                   <ScrollArea className="flex-1 min-h-0 px-3 sm:px-4 py-4">
                     <div className="space-y-3">
                       {messages.map(msg => (

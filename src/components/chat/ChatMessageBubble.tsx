@@ -85,8 +85,8 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed }: ChatMessa
             }`
           : `rounded-2xl rounded-bl-md ${
               isSessionClosed 
-                ? 'bg-muted/70 text-foreground' 
-                : 'bg-card border border-border/50 text-foreground shadow-sm'
+                ? 'bg-blue-50/80 dark:bg-muted/70 text-foreground' 
+                : 'bg-white/90 dark:bg-card border border-blue-100/60 dark:border-border/50 text-foreground shadow-sm'
             }`
         }
       `}>
