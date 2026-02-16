@@ -43,7 +43,7 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
-
+  const [consultationId, setConsultationId] = useState<string | null>(null);
   const allSessions = getSessionsByUser();
   const activeSessions = allSessions.filter(s => s.status === 'active');
   const closedSessions = allSessions.filter(s => s.status === 'closed');
@@ -173,6 +173,22 @@ export default function Chat() {
     if (selectedSession) {
       loadMessages(selectedSession);
       markAsRead(selectedSession);
+      
+      // Fetch consultation ID for this session
+      const fetchConsultation = async () => {
+        const { data } = await supabase
+          .from('consultations')
+          .select('id')
+          .eq('chat_session_id', selectedSession)
+          .eq('status', 'active')
+          .order('started_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        setConsultationId(data?.id || null);
+      };
+      fetchConsultation();
+    } else {
+      setConsultationId(null);
     }
   }, [selectedSession, loadMessages, markAsRead]);
 
@@ -468,6 +484,7 @@ export default function Chat() {
                   onDoctorProfileClick={(e) => goToDoctorProfile(e, selectedSessionData)}
                   onCloseSession={handleCloseSession}
                   onBack={isMobile ? () => setSelectedSession(null) : undefined}
+                  consultationId={consultationId}
                 />
                 
                 <CardContent className="flex-1 p-0 flex flex-col min-h-0 overflow-hidden bg-gradient-to-b from-sky-100/60 via-blue-50/40 to-sky-100/50 dark:from-primary/15 dark:via-secondary/10 dark:to-primary/15">
