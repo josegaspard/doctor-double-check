@@ -61,7 +61,7 @@ export default function NewsArticle() {
         fetchComments(data.id);
         // Fetch author profile
         const { data: authorP } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('id, name, avatar_url')
           .eq('id', data.created_by)
           .maybeSingle();
@@ -78,7 +78,7 @@ export default function NewsArticle() {
         // Fetch editor profile if edited
         if (data.last_edited_by && data.last_edited_by !== data.created_by) {
           const { data: editorP } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('id, name, avatar_url')
             .eq('id', data.last_edited_by)
             .maybeSingle();
@@ -103,7 +103,7 @@ export default function NewsArticle() {
 
     const userIds = [...new Set(commentsData.map(c => c.user_id))];
     const { data: profiles } = await supabase
-      .from('profiles')
+      .from('profiles_public')
       .select('id, name, avatar_url')
       .in('id', userIds);
 
