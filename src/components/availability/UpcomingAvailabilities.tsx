@@ -15,9 +15,11 @@ import { cn } from '@/lib/utils';
 function AvailabilityItem({
   availability,
   language,
+  isPremium,
 }: {
   availability: DoctorAvailability;
   language: 'es' | 'en';
+  isPremium?: boolean;
 }) {
   const isLive = availability.type === 'live';
   const isConsultation = availability.type === 'consultation';
@@ -56,6 +58,11 @@ function AvailabilityItem({
                 <Badge variant={availability.status === 'confirmed' ? 'verified' : 'secondary'} className="text-xs">
                   {isLive ? 'Live' : isConsultation ? 'Consulta' : 'Horario'}
                 </Badge>
+                {isPremium && isLive && (
+                  <Badge className="text-[10px] bg-yellow-500/10 text-yellow-600 border-yellow-300 gap-0.5">
+                    ⭐ Acceso anticipado
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
                 <Calendar className="h-3 w-3" />
@@ -80,6 +87,7 @@ export function UpcomingAvailabilities() {
   const { subscriptions } = useSubscriptions();
 
   // Filter availabilities from doctors the user follows
+  const premiumDoctorIds = new Set(subscriptions.filter(s => s.tier === 'premium').map(s => s.creatorId));
   const subscribedDoctorIds = new Set(subscriptions.map(s => s.creatorId));
   
   const followedAvailabilities = availabilities
@@ -142,6 +150,7 @@ export function UpcomingAvailabilities() {
                 key={availability.id}
                 availability={availability}
                 language={language}
+                isPremium={premiumDoctorIds.has(availability.doctorId)}
               />
             ))}
             
