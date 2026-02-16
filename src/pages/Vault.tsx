@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useVault, VaultFile } from '@/contexts/VaultContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,33 +77,34 @@ export default function Vault() {
   ]);
 
   // Fetch storage usage
-  useEffect(() => {
-    const fetchStorage = async () => {
-      if (!supabaseUser?.id) return;
-      const { data } = await supabase
-        .from('profiles')
-        .select('storage_used_bytes, storage_limit_bytes')
-        .eq('id', supabaseUser.id)
-        .single();
-      if (data) {
-        setStorageUsed(data.storage_used_bytes || 0);
-        setStorageLimit(data.storage_limit_bytes || 1073741824);
-      }
+  const fetchStorage = useCallback(async () => {
+    if (!supabaseUser?.id) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('storage_used_bytes, storage_limit_bytes')
+      .eq('id', supabaseUser.id)
+      .single();
+    if (data) {
+      setStorageUsed(data.storage_used_bytes || 0);
+      setStorageLimit(data.storage_limit_bytes || 1073741824);
+    }
 
-      // Fetch pricing from site_settings
-      const { data: pricingData } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('id', 'storage_pricing')
-        .single();
-      if (pricingData?.value) {
-        const pricing = pricingData.value as any;
-        if (pricing.price_per_gb) setPricePerGB(pricing.price_per_gb);
-        if (pricing.plans) setStoragePlans(pricing.plans);
-      }
-    };
+    // Fetch pricing from site_settings
+    const { data: pricingData } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('id', 'storage_pricing')
+      .single();
+    if (pricingData?.value) {
+      const pricing = pricingData.value as any;
+      if (pricing.price_per_gb) setPricePerGB(pricing.price_per_gb);
+      if (pricing.plans) setStoragePlans(pricing.plans);
+    }
+  }, [supabaseUser?.id]);
+
+  useEffect(() => {
     fetchStorage();
-  }, [supabaseUser?.id, files]);
+  }, [fetchStorage, files]);
 
   const storagePercentage = Math.min((storageUsed / storageLimit) * 100, 100);
   const isStorageFull = storageUsed >= storageLimit;
@@ -229,13 +230,8 @@ export default function Vault() {
     const result = await uploadFile(file, selectedCategory, description);
     if (result.success) {
       toast.success('Archivo subido correctamente');
-      // Update storage used
-      const newUsed = storageUsed + file.size;
-      setStorageUsed(newUsed);
-      await supabase
-        .from('profiles')
-        .update({ storage_used_bytes: newUsed })
-        .eq('id', supabaseUser!.id);
+      // Re-fetch storage to reflect new usage
+      await fetchStorage();
     } else {
       toast.error(result.error || 'Error al subir archivo');
     }
@@ -515,7 +511,15 @@ export default function Vault() {
                         <Share2 className="w-3 h-3" />
                         Permisos
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteFile(file.id)} className="text-destructive hover:text-destructive flex-1 sm:flex-none h-8 text-xs">
+                      <Button variant="ghost" size="sm" onClick={async () => {
+                        const result = await deleteFile(file.id);
+                        if (result.success) {
+                          toast.success('Archivo eliminado');
+                          await fetchStorage();
+                        } else {
+                          toast.error(result.error || 'Error al eliminar');
+                        }
+                      }} className="text-destructive hover:text-destructive flex-1 sm:flex-none h-8 text-xs">
                         <Trash2 className="w-3 h-3 mr-1" />
                         Eliminar
                       </Button>
