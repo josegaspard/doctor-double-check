@@ -378,11 +378,27 @@ export default function NewsArticle() {
                           {Number(authorDoctorProfile.rating).toFixed(1)}
                         </span>
                       )}
+                      {authorDoctorProfile.total_consultations > 0 && (
+                        <span className="flex items-center gap-1">
+                          <MessageCircle className="w-3 h-3" />
+                          {authorDoctorProfile.total_consultations} consultas
+                        </span>
+                      )}
                       {authorDoctorProfile.followers_count > 0 && (
                         <span className="flex items-center gap-1">
                           <Users className="w-3 h-3" />
                           {authorDoctorProfile.followers_count} seguidores
                         </span>
+                      )}
+                      {authorDoctorProfile.consultation_fee > 0 && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          Consulta: ${Number(authorDoctorProfile.consultation_fee).toFixed(0)} MXN
+                        </Badge>
+                      )}
+                      {authorDoctorProfile.consultation_fee === 0 && (
+                        <Badge variant="default" className="text-[10px]">
+                          Consulta gratuita
+                        </Badge>
                       )}
                     </div>
                   )}
