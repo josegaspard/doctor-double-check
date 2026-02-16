@@ -25,7 +25,6 @@ Deno.serve(async (req) => {
     );
 
     // ========== AUTHENTICATION CHECK ==========
-    // Verify the caller is authenticated and is an admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return new Response(
@@ -44,7 +43,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if user is admin
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
@@ -58,6 +56,15 @@ Deno.serve(async (req) => {
       );
     }
     // ========== END AUTHENTICATION CHECK ==========
+
+    // Parse request body for optional single-doctor mode
+    let requestBody: { doctor_id?: string; single?: boolean } = {};
+    try {
+      const bodyText = await req.text();
+      if (bodyText) requestBody = JSON.parse(bodyText);
+    } catch { /* no body = bulk mode */ }
+
+    const singleDoctorId = requestBody.single ? requestBody.doctor_id : null;
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -77,37 +84,35 @@ Deno.serve(async (req) => {
       require_invoice: true,
     };
 
-    if (!payoutSettings.auto_payout_enabled) {
+    // For bulk mode, check if auto-payout is enabled
+    if (!singleDoctorId && !payoutSettings.auto_payout_enabled) {
       return new Response(
-        JSON.stringify({
-          success: true,
-          message: "Auto-payout is disabled",
-          processed: 0,
-        }),
+        JSON.stringify({ success: true, message: "Auto-payout is disabled", processed: 0 }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get all doctors with pending earnings and enabled payouts
-    const { data: doctors } = await supabaseAdmin
+    // Build query for doctors
+    let query = supabaseAdmin
       .from("doctor_profiles")
-      .select(`
-        user_id,
-        pending_earnings,
-        stripe_account_id,
-        payouts_enabled
-      `)
-      .gte("pending_earnings", payoutSettings.minimum_payout_amount)
-      .eq("payouts_enabled", true)
+      .select("user_id, pending_earnings, stripe_account_id, payouts_enabled")
       .not("stripe_account_id", "is", null);
+
+    if (singleDoctorId) {
+      // Single doctor mode - process regardless of minimum
+      query = query.eq("user_id", singleDoctorId).gt("pending_earnings", 0);
+    } else {
+      // Bulk mode - apply minimum and payout enabled filter
+      query = query
+        .gte("pending_earnings", payoutSettings.minimum_payout_amount)
+        .eq("payouts_enabled", true);
+    }
+
+    const { data: doctors } = await query;
 
     if (!doctors || doctors.length === 0) {
       return new Response(
-        JSON.stringify({
-          success: true,
-          message: "No doctors eligible for payout",
-          processed: 0,
-        }),
+        JSON.stringify({ success: true, message: "No doctors eligible for payout", processed: 0 }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -117,8 +122,8 @@ Deno.serve(async (req) => {
 
     for (const doctor of doctors) {
       try {
-        // Check if invoice is required
-        if (payoutSettings.require_invoice) {
+        // Check invoice requirement (skip for single-doctor admin-initiated payouts)
+        if (!singleDoctorId && payoutSettings.require_invoice) {
           const { data: invoice } = await supabaseAdmin
             .from("doctor_invoices")
             .select("id")
@@ -160,7 +165,7 @@ Deno.serve(async (req) => {
           period_end: new Date().toISOString().split("T")[0],
         });
 
-        // Update doctor pending earnings - add to total, reset pending
+        // Update doctor pending earnings
         const { data: currentProfile } = await supabaseAdmin
           .from("doctor_profiles")
           .select("total_earnings")
@@ -169,7 +174,7 @@ Deno.serve(async (req) => {
 
         const currentTotal = currentProfile?.total_earnings || 0;
 
-        // *** CRITICAL FIX: Notify doctor about payout ***
+        // Notify doctor about payout
         await supabaseAdmin.from("notifications").insert({
           user_id: doctor.user_id,
           type: "system",
@@ -211,10 +216,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error("Error in process-doctor-payouts:", error);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || "Error al procesar payouts",
-      }),
+      JSON.stringify({ success: false, error: error.message || "Error al procesar payouts" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

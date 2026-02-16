@@ -51,6 +51,8 @@ import AdminReports from "./pages/AdminReports";
 import AdminSiteSettings from "./pages/AdminSiteSettings";
 import AdminRefunds from "./pages/AdminRefunds";
 import AdminPayoutSettings from "./pages/AdminPayoutSettings";
+import AdminPayouts from "./pages/AdminPayouts";
+import AdminInvoiceReview from "./pages/AdminInvoiceReview";
 import Onboarding from "./pages/Onboarding";
 import DoctorBankAccount from "./pages/DoctorBankAccount";
 import DoctorInvoices from "./pages/DoctorInvoices";
@@ -117,6 +119,8 @@ const App = () => (
                       <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
                       <Route path="/admin/refunds" element={<AdminRefunds />} />
                       <Route path="/admin/payout-settings" element={<AdminPayoutSettings />} />
+                      <Route path="/admin/payouts" element={<AdminPayouts />} />
+                      <Route path="/admin/invoices" element={<AdminInvoiceReview />} />
                       <Route path="/verification-pending" element={<VerificationPending />} />
                       <Route path="/doctors" element={<Doctors />} />
                       <Route path="/reset-password" element={<ResetPassword />} />

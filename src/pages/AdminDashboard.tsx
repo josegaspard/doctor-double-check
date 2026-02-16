@@ -17,6 +17,8 @@ import {
   Loader2,
   Settings,
   RefreshCcw,
+  Banknote,
+  FileText,
 } from 'lucide-react';
 
 interface AdminModule {
@@ -42,6 +44,26 @@ const adminModules: AdminModule[] = [
     color: 'text-primary',
   },
   {
+    id: 'payouts',
+    title: 'Pagos a Doctores',
+    titleEn: 'Doctor Payouts',
+    description: 'Paga a doctores por Stripe o transferencia manual, revisa saldos pendientes',
+    descriptionEn: 'Pay doctors via Stripe or manual transfer, review pending balances',
+    icon: Banknote,
+    href: '/admin/payouts',
+    color: 'text-emerald-500',
+  },
+  {
+    id: 'invoice-review',
+    title: 'Revisión de Facturas',
+    titleEn: 'Invoice Review',
+    description: 'Aprueba o rechaza las facturas subidas por doctores',
+    descriptionEn: 'Approve or reject invoices uploaded by doctors',
+    icon: FileText,
+    href: '/admin/invoices',
+    color: 'text-teal-500',
+  },
+  {
     id: 'payout-settings',
     title: 'Configuración de Pagos',
     titleEn: 'Payout Settings',
@@ -49,7 +71,7 @@ const adminModules: AdminModule[] = [
     descriptionEn: 'Configure commissions, payment frequency and process payouts',
     icon: Settings,
     href: '/admin/payout-settings',
-    color: 'text-emerald-500',
+    color: 'text-slate-500',
   },
   {
     id: 'site-settings',
