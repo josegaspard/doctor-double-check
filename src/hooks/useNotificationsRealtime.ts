@@ -1,25 +1,25 @@
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 export function useNotificationsRealtime() {
   const { supabaseUser } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleNewNotification = useCallback((payload: any) => {
     const notification = payload.new;
     
-    // Show toast based on notification type
     switch (notification.type) {
       case 'doctor_live':
         toast.info(notification.title, {
           description: notification.message,
           action: {
-            label: 'Ver',
+            label: t('notificationActions.view'),
             onClick: () => {
-              // Support both snake_case (from DB) and camelCase
               const liveId = notification.data?.live_id || notification.data?.liveId;
               if (liveId) navigate(`/live/${liveId}`);
             },
@@ -46,7 +46,7 @@ export function useNotificationsRealtime() {
         toast(notification.title, {
           description: notification.message,
           action: {
-            label: 'Abrir',
+            label: t('notificationActions.open'),
             onClick: () => navigate('/chat'),
           },
           duration: 8000,
@@ -57,7 +57,7 @@ export function useNotificationsRealtime() {
         toast.info(notification.title, {
           description: notification.message,
           action: {
-            label: 'Calificar',
+            label: t('notificationActions.rate'),
             onClick: () => navigate('/chat'),
           },
           duration: 15000,
@@ -70,12 +70,11 @@ export function useNotificationsRealtime() {
           duration: 5000,
         });
     }
-  }, [navigate]);
+  }, [navigate, t]);
 
   useEffect(() => {
     if (!supabaseUser?.id) return;
 
-    // Subscribe to notifications table for this user
     const channel = supabase
       .channel(`notifications-${supabaseUser.id}`)
       .on(

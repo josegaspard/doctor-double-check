@@ -544,10 +544,29 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Default value for resilience during HMR / module re-evaluation
+const LIVES_DEFAULTS: LivesContextType = {
+  lives: [],
+  recordings: [],
+  isLoading: true,
+  getLive: () => undefined,
+  getRecording: () => undefined,
+  getLivesByDoctor: () => [],
+  getRecordingsByDoctor: () => [],
+  likeLive: async () => {},
+  unlikeLive: async () => {},
+  hasLiked: () => false,
+  createLive: async () => ({ success: false, error: 'Context not ready' }),
+  endLive: async () => ({ success: false, error: 'Context not ready' }),
+  refreshLives: async () => {},
+  refreshRecordings: async () => {},
+};
+
 export function useLives() {
   const context = useContext(LivesContext);
   if (context === undefined) {
-    throw new Error('useLives must be used within a LivesProvider');
+    console.warn('useLives called outside LivesProvider – returning defaults');
+    return LIVES_DEFAULTS;
   }
   return context;
 }

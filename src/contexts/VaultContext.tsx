@@ -438,10 +438,27 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const VAULT_DEFAULTS: VaultContextType = {
+  files: [],
+  medicalHistory: [],
+  isLoading: false,
+  uploadProgress: null,
+  uploadFile: async () => ({ success: false, error: 'Context not ready' }),
+  deleteFile: async () => ({ success: false, error: 'Context not ready' }),
+  grantAccess: async () => ({ success: false, error: 'Context not ready' }),
+  revokeAccess: async () => ({ success: false, error: 'Context not ready' }),
+  getAccessibleFiles: () => [],
+  hasAccess: () => false,
+  revokeAllAccessForConsultation: async () => {},
+  uploadMedicalHistory: async () => ({ success: false, error: 'Context not ready' }),
+  refreshVault: async () => {},
+};
+
 export function useVault() {
   const context = useContext(VaultContext);
   if (context === undefined) {
-    throw new Error('useVault must be used within a VaultProvider');
+    console.warn('useVault called outside VaultProvider – returning defaults');
+    return VAULT_DEFAULTS;
   }
   return context;
 }

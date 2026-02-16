@@ -580,10 +580,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const CHAT_DEFAULTS: ChatContextType = {
+  sessions: [],
+  messages: {},
+  isLoading: false,
+  createSession: async () => ({ success: false, error: 'Context not ready' }),
+  sendMessage: async () => {},
+  getSession: () => undefined,
+  getSessionMessages: () => [],
+  getSessionsByUser: () => [],
+  markAsRead: async () => {},
+  refreshSessions: async () => {},
+  loadMessages: async () => {},
+  closeSession: async () => ({ success: false, error: 'Context not ready' }),
+};
+
 export function useChat() {
   const context = useContext(ChatContext);
   if (context === undefined) {
-    throw new Error('useChat must be used within a ChatProvider');
+    console.warn('useChat called outside ChatProvider – returning defaults');
+    return CHAT_DEFAULTS;
   }
   return context;
 }

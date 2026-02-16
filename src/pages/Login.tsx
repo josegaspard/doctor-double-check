@@ -51,11 +51,11 @@ export default function Login() {
       });
       
       if (error) {
-        toast.error('Error al iniciar sesión con Google');
+        toast.error(t('authErrors.googleLoginError'));
         console.error('Google login error:', error);
       }
     } catch (error) {
-      toast.error('Error al conectar con Google');
+      toast.error(t('authErrors.googleConnectError'));
       console.error('Google login error:', error);
     } finally {
       setGoogleLoading(false);
@@ -71,13 +71,13 @@ export default function Login() {
     if (result.success) {
       navigate('/lives');
     } else {
-      setLoginError(result.error || 'Error al iniciar sesión');
+      setLoginError(result.error || t('authErrors.loginError'));
     }
   };
 
   const handleForgotPassword = async () => {
     if (!loginEmail) {
-      setLoginError('Ingresa tu correo electrónico primero');
+      setLoginError(t('authErrors.emailRequired'));
       return;
     }
     
@@ -90,7 +90,7 @@ export default function Login() {
     if (result.success) {
       setResetEmailSent(true);
     } else {
-      setLoginError(result.error || 'Error al enviar el correo de recuperación');
+      setLoginError(result.error || t('authErrors.resetError'));
     }
   };
 
@@ -103,7 +103,7 @@ export default function Login() {
     // Validate password strength before submitting
     const { score } = getPasswordStrength(registerPassword);
     if (score < 60) {
-      setRegisterError('La contraseña es demasiado débil. Cumple con los requisitos indicados.');
+      setRegisterError(t('authErrors.weakPassword'));
       return;
     }
 
@@ -123,7 +123,7 @@ export default function Login() {
       return;
     }
 
-    setRegisterError(result.error || 'Error al registrarse');
+    setRegisterError(result.error || t('authErrors.registerError'));
   };
 
   return (
