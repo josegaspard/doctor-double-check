@@ -10,7 +10,7 @@ import { Newspaper, Plus, Edit, Trash2, Eye, EyeOff, Loader2, ArrowLeft, Pencil 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 interface NewsItem {
   id: string;
@@ -31,11 +31,13 @@ interface NewsItem {
 
 export default function AdminNews() {
   const { role } = useAuth();
+  const location = useLocation();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<NewsItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [editorNames, setEditorNames] = useState<Record<string, string>>({});
+  const [pendingEditId, setPendingEditId] = useState<string | null>((location.state as any)?.editId || null);
 
   const fetchNews = async () => {
     setIsLoading(true);
@@ -63,6 +65,15 @@ export default function AdminNews() {
   };
 
   useEffect(() => { fetchNews(); }, []);
+
+  // Auto-open editor if navigated with editId
+  useEffect(() => {
+    if (pendingEditId && news.length > 0) {
+      const item = news.find(n => n.id === pendingEditId);
+      if (item) setEditingItem(item);
+      setPendingEditId(null);
+    }
+  }, [pendingEditId, news]);
 
   if (role !== 'admin' && role !== 'doctor') return <Navigate to="/" replace />;
 

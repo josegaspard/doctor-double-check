@@ -1201,6 +1201,7 @@ export type Database = {
           created_at: string
           id: string
           news_id: string
+          parent_comment_id: string | null
           updated_at: string
           user_id: string
         }
@@ -1209,6 +1210,7 @@ export type Database = {
           created_at?: string
           id?: string
           news_id: string
+          parent_comment_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1217,6 +1219,7 @@ export type Database = {
           created_at?: string
           id?: string
           news_id?: string
+          parent_comment_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1226,6 +1229,13 @@ export type Database = {
             columns: ["news_id"]
             isOneToOne: false
             referencedRelation: "medical_news"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "news_comments"
             referencedColumns: ["id"]
           },
         ]

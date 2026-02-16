@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
@@ -15,7 +15,8 @@ import { es } from 'date-fns/locale';
 import {
   ArrowLeft, Clock, Share2, MessageCircle, Send, Loader2,
   Trash2, Stethoscope, User, GraduationCap, Facebook, Twitter, Link as LinkIcon,
-  Edit, Globe, Instagram, Linkedin, Pencil
+  Globe, Instagram, Linkedin, Pencil, Reply, ChevronDown, ChevronUp,
+  Star, MapPin, Users, Edit
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -24,19 +25,26 @@ interface Comment {
   content: string;
   created_at: string;
   user_id: string;
+  parent_comment_id: string | null;
   user_name?: string;
   user_avatar?: string;
   user_role?: string;
+  replies?: Comment[];
 }
 
 export default function NewsArticle() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { user, role, isAuthenticated } = useAuth();
   const [article, setArticle] = useState<any>(null);
   const [authorProfile, setAuthorProfile] = useState<any>(null);
+  const [authorDoctorProfile, setAuthorDoctorProfile] = useState<any>(null);
   const [editorProfile, setEditorProfile] = useState<any>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [collapsedThreads, setCollapsedThreads] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
 
@@ -58,6 +66,15 @@ export default function NewsArticle() {
           .eq('id', data.created_by)
           .maybeSingle();
         setAuthorProfile(authorP);
+
+        // Fetch author doctor profile for extra info
+        const { data: doctorP } = await supabase
+          .from('doctor_profiles_public')
+          .select('*')
+          .eq('user_id', data.created_by)
+          .maybeSingle();
+        setAuthorDoctorProfile(doctorP);
+
         // Fetch editor profile if edited
         if (data.last_edited_by && data.last_edited_by !== data.created_by) {
           const { data: editorP } = await supabase
@@ -98,22 +115,39 @@ export default function NewsArticle() {
     const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
     const roleMap = new Map((roles as any[])?.map((r: any) => [r.user_id, r.role]) || []);
 
-    setComments(commentsData.map(c => ({
+    const enriched = commentsData.map(c => ({
       ...c,
+      parent_comment_id: (c as any).parent_comment_id || null,
       user_name: profileMap.get(c.user_id)?.name || 'Usuario',
       user_avatar: profileMap.get(c.user_id)?.avatar_url || null,
       user_role: roleMap.get(c.user_id) || 'patient',
-    })));
+      replies: [] as Comment[],
+    }));
+
+    // Build thread tree
+    const commentMap = new Map<string, Comment>();
+    const rootComments: Comment[] = [];
+    enriched.forEach(c => commentMap.set(c.id, c));
+    enriched.forEach(c => {
+      if (c.parent_comment_id && commentMap.has(c.parent_comment_id)) {
+        commentMap.get(c.parent_comment_id)!.replies!.push(c);
+      } else {
+        rootComments.push(c);
+      }
+    });
+
+    setComments(rootComments);
   };
 
-  const handleSubmitComment = async () => {
-    if (!newComment.trim() || !user || !article) return;
+  const handleSubmitComment = async (parentId: string | null = null) => {
+    const content = parentId ? replyContent : newComment;
+    if (!content.trim() || !user || !article) return;
     setIsSending(true);
-    const { error } = await supabase
-      .from('news_comments')
-      .insert({ news_id: article.id, user_id: user.id, content: newComment.trim() });
+    const insertData: any = { news_id: article.id, user_id: user.id, content: content.trim() };
+    if (parentId) insertData.parent_comment_id = parentId;
+    const { error } = await supabase.from('news_comments').insert(insertData);
     if (error) { toast.error('Error al comentar'); setIsSending(false); return; }
-    setNewComment('');
+    if (parentId) { setReplyContent(''); setReplyTo(null); } else { setNewComment(''); }
     fetchComments(article.id);
     setIsSending(false);
   };
@@ -124,6 +158,14 @@ export default function NewsArticle() {
     if (article) fetchComments(article.id);
   };
 
+  const toggleThread = (commentId: string) => {
+    setCollapsedThreads(prev => {
+      const next = new Set(prev);
+      next.has(commentId) ? next.delete(commentId) : next.add(commentId);
+      return next;
+    });
+  };
+
   const getRoleBadge = (userRole: string) => {
     switch (userRole) {
       case 'doctor': return <Badge variant="default" className="text-[10px] gap-1"><Stethoscope className="w-2.5 h-2.5" />Doctor</Badge>;
@@ -132,9 +174,98 @@ export default function NewsArticle() {
     }
   };
 
+  const getTotalCommentCount = useCallback((comments: Comment[]): number => {
+    return comments.reduce((acc, c) => acc + 1 + getTotalCommentCount(c.replies || []), 0);
+  }, []);
+
+  const canEdit = article && user && (user.id === article.created_by || role === 'admin');
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareTitle = article?.title || '';
   const authorSocial = article?.author_social || {};
+
+  const renderComment = (comment: Comment, depth: number = 0) => {
+    const isCollapsed = collapsedThreads.has(comment.id);
+    const hasReplies = (comment.replies?.length || 0) > 0;
+    const maxDepth = 4;
+
+    return (
+      <div key={comment.id} className={depth > 0 ? 'ml-4 sm:ml-6 pl-3 sm:pl-4 border-l-2 border-muted' : ''}>
+        <div className="flex gap-2 sm:gap-3 py-2">
+          <Avatar className="w-7 h-7 mt-0.5 shrink-0">
+            <AvatarImage src={comment.user_avatar || ''} />
+            <AvatarFallback className="text-xs">{comment.user_name?.charAt(0) || 'U'}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-medium text-sm text-foreground">{comment.user_name}</span>
+              {getRoleBadge(comment.user_role || 'patient')}
+              <span className="text-xs text-muted-foreground">
+                {format(new Date(comment.created_at), "d MMM yyyy, HH:mm", { locale: es })}
+              </span>
+            </div>
+            <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap">{comment.content}</p>
+            <div className="flex items-center gap-2 mt-1.5">
+              {isAuthenticated && depth < maxDepth && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                  onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+                >
+                  <Reply className="w-3 h-3" /> Responder
+                </Button>
+              )}
+              {hasReplies && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                  onClick={() => toggleThread(comment.id)}
+                >
+                  {isCollapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+                  {comment.replies!.length} {comment.replies!.length === 1 ? 'respuesta' : 'respuestas'}
+                </Button>
+              )}
+              {user?.id === comment.user_id && (
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteComment(comment.id)}>
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
+
+            {/* Reply input */}
+            {replyTo === comment.id && (
+              <div className="flex gap-2 mt-2">
+                <Textarea
+                  placeholder={`Responder a ${comment.user_name}...`}
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  rows={2}
+                  maxLength={2000}
+                  className="text-sm min-h-[60px]"
+                />
+                <div className="flex flex-col gap-1">
+                  <Button size="sm" className="h-7 px-2" onClick={() => handleSubmitComment(comment.id)} disabled={isSending || !replyContent.trim()}>
+                    <Send className="w-3 h-3" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setReplyTo(null); setReplyContent(''); }}>
+                    ✕
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Replies */}
+        {hasReplies && !isCollapsed && (
+          <div>
+            {comment.replies!.map(reply => renderComment(reply, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (isLoading) {
     return <MainLayout><div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
@@ -154,9 +285,16 @@ export default function NewsArticle() {
   return (
     <MainLayout>
       <article className="container mx-auto px-4 py-6 max-w-3xl">
-        <Link to="/news" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
-          <ArrowLeft className="w-4 h-4" /> Volver a noticias
-        </Link>
+        <div className="flex items-center justify-between mb-4">
+          <Link to="/news" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4" /> Volver a noticias
+          </Link>
+          {canEdit && (
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate('/admin/news', { state: { editId: article.id } })}>
+              <Edit className="w-3.5 h-3.5" /> Editar artículo
+            </Button>
+          )}
+        </div>
 
         {/* Cover Image */}
         {article.image_url && (
@@ -189,48 +327,97 @@ export default function NewsArticle() {
           </div>
         )}
 
-        {/* Author Card */}
+        {/* Author Card - Enhanced */}
         {authorProfile && (
           <Card className="mb-6">
-            <CardContent className="flex items-start gap-4 p-4">
-              <Avatar className="w-12 h-12">
-                <AvatarImage src={authorProfile.avatar_url || ''} />
-                <AvatarFallback>{authorProfile.name?.charAt(0) || 'A'}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <Link to={`/profile/${authorProfile.id}`} className="font-semibold text-foreground hover:underline">
-                    {authorProfile.name}
-                  </Link>
-                  <Badge variant="outline" className="text-[10px]">Autor</Badge>
-                </div>
-                {article.author_bio && (
-                  <p className="text-sm text-muted-foreground mb-2">{article.author_bio}</p>
-                )}
-                {(authorSocial.website || authorSocial.twitter || authorSocial.linkedin || authorSocial.instagram) && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {authorSocial.website && (
-                      <a href={authorSocial.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                        <Globe className="w-3 h-3" /> Web
-                      </a>
-                    )}
-                    {authorSocial.twitter && (
-                      <a href={authorSocial.twitter.startsWith('http') ? authorSocial.twitter : `https://twitter.com/${authorSocial.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                        <Twitter className="w-3 h-3" /> Twitter
-                      </a>
-                    )}
-                    {authorSocial.linkedin && (
-                      <a href={authorSocial.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                        <Linkedin className="w-3 h-3" /> LinkedIn
-                      </a>
-                    )}
-                    {authorSocial.instagram && (
-                      <a href={authorSocial.instagram.startsWith('http') ? authorSocial.instagram : `https://instagram.com/${authorSocial.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                        <Instagram className="w-3 h-3" /> Instagram
-                      </a>
-                    )}
+            <CardContent className="p-4">
+              <div className="flex items-start gap-4">
+                <Link to={`/profile/${authorProfile.id}`}>
+                  <Avatar className="w-14 h-14 border-2 border-primary/20">
+                    <AvatarImage src={authorProfile.avatar_url || ''} />
+                    <AvatarFallback className="text-lg">{authorProfile.name?.charAt(0) || 'A'}</AvatarFallback>
+                  </Avatar>
+                </Link>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <Link to={`/profile/${authorProfile.id}`} className="font-semibold text-foreground hover:underline text-base">
+                      {authorProfile.name}
+                    </Link>
+                    <Badge variant="outline" className="text-[10px]">Autor</Badge>
                   </div>
-                )}
+
+                  {/* Doctor-specific info */}
+                  {authorDoctorProfile && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-xs text-muted-foreground">
+                      {authorDoctorProfile.specialty && (
+                        <span className="flex items-center gap-1">
+                          <Stethoscope className="w-3 h-3 text-primary" />
+                          {authorDoctorProfile.specialty}
+                        </span>
+                      )}
+                      {authorDoctorProfile.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {authorDoctorProfile.location}
+                        </span>
+                      )}
+                      {authorDoctorProfile.rating > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Star className="w-3 h-3 text-primary fill-primary" />
+                          {Number(authorDoctorProfile.rating).toFixed(1)}
+                        </span>
+                      )}
+                      {authorDoctorProfile.followers_count > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {authorDoctorProfile.followers_count} seguidores
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {article.author_bio && (
+                    <p className="text-sm text-muted-foreground mb-2">{article.author_bio}</p>
+                  )}
+                  {authorDoctorProfile?.bio && !article.author_bio && (
+                    <p className="text-sm text-muted-foreground mb-2">{authorDoctorProfile.bio}</p>
+                  )}
+
+                  {/* Social links */}
+                  {(authorSocial.website || authorSocial.twitter || authorSocial.linkedin || authorSocial.instagram) && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {authorSocial.website && (
+                        <a href={authorSocial.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                          <Globe className="w-3 h-3" /> Web
+                        </a>
+                      )}
+                      {authorSocial.twitter && (
+                        <a href={authorSocial.twitter.startsWith('http') ? authorSocial.twitter : `https://twitter.com/${authorSocial.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                          <Twitter className="w-3 h-3" /> Twitter
+                        </a>
+                      )}
+                      {authorSocial.linkedin && (
+                        <a href={authorSocial.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                          <Linkedin className="w-3 h-3" /> LinkedIn
+                        </a>
+                      )}
+                      {authorSocial.instagram && (
+                        <a href={authorSocial.instagram.startsWith('http') ? authorSocial.instagram : `https://instagram.com/${authorSocial.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                          <Instagram className="w-3 h-3" /> Instagram
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* View profile button */}
+                  <div className="mt-2">
+                    <Link to={`/profile/${authorProfile.id}`}>
+                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                        <User className="w-3 h-3" /> Ver perfil
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -264,13 +451,13 @@ export default function NewsArticle() {
         <section>
           <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-primary" />
-            Comentarios ({comments.length})
+            Comentarios ({getTotalCommentCount(comments)})
           </h2>
 
           {/* New comment */}
           {isAuthenticated ? (
             <div className="flex gap-3 mb-6">
-              <Avatar className="w-8 h-8 mt-1">
+              <Avatar className="w-8 h-8 mt-1 shrink-0">
                 <AvatarImage src={user?.avatarUrl || ''} />
                 <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
@@ -283,7 +470,7 @@ export default function NewsArticle() {
                   maxLength={2000}
                 />
                 <div className="flex justify-end">
-                  <Button size="sm" onClick={handleSubmitComment} disabled={isSending || !newComment.trim()}>
+                  <Button size="sm" onClick={() => handleSubmitComment(null)} disabled={isSending || !newComment.trim()}>
                     {isSending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />}
                     Comentar
                   </Button>
@@ -298,31 +485,9 @@ export default function NewsArticle() {
             </Card>
           )}
 
-          {/* Comments list */}
-          <div className="space-y-4">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex gap-3">
-                <Avatar className="w-8 h-8 mt-1">
-                  <AvatarImage src={comment.user_avatar || ''} />
-                  <AvatarFallback>{comment.user_name?.charAt(0) || 'U'}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-sm text-foreground">{comment.user_name}</span>
-                    {getRoleBadge(comment.user_role || 'patient')}
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(comment.created_at), "d MMM yyyy, HH:mm", { locale: es })}
-                    </span>
-                    {user?.id === comment.user_id && (
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteComment(comment.id)}>
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap">{comment.content}</p>
-                </div>
-              </div>
-            ))}
+          {/* Comments list - threaded */}
+          <div className="space-y-1">
+            {comments.map((comment) => renderComment(comment))}
             {comments.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Sé el primero en comentar</p>
             )}
