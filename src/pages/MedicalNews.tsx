@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Newspaper, Search, Clock, MessageCircle, Loader2, Filter } from 'lucide-react';
+import { Newspaper, Search, Clock, MessageCircle, Loader2, Filter, PenSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -29,6 +30,8 @@ interface NewsItem {
 }
 
 export default function MedicalNews() {
+  const { role } = useAuth();
+  const navigate = useNavigate();
   const { language } = useLanguage();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,14 +75,22 @@ export default function MedicalNews() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-5xl">
-        <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-            <Newspaper className="w-6 h-6 text-primary" />
-            {language === 'es' ? 'Noticias Médicas' : 'Medical News'}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {language === 'es' ? 'Últimas noticias e innovaciones médicas' : 'Latest medical news and innovations'}
-          </p>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+              <Newspaper className="w-6 h-6 text-primary" />
+              {language === 'es' ? 'Noticias Médicas' : 'Medical News'}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {language === 'es' ? 'Últimas noticias e innovaciones médicas' : 'Latest medical news and innovations'}
+            </p>
+          </div>
+          {(role === 'admin' || role === 'doctor') && (
+            <Button onClick={() => navigate('/admin/news')} className="gap-2">
+              <PenSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">{language === 'es' ? 'Escribir artículo' : 'Write article'}</span>
+            </Button>
+          )}
         </div>
 
         {/* Search */}

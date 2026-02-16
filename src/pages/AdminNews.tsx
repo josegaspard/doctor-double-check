@@ -45,7 +45,7 @@ export default function AdminNews() {
 
   useEffect(() => { fetchNews(); }, []);
 
-  if (role !== 'admin') return <Navigate to="/" replace />;
+  if (role !== 'admin' && role !== 'doctor') return <Navigate to="/" replace />;
 
   const togglePublish = async (item: NewsItem) => {
     const { error } = await supabase
