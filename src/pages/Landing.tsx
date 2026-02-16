@@ -196,11 +196,11 @@ export default function Landing() {
               <div className="absolute bottom-0 right-10 w-[80%] h-[70%] bg-[#00768b]/20 rounded-full filter blur-[100px] animate-pulse" />
               
               <div className="relative z-10 w-full h-full flex items-end justify-center lg:justify-end">
-                {/* Doctor image - fills entire right column, bottom aligned to hero edge */}
+                {/* Doctor image - larger, always flush to bottom edge of hero */}
                 <img 
                   src="https://i.imgur.com/YqgQSDV.png" 
                   alt="Doctora Especialista" 
-                  className="absolute bottom-0 right-0 lg:-right-10 h-full max-h-[100%] w-auto object-contain object-bottom drop-shadow-2xl z-10 pointer-events-none"
+                  className="absolute bottom-0 right-0 lg:-right-16 h-[110%] w-auto object-contain object-bottom drop-shadow-2xl z-10 pointer-events-none"
                 />
 
                 {/* Floating Card - Heart Rate */}
