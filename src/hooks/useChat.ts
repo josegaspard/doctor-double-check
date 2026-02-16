@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use ChatContext instead. This hook duplicates logic already in ChatProvider.
+ * Kept for backwards compatibility but all new code should use useChatContext from '@/contexts/ChatContext'.
+ */
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ChatSession, ChatMessage, ChatParticipantType } from '@/types/database';

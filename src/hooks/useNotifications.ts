@@ -103,8 +103,8 @@ export function useNotifications() {
 
   useEffect(() => {
     if (supabaseUser?.id) {
-      fetchNotifications();
-      fetchPreferences();
+      // Fetch both in parallel
+      Promise.all([fetchNotifications(), fetchPreferences()]);
 
       // Set up realtime subscription (unique channel per user to avoid conflicts with useNotificationsRealtime)
       const channel = supabase
@@ -148,31 +148,50 @@ export function useNotifications() {
         supabase.removeChannel(channel);
       };
     }
-  }, [supabaseUser?.id, fetchNotifications, fetchPreferences]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabaseUser?.id]);
 
   const markAsRead = async (notificationId: string) => {
-    await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('id', notificationId);
-
+    // Optimistic update
     setNotifications(prev =>
       prev.map(n => (n.id === notificationId ? { ...n, isRead: true } : n))
     );
     setUnreadCount(prev => Math.max(0, prev - 1));
+
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('id', notificationId);
+
+    if (error) {
+      // Revert on failure
+      setNotifications(prev =>
+        prev.map(n => (n.id === notificationId ? { ...n, isRead: false } : n))
+      );
+      setUnreadCount(prev => prev + 1);
+    }
   };
 
   const markAllAsRead = async () => {
     if (!supabaseUser?.id) return;
 
-    await supabase
+    // Optimistic update
+    const previousNotifications = notifications;
+    const previousCount = unreadCount;
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+
+    const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
       .eq('user_id', supabaseUser.id)
       .eq('is_read', false);
 
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    setUnreadCount(0);
+    if (error) {
+      // Revert on failure
+      setNotifications(previousNotifications);
+      setUnreadCount(previousCount);
+    }
   };
 
   const deleteNotification = async (notificationId: string) => {

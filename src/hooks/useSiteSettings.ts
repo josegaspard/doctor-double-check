@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SocialLinks {
@@ -18,8 +18,12 @@ export function useSocialLinks() {
     youtube: '',
   });
   const [isLoading, setIsLoading] = useState(true);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     const fetchSocialLinks = async () => {
       try {
         const { data, error } = await supabase

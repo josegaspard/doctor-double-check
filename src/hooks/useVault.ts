@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use VaultContext instead. This hook duplicates logic already in VaultProvider.
+ * Kept for backwards compatibility but all new code should use useVault from '@/contexts/VaultContext'.
+ */
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { VaultFile, VaultAccess, MedicalHistory } from '@/types/database';

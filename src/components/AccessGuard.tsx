@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { AppRole as UserRole } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,6 +23,7 @@ export default function AccessGuard({
   fallbackType = 'login',
 }: AccessGuardProps) {
   const { user, role, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   // Check role access
@@ -56,18 +58,18 @@ export default function AccessGuard({
             </div>
             
             <h2 className="font-heading text-xl font-bold text-foreground mb-2">
-              {fallbackType === 'login' && 'Inicia sesión para continuar'}
-              {fallbackType === 'upgrade' && 'Contenido Premium'}
-              {fallbackType === 'forbidden' && 'Acceso Restringido'}
+              {fallbackType === 'login' && t('login.title')}
+              {fallbackType === 'upgrade' && t('recordings.premiumContent')}
+              {fallbackType === 'forbidden' && t('admin.accessDenied')}
             </h2>
             
             <p className="text-muted-foreground mb-6">
               {fallbackMessage || (
                 fallbackType === 'login'
-                  ? 'Necesitas una cuenta para acceder a esta sección.'
+                  ? t('chat.chatUnavailable')
                   : fallbackType === 'upgrade'
-                  ? 'Adquiere este contenido para acceder.'
-                  : 'No tienes permisos para ver esta sección.'
+                  ? t('chat.premiumService')
+                  : t('admin.onlyAdmins')
               )}
             </p>
 
@@ -76,7 +78,7 @@ export default function AccessGuard({
                 <>
                   <Button onClick={() => navigate('/login')} className="gap-2">
                     <LogIn className="w-4 h-4" />
-                    Iniciar Sesión
+                    {t('nav.login')}
                   </Button>
                   <Button
                     variant="outline"
@@ -84,18 +86,18 @@ export default function AccessGuard({
                     className="gap-2"
                   >
                     <UserPlus className="w-4 h-4" />
-                    Registrarse
+                    {t('login.register')}
                   </Button>
                 </>
               )}
               {fallbackType === 'upgrade' && (
                 <Button onClick={() => navigate('/wallet')} className="gap-2">
                   <Shield className="w-4 h-4" />
-                  Ver Opciones
+                  {t('chat.viewOptions')}
                 </Button>
               )}
               <Button variant="ghost" onClick={() => navigate('/lives')}>
-                Ir a Lives
+                {t('chat.goToLives')}
               </Button>
             </div>
           </CardContent>

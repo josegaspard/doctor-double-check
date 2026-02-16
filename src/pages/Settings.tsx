@@ -291,10 +291,10 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                Gestionar Pagos
+                {t('settings.managePayments') || 'Gestionar Pagos'}
               </CardTitle>
               <CardDescription>
-                Administra tus suscripciones, métodos de pago y facturación
+                {t('settings.managePaymentsDescription') || 'Administra tus suscripciones, métodos de pago y facturación'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -308,10 +308,10 @@ export default function Settings() {
                 ) : (
                   <ExternalLink className="h-4 w-4" />
                 )}
-                Abrir Portal de Pagos
+                {t('settings.openPaymentPortal') || 'Abrir Portal de Pagos'}
               </Button>
               <p className="text-xs text-muted-foreground mt-3 text-center">
-                Serás redirigido a Stripe para gestionar tus suscripciones
+                {t('settings.paymentPortalRedirect') || 'Serás redirigido para gestionar tus suscripciones'}
               </p>
             </CardContent>
           </Card>

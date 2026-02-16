@@ -240,6 +240,15 @@ export const translations = {
       notifyLive: 'Notificar cuando haga live',
       notifyContent: 'Notificar nuevo contenido',
       notifyAvailability: 'Notificar disponibilidad',
+      basicPrice: '$99/mes',
+      premiumPrice: '$199/mes',
+      exclusiveContent: 'Acceso a contenido exclusivo',
+      priorityNotifications: 'Notificaciones prioritarias',
+      subscriberBadge: 'Badge de suscriptor',
+      allBasicFeatures: 'Todo lo del plan Básico',
+      recordingDiscount: '20% descuento en grabaciones',
+      priorityChat: 'Chat prioritario',
+      earlyAccess: 'Acceso anticipado a lives',
     },
     // Notifications
     notifications: {
@@ -288,6 +297,10 @@ export const translations = {
       pushDescription: 'Recibe notificaciones push en tu dispositivo',
       inAppDescription: 'Muestra notificaciones dentro de la app',
       verificationComingSoon: 'La verificación de identidad está disponible próximamente. Te notificaremos cuando esté lista.',
+      managePayments: 'Gestionar Pagos',
+      managePaymentsDescription: 'Administra tus suscripciones, métodos de pago y facturación',
+      openPaymentPortal: 'Abrir Portal de Pagos',
+      paymentPortalRedirect: 'Serás redirigido para gestionar tus suscripciones',
     },
     // Identity verification
     verification: {
@@ -641,6 +654,15 @@ export const translations = {
       notifyLive: 'Notify when live',
       notifyContent: 'Notify new content',
       notifyAvailability: 'Notify availability',
+      basicPrice: '$99/mo',
+      premiumPrice: '$199/mo',
+      exclusiveContent: 'Access to exclusive content',
+      priorityNotifications: 'Priority notifications',
+      subscriberBadge: 'Subscriber badge',
+      allBasicFeatures: 'Everything in Basic',
+      recordingDiscount: '20% discount on recordings',
+      priorityChat: 'Priority chat',
+      earlyAccess: 'Early access to lives',
     },
     // Notifications
     notifications: {
@@ -689,6 +711,10 @@ export const translations = {
       pushDescription: 'Receive push notifications on your device',
       inAppDescription: 'Show notifications within the app',
       verificationComingSoon: 'Identity verification will be available soon. We will notify you when ready.',
+      managePayments: 'Manage Payments',
+      managePaymentsDescription: 'Manage your subscriptions, payment methods, and billing',
+      openPaymentPortal: 'Open Payment Portal',
+      paymentPortalRedirect: 'You will be redirected to manage your subscriptions',
     },
     // Identity verification
     verification: {
