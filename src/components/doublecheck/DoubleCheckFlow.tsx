@@ -241,7 +241,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                 <div className="text-center py-8 bg-muted/50 rounded-lg">
                   <FileText className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground">
-                    No tienes archivos en tu Vault
+                    No tienes expedientes en tu Vault
                   </p>
                   <Button
                     variant="link"
@@ -251,7 +251,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                       navigate('/vault');
                     }}
                   >
-                    Subir archivos
+                    Subir expedientes
                   </Button>
                 </div>
               )}
@@ -260,7 +260,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
             <div className="flex items-center gap-2 p-3 bg-info/5 rounded-lg text-sm">
               <Shield className="w-4 h-4 text-info" />
               <span className="text-muted-foreground">
-                El acceso a tus archivos se revocará al finalizar la consulta
+                El acceso a tus expedientes se revocará al finalizar la orientación médica
               </span>
             </div>
 

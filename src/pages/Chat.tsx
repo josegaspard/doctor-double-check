@@ -85,7 +85,7 @@ export default function Chat() {
           
           if (existingSession) {
             setSelectedSession(existingSession.id);
-            toast.success('Orientación lista - puedes comenzar a chatear');
+            toast.success('Orientación lista — puedes comenzar a chatear');
           } else {
             const result = await createSession(doctorId, 'doctor', false);
             
@@ -324,7 +324,7 @@ export default function Chat() {
             </div>
             <h2 className="font-heading text-xl font-bold text-foreground mb-2">Activa el Chat 1:1</h2>
             <p className="text-muted-foreground mb-6">
-              El chat con médicos es un servicio premium. Adquiere el servicio para comunicarte directamente con profesionales de la salud.
+              La orientación médica por chat es un servicio premium. Adquiere el servicio para comunicarte directamente con profesionales de la salud.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button onClick={() => navigate('/wallet')}>Ver Opciones</Button>
@@ -497,7 +497,7 @@ export default function Chat() {
                     <div className="p-4 border-t bg-muted/30 flex-shrink-0">
                       <div className="flex items-center justify-center gap-2 text-muted-foreground">
                         <Lock className="w-4 h-4" />
-                        <p className="text-sm">Esta orientación ha sido cerrada</p>
+                        <p className="text-sm">Esta orientación médica ha sido cerrada</p>
                       </div>
                     </div>
                   ) : (

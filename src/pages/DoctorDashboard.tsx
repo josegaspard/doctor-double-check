@@ -304,7 +304,7 @@ export default function DoctorDashboard() {
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1">
                     {isPending
-                      ? 'Estamos revisando tu documentación. Este proceso puede tomar 24-48 horas. Mientras tanto, puedes explorar la plataforma pero no podrás crear contenido ni atender consultas.'
+                      ? 'Estamos revisando tu documentación. Este proceso puede tomar 24-48 horas. Mientras tanto, puedes explorar la plataforma pero no podrás crear contenido ni atender orientaciones.'
                       : 'Tu solicitud de verificación fue rechazada. Por favor contacta a soporte para más información.'}
                   </p>
                   {isPending && (

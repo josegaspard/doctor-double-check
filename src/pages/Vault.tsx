@@ -468,7 +468,7 @@ export default function Vault() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Mis Archivos ({files.length})</CardTitle>
+            <CardTitle className="text-lg">Mis Expedientes ({files.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {files.length > 0 ? (
@@ -654,7 +654,7 @@ export default function Vault() {
                         <Stethoscope className="w-8 h-8 mx-auto mb-2 opacity-30" />
                         <p className="font-medium">No hay médicos disponibles</p>
                         <p className="text-xs mt-1">
-                          Suscríbete a un médico o inicia una consulta para poder compartir archivos.
+                          Suscríbete a un médico o inicia una orientación médica para poder compartir archivos.
                         </p>
                       </div>
                     ) : (

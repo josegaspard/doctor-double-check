@@ -74,7 +74,7 @@ export default function DoctorVault() {
           Vault de Pacientes
         </h1>
         <p className="text-muted-foreground mb-6">
-          Archivos médicos a los que tienes acceso por autorización del paciente
+          Expedientes médicos a los que tienes acceso por autorización del paciente
         </p>
 
         {/* Info Banner */}
@@ -85,7 +85,7 @@ export default function DoctorVault() {
               <div>
                 <h3 className="font-semibold text-foreground text-sm">Acceso Controlado por el Paciente</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Solo puedes ver archivos cuando el paciente te ha concedido permiso explícito. 
+                  Solo puedes ver expedientes cuando el paciente te ha concedido permiso explícito. 
                   El paciente puede revocar el acceso en cualquier momento.
                 </p>
               </div>
@@ -102,7 +102,7 @@ export default function DoctorVault() {
                   <CardTitle className="text-base flex items-center gap-2">
                     <User className="w-4 h-4 text-muted-foreground" />
                     {patientName}
-                    <Badge variant="outline" className="ml-auto">{files.length} archivos</Badge>
+                    <Badge variant="outline" className="ml-auto">{files.length} expedientes</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -152,11 +152,11 @@ export default function DoctorVault() {
           <Card className="p-12 text-center">
             <Lock className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              Sin acceso a archivos
+              Sin acceso a expedientes
             </h3>
             <p className="text-muted-foreground max-w-sm mx-auto">
               Ningún paciente te ha concedido acceso a su vault médico todavía.
-              Cuando un paciente te autorice, podrás ver sus archivos aquí.
+              Cuando un paciente te autorice, podrás ver sus expedientes aquí.
             </p>
           </Card>
         )}
