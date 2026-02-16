@@ -57,7 +57,6 @@ Deno.serve(async (req) => {
     }
     // ========== END AUTHENTICATION CHECK ==========
 
-    // Parse request body for optional single-doctor mode
     let requestBody: { doctor_id?: string; single?: boolean } = {};
     try {
       const bodyText = await req.text();
@@ -84,7 +83,6 @@ Deno.serve(async (req) => {
       require_invoice: true,
     };
 
-    // For bulk mode, check if auto-payout is enabled
     if (!singleDoctorId && !payoutSettings.auto_payout_enabled) {
       return new Response(
         JSON.stringify({ success: true, message: "Auto-payout is disabled", processed: 0 }),
@@ -92,17 +90,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Build query for doctors
     let query = supabaseAdmin
       .from("doctor_profiles")
       .select("user_id, pending_earnings, stripe_account_id, payouts_enabled")
       .not("stripe_account_id", "is", null);
 
     if (singleDoctorId) {
-      // Single doctor mode - process regardless of minimum
       query = query.eq("user_id", singleDoctorId).gt("pending_earnings", 0);
     } else {
-      // Bulk mode - apply minimum and payout enabled filter
       query = query
         .gte("pending_earnings", payoutSettings.minimum_payout_amount)
         .eq("payouts_enabled", true);
@@ -122,7 +117,22 @@ Deno.serve(async (req) => {
 
     for (const doctor of doctors) {
       try {
+        // FIX #3: Double-payment protection - check for existing processing payout
+        const { data: existingPayout } = await supabaseAdmin
+          .from("doctor_payouts")
+          .select("id")
+          .eq("doctor_id", doctor.user_id)
+          .eq("status", "processing")
+          .maybeSingle();
+
+        if (existingPayout) {
+          console.log(`Doctor ${doctor.user_id} already has a processing payout, skipping`);
+          errors.push(`${doctor.user_id}: Already has a processing payout`);
+          continue;
+        }
+
         // Check invoice requirement (skip for single-doctor admin-initiated payouts)
+        let invoiceId: string | null = null;
         if (!singleDoctorId && payoutSettings.require_invoice) {
           const { data: invoice } = await supabaseAdmin
             .from("doctor_invoices")
@@ -137,11 +147,25 @@ Deno.serve(async (req) => {
             console.log(`Doctor ${doctor.user_id} has no approved invoice, skipping`);
             continue;
           }
+          // FIX #5: Link payout to invoice
+          invoiceId = invoice.id;
+        } else if (singleDoctorId) {
+          // For single payouts, try to link the latest approved invoice if available
+          const { data: invoice } = await supabaseAdmin
+            .from("doctor_invoices")
+            .select("id")
+            .eq("doctor_id", doctor.user_id)
+            .eq("status", "approved")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          invoiceId = invoice?.id || null;
         }
 
         // Calculate payout amount (after commission)
         const commissionRate = payoutSettings.commission_percentage / 100;
-        const payoutAmount = doctor.pending_earnings * (1 - commissionRate);
+        const grossAmount = doctor.pending_earnings;
+        const payoutAmount = grossAmount * (1 - commissionRate);
         const payoutAmountCents = Math.round(payoutAmount * 100);
 
         // Create transfer to connected account
@@ -151,28 +175,42 @@ Deno.serve(async (req) => {
           destination: doctor.stripe_account_id!,
           metadata: {
             doctor_id: doctor.user_id,
-            gross_amount: doctor.pending_earnings.toString(),
+            gross_amount: grossAmount.toString(),
             commission_percentage: payoutSettings.commission_percentage.toString(),
           },
         });
 
-        // Create payout record
+        // FIX #5 + #8: Create payout record with invoice_id and period_start
+        const now = new Date().toISOString().split("T")[0];
         await supabaseAdmin.from("doctor_payouts").insert({
           doctor_id: doctor.user_id,
           amount: payoutAmount,
           stripe_transfer_id: transfer.id,
           status: "processing",
-          period_end: new Date().toISOString().split("T")[0],
+          period_start: now,
+          period_end: now,
+          invoice_id: invoiceId,
         });
 
-        // Update doctor pending earnings
-        const { data: currentProfile } = await supabaseAdmin
-          .from("doctor_profiles")
-          .select("total_earnings")
-          .eq("user_id", doctor.user_id)
-          .single();
+        // FIX #1: Use atomic DB function instead of read-then-write
+        const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc("process_doctor_payout", {
+          p_doctor_id: doctor.user_id,
+          p_payout_amount: payoutAmount,
+          p_gross_amount: grossAmount,
+        });
 
-        const currentTotal = currentProfile?.total_earnings || 0;
+        if (rpcError) {
+          console.error(`Error in atomic payout for ${doctor.user_id}:`, rpcError);
+          errors.push(`${doctor.user_id}: ${rpcError.message}`);
+          continue;
+        }
+
+        const result = rpcResult as { success: boolean; error?: string };
+        if (!result.success) {
+          console.error(`Atomic payout failed for ${doctor.user_id}:`, result.error);
+          errors.push(`${doctor.user_id}: ${result.error}`);
+          continue;
+        }
 
         // Notify doctor about payout
         await supabaseAdmin.from("notifications").insert({
@@ -182,19 +220,11 @@ Deno.serve(async (req) => {
           message: `Se ha iniciado una transferencia de $${payoutAmount.toFixed(2)} MXN a tu cuenta bancaria`,
           data: {
             amount: payoutAmount,
-            gross_amount: doctor.pending_earnings,
-            commission: doctor.pending_earnings - payoutAmount,
+            gross_amount: grossAmount,
+            commission: grossAmount - payoutAmount,
             transfer_id: transfer.id,
           },
         });
-        
-        await supabaseAdmin
-          .from("doctor_profiles")
-          .update({
-            pending_earnings: 0,
-            total_earnings: currentTotal + doctor.pending_earnings,
-          })
-          .eq("user_id", doctor.user_id);
 
         processedCount++;
         console.log(`Processed payout for doctor ${doctor.user_id}: ${payoutAmount} MXN`);

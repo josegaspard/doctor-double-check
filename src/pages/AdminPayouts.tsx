@@ -59,6 +59,11 @@ interface DoctorPayoutInfo {
   payouts_enabled: boolean;
   stripe_account_id: string | null;
   has_approved_invoice: boolean;
+  // FIX #6: Bank details for admin visibility
+  bank_name: string | null;
+  clabe_last4: string | null;
+  account_holder_name: string | null;
+  has_processing_payout: boolean;
 }
 
 interface PayoutRecord {
@@ -139,17 +144,39 @@ export default function AdminPayouts() {
           .in('doctor_id', doctorIds);
         const invoiceSet = new Set(invoices?.map(i => i.doctor_id) || []);
 
-        const doctorList: DoctorPayoutInfo[] = doctorProfiles.map(dp => ({
-          user_id: dp.user_id,
-          name: profileMap.get(dp.user_id)?.name || 'Doctor',
-          avatar_url: profileMap.get(dp.user_id)?.avatar_url || null,
-          specialty: dp.specialty,
-          pending_earnings: dp.pending_earnings || 0,
-          total_earnings: dp.total_earnings || 0,
-          payouts_enabled: dp.payouts_enabled || false,
-          stripe_account_id: dp.stripe_account_id || null,
-          has_approved_invoice: invoiceSet.has(dp.user_id),
-        }));
+        // FIX #6: Fetch bank details for admin visibility
+        const { data: bankAccounts } = await supabase
+          .from('doctor_bank_accounts')
+          .select('doctor_id, bank_name, clabe_last4, account_holder_name')
+          .in('doctor_id', doctorIds);
+        const bankMap = new Map(bankAccounts?.map(b => [b.doctor_id, b]) || []);
+
+        // FIX #3: Fetch existing processing payouts
+        const { data: processingPayouts } = await supabase
+          .from('doctor_payouts')
+          .select('doctor_id')
+          .eq('status', 'processing')
+          .in('doctor_id', doctorIds);
+        const processingSet = new Set(processingPayouts?.map(p => p.doctor_id) || []);
+
+        const doctorList: DoctorPayoutInfo[] = doctorProfiles.map(dp => {
+          const bank = bankMap.get(dp.user_id);
+          return {
+            user_id: dp.user_id,
+            name: profileMap.get(dp.user_id)?.name || 'Doctor',
+            avatar_url: profileMap.get(dp.user_id)?.avatar_url || null,
+            specialty: dp.specialty,
+            pending_earnings: dp.pending_earnings || 0,
+            total_earnings: dp.total_earnings || 0,
+            payouts_enabled: dp.payouts_enabled || false,
+            stripe_account_id: dp.stripe_account_id || null,
+            has_approved_invoice: invoiceSet.has(dp.user_id),
+            bank_name: bank?.bank_name || null,
+            clabe_last4: bank?.clabe_last4 || null,
+            account_holder_name: bank?.account_holder_name || null,
+            has_processing_payout: processingSet.has(dp.user_id),
+          };
+        });
 
         // Sort by pending earnings desc
         doctorList.sort((a, b) => b.pending_earnings - a.pending_earnings);
@@ -227,39 +254,43 @@ export default function AdminPayouts() {
 
       for (const doctor of doctorsToProcess) {
         try {
+          // FIX #3: Double-payment protection
+          if (doctor.has_processing_payout) {
+            toast.warning(`${doctor.name} ya tiene un pago en proceso`);
+            errorCount++;
+            continue;
+          }
+
           const netAmount = getNetAmount(doctor.pending_earnings);
           const method = doctor.stripe_account_id && payoutMethod === 'stripe' ? 'stripe' : 'manual';
 
           if (method === 'stripe') {
-            // Use edge function for Stripe transfer
             const { data, error } = await supabase.functions.invoke('process-doctor-payouts', {
               body: { doctor_id: doctor.user_id, single: true },
             });
             if (error) throw error;
             if (!data?.success) throw new Error(data?.error || 'Error processing');
           } else {
-            // Manual payment - just record it in the database
+            // Manual payment - record in DB and use atomic function
+            const now = new Date().toISOString().split('T')[0];
             const { error: insertError } = await supabase.from('doctor_payouts').insert({
               doctor_id: doctor.user_id,
               amount: netAmount,
               status: 'paid',
               paid_at: new Date().toISOString(),
-              period_end: new Date().toISOString().split('T')[0],
+              period_start: now,
+              period_end: now,
               stripe_transfer_id: manualReference ? `manual_${manualReference}` : `manual_${Date.now()}`,
             });
             if (insertError) throw insertError;
 
-            // Update doctor pending earnings
-            const { data: currentProfile } = await supabase
-              .from('doctor_profiles')
-              .select('total_earnings, pending_earnings')
-              .eq('user_id', doctor.user_id)
-              .single();
-
-            await supabase.from('doctor_profiles').update({
-              pending_earnings: 0,
-              total_earnings: (currentProfile?.total_earnings || 0) + doctor.pending_earnings,
-            }).eq('user_id', doctor.user_id);
+            // FIX #1: Use atomic DB function for earnings update
+            const { error: rpcError } = await supabase.rpc('process_doctor_payout' as any, {
+              p_doctor_id: doctor.user_id,
+              p_payout_amount: netAmount,
+              p_gross_amount: doctor.pending_earnings,
+            });
+            if (rpcError) throw rpcError;
 
             // Notify doctor
             await supabase.from('notifications').insert({
@@ -459,10 +490,21 @@ export default function AdminPayouts() {
                               ) : (
                                 <Badge variant="secondary" className="text-xs gap-1"><Building className="w-3 h-3" />Manual</Badge>
                               )}
+                              {doctor.has_processing_payout && (
+                                <Badge variant="warning" className="text-xs gap-1"><Clock className="w-3 h-3" />En proceso</Badge>
+                              )}
                               {!doctor.has_approved_invoice && settings.require_invoice && (
                                 <Badge variant="warning" className="text-xs gap-1"><AlertTriangle className="w-3 h-3" />Sin factura</Badge>
                               )}
                             </div>
+                            {/* FIX #6: Show bank details for manual transfers */}
+                            {(doctor.bank_name || doctor.clabe_last4) && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {doctor.account_holder_name && <span>{doctor.account_holder_name} · </span>}
+                                {doctor.bank_name && <span>{doctor.bank_name} </span>}
+                                {doctor.clabe_last4 && <span>****{doctor.clabe_last4}</span>}
+                              </p>
+                            )}
                           </div>
 
                           <div className="text-right flex-shrink-0 space-y-1">
@@ -478,12 +520,12 @@ export default function AdminPayouts() {
 
                           <Button
                             size="sm"
-                            disabled={doctor.pending_earnings <= 0}
+                            disabled={doctor.pending_earnings <= 0 || doctor.has_processing_payout}
                             onClick={() => openPayoutDialog(doctor, false)}
                             className="flex-shrink-0"
                           >
                             <Send className="w-4 h-4 mr-1" />
-                            {language === 'es' ? 'Pagar' : 'Pay'}
+                            {doctor.has_processing_payout ? (language === 'es' ? 'En proceso' : 'Processing') : (language === 'es' ? 'Pagar' : 'Pay')}
                           </Button>
                         </div>
                       </CardContent>

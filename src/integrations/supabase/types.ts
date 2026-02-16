@@ -1748,6 +1748,10 @@ export type Database = {
       }
     }
     Functions: {
+      credit_doctor_earnings: {
+        Args: { p_amount: number; p_doctor_id: string }
+        Returns: number
+      }
       decrement_viewer_count: {
         Args: { p_live_id: string }
         Returns: undefined
@@ -1828,6 +1832,14 @@ export type Database = {
       }
       process_consultation_purchase: {
         Args: { p_amount: number; p_doctor_id: string; p_patient_name?: string }
+        Returns: Json
+      }
+      process_doctor_payout: {
+        Args: {
+          p_doctor_id: string
+          p_gross_amount: number
+          p_payout_amount: number
+        }
         Returns: Json
       }
       process_wallet_purchase: {
