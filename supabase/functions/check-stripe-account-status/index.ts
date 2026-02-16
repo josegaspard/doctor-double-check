@@ -32,11 +32,24 @@ Deno.serve(async (req) => {
 
     const userId = userData.user.id;
 
-    // Use service role for database operations
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // FIX #11: Verify user is a doctor
+    const { data: roleData } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .single();
+
+    if (roleData?.role !== "doctor") {
+      return new Response(
+        JSON.stringify({ success: false, error: "Solo doctores pueden acceder" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Get bank account record
     const { data: bankAccount } = await supabaseAdmin
@@ -61,10 +74,8 @@ Deno.serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Get account details from Stripe
     const account = await stripe.accounts.retrieve(bankAccount.stripe_account_id);
 
-    // Determine status
     let status = "pending";
     if (account.details_submitted && account.payouts_enabled) {
       status = "active";
@@ -74,7 +85,6 @@ Deno.serve(async (req) => {
       status = "pending_verification";
     }
 
-    // Update database
     await supabaseAdmin
       .from("doctor_bank_accounts")
       .update({
@@ -85,7 +95,6 @@ Deno.serve(async (req) => {
       })
       .eq("doctor_id", userId);
 
-    // Update doctor profile
     await supabaseAdmin
       .from("doctor_profiles")
       .update({

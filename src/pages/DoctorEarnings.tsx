@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 import { 
   ArrowLeft, 
   DollarSign, 
@@ -19,7 +20,8 @@ import {
   MessageSquare,
   Users,
   Loader2,
-  Calendar
+  Calendar,
+  Download
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
@@ -143,10 +145,14 @@ export default function DoctorEarnings() {
           .eq('user_id', user.id)
           .single();
 
-        setSummary({
-          totalEarnings: profile?.total_earnings || totalEarnings,
-          pendingEarnings: profile?.pending_earnings || 0,
-          paidEarnings: (profile?.total_earnings || 0) - (profile?.pending_earnings || 0),
+          // total_earnings = already paid out, pending_earnings = waiting
+          // Total ever earned = total_earnings + pending_earnings
+          const totalPaid = profile?.total_earnings || 0;
+          const pending = profile?.pending_earnings || 0;
+          setSummary({
+            totalEarnings: totalPaid + pending,
+            pendingEarnings: pending,
+            paidEarnings: totalPaid,
           thisMonthEarnings: thisMonth,
           consultationEarnings: consultation,
           recordingEarnings: recording,
@@ -192,6 +198,31 @@ export default function DoctorEarnings() {
       case 'subscription_renewal': return language === 'es' ? 'Renovación' : 'Renewal';
       default: return language === 'es' ? 'Otro' : 'Other';
     }
+  };
+
+  // FIX #9: CSV export
+  const handleExportCSV = () => {
+    if (transactions.length === 0) {
+      toast.info(language === 'es' ? 'No hay datos para exportar' : 'No data to export');
+      return;
+    }
+    const headers = ['Fecha', 'Descripción', 'Tipo', 'Monto', 'Estado'];
+    const rows = transactions.map(tx => [
+      format(new Date(tx.created_at), 'yyyy-MM-dd HH:mm'),
+      tx.description,
+      getSourceLabel((tx.metadata as Record<string, any>)?.source),
+      tx.amount.toFixed(2),
+      tx.status,
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ganancias_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(language === 'es' ? 'CSV descargado' : 'CSV downloaded');
   };
 
   const getPayoutStatusBadge = (status: string) => {
@@ -389,16 +420,22 @@ export default function DoctorEarnings() {
 
             {/* Transaction History */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Wallet className="w-5 h-5" />
-                  {language === 'es' ? 'Historial de Transacciones' : 'Transaction History'}
-                </CardTitle>
-                <CardDescription>
-                  {language === 'es' 
-                    ? 'Todas tus ganancias detalladas' 
-                    : 'All your detailed earnings'}
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Wallet className="w-5 h-5" />
+                    {language === 'es' ? 'Historial de Transacciones' : 'Transaction History'}
+                  </CardTitle>
+                  <CardDescription>
+                    {language === 'es' 
+                      ? 'Todas tus ganancias detalladas' 
+                      : 'All your detailed earnings'}
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2">
+                  <Download className="w-4 h-4" />
+                  CSV
+                </Button>
               </CardHeader>
               <CardContent>
                 {transactions.length === 0 ? (

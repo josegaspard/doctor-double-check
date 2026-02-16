@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Notify doctor about payout
+        // Notify doctor about payout (in-app)
         await supabaseAdmin.from("notifications").insert({
           user_id: doctor.user_id,
           type: "system",
@@ -225,6 +225,50 @@ Deno.serve(async (req) => {
             transfer_id: transfer.id,
           },
         });
+
+        // FIX #15: Send email notification to doctor about payout
+        try {
+          const { data: doctorProfile } = await supabaseAdmin
+            .from("profiles")
+            .select("email, name")
+            .eq("id", doctor.user_id)
+            .single();
+
+          if (doctorProfile?.email) {
+            const resendKey = Deno.env.get("RESEND_API_KEY");
+            if (resendKey) {
+              await fetch("https://api.resend.com/emails", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${resendKey}`,
+                },
+                body: JSON.stringify({
+                  from: "Medical Masters <no-reply@resend.dev>",
+                  to: [doctorProfile.email],
+                  subject: "💰 Pago procesado - Medical Masters",
+                  html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                      <h2>¡Hola ${doctorProfile.name || "Doctor"}!</h2>
+                      <p>Se ha procesado un pago a tu cuenta bancaria:</p>
+                      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                        <tr><td style="padding: 8px; border-bottom: 1px solid #eee;">Monto bruto:</td><td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$${grossAmount.toFixed(2)} MXN</td></tr>
+                        <tr><td style="padding: 8px; border-bottom: 1px solid #eee;">Comisión plataforma:</td><td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right; color: #e53e3e;">-$${(grossAmount - payoutAmount).toFixed(2)} MXN</td></tr>
+                        <tr><td style="padding: 8px; font-weight: bold;">Monto neto:</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #38a169;">$${payoutAmount.toFixed(2)} MXN</td></tr>
+                      </table>
+                      <p>El depósito llegará a tu cuenta en 2-3 días hábiles.</p>
+                      <p style="color: #718096; font-size: 12px;">Este es un correo automático de Medical Masters.</p>
+                    </div>
+                  `,
+                }),
+              });
+              console.log(`Payout email sent to ${doctorProfile.email}`);
+            }
+          }
+        } catch (emailError) {
+          console.error(`Error sending payout email for ${doctor.user_id}:`, emailError);
+          // Don't fail the payout if email fails
+        }
 
         processedCount++;
         console.log(`Processed payout for doctor ${doctor.user_id}: ${payoutAmount} MXN`);
