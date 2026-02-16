@@ -373,9 +373,9 @@ const handleExportPDF = () => {
                   Tu historial es privado
                 </h4>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Solo tú puedes ver estos archivos. Cuando tengas una consulta, puedes
-                  compartir archivos específicos con tu médico desde la sección Vault.
-                </p>
+                  Solo tú puedes ver estos archivos. Cuando tengas una orientación médica, puedes
+                   compartir archivos específicos con tu médico desde la sección Vault.
+                 </p>
               </div>
             </div>
           </CardContent>

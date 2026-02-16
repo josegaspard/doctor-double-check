@@ -187,9 +187,9 @@ export function ChatHeader({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>¿Cerrar esta consulta?</AlertDialogTitle>
+                    <AlertDialogTitle>¿Cerrar esta orientación?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Al cerrar la consulta, el paciente ya no podrá enviar más mensajes. 
+                      Al cerrar la orientación, el paciente ya no podrá enviar más mensajes. 
                       El historial de la conversación se mantendrá disponible para ambas partes.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -219,7 +219,7 @@ export function ChatHeader({
       
       {isClosed && session.createdAt && (
         <p className="text-[11px] text-muted-foreground mt-2 pl-14">
-          Consulta del {format(session.createdAt, 'dd MMMM yyyy', { locale: es })}
+          Orientación del {format(session.createdAt, 'dd MMMM yyyy', { locale: es })}
         </p>
       )}
     </div>

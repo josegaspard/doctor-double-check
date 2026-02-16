@@ -28,6 +28,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
+import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 
 interface DoctorWithProfile {
   id: string;
@@ -37,6 +38,7 @@ interface DoctorWithProfile {
   rating: number;
   followers_count: number;
   consultation_fee: number;
+  total_consultations: number;
   location: string | null;
   available_for_double_check: boolean;
   profile: {
@@ -99,7 +101,8 @@ export default function Doctors() {
           followers_count,
           consultation_fee,
           location,
-          available_for_double_check
+          available_for_double_check,
+          total_consultations
         `)
         .order('rating', { ascending: false });
 
@@ -308,7 +311,7 @@ export default function Doctors() {
                           <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
                         )}
                       </div>
-                      
+                      <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0)} size="sm" />
                       <Badge variant="secondary" className="mb-2">
                         <Stethoscope className="w-3 h-3 mr-1" />
                         {doctor.specialty}

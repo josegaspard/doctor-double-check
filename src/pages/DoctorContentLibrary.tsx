@@ -192,7 +192,7 @@ export default function DoctorContentLibrary() {
               Mi Biblioteca de Contenido
             </h1>
             <p className="text-muted-foreground mt-1">
-              {contents.length} archivos subidos
+              {contents.length} expedientes subidos
             </p>
           </div>
           

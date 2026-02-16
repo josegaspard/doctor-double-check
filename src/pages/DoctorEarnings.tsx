@@ -192,7 +192,7 @@ export default function DoctorEarnings() {
 
   const getSourceLabel = (source: string) => {
     switch (source) {
-      case 'consultation': return language === 'es' ? 'Consulta' : 'Consultation';
+      case 'consultation': return language === 'es' ? 'Orientación' : 'Consultation';
       case 'recording': return language === 'es' ? 'Grabación' : 'Recording';
       case 'subscription': return language === 'es' ? 'Suscripción' : 'Subscription';
       case 'subscription_renewal': return language === 'es' ? 'Renovación' : 'Renewal';
@@ -382,7 +382,7 @@ export default function DoctorEarnings() {
                   <div className="flex items-center justify-between p-3 bg-info/10 rounded-lg">
                     <div className="flex items-center gap-2">
                       <MessageSquare className="w-4 h-4 text-info" />
-                      <span className="text-sm">{language === 'es' ? 'Consultas' : 'Consultations'}</span>
+                      <span className="text-sm">{language === 'es' ? 'Orientaciones' : 'Consultations'}</span>
                     </div>
                     <span className="font-semibold">${summary.consultationEarnings.toLocaleString()}</span>
                   </div>
