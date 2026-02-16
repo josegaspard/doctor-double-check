@@ -69,6 +69,12 @@ export default function Vault() {
   const [storageLimit, setStorageLimit] = useState(1073741824); // 1GB default
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [pricePerGB, setPricePerGB] = useState(49);
+  const [storagePlans, setStoragePlans] = useState([
+    { gb: 1, label: '+1 GB' },
+    { gb: 5, label: '+5 GB', badge: 'Popular' },
+    { gb: 10, label: '+10 GB', badge: 'Mejor valor' },
+  ]);
 
   // Fetch storage usage
   useEffect(() => {
@@ -82,6 +88,18 @@ export default function Vault() {
       if (data) {
         setStorageUsed(data.storage_used_bytes || 0);
         setStorageLimit(data.storage_limit_bytes || 1073741824);
+      }
+
+      // Fetch pricing from site_settings
+      const { data: pricingData } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('id', 'storage_pricing')
+        .single();
+      if (pricingData?.value) {
+        const pricing = pricingData.value as any;
+        if (pricing.price_per_gb) setPricePerGB(pricing.price_per_gb);
+        if (pricing.plans) setStoragePlans(pricing.plans);
       }
     };
     fetchStorage();
@@ -229,8 +247,7 @@ export default function Vault() {
     if (!supabaseUser?.id) return;
     setIsUpgrading(true);
 
-    const costPerGB = 49; // $49 MXN per GB
-    const totalCost = extraGB * costPerGB;
+    const totalCost = extraGB * pricePerGB;
 
     try {
       const { data, error } = await supabase.rpc('process_wallet_purchase', {

@@ -70,6 +70,7 @@ import ContentGallery from "./pages/ContentGallery";
 import Notifications from "./pages/Notifications";
 import MedicalNews from "./pages/MedicalNews";
 import VideoCall from "./pages/VideoCall";
+import AdminCredentials from "./pages/AdminCredentials";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -123,6 +124,7 @@ const App = () => (
                       <Route path="/admin/payout-settings" element={<AdminPayoutSettings />} />
                       <Route path="/admin/payouts" element={<AdminPayouts />} />
                       <Route path="/admin/invoices" element={<AdminInvoiceReview />} />
+                      <Route path="/admin/credentials" element={<AdminCredentials />} />
                       <Route path="/verification-pending" element={<VerificationPending />} />
                       <Route path="/doctors" element={<Doctors />} />
                       <Route path="/reset-password" element={<ResetPassword />} />

@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +27,7 @@ import {
   Loader2,
   Save,
   Mail,
+  HardDrive,
 } from 'lucide-react';
 
 interface SocialLinks {
@@ -46,6 +48,11 @@ interface ContactInfo {
   phone: string;
   address: string;
   content: string;
+}
+
+interface StoragePricing {
+  price_per_gb: number;
+  plans: { gb: number; label: string; badge?: string }[];
 }
 
 export default function AdminSiteSettings() {
@@ -70,6 +77,14 @@ export default function AdminSiteSettings() {
     phone: '+52 55 1234 5678',
     address: 'Ciudad de México, México',
     content: '',
+  });
+  const [storagePricing, setStoragePricing] = useState<StoragePricing>({
+    price_per_gb: 49,
+    plans: [
+      { gb: 1, label: '+1 GB' },
+      { gb: 5, label: '+5 GB', badge: 'Popular' },
+      { gb: 10, label: '+10 GB', badge: 'Mejor valor' },
+    ],
   });
 
   useEffect(() => {
@@ -128,6 +143,17 @@ export default function AdminSiteSettings() {
 
         if (contactData?.value) {
           setContactInfo(contactData.value as unknown as ContactInfo);
+        }
+
+        // Fetch storage pricing
+        const { data: storageData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'storage_pricing')
+          .single();
+
+        if (storageData?.value) {
+          setStoragePricing(storageData.value as unknown as StoragePricing);
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -230,6 +256,27 @@ export default function AdminSiteSettings() {
     }
   };
 
+  const handleSaveStoragePricing = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          id: 'storage_pricing',
+          value: storagePricing as unknown as Json,
+          updated_by: supabaseUser?.id,
+        });
+
+      if (error) throw error;
+      toast.success('Precios de almacenamiento actualizados');
+    } catch (error) {
+      console.error('Error saving storage pricing:', error);
+      toast.error('Error al guardar');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (role !== 'admin') return null;
 
   return (
@@ -259,7 +306,7 @@ export default function AdminSiteSettings() {
           </div>
         ) : (
           <Tabs defaultValue="social" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="social" className="gap-2 text-xs">
                 <Globe className="w-4 h-4" />
                 <span className="hidden sm:inline">{language === 'es' ? 'Redes' : 'Social'}</span>
@@ -275,6 +322,10 @@ export default function AdminSiteSettings() {
               <TabsTrigger value="contact" className="gap-2 text-xs">
                 <Mail className="w-4 h-4" />
                 <span className="hidden sm:inline">{language === 'es' ? 'Contacto' : 'Contact'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="storage" className="gap-2 text-xs">
+                <HardDrive className="w-4 h-4" />
+                <span className="hidden sm:inline">Almacenamiento</span>
               </TabsTrigger>
             </TabsList>
 
@@ -531,6 +582,95 @@ export default function AdminSiteSettings() {
                       <Save className="w-4 h-4 mr-2" />
                     )}
                     {language === 'es' ? 'Guardar Contacto' : 'Save Contact'}
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Storage Pricing Tab */}
+            <TabsContent value="storage">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <HardDrive className="w-5 h-5" />
+                    Precios de Almacenamiento
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Configura el precio por GB y los planes disponibles para los usuarios
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="price-per-gb" className="text-xs">Precio por GB (MXN)</Label>
+                    <Input
+                      id="price-per-gb"
+                      type="number"
+                      min="1"
+                      value={storagePricing.price_per_gb}
+                      onChange={(e) => setStoragePricing({ ...storagePricing, price_per_gb: Number(e.target.value) })}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-3">
+                    <Label className="text-xs font-semibold">Planes disponibles</Label>
+                    {storagePricing.plans.map((plan, idx) => (
+                      <div key={idx} className="grid grid-cols-3 gap-2 items-end">
+                        <div>
+                          <Label className="text-xs">GB</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={plan.gb}
+                            onChange={(e) => {
+                              const plans = [...storagePricing.plans];
+                              plans[idx] = { ...plans[idx], gb: Number(e.target.value) };
+                              setStoragePricing({ ...storagePricing, plans });
+                            }}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Etiqueta</Label>
+                          <Input
+                            value={plan.label}
+                            onChange={(e) => {
+                              const plans = [...storagePricing.plans];
+                              plans[idx] = { ...plans[idx], label: e.target.value };
+                              setStoragePricing({ ...storagePricing, plans });
+                            }}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Badge</Label>
+                          <Input
+                            value={plan.badge || ''}
+                            onChange={(e) => {
+                              const plans = [...storagePricing.plans];
+                              plans[idx] = { ...plans[idx], badge: e.target.value || undefined };
+                              setStoragePricing({ ...storagePricing, plans });
+                            }}
+                            placeholder="Opcional"
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <p className="text-xs text-muted-foreground">
+                      Precio total por plan = GB × ${storagePricing.price_per_gb} MXN
+                    </p>
+                  </div>
+
+                  <Button onClick={handleSaveStoragePricing} disabled={isSaving} className="w-full">
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Guardar Precios
                   </Button>
                 </CardContent>
               </Card>

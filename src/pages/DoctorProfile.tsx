@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
+import DoctorCredentials from '@/components/doctor/DoctorCredentials';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -458,6 +459,12 @@ export default function DoctorProfile() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Academic & Professional Profile */}
+        <DoctorCredentials 
+          doctorId={doctor.id} 
+          isOwner={user?.id === doctor.id} 
+        />
 
         {/* Payment Modal */}
         <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
