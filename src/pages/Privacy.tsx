@@ -170,7 +170,7 @@ Para ejercer sus derechos o realizar consultas sobre privacidad, contáctenos en
           </CardHeader>
           <CardContent className="px-4 sm:px-6 prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
             {customContent ? (
-              <div className="whitespace-pre-wrap">{customContent}</div>
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(customContent) }} />
             ) : (
               <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(defaultContent.replace(/\n/g, '<br/>').replace(/## /g, '<h2 class="text-base font-semibold mt-6 mb-2">').replace(/<br\/><h2/g, '</h2><h2').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/- /g, '• ')) }} />
             )}

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextLegalEditor } from '@/components/admin/RichTextLegalEditor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
@@ -453,13 +454,12 @@ export default function AdminSiteSettings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Textarea
+                  <RichTextLegalEditor
+                    content={termsContent}
+                    onChange={setTermsContent}
                     placeholder={language === 'es' 
                       ? 'Escribe los términos de servicio aquí...' 
                       : 'Write terms of service here...'}
-                    value={termsContent}
-                    onChange={(e) => setTermsContent(e.target.value)}
-                    className="min-h-[300px] font-mono text-xs"
                   />
                   <Button onClick={handleSaveTerms} disabled={isSaving} className="w-full">
                     {isSaving ? (
@@ -488,13 +488,12 @@ export default function AdminSiteSettings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Textarea
+                  <RichTextLegalEditor
+                    content={privacyContent}
+                    onChange={setPrivacyContent}
                     placeholder={language === 'es' 
                       ? 'Escribe la política de privacidad aquí...' 
                       : 'Write privacy policy here...'}
-                    value={privacyContent}
-                    onChange={(e) => setPrivacyContent(e.target.value)}
-                    className="min-h-[300px] font-mono text-xs"
                   />
                   <Button onClick={handleSavePrivacy} disabled={isSaving} className="w-full">
                     {isSaving ? (
