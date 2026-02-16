@@ -490,8 +490,6 @@ export default function Onboarding() {
         }
       }
 
-      }
-
       if (selectedRole === 'patient') {
         // Create wallet for patient
         const { error: walletError } = await supabase
