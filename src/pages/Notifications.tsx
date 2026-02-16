@@ -17,6 +17,8 @@ function getNotificationIcon(type: string) {
     case 'new_content': return '📄';
     case 'chat_message': return '💬';
     case 'subscription_update': return '⭐';
+    case 'rating_request': return '⭐';
+    case 'system': return '🔔';
     default: return '🔔';
   }
 }
@@ -32,6 +34,9 @@ function navigateByType(notification: Notification, navigate: ReturnType<typeof 
       break;
     case 'chat_message':
       navigate(data.session_id || data.sessionId ? `/chat?session=${data.session_id || data.sessionId}` : '/chat');
+      break;
+    case 'rating_request':
+      navigate(data.url || '/chat');
       break;
     case 'doctor_availability':
       navigate(data.doctor_id || data.doctorId ? `/doctor/${data.doctor_id || data.doctorId}` : '/doctors');

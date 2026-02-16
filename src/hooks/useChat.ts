@@ -59,7 +59,7 @@ export function useChat(userId: string | undefined, userRole: string | undefined
     // Subscribe to realtime updates
     if (userId) {
       const channel = supabase
-        .channel('chat-updates')
+        .channel(`chat-updates-hook-${userId}`)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'chat_sessions' },
@@ -179,10 +179,18 @@ export function useChat(userId: string | undefined, userRole: string | undefined
         return { success: false };
       }
 
-      // Update session last message
+      // Update session last message - fetch current counts from DB to avoid race conditions
       const session = sessions.find(s => s.id === sessionId);
       if (session) {
+        const { data: currentSession } = await supabase
+          .from('chat_sessions')
+          .select('unread_count_1, unread_count_2')
+          .eq('id', sessionId)
+          .single();
+
         const isParticipant1 = session.participant1_id === userId;
+        const unread1 = currentSession?.unread_count_1 || 0;
+        const unread2 = currentSession?.unread_count_2 || 0;
         
         await supabase
           .from('chat_sessions')
@@ -190,8 +198,8 @@ export function useChat(userId: string | undefined, userRole: string | undefined
             last_message: content,
             last_message_at: new Date().toISOString(),
             ...(isParticipant1 
-              ? { unread_count_2: session.unread_count_2 + 1 }
-              : { unread_count_1: session.unread_count_1 + 1 }
+              ? { unread_count_2: unread2 + 1 }
+              : { unread_count_1: unread1 + 1 }
             ),
           })
           .eq('id', sessionId);
