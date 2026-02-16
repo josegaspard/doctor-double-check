@@ -60,7 +60,7 @@ export function useSubscriptions() {
           notifyOnLive: s.notify_on_live,
           notifyOnContent: s.notify_on_content,
           notifyOnAvailability: s.notify_on_availability,
-          earlyAccessMinutes: Number((s as any).early_access_minutes ?? 0),
+          earlyAccessMinutes: 0,
           createdAt: new Date(s.created_at),
           expiresAt: s.expires_at ? new Date(s.expires_at) : undefined,
         }))
@@ -96,7 +96,7 @@ export function useSubscriptions() {
           notifyOnLive: s.notify_on_live,
           notifyOnContent: s.notify_on_content,
           notifyOnAvailability: s.notify_on_availability,
-          earlyAccessMinutes: Number((s as any).early_access_minutes ?? 0),
+          earlyAccessMinutes: 0,
           createdAt: new Date(s.created_at),
           expiresAt: s.expires_at ? new Date(s.expires_at) : undefined,
         }))

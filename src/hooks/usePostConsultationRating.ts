@@ -76,7 +76,7 @@ export function usePostConsultationRating() {
     if (!user?.id || role !== 'patient') return;
     
     const channel = supabase
-      .channel('consultation-rating-check')
+      .channel(`consultation-rating-check-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -96,7 +96,7 @@ export function usePostConsultationRating() {
 
     // Also listen for chat_sessions closing (covers the case when patient is on chat page)
     const chatChannel = supabase
-      .channel('chat-session-closed-rating')
+      .channel(`chat-session-closed-rating-${user.id}`)
       .on(
         'postgres_changes',
         {

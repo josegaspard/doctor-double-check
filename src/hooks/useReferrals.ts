@@ -89,11 +89,12 @@ export function useReferrals() {
   const generateCode = async (): Promise<string | null> => {
     if (!supabaseUser?.id) return null;
 
-    // Generate a unique 8-char code
+    // Generate a unique 8-char code using crypto for security
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = 'MM-';
+    const randomValues = crypto.getRandomValues(new Uint8Array(5));
     for (let i = 0; i < 5; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+      code += chars.charAt(randomValues[i] % chars.length);
     }
 
     try {

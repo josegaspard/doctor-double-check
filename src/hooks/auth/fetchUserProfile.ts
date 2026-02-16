@@ -3,23 +3,18 @@ import { ExtendedUser, UserRole, DoctorStatus } from './types';
 
 export async function fetchUserProfile(userId: string): Promise<ExtendedUser | null> {
   try {
-    // Fetch base profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    // Fetch profile, role, wallet, and entitlements in parallel
+    const [profileResult, roleResult, walletResult, entitlementsResult] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).single(),
+      supabase.from('user_roles').select('role').eq('user_id', userId).single(),
+      supabase.from('wallets').select('*').eq('user_id', userId).single(),
+      supabase.from('entitlements').select('*').eq('user_id', userId).eq('is_active', true),
+    ]);
 
-    if (profileError || !profile) return null;
+    const profile = profileResult.data;
+    if (profileResult.error || !profile) return null;
 
-    // Fetch role
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
-
-    const role = (roleData?.role as UserRole) || 'patient';
+    const role = (roleResult.data?.role as UserRole) || 'patient';
 
     const extendedUser: ExtendedUser = {
       id: profile.id,
@@ -31,7 +26,7 @@ export async function fetchUserProfile(userId: string): Promise<ExtendedUser | n
       onboardingCompleted: profile.onboarding_completed ?? true,
     };
 
-    // Fetch role-specific data
+    // Fetch role-specific data (only one branch needed)
     if (role === 'doctor') {
       const { data: doctorProfile } = await supabase
         .from('doctor_profiles')
@@ -57,9 +52,7 @@ export async function fetchUserProfile(userId: string): Promise<ExtendedUser | n
           location: doctorProfile.location || undefined,
         };
       }
-    }
-
-    if (role === 'resident') {
+    } else if (role === 'resident') {
       const { data: residentProfile } = await supabase
         .from('resident_profiles')
         .select('*')
@@ -80,31 +73,17 @@ export async function fetchUserProfile(userId: string): Promise<ExtendedUser | n
       }
     }
 
-    // Fetch wallet for patients, residents and doctors
-    if (role === 'patient' || role === 'resident' || role === 'doctor') {
-      const { data: wallet } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (wallet) {
-        extendedUser.wallet = {
-          id: wallet.id,
-          balance: Number(wallet.balance),
-        };
-      }
+    // Apply wallet data (already fetched in parallel)
+    if (walletResult.data && (role === 'patient' || role === 'resident' || role === 'doctor')) {
+      extendedUser.wallet = {
+        id: walletResult.data.id,
+        balance: Number(walletResult.data.balance),
+      };
     }
 
-    // Fetch entitlements
-    const { data: entitlements } = await supabase
-      .from('entitlements')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_active', true);
-
-    if (entitlements) {
-      extendedUser.entitlements = entitlements.map(e => ({
+    // Apply entitlements (already fetched in parallel)
+    if (entitlementsResult.data) {
+      extendedUser.entitlements = entitlementsResult.data.map(e => ({
         type: e.type,
         isActive: e.is_active,
         expiresAt: e.expires_at ? new Date(e.expires_at) : undefined,
