@@ -51,6 +51,8 @@ import { EarningsCard } from '@/components/doctor/EarningsCard';
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { OfficeHoursConfig } from '@/components/doctor/OfficeHoursConfig';
 import { DoctorAnalytics } from '@/components/doctor/DoctorAnalytics';
+import { FundHoldsCard } from '@/components/doctor/FundHoldsCard';
+import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 
 const SPECIALTIES = [
   'Cardiología',
@@ -183,6 +185,7 @@ export default function DoctorDashboard() {
                   <span className="hidden sm:inline">{t('dashboard.verified')}</span>
                   <span className="sm:hidden">✓</span>
                 </Badge>
+                <DoctorBadge type={getDoctorBadgeType(doctorProfile?.totalConsultations || 0, doctorProfile?.rating || 0)} />
               </>
             )}
             {isPending && (
@@ -454,7 +457,7 @@ export default function DoctorDashboard() {
                       <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 text-info" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm sm:text-lg text-foreground mb-1 sm:mb-2">Consultas</h3>
+                      <h3 className="font-semibold text-sm sm:text-lg text-foreground mb-1 sm:mb-2">Orientaciones</h3>
                       <p className="text-muted-foreground mb-2 sm:mb-4 text-xs sm:text-sm line-clamp-2">
                         Revisa tus chats con pacientes
                       </p>
@@ -487,13 +490,16 @@ export default function DoctorDashboard() {
               <EmailHistoryCard />
             </div>
 
+            {/* Fund Holds Section */}
+            <FundHoldsCard />
+
         {/* Vault Access Section */}
         {accessibleVaultFiles.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Folder className="w-5 h-5 text-primary" />
-                  Archivos de Pacientes con Acceso
+                  Expedientes de Pacientes con Acceso
                 </CardTitle>
               </CardHeader>
               <CardContent>

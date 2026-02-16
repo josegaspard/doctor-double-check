@@ -18,8 +18,8 @@ export function EmptyState({ type, activeTab = 'active' }: EmptyStateProps) {
         </h3>
         <p className="text-sm text-muted-foreground max-w-[200px]">
           {activeTab === 'active' 
-            ? 'Tus consultas activas aparecerán aquí'
-            : 'Las consultas cerradas se mostrarán aquí'
+            ? 'Tus orientaciones activas aparecerán aquí'
+            : 'Las orientaciones cerradas se mostrarán aquí'
           }
         </p>
       </div>
@@ -42,7 +42,7 @@ export function EmptyState({ type, activeTab = 'active' }: EmptyStateProps) {
         <p className="text-sm text-center max-w-[250px]">
           {activeTab === 'active' 
             ? 'Elige una conversación de la lista para comenzar a chatear'
-            : 'Selecciona una consulta anterior para ver los mensajes'
+            : 'Selecciona una orientación anterior para ver los mensajes'
           }
         </p>
       </div>

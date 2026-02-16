@@ -280,6 +280,8 @@ export type Database = {
           patient_id: string
           started_at: string
           status: string
+          video_room_name: string | null
+          video_room_url: string | null
         }
         Insert: {
           chat_session_id?: string | null
@@ -291,6 +293,8 @@ export type Database = {
           patient_id: string
           started_at?: string
           status?: string
+          video_room_name?: string | null
+          video_room_url?: string | null
         }
         Update: {
           chat_session_id?: string | null
@@ -302,6 +306,8 @@ export type Database = {
           patient_id?: string
           started_at?: string
           status?: string
+          video_room_name?: string | null
+          video_room_url?: string | null
         }
         Relationships: [
           {
@@ -647,6 +653,36 @@ export type Database = {
           },
         ]
       }
+      document_signatures: {
+        Row: {
+          document_type: string
+          document_version: string
+          id: string
+          ip_address: string | null
+          signed_at: string
+          signer_name: string
+          user_id: string
+        }
+        Insert: {
+          document_type: string
+          document_version?: string
+          id?: string
+          ip_address?: string | null
+          signed_at?: string
+          signer_name: string
+          user_id: string
+        }
+        Update: {
+          document_type?: string
+          document_version?: string
+          id?: string
+          ip_address?: string | null
+          signed_at?: string
+          signer_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_history: {
         Row: {
           content_id: string | null
@@ -734,6 +770,48 @@ export type Database = {
           followed_id?: string
           follower_id?: string
           id?: string
+        }
+        Relationships: []
+      }
+      fund_holds: {
+        Row: {
+          amount: number
+          consultation_id: string | null
+          created_at: string
+          doctor_id: string
+          held_at: string
+          id: string
+          reason: string
+          release_at: string | null
+          released_at: string | null
+          released_by: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          consultation_id?: string | null
+          created_at?: string
+          doctor_id: string
+          held_at?: string
+          id?: string
+          reason: string
+          release_at?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          consultation_id?: string | null
+          created_at?: string
+          doctor_id?: string
+          held_at?: string
+          id?: string
+          reason?: string
+          release_at?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -898,6 +976,51 @@ export type Database = {
         }
         Relationships: []
       }
+      medical_news: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          image_url: string | null
+          is_published: boolean
+          published_at: string | null
+          source_url: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          published_at?: string | null
+          source_url?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          published_at?: string | null
+          source_url?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           created_at: string
@@ -1012,6 +1135,57 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_clinical_history: {
+        Row: {
+          allergies: string | null
+          blood_type: string | null
+          chronic_conditions: string | null
+          created_at: string
+          current_medications: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          family_history: string | null
+          height_cm: number | null
+          id: string
+          patient_id: string
+          previous_surgeries: string | null
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          allergies?: string | null
+          blood_type?: string | null
+          chronic_conditions?: string | null
+          created_at?: string
+          current_medications?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          family_history?: string | null
+          height_cm?: number | null
+          id?: string
+          patient_id: string
+          previous_surgeries?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          allergies?: string | null
+          blood_type?: string | null
+          chronic_conditions?: string | null
+          created_at?: string
+          current_medications?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          family_history?: string | null
+          height_cm?: number | null
+          id?: string
+          patient_id?: string
+          previous_surgeries?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       payout_settings: {
         Row: {
           auto_payout_enabled: boolean | null
@@ -1058,6 +1232,8 @@ export type Database = {
           name: string
           onboarding_completed: boolean
           preferred_language: Database["public"]["Enums"]["supported_language"]
+          storage_limit_bytes: number
+          storage_used_bytes: number
           updated_at: string
         }
         Insert: {
@@ -1069,6 +1245,8 @@ export type Database = {
           name: string
           onboarding_completed?: boolean
           preferred_language?: Database["public"]["Enums"]["supported_language"]
+          storage_limit_bytes?: number
+          storage_used_bytes?: number
           updated_at?: string
         }
         Update: {
@@ -1080,6 +1258,8 @@ export type Database = {
           name?: string
           onboarding_completed?: boolean
           preferred_language?: Database["public"]["Enums"]["supported_language"]
+          storage_limit_bytes?: number
+          storage_used_bytes?: number
           updated_at?: string
         }
         Relationships: []
@@ -1443,6 +1623,30 @@ export type Database = {
           price_paid?: number
           subscriber_id?: string
           tier?: Database["public"]["Enums"]["subscription_tier"]
+        }
+        Relationships: []
+      }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
         }
         Relationships: []
       }
