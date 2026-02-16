@@ -79,14 +79,21 @@ Deno.serve(async (req) => {
       await handleAccountUpdated(db, account);
     }
 
-    if (event.type === "transfer.paid") {
-      const transfer = event.data.object as Stripe.Transfer;
-      await handleTransferPaid(db, transfer);
+    // Handle payout events (Stripe sends payout.paid/payout.failed for bank transfers)
+    if (event.type === "payout.paid") {
+      const payout = event.data.object as Stripe.Payout;
+      await handlePayoutPaid(db, payout);
     }
 
-    if (event.type === "transfer.failed") {
+    if (event.type === "payout.failed") {
+      const payout = event.data.object as Stripe.Payout;
+      await handlePayoutFailed(db, stripe, payout);
+    }
+
+    // Handle transfer events (transfer.created/updated for Connect transfers)
+    if (event.type === "transfer.created" || event.type === "transfer.updated") {
       const transfer = event.data.object as Stripe.Transfer;
-      await handleTransferFailed(db, transfer);
+      await handleTransferUpdate(db, transfer);
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -447,67 +454,99 @@ async function handleAccountUpdated(db: ReturnType<typeof supabaseAdmin>, accoun
   logStep("Account status updated", { doctorId: bankAccount.doctor_id, status });
 }
 
-async function handleTransferPaid(db: ReturnType<typeof supabaseAdmin>, transfer: Stripe.Transfer) {
-  logStep("Transfer paid", { transferId: transfer.id, destination: transfer.destination });
+// Handle transfer.created/updated - mark payout as processing or completed
+async function handleTransferUpdate(db: ReturnType<typeof supabaseAdmin>, transfer: Stripe.Transfer) {
+  logStep("Transfer update", { transferId: transfer.id, reversed: transfer.reversed });
 
-  const { error } = await db
-    .from("doctor_payouts")
-    .update({
-      status: "paid",
-      paid_at: new Date().toISOString(),
-    })
-    .eq("stripe_transfer_id", transfer.id);
+  // If transfer was reversed, treat it like a failure
+  if (transfer.reversed) {
+    const doctorId = transfer.metadata?.doctor_id;
+    if (doctorId) {
+      const grossAmount = parseFloat(transfer.metadata?.gross_amount || "0");
+      if (grossAmount > 0) {
+        await db.rpc("credit_doctor_earnings", {
+          p_doctor_id: doctorId,
+          p_amount: grossAmount,
+        });
 
-  if (error) {
-    logStep("Error updating payout status", { error });
+        const { data: profile } = await db
+          .from("doctor_profiles")
+          .select("total_earnings")
+          .eq("user_id", doctorId)
+          .single();
+
+        if (profile) {
+          await db
+            .from("doctor_profiles")
+            .update({ total_earnings: Math.max(0, (profile.total_earnings || 0) - grossAmount) })
+            .eq("user_id", doctorId);
+        }
+
+        logStep("Reversed earnings for reversed transfer", { doctorId, grossAmount });
+      }
+    }
+
+    await db
+      .from("doctor_payouts")
+      .update({ status: "failed", error_message: "Transfer reversed" })
+      .eq("stripe_transfer_id", transfer.id);
   } else {
-    logStep("Payout marked as paid", { transferId: transfer.id });
+    // Transfer completed successfully - mark as paid
+    const { data: existingPayout } = await db
+      .from("doctor_payouts")
+      .select("status")
+      .eq("stripe_transfer_id", transfer.id)
+      .maybeSingle();
+
+    if (existingPayout && existingPayout.status === "processing") {
+      await db
+        .from("doctor_payouts")
+        .update({ status: "paid", paid_at: new Date().toISOString() })
+        .eq("stripe_transfer_id", transfer.id);
+
+      logStep("Payout marked as paid via transfer update", { transferId: transfer.id });
+    }
   }
 }
 
-async function handleTransferFailed(db: ReturnType<typeof supabaseAdmin>, transfer: Stripe.Transfer) {
-  logStep("Transfer failed", { transferId: transfer.id });
+// Handle payout.paid - funds arrived in connected account's bank
+async function handlePayoutPaid(db: ReturnType<typeof supabaseAdmin>, payout: Stripe.Payout) {
+  logStep("Payout paid", { payoutId: payout.id, destination: payout.destination });
 
-  // Reverse the earnings: add back to pending, subtract from total
-  const doctorId = transfer.metadata?.doctor_id;
-  if (doctorId) {
-    const grossAmount = parseFloat(transfer.metadata?.gross_amount || "0");
-    if (grossAmount > 0) {
-      await db.rpc("credit_doctor_earnings", {
-        p_doctor_id: doctorId,
-        p_amount: grossAmount,
-      });
-      
-      // Subtract from total_earnings since we added it during payout
-      const { data: profile } = await db
-        .from("doctor_profiles")
-        .select("total_earnings")
-        .eq("user_id", doctorId)
-        .single();
-      
-      if (profile) {
-        await db
-          .from("doctor_profiles")
-          .update({ total_earnings: Math.max(0, (profile.total_earnings || 0) - grossAmount) })
-          .eq("user_id", doctorId);
-      }
+  // Stripe payouts go from connected account to bank
+  // We track via stripe_payout_id if set
+  const { error } = await db
+    .from("doctor_payouts")
+    .update({ status: "paid", paid_at: new Date().toISOString() })
+    .eq("stripe_payout_id", payout.id);
 
-      logStep("Reversed earnings for failed transfer", { doctorId, grossAmount });
-    }
+  if (error) {
+    logStep("Error updating payout status for payout.paid", { error });
+  } else {
+    logStep("Payout marked as paid", { payoutId: payout.id });
   }
+}
+
+// Handle payout.failed - bank transfer failed
+async function handlePayoutFailed(
+  db: ReturnType<typeof supabaseAdmin>,
+  stripe: Stripe,
+  payout: Stripe.Payout
+) {
+  logStep("Payout failed", { payoutId: payout.id, failureMessage: payout.failure_message });
 
   const { error } = await db
     .from("doctor_payouts")
     .update({
       status: "failed",
-      error_message: "Transfer failed",
+      error_message: payout.failure_message || "Bank payout failed",
     })
-    .eq("stripe_transfer_id", transfer.id);
+    .eq("stripe_payout_id", payout.id);
 
   if (error) {
-    logStep("Error updating payout status", { error });
+    logStep("Error updating payout status for payout.failed", { error });
   } else {
-    logStep("Payout marked as failed", { transferId: transfer.id });
+    logStep("Payout marked as failed", { payoutId: payout.id });
   }
 }
 
