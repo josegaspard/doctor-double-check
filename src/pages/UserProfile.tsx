@@ -116,7 +116,7 @@ const cardVariants = {
 export default function UserProfile() {
   const navigate = useNavigate();
   const { user, role, refreshUser } = useAuth();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -238,7 +238,7 @@ export default function UserProfile() {
 
   const handleSaveName = async () => {
     if (!editedName.trim()) {
-      toast.error('El nombre no puede estar vacío');
+      toast.error(t('profile.nameEmpty'));
       return;
     }
 
@@ -251,11 +251,11 @@ export default function UserProfile() {
 
       if (error) throw error;
 
-      toast.success('Nombre actualizado correctamente');
+      toast.success(t('profile.nameUpdated'));
       setIsEditingName(false);
       refreshUser?.();
     } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar el nombre');
+      toast.error(error.message || t('profile.nameError'));
     } finally {
       setIsSavingName(false);
     }
@@ -274,10 +274,10 @@ export default function UserProfile() {
       if (error) throw error;
 
       setDoctorProfile(prev => prev ? { ...prev, bio: editedBio.trim() || null } : null);
-      toast.success('Biografía actualizada');
+      toast.success(t('profile.bioUpdated'));
       setIsEditingBio(false);
     } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar la biografía');
+      toast.error(error.message || t('profile.bioError'));
     } finally {
       setIsSavingBio(false);
     }
@@ -296,10 +296,10 @@ export default function UserProfile() {
       if (error) throw error;
 
       setDoctorProfile(prev => prev ? { ...prev, location: editedLocation.trim() || null } : null);
-      toast.success('Ubicación actualizada');
+      toast.success(t('profile.locationUpdated'));
       setIsEditingLocation(false);
     } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar la ubicación');
+      toast.error(error.message || t('profile.locationError'));
     } finally {
       setIsSavingLocation(false);
     }
@@ -311,13 +311,13 @@ export default function UserProfile() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Solo se permiten imágenes');
+      toast.error(t('profile.onlyImages'));
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('La imagen no puede superar 5MB');
+      toast.error(t('profile.maxFileSize'));
       return;
     }
 
@@ -358,13 +358,13 @@ export default function UserProfile() {
 
       if (updateError) throw updateError;
 
-      toast.success('Foto de perfil actualizada');
+      toast.success(t('profile.photoUpdated'));
       setAvatarDialogOpen(false);
       setSelectedFile(null);
       setPreviewUrl(null);
       refreshUser?.();
     } catch (error: any) {
-      toast.error(error.message || 'Error al subir la imagen');
+      toast.error(error.message || t('profile.photoError'));
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -381,9 +381,9 @@ export default function UserProfile() {
       if (error) throw error;
 
       setLanguage(newLanguage);
-      toast.success(newLanguage === 'es' ? 'Idioma actualizado a Español' : 'Language updated to English');
+      toast.success(newLanguage === 'es' ? t('profile.languageUpdatedEs') : t('profile.languageUpdatedEn'));
     } catch (error: any) {
-      toast.error(error.message || 'Error al cambiar el idioma');
+      toast.error(error.message || t('profile.languageError'));
     } finally {
       setIsSavingLanguage(false);
     }
@@ -399,11 +399,11 @@ export default function UserProfile() {
 
   const getRoleBadge = () => {
     const roles: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline'; icon: React.ElementType }> = {
-      patient: { label: 'Paciente', variant: 'default', icon: User },
-      doctor: { label: 'Médico', variant: 'default', icon: Stethoscope },
-      resident: { label: 'Residente', variant: 'default', icon: GraduationCap },
-      admin: { label: 'Administrador', variant: 'secondary', icon: Shield },
-      visitor: { label: 'Visitante', variant: 'outline', icon: User },
+      patient: { label: t('roles.patient'), variant: 'default', icon: User },
+      doctor: { label: t('roles.doctor'), variant: 'default', icon: Stethoscope },
+      resident: { label: t('roles.resident'), variant: 'default', icon: GraduationCap },
+      admin: { label: t('roles.admin'), variant: 'secondary', icon: Shield },
+      visitor: { label: t('roles.visitor'), variant: 'outline', icon: User },
     };
     return roles[role] || roles.visitor;
   };
@@ -414,11 +414,11 @@ export default function UserProfile() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200">Aprobado</Badge>;
+        return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200">{t('profile.statusApproved')}</Badge>;
       case 'pending':
-        return <Badge className="bg-amber-500/10 text-amber-600 border-amber-200">Pendiente</Badge>;
+        return <Badge className="bg-amber-500/10 text-amber-600 border-amber-200">{t('profile.statusPending')}</Badge>;
       case 'rejected':
-        return <Badge className="bg-red-500/10 text-red-600 border-red-200">Rechazado</Badge>;
+        return <Badge className="bg-red-500/10 text-red-600 border-red-200">{t('profile.statusRejected')}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -435,10 +435,10 @@ export default function UserProfile() {
         {/* Header */}
         <motion.div className="mb-6" variants={itemVariants}>
           <h1 className="font-heading text-2xl font-bold text-foreground">
-            {language === 'es' ? 'Mi Perfil' : 'My Profile'}
+            {t('profile.title')}
           </h1>
           <p className="text-muted-foreground">
-            {language === 'es' ? 'Gestiona tu información personal' : 'Manage your personal information'}
+            {t('profile.subtitle')}
           </p>
         </motion.div>
 
@@ -554,10 +554,10 @@ export default function UserProfile() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Stethoscope className="w-5 h-5 text-primary" />
-                  {language === 'es' ? 'Perfil Profesional' : 'Professional Profile'}
+                  {t('profile.professionalProfile')}
                 </CardTitle>
                 <CardDescription>
-                  {language === 'es' ? 'Información visible para pacientes' : 'Information visible to patients'}
+                  {t('profile.professionalSubtitle')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -565,7 +565,7 @@ export default function UserProfile() {
                 <div className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3">
                     <Award className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Especialidad</span>
+                    <span className="text-muted-foreground">{t('profile.specialty')}</span>
                   </div>
                   <span className="font-medium">{doctorProfile.specialty}</span>
                 </div>
@@ -576,7 +576,7 @@ export default function UserProfile() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <MapPin className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Ubicación</span>
+                      <span className="text-muted-foreground">{t('profile.location')}</span>
                     </div>
                     {!isEditingLocation && (
                       <Button 
@@ -601,7 +601,7 @@ export default function UserProfile() {
                         <Input
                           value={editedLocation}
                           onChange={(e) => setEditedLocation(e.target.value)}
-                          placeholder="Ej: Ciudad de México, CDMX"
+                          placeholder={t('profile.locationPlaceholder')}
                           className="flex-1"
                         />
                         <Button size="sm" onClick={handleSaveLocation} disabled={isSavingLocation}>
@@ -619,7 +619,7 @@ export default function UserProfile() {
                         key="display"
                         className="mt-1 text-sm font-medium ml-7"
                       >
-                        {doctorProfile.location || <span className="text-muted-foreground italic">No especificada</span>}
+                        {doctorProfile.location || <span className="text-muted-foreground italic">{t('profile.locationNotSet')}</span>}
                       </motion.p>
                     )}
                   </AnimatePresence>
@@ -631,7 +631,7 @@ export default function UserProfile() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <User className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Biografía</span>
+                      <span className="text-muted-foreground">{t('profile.biography')}</span>
                     </div>
                     {!isEditingBio && (
                       <Button 
@@ -656,7 +656,7 @@ export default function UserProfile() {
                         <Textarea
                           value={editedBio}
                           onChange={(e) => setEditedBio(e.target.value)}
-                          placeholder="Cuéntale a tus pacientes sobre tu experiencia..."
+                          placeholder={t('profile.biographyPlaceholder')}
                           rows={3}
                           maxLength={500}
                         />
@@ -667,11 +667,11 @@ export default function UserProfile() {
                               setIsEditingBio(false);
                               setEditedBio(doctorProfile.bio || '');
                             }}>
-                              Cancelar
+                              {t('common.cancel')}
                             </Button>
                             <Button size="sm" onClick={handleSaveBio} disabled={isSavingBio}>
                               {isSavingBio ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                              Guardar
+                              {t('common.save')}
                             </Button>
                           </div>
                         </div>
@@ -681,7 +681,7 @@ export default function UserProfile() {
                         key="display"
                         className="mt-1 text-sm ml-7"
                       >
-                        {doctorProfile.bio || <span className="text-muted-foreground italic">Añade una biografía para que tus pacientes te conozcan mejor</span>}
+                        {doctorProfile.bio || <span className="text-muted-foreground italic">{t('profile.biographyEmpty')}</span>}
                       </motion.p>
                     )}
                   </AnimatePresence>
@@ -703,14 +703,14 @@ export default function UserProfile() {
                       <Star className="w-4 h-4 fill-current" />
                       <span className="font-semibold">{doctorProfile.rating.toFixed(1)}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">Calificación</p>
+                    <p className="text-xs text-muted-foreground">{t('profile.rating')}</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <div className="flex items-center justify-center gap-1 mb-1">
                       <Users className="w-4 h-4 text-primary" />
                       <span className="font-semibold">{doctorProfile.followers_count}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">Seguidores</p>
+                    <p className="text-xs text-muted-foreground">{t('profile.followers')}</p>
                   </div>
                   <ConsultationFeeEditor 
                     initialFee={doctorProfile.consultation_fee} 
@@ -730,14 +730,14 @@ export default function UserProfile() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <GraduationCap className="w-5 h-5 text-primary" />
-                  {language === 'es' ? 'Perfil de Residente' : 'Resident Profile'}
+                  {t('profile.residentProfile')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3">
                     <Award className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Especialidad</span>
+                    <span className="text-muted-foreground">{t('profile.specialty')}</span>
                   </div>
                   <span className="font-medium">{residentProfile.specialty}</span>
                 </div>
@@ -745,7 +745,7 @@ export default function UserProfile() {
                 <div className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3">
                     <Building className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Institución</span>
+                    <span className="text-muted-foreground">{t('profile.institution')}</span>
                   </div>
                   <span className="font-medium text-right max-w-[200px]">{residentProfile.institution}</span>
                 </div>
@@ -753,15 +753,15 @@ export default function UserProfile() {
                 <div className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Año de residencia</span>
+                    <span className="text-muted-foreground">{t('profile.residencyYear')}</span>
                   </div>
-                  <Badge variant="outline">{residentProfile.year}° año</Badge>
+                  <Badge variant="outline">{residentProfile.year}{t('profile.yearSuffix')}</Badge>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3">
                     <Users className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Seguidores</span>
+                    <span className="text-muted-foreground">{t('profile.followers')}</span>
                   </div>
                   <span className="font-medium">{residentProfile.followers_count}</span>
                 </div>
@@ -778,10 +778,10 @@ export default function UserProfile() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Globe className="w-5 h-5" />
-                  {language === 'es' ? 'Idioma' : 'Language'}
+                  {t('profile.language')}
                 </CardTitle>
                 <CardDescription>
-                  {language === 'es' ? 'Selecciona tu idioma preferido' : 'Select your preferred language'}
+                  {t('profile.languageSubtitle')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -816,7 +816,7 @@ export default function UserProfile() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <User className="w-5 h-5" />
-                  {language === 'es' ? 'Información de la Cuenta' : 'Account Information'}
+                  {t('profile.accountInfo')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -824,7 +824,7 @@ export default function UserProfile() {
                   <div className="flex items-center gap-3">
                     <Mail className="w-4 h-4 text-muted-foreground" />
                     <span className="text-muted-foreground">
-                      {language === 'es' ? 'Correo electrónico' : 'Email'}
+                      {t('profile.email')}
                     </span>
                   </div>
                   <span className="font-medium">{user.email}</span>
@@ -834,7 +834,7 @@ export default function UserProfile() {
                   <div className="flex items-center gap-3">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <span className="text-muted-foreground">
-                      {language === 'es' ? 'Miembro desde' : 'Member since'}
+                      {t('profile.memberSince')}
                     </span>
                   </div>
                   <span className="font-medium">
@@ -846,7 +846,7 @@ export default function UserProfile() {
                   <div className="flex items-center gap-3">
                     <Shield className="w-4 h-4 text-muted-foreground" />
                     <span className="text-muted-foreground">
-                      {language === 'es' ? 'Verificación de identidad' : 'Identity verification'}
+                      {t('profile.identityVerification')}
                     </span>
                   </div>
                   {isLoadingVerification ? (
@@ -857,12 +857,12 @@ export default function UserProfile() {
                   ) : verificationStatus === 'approved' ? (
                     <Badge className="gap-1 bg-emerald-500/10 text-emerald-600 border-emerald-200">
                       <Check className="w-3 h-3" />
-                      {language === 'es' ? 'Verificado' : 'Verified'}
+                      {t('profile.verified')}
                     </Badge>
                   ) : verificationStatus === 'pending' ? (
                     <Badge className="gap-1 bg-amber-500/10 text-amber-600 border-amber-200">
                       <Clock className="w-3 h-3" />
-                      {language === 'es' ? 'Pendiente' : 'Pending'}
+                      {t('profile.pending')}
                     </Badge>
                   ) : (
                     <Button 
@@ -871,7 +871,7 @@ export default function UserProfile() {
                       onClick={() => navigate('/verify-identity')}
                     >
                       <FileCheck className="w-3 h-3 mr-1" />
-                      {language === 'es' ? 'Verificar' : 'Verify'}
+                      {t('profile.verify')}
                     </Button>
                   )}
                 </div>
@@ -885,7 +885,7 @@ export default function UserProfile() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Settings className="w-5 h-5" />
-                  {language === 'es' ? 'Accesos Rápidos' : 'Quick Links'}
+                  {t('profile.quickLinks')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -894,15 +894,15 @@ export default function UserProfile() {
                     <>
                       <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/wallet')}>
                         <Wallet className="w-4 h-4" />
-                        {language === 'es' ? 'Mi Billetera' : 'My Wallet'}
+                        {t('profile.myWallet')}
                       </Button>
                       <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/vault')}>
                         <Shield className="w-4 h-4" />
-                        {language === 'es' ? 'Mi Bóveda' : 'My Vault'}
+                        {t('profile.myVault')}
                       </Button>
                       <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/medical-history')}>
                         <User className="w-4 h-4" />
-                        {language === 'es' ? 'Historial Médico' : 'Medical History'}
+                        {t('profile.medicalHistory')}
                       </Button>
                     </>
                   )}
@@ -914,19 +914,19 @@ export default function UserProfile() {
                       </Button>
                       <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/doctor/recordings')}>
                         <Camera className="w-4 h-4" />
-                        Grabaciones
+                        {t('profile.recordings')}
                       </Button>
                     </>
                   )}
                   {role === 'resident' && (
                     <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/groups')}>
                       <Users className="w-4 h-4" />
-                      Grupos
+                      {t('profile.groups')}
                     </Button>
                   )}
                   <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/settings')}>
                     <Settings className="w-4 h-4" />
-                    {language === 'es' ? 'Configuración' : 'Settings'}
+                    {t('nav.settings')}
                   </Button>
                 </div>
               </CardContent>
@@ -940,10 +940,10 @@ export default function UserProfile() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {language === 'es' ? 'Cambiar foto de perfil' : 'Change profile photo'}
+              {t('profile.changePhoto')}
             </DialogTitle>
             <DialogDescription>
-              {language === 'es' ? 'Vista previa de tu nueva foto' : 'Preview of your new photo'}
+              {t('profile.photoPreview')}
             </DialogDescription>
           </DialogHeader>
           <motion.div 
@@ -969,18 +969,18 @@ export default function UserProfile() {
               }}
               disabled={isUploadingAvatar}
             >
-              {language === 'es' ? 'Cancelar' : 'Cancel'}
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleUploadAvatar} disabled={isUploadingAvatar}>
               {isUploadingAvatar ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {language === 'es' ? 'Subiendo...' : 'Uploading...'}
+                  {t('profile.uploading')}
                 </>
               ) : (
                 <>
                   <Check className="w-4 h-4 mr-2" />
-                  {language === 'es' ? 'Guardar' : 'Save'}
+                  {t('common.save')}
                 </>
               )}
             </Button>

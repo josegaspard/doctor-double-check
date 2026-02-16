@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { tContext } from '@/lib/i18n-context';
 import { AuthContext } from './AuthContext';
 
 export type LiveStatus = 'live' | 'ended' | 'processing_recording' | 'recording_ready';
@@ -430,7 +431,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   }, [likedLives]);
 
   const createLive = async (data: Partial<Live>): Promise<{ success: boolean; liveId?: string; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
 
     try {
       const { data: newLive, error } = await supabase
@@ -461,24 +462,24 @@ export function LivesProvider({ children }: { children: ReactNode }) {
 
       return { success: true, liveId: newLive.id };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Error al crear live' };
+      return { success: false, error: error.message || tContext('contextErrors.createLiveError') };
     }
   };
 
   const endLive = async (liveId: string, saveAsRecording: boolean = false): Promise<{ success: boolean; recordingId?: string; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
 
     try {
       // Get the live data first
       const live = lives.find(l => l.id === liveId);
-      if (!live) return { success: false, error: 'Live no encontrado' };
+      if (!live) return { success: false, error: tContext('contextErrors.liveNotFound') };
 
       let recordingId: string | undefined;
 
       if (saveAsRecording) {
         // End the Cloudflare stream and create/update the recording via backend
         if (!live.dailyRoomName) {
-          return { success: false, error: 'No se encontró el stream UID para este live' };
+          return { success: false, error: tContext('contextErrors.streamUidMissing') };
         }
 
         const { data, error: fnError } = await supabase.functions.invoke('end-cloudflare-stream', {
@@ -490,7 +491,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         });
 
         if (fnError) throw fnError;
-        if (!data?.success) throw new Error(data?.error || 'Error al finalizar y guardar la grabación');
+        if (!data?.success) throw new Error(data?.error || tContext('contextErrors.endLiveError'));
 
         recordingId = data.recordingId || undefined;
       } else {
@@ -507,7 +508,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       await Promise.all([fetchLives(true), fetchRecordings()]);
       return { success: true, recordingId };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Error al terminar live' };
+      return { success: false, error: error.message || tContext('contextErrors.endLiveGenericError') };
     }
   };
 
