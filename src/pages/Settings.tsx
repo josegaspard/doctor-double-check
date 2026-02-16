@@ -27,15 +27,34 @@ export default function Settings() {
     setIsLoadingPortal(true);
     try {
       const { data, error } = await supabase.functions.invoke('customer-portal');
-      if (error) throw error;
+      if (error) {
+        // Parse the error body if available
+        const errorBody = typeof error === 'object' && error.message ? error.message : String(error);
+        if (errorBody.includes('No Stripe customer found')) {
+          toast.info('Aún no tienes un historial de pagos. Realiza tu primera compra o suscripción para acceder al portal.');
+          return;
+        }
+        throw error;
+      }
       if (data?.url) {
         window.open(data.url, '_blank');
+      } else if (data?.error) {
+        if (data.error.includes('No Stripe customer found')) {
+          toast.info('Aún no tienes un historial de pagos. Realiza tu primera compra o suscripción para acceder al portal.');
+        } else {
+          toast.error(data.error);
+        }
       } else {
-        toast.error('No tienes suscripciones activas para gestionar');
+        toast.error('No se pudo abrir el portal de pagos');
       }
     } catch (error: any) {
       console.error('Error opening portal:', error);
-      toast.error(error.message || 'Error al abrir el portal de suscripciones');
+      const msg = error?.message || error?.context?.body?.error || 'Error al abrir el portal de suscripciones';
+      if (msg.includes('No Stripe customer found')) {
+        toast.info('Aún no tienes un historial de pagos. Realiza tu primera compra o suscripción para acceder al portal.');
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setIsLoadingPortal(false);
     }
