@@ -27,13 +27,28 @@ export function useDoctorAvailability() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAvailabilities = useCallback(async () => {
-    // Fetch all upcoming public availabilities
-    const { data: publicData } = await supabase
+    // Fetch public availabilities and doctor's own in parallel
+    const publicQuery = supabase
       .from('doctor_availability')
       .select('*')
       .gte('scheduled_at', new Date().toISOString())
       .in('status', ['scheduled', 'confirmed'])
       .order('scheduled_at', { ascending: true });
+
+    const myQuery = (supabaseUser?.id && role === 'doctor')
+      ? supabase
+          .from('doctor_availability')
+          .select('*')
+          .eq('doctor_id', supabaseUser.id)
+          .order('scheduled_at', { ascending: false })
+      : null;
+
+    const [publicResult, myResult] = await Promise.all([
+      publicQuery,
+      myQuery,
+    ]);
+
+    const publicData = publicResult.data;
 
     if (publicData) {
       const doctorIds = [...new Set(publicData.map(a => a.doctor_id))];
@@ -56,20 +71,15 @@ export function useDoctorAvailability() {
           type: a.type as AvailabilityType,
           status: a.status as AvailabilityStatus,
           notificationsSent: a.notifications_sent,
-          reminderSent: (a as any).reminder_sent ?? false,
+          reminderSent: a.reminder_sent ?? false,
           createdAt: new Date(a.created_at),
         }))
       );
     }
 
-    // If user is a doctor, fetch their own availabilities
-    if (supabaseUser?.id && role === 'doctor') {
-      const { data: myData } = await supabase
-        .from('doctor_availability')
-        .select('*')
-        .eq('doctor_id', supabaseUser.id)
-        .order('scheduled_at', { ascending: false });
-
+    // Apply doctor's own availabilities (already fetched in parallel)
+    if (myResult) {
+      const myData = myResult.data;
       if (myData) {
         setMyAvailabilities(
           myData.map(a => ({
@@ -82,7 +92,7 @@ export function useDoctorAvailability() {
             type: a.type as AvailabilityType,
             status: a.status as AvailabilityStatus,
             notificationsSent: a.notifications_sent,
-            reminderSent: (a as any).reminder_sent ?? false,
+            reminderSent: a.reminder_sent ?? false,
             createdAt: new Date(a.created_at),
           }))
         );
@@ -91,6 +101,9 @@ export function useDoctorAvailability() {
 
     setIsLoading(false);
   }, [supabaseUser?.id, role]);
+
+  // Note: useChat.ts and useVault.ts hooks exist as standalone alternatives
+  // but primary usage should be through ChatContext and VaultContext respectively
 
   useEffect(() => {
     fetchAvailabilities();

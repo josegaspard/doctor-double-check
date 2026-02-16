@@ -249,12 +249,12 @@ export function SubscribeButton({
                     <h4 className="font-semibold">Básico</h4>
                     <p className="text-sm text-muted-foreground">Contenido exclusivo y notificaciones</p>
                   </div>
-                  <Badge variant="outline">$99/mes</Badge>
+                  <Badge variant="outline">{t('subscriptions.basicPrice') || '$99/mes'}</Badge>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1 mt-3">
-                  <li>✓ Acceso a contenido exclusivo</li>
-                  <li>✓ Notificaciones prioritarias</li>
-                  <li>✓ Badge de suscriptor</li>
+                  <li>✓ {t('subscriptions.exclusiveContent') || 'Acceso a contenido exclusivo'}</li>
+                  <li>✓ {t('subscriptions.priorityNotifications') || 'Notificaciones prioritarias'}</li>
+                  <li>✓ {t('subscriptions.subscriberBadge') || 'Badge de suscriptor'}</li>
                 </ul>
               </CardContent>
             </Card>
@@ -270,13 +270,13 @@ export function SubscribeButton({
                     </h4>
                     <p className="text-sm text-muted-foreground">Todo lo básico + descuentos y más</p>
                   </div>
-                  <Badge variant="default">$199/mes</Badge>
+                  <Badge variant="default">{t('subscriptions.premiumPrice') || '$199/mes'}</Badge>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1 mt-3">
-                  <li>✓ Todo lo del plan Básico</li>
-                  <li>✓ 20% descuento en grabaciones</li>
-                  <li>✓ Chat prioritario</li>
-                  <li>✓ Acceso anticipado a lives</li>
+                  <li>✓ {t('subscriptions.allBasicFeatures') || 'Todo lo del plan Básico'}</li>
+                  <li>✓ {t('subscriptions.recordingDiscount') || '20% descuento en grabaciones'}</li>
+                  <li>✓ {t('subscriptions.priorityChat') || 'Chat prioritario'}</li>
+                  <li>✓ {t('subscriptions.earlyAccess') || 'Acceso anticipado a lives'}</li>
                 </ul>
               </CardContent>
             </Card>
