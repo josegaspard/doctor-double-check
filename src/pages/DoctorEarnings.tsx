@@ -35,6 +35,16 @@ interface Transaction {
   metadata: any;
 }
 
+interface PayoutRecord {
+  id: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  paid_at: string | null;
+  stripe_transfer_id: string | null;
+  error_message: string | null;
+}
+
 interface EarningsSummary {
   totalEarnings: number;
   pendingEarnings: number;
@@ -51,6 +61,8 @@ export default function DoctorEarnings() {
   const { language, t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
+  const [commissionRate, setCommissionRate] = useState(20);
   const [summary, setSummary] = useState<EarningsSummary>({
     totalEarnings: 0,
     pendingEarnings: 0,
@@ -85,10 +97,26 @@ export default function DoctorEarnings() {
         .eq('type', 'earning')
         .order('created_at', { ascending: false });
 
+      // Fetch payout history
+      const { data: payoutData } = await supabase
+        .from('doctor_payouts')
+        .select('*')
+        .eq('doctor_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (payoutData) setPayouts(payoutData);
+
+      // Fetch commission rate
+      const { data: settingsData } = await supabase
+        .from('payout_settings_public')
+        .select('commission_percentage')
+        .limit(1)
+        .maybeSingle();
+      if (settingsData?.commission_percentage) setCommissionRate(settingsData.commission_percentage);
+
       if (txData) {
         setTransactions(txData);
 
-        // Calculate summary
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         
@@ -100,7 +128,7 @@ export default function DoctorEarnings() {
           const source = metadata?.source || '';
           if (source === 'consultation') consultation += tx.amount;
           else if (source === 'recording') recording += tx.amount;
-          else if (source === 'subscription') subscription += tx.amount;
+          else if (source === 'subscription' || source === 'subscription_renewal') subscription += tx.amount;
 
           if (new Date(tx.created_at) >= startOfMonth) {
             thisMonth += tx.amount;
@@ -109,7 +137,6 @@ export default function DoctorEarnings() {
 
         const totalEarnings = txData.reduce((sum, tx) => sum + tx.amount, 0);
 
-        // Get pending earnings from doctor_profiles
         const { data: profile } = await supabase
           .from('doctor_profiles')
           .select('pending_earnings, total_earnings')
@@ -126,7 +153,6 @@ export default function DoctorEarnings() {
           subscriptionEarnings: subscription,
         });
 
-        // Build monthly chart data
         const monthlyMap = new Map<string, number>();
         txData.forEach(tx => {
           const monthKey = format(new Date(tx.created_at), 'MMM yyyy', { locale });
@@ -134,7 +160,6 @@ export default function DoctorEarnings() {
           monthlyMap.set(monthKey, current + tx.amount);
         });
 
-        // Convert to array (last 6 months)
         const chartData = Array.from(monthlyMap.entries())
           .slice(0, 6)
           .reverse()
@@ -153,7 +178,8 @@ export default function DoctorEarnings() {
     switch (source) {
       case 'consultation': return <MessageSquare className="w-4 h-4 text-info" />;
       case 'recording': return <Video className="w-4 h-4 text-primary" />;
-      case 'subscription': return <Users className="w-4 h-4 text-warning" />;
+      case 'subscription': 
+      case 'subscription_renewal': return <Users className="w-4 h-4 text-warning" />;
       default: return <DollarSign className="w-4 h-4 text-success" />;
     }
   };
@@ -163,8 +189,25 @@ export default function DoctorEarnings() {
       case 'consultation': return language === 'es' ? 'Consulta' : 'Consultation';
       case 'recording': return language === 'es' ? 'Grabación' : 'Recording';
       case 'subscription': return language === 'es' ? 'Suscripción' : 'Subscription';
+      case 'subscription_renewal': return language === 'es' ? 'Renovación' : 'Renewal';
       default: return language === 'es' ? 'Otro' : 'Other';
     }
+  };
+
+  const getPayoutStatusBadge = (status: string) => {
+    switch (status) {
+      case 'paid': return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />{language === 'es' ? 'Pagado' : 'Paid'}</Badge>;
+      case 'processing': return <Badge variant="warning" className="gap-1"><Clock className="w-3 h-3" />{language === 'es' ? 'En proceso' : 'Processing'}</Badge>;
+      case 'failed': return <Badge className="gap-1 bg-destructive text-destructive-foreground">{language === 'es' ? 'Fallido' : 'Failed'}</Badge>;
+      default: return <Badge variant="outline" className="gap-1"><Clock className="w-3 h-3" />{language === 'es' ? 'Pendiente' : 'Pending'}</Badge>;
+    }
+  };
+
+  const getPayoutMethodBadge = (transferId: string | null) => {
+    if (transferId?.startsWith('manual_')) {
+      return <Badge variant="secondary" className="text-xs">{language === 'es' ? 'Banco' : 'Bank'}</Badge>;
+    }
+    return <Badge variant="outline" className="text-xs">Stripe</Badge>;
   };
 
   if (role !== 'doctor') return null;
@@ -328,6 +371,18 @@ export default function DoctorEarnings() {
                     </div>
                     <span className="font-semibold">${summary.subscriptionEarnings.toLocaleString()}</span>
                   </div>
+
+                  {/* Commission info */}
+                  <hr className="border-border" />
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        {language === 'es' ? 'Comisión plataforma' : 'Platform commission'}
+                      </span>
+                    </div>
+                    <span className="font-semibold text-muted-foreground">{commissionRate}%</span>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -372,6 +427,62 @@ export default function DoctorEarnings() {
                         </div>
                         <span className="font-bold text-success">
                           +${tx.amount.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Payout History */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  {language === 'es' ? 'Historial de Pagos' : 'Payout History'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'es' 
+                    ? 'Registro de todos los pagos que has recibido' 
+                    : 'Record of all payouts you have received'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {payouts.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {language === 'es' ? 'No hay pagos registrados aún' : 'No payouts recorded yet'}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {payouts.map((payout) => (
+                      <div 
+                        key={payout.id} 
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-success/10">
+                            <DollarSign className="w-4 h-4 text-success" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm">
+                                {language === 'es' ? 'Pago recibido' : 'Payout received'}
+                              </p>
+                              {getPayoutMethodBadge(payout.stripe_transfer_id)}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                              <Calendar className="w-3 h-3" />
+                              {format(new Date(payout.created_at), 'dd MMM yyyy, HH:mm', { locale })}
+                              {getPayoutStatusBadge(payout.status)}
+                            </div>
+                            {payout.error_message && (
+                              <p className="text-xs text-destructive mt-1">{payout.error_message}</p>
+                            )}
+                          </div>
+                        </div>
+                        <span className="font-bold text-success">
+                          ${payout.amount.toLocaleString()}
                         </span>
                       </div>
                     ))}
