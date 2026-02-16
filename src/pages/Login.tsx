@@ -264,11 +264,11 @@ export default function Login() {
                         <CheckCircle className="w-8 h-8 text-success" />
                       </div>
                       <div>
-                        <h3 className="font-heading text-xl font-bold text-foreground">
-                          ¡Revisa tu correo!
+                       <h3 className="font-heading text-xl font-bold text-foreground">
+                          {t('login.checkEmail')}
                         </h3>
                         <p className="text-muted-foreground mt-2">
-                          Hemos enviado un enlace de confirmación a:
+                          {t('login.confirmationSentTo')}
                         </p>
                         <p className="font-medium text-foreground mt-1 flex items-center justify-center gap-2">
                           <Mail className="w-4 h-4" />
@@ -277,10 +277,9 @@ export default function Login() {
                       </div>
                       <Alert className="text-left">
                         <Mail className="h-4 w-4" />
-                        <AlertTitle>Confirma tu email</AlertTitle>
+                        <AlertTitle>{t('login.confirmEmail')}</AlertTitle>
                         <AlertDescription>
-                          Haz clic en el enlace que te enviamos para activar tu cuenta. 
-                          Si no lo encuentras, revisa tu carpeta de spam.
+                          {t('login.confirmEmailDescription')}
                         </AlertDescription>
                       </Alert>
                       <Button 
@@ -293,7 +292,7 @@ export default function Login() {
                           setRegisterName('');
                         }}
                       >
-                        Registrar otra cuenta
+                        {t('login.registerAnother')}
                       </Button>
                     </div>
                   </CardContent>

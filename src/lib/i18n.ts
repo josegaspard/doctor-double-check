@@ -103,6 +103,10 @@ export const translations = {
       privacyPolicy: 'Política de Privacidad',
       invalidCredentials: 'Credenciales inválidas',
       emailRequired: 'Ingresa tu correo electrónico primero',
+      confirmationSentTo: 'Hemos enviado un enlace de confirmación a:',
+      confirmEmail: 'Confirma tu email',
+      confirmEmailDescription: 'Haz clic en el enlace que te enviamos para activar tu cuenta. Si no lo encuentras, revisa tu carpeta de spam.',
+      registerAnother: 'Registrar otra cuenta',
     },
     // Reset Password
     resetPassword: {
@@ -553,6 +557,10 @@ export const translations = {
       privacyPolicy: 'Privacy Policy',
       invalidCredentials: 'Invalid credentials',
       emailRequired: 'Please enter your email first',
+      confirmationSentTo: 'We sent a confirmation link to:',
+      confirmEmail: 'Confirm your email',
+      confirmEmailDescription: 'Click the link we sent you to activate your account. If you can\'t find it, check your spam folder.',
+      registerAnother: 'Register another account',
     },
     // Reset Password
     resetPassword: {

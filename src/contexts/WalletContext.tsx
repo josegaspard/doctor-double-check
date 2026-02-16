@@ -88,7 +88,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'wallets', filter: `user_id=eq.${user.id}` },
         (payload) => {
-          const newBalance = Number((payload.new as any).balance);
+          const record = payload.new as { balance: number };
+          const newBalance = Number(record.balance);
           setBalance(newBalance);
         }
       )

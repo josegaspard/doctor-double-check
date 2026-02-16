@@ -150,7 +150,10 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           .eq('doctor_id', user.id);
 
         if (accessData) {
-          const patientIds = [...new Set(accessData.map(a => (a.vault_files as any)?.patient_id).filter(Boolean))];
+          const patientIds = [...new Set(accessData.map(a => {
+            const vf = a.vault_files as { patient_id?: string } | null;
+            return vf?.patient_id;
+          }).filter((id): id is string => !!id))];
           const { data: patientProfiles } = await supabase
             .from('profiles_public')
             .select('id, name')
@@ -159,7 +162,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           const patientMap = new Map(patientProfiles?.map(p => [p.id, p.name]) || []);
 
           setAccessibleFiles(accessData.filter(a => a.vault_files).map(a => {
-            const file = a.vault_files as any;
+            const file = a.vault_files as { id: string; patient_id: string; name: string; file_type: string; file_size: number; created_at: string; description?: string; category: string; file_url: string };
             return {
               id: file.id,
               patientId: file.patient_id,
