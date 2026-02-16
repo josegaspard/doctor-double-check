@@ -312,7 +312,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         (payload) => {
           // For INSERT/UPDATE, update state directly when possible
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const record = payload.new as any;
+            const record = payload.new as { id: string; title: string; description?: string; doctor_id: string; specialty: string; status: string; viewer_count: number; likes_count: number; started_at: string; ended_at?: string; thumbnail_url?: string; recording_price?: number; tags?: string[]; daily_room_name?: string };
             
             setLives(prev => {
               const existing = prev.find(l => l.id === record.id);
@@ -347,7 +347,8 @@ export function LivesProvider({ children }: { children: ReactNode }) {
               }
             });
           } else if (payload.eventType === 'DELETE') {
-            setLives(prev => prev.filter(l => l.id !== (payload.old as any).id));
+            const oldRecord = payload.old as { id: string };
+            setLives(prev => prev.filter(l => l.id !== oldRecord.id));
           }
         }
       )

@@ -258,7 +258,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },
         async (payload) => {
-          const newMessage = payload.new as any;
+          const newMessage = payload.new as { id: string; session_id: string; sender_id: string; content: string; is_read: boolean; created_at: string };
           
           // Fetch sender name for the new message
           let senderName: string | undefined;
