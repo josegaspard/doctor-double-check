@@ -71,7 +71,33 @@ export function usePostConsultationRating() {
 
   useEffect(() => {
     checkPendingRatings();
-  }, [checkPendingRatings]);
+
+    // Listen for consultation updates (e.g., doctor closes the session)
+    if (!user?.id || role !== 'patient') return;
+    
+    const channel = supabase
+      .channel('consultation-rating-check')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'consultations',
+          filter: `patient_id=eq.${user.id}`,
+        },
+        (payload) => {
+          // If ended_at was just set, check for pending ratings
+          if (payload.new?.ended_at && !payload.old?.ended_at) {
+            setTimeout(checkPendingRatings, 1500);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [checkPendingRatings, user?.id, role]);
 
   const closeDialog = useCallback(() => {
     setIsDialogOpen(false);
