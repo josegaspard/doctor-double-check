@@ -2311,6 +2311,10 @@ export type Database = {
         Args: { p_amount: number; p_doctor_id: string }
         Returns: number
       }
+      decrement_storage_used: {
+        Args: { p_bytes: number; p_user_id: string }
+        Returns: undefined
+      }
       decrement_viewer_count: {
         Args: { p_live_id: string }
         Returns: undefined
@@ -2372,6 +2376,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_storage_used: {
+        Args: { p_bytes: number; p_user_id: string }
+        Returns: undefined
       }
       increment_viewer_count: {
         Args: { p_live_id: string }

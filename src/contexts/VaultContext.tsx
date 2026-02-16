@@ -241,7 +241,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       if (dbError) throw dbError;
 
       // Update storage usage in profile
-      await supabase.rpc('increment_storage_used', { p_user_id: user.id, p_bytes: file.size });
+      await (supabase.rpc as any)('increment_storage_used', { p_user_id: user.id, p_bytes: file.size });
 
       setUploadProgress(100);
       await fetchFiles();
@@ -335,7 +335,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
       // Decrement storage usage in profile
       if (fileSize > 0) {
-        await supabase.rpc('decrement_storage_used', { p_user_id: user.id, p_bytes: fileSize });
+        await (supabase.rpc as any)('decrement_storage_used', { p_user_id: user.id, p_bytes: fileSize });
       }
 
       await fetchFiles();
