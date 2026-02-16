@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import { tContext } from '@/lib/i18n-context';
 
 export type ChatParticipantType = 'patient' | 'doctor' | 'resident';
 export type ChatStatus = 'active' | 'closed';
@@ -308,17 +309,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     isDoubleCheck = false,
     originalConsultationId?: string
   ): Promise<{ success: boolean; session?: ChatSession; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
 
     const userType = getUserType();
-    if (!userType) return { success: false, error: 'Tipo de usuario inválido' };
+    if (!userType) return { success: false, error: tContext('contextErrors.invalidUserType') };
 
     // CRITICAL: Block patient-resident chat
     if (
       (userType === 'patient' && participantType === 'resident') ||
       (userType === 'resident' && participantType === 'patient')
     ) {
-      return { success: false, error: 'No se permite chat entre pacientes y residentes' };
+      return { success: false, error: tContext('contextErrors.patientResidentBlocked') };
     }
 
     try {
@@ -397,7 +398,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         },
       };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Error al crear sesión' };
+      return { success: false, error: error.message || tContext('contextErrors.sessionCreateError') };
     }
   };
 
@@ -502,21 +503,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   };
 
   const closeSession = async (sessionId: string): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
 
     try {
       const session = sessions.find(s => s.id === sessionId);
-      if (!session) return { success: false, error: 'Sesión no encontrada' };
+      if (!session) return { success: false, error: tContext('contextErrors.sessionNotFound') };
 
       // Only allow doctors to close sessions
       const userType = getUserType();
       if (userType !== 'doctor') {
-        return { success: false, error: 'Solo los médicos pueden cerrar consultas' };
+        return { success: false, error: tContext('contextErrors.onlyDoctorsClose') };
       }
 
       // Verify user is participant
       if (session.participant1Id !== user.id && session.participant2Id !== user.id) {
-        return { success: false, error: 'No tienes permisos para cerrar esta consulta' };
+        return { success: false, error: tContext('contextErrors.noPermissionClose') };
       }
 
       const { error } = await supabase
@@ -536,14 +537,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Send notification to the patient so they can rate
       const patientId = session.participant1Id === user.id ? session.participant2Id : session.participant1Id;
       const doctorName = session.participant1Id === user.id 
-        ? (session.participant1Name || 'Tu médico')
-        : (session.participant2Name || 'Tu médico');
+        ? (session.participant1Name || tContext('roles.doctor'))
+        : (session.participant2Name || tContext('roles.doctor'));
       
       const { error: notifError } = await supabase.from('notifications').insert({
         user_id: patientId,
         type: 'rating_request',
-        title: '⭐ Califica tu orientación',
-        message: `${doctorName} ha finalizado tu orientación. ¡Califica tu experiencia!`,
+        title: tContext('contextErrors.rateOrientation'),
+        message: `${doctorName} ${tContext('contextErrors.rateOrientationMsg')}`,
         data: { sessionId, type: 'consultation_ended', url: '/chat' },
       });
       
@@ -554,7 +555,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       await fetchSessions();
       return { success: true };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Error al cerrar la consulta' };
+      return { success: false, error: error.message || tContext('contextErrors.sessionCloseError') };
     }
   };
 

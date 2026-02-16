@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import { tContext } from '@/lib/i18n-context';
 
 export type TransactionType = 'topup' | 'purchase' | 'refund' | 'subscription' | 'earning';
 export type TransactionStatus = 'initiated' | 'paid' | 'failed';
@@ -113,8 +114,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const topUp = async (amount: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
-    if (amount <= 0) return { success: false, error: 'Monto inválido' };
+    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
+    if (amount <= 0) return { success: false, error: tContext('contextErrors.invalidAmount') };
 
     setIsLoading(true);
     try {
@@ -129,7 +130,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       if (!result.success) {
         setIsLoading(false);
-        return { success: false, error: result.error || 'Error al recargar' };
+        return { success: false, error: result.error || tContext('contextErrors.topUpError') };
       }
 
       await refreshWallet();
@@ -137,7 +138,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       return { success: true };
     } catch (error: any) {
       setIsLoading(false);
-      return { success: false, error: error.message || 'Error al recargar' };
+      return { success: false, error: error.message || tContext('contextErrors.topUpError') };
     }
   };
 
@@ -146,8 +147,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     description: string,
     metadata?: any
   ): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
-    if (amount <= 0) return { success: false, error: 'Monto inválido' };
+    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
+    if (amount <= 0) return { success: false, error: tContext('contextErrors.invalidAmount') };
 
     setIsLoading(true);
     try {
@@ -164,7 +165,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       if (!result.success) {
         setIsLoading(false);
-        return { success: false, error: result.error || 'Error en la compra' };
+        return { success: false, error: result.error || tContext('contextErrors.purchaseError') };
       }
 
       await refreshWallet();
@@ -172,7 +173,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       return { success: true };
     } catch (error: any) {
       setIsLoading(false);
-      return { success: false, error: error.message || 'Error en la compra' };
+      return { success: false, error: error.message || tContext('contextErrors.purchaseError') };
     }
   };
 

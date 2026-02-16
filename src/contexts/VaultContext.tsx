@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import { tContext } from '@/lib/i18n-context';
 
 export type VaultFileType = 'pdf' | 'image' | 'study';
 
@@ -202,7 +203,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     category: string,
     description?: string
   ): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
 
     setIsLoading(true);
     setUploadProgress(0);
@@ -255,7 +256,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       setUploadProgress(null);
       setIsLoading(false);
-      return { success: false, error: error.message || 'Error al subir archivo' };
+      return { success: false, error: error.message || tContext('contextErrors.uploadError') };
     }
   };
 
@@ -266,7 +267,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     description?: string,
     dateOfStudy?: Date
   ): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
 
     setIsLoading(true);
     setUploadProgress(0);
@@ -315,12 +316,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       setUploadProgress(null);
       setIsLoading(false);
-      return { success: false, error: error.message || 'Error al subir historial' };
+      return { success: false, error: error.message || tContext('contextErrors.historyUploadError') };
     }
   };
 
   const deleteFile = async (fileId: string): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
 
     setIsLoading(true);
     try {
@@ -346,12 +347,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       return { success: true };
     } catch (error: any) {
       setIsLoading(false);
-      return { success: false, error: error.message || 'Error al eliminar' };
+      return { success: false, error: error.message || tContext('contextErrors.deleteError') };
     }
   };
 
   const grantAccess = async (fileId: string, doctorId: string): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
 
     try {
       const { error } = await supabase
@@ -366,12 +367,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       await fetchFiles();
       return { success: true };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Error al dar acceso' };
+      return { success: false, error: error.message || tContext('contextErrors.grantAccessError') };
     }
   };
 
   const revokeAccess = async (fileId: string, doctorId: string): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'Usuario no autenticado' };
+    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
 
     try {
       const { error } = await supabase
@@ -385,7 +386,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       await fetchFiles();
       return { success: true };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Error al revocar acceso' };
+      return { success: false, error: error.message || tContext('contextErrors.revokeAccessError') };
     }
   };
 
