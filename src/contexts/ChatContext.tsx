@@ -535,6 +535,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
+      // Also close related consultations so the rating popup triggers
+      await supabase
+        .from('consultations')
+        .update({ ended_at: new Date().toISOString(), status: 'completed' })
+        .eq('chat_session_id', sessionId)
+        .is('ended_at', null);
+
       await fetchSessions();
       return { success: true };
     } catch (error: any) {
