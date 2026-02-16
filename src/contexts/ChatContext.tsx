@@ -542,6 +542,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         .eq('chat_session_id', sessionId)
         .is('ended_at', null);
 
+      // Send notification to the patient so they can rate
+      const patientId = session.participant1Id === user.id ? session.participant2Id : session.participant1Id;
+      const doctorName = session.participant1Id === user.id 
+        ? (session.participant1Name || 'Tu médico')
+        : (session.participant2Name || 'Tu médico');
+      
+      await supabase.from('notifications').insert({
+        user_id: patientId,
+        type: 'rating_request' as any,
+        title: 'Orientación finalizada',
+        message: `${doctorName} ha finalizado tu orientación. ¡Califica tu experiencia!`,
+        data: { sessionId, type: 'consultation_ended' },
+      });
+
       await fetchSessions();
       return { success: true };
     } catch (error: any) {
