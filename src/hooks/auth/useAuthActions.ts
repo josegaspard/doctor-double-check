@@ -30,7 +30,7 @@ export function useAuthActions(
       return { success: true };
     } catch (error: any) {
       setIsLoading(false);
-      return { success: false, error: error.message || 'Error al iniciar sesión' };
+      return { success: false, error: error.message || 'Login error' };
     }
   };
 
@@ -97,7 +97,7 @@ export function useAuthActions(
       return { success: true };
     } catch (error: any) {
       setIsLoading(false);
-      return { success: false, error: error.message || 'Error al registrar' };
+      return { success: false, error: error.message || 'Registration error' };
     }
   };
 
@@ -113,7 +113,7 @@ export function useAuthActions(
 
       return { success: true };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Error al enviar el correo de recuperación' };
+      return { success: false, error: error.message || 'Error sending recovery email' };
     }
   };
 

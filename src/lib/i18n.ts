@@ -455,6 +455,48 @@ export const translations = {
       contact: 'Contacto',
       copyright: '© 2026 Medical Masters. Todos los derechos reservados.',
     },
+    // Auth errors
+    authErrors: {
+      googleLoginError: 'Error al iniciar sesión con Google',
+      googleConnectError: 'Error al conectar con Google',
+      loginError: 'Error al iniciar sesión',
+      emailRequired: 'Ingresa tu correo electrónico primero',
+      resetError: 'Error al enviar el correo de recuperación',
+      weakPassword: 'La contraseña es demasiado débil. Cumple con los requisitos indicados.',
+      registerError: 'Error al registrarse',
+      notAuthenticated: 'No autenticado',
+    },
+    // Purchase messages
+    purchaseMessages: {
+      alreadyPurchased: 'Ya tienes esta grabación',
+      purchaseError: 'Error en la compra',
+      purchaseSuccess: '¡Grabación comprada! Nuevo saldo:',
+      processingError: 'Error al procesar la compra',
+      paymentError: 'Error al procesar el pago',
+      paymentSessionError: 'No se pudo crear la sesión de pago',
+    },
+    // Wallet messages
+    walletMessages: {
+      notAuthenticated: 'Usuario no autenticado',
+      invalidAmount: 'Monto inválido',
+      topUpError: 'Error al recargar',
+      purchaseError: 'Error en la compra',
+    },
+    // Vault messages
+    vaultMessages: {
+      notAuthenticated: 'Usuario no autenticado',
+      uploadError: 'Error al subir archivo',
+      historyUploadError: 'Error al subir historial',
+      deleteError: 'Error al eliminar',
+      grantError: 'Error al dar acceso',
+      revokeError: 'Error al revocar acceso',
+    },
+    // Notification actions
+    notificationActions: {
+      view: 'Ver',
+      open: 'Abrir',
+      rate: 'Calificar',
+    },
   },
   en: {
     // Navigation
@@ -908,6 +950,48 @@ export const translations = {
       privacyPolicy: 'Privacy Policy',
       contact: 'Contact',
       copyright: '© 2026 Medical Masters. All rights reserved.',
+    },
+    // Auth errors
+    authErrors: {
+      googleLoginError: 'Error signing in with Google',
+      googleConnectError: 'Error connecting with Google',
+      loginError: 'Error signing in',
+      emailRequired: 'Please enter your email first',
+      resetError: 'Error sending recovery email',
+      weakPassword: 'Password is too weak. Meet the requirements listed.',
+      registerError: 'Error registering',
+      notAuthenticated: 'Not authenticated',
+    },
+    // Purchase messages
+    purchaseMessages: {
+      alreadyPurchased: 'You already have this recording',
+      purchaseError: 'Purchase error',
+      purchaseSuccess: 'Recording purchased! New balance:',
+      processingError: 'Error processing the purchase',
+      paymentError: 'Error processing payment',
+      paymentSessionError: 'Could not create payment session',
+    },
+    // Wallet messages
+    walletMessages: {
+      notAuthenticated: 'User not authenticated',
+      invalidAmount: 'Invalid amount',
+      topUpError: 'Error topping up',
+      purchaseError: 'Purchase error',
+    },
+    // Vault messages
+    vaultMessages: {
+      notAuthenticated: 'User not authenticated',
+      uploadError: 'Error uploading file',
+      historyUploadError: 'Error uploading history',
+      deleteError: 'Error deleting',
+      grantError: 'Error granting access',
+      revokeError: 'Error revoking access',
+    },
+    // Notification actions
+    notificationActions: {
+      view: 'View',
+      open: 'Open',
+      rate: 'Rate',
     },
   },
 } as const;

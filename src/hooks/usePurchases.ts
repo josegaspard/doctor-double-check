@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 
 export interface Purchase {
@@ -14,6 +15,7 @@ export interface Purchase {
 export function usePurchases() {
   const { supabaseUser, role } = useAuth();
   const { refreshWallet } = useWallet();
+  const { t } = useLanguage();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -55,13 +57,12 @@ export function usePurchases() {
 
   const hasPurchased = useCallback((recordingId: string): boolean => {
     if (role === 'admin') return true;
-    // Doctors only get free access to their own recordings (checked elsewhere)
     return purchases.some(p => p.recordingId === recordingId);
   }, [purchases, role]);
 
   const purchaseWithWallet = async (recordingId: string): Promise<{ success: boolean; error?: string }> => {
     if (!supabaseUser?.id) {
-      return { success: false, error: 'No autenticado' };
+      return { success: false, error: t('authErrors.notAuthenticated') };
     }
 
     setIsPurchasing(true);
@@ -73,22 +74,21 @@ export function usePurchases() {
       if (error) throw error;
 
       if (data?.alreadyPurchased) {
-        toast.info('Ya tienes esta grabación');
+        toast.info(t('purchaseMessages.alreadyPurchased'));
         return { success: true };
       }
 
       if (!data?.success) {
-        throw new Error(data?.error || 'Error en la compra');
+        throw new Error(data?.error || t('purchaseMessages.purchaseError'));
       }
 
-      toast.success(`¡Grabación comprada! Nuevo saldo: $${data.newBalance}`);
+      toast.success(`${t('purchaseMessages.purchaseSuccess')} $${data.newBalance}`);
       
-      // Refresh purchases and wallet
       await Promise.all([fetchPurchases(), refreshWallet()]);
       
       return { success: true };
     } catch (error: any) {
-      const errorMsg = error.message || 'Error al procesar la compra';
+      const errorMsg = error.message || t('purchaseMessages.processingError');
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
     } finally {
@@ -98,7 +98,7 @@ export function usePurchases() {
 
   const purchaseWithStripe = async (recordingId: string): Promise<{ success: boolean; url?: string; error?: string }> => {
     if (!supabaseUser?.id) {
-      return { success: false, error: 'No autenticado' };
+      return { success: false, error: t('authErrors.notAuthenticated') };
     }
 
     try {
@@ -112,9 +112,9 @@ export function usePurchases() {
         return { success: true, url: data.url };
       }
 
-      throw new Error('No se pudo crear la sesión de pago');
+      throw new Error(t('purchaseMessages.paymentSessionError'));
     } catch (error: any) {
-      const errorMsg = error.message || 'Error al procesar el pago';
+      const errorMsg = error.message || t('purchaseMessages.paymentError');
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
     }

@@ -210,10 +210,23 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const WALLET_DEFAULTS: WalletContextType = {
+  balance: 0,
+  transactions: [],
+  isLoading: false,
+  topUp: async () => ({ success: false, error: 'Context not ready' }),
+  purchase: async () => ({ success: false, error: 'Context not ready' }),
+  canAfford: () => false,
+  getEffectivePrice: (a: number) => a,
+  getTransactionHistory: () => [],
+  refreshWallet: async () => {},
+};
+
 export function useWallet() {
   const context = useContext(WalletContext);
   if (context === undefined) {
-    throw new Error('useWallet must be used within a WalletProvider');
+    console.warn('useWallet called outside WalletProvider – returning defaults');
+    return WALLET_DEFAULTS;
   }
   return context;
 }
