@@ -1145,6 +1145,7 @@ export type Database = {
           image_url: string | null
           is_published: boolean
           published_at: string | null
+          slug: string | null
           source_url: string | null
           summary: string | null
           title: string
@@ -1159,6 +1160,7 @@ export type Database = {
           image_url?: string | null
           is_published?: boolean
           published_at?: string | null
+          slug?: string | null
           source_url?: string | null
           summary?: string | null
           title: string
@@ -1173,12 +1175,48 @@ export type Database = {
           image_url?: string | null
           is_published?: boolean
           published_at?: string | null
+          slug?: string | null
           source_url?: string | null
           summary?: string | null
           title?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      news_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          news_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          news_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          news_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_comments_news_id_fkey"
+            columns: ["news_id"]
+            isOneToOne: false
+            referencedRelation: "medical_news"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_preferences: {
         Row: {

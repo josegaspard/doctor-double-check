@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UpcomingAvailabilities } from '@/components/availability/UpcomingAvailabilities';
+import { NewsFeed } from '@/components/news/NewsFeed';
 import { 
   Video, 
   Users, 
@@ -176,6 +177,9 @@ export default function LivesGrid() {
             </div>
           </Card>
         )}
+
+        {/* News Feed below Lives */}
+        <NewsFeed />
       </div>
     </MainLayout>
   );

@@ -69,8 +69,10 @@ import Enterprise from "./pages/Enterprise";
 import ContentGallery from "./pages/ContentGallery";
 import Notifications from "./pages/Notifications";
 import MedicalNews from "./pages/MedicalNews";
+import NewsArticle from "./pages/NewsArticle";
 import VideoCall from "./pages/VideoCall";
 import AdminCredentials from "./pages/AdminCredentials";
+import AdminNews from "./pages/AdminNews";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -125,6 +127,7 @@ const App = () => (
                       <Route path="/admin/payouts" element={<AdminPayouts />} />
                       <Route path="/admin/invoices" element={<AdminInvoiceReview />} />
                       <Route path="/admin/credentials" element={<AdminCredentials />} />
+                      <Route path="/admin/news" element={<AdminNews />} />
                       <Route path="/verification-pending" element={<VerificationPending />} />
                       <Route path="/doctors" element={<Doctors />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
@@ -145,6 +148,7 @@ const App = () => (
                       <Route path="/content" element={<ContentGallery />} />
                       <Route path="/notifications" element={<Notifications />} />
                       <Route path="/news" element={<MedicalNews />} />
+                      <Route path="/news/:slug" element={<NewsArticle />} />
                       <Route path="/video-call" element={<VideoCall />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
