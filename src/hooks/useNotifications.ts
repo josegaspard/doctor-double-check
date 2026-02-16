@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface Notification {
   id: string;
   userId: string;
-  type: 'doctor_live' | 'doctor_availability' | 'new_content' | 'subscription_update' | 'chat_message' | 'system';
+  type: 'doctor_live' | 'doctor_availability' | 'new_content' | 'subscription_update' | 'chat_message' | 'rating_request' | 'system';
   title: string;
   message: string;
   data: Record<string, any>;
@@ -106,9 +106,9 @@ export function useNotifications() {
       fetchNotifications();
       fetchPreferences();
 
-      // Set up realtime subscription
+      // Set up realtime subscription (unique channel per user to avoid conflicts with useNotificationsRealtime)
       const channel = supabase
-        .channel('notifications')
+        .channel(`notifications-list-${supabaseUser.id}`)
         .on(
           'postgres_changes',
           {

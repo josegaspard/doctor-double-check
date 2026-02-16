@@ -176,25 +176,26 @@ export default function Vault() {
         .in('id', doctorIdsArray);
       
       if (profiles && profiles.length > 0) {
-        const doctors: AvailableDoctor[] = [];
-        
-        for (const profile of profiles) {
-          if (profile.id) {
-            // Get specialty via RPC call
-            const { data: doctorData } = await supabase
-              .rpc('get_doctor_public_profile', { p_user_id: profile.id });
-            
-            const specialty = doctorData?.[0]?.specialty || 'Medicina General';
-            
-            doctors.push({
-              id: profile.id,
-              name: profile.name || 'Doctor',
-              specialty,
-              avatarUrl: profile.avatar_url || undefined,
-              relationshipType: doctorMap.get(profile.id),
-            });
-          }
-        }
+        // Batch fetch doctor specialties via doctor_profiles_public view instead of N+1 RPC calls
+        const profileIds = profiles.filter(p => p.id).map(p => p.id!);
+        const { data: doctorProfilesData } = await supabase
+          .from('doctor_profiles_public')
+          .select('user_id, specialty')
+          .in('user_id', profileIds);
+
+        const specialtyMap = new Map(
+          (doctorProfilesData || []).map(d => [d.user_id, d.specialty])
+        );
+
+        const doctors: AvailableDoctor[] = profiles
+          .filter(p => p.id)
+          .map(profile => ({
+            id: profile.id!,
+            name: profile.name || 'Doctor',
+            specialty: specialtyMap.get(profile.id!) || 'Medicina General',
+            avatarUrl: profile.avatar_url || undefined,
+            relationshipType: doctorMap.get(profile.id!),
+          }));
 
         setAvailableDoctors(doctors);
       } else {

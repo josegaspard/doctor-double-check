@@ -263,6 +263,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only run on mount
 
   // Auto-cleanup stuck lives for the current user (doctor only)
@@ -297,6 +298,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     };
     
     cleanupStuckLives();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.role]);
 
   // Realtime subscription with intelligent batching
@@ -370,7 +372,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [throttledFetchLives, fetchLikedLives]);
+  }, [throttledFetchLives, fetchLikedLives, fetchRecordings]);
 
   const getLive = useCallback((id: string): Live | undefined => {
     return lives.find(l => l.id === id);
