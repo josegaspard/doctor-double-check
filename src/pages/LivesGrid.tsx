@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSubscriptions } from '@/hooks/useSubscriptions';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,13 +16,15 @@ import {
   Clock, 
   Radio,
   Eye,
-  Lock
+  Lock,
+  Crown,
 } from 'lucide-react';
 
 export default function LivesGrid() {
   const { lives, isLoading, refreshLives } = useLives();
   const { role, isAuthenticated } = useAuth();
   const { t } = useLanguage();
+  const { getSubscription } = useSubscriptions();
 
   const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
 
@@ -83,7 +86,11 @@ export default function LivesGrid() {
           </div>
         ) : activeLives.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {activeLives.map((live) => (
+            {activeLives.map((live) => {
+              const sub = getSubscription(live.doctorId);
+              const isPremiumSub = sub?.tier === 'premium';
+              
+              return (
               <Link key={live.id} to={`/live/${live.id}`}>
                 <Card className="card-live group cursor-pointer overflow-hidden hover:shadow-lg transition-all relative ring-2 ring-live animate-pulse-ring">
                   {/* Thumbnail */}
@@ -93,11 +100,17 @@ export default function LivesGrid() {
                     </div>
                     
                     {/* Live Badge */}
-                    <div className="absolute top-2 left-2">
+                    <div className="absolute top-2 left-2 flex items-center gap-1.5">
                       <Badge variant="live" className="gap-1">
                         <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                         EN VIVO
                       </Badge>
+                      {isPremiumSub && (
+                        <Badge className="gap-1 bg-yellow-500/90 text-white border-0 text-[10px]">
+                          <Crown className="w-3 h-3" />
+                          Premium
+                        </Badge>
+                      )}
                     </div>
                     
                     {/* Viewers */}
@@ -140,11 +153,18 @@ export default function LivesGrid() {
                       <Badge variant="outline" className="text-xs">
                         {live.specialty}
                       </Badge>
+                      {isPremiumSub && (
+                        <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-300 gap-1">
+                          <Crown className="w-3 h-3" />
+                          Acceso anticipado
+                        </Badge>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               </Link>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <Card className="p-12 text-center">
