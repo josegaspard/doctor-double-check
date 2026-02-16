@@ -548,13 +548,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         ? (session.participant1Name || 'Tu médico')
         : (session.participant2Name || 'Tu médico');
       
-      await supabase.from('notifications').insert({
+      const { error: notifError } = await supabase.from('notifications').insert({
         user_id: patientId,
-        type: 'rating_request' as any,
-        title: 'Orientación finalizada',
+        type: 'rating_request',
+        title: '⭐ Califica tu orientación',
         message: `${doctorName} ha finalizado tu orientación. ¡Califica tu experiencia!`,
-        data: { sessionId, type: 'consultation_ended' },
+        data: { sessionId, type: 'consultation_ended', url: '/chat' },
       });
+      
+      if (notifError) {
+        console.error('Error sending rating notification:', notifError);
+      }
 
       await fetchSessions();
       return { success: true };

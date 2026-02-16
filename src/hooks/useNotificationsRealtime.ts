@@ -51,6 +51,17 @@ export function useNotificationsRealtime() {
           duration: 8000,
         });
         break;
+
+      case 'rating_request':
+        toast.info(notification.title, {
+          description: notification.message,
+          action: {
+            label: 'Calificar',
+            onClick: () => navigate('/chat'),
+          },
+          duration: 15000,
+        });
+        break;
         
       default:
         toast(notification.title, {
