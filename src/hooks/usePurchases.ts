@@ -54,7 +54,8 @@ export function usePurchases() {
   }, [fetchPurchases]);
 
   const hasPurchased = useCallback((recordingId: string): boolean => {
-    if (role === 'admin' || role === 'doctor') return true;
+    if (role === 'admin') return true;
+    // Doctors only get free access to their own recordings (checked elsewhere)
     return purchases.some(p => p.recordingId === recordingId);
   }, [purchases, role]);
 

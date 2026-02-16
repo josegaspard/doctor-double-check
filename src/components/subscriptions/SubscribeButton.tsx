@@ -56,8 +56,8 @@ export function SubscribeButton({
   const handleSubscribe = async () => {
     if (!isAuthenticated) {
       toast({
-        title: 'Error',
-        description: 'Debes iniciar sesión para suscribirte',
+        title: t('common.error'),
+        description: t('paywall.loginRequired'),
         variant: 'destructive',
       });
       return;
@@ -67,17 +67,15 @@ export function SubscribeButton({
     const result = await subscribe(doctorId, 'free', 0);
     
     if (result.success) {
-      // *** CRITICAL FIX: Refresh follower count after subscribe ***
-      // Force a re-fetch of subscription data
       await new Promise(resolve => setTimeout(resolve, 500));
       
       toast({
         title: t('subscriptions.subscribed'),
-        description: `Ahora sigues a ${doctorName || 'este doctor'}`,
+        description: `${t('subscriptions.nowFollowing')} ${doctorName || 'este doctor'}`,
       });
     } else {
       toast({
-        title: 'Error',
+        title: t('common.error'),
         description: result.error,
         variant: 'destructive',
       });
@@ -92,7 +90,7 @@ export function SubscribeButton({
 
     if (result.success) {
       toast({
-        description: 'Has dejado de seguir a este doctor',
+        description: t('subscriptions.unsubscribe'),
       });
     }
   };
@@ -120,8 +118,8 @@ export function SubscribeButton({
       }
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'No se pudo iniciar el proceso de pago',
+        title: t('common.error'),
+        description: error.message || t('paywall.checkoutError'),
         variant: 'destructive',
       });
     } finally {
@@ -155,13 +153,13 @@ export function SubscribeButton({
         <div className="space-y-4">
           <h4 className="font-medium flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            Preferencias de notificación
+            {t('subscriptions.notificationPreferences')}
           </h4>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label htmlFor="notify-live" className="text-sm flex items-center gap-2">
-                <span className="text-red-500">🔴</span>
+                <span className="text-destructive">🔴</span>
                 {t('subscriptions.notifyLive')}
               </Label>
               <Switch
@@ -207,8 +205,8 @@ export function SubscribeButton({
                   className="w-full gap-2"
                   onClick={() => setShowUpgradeModal(true)}
                 >
-                  <Crown className="h-4 w-4 text-yellow-500" />
-                  Mejorar suscripción
+                  <Crown className="h-4 w-4 text-warning" />
+                  {t('subscriptions.upgradeSubscription')}
                 </Button>
               </div>
             </>
@@ -232,11 +230,11 @@ export function SubscribeButton({
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Crown className="w-5 h-5 text-yellow-500" />
-              Mejora tu suscripción
+              <Crown className="w-5 h-5 text-warning" />
+              {t('subscriptions.upgradeTitle')}
             </DialogTitle>
             <DialogDescription>
-              Obtén beneficios exclusivos de {doctorName || 'este doctor'}
+              {t('subscriptions.upgradeDescription')} {doctorName || 'este doctor'}
             </DialogDescription>
           </DialogHeader>
 
@@ -246,37 +244,37 @@ export function SubscribeButton({
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h4 className="font-semibold">Básico</h4>
-                    <p className="text-sm text-muted-foreground">Contenido exclusivo y notificaciones</p>
+                    <h4 className="font-semibold">{t('subscriptions.basicTierName')}</h4>
+                    <p className="text-sm text-muted-foreground">{t('subscriptions.basicTierDescription')}</p>
                   </div>
-                  <Badge variant="outline">{t('subscriptions.basicPrice') || '$99/mes'}</Badge>
+                  <Badge variant="outline">{t('subscriptions.basicPrice')}</Badge>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1 mt-3">
-                  <li>✓ {t('subscriptions.exclusiveContent') || 'Acceso a contenido exclusivo'}</li>
-                  <li>✓ {t('subscriptions.priorityNotifications') || 'Notificaciones prioritarias'}</li>
-                  <li>✓ {t('subscriptions.subscriberBadge') || 'Badge de suscriptor'}</li>
+                  <li>✓ {t('subscriptions.exclusiveContent')}</li>
+                  <li>✓ {t('subscriptions.priorityNotifications')}</li>
+                  <li>✓ {t('subscriptions.subscriberBadge')}</li>
                 </ul>
               </CardContent>
             </Card>
 
             {/* Premium Tier */}
-            <Card className="cursor-pointer border-yellow-500/50 hover:border-yellow-500 transition-colors" onClick={() => handleUpgrade('premium')}>
+            <Card className="cursor-pointer border-warning/50 hover:border-warning transition-colors" onClick={() => handleUpgrade('premium')}>
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h4 className="font-semibold flex items-center gap-2">
-                      Premium
-                      <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600">Popular</Badge>
+                      {t('subscriptions.premiumTierName')}
+                      <Badge variant="secondary" className="bg-warning/10 text-warning">{t('subscriptions.popular')}</Badge>
                     </h4>
-                    <p className="text-sm text-muted-foreground">Todo lo básico + descuentos y más</p>
+                    <p className="text-sm text-muted-foreground">{t('subscriptions.premiumTierDescription')}</p>
                   </div>
-                  <Badge variant="default">{t('subscriptions.premiumPrice') || '$199/mes'}</Badge>
+                  <Badge variant="default">{t('subscriptions.premiumPrice')}</Badge>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1 mt-3">
-                  <li>✓ {t('subscriptions.allBasicFeatures') || 'Todo lo del plan Básico'}</li>
-                  <li>✓ {t('subscriptions.recordingDiscount') || '20% descuento en grabaciones'}</li>
-                  <li>✓ {t('subscriptions.priorityChat') || 'Chat prioritario'}</li>
-                  <li>✓ {t('subscriptions.earlyAccess') || 'Acceso anticipado a lives'}</li>
+                  <li>✓ {t('subscriptions.allBasicFeatures')}</li>
+                  <li>✓ {t('subscriptions.recordingDiscount')}</li>
+                  <li>✓ {t('subscriptions.priorityChat')}</li>
+                  <li>✓ {t('subscriptions.earlyAccess')}</li>
                 </ul>
               </CardContent>
             </Card>
@@ -285,7 +283,7 @@ export function SubscribeButton({
           {isUpgrading && (
             <div className="flex items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Redirigiendo al pago...
+              {t('subscriptions.redirectingPayment')}
             </div>
           )}
         </DialogContent>

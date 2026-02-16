@@ -32,7 +32,7 @@ export default function Settings() {
         // Parse the error body if available
         const errorBody = typeof error === 'object' && error.message ? error.message : String(error);
         if (errorBody.includes('No Stripe customer found')) {
-          toast.info('Aún no tienes un historial de pagos. Realiza tu primera compra o suscripción para acceder al portal.');
+          toast.info(t('paywall.noPaymentHistory'));
           return;
         }
         throw error;
@@ -41,7 +41,7 @@ export default function Settings() {
         window.open(data.url, '_blank');
       } else if (data?.error) {
         if (data.error.includes('No Stripe customer found')) {
-          toast.info('Aún no tienes un historial de pagos. Realiza tu primera compra o suscripción para acceder al portal.');
+          toast.info(t('paywall.noPaymentHistory'));
         } else {
           toast.error(data.error);
         }
@@ -52,7 +52,7 @@ export default function Settings() {
       console.error('Error opening portal:', error);
       const msg = error?.message || error?.context?.body?.error || 'Error al abrir el portal de suscripciones';
       if (msg.includes('No Stripe customer found')) {
-        toast.info('Aún no tienes un historial de pagos. Realiza tu primera compra o suscripción para acceder al portal.');
+        toast.info(t('paywall.noPaymentHistory'));
       } else {
         toast.error(msg);
       }
