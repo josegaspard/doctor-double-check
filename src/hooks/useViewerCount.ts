@@ -14,52 +14,31 @@ export function useViewerCount({ liveId, autoJoin = true }: UseViewerCountOption
   const [isJoined, setIsJoined] = useState(false);
   const hasJoinedRef = useRef(false);
 
-  // Increment viewer count when joining - with proper error handling
+  // Increment viewer count when joining
   const joinAsViewer = useCallback(async () => {
     if (!liveId || hasJoinedRef.current) return;
 
     try {
-      // Use direct RPC call with type override since types haven't regenerated yet
-      const { error } = await (supabase.rpc as any)('increment_viewer_count', { p_live_id: liveId });
+      const { error } = await supabase.rpc('increment_viewer_count', { p_live_id: liveId });
       if (error) {
-        console.warn('RPC increment_viewer_count failed:', error.message);
-        // Fallback: try direct update
-        const { error: updateError } = await supabase
-          .from('lives')
-          .update({ viewer_count: viewerCount + 1 })
-          .eq('id', liveId);
-        
-        if (updateError) {
-          console.error('Fallback update also failed:', updateError.message);
-          return; // Don't set as joined if both methods fail
-        }
+        console.error('RPC increment_viewer_count failed:', error.message);
+        return;
       }
       hasJoinedRef.current = true;
       setIsJoined(true);
     } catch (error) {
       console.error('Unexpected error in joinAsViewer:', error);
     }
-  }, [liveId, viewerCount]);
+  }, [liveId]);
 
-  // Decrement viewer count when leaving - with proper error handling
+  // Decrement viewer count when leaving
   const leaveAsViewer = useCallback(async () => {
     if (!liveId || !hasJoinedRef.current) return;
 
     try {
-      const { error } = await (supabase.rpc as any)('decrement_viewer_count', { p_live_id: liveId });
+      const { error } = await supabase.rpc('decrement_viewer_count', { p_live_id: liveId });
       if (error) {
-        console.warn('RPC decrement_viewer_count failed:', error.message);
-        // Fallback: try direct update
-        const newCount = Math.max(0, viewerCount - 1);
-        const { error: updateError } = await supabase
-          .from('lives')
-          .update({ viewer_count: newCount })
-          .eq('id', liveId);
-        
-        if (updateError) {
-          console.error('Fallback update also failed:', updateError.message);
-          return;
-        }
+        console.error('RPC decrement_viewer_count failed:', error.message);
       }
       hasJoinedRef.current = false;
       setIsJoined(false);
@@ -68,13 +47,12 @@ export function useViewerCount({ liveId, autoJoin = true }: UseViewerCountOption
       hasJoinedRef.current = false;
       setIsJoined(false);
     }
-  }, [liveId, viewerCount]);
+  }, [liveId]);
 
-  // Fetch initial data and subscribe to real-time updates - with error handling
+  // Fetch initial data and subscribe to real-time updates
   useEffect(() => {
     if (!liveId) return;
 
-    // Fetch initial counts with error handling
     const fetchCounts = async () => {
       try {
         const { data, error } = await supabase
@@ -99,7 +77,6 @@ export function useViewerCount({ liveId, autoJoin = true }: UseViewerCountOption
 
     fetchCounts();
 
-    // Subscribe to real-time updates
     const channel = supabase
       .channel(`live-stats-${liveId}`)
       .on(
@@ -129,19 +106,17 @@ export function useViewerCount({ liveId, autoJoin = true }: UseViewerCountOption
       joinAsViewer();
     }
 
-    // Cleanup: leave when unmounting
+    // Cleanup: decrement properly on unmount
     return () => {
       if (hasJoinedRef.current && liveId) {
-        // Fire and forget - don't await in cleanup
-        (supabase.rpc as any)('decrement_viewer_count', { p_live_id: liveId })
-          .then(() => {})
-          .catch(() => {
-            // Fallback
-            supabase
-              .from('lives')
-              .update({ viewer_count: 0 }) // Will be overwritten by next viewer count update
-              .eq('id', liveId);
-          });
+        // Fire and forget - use RPC to decrement by 1
+        (async () => {
+          try {
+            await supabase.rpc('decrement_viewer_count', { p_live_id: liveId });
+          } catch (err) {
+            console.warn('Cleanup decrement failed:', err);
+          }
+        })();
         hasJoinedRef.current = false;
       }
     };

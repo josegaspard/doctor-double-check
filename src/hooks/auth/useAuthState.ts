@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { ExtendedUser } from './types';
@@ -91,18 +92,16 @@ export function useAuthState() {
 
           if (isOAuthProvider && shouldRedirect) {
             if (!profile?.onboardingCompleted) {
-              // New OAuth user - go to onboarding to select role
               console.log('[Auth] Redirecting to onboarding');
-              window.location.href = '/onboarding';
+              window.location.replace('/onboarding');
             } else {
-              // Existing OAuth user with completed onboarding - go to appropriate dashboard
               console.log('[Auth] Redirecting based on role:', profile?.role);
               if (profile?.role === 'doctor') {
-                window.location.href = '/doctor/dashboard';
+                window.location.replace('/doctor/dashboard');
               } else if (profile?.role === 'admin') {
-                window.location.href = '/admin';
+                window.location.replace('/admin');
               } else {
-                window.location.href = '/lives';
+                window.location.replace('/lives');
               }
             }
           }
