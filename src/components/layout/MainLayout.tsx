@@ -39,6 +39,7 @@ import {
   Twitter,
   Youtube,
   Calendar,
+  FileText,
 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
@@ -59,6 +60,7 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.content', href: '/content', icon: Folder, roles: ['patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'doctor'] },
+  { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'] },
   { labelKey: 'nav.vault', href: '/vault', icon: Folder, roles: ['patient'] },
   { labelKey: 'nav.doctorVault', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },

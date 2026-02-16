@@ -74,6 +74,7 @@ import VideoCall from "./pages/VideoCall";
 import AdminCredentials from "./pages/AdminCredentials";
 import AdminNews from "./pages/AdminNews";
 import Prescriptions from "./pages/Prescriptions";
+import CreatePrescription from "./pages/CreatePrescription";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -152,6 +153,7 @@ const App = () => (
                       <Route path="/news/:slug" element={<NewsArticle />} />
                       <Route path="/video-call" element={<VideoCall />} />
                       <Route path="/prescriptions" element={<Prescriptions />} />
+                      <Route path="/prescriptions/new" element={<CreatePrescription />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>
