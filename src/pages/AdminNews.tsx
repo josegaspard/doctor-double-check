@@ -6,8 +6,7 @@ import { NewsEditor } from '@/components/admin/NewsEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Newspaper, Plus, Edit, Trash2, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
+import { Newspaper, Plus, Edit, Trash2, Eye, EyeOff, Loader2, ArrowLeft, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -24,6 +23,10 @@ interface NewsItem {
   published_at: string | null;
   created_at: string;
   slug: string | null;
+  last_edited_at: string | null;
+  last_edited_by: string | null;
+  author_bio: string | null;
+  author_social: any;
 }
 
 export default function AdminNews() {
@@ -32,6 +35,7 @@ export default function AdminNews() {
   const [isLoading, setIsLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<NewsItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [editorNames, setEditorNames] = useState<Record<string, string>>({});
 
   const fetchNews = async () => {
     setIsLoading(true);
@@ -39,7 +43,22 @@ export default function AdminNews() {
       .from('medical_news')
       .select('*')
       .order('created_at', { ascending: false });
-    if (data) setNews(data as NewsItem[]);
+    if (data) {
+      setNews(data as NewsItem[]);
+      // Fetch editor names
+      const editorIds = [...new Set(data.filter(d => d.last_edited_by).map(d => d.last_edited_by))];
+      if (editorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', editorIds);
+        if (profiles) {
+          const map: Record<string, string> = {};
+          profiles.forEach(p => { map[p.id] = p.name; });
+          setEditorNames(map);
+        }
+      }
+    }
     setIsLoading(false);
   };
 
@@ -90,6 +109,8 @@ export default function AdminNews() {
                   category: editingItem.category,
                   is_published: editingItem.is_published,
                   slug: editingItem.slug || '',
+                  author_bio: editingItem.author_bio || '',
+                  author_social: editingItem.author_social || {},
                 } : undefined}
                 onSaved={() => {
                   setIsCreating(false);
@@ -141,7 +162,7 @@ export default function AdminNews() {
                   )}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground truncate">{item.title}</h3>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <Badge variant={item.is_published ? 'default' : 'secondary'} className="text-[10px]">
                         {item.is_published ? 'Publicada' : 'Borrador'}
                       </Badge>
@@ -150,6 +171,15 @@ export default function AdminNews() {
                         {format(new Date(item.created_at), 'd MMM yyyy', { locale: es })}
                       </span>
                     </div>
+                    {item.last_edited_at && (
+                      <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground">
+                        <Pencil className="w-2.5 h-2.5" />
+                        Editado {format(new Date(item.last_edited_at), "d MMM yyyy, HH:mm", { locale: es })}
+                        {item.last_edited_by && editorNames[item.last_edited_by] && (
+                          <> por {editorNames[item.last_edited_by]}</>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" onClick={() => togglePublish(item)} title={item.is_published ? 'Despublicar' : 'Publicar'}>
