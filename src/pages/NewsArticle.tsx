@@ -29,6 +29,7 @@ interface Comment {
   user_name?: string;
   user_avatar?: string;
   user_role?: string;
+  is_approved_doctor?: boolean;
   replies?: Comment[];
 }
 
@@ -39,6 +40,7 @@ export default function NewsArticle() {
   const [article, setArticle] = useState<any>(null);
   const [authorProfile, setAuthorProfile] = useState<any>(null);
   const [authorDoctorProfile, setAuthorDoctorProfile] = useState<any>(null);
+  const [authorRole, setAuthorRole] = useState<string | null>(null);
   const [editorProfile, setEditorProfile] = useState<any>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -75,6 +77,13 @@ export default function NewsArticle() {
           .maybeSingle();
         setAuthorDoctorProfile(doctorP);
 
+        // Fetch author role
+        const { data: roleData } = await supabase
+          .from('user_roles' as any)
+          .select('role')
+          .eq('user_id', data.created_by)
+          .maybeSingle();
+        setAuthorRole((roleData as any)?.role || 'patient');
         // Fetch editor profile if edited
         if (data.last_edited_by && data.last_edited_by !== data.created_by) {
           const { data: editorP } = await supabase
@@ -102,18 +111,17 @@ export default function NewsArticle() {
     if (!commentsData || commentsData.length === 0) { setComments([]); return; }
 
     const userIds = [...new Set(commentsData.map(c => c.user_id))];
-    const { data: profiles } = await supabase
-      .from('profiles_public')
-      .select('id, name, avatar_url')
-      .in('id', userIds);
-
-    const { data: roles } = await supabase
-      .from('user_roles' as any)
-      .select('user_id, role')
-      .in('user_id', userIds);
+    const [{ data: profiles }, { data: roles }, { data: doctorProfiles }] = await Promise.all([
+      supabase.from('profiles_public').select('id, name, avatar_url').in('id', userIds),
+      supabase.from('user_roles' as any).select('user_id, role').in('user_id', userIds),
+      supabase.from('doctor_profiles_public').select('user_id, status').in('user_id', userIds),
+    ]);
 
     const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
     const roleMap = new Map((roles as any[])?.map((r: any) => [r.user_id, r.role]) || []);
+    const approvedDoctorSet = new Set(
+      (doctorProfiles as any[])?.filter((d: any) => d.status === 'approved').map((d: any) => d.user_id) || []
+    );
 
     const enriched = commentsData.map(c => ({
       ...c,
@@ -121,6 +129,7 @@ export default function NewsArticle() {
       user_name: profileMap.get(c.user_id)?.name || 'Usuario',
       user_avatar: profileMap.get(c.user_id)?.avatar_url || null,
       user_role: roleMap.get(c.user_id) || 'patient',
+      is_approved_doctor: approvedDoctorSet.has(c.user_id),
       replies: [] as Comment[],
     }));
 
@@ -197,7 +206,13 @@ export default function NewsArticle() {
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-medium text-sm text-foreground">{comment.user_name}</span>
+              {comment.is_approved_doctor ? (
+                <Link to={`/doctor/${comment.user_id}`} className="font-medium text-sm text-foreground hover:underline hover:text-primary transition-colors">
+                  {comment.user_name}
+                </Link>
+              ) : (
+                <span className="font-medium text-sm text-foreground">{comment.user_name}</span>
+              )}
               {getRoleBadge(comment.user_role || 'patient')}
               <span className="text-xs text-muted-foreground">
                 {format(new Date(comment.created_at), "d MMM yyyy, HH:mm", { locale: es })}
@@ -355,8 +370,8 @@ export default function NewsArticle() {
                       <span className="font-semibold text-foreground text-base">{authorProfile.name}</span>
                     )}
                     <Badge variant="outline" className="text-[10px]">Autor</Badge>
+                    {authorRole && getRoleBadge(authorRole)}
                   </div>
-
                   {/* Doctor-specific info */}
                   {authorDoctorProfile && (
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-xs text-muted-foreground">
