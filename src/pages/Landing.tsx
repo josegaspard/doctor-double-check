@@ -200,7 +200,7 @@ export default function Landing() {
                 <img 
                   src="https://i.imgur.com/YqgQSDV.png" 
                   alt="Doctora Especialista" 
-                  className="absolute bottom-0 right-0 lg:-right-16 h-[110%] w-auto object-contain object-bottom drop-shadow-2xl z-10 pointer-events-none"
+                  className="absolute bottom-0 right-0 lg:-right-16 h-[130%] w-auto object-contain object-bottom drop-shadow-2xl z-10 pointer-events-none"
                 />
 
                 {/* Floating Card - Heart Rate */}
