@@ -68,7 +68,7 @@ export function ConsultationFeeEditor({ initialFee, onFeeChanged, variant = 'inl
 
       setFee(newFee);
       setIsEditing(false);
-      toast.success(newFee === 0 ? 'Consultas configuradas como gratuitas' : `Precio actualizado a $${newFee} MXN`);
+      toast.success(newFee === 0 ? 'Orientaciones configuradas como gratuitas' : `Precio actualizado a $${newFee} MXN`);
       onFeeChanged?.(newFee);
       refreshUser?.();
     } catch (error: any) {
@@ -111,7 +111,7 @@ export function ConsultationFeeEditor({ initialFee, onFeeChanged, variant = 'inl
                 />
                 <span className="text-xs text-muted-foreground">MXN</span>
               </div>
-              <p className="text-[10px] text-muted-foreground">$0 = Consultas gratis</p>
+              <p className="text-[10px] text-muted-foreground">$0 = Orientaciones gratis</p>
               <div className="flex items-center justify-center gap-1">
                 <Button size="sm" variant="default" onClick={handleSave} disabled={isSaving} className="h-7 text-xs px-2">
                   {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
@@ -138,7 +138,7 @@ export function ConsultationFeeEditor({ initialFee, onFeeChanged, variant = 'inl
                 )}
                 <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <p className="text-xs text-muted-foreground">Consulta</p>
+              <p className="text-xs text-muted-foreground">Orientación</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -152,7 +152,7 @@ export function ConsultationFeeEditor({ initialFee, onFeeChanged, variant = 'inl
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Wallet className="w-4 h-4 text-muted-foreground" />
-          <span className="text-muted-foreground">Precio de consulta</span>
+          <span className="text-muted-foreground">Precio de orientación</span>
         </div>
         {!isEditing && (
           <Button
@@ -196,7 +196,7 @@ export function ConsultationFeeEditor({ initialFee, onFeeChanged, variant = 'inl
               </Button>
             </div>
             <p className="text-xs text-muted-foreground ml-5">
-              Escribe <strong>0</strong> para consultas gratuitas
+              Escribe <strong>0</strong> para orientaciones gratuitas
             </p>
           </motion.div>
         ) : (

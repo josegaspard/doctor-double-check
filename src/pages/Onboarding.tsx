@@ -16,6 +16,8 @@ import { AppRole as UserRole } from '@/types/database';
 import { AvatarUpload } from '@/components/onboarding/AvatarUpload';
 import { CedulaVerificationStatus, useCedulaStatus } from '@/components/onboarding/CedulaVerificationStatus';
 import { CedulaAutoVerify } from '@/components/onboarding/CedulaAutoVerify';
+import { ClinicalHistoryForm, ClinicalHistoryData } from '@/components/onboarding/ClinicalHistoryForm';
+import { DocumentSignature } from '@/components/onboarding/DocumentSignature';
 
 // Predefined medical specialties
 const MEDICAL_SPECIALTIES = [
@@ -181,6 +183,26 @@ export default function Onboarding() {
   const [isSavingProgress, setIsSavingProgress] = useState(false);
   const [cedulaVerified, setCedulaVerified] = useState(false);
   const [cedulaVerificationId, setCedulaVerificationId] = useState<string | null>(null);
+  
+  // Clinical History State
+  const [clinicalHistory, setClinicalHistory] = useState<ClinicalHistoryData>({
+    bloodType: '',
+    allergies: '',
+    chronicConditions: '',
+    currentMedications: '',
+    previousSurgeries: '',
+    familyHistory: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    heightCm: '',
+    weightKg: ''
+  });
+
+  // Document Signatures State
+  const [signerName, setSignerName] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [doctorContractAccepted, setDoctorContractAccepted] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasLoadedProgress = useRef(false);
   
@@ -221,8 +243,25 @@ export default function Onboarding() {
       }
     }
 
+    // Step 2 validation for patient (Clinical History)
+    if (selectedRole === 'patient' && step === 2) {
+      // Basic validation for clinical history - can be optional or required depending on rules
+      // For now, let's just require emergency contact
+      if (!clinicalHistory.emergencyContactName.trim()) {
+        errors.institution = 'El nombre de contacto de emergencia es recomendado'; 
+      }
+    }
+
+    // Step 2 validation for doctor/resident (Signatures)
+    if ((selectedRole === 'doctor' || selectedRole === 'resident') && step === 2) {
+      if (!signerName.trim()) errors.license = 'Firma requerida';
+      if (!termsAccepted) errors.specialty = 'Acepta términos';
+      if (!privacyAccepted) errors.specialty = 'Acepta privacidad';
+      if (selectedRole === 'doctor' && !doctorContractAccepted) errors.specialty = 'Acepta contrato';
+    }
+
     return errors;
-  }, [selectedRole, specialty, license, institution, year]);
+  }, [selectedRole, specialty, license, institution, year, step, clinicalHistory, signerName, termsAccepted, privacyAccepted, doctorContractAccepted]);
 
   const isFormValid = Object.keys(validateForm).length === 0;
 
@@ -358,7 +397,8 @@ export default function Onboarding() {
 
   const handleContinue = () => {
     if (selectedRole === 'patient') {
-      handleSubmit();
+      // Patient goes to step 2 (Clinical History)
+      setStep(2);
     } else {
       setStep(2);
     }
@@ -450,6 +490,8 @@ export default function Onboarding() {
         }
       }
 
+      }
+
       if (selectedRole === 'patient') {
         // Create wallet for patient
         const { error: walletError } = await supabase
@@ -458,6 +500,50 @@ export default function Onboarding() {
         
         if (walletError && !walletError.message.includes('duplicate')) {
           console.error('Wallet creation error:', walletError);
+        }
+
+        // Save Clinical History
+        const { error: historyError } = await supabase
+          .from('patient_clinical_history')
+          .insert({
+            patient_id: supabaseUser.id,
+            blood_type: clinicalHistory.bloodType || null,
+            allergies: clinicalHistory.allergies || null,
+            chronic_conditions: clinicalHistory.chronicConditions || null,
+            current_medications: clinicalHistory.currentMedications || null,
+            previous_surgeries: clinicalHistory.previousSurgeries || null,
+            family_history: clinicalHistory.familyHistory || null,
+            emergency_contact_name: clinicalHistory.emergencyContactName || null,
+            emergency_contact_phone: clinicalHistory.emergencyContactPhone || null,
+            height_cm: clinicalHistory.heightCm ? parseFloat(clinicalHistory.heightCm) : null,
+            weight_kg: clinicalHistory.weightKg ? parseFloat(clinicalHistory.weightKg) : null,
+          });
+
+        if (historyError) {
+          console.error('Error saving clinical history:', historyError);
+          // Don't block onboarding for this
+        }
+      }
+
+      // Save Signatures
+      if (signerName && termsAccepted && privacyAccepted) {
+        const signatures = [
+          { type: 'terms_of_service', version: '1.0' },
+          { type: 'privacy_policy', version: '1.0' },
+        ];
+        
+        if (selectedRole === 'doctor' && doctorContractAccepted) {
+          signatures.push({ type: 'doctor_contract', version: '1.0' });
+        }
+
+        for (const sig of signatures) {
+          await supabase.from('document_signatures').insert({
+            user_id: supabaseUser.id,
+            document_type: sig.type,
+            document_version: sig.version,
+            signer_name: signerName,
+            ip_address: 'unknown', // Would need edge function to get real IP
+          });
         }
       }
 
@@ -642,7 +728,7 @@ export default function Onboarding() {
     );
   }
 
-  const totalSteps = selectedRole === 'patient' ? 1 : 2;
+  const totalSteps = 2; // Always 2 steps now (Patient has Clinical History, Doctors have Verification/Signature)
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -870,7 +956,7 @@ export default function Onboarding() {
                           {isSubmitting ? (
                             <Loader2 className="w-4 h-4 animate-spin mr-2" />
                           ) : null}
-                          {selectedRole === 'patient' ? 'Completar registro' : 'Continuar'}
+                          {selectedRole === 'patient' ? 'Continuar' : 'Continuar'}
                         </Button>
                       </motion.div>
                     </motion.div>
@@ -894,9 +980,17 @@ export default function Onboarding() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     >
-                      <CardTitle>Completa tu perfil de {selectedRole === 'doctor' ? 'médico' : 'residente'}</CardTitle>
+                      <CardTitle>
+                        {selectedRole === 'patient' 
+                          ? 'Historial Clínico Básico' 
+                          : `Completa tu perfil de ${selectedRole === 'doctor' ? 'médico' : 'residente'}`
+                        }
+                      </CardTitle>
                       <CardDescription>
-                        Esta información nos ayudará a verificar tu identidad profesional
+                        {selectedRole === 'patient'
+                          ? 'Esta información ayudará a los médicos a atenderte mejor (Opcional)'
+                          : 'Esta información nos ayudará a verificar tu identidad profesional'
+                        }
                       </CardDescription>
                     </motion.div>
                   </CardHeader>
@@ -907,7 +1001,16 @@ export default function Onboarding() {
                       initial="initial"
                       animate="animate"
                     >
-                      <motion.div className="space-y-2" variants={itemVariants}>
+                      {selectedRole === 'patient' ? (
+                        <motion.div variants={itemVariants}>
+                          <ClinicalHistoryForm 
+                            data={clinicalHistory}
+                            onChange={setClinicalHistory}
+                          />
+                        </motion.div>
+                      ) : (
+                        <>
+                          <motion.div className="space-y-2" variants={itemVariants}>
                         <Label htmlFor="specialty" className="flex items-center gap-1">
                           Especialidad <span className="text-destructive">*</span>
                         </Label>
@@ -1056,6 +1159,25 @@ export default function Onboarding() {
                             </AnimatePresence>
                           </motion.div>
                         </>
+                          )}
+                        </>
+                      )}
+
+                      {/* Document Signature for everyone in Step 2 */}
+                      {(selectedRole === 'doctor' || selectedRole === 'resident') && (
+                        <motion.div variants={itemVariants} className="mt-6">
+                          <DocumentSignature
+                            signerName={signerName}
+                            onSignerNameChange={setSignerName}
+                            termsAccepted={termsAccepted}
+                            onTermsChange={setTermsAccepted}
+                            privacyAccepted={privacyAccepted}
+                            onPrivacyChange={setPrivacyAccepted}
+                            doctorContractAccepted={doctorContractAccepted}
+                            onDoctorContractChange={setDoctorContractAccepted}
+                            showDoctorContract={selectedRole === 'doctor'}
+                          />
+                        </motion.div>
                       )}
 
                       <motion.div 

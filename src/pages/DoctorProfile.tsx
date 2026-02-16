@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/dialog';
 import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard } from 'lucide-react';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
+import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
+import { BlockUserButton } from '@/components/blocks/BlockUserButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
@@ -172,7 +174,7 @@ export default function DoctorProfile() {
         navigate('/chat');
         toast.success(`Chat iniciado con ${doctor.name}`);
       } else {
-        toast.error(result.error || 'Error al iniciar consulta');
+        toast.error(result.error || 'Error al iniciar orientación');
       }
     } catch (error) {
       toast.error('Error al iniciar consulta');
@@ -191,7 +193,7 @@ export default function DoctorProfile() {
 
     // Only patients can start consultations
     if (role !== 'patient') {
-      toast.error('Solo los pacientes pueden iniciar consultas');
+      toast.error('Solo los pacientes pueden iniciar orientaciones médicas');
       return;
     }
 
@@ -379,7 +381,8 @@ export default function DoctorProfile() {
                   <div>
                     <h1 className="font-heading text-2xl font-bold text-foreground">{doctor.name}</h1>
                     <p className="text-muted-foreground">{doctor.specialty}</p>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <DoctorBadge type={getDoctorBadgeType(doctor.totalConsultations, doctor.rating)} />
                       <Badge variant="verified" className="gap-1">
                         <Award className="w-3 h-3" />
                         Verificado
@@ -405,7 +408,7 @@ export default function DoctorProfile() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
                   <div className="text-center p-3 bg-muted/50 rounded-lg">
                     <p className="text-xl font-bold text-foreground">{doctor.totalConsultations}</p>
-                    <p className="text-xs text-muted-foreground">Consultas</p>
+                    <p className="text-xs text-muted-foreground">Orientaciones</p>
                   </div>
                   <div className="text-center p-3 bg-muted/50 rounded-lg">
                     {isFreeConsultation ? (
@@ -413,7 +416,7 @@ export default function DoctorProfile() {
                     ) : (
                       <p className="text-xl font-bold text-premium">${doctor.consultationFee}</p>
                     )}
-                    <p className="text-xs text-muted-foreground">Consulta</p>
+                    <p className="text-xs text-muted-foreground">Orientación</p>
                   </div>
                   {doctor.location && (
                     <div className="text-center p-3 bg-muted/50 rounded-lg">
@@ -439,16 +442,17 @@ export default function DoctorProfile() {
                     {isStartingChat 
                       ? 'Iniciando...' 
                       : isFreeConsultation 
-                        ? 'Consulta Gratis'
+                        ? 'Orientación Gratis'
                         : canChatDirectly 
-                          ? 'Iniciar Consulta'
-                          : `Consultar ($${doctor.consultationFee})`
+                          ? 'Iniciar Orientación'
+                          : `Orientación ($${doctor.consultationFee})`
                     }
                   </Button>
                   <Button variant="outline" className="gap-2" onClick={() => navigate('/lives')}>
                     <Video className="w-4 h-4" />
                     Ver Lives
                   </Button>
+                  <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
                 </div>
               </div>
             </div>
@@ -461,10 +465,10 @@ export default function DoctorProfile() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-primary" />
-                Iniciar Consulta
+                Iniciar Orientación Médica
               </DialogTitle>
               <DialogDescription>
-                Consulta con {doctor.name} - ${doctor.consultationFee} MXN
+                Orientación con {doctor.name} - ${doctor.consultationFee} MXN
               </DialogDescription>
             </DialogHeader>
 

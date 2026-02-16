@@ -68,6 +68,8 @@ import ForPatients from "./pages/ForPatients";
 import Enterprise from "./pages/Enterprise";
 import ContentGallery from "./pages/ContentGallery";
 import Notifications from "./pages/Notifications";
+import MedicalNews from "./pages/MedicalNews";
+import VideoCall from "./pages/VideoCall";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -140,6 +142,8 @@ const App = () => (
                       <Route path="/enterprise" element={<Enterprise />} />
                       <Route path="/content" element={<ContentGallery />} />
                       <Route path="/notifications" element={<Notifications />} />
+                      <Route path="/news" element={<MedicalNews />} />
+                      <Route path="/video-call" element={<VideoCall />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>
