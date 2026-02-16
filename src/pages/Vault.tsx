@@ -107,7 +107,7 @@ export default function Vault() {
 
   const storagePercentage = Math.min((storageUsed / storageLimit) * 100, 100);
   const isStorageFull = storageUsed >= storageLimit;
-  const isStorageNearFull = storagePercentage >= 80;
+  const isStorageNearFull = storagePercentage >= 85;
 
   // Fetch doctors the patient has a relationship with (subscriptions, chats, consultations)
   const fetchRelatedDoctors = async () => {
@@ -243,11 +243,11 @@ export default function Vault() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleUpgradeStorage = async (extraGB: number) => {
+  const handleUpgradeStorage = async (extraGB: number, planPrice?: number) => {
     if (!supabaseUser?.id) return;
     setIsUpgrading(true);
 
-    const totalCost = extraGB * pricePerGB;
+    const totalCost = planPrice != null ? planPrice : extraGB * pricePerGB;
 
     try {
       const { data, error } = await supabase.rpc('process_wallet_purchase', {
@@ -389,27 +389,27 @@ export default function Vault() {
               value={storagePercentage} 
               className={`h-2.5 ${isStorageFull ? '[&>div]:bg-destructive' : isStorageNearFull ? '[&>div]:bg-warning' : ''}`} 
             />
-            {isStorageFull && (
-              <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center justify-between mt-3">
+              {isStorageFull ? (
                 <p className="text-xs text-destructive flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
                   Almacenamiento lleno
                 </p>
-                <Button size="sm" variant="default" className="gap-1 h-7 text-xs" onClick={() => setShowUpgradeDialog(true)}>
-                  <Zap className="w-3 h-3" />
-                  Ampliar
-                </Button>
-              </div>
-            )}
-            {!isStorageFull && isStorageNearFull && (
-              <div className="flex items-center justify-between mt-3">
+              ) : isStorageNearFull ? (
                 <p className="text-xs text-warning">Casi lleno — considera ampliar tu espacio</p>
-                <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setShowUpgradeDialog(true)}>
-                  <Zap className="w-3 h-3" />
-                  Ampliar
-                </Button>
-              </div>
-            )}
+              ) : (
+                <p className="text-xs text-muted-foreground">Necesitas más espacio? Consulta nuestros planes</p>
+              )}
+              <Button 
+                size="sm" 
+                variant={isStorageFull ? 'default' : 'outline'} 
+                className="gap-1 h-7 text-xs" 
+                onClick={() => setShowUpgradeDialog(true)}
+              >
+                <Zap className="w-3 h-3" />
+                {isStorageFull ? 'Ampliar' : 'Ver planes'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -691,34 +691,33 @@ export default function Vault() {
             </DialogHeader>
             
             <div className="space-y-3 mt-2">
-              {[
-                { gb: 1, price: 49, label: '+1 GB' },
-                { gb: 5, price: 245, label: '+5 GB', badge: 'Popular' },
-                { gb: 10, price: 490, label: '+10 GB', badge: 'Mejor valor' },
-              ].map(plan => (
-                <button
-                  key={plan.gb}
-                  onClick={() => handleUpgradeStorage(plan.gb)}
-                  disabled={isUpgrading}
-                  className="w-full flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left disabled:opacity-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <HardDrive className="w-5 h-5 text-primary" />
+              {storagePlans.map((plan: any) => {
+                const price = (plan.price != null) ? plan.price : plan.gb * pricePerGB;
+                return (
+                  <button
+                    key={plan.gb}
+                    onClick={() => handleUpgradeStorage(plan.gb, price)}
+                    disabled={isUpgrading}
+                    className="w-full flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left disabled:opacity-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <HardDrive className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{plan.label || `+${plan.gb} GB`}</p>
+                        <p className="text-xs text-muted-foreground">Total: {formatStorageSize(storageLimit + plan.gb * 1073741824)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{plan.label}</p>
-                      <p className="text-xs text-muted-foreground">Total: {formatStorageSize(storageLimit + plan.gb * 1073741824)}</p>
+                    <div className="text-right flex items-center gap-2">
+                      {plan.badge && (
+                        <Badge variant="secondary" className="text-[10px]">{plan.badge}</Badge>
+                      )}
+                      <span className="font-bold text-foreground">${price} MXN</span>
                     </div>
-                  </div>
-                  <div className="text-right flex items-center gap-2">
-                    {plan.badge && (
-                      <Badge variant="secondary" className="text-[10px]">{plan.badge}</Badge>
-                    )}
-                    <span className="font-bold text-foreground">${plan.price} MXN</span>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
 
             <p className="text-xs text-muted-foreground text-center mt-2">
