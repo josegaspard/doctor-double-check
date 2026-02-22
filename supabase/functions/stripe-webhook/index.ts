@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-03-31.basil" });
     const signature = req.headers.get("stripe-signature");
     const body = await req.text();
 

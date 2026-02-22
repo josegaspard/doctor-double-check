@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     const singleDoctorId = requestBody.single ? requestBody.doctor_id : null;
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
+      apiVersion: "2025-03-31.basil",
     });
 
     // Get payout settings

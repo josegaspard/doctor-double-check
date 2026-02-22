@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     const { creator_id } = await req.json();
     if (!creator_id) throw new Error("creator_id is required");
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-03-31.basil" });
 
     // Find user's Stripe customer
     const customers = await stripe.customers.list({ email: user.email!, limit: 1 });

@@ -11,17 +11,17 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-SUBSCRIPTION-CHECKOUT] ${step}${detailsStr}`);
 };
 
-// Subscription tiers with Stripe price IDs
+// Subscription tiers with prices in MXN
 const SUBSCRIPTION_TIERS = {
   basic: {
     name: "Suscripción Básica",
     description: "Acceso a contenido exclusivo y notificaciones",
-    priceId: "price_1SwpRUDYtkQ07Jnnrvm7dwW5", // $99 MXN/month
+    price: 9900, // $99 MXN in cents
   },
   premium: {
     name: "Suscripción Premium",
     description: "Todo lo básico + descuentos en grabaciones y chats prioritarios",
-    priceId: "price_1SwpRzDYtkQ07JnnFmwmpCru", // $199 MXN/month
+    price: 19900, // $199 MXN in cents
   },
 };
 
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     if (!tier || !['basic', 'premium'].includes(tier)) throw new Error("Invalid tier. Use 'basic' or 'premium'");
 
     const tierConfig = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS];
-    logStep("Subscription request", { creatorId, tier, priceId: tierConfig.priceId });
+    logStep("Subscription request", { creatorId, tier, price: tierConfig.price });
 
     // Get creator info
     const { data: creatorProfile } = await supabaseClient
@@ -67,7 +67,9 @@ Deno.serve(async (req) => {
       .eq('id', creatorId)
       .single();
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const creatorName = creatorProfile?.name || 'Doctor';
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-03-31.basil" });
 
     // Check if customer exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -77,13 +79,23 @@ Deno.serve(async (req) => {
       logStep("Existing customer found", { customerId });
     }
 
-    // Create checkout session using real Stripe price ID
+    // Create checkout session using dynamic price_data (no hardcoded price IDs needed)
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price: tierConfig.priceId,
+          price_data: {
+            currency: "mxn",
+            product_data: {
+              name: `${tierConfig.name} - ${creatorName}`,
+              description: tierConfig.description,
+            },
+            unit_amount: tierConfig.price,
+            recurring: {
+              interval: "month",
+            },
+          },
           quantity: 1,
         },
       ],
