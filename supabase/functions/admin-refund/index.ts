@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       throw new Error("user_id and amount are required");
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-03-31.basil" });
 
     let stripeRefundId = null;
 

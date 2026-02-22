@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
     logStep("Amount received", { amount });
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-03-31.basil" });
 
     // Check if customer exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });

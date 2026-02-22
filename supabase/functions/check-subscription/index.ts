@@ -11,11 +11,11 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
-// Map Stripe price IDs to subscription tiers
-const PRICE_TO_TIER: Record<string, 'basic' | 'premium'> = {
-  'price_1SwpRUDYtkQ07Jnnrvm7dwW5': 'basic',
-  'price_1SwpRzDYtkQ07JnnFmwmpCru': 'premium',
-};
+// Determine tier from price amount (in cents) since we use dynamic price_data
+function determineTierFromAmount(amountInCents: number): 'basic' | 'premium' {
+  // $199 MXN = 19900 cents = premium, anything else = basic
+  return amountInCents >= 15000 ? 'premium' : 'basic';
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -33,15 +33,11 @@ Deno.serve(async (req) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
-    logStep("Authenticating user with token");
-    
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
@@ -57,7 +53,7 @@ Deno.serve(async (req) => {
       // No body or invalid JSON - that's ok
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-03-31.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length === 0) {
@@ -100,8 +96,10 @@ Deno.serve(async (req) => {
         });
       }
 
-      const priceId = creatorSubscription.items.data[0]?.price?.id;
-      const tier = priceId ? PRICE_TO_TIER[priceId] || 'basic' : 'basic';
+      // Use metadata tier or determine from price amount
+      const metadataTier = creatorSubscription.metadata?.tier as 'basic' | 'premium' | undefined;
+      const priceAmount = creatorSubscription.items.data[0]?.price?.unit_amount || 0;
+      const tier = metadataTier || determineTierFromAmount(priceAmount);
       const subscriptionEnd = new Date(creatorSubscription.current_period_end * 1000).toISOString();
 
       logStep("Found creator subscription", { creatorId, tier, subscriptionEnd });
@@ -119,8 +117,9 @@ Deno.serve(async (req) => {
 
     // Return all active subscriptions
     const activeSubscriptions = subscriptions.data.map((sub: any) => {
-      const priceId = sub.items.data[0]?.price?.id;
-      const tier = priceId ? PRICE_TO_TIER[priceId] || 'basic' : 'basic';
+      const metadataTier = sub.metadata?.tier as 'basic' | 'premium' | undefined;
+      const priceAmount = sub.items.data[0]?.price?.unit_amount || 0;
+      const tier = metadataTier || determineTierFromAmount(priceAmount);
       return {
         subscription_id: sub.id,
         creator_id: sub.metadata?.creator_id,

@@ -113,28 +113,19 @@ Deno.serve(async (req) => {
         is_active: true,
       });
 
-    // *** CRITICAL FIX: Credit doctor earnings ***
+    // Credit doctor earnings atomically
     const doctorId = recording.doctor_id;
     const amountToCredit = purchaseResult.amount_charged;
     
-    // Get current pending earnings
-    const { data: doctorProfile } = await supabaseClient
-      .from('doctor_profiles')
-      .select('pending_earnings')
-      .eq('user_id', doctorId)
-      .single();
+    const { data: newPending, error: rpcError } = await supabaseClient.rpc("credit_doctor_earnings", {
+      p_doctor_id: doctorId,
+      p_amount: amountToCredit,
+    });
 
-    if (doctorProfile) {
-      const currentPending = doctorProfile.pending_earnings || 0;
-      const newPending = currentPending + amountToCredit;
-
-      // Update doctor pending earnings
-      await supabaseClient
-        .from('doctor_profiles')
-        .update({ pending_earnings: newPending })
-        .eq('user_id', doctorId);
-
-      logStep("Doctor earnings credited", { doctorId, amountToCredit, newPending });
+    if (rpcError || newPending === -1) {
+      logStep("Error crediting earnings atomically", { error: rpcError, doctorId });
+    } else {
+      logStep("Doctor earnings credited atomically", { doctorId, amountToCredit, newPending });
 
       // Create earning transaction record for doctor
       await supabaseClient
