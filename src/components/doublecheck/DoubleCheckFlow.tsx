@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVault } from '@/contexts/VaultContext';
 import { useChat } from '@/contexts/ChatContext';
+import { useWallet } from '@/contexts/WalletContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   CheckCheck,
@@ -24,6 +26,10 @@ import {
   DollarSign,
   Loader2,
   ArrowRight,
+  CreditCard,
+  Wallet,
+  ExternalLink,
+  AlertCircle,
 } from 'lucide-react';
 
 interface DoubleCheckFlowProps {
@@ -42,13 +48,15 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
   const { user, role } = useAuth();
   const { files, grantAccess } = useVault();
   const { createSession } = useChat();
+  const { balance, canAfford, getEffectivePrice, refreshWallet } = useWallet();
   
   const [step, setStep] = useState<'files' | 'confirm' | 'processing'>('files');
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isStripeProcessing, setIsStripeProcessing] = useState(false);
 
   const patientFiles = files.filter(f => f.patientId === user?.id);
-  const discountedFee = role === 'resident' ? doctor.consultationFee * 0.5 : doctor.consultationFee;
+  const discountedFee = getEffectivePrice(doctor.consultationFee);
 
   const toggleFile = (fileId: string) => {
     setSelectedFiles((prev) =>
@@ -56,7 +64,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
     );
   };
 
-  const handleStartDoubleCheck = async () => {
+  const handleWalletPayment = async () => {
     if (!user) return;
     
     setStep('processing');
@@ -85,10 +93,13 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       );
 
       if (purchaseError) throw purchaseError;
-      const result = purchaseResult as { success: boolean; error?: string; amount_charged?: number } | null;
+      const result = purchaseResult as { success: boolean; error?: string; amount_charged?: number; new_balance?: number } | null;
       if (!result?.success) {
         throw new Error(result?.error || 'Error en el pago');
       }
+
+      // Show debit notification
+      toast.success(`Se debitaron $${result.amount_charged} de tu wallet. Nuevo saldo: $${result.new_balance}`);
 
       // 2. Create consultation record
       const { data: consultation, error: consultationError } = await supabase
@@ -116,7 +127,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         throw new Error(chatResult.error || 'Error al crear sesión de chat');
       }
 
-      // 5. *** CRITICAL FIX: Create double_check entitlement ***
+      // 5. Create entitlement
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
       
@@ -129,22 +140,14 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           expires_at: expiresAt.toISOString(),
         });
 
-      // 6. *** CRITICAL FIX: Credit doctor earnings ***
+      // 6. Credit doctor earnings atomically
       const amountCharged = result.amount_charged || doctor.consultationFee;
-      const { data: currentDoctorProfile } = await supabase
-        .from('doctor_profiles')
-        .select('pending_earnings')
-        .eq('user_id', doctor.userId)
-        .single();
+      const { data: newPending, error: rpcError } = await supabase.rpc("credit_doctor_earnings", {
+        p_doctor_id: doctor.userId,
+        p_amount: amountCharged,
+      });
 
-      if (currentDoctorProfile) {
-        const newPending = (currentDoctorProfile.pending_earnings || 0) + amountCharged;
-        await supabase
-          .from('doctor_profiles')
-          .update({ pending_earnings: newPending })
-          .eq('user_id', doctor.userId);
-
-        // Create earning transaction for doctor
+      if (!rpcError && newPending !== -1) {
         await supabase
           .from('wallet_transactions')
           .insert({
@@ -157,7 +160,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           });
       }
 
-      // 7. *** CRITICAL FIX: Notify doctor ***
+      // 7. Notify doctor
       await supabase
         .from('notifications')
         .insert({
@@ -174,6 +177,9 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           },
         });
 
+      // 8. Refresh wallet
+      await refreshWallet();
+
       toast.success('Double Check iniciado correctamente');
       onClose();
       navigate('/chat', { state: { sessionId: chatResult.session?.id } });
@@ -181,9 +187,38 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
     } catch (error: any) {
       console.error('Double Check error:', error);
       toast.error(error.message || 'Error al iniciar Double Check');
-      setStep('files');
+      setStep('confirm');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleStripePayment = async () => {
+    setIsStripeProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-consultation-checkout', {
+        body: { 
+          doctorId: doctor.userId, 
+          consultationFee: doctor.consultationFee, 
+          doctorName: doctor.name,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Store selected files in sessionStorage so we can grant access after redirect
+        if (selectedFiles.length > 0) {
+          sessionStorage.setItem('doublecheck_files', JSON.stringify(selectedFiles));
+          sessionStorage.setItem('doublecheck_doctor', doctor.userId);
+        }
+        window.location.href = data.url;
+      }
+    } catch (error: any) {
+      console.error('Stripe checkout error:', error);
+      toast.error(error.message || 'Error al procesar el pago con tarjeta');
+    } finally {
+      setIsStripeProcessing(false);
     }
   };
 
@@ -320,16 +355,82 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                   </div>
                 </div>
               </div>
+
+              <Separator />
+
+              {/* Payment Options */}
+              <div className="space-y-3">
+                {/* Stripe */}
+                <Button 
+                  onClick={handleStripePayment}
+                  disabled={isStripeProcessing || isProcessing}
+                  className="w-full h-12 gap-2"
+                >
+                  {isStripeProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4" />
+                      Pagar con tarjeta
+                      <ExternalLink className="w-3 h-3 ml-1" />
+                    </>
+                  )}
+                </Button>
+
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">o usa tu saldo</span>
+                  </div>
+                </div>
+
+                {/* Wallet */}
+                {canAfford(doctor.consultationFee) ? (
+                  <Button 
+                    onClick={handleWalletPayment}
+                    disabled={isProcessing || isStripeProcessing}
+                    variant="outline"
+                    className="w-full h-12 gap-2"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Wallet className="w-4 h-4" />
+                        Pagar con saldo (${balance.toLocaleString()})
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2 p-3 bg-warning/10 rounded-lg border border-warning/30">
+                      <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-medium text-warning">Saldo insuficiente</p>
+                        <p className="text-warning/80 text-xs">
+                          Tienes ${balance.toLocaleString()} — necesitas ${(discountedFee - balance).toLocaleString()} más
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => { onClose(); navigate('/wallet'); }} 
+                      variant="outline"
+                      className="w-full gap-2"
+                    >
+                      <Wallet className="w-4 h-4" />
+                      Recargar wallet
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setStep('files')}>
-                Atrás
-              </Button>
-              <Button onClick={handleStartDoubleCheck}>
-                Confirmar y Pagar
-              </Button>
-            </DialogFooter>
+            <Button variant="ghost" onClick={() => setStep('files')} className="w-full">
+              ← Atrás
+            </Button>
           </>
         )}
 

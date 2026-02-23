@@ -82,7 +82,7 @@ export function usePurchases() {
         throw new Error(data?.error || t('purchaseMessages.purchaseError'));
       }
 
-      toast.success(`${t('purchaseMessages.purchaseSuccess')} $${data.newBalance}`);
+      toast.success(`Se debitaron $${data.amountCharged} de tu wallet. Nuevo saldo: $${data.newBalance}`);
       
       await Promise.all([fetchPurchases(), refreshWallet()]);
       
