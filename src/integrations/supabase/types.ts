@@ -1451,6 +1451,7 @@ export type Database = {
           doctor_license: string
           doctor_name: string
           doctor_specialty: string
+          file_url: string | null
           id: string
           instructions: string | null
           medications: Json
@@ -1470,6 +1471,7 @@ export type Database = {
           doctor_license: string
           doctor_name: string
           doctor_specialty: string
+          file_url?: string | null
           id?: string
           instructions?: string | null
           medications?: Json
@@ -1489,6 +1491,7 @@ export type Database = {
           doctor_license?: string
           doctor_name?: string
           doctor_specialty?: string
+          file_url?: string | null
           id?: string
           instructions?: string | null
           medications?: Json
