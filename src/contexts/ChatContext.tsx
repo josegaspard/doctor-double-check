@@ -93,27 +93,25 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       if (sessionsData) {
-        // Batch fetch session details via RPC (limit concurrency to avoid N+1 overload)
+        // Single bulk RPC call to fetch all session details at once (eliminates N+1)
         const sessionIds = sessionsData.map(s => s.id);
-        const BATCH_SIZE = 10;
-        const detailsResults: Awaited<ReturnType<typeof supabase.rpc>>[] = [];
-        for (let i = 0; i < sessionIds.length; i += BATCH_SIZE) {
-          const batch = sessionIds.slice(i, i + BATCH_SIZE);
-          const batchResults = await Promise.all(
-            batch.map(id => supabase.rpc('get_chat_session_details', { p_session_id: id }))
-          );
-          detailsResults.push(...batchResults);
-        }
         
         const detailsMap = new Map<string, any>();
-        detailsResults.forEach((result, i) => {
-          if (!result.error && result.data) {
-            const dataArr = Array.isArray(result.data) ? result.data : [result.data];
-            if (dataArr.length > 0) {
-              detailsMap.set(sessionIds[i], dataArr[0]);
-            }
+        if (sessionIds.length > 0) {
+          const { data: bulkDetails, error: bulkError } = await supabase.rpc(
+            'get_chat_sessions_details_bulk' as any,
+            { p_session_ids: sessionIds }
+          );
+          
+          if (!bulkError && bulkDetails) {
+            const detailsArr = Array.isArray(bulkDetails) ? bulkDetails : [bulkDetails];
+            detailsArr.forEach((d: any) => {
+              if (d?.session_id) {
+                detailsMap.set(d.session_id, d);
+              }
+            });
           }
-        });
+        }
 
         // Collect participant IDs that need fallback profile data
         const needsFallbackIds = new Set<string>();
