@@ -100,7 +100,7 @@ const RESIDENT_NAMES = [
   "Res. Francisco Guzmán Ortiz",
 ];
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
