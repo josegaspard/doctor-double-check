@@ -57,8 +57,14 @@ export function useNotificationsRealtime() {
         toast.info(notification.title, {
           description: notification.message,
           action: {
-            label: t('notificationActions.rate'),
-            onClick: () => navigate('/chat'),
+            label: '⭐ Calificar',
+            onClick: () => {
+              // Navigate to trigger PostConsultationRatingProvider check
+              // The provider auto-opens the dialog for unrated consultations
+              navigate('/');
+              // Dispatch a custom event so the provider can pick it up
+              window.dispatchEvent(new CustomEvent('trigger-rating-check'));
+            },
           },
           duration: 15000,
         });

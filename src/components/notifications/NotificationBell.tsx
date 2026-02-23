@@ -81,6 +81,15 @@ function NotificationItem({
           navigate('/doctors');
         }
         break;
+      case 'rating_request':
+        // For rating requests, navigate to the data URL or stay - the PostConsultationRatingProvider handles the modal
+        if (data.url) {
+          navigate(data.url);
+        } else if (data.consultation_id || data.consultationId) {
+          // Trigger a check for pending ratings by navigating to home
+          navigate('/');
+        }
+        break;
       case 'subscription_update':
         navigate('/settings');
         break;

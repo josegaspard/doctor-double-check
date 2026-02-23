@@ -7,9 +7,10 @@ import { PrescriptionForm } from '@/components/prescriptions/PrescriptionForm';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function CreatePrescription() {
-  const { role } = useAuth();
+  const { user, role } = useAuth();
   const { language } = useLanguage();
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -22,6 +23,31 @@ export default function CreatePrescription() {
   const patientId = params.get('patientId') || '';
   const patientName = params.get('patientName') || '';
   const consultationId = params.get('consultationId') || undefined;
+  const sessionId = params.get('sessionId') || undefined;
+
+  const handleCreated = async (prescriptionId?: string) => {
+    // Send auto-message in chat if we have a session
+    if (sessionId && user?.id && prescriptionId) {
+      try {
+        await supabase.from('chat_messages').insert({
+          session_id: sessionId,
+          sender_id: user.id,
+          content: `📋 Se te ha generado tu receta médica. Haz clic aquí para verla: /prescriptions/${prescriptionId}`,
+        });
+        await supabase.from('chat_sessions').update({
+          last_message: '📋 Se te ha generado tu receta médica',
+          last_message_at: new Date().toISOString(),
+        }).eq('id', sessionId);
+      } catch (err) {
+        console.error('Error sending prescription message:', err);
+      }
+    }
+    if (sessionId) {
+      navigate(`/chat?session=${sessionId}`);
+    } else {
+      navigate('/prescriptions');
+    }
+  };
 
   return (
     <MainLayout>
@@ -40,7 +66,7 @@ export default function CreatePrescription() {
               patientId={patientId}
               patientName={patientName}
               consultationId={consultationId}
-              onCreated={() => navigate('/prescriptions')}
+              onCreated={handleCreated}
             />
           </CardContent>
         </Card>

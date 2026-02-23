@@ -19,7 +19,7 @@ interface PrescriptionFormProps {
   patientId: string;
   patientName: string;
   consultationId?: string;
-  onCreated?: () => void;
+  onCreated?: (prescriptionId?: string) => void;
 }
 
 export function PrescriptionForm({ patientId, patientName, consultationId, onCreated }: PrescriptionFormProps) {
@@ -164,7 +164,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
       }
 
       toast.success(language === 'es' ? 'Receta creada y enviada al paciente' : 'Prescription created and sent');
-      onCreated?.();
+      onCreated?.(data.id);
     } catch (error: any) {
       toast.error(error.message || 'Error');
     } finally {

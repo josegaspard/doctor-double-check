@@ -72,6 +72,12 @@ export function usePostConsultationRating() {
   useEffect(() => {
     checkPendingRatings();
 
+    // Listen for manual trigger from notification click
+    const handleTrigger = () => {
+      setTimeout(checkPendingRatings, 500);
+    };
+    window.addEventListener('trigger-rating-check', handleTrigger);
+
     // Listen for consultation updates (e.g., doctor closes the session)
     if (!user?.id || role !== 'patient') return;
     
@@ -94,7 +100,7 @@ export function usePostConsultationRating() {
       )
       .subscribe();
 
-    // Also listen for chat_sessions closing (covers the case when patient is on chat page)
+    // Also listen for chat_sessions closing
     const chatChannel = supabase
       .channel(`chat-session-closed-rating-${user.id}`)
       .on(
@@ -106,7 +112,6 @@ export function usePostConsultationRating() {
         },
         (payload) => {
           if (payload.new?.status === 'closed' && payload.old?.status === 'active') {
-            // Check if this user is a participant
             const isParticipant = payload.new.participant1_id === user.id || payload.new.participant2_id === user.id;
             if (isParticipant) {
               setTimeout(checkPendingRatings, 1500);
@@ -117,6 +122,7 @@ export function usePostConsultationRating() {
       .subscribe();
 
     return () => {
+      window.removeEventListener('trigger-rating-check', handleTrigger);
       supabase.removeChannel(channel);
       supabase.removeChannel(chatChannel);
     };

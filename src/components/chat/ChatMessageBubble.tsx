@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FileText, Image, Download, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -11,8 +12,29 @@ interface ChatMessageBubbleProps {
 }
 
 export function ChatMessageBubble({ message, isOwn, isSessionClosed }: ChatMessageBubbleProps) {
+  const navigate = useNavigate();
+
   // Render message content (with file support)
   const renderMessageContent = (content: string) => {
+    // Check if it's a prescription message
+    const prescriptionMatch = content.match(/📋.*\/prescriptions\/([a-f0-9-]+)/);
+    if (prescriptionMatch) {
+      const prescriptionId = prescriptionMatch[1];
+      const textPart = content.split('/prescriptions/')[0].trim();
+      return (
+        <div 
+          className="cursor-pointer"
+          onClick={() => navigate(`/prescriptions/${prescriptionId}`)}
+        >
+          <p className="text-sm whitespace-pre-wrap leading-relaxed">{textPart}</p>
+          <div className={`mt-2 flex items-center gap-2 p-2 rounded-lg ${isOwn ? 'bg-white/10' : 'bg-primary/5'}`}>
+            <FileText className="w-4 h-4" />
+            <span className="text-xs font-medium underline">Ver receta médica</span>
+          </div>
+        </div>
+      );
+    }
+
     // Check if it's a file message
     const imageMatch = content.match(/📷 \[Imagen: (.+?)\]\n(https?:\/\/.+)/);
     const fileMatch = content.match(/📎 \[Archivo: (.+?)\]\n(https?:\/\/.+)/);

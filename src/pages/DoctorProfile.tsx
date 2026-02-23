@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import MainLayout from '@/components/layout/MainLayout';
 import DoctorCredentials from '@/components/doctor/DoctorCredentials';
 import { Card, CardContent } from '@/components/ui/card';
@@ -386,9 +387,20 @@ export default function DoctorProfile() {
                         <Award className="w-3 h-3" />
                         Verificado
                       </Badge>
-                      <Badge variant="secondary" className="gap-1">
+                      <Badge variant="secondary" className="gap-1 overflow-hidden">
                         <Users className="w-3 h-3" />
-                        {doctor.followersCount} seguidores
+                        <AnimatePresence mode="popLayout">
+                          <motion.span
+                            key={doctor.followersCount}
+                            initial={{ y: 10, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -10, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                          >
+                            {doctor.followersCount}
+                          </motion.span>
+                        </AnimatePresence>
+                        {' '}seguidores
                       </Badge>
                     </div>
                   </div>
