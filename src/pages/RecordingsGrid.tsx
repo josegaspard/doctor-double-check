@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import PaywallModal from '@/components/PaywallModal';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +33,8 @@ import {
 
 export default function RecordingsGrid() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const doctorFilter = searchParams.get('doctor');
   const { recordings } = useLives();
   const { user, role, isAuthenticated } = useAuth();
   const { t } = useLanguage();
@@ -42,6 +45,21 @@ export default function RecordingsGrid() {
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [doctorName, setDoctorName] = useState<string | null>(null);
+
+  // Fetch doctor name if filtering by doctor
+  useEffect(() => {
+    if (!doctorFilter) { setDoctorName(null); return; }
+    const fetchName = async () => {
+      const { data } = await supabase
+        .from('profiles_public')
+        .select('name')
+        .eq('id', doctorFilter)
+        .single();
+      setDoctorName(data?.name || null);
+    };
+    fetchName();
+  }, [doctorFilter]);
 
   // Block visitors completely
   if (!isAuthenticated || role === 'visitor') {
@@ -80,7 +98,8 @@ export default function RecordingsGrid() {
     const matchesSearch = rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          rec.doctorName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSpecialty = specialtyFilter === 'all' || rec.specialty === specialtyFilter;
-    return matchesSearch && matchesSpecialty;
+    const matchesDoctor = !doctorFilter || rec.doctorId === doctorFilter;
+    return matchesSearch && matchesSpecialty && matchesDoctor;
   });
 
   // Check if user owns recording or has free access
@@ -130,10 +149,15 @@ export default function RecordingsGrid() {
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
               <PlayCircle className="w-6 h-6 text-premium" />
-              {t('recordings.premiumContent')}
+              {doctorName ? `Grabaciones de ${doctorName}` : t('recordings.premiumContent')}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {recordings.length} {t('recordings.title').toLowerCase()}
+              {filteredRecordings.length} {t('recordings.title').toLowerCase()}
+              {doctorFilter && (
+                <Button variant="link" size="sm" className="ml-2 p-0 h-auto text-xs" onClick={() => navigate('/recordings')}>
+                  Ver todas
+                </Button>
+              )}
             </p>
           </div>
           

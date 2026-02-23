@@ -29,6 +29,7 @@ interface SubscribeButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   showUpgrade?: boolean;
+  onSubscriptionChange?: () => void;
 }
 
 export function SubscribeButton({
@@ -37,6 +38,7 @@ export function SubscribeButton({
   variant = 'default',
   size = 'default',
   showUpgrade = true,
+  onSubscriptionChange,
 }: SubscribeButtonProps) {
   const { user, isAuthenticated } = useAuth();
   const { isSubscribedTo, getSubscription, subscribe, unsubscribe, updateNotificationPrefs } =
@@ -68,7 +70,7 @@ export function SubscribeButton({
     
     if (result.success) {
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+      onSubscriptionChange?.();
       toast({
         title: t('subscriptions.subscribed'),
         description: `${t('subscriptions.nowFollowing')} ${doctorName || 'este doctor'}`,
@@ -89,6 +91,7 @@ export function SubscribeButton({
     setIsLoading(false);
 
     if (result.success) {
+      onSubscriptionChange?.();
       toast({
         description: t('subscriptions.unsubscribe'),
       });
