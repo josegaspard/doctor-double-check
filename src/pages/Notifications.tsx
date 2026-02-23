@@ -36,8 +36,8 @@ function navigateByType(notification: Notification, navigate: ReturnType<typeof 
       navigate(data.session_id || data.sessionId ? `/chat?session=${data.session_id || data.sessionId}` : '/chat');
       break;
     case 'rating_request':
-      navigate('/');
-      setTimeout(() => window.dispatchEvent(new CustomEvent('trigger-rating-check')), 500);
+      // Open rating modal immediately
+      window.dispatchEvent(new CustomEvent('trigger-rating-check'));
       break;
     case 'doctor_availability':
       navigate(data.doctor_id || data.doctorId ? `/doctor/${data.doctor_id || data.doctorId}` : '/doctors');

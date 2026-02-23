@@ -55,13 +55,12 @@ export function usePostConsultationRating() {
           doctorName: doctorProfile?.name || 'tu médico',
         });
 
-        // Only show if ended recently (within last 24 hours) and after a short delay
+        // Auto-show dialog if consultation ended recently (within 24h)
         const endedAt = new Date(unrated.ended_at);
         const hoursAgo = (Date.now() - endedAt.getTime()) / (1000 * 60 * 60);
         
         if (hoursAgo < 24) {
-          // Delay showing the dialog slightly
-          setTimeout(() => setIsDialogOpen(true), 2000);
+          setTimeout(() => setIsDialogOpen(true), 1500);
         }
       }
     } catch (error) {
@@ -69,12 +68,26 @@ export function usePostConsultationRating() {
     }
   }, [user?.id, role]);
 
+  // Force open the dialog immediately (used when clicking notification)
+  const forceOpenDialog = useCallback(() => {
+    if (pendingRating) {
+      setIsDialogOpen(true);
+    } else {
+      // No pending rating cached yet — fetch and open immediately
+      (async () => {
+        await checkPendingRatings();
+        // After check, force open
+        setIsDialogOpen(true);
+      })();
+    }
+  }, [pendingRating, checkPendingRatings]);
+
   useEffect(() => {
     checkPendingRatings();
 
-    // Listen for manual trigger from notification click
+    // Listen for manual trigger from notification click — open immediately
     const handleTrigger = () => {
-      setTimeout(checkPendingRatings, 500);
+      forceOpenDialog();
     };
     window.addEventListener('trigger-rating-check', handleTrigger);
 
@@ -92,7 +105,6 @@ export function usePostConsultationRating() {
           filter: `patient_id=eq.${user.id}`,
         },
         (payload) => {
-          // If ended_at was just set, check for pending ratings
           if (payload.new?.ended_at && !payload.old?.ended_at) {
             setTimeout(checkPendingRatings, 1000);
           }
@@ -100,7 +112,6 @@ export function usePostConsultationRating() {
       )
       .subscribe();
 
-    // Also listen for chat_sessions closing
     const chatChannel = supabase
       .channel(`chat-session-closed-rating-${user.id}`)
       .on(
@@ -126,7 +137,7 @@ export function usePostConsultationRating() {
       supabase.removeChannel(channel);
       supabase.removeChannel(chatChannel);
     };
-  }, [checkPendingRatings, user?.id, role]);
+  }, [checkPendingRatings, forceOpenDialog, user?.id, role]);
 
   const closeDialog = useCallback(() => {
     setIsDialogOpen(false);
