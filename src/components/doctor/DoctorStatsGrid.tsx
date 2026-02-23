@@ -1,0 +1,56 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import { Radio, PlayCircle, Folder, Star } from 'lucide-react';
+import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
+
+interface Props {
+  activeLivesCount: number;
+  recordingsCount: number;
+  vaultFilesCount: number;
+  rating: number;
+}
+
+export function DoctorStatsGrid({ activeLivesCount, recordingsCount, vaultFilesCount, rating }: Props) {
+  const navigate = useNavigate();
+
+  const stats = [
+    { label: 'Lives Activos', value: activeLivesCount, icon: Radio, color: 'live' },
+    { label: 'Grabaciones', value: recordingsCount, icon: PlayCircle, color: 'premium', onClick: () => navigate('/doctor/recordings') },
+    { label: 'Acceso Vault', value: vaultFilesCount, icon: Folder, color: 'primary' },
+    { label: 'Rating', value: rating, icon: Star, color: 'success' },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:gap-6 lg:grid-cols-5">
+      {stats.map((stat) => {
+        const Icon = stat.icon;
+        return (
+          <Card
+            key={stat.label}
+            className={`hover:shadow-md transition-shadow ${stat.onClick ? 'cursor-pointer' : ''}`}
+            onClick={stat.onClick}
+          >
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-${stat.color}/10 flex items-center justify-center flex-shrink-0`}>
+                  <Icon className={`w-5 h-5 sm:w-7 sm:h-7 text-${stat.color}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-3xl font-bold text-foreground">{stat.value}</p>
+                  <p className="text-[10px] sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 truncate">{stat.label}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      <Card className="hover:shadow-md transition-shadow">
+        <CardContent className="p-3 sm:p-6">
+          <ConsultationFeeEditor variant="card" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
