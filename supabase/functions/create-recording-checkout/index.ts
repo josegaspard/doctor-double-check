@@ -27,6 +27,10 @@ Deno.serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
+    if (stripeKey.startsWith("pk_")) {
+      throw new Error("Invalid key: STRIPE_SECRET_KEY contains a publishable key. Need secret key (sk_*)");
+    }
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
     
@@ -41,14 +45,18 @@ Deno.serve(async (req) => {
     const { recordingId } = await req.json();
     if (!recordingId) throw new Error("Recording ID is required");
 
-    // Fetch recording details
+    // Fetch recording details (simple query without joins)
     const { data: recording, error: recError } = await supabaseClient
       .from("recordings")
-      .select("*, doctor_profiles:doctor_id(specialty), profiles:doctor_id(name)")
+      .select("id, title, price, specialty, doctor_id")
       .eq("id", recordingId)
       .single();
 
-    if (recError || !recording) throw new Error("Recording not found");
+    if (recError) {
+      logStep("Recording query error", { error: recError.message, code: recError.code });
+      throw new Error("Recording not found");
+    }
+    if (!recording) throw new Error("Recording not found");
     logStep("Recording found", { title: recording.title, price: recording.price });
 
     // Check if already purchased
@@ -57,10 +65,13 @@ Deno.serve(async (req) => {
       .select("id")
       .eq("user_id", user.id)
       .eq("recording_id", recordingId)
-      .single();
+      .maybeSingle();
 
     if (existingPurchase) {
-      throw new Error("Recording already purchased");
+      return new Response(JSON.stringify({ error: "Recording already purchased" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
     // Check user role for discount
@@ -72,7 +83,7 @@ Deno.serve(async (req) => {
 
     let finalPrice = recording.price;
     if (roleData?.role === "resident") {
-      finalPrice = recording.price * 0.5; // 50% discount for residents
+      finalPrice = recording.price * 0.5;
       logStep("Resident discount applied", { originalPrice: recording.price, finalPrice });
     }
 

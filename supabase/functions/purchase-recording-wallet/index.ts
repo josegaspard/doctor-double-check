@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const logStep = (step: string, details?: any) => {
@@ -18,16 +18,17 @@ Deno.serve(async (req) => {
   try {
     logStep("Function started");
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+    // Admin client for queries that bypass RLS
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    const { data: userData, error: userError } = await adminClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
 
     const user = userData.user;
@@ -39,9 +40,9 @@ Deno.serve(async (req) => {
     logStep("Recording ID received", { recordingId });
 
     // Get recording details
-    const { data: recording, error: recordingError } = await supabaseClient
+    const { data: recording, error: recordingError } = await adminClient
       .from('recordings')
-      .select('*')
+      .select('id, title, price, doctor_id, specialty')
       .eq('id', recordingId)
       .single();
 
@@ -51,25 +52,27 @@ Deno.serve(async (req) => {
     logStep("Recording found", { title: recording.title, price: recording.price });
 
     // Check if already purchased
-    const { data: existingPurchase } = await supabaseClient
+    const { data: existingPurchase } = await adminClient
       .from('purchases')
       .select('id')
       .eq('user_id', user.id)
       .eq('recording_id', recordingId)
-      .single();
+      .maybeSingle();
 
     if (existingPurchase) {
       return new Response(
         JSON.stringify({ success: true, alreadyPurchased: true }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
-    // Use the process_wallet_purchase RPC function
-    const { data: purchaseResult, error: purchaseError } = await supabaseClient
+    // Use a user-scoped client for the RPC call (so auth.uid() works)
+    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+
+    // Use the process_wallet_purchase RPC function (requires auth.uid())
+    const { data: purchaseResult, error: purchaseError } = await userClient
       .rpc('process_wallet_purchase', {
         p_amount: recording.price,
         p_description: `Grabación: ${recording.title}`,
@@ -90,8 +93,8 @@ Deno.serve(async (req) => {
       newBalance: purchaseResult.new_balance 
     });
 
-    // Create purchase record
-    const { error: insertError } = await supabaseClient
+    // Create purchase record (admin client to bypass RLS)
+    const { error: insertError } = await adminClient
       .from('purchases')
       .insert({
         user_id: user.id,
@@ -101,11 +104,10 @@ Deno.serve(async (req) => {
 
     if (insertError) {
       logStep("Error creating purchase record", { error: insertError.message });
-      // Don't throw - wallet transaction already succeeded
     }
 
     // Create entitlement
-    await supabaseClient
+    await adminClient
       .from('entitlements')
       .insert({
         user_id: user.id,
@@ -117,7 +119,7 @@ Deno.serve(async (req) => {
     const doctorId = recording.doctor_id;
     const amountToCredit = purchaseResult.amount_charged;
     
-    const { data: newPending, error: rpcError } = await supabaseClient.rpc("credit_doctor_earnings", {
+    const { data: newPending, error: rpcError } = await adminClient.rpc("credit_doctor_earnings", {
       p_doctor_id: doctorId,
       p_amount: amountToCredit,
     });
@@ -127,8 +129,7 @@ Deno.serve(async (req) => {
     } else {
       logStep("Doctor earnings credited atomically", { doctorId, amountToCredit, newPending });
 
-      // Create earning transaction record for doctor
-      await supabaseClient
+      await adminClient
         .from('wallet_transactions')
         .insert({
           user_id: doctorId,
@@ -140,9 +141,9 @@ Deno.serve(async (req) => {
         });
     }
 
-    // Send purchase confirmation email
+    // Send purchase confirmation email (non-critical)
     try {
-      await supabaseClient.functions.invoke('send-purchase-email', {
+      await adminClient.functions.invoke('send-purchase-email', {
         body: {
           userId: user.id,
           purchaseType: 'recording',
@@ -150,7 +151,6 @@ Deno.serve(async (req) => {
           amount: purchaseResult.amount_charged,
         },
       });
-      logStep("Purchase confirmation email sent");
     } catch (emailError) {
       logStep("Email sending failed (non-critical)", { error: emailError });
     }
@@ -163,20 +163,14 @@ Deno.serve(async (req) => {
         amountCharged: purchaseResult.amount_charged,
         newBalance: purchaseResult.new_balance,
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
 });
