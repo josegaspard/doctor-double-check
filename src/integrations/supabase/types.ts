@@ -2311,6 +2311,10 @@ export type Database = {
         Args: { p_amount: number; p_doctor_id: string }
         Returns: number
       }
+      credit_wallet_balance: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: undefined
+      }
       decrement_storage_used: {
         Args: { p_bytes: number; p_user_id: string }
         Returns: undefined
