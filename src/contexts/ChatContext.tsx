@@ -532,6 +532,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         .eq('chat_session_id', sessionId)
         .is('ended_at', null);
 
+      // Invalidate the patient's chat entitlement so they must pay again for a new chat
+      const chatPatientId = session.participant1Type === 'patient' ? session.participant1Id 
+        : session.participant2Type === 'patient' ? session.participant2Id : null;
+      
+      if (chatPatientId) {
+        await supabase
+          .from('entitlements')
+          .update({ is_active: false })
+          .eq('user_id', chatPatientId)
+          .eq('type', 'chat')
+          .eq('is_active', true);
+      }
+
       // Send notification to the patient so they can rate
       const patientId = session.participant1Id === user.id ? session.participant2Id : session.participant1Id;
       const doctorName = session.participant1Id === user.id 
