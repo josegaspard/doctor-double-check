@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useWallet } from '@/contexts/WalletContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,13 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Wallet as WalletIcon, Plus, CreditCard, Loader2, ExternalLink } from 'lucide-react';
+import { Wallet as WalletIcon, Plus, CreditCard, Loader2, ExternalLink, TrendingUp } from 'lucide-react';
 import { TransactionHistory } from '@/components/wallet/TransactionHistory';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const TOPUP_AMOUNTS = [100, 250, 500, 1000];
 const MIN_TOPUP_AMOUNT = 50;
-// Stripe Checkout limita el total a 999,999.99 en la moneda.
-// Usamos entero MXN para recargas.
 const MAX_TOPUP_AMOUNT = 999999;
 
 export default function Wallet() {
@@ -28,6 +27,20 @@ export default function Wallet() {
   const [customAmount, setCustomAmount] = useState('');
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showTopUpAnimation, setShowTopUpAnimation] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState(0);
+  const prevBalanceRef = useRef(balance);
+
+  // Detect balance increase and trigger animation
+  useEffect(() => {
+    if (balance > prevBalanceRef.current && prevBalanceRef.current > 0) {
+      const diff = balance - prevBalanceRef.current;
+      setTopUpAmount(diff);
+      setShowTopUpAnimation(true);
+      setTimeout(() => setShowTopUpAnimation(false), 3000);
+    }
+    prevBalanceRef.current = balance;
+  }, [balance]);
 
   useEffect(() => {
     const success = searchParams.get('success');
@@ -39,8 +52,15 @@ export default function Wallet() {
         title: t('wallet.paymentSuccess'),
         description: `$${amount} MXN ${t('wallet.paymentSuccessMessage')}`,
       });
-      refreshWallet();
+      // Polling to catch the webhook-triggered balance update
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        await refreshWallet();
+        attempts++;
+        if (attempts >= 10) clearInterval(poll);
+      }, 2000);
       setSearchParams({});
+      return () => clearInterval(poll);
     } else if (canceled === 'true') {
       toast({
         title: t('wallet.paymentCanceled'),
@@ -108,16 +128,40 @@ export default function Wallet() {
 
         <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
           {/* Balance Card */}
-          <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
+          <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground relative overflow-hidden">
             <CardContent className="p-4 sm:p-6">
               <p className="text-primary-foreground/80 text-xs sm:text-sm mb-1">{t('wallet.balance')}</p>
-              <p className="text-3xl sm:text-4xl font-bold">${balance.toLocaleString()} MXN</p>
+              <motion.p
+                key={balance}
+                initial={{ scale: 1 }}
+                animate={showTopUpAnimation ? { scale: [1, 1.1, 1] } : {}}
+                transition={{ duration: 0.5 }}
+                className="text-3xl sm:text-4xl font-bold"
+              >
+                ${balance.toLocaleString()} MXN
+              </motion.p>
               <p className="text-primary-foreground/60 text-xs mt-2 truncate">{user?.name}</p>
               {role === 'resident' && (
                 <div className="mt-2 sm:mt-3 px-2 py-1 bg-white/20 rounded-full text-xs inline-block">
                   🎓 {t('wallet.residentDiscount')}
                 </div>
               )}
+              
+              {/* Top-up animation overlay */}
+              <AnimatePresence>
+                {showTopUpAnimation && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: -10 }}
+                    exit={{ opacity: 0, y: -40 }}
+                    transition={{ duration: 1.5, ease: 'easeOut' }}
+                    className="absolute top-3 right-4 flex items-center gap-1 text-lg font-bold text-white drop-shadow-lg"
+                  >
+                    <TrendingUp className="w-5 h-5" />
+                    +${topUpAmount.toLocaleString()}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </CardContent>
           </Card>
 

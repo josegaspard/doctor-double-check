@@ -88,10 +88,16 @@ export function BlockUserButton({ targetUserId, targetUserName, size = 'sm' }: B
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="ghost" size={size} className="gap-1 text-muted-foreground hover:text-destructive">
-          <Ban className="w-3 h-3" />
-          Bloquear
-        </Button>
+        {size === 'icon' ? (
+          <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full" title="Bloquear">
+            <Ban className="w-3.5 h-3.5" />
+          </Button>
+        ) : (
+          <Button variant="ghost" size={size} className="gap-1 text-muted-foreground hover:text-destructive">
+            <Ban className="w-3 h-3" />
+            Bloquear
+          </Button>
+        )}
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

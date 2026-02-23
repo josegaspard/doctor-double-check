@@ -184,13 +184,13 @@ export function ChatHeader({
         </div>
         
         {/* Actions */}
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
           {/* Video call button */}
           {!isClosed && consultationId && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
+              className="h-8 w-8 sm:h-9 sm:w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
               onClick={() => navigate(`/video-call?consultation=${consultationId}`)}
               title="Videollamada"
             >
@@ -219,7 +219,7 @@ export function ChatHeader({
             userRole === 'doctor' && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full" title="Cerrar orientación">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full" title="Cerrar orientación">
                     <XCircle className="w-4 h-4" />
                   </Button>
                 </AlertDialogTrigger>
