@@ -182,7 +182,7 @@ Deno.serve(async (req: Request) => {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                from: 'Medical Masters <onboarding@resend.dev>',
+                from: 'Cirugía Estética Uribe <noreply@cirugiaesteticauribe.com>',
                 to: [profile.email],
                 subject,
                 html,
