@@ -25,7 +25,8 @@ import {
   GraduationCap,
   ArrowLeft,
   Video,
-  Ban
+  Ban,
+  FileText,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -197,6 +198,23 @@ export function ChatHeader({
               <Video className="w-4 h-4" />
             </Button>
           )}
+
+          {/* Prescription button - only for doctors */}
+          {!isClosed && userRole === 'doctor' && (() => {
+            const patientId = session.participant1Id === user?.id ? session.participant2Id : session.participant1Id;
+            const patientName = displayInfo.name;
+            return (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 sm:h-9 sm:w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
+                onClick={() => navigate(`/prescriptions/new?patientId=${patientId}&patientName=${encodeURIComponent(patientName)}${consultationId ? `&consultationId=${consultationId}` : ''}`)}
+                title="Crear receta"
+              >
+                <FileText className="w-4 h-4" />
+              </Button>
+            );
+          })()}
 
           {/* Block user button */}
           {(() => {

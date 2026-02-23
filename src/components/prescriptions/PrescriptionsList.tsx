@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { exportPrescriptionToPDF } from '@/lib/generatePrescriptionPDF';
-import { FileText, Download, Loader2, Pill } from 'lucide-react';
+import { FileText, Download, Loader2, Pill, ChevronRight, Plus, Image } from 'lucide-react';
 
 interface Prescription {
   id: string;
+  patientId: string;
   patientName: string;
   patientAge?: string;
   diagnosis?: string;
@@ -22,9 +24,11 @@ interface Prescription {
   doctorCedula?: string;
   signedAt: Date;
   createdAt: Date;
+  fileUrl?: string;
 }
 
 export function PrescriptionsList() {
+  const navigate = useNavigate();
   const { supabaseUser, role } = useAuth();
   const { language } = useLanguage();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
@@ -39,7 +43,6 @@ export function PrescriptionsList() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Doctor sees their own, patient sees theirs
       if (role === 'doctor') {
         query.eq('doctor_id', supabaseUser.id);
       } else {
@@ -50,6 +53,7 @@ export function PrescriptionsList() {
       if (!error && data) {
         setPrescriptions(data.map(p => ({
           id: p.id,
+          patientId: p.patient_id,
           patientName: p.patient_name,
           patientAge: p.patient_age || undefined,
           diagnosis: p.diagnosis || undefined,
@@ -62,6 +66,7 @@ export function PrescriptionsList() {
           doctorCedula: p.doctor_cedula || undefined,
           signedAt: new Date(p.signed_at),
           createdAt: new Date(p.created_at),
+          fileUrl: (p as any).file_url || undefined,
         })));
       }
       setIsLoading(false);
@@ -106,24 +111,36 @@ export function PrescriptionsList() {
   return (
     <div className="space-y-3">
       {prescriptions.map(rx => (
-        <Card key={rx.id} className="hover:shadow-md transition-shadow">
+        <Card 
+          key={rx.id} 
+          className="hover:shadow-md transition-shadow cursor-pointer group"
+          onClick={() => navigate(`/prescriptions/${rx.id}`)}
+        >
           <CardContent className="p-4">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0">
+              <div className="flex items-start gap-3 min-w-0 flex-1">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-5 h-5 text-primary" />
+                  {rx.fileUrl ? <Image className="w-5 h-5 text-info" /> : <FileText className="w-5 h-5 text-primary" />}
                 </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-sm truncate">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
                     {role === 'doctor' ? rx.patientName : rx.doctorName}
                   </p>
                   {rx.diagnosis && (
                     <p className="text-xs text-muted-foreground truncate">{rx.diagnosis}</p>
                   )}
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-xs">
-                      {rx.medications.length} {language === 'es' ? 'medicamentos' : 'medications'}
-                    </Badge>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {rx.medications.length > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        {rx.medications.length} {language === 'es' ? 'medicamentos' : 'medications'}
+                      </Badge>
+                    )}
+                    {rx.fileUrl && (
+                      <Badge variant="secondary" className="text-xs gap-1">
+                        <Image className="w-3 h-3" />
+                        Archivo
+                      </Badge>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {new Intl.DateTimeFormat(language === 'es' ? 'es-MX' : 'en-US', {
                         day: 'numeric', month: 'short', year: 'numeric'
@@ -132,10 +149,20 @@ export function PrescriptionsList() {
                   </div>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="gap-1 flex-shrink-0" onClick={() => handleDownload(rx)}>
-                <Download className="w-3 h-3" />
-                PDF
-              </Button>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {rx.medications.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-1" 
+                    onClick={(e) => { e.stopPropagation(); handleDownload(rx); }}
+                  >
+                    <Download className="w-3 h-3" />
+                    PDF
+                  </Button>
+                )}
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
             </div>
           </CardContent>
         </Card>
