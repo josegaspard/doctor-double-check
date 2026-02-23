@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { tContext } from '@/lib/i18n-context';
+import { toast } from 'sonner';
 
 export type TransactionType = 'topup' | 'purchase' | 'refund' | 'subscription' | 'earning';
 export type TransactionStatus = 'initiated' | 'paid' | 'failed';
@@ -36,6 +37,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const prevBalanceRef = useRef<number | null>(null);
 
   const fetchWalletData = useCallback(async () => {
     if (!user?.id || user.role === 'visitor') return;
@@ -49,7 +51,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (wallet) {
-        setBalance(Number(wallet.balance));
+        const newBal = Number(wallet.balance);
+        if (prevBalanceRef.current === null) {
+          prevBalanceRef.current = newBal;
+        }
+        setBalance(newBal);
       }
 
       // Fetch transactions
@@ -91,6 +97,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         (payload) => {
           const record = payload.new as { balance: number };
           const newBalance = Number(record.balance);
+          const oldBalance = prevBalanceRef.current;
+          
+          // Show notification for balance changes (only after initial load)
+          if (oldBalance !== null && oldBalance !== newBalance) {
+            const diff = newBalance - oldBalance;
+            if (diff > 0) {
+              toast.success(`💰 +$${diff.toLocaleString()} recibidos. Saldo: $${newBalance.toLocaleString()}`);
+            } else if (diff < 0) {
+              toast.info(`💳 -$${Math.abs(diff).toLocaleString()} debitados. Saldo: $${newBalance.toLocaleString()}`);
+            }
+          }
+          
+          prevBalanceRef.current = newBalance;
           setBalance(newBalance);
         }
       )
