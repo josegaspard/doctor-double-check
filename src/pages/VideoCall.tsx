@@ -7,7 +7,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Video, VideoOff, Mic, MicOff, PhoneOff, Loader2, ArrowLeft } from 'lucide-react';
+import { Video, VideoOff, PhoneOff, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import DailyIframe from '@daily-co/daily-js';
 
@@ -15,7 +15,7 @@ export default function VideoCall() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, role } = useAuth();
-  const { createRoom, getViewerToken, endRoom } = useDaily();
+  const { createRoom, endRoom } = useDaily();
   
   const consultationId = searchParams.get('consultation');
   const doctorId = searchParams.get('doctor');
@@ -42,14 +42,15 @@ export default function VideoCall() {
           return;
         }
         
-        setRoomUrl(room.url);
-        setRoomName(room.name);
-
         // Save room info to consultation
         await supabase
           .from('consultations')
           .update({ video_room_name: room.name, video_room_url: room.url })
           .eq('id', consultationId);
+
+        // Join with the owner token
+        setRoomUrl(`${room.url}?t=${room.ownerToken}`);
+        setRoomName(room.name);
 
       } else {
         // Patient gets the existing room
@@ -65,14 +66,18 @@ export default function VideoCall() {
           return;
         }
 
-        const token = await getViewerToken(consultation.video_room_name);
-        if (!token) {
+        // Get participant token (with video/audio enabled for 1:1 call)
+        const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-daily-token', {
+          body: { roomName: consultation.video_room_name, isOwner: false, enableMedia: true },
+        });
+        
+        if (tokenError || !tokenData?.success) {
           toast.error('Error al unirse a la llamada');
           setCallState('idle');
           return;
         }
 
-        setRoomUrl(consultation.video_room_url);
+        setRoomUrl(`${consultation.video_room_url}?t=${tokenData.token}`);
         setRoomName(consultation.video_room_name);
       }
     } catch (error) {
@@ -80,7 +85,7 @@ export default function VideoCall() {
       toast.error('Error al iniciar la videollamada');
       setCallState('idle');
     }
-  }, [consultationId, user?.id, isDoctor, createRoom, getViewerToken]);
+  }, [consultationId, user?.id, isDoctor, createRoom]);
 
   // Initialize Daily iframe when room is ready
   useEffect(() => {
@@ -103,13 +108,23 @@ export default function VideoCall() {
       callFrame.destroy();
       callFrameRef.current = null;
     });
+    callFrame.on('error', (e: any) => {
+      console.error('Daily error:', e);
+      toast.error('Error en la videollamada');
+      setCallState('ended');
+    });
 
-    callFrame.join({ url: roomUrl });
+    // Join with token embedded in URL
+    callFrame.join({ 
+      url: roomUrl,
+      startVideoOff: false,
+      startAudioOff: false,
+    });
     callFrameRef.current = callFrame;
 
     return () => {
       if (callFrameRef.current) {
-        callFrameRef.current.destroy();
+        try { callFrameRef.current.destroy(); } catch {}
         callFrameRef.current = null;
       }
     };

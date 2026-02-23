@@ -47,13 +47,12 @@ Deno.serve(async (req) => {
       .single();
 
     // Parse request body
-    const { roomName, isOwner = false } = await req.json();
+    const { roomName, isOwner = false, enableMedia = false } = await req.json();
     if (!roomName) throw new Error("roomName is required");
 
-    logStep("Creating viewer token", { roomName, isOwner, userName: profile?.name });
+    logStep("Creating token", { roomName, isOwner, enableMedia, userName: profile?.name });
 
-    // Configure token properties for viewer
-    // Viewers have limited permissions compared to owners
+    // Configure token properties
     const tokenProperties: Record<string, any> = {
       room_name: roomName,
       is_owner: isOwner,
@@ -61,9 +60,10 @@ Deno.serve(async (req) => {
       user_name: profile?.name || "Usuario",
       // Token expires in 24 hours
       exp: Math.floor(Date.now() / 1000) + 86400,
-      // Viewers start with video/audio off to reduce bandwidth
-      start_video_off: true,
-      start_audio_off: true,
+      // For 1:1 calls (enableMedia=true) start with video/audio on
+      // For live viewers, start with video/audio off
+      start_video_off: !enableMedia,
+      start_audio_off: !enableMedia,
     };
 
     // Create meeting token for the viewer

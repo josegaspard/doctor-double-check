@@ -105,7 +105,7 @@ export function usePostConsultationRating() {
           filter: `patient_id=eq.${user.id}`,
         },
         (payload) => {
-          if (payload.new?.ended_at && !payload.old?.ended_at) {
+          if (payload.new?.ended_at && !payload.old?.ended_at && !isDialogOpen) {
             setTimeout(checkPendingRatings, 1000);
           }
         }
@@ -124,7 +124,7 @@ export function usePostConsultationRating() {
         (payload) => {
           if (payload.new?.status === 'closed' && payload.old?.status === 'active') {
             const isParticipant = payload.new.participant1_id === user.id || payload.new.participant2_id === user.id;
-            if (isParticipant) {
+            if (isParticipant && !isDialogOpen) {
               setTimeout(checkPendingRatings, 1500);
             }
           }
@@ -137,7 +137,7 @@ export function usePostConsultationRating() {
       supabase.removeChannel(channel);
       supabase.removeChannel(chatChannel);
     };
-  }, [checkPendingRatings, forceOpenDialog, user?.id, role]);
+  }, [checkPendingRatings, forceOpenDialog, user?.id, role, isDialogOpen]);
 
   const closeDialog = useCallback(() => {
     setIsDialogOpen(false);
