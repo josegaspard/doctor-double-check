@@ -193,18 +193,18 @@ async function createTokenAndRespond(
   corsHeaders: Record<string, string>,
   logStep: (step: string, details?: any) => void
 ) {
-  // Save the daily_room_name to the lives table
-  const { error: updateError } = await supabaseClient
+  // Try to save the daily_room_name to the lives table (for live streams)
+  // For consultations, this will simply not match any row — that's expected
+  const { error: updateError, count } = await supabaseClient
     .from('lives')
     .update({ daily_room_name: roomData.name })
     .eq('id', liveId)
     .eq('doctor_id', userId);
 
-  if (updateError) {
-    logStep("Error updating live with room name", updateError);
-    // Don't throw - room was created successfully
-  } else {
+  if (count && count > 0) {
     logStep("Saved daily_room_name to lives table", { liveId, roomName: roomData.name });
+  } else {
+    logStep("No lives row updated (may be a consultation room)", { liveId });
   }
 
   // Create meeting token for the owner (doctor)

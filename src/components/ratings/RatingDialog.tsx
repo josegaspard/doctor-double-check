@@ -51,6 +51,24 @@ export function RatingDialog({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No autenticado');
 
+      // Check if already rated (prevent duplicate)
+      const { data: existing } = await supabase
+        .from('consultation_ratings')
+        .select('id')
+        .eq('consultation_id', consultationId)
+        .eq('patient_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        toast({
+          title: 'Ya calificaste esta consulta',
+          description: 'Tu calificación ya fue registrada anteriormente',
+        });
+        onRated?.();
+        onClose();
+        return;
+      }
+
       const { error } = await supabase
         .from('consultation_ratings')
         .insert({
@@ -61,7 +79,19 @@ export function RatingDialog({
           comment: comment.trim() || null,
         });
 
-      if (error) throw error;
+      if (error) {
+        // Handle unique constraint violation gracefully
+        if (error.code === '23505' || error.message?.includes('unique')) {
+          toast({
+            title: 'Ya calificaste esta consulta',
+            description: 'Tu calificación ya fue registrada anteriormente',
+          });
+          onRated?.();
+          onClose();
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: '¡Gracias por tu calificación!',
