@@ -61,34 +61,7 @@ export default function RecordingsGrid() {
     fetchName();
   }, [doctorFilter]);
 
-  // Block visitors completely
-  if (!isAuthenticated || role === 'visitor') {
-    return (
-      <MainLayout>
-        <div className="container mx-auto px-4 py-12">
-          <Card className="max-w-lg mx-auto text-center p-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-premium/10 flex items-center justify-center">
-              <Lock className="w-8 h-8 text-premium" />
-            </div>
-            <h2 className="font-heading text-xl font-bold text-foreground mb-2">
-              {t('recordings.premiumContent')}
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              {t('lives.registerPrompt')}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button onClick={() => navigate('/login')}>
-                {t('nav.login')}
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/lives')}>
-                {t('chat.goToLives')}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </MainLayout>
-    );
-  }
+  // Everyone can browse — purchase requires authentication
 
   // Get unique specialties
   const specialties = [...new Set(recordings.map(r => r.specialty))];
@@ -111,6 +84,10 @@ export default function RecordingsGrid() {
   };
 
   const handleRecordingClick = (recording: Recording) => {
+    if (!isAuthenticated || role === 'visitor') {
+      navigate('/login');
+      return;
+    }
     if (ownsRecording(recording)) {
       navigate(`/recording/${recording.id}`);
     } else {
@@ -161,7 +138,7 @@ export default function RecordingsGrid() {
             </p>
           </div>
           
-          {(role === 'patient' || role === 'resident') && (
+          {isAuthenticated && (role === 'patient' || role === 'resident') && (
             <Link to="/wallet">
               <Button variant="outline" className="gap-2">
                 <Wallet className="w-4 h-4" />
