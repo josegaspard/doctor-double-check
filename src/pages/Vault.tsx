@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useVault, VaultFile } from '@/contexts/VaultContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWallet } from '@/contexts/WalletContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +38,10 @@ import {
   HardDrive,
   Zap,
   AlertTriangle,
+  CreditCard,
+  Wallet,
+  ExternalLink,
+  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -54,6 +59,7 @@ interface AvailableDoctor {
 export default function Vault() {
   const { files, uploadFile, deleteFile, grantAccess, revokeAccess, uploadProgress, isLoading, refreshVault } = useVault();
   const { role, supabaseUser } = useAuth();
+  const { balance, canAfford, getEffectivePrice } = useWallet();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedCategory, setSelectedCategory] = useState('Otros');
@@ -69,7 +75,8 @@ export default function Vault() {
   const [storageLimit, setStorageLimit] = useState(1073741824); // 1GB default
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
-  const [pricePerGB, setPricePerGB] = useState(49);
+  const [isStripeProcessing, setIsStripeProcessing] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{ gb: number; price: number; label?: string } | null>(null);
   const [storagePlans, setStoragePlans] = useState([
     { gb: 1, label: '+1 GB' },
     { gb: 5, label: '+5 GB', badge: 'Popular' },
@@ -97,7 +104,6 @@ export default function Vault() {
       .single();
     if (pricingData?.value) {
       const pricing = pricingData.value as any;
-      if (pricing.price_per_gb) setPricePerGB(pricing.price_per_gb);
       if (pricing.plans) setStoragePlans(pricing.plans);
     }
   }, [supabaseUser?.id]);
@@ -105,6 +111,17 @@ export default function Vault() {
   useEffect(() => {
     fetchStorage();
   }, [fetchStorage, files]);
+
+  // Handle Stripe storage success redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('storage_success') === 'true') {
+      toast.success('¡Almacenamiento ampliado exitosamente!');
+      fetchStorage();
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [fetchStorage]);
 
   const storagePercentage = Math.min((storageUsed / storageLimit) * 100, 100);
   const isStorageFull = storageUsed >= storageLimit;
@@ -240,15 +257,15 @@ export default function Vault() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleUpgradeStorage = async (extraGB: number, planPrice?: number) => {
+  const handleUpgradeStorage = async (extraGB: number, planPrice: number) => {
     if (!supabaseUser?.id) return;
     setIsUpgrading(true);
 
-    const totalCost = planPrice != null ? planPrice : extraGB * pricePerGB;
+    const effectiveCost = getEffectivePrice(planPrice);
 
     try {
       const { data, error } = await supabase.rpc('process_wallet_purchase', {
-        p_amount: totalCost,
+        p_amount: effectiveCost,
         p_description: `Expansión de almacenamiento: +${extraGB}GB`,
         p_metadata: { type: 'storage_upgrade', extra_gb: extraGB },
       });
@@ -257,16 +274,12 @@ export default function Vault() {
       const result = data as any;
 
       if (!result?.success) {
-        if (result?.error === 'Insufficient balance') {
-          toast.error('Saldo insuficiente. Recarga tu billetera primero.');
-          navigate('/wallet');
-        } else {
-          toast.error(result?.error || 'Error al procesar la compra');
-        }
+        toast.error(result?.error === 'Insufficient balance' 
+          ? 'Saldo insuficiente' 
+          : (result?.error || 'Error al procesar la compra'));
         return;
       }
 
-      // Update storage limit
       const newLimit = storageLimit + (extraGB * 1073741824);
       await supabase
         .from('profiles')
@@ -275,12 +288,33 @@ export default function Vault() {
       
       setStorageLimit(newLimit);
       setShowUpgradeDialog(false);
+      setSelectedPlan(null);
       toast.success(`¡Almacenamiento ampliado a ${formatStorageSize(newLimit)}!`);
     } catch (error) {
       console.error('Upgrade error:', error);
       toast.error('Error al ampliar almacenamiento');
     } finally {
       setIsUpgrading(false);
+    }
+  };
+
+  const handleStripeStorageCheckout = async (extraGB: number, price: number) => {
+    setIsStripeProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-storage-checkout', {
+        body: { extraGB, price },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error: any) {
+      console.error('Storage checkout error:', error);
+      toast.error(error.message || 'Error al procesar el pago');
+    } finally {
+      setIsStripeProcessing(false);
     }
   };
 
@@ -682,7 +716,7 @@ export default function Vault() {
         </Dialog>
 
         {/* Storage Upgrade Dialog */}
-        <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <Dialog open={showUpgradeDialog} onOpenChange={(o) => { setShowUpgradeDialog(o); if (!o) setSelectedPlan(null); }}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -691,43 +725,132 @@ export default function Vault() {
               </DialogTitle>
               <DialogDescription>
                 Tu almacenamiento actual: {formatStorageSize(storageUsed)} de {formatStorageSize(storageLimit)} usado.
-                Selecciona cuánto espacio adicional necesitas.
+                {!selectedPlan ? ' Selecciona cuánto espacio adicional necesitas.' : ''}
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-3 mt-2">
-              {storagePlans.map((plan: any) => {
-                const price = (plan.price != null) ? plan.price : plan.gb * pricePerGB;
-                return (
-                  <button
-                    key={plan.gb}
-                    onClick={() => handleUpgradeStorage(plan.gb, price)}
-                    disabled={isUpgrading}
-                    className="w-full flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left disabled:opacity-50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <HardDrive className="w-5 h-5 text-primary" />
+            {!selectedPlan ? (
+              /* Step 1: Pick a plan */
+              <div className="space-y-3 mt-2">
+                {storagePlans.map((plan: any) => {
+                  const price = (plan.price != null) ? plan.price : plan.gb * 49;
+                  return (
+                    <button
+                      key={plan.gb}
+                      onClick={() => setSelectedPlan({ gb: plan.gb, price, label: plan.label })}
+                      className="w-full flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <HardDrive className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">{plan.label || `+${plan.gb} GB`}</p>
+                          <p className="text-xs text-muted-foreground">Total: {formatStorageSize(storageLimit + plan.gb * 1073741824)}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{plan.label || `+${plan.gb} GB`}</p>
-                        <p className="text-xs text-muted-foreground">Total: {formatStorageSize(storageLimit + plan.gb * 1073741824)}</p>
+                      <div className="text-right flex items-center gap-2">
+                        {plan.badge && (
+                          <Badge variant="secondary" className="text-[10px]">{plan.badge}</Badge>
+                        )}
+                        <span className="font-bold text-foreground">${getEffectivePrice(price)} MXN</span>
                       </div>
+                    </button>
+                  );
+                })}
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Residentes reciben 50% de descuento automático.
+                </p>
+              </div>
+            ) : (
+              /* Step 2: Choose payment method */
+              <div className="space-y-4 mt-2">
+                <div className="bg-muted/50 rounded-lg p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <HardDrive className="w-5 h-5 text-primary" />
                     </div>
-                    <div className="text-right flex items-center gap-2">
-                      {plan.badge && (
-                        <Badge variant="secondary" className="text-[10px]">{plan.badge}</Badge>
-                      )}
-                      <span className="font-bold text-foreground">${price} MXN</span>
+                    <div>
+                      <p className="font-semibold text-foreground">{selectedPlan.label || `+${selectedPlan.gb} GB`}</p>
+                      <p className="text-xs text-muted-foreground">Total: {formatStorageSize(storageLimit + selectedPlan.gb * 1073741824)}</p>
                     </div>
-                  </button>
-                );
-              })}
-            </div>
+                  </div>
+                  <p className="text-lg font-bold text-foreground">${getEffectivePrice(selectedPlan.price)} MXN</p>
+                </div>
 
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Se descontará de tu billetera. Residentes reciben 50% de descuento automático.
-            </p>
+                <Separator />
+
+                {/* Stripe */}
+                <Button 
+                  onClick={() => handleStripeStorageCheckout(selectedPlan.gb, selectedPlan.price)}
+                  disabled={isStripeProcessing}
+                  className="w-full h-12 gap-2"
+                >
+                  {isStripeProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4" />
+                      Pagar con tarjeta
+                      <ExternalLink className="w-3 h-3 ml-1" />
+                    </>
+                  )}
+                </Button>
+
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">o usa tu saldo</span>
+                  </div>
+                </div>
+
+                {/* Wallet */}
+                {canAfford(selectedPlan.price) ? (
+                  <Button 
+                    onClick={() => handleUpgradeStorage(selectedPlan.gb, selectedPlan.price)}
+                    disabled={isUpgrading}
+                    variant="outline"
+                    className="w-full h-12 gap-2"
+                  >
+                    {isUpgrading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Wallet className="w-4 h-4" />
+                        Pagar con saldo (${balance.toLocaleString()})
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2 p-3 bg-warning/10 rounded-lg border border-warning/30">
+                      <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-medium text-warning">Saldo insuficiente</p>
+                        <p className="text-warning/80 text-xs">
+                          Tienes ${balance.toLocaleString()} — necesitas ${(getEffectivePrice(selectedPlan.price) - balance).toLocaleString()} más
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => { setShowUpgradeDialog(false); navigate('/wallet'); }}
+                      variant="outline"
+                      className="w-full gap-2"
+                    >
+                      <Wallet className="w-4 h-4" />
+                      Recargar billetera
+                    </Button>
+                  </div>
+                )}
+
+                <Button variant="ghost" size="sm" onClick={() => setSelectedPlan(null)} className="w-full">
+                  ← Cambiar plan
+                </Button>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

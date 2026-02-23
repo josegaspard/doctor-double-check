@@ -67,6 +67,9 @@ Deno.serve(async (req) => {
       if (session.metadata?.type === "consultation_payment" && session.payment_status === "paid") {
         await handleConsultationPayment(db, session);
       }
+      if (session.metadata?.type === "storage_upgrade" && session.payment_status === "paid") {
+        await handleStorageUpgrade(db, session);
+      }
     }
 
     if (event.type === "invoice.payment_succeeded") {
@@ -441,6 +444,58 @@ async function creditDoctorEarningsAtomic(
       metadata: { source, reference_id: referenceId },
     });
 }
+
+async function handleStorageUpgrade(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const userId = session.metadata!.user_id;
+  const extraGB = parseInt(session.metadata!.extra_gb);
+  const amount = parseFloat(session.metadata!.amount);
+
+  logStep("Processing storage upgrade", { userId, extraGB, amount });
+
+  // Idempotency check
+  const { data: existingTx } = await db
+    .from("wallet_transactions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("type", "purchase")
+    .contains("metadata", { stripe_session_id: session.id })
+    .maybeSingle();
+
+  if (existingTx) {
+    logStep("Storage upgrade already processed, skipping", { sessionId: session.id });
+    return;
+  }
+
+  // Update storage limit
+  const { data: profile } = await db
+    .from("profiles")
+    .select("storage_limit_bytes")
+    .eq("id", userId)
+    .single();
+
+  const currentLimit = profile?.storage_limit_bytes || 1073741824;
+  const newLimit = currentLimit + (extraGB * 1073741824);
+
+  await db
+    .from("profiles")
+    .update({ storage_limit_bytes: newLimit })
+    .eq("id", userId);
+
+  // Record transaction
+  await db
+    .from("wallet_transactions")
+    .insert({
+      user_id: userId,
+      type: "purchase",
+      amount: -amount,
+      description: `Expansión de almacenamiento: +${extraGB}GB (Stripe)`,
+      status: "paid",
+      metadata: { type: "storage_upgrade", extra_gb: extraGB, stripe_session_id: session.id },
+    });
+
+  logStep("Storage upgrade completed", { userId, extraGB, newLimit });
+}
+
 
 async function handleAccountUpdated(db: ReturnType<typeof supabaseAdmin>, account: Stripe.Account) {
   logStep("Account updated", { accountId: account.id, payoutsEnabled: account.payouts_enabled });
