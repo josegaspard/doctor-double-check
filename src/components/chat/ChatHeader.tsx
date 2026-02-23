@@ -208,7 +208,7 @@ export function ChatHeader({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 sm:h-9 sm:w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
-                onClick={() => navigate(`/prescriptions/new?patientId=${patientId}&patientName=${encodeURIComponent(patientName)}${consultationId ? `&consultationId=${consultationId}` : ''}`)}
+                onClick={() => navigate(`/prescriptions/new?patientId=${patientId}&patientName=${encodeURIComponent(patientName)}${consultationId ? `&consultationId=${consultationId}` : ''}&sessionId=${session.id}`)}
                 title="Crear receta"
               >
                 <FileText className="w-4 h-4" />
