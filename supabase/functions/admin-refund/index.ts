@@ -120,23 +120,31 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Credit user's wallet
-    const { data: wallet } = await supabaseAdmin
-      .from("wallets")
-      .select("balance")
-      .eq("user_id", user_id)
-      .single();
+    // Credit user's wallet atomically
+    const { error: rpcError } = await supabaseAdmin.rpc("credit_wallet_balance", {
+      p_user_id: user_id,
+      p_amount: amount,
+    });
 
-    if (wallet) {
-      const newBalance = Number(wallet.balance) + amount;
-      
-      await supabaseAdmin
+    if (rpcError) {
+      // Fallback to direct update if RPC doesn't exist
+      logStep("RPC fallback for wallet credit", { error: rpcError.message });
+      const { data: wallet } = await supabaseAdmin
         .from("wallets")
-        .update({ balance: newBalance, updated_at: new Date().toISOString() })
-        .eq("user_id", user_id);
+        .select("balance")
+        .eq("user_id", user_id)
+        .single();
 
-      logStep("Wallet credited", { userId: user_id, amount, newBalance });
+      if (wallet) {
+        const newBalance = Number(wallet.balance) + amount;
+        await supabaseAdmin
+          .from("wallets")
+          .update({ balance: newBalance, updated_at: new Date().toISOString() })
+          .eq("user_id", user_id);
+      }
     }
+
+    logStep("Wallet credited", { userId: user_id, amount });
 
     // Create refund transaction record
     await supabaseAdmin
