@@ -362,11 +362,12 @@ export default function Landing() {
               <video
                 src="https://gestomarketing.com.mx/wp-content/uploads/2026/01/Video_de_Landing_Page_Hiperrealista.mp4"
                 className="w-full h-full object-cover"
+                autoPlay
                 muted 
-                loop 
+                loop
                 playsInline
                 controls
-                preload="none"
+                preload="auto"
                 poster=""
               />
             </div>
