@@ -2338,6 +2338,25 @@ export type Database = {
           session_id: string
         }[]
       }
+      get_chat_sessions_details_bulk: {
+        Args: { p_session_ids: string[] }
+        Returns: {
+          doctor_office_days: string[]
+          doctor_office_hours_end: string
+          doctor_office_hours_start: string
+          participant1_avatar: string
+          participant1_id: string
+          participant1_name: string
+          participant1_specialty: string
+          participant1_type: Database["public"]["Enums"]["chat_participant_type"]
+          participant2_avatar: string
+          participant2_id: string
+          participant2_name: string
+          participant2_specialty: string
+          participant2_type: Database["public"]["Enums"]["chat_participant_type"]
+          session_id: string
+        }[]
+      }
       get_doctor_public_profile: {
         Args: { p_user_id: string }
         Returns: {
