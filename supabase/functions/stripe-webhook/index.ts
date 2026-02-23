@@ -118,6 +118,21 @@ async function handleWalletTopup(db: ReturnType<typeof supabaseAdmin>, session: 
   
   logStep("Processing wallet topup", { userId, amount });
 
+  // Check for duplicate processing (idempotency)
+  const { data: existingTx } = await db
+    .from("wallet_transactions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("type", "topup")
+    .eq("status", "paid")
+    .contains("metadata", { stripe_session_id: session.id })
+    .maybeSingle();
+
+  if (existingTx) {
+    logStep("Topup already processed, skipping", { sessionId: session.id });
+    return;
+  }
+
   const { error: txError } = await db
     .from("wallet_transactions")
     .insert({
@@ -134,21 +149,31 @@ async function handleWalletTopup(db: ReturnType<typeof supabaseAdmin>, session: 
     throw txError;
   }
 
-  const { data: currentWallet } = await db
-    .from("wallets")
-    .select("balance")
-    .eq("user_id", userId)
-    .single();
+  // Atomic balance update using RPC to prevent race conditions
+  const { error: rpcError } = await db.rpc("credit_wallet_balance", {
+    p_user_id: userId,
+    p_amount: amount,
+  });
 
-  if (currentWallet) {
-    const newBalance = Number(currentWallet.balance) + amount;
-    await db
+  if (rpcError) {
+    // Fallback to direct update if RPC doesn't exist yet
+    logStep("RPC credit_wallet_balance not available, using direct update", { error: rpcError.message });
+    const { data: currentWallet } = await db
       .from("wallets")
-      .update({ balance: newBalance, updated_at: new Date().toISOString() })
-      .eq("user_id", userId);
-    
-    logStep("Wallet updated successfully", { userId, newBalance });
+      .select("balance")
+      .eq("user_id", userId)
+      .single();
+
+    if (currentWallet) {
+      const newBalance = Number(currentWallet.balance) + amount;
+      await db
+        .from("wallets")
+        .update({ balance: newBalance, updated_at: new Date().toISOString() })
+        .eq("user_id", userId);
+    }
   }
+  
+  logStep("Wallet topup completed", { userId, amount });
 }
 
 async function handleRecordingPurchase(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLives } from '@/contexts/LivesContext';
@@ -43,8 +43,7 @@ export default function DoctorDashboard() {
   }, [user?.id]);
 
   if (role !== 'doctor') {
-    navigate('/lives');
-    return null;
+    return <Navigate to="/lives" replace />;
   }
 
   const doctorProfile = user?.doctorProfile;
