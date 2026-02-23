@@ -4,6 +4,27 @@ import { useAuth } from '@/contexts/AuthContext';
 import { DemoVideoModal } from '@/components/landing/DemoVideoModal';
 import logoWhite from '@/assets/logo-medical-masters-white.png';
 import logoBlue from '@/assets/logo-medical-masters.png';
+import {
+  ArrowRight,
+  Star,
+  PlayCircle,
+  HeartPulse,
+  Check,
+  Smartphone,
+  Network,
+  ShieldCheck,
+  Lock,
+  Zap,
+  Sparkles,
+  Building2,
+  Stethoscope,
+  UserRound,
+  Dna,
+  Hospital,
+  Linkedin,
+  Twitter,
+  Instagram,
+} from 'lucide-react';
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -56,28 +77,18 @@ export default function Landing() {
         <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-[#00768b]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '4s' }} />
       </div>
 
-      {/* Navigation - Simplified, no mobile menu */}
+      {/* Navigation */}
       <nav className={`fixed w-full z-50 transition-all duration-500 top-0 border-b ${scrolled ? 'border-gray-100' : 'border-transparent'}`}>
         <div className={`absolute inset-0 transition-all duration-500 ${scrolled ? 'bg-white/90 backdrop-blur-lg shadow-sm' : 'bg-transparent'}`} />
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
           <div className="flex justify-between items-center h-16 sm:h-20 md:h-24">
-            {/* Logo */}
             <Link to="/" className="flex items-center gap-2 group">
               <div className="relative h-8 sm:h-10 md:h-12 overflow-hidden">
-                <img 
-                  src={logoWhite} 
-                  alt="Logo" 
-                  className={`h-full object-contain transition-all duration-500 group-hover:scale-105 ${scrolled ? 'opacity-0' : 'opacity-100'}`} 
-                />
-                <img 
-                  src={logoBlue} 
-                  alt="Logo" 
-                  className={`h-full object-contain absolute top-0 left-0 transition-opacity duration-500 ${scrolled ? 'opacity-100' : 'opacity-0'}`} 
-                />
+                <img src={logoWhite} alt="Logo" className={`h-full object-contain transition-all duration-500 group-hover:scale-105 ${scrolled ? 'opacity-0' : 'opacity-100'}`} />
+                <img src={logoBlue} alt="Logo" className={`h-full object-contain absolute top-0 left-0 transition-opacity duration-500 ${scrolled ? 'opacity-100' : 'opacity-0'}`} />
               </div>
             </Link>
 
-            {/* Desktop Menu */}
             <div className="hidden lg:flex items-center space-x-1">
               <div className={`flex items-center backdrop-blur-md rounded-full p-1 mr-6 transition-all duration-300 ${scrolled ? 'bg-gray-100 border-gray-200' : 'bg-white/10 border-white/20'} border`}>
                 <a href="#ecosistema" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>Ecosistema</a>
@@ -91,12 +102,11 @@ export default function Landing() {
                 className="relative overflow-hidden group bg-[#00768b] hover:bg-white text-white hover:text-[#163a83] font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(0,118,139,0.4)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)] border border-transparent hover:border-[#163a83]"
               >
                 <span className="relative z-10 flex items-center gap-2 text-sm uppercase tracking-wider">
-                  Entrar a la App <i className="fa-solid fa-arrow-right-long transition-transform group-hover:translate-x-1" />
+                  Entrar a la App <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
             </div>
 
-            {/* Mobile CTA - Simple button instead of menu */}
             <Link 
               to="/app" 
               className={`lg:hidden font-bold py-2 px-4 sm:px-6 rounded-full transition-all duration-300 text-sm ${
@@ -116,14 +126,13 @@ export default function Landing() {
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d45] via-[#163a83] to-[#00768b] opacity-90" />
           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%23163a83' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E\")" }} />
-          <video autoPlay muted loop playsInline className="w-full h-full object-cover opacity-20 mix-blend-overlay">
+          <video autoPlay muted loop playsInline preload="none" className="w-full h-full object-cover opacity-20 mix-blend-overlay">
             <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-glitch-heart-heartbeat-32454-large.mp4" type="video/mp4" />
           </video>
         </div>
 
         <div className="container mx-auto px-6 lg:px-12 relative z-10 h-full">
           <div className="flex flex-col lg:flex-row items-center h-full">
-            {/* Left Content */}
             <div className="w-full lg:w-1/2 space-y-8 py-12 lg:py-24 animate-fade-in relative z-20">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
                 <span className="flex h-2 w-2 relative">
@@ -153,7 +162,7 @@ export default function Landing() {
                 </div>
                 <div className="flex flex-col">
                   <div className="flex text-yellow-400 text-[10px] gap-0.5">
-                    <i className="fa-solid fa-star" /><i className="fa-solid fa-star" /><i className="fa-solid fa-star" /><i className="fa-solid fa-star" /><i className="fa-solid fa-star" />
+                    <Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" />
                   </div>
                   <span className="text-sm font-medium text-white">Usuarios activos</span>
                 </div>
@@ -166,14 +175,14 @@ export default function Landing() {
                   className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-[#163a83] bg-white rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:-translate-y-1 transition-all duration-300"
                 >
                   <span>Entrar a la aplicación</span>
-                  <i className="fa-solid fa-arrow-right ml-3" />
+                  <ArrowRight className="w-5 h-5 ml-3" />
                 </Link>
                 
                 <button 
                   onClick={() => setShowDemoModal(true)}
                   className="inline-flex items-center justify-center px-8 py-4 text-base font-medium text-white border border-white/20 rounded-xl hover:bg-white/10 transition-all backdrop-blur-md group"
                 >
-                  <i className="fa-solid fa-circle-play mr-3 text-[#aed3d9] group-hover:scale-110 transition-transform" />
+                  <PlayCircle className="w-5 h-5 mr-3 text-[#aed3d9] group-hover:scale-110 transition-transform" />
                   Demo Interactiva
                 </button>
               </div>
@@ -196,10 +205,10 @@ export default function Landing() {
               <div className="absolute bottom-0 right-10 w-[80%] h-[70%] bg-[#00768b]/20 rounded-full filter blur-[100px] animate-pulse" />
               
               <div className="relative z-10 w-full h-full flex items-end justify-center lg:justify-end overflow-visible">
-                {/* Doctor image - larger, always flush to bottom edge of hero */}
                 <img 
                   src="https://i.imgur.com/YqgQSDV.png" 
                   alt="Doctora Especialista" 
+                  loading="lazy"
                   style={{ height: '140%', maxHeight: 'none' }}
                   className="absolute bottom-0 right-0 lg:-right-20 w-auto object-contain object-bottom drop-shadow-2xl z-10 pointer-events-none"
                 />
@@ -207,7 +216,7 @@ export default function Landing() {
                 {/* Floating Card - Heart Rate */}
                 <div className="absolute top-[30%] left-0 lg:left-0 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-20 max-w-[160px] border border-white/50 shadow-xl animate-bounce" style={{ animationDuration: '6s' }}>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="p-2 bg-red-100 rounded-lg text-red-500"><i className="fa-solid fa-heart-pulse" /></div>
+                    <div className="p-2 bg-red-100 rounded-lg text-red-500"><HeartPulse className="w-4 h-4" /></div>
                     <span className="text-xs font-bold text-gray-500">Live</span>
                   </div>
                   <p className="text-xl font-bold text-gray-800">72 <span className="text-sm font-normal text-gray-500">bpm</span></p>
@@ -219,7 +228,7 @@ export default function Landing() {
                 {/* Floating Card - Record Ready */}
                 <div className="absolute bottom-24 right-4 lg:right-12 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-30 flex items-center gap-3 border-l-4 border-green-500 shadow-2xl animate-bounce" style={{ animationDuration: '4s' }}>
                   <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
-                    <i className="fa-solid fa-check" />
+                    <Check className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-gray-800">Expediente Listo</p>
@@ -231,7 +240,7 @@ export default function Landing() {
                 <div className="absolute top-[20%] right-0 lg:-right-8 bg-white/65 backdrop-blur-xl p-3 rounded-xl z-20 flex flex-col gap-2 border border-white/50 shadow-lg animate-bounce" style={{ animationDuration: '5s' }}>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[#163a83] flex items-center justify-center text-white shadow-md">
-                      <i className="fa-solid fa-mobile-screen-button" />
+                      <Smartphone className="w-4 h-4" />
                     </div>
                     <div>
                       <p className="text-xs font-bold text-gray-800">Medical App</p>
@@ -259,12 +268,12 @@ export default function Landing() {
         <div className="flex w-[300%] sm:w-[200%] animate-scroll">
           {[1, 2].map((i) => (
             <div key={i} className="flex w-1/2 justify-around items-center gap-4 sm:gap-0 px-4 sm:px-0">
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-hospital text-[10px] sm:text-base" /> <span className="hidden xs:inline">Mayo</span> Clinic</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-staff-snake text-[10px] sm:text-base" /> Johns Hopkins</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-user-doctor text-[10px] sm:text-base" /> Cleveland</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-heart-pulse text-[10px] sm:text-base" /> Cedars-Sinai</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-dna text-[10px] sm:text-base" /> Stanford</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><i className="fa-solid fa-hospital-user text-[10px] sm:text-base" /> Mass General</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Building2 className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden xs:inline">Mayo</span> Clinic</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Stethoscope className="w-3 h-3 sm:w-4 sm:h-4" /> Johns Hopkins</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><UserRound className="w-3 h-3 sm:w-4 sm:h-4" /> Cleveland</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><HeartPulse className="w-3 h-3 sm:w-4 sm:h-4" /> Cedars-Sinai</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Dna className="w-3 h-3 sm:w-4 sm:h-4" /> Stanford</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Hospital className="w-3 h-3 sm:w-4 sm:h-4" /> Mass General</span>
             </div>
           ))}
         </div>
@@ -285,12 +294,11 @@ export default function Landing() {
 
             {/* Bento Grid */}
             <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-4 gap-6">
-              {/* Large Feature Block */}
               <div className="md:col-span-3 lg:col-span-2 row-span-2 bg-white rounded-3xl p-8 shadow-lg border border-slate-100 relative overflow-hidden group hover:shadow-xl transition-all duration-300">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700" />
                 <div className="relative z-10">
                   <div className="w-16 h-16 bg-[#163a83] rounded-2xl flex items-center justify-center text-white text-2xl mb-8 shadow-lg shadow-[#163a83]/30">
-                    <i className="fa-solid fa-network-wired" />
+                    <Network className="w-7 h-7" />
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-4">Interconexión Neural</h3>
                   <p className="text-gray-500 leading-relaxed mb-6">
@@ -308,13 +316,12 @@ export default function Landing() {
                 </div>
               </div>
 
-              {/* Security Block */}
               <div className="md:col-span-3 lg:col-span-2 bg-gradient-to-br from-[#163a83] to-[#0b1d45] rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group">
-                <i className="fa-solid fa-shield-virus absolute -bottom-4 -right-4 text-9xl text-white/5 group-hover:text-white/10 transition-colors" />
+                <ShieldCheck className="absolute -bottom-4 -right-4 w-32 h-32 text-white/5 group-hover:text-white/10 transition-colors" />
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-6">
                     <h3 className="text-xl font-bold">Seguridad Militar</h3>
-                    <i className="fa-solid fa-lock text-[#aed3d9] text-xl" />
+                    <Lock className="w-5 h-5 text-[#aed3d9]" />
                   </div>
                   <p className="text-blue-100 text-sm leading-relaxed">
                     Encriptación AES-256 en reposo y tránsito. Cumplimiento total HIPAA, GDPR y HITECH. Sus datos son inviolables.
@@ -322,19 +329,17 @@ export default function Landing() {
                 </div>
               </div>
 
-              {/* Speed Block */}
               <div className="md:col-span-2 lg:col-span-1 bg-white rounded-3xl p-8 shadow-sm border border-slate-100 group hover:border-[#839ed5]/50 transition-colors">
                 <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 mb-6 group-hover:scale-110 transition-transform">
-                  <i className="fa-solid fa-bolt" />
+                  <Zap className="w-5 h-5" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Velocidad Real</h3>
                 <p className="text-sm text-gray-500">Latencia &lt; 20ms en videoconsultas HD.</p>
               </div>
 
-              {/* AI Block */}
               <div className="md:col-span-2 lg:col-span-1 bg-white rounded-3xl p-8 shadow-sm border border-slate-100 group hover:border-[#839ed5]/50 transition-colors">
                 <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 mb-6 group-hover:scale-110 transition-transform">
-                  <i className="fa-solid fa-wand-magic-sparkles" />
+                  <Sparkles className="w-5 h-5" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">AI Assistant</h3>
                 <p className="text-sm text-gray-500">Pre-diagnóstico y triaje automatizado.</p>
@@ -357,11 +362,12 @@ export default function Landing() {
               <video
                 src="https://gestomarketing.com.mx/wp-content/uploads/2026/01/Video_de_Landing_Page_Hiperrealista.mp4"
                 className="w-full h-full object-cover"
-                autoPlay 
                 muted 
                 loop 
                 playsInline
                 controls
+                preload="none"
+                poster=""
               />
             </div>
           </div>
@@ -371,7 +377,6 @@ export default function Landing() {
         <section id="workflow" className="py-24 bg-white relative">
           <div className="container mx-auto px-6">
             <div className="flex flex-col lg:flex-row gap-16">
-              {/* Sticky Sidebar */}
               <div className="lg:w-1/3">
                 <div className="lg:sticky lg:top-32">
                   <h2 className="text-4xl font-bold text-[#163a83] mb-6">Implementación sin fricción</h2>
@@ -379,12 +384,11 @@ export default function Landing() {
                     Sabemos que cambiar de software es doloroso. Por eso hemos creado un proceso de migración asistida que garantiza <span className="font-bold">cero pérdida de datos</span> y una curva de aprendizaje mínima.
                   </p>
                   <Link to="/app" className="group inline-flex items-center gap-3 text-lg font-bold text-[#00768b]">
-                    Agendar migración <span className="bg-blue-50 p-2 rounded-full group-hover:translate-x-2 transition-transform"><i className="fa-solid fa-arrow-right" /></span>
+                    Agendar migración <span className="bg-blue-50 p-2 rounded-full group-hover:translate-x-2 transition-transform"><ArrowRight className="w-4 h-4" /></span>
                   </Link>
                 </div>
               </div>
 
-              {/* Timeline */}
               <div className="lg:w-2/3 space-y-12 relative pl-8 border-l-2 border-slate-100">
                 {[
                   { step: '01', title: 'Onboarding & Configuración', desc: 'Personalizamos la plataforma con tu identidad corporativa (Marca blanca). Configuramos las sedes, consultorios y especialidades.', color: 'border-[#00768b]' },
@@ -417,7 +421,7 @@ export default function Landing() {
               ].map((review, idx) => (
                 <div key={idx} className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-all duration-300">
                   <div className="flex items-center gap-1 text-yellow-400 mb-4 text-sm">
-                    {[1,2,3,4,5].map(s => <i key={s} className="fa-solid fa-star" />)}
+                    {[1,2,3,4,5].map(s => <Star key={s} className="w-4 h-4 fill-current" />)}
                   </div>
                   <p className="text-slate-600 mb-6 italic leading-relaxed">{review.text}</p>
                   <div className="flex items-center gap-4">
@@ -440,7 +444,6 @@ export default function Landing() {
               <h2 className="text-4xl font-bold text-white mb-4">Planes para cada necesidad</h2>
               <p className="text-slate-400 max-w-2xl mx-auto">Desde profesionales independientes hasta grandes redes hospitalarias.</p>
               
-              {/* Toggle */}
               <div className="mt-8 inline-flex p-1 rounded-xl bg-white/5 border border-white/10">
                 <button 
                   onClick={() => setBillingMode('monthly')}
@@ -458,7 +461,6 @@ export default function Landing() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {/* Personal Plan */}
               <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#00768b]/50 transition-all duration-300">
                 <h3 className="text-xl font-bold text-[#aed3d9]">Personal</h3>
                 <div className="my-4">
@@ -468,13 +470,12 @@ export default function Landing() {
                 <p className="text-slate-400 text-sm mb-6">Para profesionales de salud independientes.</p>
                 <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">Empezar Ahora</Link>
                 <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2"><i className="fa-solid fa-check text-[#00768b]" /> 50 Consultas / Mes</li>
-                  <li className="flex gap-2"><i className="fa-solid fa-check text-[#00768b]" /> Historia Clínica Electrónica</li>
-                  <li className="flex gap-2"><i className="fa-solid fa-check text-[#00768b]" /> Recordatorios SMS</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> 50 Consultas / Mes</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Historia Clínica Electrónica</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Recordatorios SMS</li>
                 </ul>
               </div>
 
-              {/* Family Plan */}
               <div className="bg-gradient-to-b from-[#00768b] to-[#163a83] rounded-3xl p-8 border-2 border-[#aed3d9]/50 shadow-2xl relative transform scale-105 z-10">
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-yellow-400 text-xs font-bold text-black rounded-full uppercase tracking-wider">Más Popular</span>
                 <h3 className="text-xl font-bold text-white">Familiar / Clínica</h3>
@@ -485,23 +486,22 @@ export default function Landing() {
                 <p className="text-blue-100 text-sm mb-6">Para clínicas con múltiples profesionales.</p>
                 <Link to="/app" className="block w-full py-3 rounded-xl bg-white text-[#163a83] text-center font-bold hover:shadow-xl transition-all">Seleccionar Plan</Link>
                 <ul className="mt-8 space-y-3 text-sm text-blue-50">
-                  <li className="flex gap-2"><i className="fa-solid fa-check text-[#aed3d9]" /> Consultas Ilimitadas</li>
-                  <li className="flex gap-2"><i className="fa-solid fa-check text-[#aed3d9]" /> Asistente IA 24/7</li>
-                  <li className="flex gap-2"><i className="fa-solid fa-check text-[#aed3d9]" /> Monitoreo Remoto</li>
-                  <li className="flex gap-2"><i className="fa-solid fa-check text-[#aed3d9]" /> Prioridad en Urgencias</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Consultas Ilimitadas</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Asistente IA 24/7</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Monitoreo Remoto</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Prioridad en Urgencias</li>
                 </ul>
               </div>
 
-              {/* Corporate Plan */}
               <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#00768b]/50 transition-all duration-300">
                 <h3 className="text-xl font-bold text-[#aed3d9]">Corporativo</h3>
                 <div className="my-4"><span className="text-4xl font-bold text-white">Custom</span></div>
                 <p className="text-slate-400 text-sm mb-6">Para empresas y grandes colectivos.</p>
                 <Link to="/contact" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">Contactar Ventas</Link>
                 <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2"><i className="fa-solid fa-check text-[#00768b]" /> API Empresarial</li>
-                  <li className="flex gap-2"><i className="fa-solid fa-check text-[#00768b]" /> Dashboard de Analytics</li>
-                  <li className="flex gap-2"><i className="fa-solid fa-check text-[#00768b]" /> Gestor de Cuenta Dedicado</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> API Empresarial</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Dashboard de Analytics</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Gestor de Cuenta Dedicado</li>
                 </ul>
               </div>
             </div>
@@ -546,20 +546,18 @@ export default function Landing() {
       <footer className="bg-[#0b1d45] pt-20 pb-10 text-slate-300 border-t border-white/5 font-light text-sm">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 mb-16">
-            {/* Brand Column */}
             <div className="col-span-2 lg:col-span-2">
               <img src={logoWhite} alt="Medical Logo" className="h-8 mb-6 opacity-90" />
               <p className="mb-6 max-w-sm text-slate-400">
                 Revolucionando la atención médica a través de la tecnología. Comprometidos con la ética, la seguridad y la excelencia clínica.
               </p>
               <div className="flex space-x-4">
-                <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/20 transition-colors"><i className="fa-brands fa-linkedin-in" /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/20 transition-colors"><i className="fa-brands fa-twitter" /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/20 transition-colors"><i className="fa-brands fa-instagram" /></a>
+                <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/20 transition-colors"><Linkedin className="w-4 h-4" /></a>
+                <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/20 transition-colors"><Twitter className="w-4 h-4" /></a>
+                <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/20 transition-colors"><Instagram className="w-4 h-4" /></a>
               </div>
             </div>
 
-            {/* Links */}
             <div>
               <h4 className="text-white font-bold mb-6">Plataforma</h4>
               <ul className="space-y-4">
@@ -602,9 +600,6 @@ export default function Landing() {
         </div>
       </footer>
 
-      {/* Add Font Awesome */}
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-      
       {/* Custom Styles */}
       <style>{`
         @keyframes scroll {

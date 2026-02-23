@@ -15,9 +15,11 @@ import { Loader2 } from "lucide-react";
 
 // Eagerly loaded (landing + core navigation)
 import Landing from "./pages/Landing";
-import LivesGrid from "./pages/LivesGrid";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+
+// Lazy loaded pages
+const LivesGrid = React.lazy(() => import("./pages/LivesGrid"));
 
 // Lazy loaded pages
 const RoleSelector = React.lazy(() => import("./pages/RoleSelector"));
@@ -81,7 +83,16 @@ const AdminNews = React.lazy(() => import("./pages/AdminNews"));
 const Prescriptions = React.lazy(() => import("./pages/Prescriptions"));
 const CreatePrescription = React.lazy(() => import("./pages/CreatePrescription"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function PageLoader() {
   return (
