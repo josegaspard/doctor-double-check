@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
-import { supabase } from '@/integrations/supabase/client';
+import { usePurchases } from '@/hooks/usePurchases';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import MainLayout from '@/components/layout/MainLayout';
 import PaywallModal from '@/components/PaywallModal';
@@ -33,41 +33,15 @@ import {
 export default function RecordingsGrid() {
   const navigate = useNavigate();
   const { recordings } = useLives();
-  const { user, role, isAuthenticated, supabaseUser } = useAuth();
+  const { user, role, isAuthenticated } = useAuth();
   const { t } = useLanguage();
-  const { balance, canAfford, purchase, refreshWallet } = useWallet();
+  const { balance } = useWallet();
+  const { hasPurchased, purchaseWithWallet, isPurchasing } = usePurchases();
   const { getEffectiveRecordingPrice, hasPremiumTo } = useSubscriptions();
   const [searchQuery, setSearchQuery] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [isPurchasing, setIsPurchasing] = useState(false);
-  const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
-
-  // Fetch user's purchases
-  const fetchPurchases = useCallback(async () => {
-    if (!supabaseUser?.id) {
-      setPurchasedIds(new Set());
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('purchases')
-        .select('recording_id')
-        .eq('user_id', supabaseUser.id);
-
-      if (error) throw error;
-
-      setPurchasedIds(new Set(data?.map(p => p.recording_id) || []));
-    } catch (error) {
-      console.error('Error fetching purchases:', error);
-    }
-  }, [supabaseUser?.id]);
-
-  useEffect(() => {
-    fetchPurchases();
-  }, [fetchPurchases]);
 
   // Block visitors completely
   if (!isAuthenticated || role === 'visitor') {
@@ -113,9 +87,8 @@ export default function RecordingsGrid() {
   const ownsRecording = (recording: Recording): boolean => {
     if (!user) return false;
     if (role === 'admin' || role === 'doctor') return true;
-    // Free recordings are accessible to all authenticated users
     if (recording.price === 0) return true;
-    return purchasedIds.has(recording.id);
+    return hasPurchased(recording.id);
   };
 
   const handleRecordingClick = (recording: Recording) => {
@@ -128,37 +101,13 @@ export default function RecordingsGrid() {
   };
 
   const handlePurchase = async () => {
-    if (!selectedRecording || !supabaseUser?.id) return;
+    if (!selectedRecording) return;
     
-    setIsPurchasing(true);
-    
-    try {
-      // Use the edge function that handles everything atomically
-      const { data, error } = await supabase.functions.invoke('purchase-recording-wallet', {
-        body: { recordingId: selectedRecording.id },
-      });
-
-      if (error) throw error;
-
-      if (data?.alreadyPurchased) {
-        setShowPaywall(false);
-        navigate(`/recording/${selectedRecording.id}`);
-        return;
-      }
-
-      if (data?.success) {
-        // Refresh purchases and wallet
-        await Promise.all([fetchPurchases(), refreshWallet()]);
-        setShowPaywall(false);
-        setSelectedRecording(null);
-        navigate(`/recording/${selectedRecording.id}`);
-      } else {
-        throw new Error(data?.error || 'Error en la compra');
-      }
-    } catch (error: any) {
-      console.error('Purchase error:', error);
-    } finally {
-      setIsPurchasing(false);
+    const result = await purchaseWithWallet(selectedRecording.id);
+    if (result.success) {
+      setShowPaywall(false);
+      navigate(`/recording/${selectedRecording.id}`);
+      setSelectedRecording(null);
     }
   };
 
@@ -168,6 +117,10 @@ export default function RecordingsGrid() {
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
   };
+
+  const canAffordSelected = selectedRecording 
+    ? balance >= getEffectiveRecordingPrice(selectedRecording.price, selectedRecording.doctorId)
+    : false;
 
   return (
     <MainLayout>
@@ -335,7 +288,7 @@ export default function RecordingsGrid() {
         recording={selectedRecording as any}
         onPurchase={handlePurchase}
         isPurchasing={isPurchasing}
-        canAfford={selectedRecording ? canAfford(selectedRecording.price) : false}
+        canAfford={canAffordSelected}
         balance={balance}
       />
     </MainLayout>
