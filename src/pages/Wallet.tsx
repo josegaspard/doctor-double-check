@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { useWallet } from '@/contexts/WalletContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -19,7 +19,7 @@ const MIN_TOPUP_AMOUNT = 50;
 const MAX_TOPUP_AMOUNT = 999999;
 
 export default function Wallet() {
-  const navigate = useNavigate();
+  
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, role } = useAuth();
   const { t } = useLanguage();
@@ -52,8 +52,7 @@ export default function Wallet() {
   }, [searchParams, setSearchParams, refreshWallet, toast, t]);
 
   if (role !== 'patient' && role !== 'resident') {
-    navigate('/lives');
-    return null;
+    return <Navigate to="/lives" replace />;
   }
 
   const handleStripeCheckout = async () => {
@@ -85,7 +84,7 @@ export default function Wallet() {
       if (error) throw error;
 
       if (data?.url) {
-        window.open(data.url, '_blank');
+        window.location.href = data.url;
       }
     } catch (error) {
       console.error('Checkout error:', error);
