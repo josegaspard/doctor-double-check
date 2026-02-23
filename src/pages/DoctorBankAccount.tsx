@@ -225,8 +225,8 @@ export default function DoctorBankAccount() {
                 </div>
 
                 {!accountStatus.payoutsEnabled && (
-                  <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
-                    <p className="text-sm text-warning-foreground">
+                  <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p className="text-sm text-primary font-medium">
                       {language === 'es' 
                         ? 'Tu cuenta aún no está lista para recibir pagos. Completa la configuración para habilitar los pagos automáticos.'
                         : 'Your account is not yet ready to receive payments. Complete the setup to enable automatic payments.'}

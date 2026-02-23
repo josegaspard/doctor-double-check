@@ -59,8 +59,8 @@ Deno.serve(async (req) => {
 
     let stripeAccountId = bankAccount?.stripe_account_id;
 
-    if (!stripeAccountId) {
-      // Create new Stripe Connect account (Express type for Mexico)
+    // Helper to create a new Stripe Connect account
+    const createNewAccount = async () => {
       const account = await stripe.accounts.create({
         type: "express",
         country: "MX",
@@ -74,14 +74,12 @@ Deno.serve(async (req) => {
         },
       });
 
-      stripeAccountId = account.id;
-
       // Save to database
       await supabaseAdmin
         .from("doctor_bank_accounts")
         .upsert({
           doctor_id: userId,
-          stripe_account_id: stripeAccountId,
+          stripe_account_id: account.id,
           stripe_account_status: "pending",
           account_holder_name: profile?.name || "",
         });
@@ -89,18 +87,41 @@ Deno.serve(async (req) => {
       // Update doctor profile
       await supabaseAdmin
         .from("doctor_profiles")
-        .update({ stripe_account_id: stripeAccountId })
+        .update({ stripe_account_id: account.id })
         .eq("user_id", userId);
+
+      return account.id;
+    };
+
+    if (!stripeAccountId) {
+      stripeAccountId = await createNewAccount();
     }
 
     // Create account link for onboarding
     const origin = req.headers.get("origin") || "http://localhost:5173";
-    const accountLink = await stripe.accountLinks.create({
-      account: stripeAccountId,
-      refresh_url: `${origin}/doctor/bank-account?refresh=true`,
-      return_url: `${origin}/doctor/bank-account?success=true`,
-      type: "account_onboarding",
-    });
+    let accountLink;
+    try {
+      accountLink = await stripe.accountLinks.create({
+        account: stripeAccountId,
+        refresh_url: `${origin}/doctor/bank-account?refresh=true`,
+        return_url: `${origin}/doctor/bank-account?success=true`,
+        type: "account_onboarding",
+      });
+    } catch (linkError: any) {
+      // If mode mismatch (live account with test key or vice versa), create a new account
+      if (linkError.message?.includes("live mode") || linkError.message?.includes("test mode")) {
+        console.log("Mode mismatch detected, creating new account...");
+        stripeAccountId = await createNewAccount();
+        accountLink = await stripe.accountLinks.create({
+          account: stripeAccountId,
+          refresh_url: `${origin}/doctor/bank-account?refresh=true`,
+          return_url: `${origin}/doctor/bank-account?success=true`,
+          type: "account_onboarding",
+        });
+      } else {
+        throw linkError;
+      }
+    }
 
     return new Response(
       JSON.stringify({

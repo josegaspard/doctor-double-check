@@ -311,7 +311,9 @@ export default function Settings() {
                 {t('settings.openPaymentPortal') || 'Abrir Portal de Pagos'}
               </Button>
               <p className="text-xs text-muted-foreground mt-3 text-center">
-                {t('settings.paymentPortalRedirect') || 'Serás redirigido para gestionar tus suscripciones'}
+                {language === 'es' 
+                  ? 'Gestiona tus suscripciones activas y métodos de pago. Si aún no has realizado ninguna compra, el portal no estará disponible.'
+                  : 'Manage your active subscriptions and payment methods. If you haven\'t made any purchases yet, the portal won\'t be available.'}
               </p>
             </CardContent>
           </Card>
