@@ -69,7 +69,8 @@ export function SubscribeButton({
     const result = await subscribe(doctorId, 'free', 0);
     
     if (result.success) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for DB trigger (update_followers_count_on_subscription) to complete
+      await new Promise(resolve => setTimeout(resolve, 1200));
       onSubscriptionChange?.();
       toast({
         title: t('subscriptions.subscribed'),
@@ -88,14 +89,15 @@ export function SubscribeButton({
   const handleUnsubscribe = async () => {
     setIsLoading(true);
     const result = await unsubscribe(doctorId);
-    setIsLoading(false);
 
     if (result.success) {
+      await new Promise(resolve => setTimeout(resolve, 1200));
       onSubscriptionChange?.();
       toast({
         description: t('subscriptions.unsubscribe'),
       });
     }
+    setIsLoading(false);
   };
 
   const handleToggleNotification = async (

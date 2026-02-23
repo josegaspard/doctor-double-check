@@ -439,7 +439,8 @@ export default function DoctorProfile() {
 
                 <div className="flex flex-wrap gap-3">
                   <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} onSubscriptionChange={async () => {
-                    // Refetch follower count
+                    // Wait for DB trigger to complete, then refetch
+                    await new Promise(r => setTimeout(r, 1000));
                     const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
                     const profile = Array.isArray(data) ? data[0] : data;
                     if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
