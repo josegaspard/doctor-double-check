@@ -271,9 +271,7 @@ export default function DoctorProfile() {
       if (error) throw error;
 
       if (data?.url) {
-        // Open Stripe checkout in new tab
-        window.open(data.url, '_blank');
-        setShowPaymentModal(false);
+        window.location.href = data.url;
       } else {
         toast.error('Error al crear sesión de pago');
       }
