@@ -184,13 +184,13 @@ export function ChatHeader({
         </div>
         
         {/* Actions */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0">
           {/* Video call button */}
           {!isClosed && consultationId && (
             <Button
               variant="ghost"
               size="icon"
-              className="text-primary hover:text-primary hover:bg-primary/10"
+              className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
               onClick={() => navigate(`/video-call?consultation=${consultationId}`)}
               title="Videollamada"
             >
@@ -211,7 +211,7 @@ export function ChatHeader({
           })()}
 
           {isClosed ? (
-            <Badge variant="secondary" className="gap-1.5 bg-muted text-muted-foreground">
+            <Badge variant="secondary" className="gap-1 bg-muted/80 text-muted-foreground text-[11px] px-2 py-0.5">
               <Lock className="w-3 h-3" />
               <span className="hidden sm:inline">Cerrada</span>
             </Badge>
@@ -219,9 +219,8 @@ export function ChatHeader({
             userRole === 'doctor' && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full" title="Cerrar orientación">
                     <XCircle className="w-4 h-4" />
-                    <span className="hidden sm:inline">Cerrar</span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
