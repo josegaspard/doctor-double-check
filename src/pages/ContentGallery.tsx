@@ -62,14 +62,14 @@ const getAudienceIcon = (audience: string) => {
   }
 };
 
-const getAudienceLabel = (audience: string, lang: string) => {
+const getAudienceLabel = (audience: string, t: any) => {
   switch (audience) {
     case 'professionals':
-      return lang === 'es' ? 'Profesionales' : 'Professionals';
+      return t('content.professionals');
     case 'patients':
-      return lang === 'es' ? 'Pacientes' : 'Patients';
+      return t('content.patients');
     default:
-      return lang === 'es' ? 'Todos' : 'Everyone';
+      return t('content.all');
   }
 };
 
@@ -88,7 +88,7 @@ const getTypeIcon = (type: string) => {
 
 export default function ContentGallery() {
   const { user, role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const locale = language === 'es' ? es : enUS;
   const [contents, setContents] = useState<DoctorContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -167,12 +167,10 @@ export default function ContentGallery() {
         <div className="mb-6">
           <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
             <Library className="w-6 h-6 text-primary" />
-            {language === 'es' ? 'Biblioteca de Contenido' : 'Content Library'}
+            {t('content.library')}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {language === 'es' 
-              ? 'Explora contenido educativo de nuestros doctores' 
-              : 'Explore educational content from our doctors'}
+            {t('content.explore')}
           </p>
         </div>
 
@@ -181,7 +179,7 @@ export default function ContentGallery() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder={language === 'es' ? 'Buscar por título o doctor...' : 'Search by title or doctor...'}
+              placeholder={t('inputs.searchByTitle')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -190,22 +188,22 @@ export default function ContentGallery() {
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-full sm:w-40">
               <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder={language === 'es' ? 'Tipo' : 'Type'} />
+              <SelectValue placeholder={t('content.type')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
-              <SelectItem value="video">Videos</SelectItem>
-              <SelectItem value="pdf">PDFs</SelectItem>
-              <SelectItem value="image">{language === 'es' ? 'Imágenes' : 'Images'}</SelectItem>
+              <SelectItem value="all">{t('content.all')}</SelectItem>
+              <SelectItem value="video">{t('content.videos')}</SelectItem>
+              <SelectItem value="pdf">{t('content.pdfs')}</SelectItem>
+              <SelectItem value="image">{t('content.images')}</SelectItem>
             </SelectContent>
           </Select>
           {categories.length > 0 && (
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder={language === 'es' ? 'Categoría' : 'Category'} />
+                <SelectValue placeholder={t('content.category')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{language === 'es' ? 'Todas las categorías' : 'All categories'}</SelectItem>
+                <SelectItem value="all">{t('content.allCategories')}</SelectItem>
                 {categories.map(cat => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                 ))}
@@ -233,6 +231,7 @@ export default function ContentGallery() {
                     <img 
                       src={content.thumbnail_url} 
                       alt={content.title}
+                      loading="lazy"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -254,7 +253,7 @@ export default function ContentGallery() {
                     <div className="absolute top-2 right-2">
                       <Badge variant="outline" className="bg-background/80">
                         {getAudienceIcon(content.audience_type)}
-                        <span className="ml-1">{getAudienceLabel(content.audience_type, language)}</span>
+                        <span className="ml-1">{getAudienceLabel(content.audience_type, t)}</span>
                       </Badge>
                     </div>
                   )}
@@ -304,12 +303,12 @@ export default function ContentGallery() {
           <Card className="p-12 text-center">
             <Library className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              {language === 'es' ? 'No hay contenido disponible' : 'No content available'}
+              {t('content.noContent')}
             </h3>
             <p className="text-muted-foreground">
               {searchQuery || typeFilter !== 'all' || categoryFilter !== 'all'
-                ? (language === 'es' ? 'No se encontró contenido con esos filtros' : 'No content found with those filters')
-                : (language === 'es' ? 'Los doctores aún no han subido contenido' : 'Doctors have not uploaded content yet')}
+                ? t('content.noContentFilters')
+                : t('content.noContentUploaded')}
             </p>
           </Card>
         )}

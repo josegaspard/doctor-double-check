@@ -184,7 +184,7 @@ export default function AdminReports() {
         <div className="mb-6">
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filtrar por estado" />
+              <SelectValue placeholder={t('admin.filterStatus')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>

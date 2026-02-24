@@ -175,7 +175,7 @@ export default function LivePlayer() {
         setShowEndDialog(false);
         navigate('/lives');
       } else {
-        toast.error(result.error || 'Error al terminar el live');
+        toast.error(result.error || t('livePlayer.endError'));
       }
     } finally {
       setIsEnding(false);

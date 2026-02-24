@@ -113,7 +113,7 @@ export function ChatSessionItem({
                 type="button"
                 onClick={onDoctorProfileClick}
                 className="font-semibold text-sm truncate text-left hover:text-primary transition-colors focus:outline-none"
-                title="Ver perfil del doctor"
+                title={t('common.viewProfile')}
               >
                 {displayInfo.name}
               </button>
@@ -136,7 +136,7 @@ export function ChatSessionItem({
                   type="button"
                   onClick={onDoctorProfileClick}
                   className="text-xs text-primary font-medium truncate text-left hover:underline focus:outline-none"
-                  title="Ver perfil del doctor"
+                  title={t('common.viewProfile')}
                 >
                   {displayInfo.specialty}
                 </button>

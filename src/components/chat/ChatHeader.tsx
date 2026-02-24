@@ -137,7 +137,7 @@ export function ChatHeader({
                 type="button"
                 onClick={onDoctorProfileClick}
                 className="text-sm font-semibold text-left hover:text-primary transition-colors focus:outline-none truncate"
-                title="Ver perfil del doctor"
+                title={t('common.viewProfile')}
               >
                 {displayInfo.name}
               </button>
@@ -164,7 +164,7 @@ export function ChatHeader({
                   type="button"
                   onClick={onDoctorProfileClick}
                   className="text-primary hover:underline focus:outline-none font-medium"
-                  title="Ver perfil del doctor"
+                  title={t('common.viewProfile')}
                 >
                   {displayInfo.specialty}
                 </button>
@@ -209,7 +209,7 @@ export function ChatHeader({
                 size="icon"
                 className="h-8 w-8 sm:h-9 sm:w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
                 onClick={() => navigate(`/prescriptions/new?patientId=${patientId}&patientName=${encodeURIComponent(patientName)}${consultationId ? `&consultationId=${consultationId}` : ''}&sessionId=${session.id}`)}
-                title="Crear receta"
+                title={t('common.createPrescription')}
               >
                 <FileText className="w-4 h-4" />
               </Button>
@@ -237,7 +237,7 @@ export function ChatHeader({
             userRole === 'doctor' && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full" title="Cerrar orientación">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full" title={t('common.closeConsultation')}>
                     <XCircle className="w-4 h-4" />
                   </Button>
                 </AlertDialogTrigger>

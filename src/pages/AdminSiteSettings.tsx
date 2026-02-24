@@ -291,12 +291,10 @@ export default function AdminSiteSettings() {
           <div className="flex-1">
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
               <Settings className="w-6 h-6 text-primary" />
-              {language === 'es' ? 'Configuración del Sitio' : 'Site Settings'}
+              {t('admin.siteSettings')}
             </h1>
             <p className="text-muted-foreground text-sm">
-              {language === 'es' 
-                ? 'Administra redes sociales, términos, privacidad y contacto' 
-                : 'Manage social links, terms, privacy and contact'}
+              {t('admin.socialDescription')}
             </p>
           </div>
         </div>
@@ -310,23 +308,23 @@ export default function AdminSiteSettings() {
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="social" className="gap-2 text-xs">
                 <Globe className="w-4 h-4" />
-                <span className="hidden sm:inline">{language === 'es' ? 'Redes' : 'Social'}</span>
+                <span className="hidden sm:inline">{t('admin.socialLinks')}</span>
               </TabsTrigger>
               <TabsTrigger value="terms" className="gap-2 text-xs">
                 <FileText className="w-4 h-4" />
-                <span className="hidden sm:inline">{language === 'es' ? 'Términos' : 'Terms'}</span>
+                <span className="hidden sm:inline">{t('admin.terms')}</span>
               </TabsTrigger>
               <TabsTrigger value="privacy" className="gap-2 text-xs">
                 <Shield className="w-4 h-4" />
-                <span className="hidden sm:inline">{language === 'es' ? 'Privacidad' : 'Privacy'}</span>
+                <span className="hidden sm:inline">{t('admin.privacy')}</span>
               </TabsTrigger>
               <TabsTrigger value="contact" className="gap-2 text-xs">
                 <Mail className="w-4 h-4" />
-                <span className="hidden sm:inline">{language === 'es' ? 'Contacto' : 'Contact'}</span>
+                <span className="hidden sm:inline">{t('admin.contact')}</span>
               </TabsTrigger>
               <TabsTrigger value="storage" className="gap-2 text-xs">
                 <HardDrive className="w-4 h-4" />
-                <span className="hidden sm:inline">Almacenamiento</span>
+                <span className="hidden sm:inline">{t('admin.storage')}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -336,12 +334,10 @@ export default function AdminSiteSettings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Globe className="w-5 h-5" />
-                    {language === 'es' ? 'Redes Sociales' : 'Social Media Links'}
+                    {t('admin.socialLinks')}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    {language === 'es' 
-                      ? 'Configura los enlaces de redes sociales que aparecen en el footer' 
-                      : 'Configure social media links shown in the footer'}
+                    {t('admin.socialDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -433,7 +429,7 @@ export default function AdminSiteSettings() {
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
-                    {language === 'es' ? 'Guardar Redes Sociales' : 'Save Social Links'}
+                    {t('admin.saveSocial')}
                   </Button>
                 </CardContent>
               </Card>
@@ -445,21 +441,17 @@ export default function AdminSiteSettings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <FileText className="w-5 h-5" />
-                    {language === 'es' ? 'Términos de Servicio' : 'Terms of Service'}
+                    {t('admin.terms')}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    {language === 'es' 
-                      ? 'Edita el contenido de la página de términos de servicio' 
-                      : 'Edit the terms of service page content'}
+                    {t('admin.termsDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <RichTextLegalEditor
                     content={termsContent}
                     onChange={setTermsContent}
-                    placeholder={language === 'es' 
-                      ? 'Escribe los términos de servicio aquí...' 
-                      : 'Write terms of service here...'}
+                    placeholder={t('admin.termsDescription')}
                   />
                   <Button onClick={handleSaveTerms} disabled={isSaving} className="w-full">
                     {isSaving ? (
@@ -467,7 +459,7 @@ export default function AdminSiteSettings() {
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
-                    {language === 'es' ? 'Guardar Términos' : 'Save Terms'}
+                    {t('admin.saveTerms')}
                   </Button>
                 </CardContent>
               </Card>
@@ -491,9 +483,7 @@ export default function AdminSiteSettings() {
                   <RichTextLegalEditor
                     content={privacyContent}
                     onChange={setPrivacyContent}
-                    placeholder={language === 'es' 
-                      ? 'Escribe la política de privacidad aquí...' 
-                      : 'Write privacy policy here...'}
+                    placeholder={t('admin.privacyDescription')}
                   />
                   <Button onClick={handleSavePrivacy} disabled={isSaving} className="w-full">
                     {isSaving ? (

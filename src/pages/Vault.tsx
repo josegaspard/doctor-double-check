@@ -637,7 +637,7 @@ export default function Vault() {
                 <div className="relative mb-3">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar médico por nombre o especialidad..."
+                    placeholder={t('inputs.searchDoctorVault')}
                     value={doctorSearch}
                     onChange={(e) => setDoctorSearch(e.target.value)}
                     className="pl-9 h-9"
