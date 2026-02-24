@@ -25,137 +25,43 @@ import {
 
 interface AdminModule {
   id: string;
-  title: string;
-  titleEn: string;
-  description: string;
-  descriptionEn: string;
+  titleKey: string;
+  descriptionKey: string;
   icon: React.ElementType;
   href: string;
   color: string;
 }
 
 const adminModules: AdminModule[] = [
-  {
-    id: 'analytics',
-    title: 'Analytics y Reportes',
-    titleEn: 'Analytics & Reports',
-    description: 'Visualiza estadísticas de ingresos, usuarios y actividad',
-    descriptionEn: 'View revenue, users and activity statistics',
-    icon: LayoutDashboard,
-    href: '/admin/analytics',
-    color: 'text-primary',
-  },
-  {
-    id: 'payouts',
-    title: 'Pagos a Doctores',
-    titleEn: 'Doctor Payouts',
-    description: 'Paga a doctores por Stripe o transferencia manual, revisa saldos pendientes',
-    descriptionEn: 'Pay doctors via Stripe or manual transfer, review pending balances',
-    icon: Banknote,
-    href: '/admin/payouts',
-    color: 'text-emerald-500',
-  },
-  {
-    id: 'invoice-review',
-    title: 'Revisión de Facturas',
-    titleEn: 'Invoice Review',
-    description: 'Aprueba o rechaza las facturas subidas por doctores',
-    descriptionEn: 'Approve or reject invoices uploaded by doctors',
-    icon: FileText,
-    href: '/admin/invoices',
-    color: 'text-teal-500',
-  },
-  {
-    id: 'payout-settings',
-    title: 'Configuración de Pagos',
-    titleEn: 'Payout Settings',
-    description: 'Configura comisiones, frecuencia de pagos y procesa payouts',
-    descriptionEn: 'Configure commissions, payment frequency and process payouts',
-    icon: Settings,
-    href: '/admin/payout-settings',
-    color: 'text-slate-500',
-  },
-  {
-    id: 'site-settings',
-    title: 'Configuración del Sitio',
-    titleEn: 'Site Settings',
-    description: 'Redes sociales, términos de servicio y política de privacidad',
-    descriptionEn: 'Social media, terms of service and privacy policy',
-    icon: Settings,
-    href: '/admin/site-settings',
-    color: 'text-cyan-500',
-  },
-  {
-    id: 'verifications',
-    title: 'Verificaciones de Identidad',
-    titleEn: 'Identity Verifications',
-    description: 'Revisa y aprueba las solicitudes de verificación de identidad de pacientes',
-    descriptionEn: 'Review and approve patient identity verification requests',
-    icon: FileCheck,
-    href: '/admin/verifications',
-    color: 'text-blue-500',
-  },
-  {
-    id: 'doctors',
-    title: 'Validación de Médicos',
-    titleEn: 'Doctor Validation',
-    description: 'Aprueba o rechaza las solicitudes de registro de médicos',
-    descriptionEn: 'Approve or reject doctor registration requests',
-    icon: Stethoscope,
-    href: '/admin/doctors',
-    color: 'text-green-500',
-  },
-  {
-    id: 'residents',
-    title: 'Validación de Residentes',
-    titleEn: 'Resident Validation',
-    description: 'Gestiona las solicitudes de registro de médicos residentes',
-    descriptionEn: 'Manage resident doctor registration requests',
-    icon: GraduationCap,
-    href: '/admin/residents',
-    color: 'text-purple-500',
-  },
-  {
-    id: 'users',
-    title: 'Gestión de Usuarios',
-    titleEn: 'User Management',
-    description: 'Administra todos los usuarios de la plataforma',
-    descriptionEn: 'Manage all platform users',
-    icon: Users,
-    href: '/admin/users',
-    color: 'text-orange-500',
-  },
-  {
-    id: 'refunds',
-    title: 'Gestión de Reembolsos',
-    titleEn: 'Refund Management',
-    description: 'Procesa reembolsos y gestiona disputas de usuarios',
-    descriptionEn: 'Process refunds and manage user disputes',
-    icon: RefreshCcw,
-    href: '/admin/refunds',
-    color: 'text-destructive',
-  },
-  {
-    id: 'news',
-    title: 'Noticias y Blog Médico',
-    titleEn: 'Medical News & Blog',
-    description: 'Crea, edita y publica artículos y noticias médicas para la comunidad',
-    descriptionEn: 'Create, edit and publish medical articles and news for the community',
-    icon: Newspaper,
-    href: '/admin/news',
-    color: 'text-pink-500',
-  },
-  {
-    id: 'credentials',
-    title: 'Credenciales de Doctores',
-    titleEn: 'Doctor Credentials',
-    description: 'Revisa y aprueba la educación, certificaciones y experiencia de los médicos',
-    descriptionEn: 'Review and approve doctors education, certifications and experience',
-    icon: ShieldCheck,
-    href: '/admin/credentials',
-    color: 'text-indigo-500',
-  },
+  { id: 'analytics', titleKey: 'admin.analytics', descriptionKey: 'admin.analytics', icon: LayoutDashboard, href: '/admin/analytics', color: 'text-primary' },
+  { id: 'payouts', titleKey: 'admin.payouts', descriptionKey: 'admin.payouts', icon: Banknote, href: '/admin/payouts', color: 'text-success' },
+  { id: 'invoice-review', titleKey: 'admin.invoiceReview', descriptionKey: 'admin.invoiceReview', icon: FileText, href: '/admin/invoices', color: 'text-secondary' },
+  { id: 'payout-settings', titleKey: 'admin.payoutSettings', descriptionKey: 'admin.payoutSettings', icon: Settings, href: '/admin/payout-settings', color: 'text-muted-foreground' },
+  { id: 'site-settings', titleKey: 'admin.siteSettings', descriptionKey: 'admin.siteSettings', icon: Settings, href: '/admin/site-settings', color: 'text-info' },
+  { id: 'verifications', titleKey: 'admin.verifications', descriptionKey: 'admin.verifications', icon: FileCheck, href: '/admin/verifications', color: 'text-info' },
+  { id: 'doctors', titleKey: 'admin.doctorManagement', descriptionKey: 'admin.doctorManagement', icon: Stethoscope, href: '/admin/doctors', color: 'text-success' },
+  { id: 'residents', titleKey: 'admin.residentManagement', descriptionKey: 'admin.residentManagement', icon: GraduationCap, href: '/admin/residents', color: 'text-accent' },
+  { id: 'users', titleKey: 'admin.userManagement', descriptionKey: 'admin.userManagement', icon: Users, href: '/admin/users', color: 'text-warning' },
+  { id: 'refunds', titleKey: 'admin.refunds', descriptionKey: 'admin.refunds', icon: RefreshCcw, href: '/admin/refunds', color: 'text-destructive' },
+  { id: 'news', titleKey: 'admin.news', descriptionKey: 'admin.news', icon: Newspaper, href: '/admin/news', color: 'text-primary' },
+  { id: 'credentials', titleKey: 'admin.credentials', descriptionKey: 'admin.credentials', icon: ShieldCheck, href: '/admin/credentials', color: 'text-accent' },
 ];
+
+// Localized module titles/descriptions
+const moduleLabels: Record<string, { es: { title: string; desc: string }; en: { title: string; desc: string } }> = {
+  analytics: { es: { title: 'Analytics y Reportes', desc: 'Visualiza estadísticas de ingresos, usuarios y actividad' }, en: { title: 'Analytics & Reports', desc: 'View revenue, users and activity statistics' } },
+  payouts: { es: { title: 'Pagos a Doctores', desc: 'Paga a doctores por Stripe o transferencia manual' }, en: { title: 'Doctor Payouts', desc: 'Pay doctors via Stripe or manual transfer' } },
+  'invoice-review': { es: { title: 'Revisión de Facturas', desc: 'Aprueba o rechaza facturas de doctores' }, en: { title: 'Invoice Review', desc: 'Approve or reject doctor invoices' } },
+  'payout-settings': { es: { title: 'Configuración de Pagos', desc: 'Comisiones, frecuencia de pagos y payouts' }, en: { title: 'Payout Settings', desc: 'Commissions, payment frequency and payouts' } },
+  'site-settings': { es: { title: 'Configuración del Sitio', desc: 'Redes sociales, términos y privacidad' }, en: { title: 'Site Settings', desc: 'Social media, terms and privacy' } },
+  verifications: { es: { title: 'Verificaciones de Identidad', desc: 'Revisa solicitudes de verificación de pacientes' }, en: { title: 'Identity Verifications', desc: 'Review patient verification requests' } },
+  doctors: { es: { title: 'Validación de Médicos', desc: 'Aprueba o rechaza solicitudes de médicos' }, en: { title: 'Doctor Validation', desc: 'Approve or reject doctor requests' } },
+  residents: { es: { title: 'Validación de Residentes', desc: 'Gestiona solicitudes de residentes' }, en: { title: 'Resident Validation', desc: 'Manage resident requests' } },
+  users: { es: { title: 'Gestión de Usuarios', desc: 'Administra todos los usuarios' }, en: { title: 'User Management', desc: 'Manage all users' } },
+  refunds: { es: { title: 'Gestión de Reembolsos', desc: 'Procesa reembolsos y disputas' }, en: { title: 'Refund Management', desc: 'Process refunds and disputes' } },
+  news: { es: { title: 'Noticias y Blog Médico', desc: 'Crea y publica artículos médicos' }, en: { title: 'Medical News & Blog', desc: 'Create and publish medical articles' } },
+  credentials: { es: { title: 'Credenciales de Doctores', desc: 'Revisa educación y certificaciones' }, en: { title: 'Doctor Credentials', desc: 'Review education and certifications' } },
+};
 
 interface Stats {
   pendingVerifications: number;
@@ -170,7 +76,7 @@ interface Stats {
 const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDashboard(_props, ref) {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const [stats, setStats] = useState<Stats>({ 
     pendingVerifications: 0, 
     pendingDoctors: 0, 
@@ -185,49 +91,42 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
   useEffect(() => {
     if (role && role !== 'admin') {
       navigate('/');
-      toast.error(language === 'es' ? 'Acceso denegado' : 'Access denied');
+      toast.error(t('adminDashboard.accessDenied'));
     }
-  }, [role, navigate, language]);
+  }, [role, navigate, t]);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch pending verifications
         const { count: verifications } = await supabase
           .from('identity_verifications')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending');
 
-        // Fetch pending doctors
         const { count: pendingDoctors } = await supabase
           .from('doctor_profiles')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending');
 
-        // Fetch total doctors (approved)
         const { count: totalDoctors } = await supabase
           .from('doctor_profiles')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'approved');
 
-        // Fetch pending residents
         const { count: pendingResidents } = await supabase
           .from('resident_profiles')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending');
 
-        // Fetch total residents (approved)
         const { count: totalResidents } = await supabase
           .from('resident_profiles')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'approved');
 
-        // Fetch total users
         const { count: users } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true });
 
-        // Fetch total patients
         const { count: totalPatients } = await supabase
           .from('user_roles')
           .select('*', { count: 'exact', head: true })
@@ -261,7 +160,6 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
   return (
     <MainLayout>
       <div ref={ref} className="container mx-auto px-4 py-6 max-w-4xl">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -269,129 +167,83 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
             </div>
             <div>
               <h1 className="font-heading text-2xl font-bold text-foreground">
-                {language === 'es' ? 'Panel de Administración' : 'Admin Dashboard'}
+                {t('adminDashboard.title')}
               </h1>
               <p className="text-muted-foreground">
-                {language === 'es' 
-                  ? 'Gestiona la plataforma y sus usuarios' 
-                  : 'Manage the platform and its users'}
+                {t('adminDashboard.subtitle')}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Totales Reales */}
         <h2 className="font-heading text-lg font-semibold mb-3">
-          {language === 'es' ? 'Totales de la Plataforma' : 'Platform Totals'}
+          {t('adminDashboard.platformTotals')}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-secondary" onClick={() => navigate('/admin/users')}>
             <CardContent className="p-4 text-center">
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" />
-              ) : (
-                <p className="text-3xl font-bold text-secondary mb-1">{stats.totalDoctors}</p>
-              )}
+              {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className="text-3xl font-bold text-secondary mb-1">{stats.totalDoctors}</p>}
               <Stethoscope className="w-5 h-5 mx-auto text-secondary mb-1" />
-              <div className="text-xs text-muted-foreground">
-                {language === 'es' ? 'Médicos Activos' : 'Active Doctors'}
-              </div>
+              <div className="text-xs text-muted-foreground">{t('adminDashboard.activeDoctors')}</div>
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-primary" onClick={() => navigate('/admin/users')}>
             <CardContent className="p-4 text-center">
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" />
-              ) : (
-                <p className="text-3xl font-bold text-primary mb-1">{stats.totalPatients}</p>
-              )}
+              {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className="text-3xl font-bold text-primary mb-1">{stats.totalPatients}</p>}
               <Users className="w-5 h-5 mx-auto text-primary mb-1" />
-              <div className="text-xs text-muted-foreground">
-                {language === 'es' ? 'Pacientes' : 'Patients'}
-              </div>
+              <div className="text-xs text-muted-foreground">{t('adminDashboard.patients')}</div>
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-accent" onClick={() => navigate('/admin/users')}>
             <CardContent className="p-4 text-center">
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" />
-              ) : (
-                <p className="text-3xl font-bold text-accent mb-1">{stats.totalResidents}</p>
-              )}
+              {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className="text-3xl font-bold text-accent mb-1">{stats.totalResidents}</p>}
               <GraduationCap className="w-5 h-5 mx-auto text-accent mb-1" />
-              <div className="text-xs text-muted-foreground">
-                {language === 'es' ? 'Residentes' : 'Residents'}
-              </div>
+              <div className="text-xs text-muted-foreground">{t('adminDashboard.residents')}</div>
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-warning" onClick={() => navigate('/admin/users')}>
             <CardContent className="p-4 text-center">
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" />
-              ) : (
-                <p className="text-3xl font-bold text-warning mb-1">{stats.totalUsers}</p>
-              )}
+              {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className="text-3xl font-bold text-warning mb-1">{stats.totalUsers}</p>}
               <Users className="w-5 h-5 mx-auto text-warning mb-1" />
-              <div className="text-xs text-muted-foreground">
-                {language === 'es' ? 'Usuarios Totales' : 'Total Users'}
-              </div>
+              <div className="text-xs text-muted-foreground">{t('adminDashboard.totalUsers')}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Pendientes */}
         <h2 className="font-heading text-lg font-semibold mb-3">
-          {language === 'es' ? 'Pendientes de Revisión' : 'Pending Review'}
+          {t('adminDashboard.pendingReview')}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/admin/verifications')}>
             <CardContent className="p-4 text-center">
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" />
-              ) : (
-                <p className="text-3xl font-bold text-info mb-1">{stats.pendingVerifications}</p>
-              )}
+              {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className="text-3xl font-bold text-info mb-1">{stats.pendingVerifications}</p>}
               <UserCheck className="w-5 h-5 mx-auto text-info mb-1" />
-              <div className="text-xs text-muted-foreground">
-                {language === 'es' ? 'Verificaciones' : 'Verifications'}
-              </div>
+              <div className="text-xs text-muted-foreground">{t('adminDashboard.verifications')}</div>
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/admin/doctors')}>
             <CardContent className="p-4 text-center">
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" />
-              ) : (
-                <p className="text-3xl font-bold text-success mb-1">{stats.pendingDoctors}</p>
-              )}
+              {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className="text-3xl font-bold text-success mb-1">{stats.pendingDoctors}</p>}
               <Stethoscope className="w-5 h-5 mx-auto text-success mb-1" />
-              <div className="text-xs text-muted-foreground">
-                {language === 'es' ? 'Médicos Pendientes' : 'Pending Doctors'}
-              </div>
+              <div className="text-xs text-muted-foreground">{t('adminDashboard.pendingDoctors')}</div>
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/admin/residents')}>
             <CardContent className="p-4 text-center">
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" />
-              ) : (
-                <p className="text-3xl font-bold text-accent mb-1">{stats.pendingResidents}</p>
-              )}
+              {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className="text-3xl font-bold text-accent mb-1">{stats.pendingResidents}</p>}
               <GraduationCap className="w-5 h-5 mx-auto text-accent mb-1" />
-              <div className="text-xs text-muted-foreground">
-                {language === 'es' ? 'Residentes Pendientes' : 'Pending Residents'}
-              </div>
+              <div className="text-xs text-muted-foreground">{t('adminDashboard.pendingResidents')}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Modules Grid */}
         <h2 className="font-heading text-lg font-semibold mb-4">
-          {language === 'es' ? 'Módulos de administración' : 'Admin Modules'}
+          {t('adminDashboard.adminModules')}
         </h2>
         <div className="grid gap-4 md:grid-cols-2">
           {adminModules.map((module) => {
             const Icon = module.icon;
+            const labels = moduleLabels[module.id];
             return (
               <Card 
                 key={module.id}
@@ -408,10 +260,10 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
                 </CardHeader>
                 <CardContent>
                   <CardTitle className="text-lg mb-1">
-                    {language === 'es' ? module.title : module.titleEn}
+                    {labels?.[language]?.title || module.id}
                   </CardTitle>
                   <CardDescription>
-                    {language === 'es' ? module.description : module.descriptionEn}
+                    {labels?.[language]?.desc || ''}
                   </CardDescription>
                 </CardContent>
               </Card>

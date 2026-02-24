@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useVault } from '@/contexts/VaultContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,8 +45,8 @@ const CATEGORIES = [
 ];
 
 export default function MedicalHistory() {
-  const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t, language } = useLanguage();
   const { medicalHistory, uploadMedicalHistory, isLoading } = useVault();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -57,10 +58,9 @@ export default function MedicalHistory() {
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  // Redirect non-patients
+  // Redirect non-patients using declarative Navigate
   if (role !== 'patient') {
-    navigate('/lives');
-    return null;
+    return <Navigate to="/lives" replace />;
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,14 +72,13 @@ export default function MedicalHistory() {
 
   const handleUpload = async () => {
     if (!selectedFile || !formData.title || !formData.category) {
-      toast.error('Completa todos los campos requeridos');
+      toast.error(t('medicalHistory.requiredFields'));
       return;
     }
 
     setIsUploading(true);
     setUploadProgress(0);
 
-    // Simulate progress
     const progressInterval = setInterval(() => {
       setUploadProgress((prev) => Math.min(prev + 10, 90));
     }, 200);
@@ -97,17 +96,17 @@ export default function MedicalHistory() {
 
       if (result.success) {
         setUploadProgress(100);
-        toast.success('Estudio subido exitosamente');
+        toast.success(t('medicalHistory.uploadSuccess'));
         setFormData({ title: '', description: '', category: '', dateOfStudy: '' });
         setSelectedFile(null);
         setTimeout(() => setUploadProgress(0), 1000);
       } else {
-        toast.error(result.error || 'Error al subir el archivo');
+        toast.error(result.error || t('medicalHistory.uploadError'));
         setUploadProgress(0);
       }
     } catch (error) {
       clearInterval(progressInterval);
-      toast.error('Error al subir el archivo');
+      toast.error(t('medicalHistory.uploadError'));
       setUploadProgress(0);
     } finally {
       setIsUploading(false);
@@ -132,16 +131,16 @@ export default function MedicalHistory() {
   };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-MX', {
+    return new Intl.DateTimeFormat(language === 'es' ? 'es-MX' : 'en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     }).format(date);
   };
 
-const handleExportPDF = () => {
+  const handleExportPDF = () => {
     if (medicalHistory.length === 0) {
-      toast.error('No hay estudios para exportar');
+      toast.error(t('medicalHistory.noStudiesToExport'));
       return;
     }
 
@@ -161,13 +160,12 @@ const handleExportPDF = () => {
         email: user?.email || '',
       }
     );
-    toast.success('Generando PDF...');
+    toast.success(t('medicalHistory.generatingPdf'));
   };
 
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        {/* Header */}
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -175,50 +173,48 @@ const handleExportPDF = () => {
             </div>
             <div>
               <h1 className="font-heading text-2xl font-bold text-foreground">
-                Historial Médico
+                {t('medicalHistory.title')}
               </h1>
               <p className="text-muted-foreground text-sm">
-                Almacena tus estudios clínicos de forma segura
+                {t('medicalHistory.subtitle')}
               </p>
             </div>
           </div>
           
-          {/* Export Button */}
           {medicalHistory.length > 0 && (
             <Button variant="outline" onClick={handleExportPDF} className="gap-2">
               <Download className="w-4 h-4" />
-              Exportar PDF
+              {t('medicalHistory.exportPdf')}
             </Button>
           )}
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Upload Form */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Upload className="w-5 h-5" />
-                Subir Estudio
+                {t('medicalHistory.uploadTitle')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Título del estudio *</Label>
+                <Label>{t('medicalHistory.studyTitle')} *</Label>
                 <Input
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Ej: Análisis de sangre general"
+                  placeholder={t('medicalHistory.studyTitlePlaceholder')}
                 />
               </div>
 
               <div>
-                <Label>Categoría *</Label>
+                <Label>{t('medicalHistory.category')} *</Label>
                 <Select
                   value={formData.category}
                   onValueChange={(value) => setFormData({ ...formData, category: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona categoría" />
+                    <SelectValue placeholder={t('medicalHistory.selectCategory')} />
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map((cat) => (
@@ -231,7 +227,7 @@ const handleExportPDF = () => {
               </div>
 
               <div>
-                <Label>Fecha del estudio</Label>
+                <Label>{t('medicalHistory.studyDate')}</Label>
                 <Input
                   type="date"
                   value={formData.dateOfStudy}
@@ -240,17 +236,17 @@ const handleExportPDF = () => {
               </div>
 
               <div>
-                <Label>Descripción</Label>
+                <Label>{t('medicalHistory.description')}</Label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Notas adicionales sobre el estudio..."
+                  placeholder={t('medicalHistory.descriptionPlaceholder')}
                   rows={3}
                 />
               </div>
 
               <div>
-                <Label>Archivo *</Label>
+                <Label>{t('medicalHistory.file')} *</Label>
                 <div className="mt-1">
                   <label className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 cursor-pointer hover:border-primary/50 transition-colors">
                     {selectedFile ? (
@@ -265,10 +261,10 @@ const handleExportPDF = () => {
                       <div className="text-center">
                         <Upload className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
                         <p className="text-sm text-muted-foreground">
-                          Haz clic para seleccionar un archivo
+                          {t('medicalHistory.selectFile')}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          PDF, imagen o estudio DICOM
+                          {t('medicalHistory.fileTypes')}
                         </p>
                       </div>
                     )}
@@ -286,7 +282,7 @@ const handleExportPDF = () => {
                 <div className="space-y-2">
                   <Progress value={uploadProgress} />
                   <p className="text-xs text-center text-muted-foreground">
-                    {uploadProgress < 100 ? 'Subiendo...' : '¡Completado!'}
+                    {uploadProgress < 100 ? t('medicalHistory.uploading') : t('medicalHistory.completed')}
                   </p>
                 </div>
               )}
@@ -301,17 +297,16 @@ const handleExportPDF = () => {
                 ) : (
                   <Upload className="w-4 h-4 mr-2" />
                 )}
-                Subir Estudio
+                {t('medicalHistory.uploadButton')}
               </Button>
             </CardContent>
           </Card>
 
-          {/* History List */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Folder className="w-5 h-5" />
-                Mis Estudios ({medicalHistory.length})
+                {t('medicalHistory.myStudies')} ({medicalHistory.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -353,7 +348,7 @@ const handleExportPDF = () => {
                 <div className="text-center py-8">
                   <FileText className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
                   <p className="text-sm text-muted-foreground">
-                    No tienes estudios guardados
+                    {t('medicalHistory.noStudies')}
                   </p>
                 </div>
               )}
@@ -361,7 +356,6 @@ const handleExportPDF = () => {
           </Card>
         </div>
 
-        {/* Info Card */}
         <Card className="mt-6 bg-info/5 border-info/20">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
@@ -370,12 +364,11 @@ const handleExportPDF = () => {
               </div>
               <div>
                 <h4 className="font-semibold text-foreground text-sm">
-                  Tu historial es privado
+                  {t('medicalHistory.privacyTitle')}
                 </h4>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Solo tú puedes ver estos archivos. Cuando tengas una orientación médica, puedes
-                   compartir archivos específicos con tu médico desde la sección Vault.
-                 </p>
+                  {t('medicalHistory.privacyDescription')}
+                </p>
               </div>
             </div>
           </CardContent>
