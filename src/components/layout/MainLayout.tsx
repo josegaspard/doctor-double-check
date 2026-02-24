@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -68,6 +69,33 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.upload', href: '/doctor/upload', icon: Upload, roles: ['doctor'] },
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];
+
+// Animated wallet balance component
+function AnimatedBalance({ balance }: { balance: number }) {
+  const [flash, setFlash] = useState(false);
+  const prevRef = useRef(balance);
+
+  useEffect(() => {
+    if (prevRef.current !== balance) {
+      setFlash(true);
+      prevRef.current = balance;
+      const t = setTimeout(() => setFlash(false), 600);
+      return () => clearTimeout(t);
+    }
+  }, [balance]);
+
+  return (
+    <motion.span
+      key={balance}
+      initial={{ scale: 1.25, color: 'hsl(var(--success))' }}
+      animate={{ scale: 1, color: 'hsl(var(--foreground))' }}
+      transition={{ duration: 0.5 }}
+      className="font-semibold"
+    >
+      ${balance.toLocaleString()}
+    </motion.span>
+  );
+}
 
 const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(function MainLayout({ children }, ref) {
   const navigate = useNavigate();
@@ -183,8 +211,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                             }`}
                           >
-                            <Wallet className="w-5 h-5" />
-                            {t('nav.wallet')} (${balance.toLocaleString()})
+                          <Wallet className="w-5 h-5" />
+                            {t('nav.wallet')} (<AnimatedBalance balance={balance} />)
                           </Link>
                         )}
                         <Link
@@ -219,21 +247,31 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
             {/* Desktop Nav - compact on tablet, full on desktop */}
             <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start overflow-x-auto scrollbar-hide mx-2">
-              <div className="flex items-center gap-px lg:gap-0.5">
-                {filteredNavItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className={`flex items-center gap-1 px-1.5 lg:px-2 xl:px-2.5 py-1.5 rounded-md text-[10px] lg:text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
-                      location.pathname === item.href
-                        ? 'bg-accent text-accent-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
-                  >
-                    <item.icon className="w-3 h-3 lg:w-3.5 lg:h-3.5 flex-shrink-0" />
-                    <span className="hidden md:inline">{t(item.labelKey)}</span>
-                  </Link>
-                ))}
+              <div className="flex items-center gap-0.5 lg:gap-1">
+                {filteredNavItems.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      className={`relative flex items-center gap-1 px-2 lg:px-2.5 xl:px-3 py-1.5 rounded-md text-xs lg:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                        isActive
+                          ? 'text-primary'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.span
+                          layoutId="nav-pill"
+                          className="absolute inset-0 bg-primary/10 rounded-md"
+                          transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                        />
+                      )}
+                      <item.icon className="w-3.5 h-3.5 lg:w-4 lg:h-4 flex-shrink-0 relative z-10" />
+                      <span className="relative z-10">{t(item.labelKey)}</span>
+                    </Link>
+                  );
+                })}
               </div>
             </nav>
 
@@ -253,7 +291,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 <Link to="/wallet" className="hidden sm:block">
                   <Button variant="outline" size="sm" className="gap-2">
                     <Wallet className="w-4 h-4" />
-                    <span className="font-semibold">${balance.toLocaleString()}</span>
+                    <AnimatedBalance balance={balance} />
                   </Button>
                 </Link>
               )}
@@ -315,7 +353,17 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
       {/* Main Content */}
       <main className="flex-1">
-        {children}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Footer */}
