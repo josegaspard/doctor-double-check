@@ -59,7 +59,7 @@ interface StoragePricing {
 export default function AdminSiteSettings() {
   const navigate = useNavigate();
   const { role, supabaseUser } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 

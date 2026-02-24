@@ -68,7 +68,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
 export default function AdminReports() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [reports, setReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('pending');

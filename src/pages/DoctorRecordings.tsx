@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
@@ -88,6 +89,7 @@ interface RecordingStats {
 export default function DoctorRecordings() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const { refreshRecordings } = useLives();
 
   const [recordings, setRecordings] = useState<Recording[]>([]);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useViewerCount } from '@/hooks/useViewerCount';
 import { useCloudflareStream, useLocalRecording } from '@/hooks/cloudflare';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +33,7 @@ interface StreamData {
 export default function DoctorGoLive() {
   const navigate = useNavigate();
   const { user, role, isLoading: isAuthLoading } = useAuth();
+  const { t } = useLanguage();
 
   // Live state
   const [isCreating, setIsCreating] = useState(false);

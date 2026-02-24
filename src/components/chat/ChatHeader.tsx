@@ -33,6 +33,7 @@ import { es } from 'date-fns/locale';
 import { ChatSession } from '@/contexts/ChatContext';
 import { BlockUserButton } from '@/components/blocks/BlockUserButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SessionDisplayInfo {
   name: string;
@@ -72,6 +73,7 @@ export function ChatHeader({
 }: ChatHeaderProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const getOtherUserId = () => {
     if (!user) return null;

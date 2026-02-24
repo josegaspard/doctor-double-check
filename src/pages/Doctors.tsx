@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,6 +70,7 @@ const SPECIALTIES = [
 export default function Doctors() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const [doctors, setDoctors] = useState<DoctorWithProfile[]>([]);
   const [filteredDoctors, setFilteredDoctors] = useState<DoctorWithProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);

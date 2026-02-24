@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useVault, VaultFile } from '@/contexts/VaultContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
@@ -59,6 +60,7 @@ interface AvailableDoctor {
 export default function Vault() {
   const { files, uploadFile, deleteFile, grantAccess, revokeAccess, uploadProgress, isLoading, refreshVault } = useVault();
   const { role, supabaseUser } = useAuth();
+  const { t } = useLanguage();
   const { balance, canAfford, getEffectivePrice } = useWallet();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
