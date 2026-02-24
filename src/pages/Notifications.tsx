@@ -10,6 +10,9 @@ import { ArrowLeft, Bell, Check, Trash2, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 
+function stripLeadingEmoji(text: string): string {
+  return text.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\uFE0F]+\s*/u, '').trim();
+}
 function getNotificationIcon(type: string) {
   switch (type) {
     case 'doctor_live': return '🔴';
@@ -122,7 +125,7 @@ export default function Notifications() {
                     <span className="text-xl mt-0.5">{getNotificationIcon(notification.type)}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm">{notification.title}</p>
+                        <p className="font-medium text-sm">{stripLeadingEmoji(notification.title)}</p>
                         {!notification.isRead && (
                           <Badge variant="default" className="text-xs px-1.5 py-0">
                             {t('notificationsPage.new')}
