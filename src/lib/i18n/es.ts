@@ -722,6 +722,10 @@ export const es = {
     chatError: 'Error al iniciar orientación',
     paymentSuccess: '¡Pago exitoso!',
     paymentError: 'Error al procesar el pago',
+    reviewsTitle: 'Reseñas de Pacientes',
+    review: 'reseña',
+    reviews: 'reseñas',
+    anonymousPatient: 'Paciente',
   },
   // Medical History
   medicalHistory: {

@@ -722,6 +722,10 @@ export const en = {
     chatError: 'Error starting consultation',
     paymentSuccess: 'Payment successful!',
     paymentError: 'Error processing payment',
+    reviewsTitle: 'Patient Reviews',
+    review: 'review',
+    reviews: 'reviews',
+    anonymousPatient: 'Patient',
   },
   // Medical History
   medicalHistory: {
