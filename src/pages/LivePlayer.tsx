@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useCloudflareStream } from '@/hooks/cloudflare';
 import { useViewerCount } from '@/hooks/useViewerCount';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -46,6 +47,7 @@ export default function LivePlayer() {
   const navigate = useNavigate();
   const { getLive, likeLive, unlikeLive, hasLiked, endLive, isLoading, refreshLives } = useLives();
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const { getSubscription } = useSubscriptions();
   const { getPlaybackUrl, isLoading: isStreamLoading } = useCloudflareStream();
   

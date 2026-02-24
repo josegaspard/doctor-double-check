@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useVault } from '@/contexts/VaultContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { VaultFilePreviewModal } from '@/components/vault/VaultFilePreviewModal';
@@ -22,6 +23,7 @@ import { VaultFile } from '@/contexts/VaultContext';
 export default function DoctorVault() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const { getAccessibleFiles } = useVault();
   const [selectedFile, setSelectedFile] = useState<VaultFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);

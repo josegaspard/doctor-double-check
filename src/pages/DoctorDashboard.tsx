@@ -26,6 +26,7 @@ import { DoctorStatusAlert } from '@/components/doctor/DoctorStatusAlert';
 export default function DoctorDashboard() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const { getLivesByDoctor } = useLives();
   const { getAccessibleFiles } = useVault();
   const [recordingsCount, setRecordingsCount] = useState(0);

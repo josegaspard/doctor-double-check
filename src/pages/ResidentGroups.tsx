@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,6 +41,7 @@ interface ResidentGroup {
 export default function ResidentGroups() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const [groups, setGroups] = useState<ResidentGroup[]>([]);
   const [myMemberships, setMyMemberships] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);

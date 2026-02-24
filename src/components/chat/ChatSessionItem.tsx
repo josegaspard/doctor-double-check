@@ -13,6 +13,7 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChatSession } from '@/contexts/ChatContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SessionDisplayInfo {
   name: string;
@@ -44,6 +45,7 @@ export function ChatSessionItem({
   onClick,
   onDoctorProfileClick,
 }: ChatSessionItemProps) {
+  const { t } = useLanguage();
   const isClosed = session.status === 'closed';
   
   const getParticipantIcon = () => {
