@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Radio, PlayCircle, Folder, Star } from 'lucide-react';
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
   activeLivesCount: number;
@@ -13,12 +14,13 @@ interface Props {
 
 export function DoctorStatsGrid({ activeLivesCount, recordingsCount, vaultFilesCount, rating }: Props) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const stats = [
-    { label: 'Lives Activos', value: activeLivesCount, icon: Radio, color: 'live' },
-    { label: 'Grabaciones', value: recordingsCount, icon: PlayCircle, color: 'premium', onClick: () => navigate('/doctor/recordings') },
-    { label: 'Acceso Vault', value: vaultFilesCount, icon: Folder, color: 'primary' },
-    { label: 'Rating', value: rating, icon: Star, color: 'success' },
+    { label: t('dashboard.activeLives'), value: activeLivesCount, icon: Radio, color: 'live' },
+    { label: t('dashboard.totalRecordings'), value: recordingsCount, icon: PlayCircle, color: 'premium', onClick: () => navigate('/doctor/recordings') },
+    { label: t('dashboard.vaultAccess'), value: vaultFilesCount, icon: Folder, color: 'primary' },
+    { label: t('dashboard.rating'), value: rating, icon: Star, color: 'success' },
   ];
 
   return (

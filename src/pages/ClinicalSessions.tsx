@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -85,13 +85,8 @@ export default function ClinicalSessions() {
 
   const isApproved = role === 'doctor' && user?.doctorProfile?.status === 'approved';
 
-  // Redirect non-doctors using declarative Navigate
-  if (role !== 'doctor') {
-    return <Navigate to="/lives" replace />;
-  }
-
-  const fetchSessions = async () => {
-    if (!user?.id) return;
+  const fetchSessions = useCallback(async () => {
+    if (!user?.id || role !== 'doctor') return;
 
     try {
       const { data: mySessions } = await supabase
@@ -141,11 +136,16 @@ export default function ClinicalSessions() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, role]);
 
   useEffect(() => {
     fetchSessions();
-  }, [user?.id]);
+  }, [fetchSessions]);
+
+  // Redirect non-doctors using declarative Navigate
+  if (role !== 'doctor') {
+    return <Navigate to="/lives" replace />;
+  }
 
   const handleCreateSession = async () => {
     if (!newSession.title.trim() || !newSession.specialty || !user?.id) return;

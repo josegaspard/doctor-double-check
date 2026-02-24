@@ -11,6 +11,7 @@ import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { CallWaitingBanner } from '@/components/videocall/CallWaitingBanner';
 import { ChatSession } from '@/contexts/ChatContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SessionDisplayInfo {
@@ -80,6 +81,7 @@ export function ChatMessagesPanel({
 }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeVideoRoom, setActiveVideoRoom] = useState<boolean>(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -173,7 +175,7 @@ export function ChatMessagesPanel({
               <div className="p-4 border-t bg-muted/30 flex-shrink-0">
                 <div className="flex items-center justify-center gap-2 text-muted-foreground">
                   <Lock className="w-4 h-4" />
-                  <p className="text-sm">Esta orientación médica ha sido cerrada</p>
+                  <p className="text-sm">{t('chat.sessionClosed')}</p>
                 </div>
               </div>
             ) : (
@@ -184,7 +186,7 @@ export function ChatMessagesPanel({
                     onFileUploaded={onFileUploaded}
                   />
                   <Input
-                    placeholder="Escribe un mensaje..."
+                    placeholder={t('chat.writeMessage')}
                     value={newMessage}
                     onChange={onInputChange}
                     onKeyDown={e => e.key === 'Enter' && !e.shiftKey && onSend()}
