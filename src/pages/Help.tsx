@@ -3,32 +3,40 @@ import { ArrowLeft, HelpCircle, MessageCircle, Mail, Phone, Book, Video, FileTex
 import logoBlue from '@/assets/logo-medical-masters.png';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 
-const faqItems = [
-  {
-    question: '¿Cómo inicio una consulta con un médico?',
-    answer: 'Navega a la sección de médicos, selecciona el especialista de tu preferencia y haz clic en "Iniciar Consulta". Serás guiado al proceso de pago y luego podrás chatear directamente.',
-  },
-  {
-    question: '¿Es segura mi información médica?',
-    answer: 'Absolutamente. Utilizamos encriptación de grado militar y cumplimos con todas las normativas de protección de datos de salud (HIPAA, GDPR).',
-  },
-  {
-    question: '¿Cómo funciona el sistema de segunda opinión?',
-    answer: 'Puedes solicitar una segunda opinión sobre tu diagnóstico. Un especialista revisará tu caso y te proporcionará su evaluación profesional.',
-  },
-  {
-    question: '¿Puedo cancelar mi suscripción?',
-    answer: 'Sí, puedes cancelar en cualquier momento desde la configuración de tu cuenta. Tu acceso continuará hasta el final del período de facturación.',
-  },
-];
+// FAQ items moved to i18n
+// Resources moved to i18n
 
-const resources = [
-  { icon: Book, title: 'Guías de Usuario', description: 'Aprende a usar todas las funciones', link: '#' },
-  { icon: Video, title: 'Video Tutoriales', description: 'Tutoriales paso a paso', link: '#' },
-  { icon: FileText, title: 'Documentación', description: 'Información técnica detallada', link: '#' },
-];
+
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Help() {
+  const { t } = useLanguage();
+
+  const faqItems = [
+    {
+      question: t('help.faq1_q'),
+      answer: t('help.faq1_a'),
+    },
+    {
+      question: t('help.faq2_q'),
+      answer: t('help.faq2_a'),
+    },
+    {
+      question: t('help.faq3_q'),
+      answer: t('help.faq3_a'),
+    },
+    {
+      question: t('help.faq4_q'),
+      answer: t('help.faq4_a'),
+    },
+  ];
+
+  const resources = [
+    { icon: Book, title: t('help.userGuides'), description: t('help.learnFunctions'), link: '#' },
+    { icon: Video, title: t('help.videoTutorials'), description: t('help.stepByStep'), link: '#' },
+    { icon: FileText, title: t('help.documentation'), description: t('help.techInfo'), link: '#' },
+  ];
+
   return (
     <div className="font-sans text-slate-800 bg-slate-50 min-h-screen selection:bg-[#00768b] selection:text-white">
       {/* Navigation */}
@@ -43,8 +51,8 @@ export default function Help() {
               className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-[#163a83] transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Volver al inicio</span>
-              <span className="sm:hidden">Volver</span>
+              <span className="hidden sm:inline">{t('common.back')}</span>
+              <span className="sm:hidden">{t('common.back')}</span>
             </Link>
           </div>
         </div>
@@ -56,13 +64,13 @@ export default function Help() {
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
               <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#aed3d9]" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#aed3d9]">Centro de Ayuda</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#aed3d9]">{t('help.center')}</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
-              ¿Cómo podemos <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] to-white">ayudarte?</span>
+              {t('help.title')}
             </h1>
             <p className="text-sm sm:text-lg text-slate-300 max-w-xl mx-auto px-4">
-              Encuentra respuestas a tus preguntas o contacta a nuestro equipo de soporte.
+              {t('help.subtitle')}
             </p>
           </div>
         </div>
@@ -77,8 +85,8 @@ export default function Help() {
                 <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-[#163a83]" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">Chat en Vivo</h3>
-                <p className="text-xs sm:text-sm text-gray-500">Respuesta inmediata</p>
+                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{t('help.liveChat')}</h3>
+                <p className="text-xs sm:text-sm text-gray-500">{t('help.immediateResponse')}</p>
               </div>
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-[#163a83] transition-colors" />
             </Link>
@@ -88,7 +96,7 @@ export default function Help() {
                 <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-[#00768b]" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">Email</h3>
+                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{t('help.email')}</h3>
                 <p className="text-xs sm:text-sm text-gray-500 truncate">soporte@medical.com</p>
               </div>
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-[#00768b] transition-colors" />
@@ -99,7 +107,7 @@ export default function Help() {
                 <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-[#163a83]" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">Teléfono</h3>
+                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{t('help.phone')}</h3>
                 <p className="text-xs sm:text-sm text-gray-500">+52 55 5123 4567</p>
               </div>
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-[#163a83] transition-colors" />
@@ -112,7 +120,7 @@ export default function Help() {
       <section className="py-12 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6">
           <h2 className="text-xl sm:text-3xl font-bold text-center text-gray-800 mb-6 sm:mb-12">
-            Preguntas Frecuentes
+            {t('help.faq')}
           </h2>
           
           <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
@@ -138,7 +146,7 @@ export default function Help() {
       <section className="py-12 sm:py-24 bg-gray-100">
         <div className="container mx-auto px-4 sm:px-6">
           <h2 className="text-xl sm:text-3xl font-bold text-center text-gray-800 mb-6 sm:mb-12">
-            Recursos
+            {t('help.resources')}
           </h2>
           
           <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">

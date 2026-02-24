@@ -89,7 +89,7 @@ export default function Wallet() {
     if (amount > MAX_TOPUP_AMOUNT) {
       toast({
         title: t('wallet.invalidAmount'),
-        description: `El monto máximo por recarga es $${MAX_TOPUP_AMOUNT.toLocaleString()} MXN`,
+        description: `${t('wallet.maxAmount')} $${MAX_TOPUP_AMOUNT.toLocaleString()} MXN`,
         variant: 'destructive',
       });
       return;

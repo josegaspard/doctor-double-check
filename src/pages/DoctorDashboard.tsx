@@ -101,7 +101,7 @@ export default function DoctorDashboard() {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Folder className="w-5 h-5 text-primary" />
-                    Expedientes de Pacientes con Acceso
+                    {t('dashboard.patientFiles')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -119,7 +119,7 @@ export default function DoctorDashboard() {
                           <p className="font-medium text-sm truncate">{file.name}</p>
                           <p className="text-xs text-muted-foreground">{file.category}</p>
                         </div>
-                        <Badge variant="outline" className="text-xs">Paciente</Badge>
+                        <Badge variant="outline" className="text-xs">{t('roles.patient')}</Badge>
                       </div>
                     ))}
                   </div>

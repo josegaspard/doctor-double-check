@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -103,7 +103,7 @@ export default function LivesGrid() {
                     <div className="absolute top-2 left-2 flex items-center gap-1.5">
                       <Badge variant="live" className="gap-1">
                         <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                        EN VIVO
+                        {t('lives.liveBadge')}
                       </Badge>
                       {isPremiumSub && (
                         <Badge className="gap-1 bg-yellow-500/90 text-white border-0 text-[10px]">
@@ -156,7 +156,7 @@ export default function LivesGrid() {
                       {isPremiumSub && (
                         <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-300 gap-1">
                           <Crown className="w-3 h-3" />
-                          Acceso anticipado
+                          {t('lives.earlyAccess')}
                         </Badge>
                       )}
                     </div>

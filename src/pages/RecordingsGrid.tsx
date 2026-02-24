@@ -126,13 +126,13 @@ export default function RecordingsGrid() {
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
               <PlayCircle className="w-6 h-6 text-premium" />
-              {doctorName ? `Grabaciones de ${doctorName}` : t('recordings.premiumContent')}
+              {doctorName ? `${t('recordings.recordingsOf')} ${doctorName}` : t('recordings.premiumContent')}
             </h1>
             <p className="text-muted-foreground mt-1">
               {filteredRecordings.length} {t('recordings.title').toLowerCase()}
               {doctorFilter && (
                 <Button variant="link" size="sm" className="ml-2 p-0 h-auto text-xs" onClick={() => navigate('/recordings')}>
-                  Ver todas
+                  {t('recordings.viewAll')}
                 </Button>
               )}
             </p>

@@ -132,7 +132,7 @@ export default function DoctorVault() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            title="Ver archivo"
+                            title={t('common.viewFile')}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleViewFile(file);

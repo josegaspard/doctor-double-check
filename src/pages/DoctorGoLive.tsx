@@ -97,7 +97,7 @@ export default function DoctorGoLive() {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isLive && !isEnding) {
         e.preventDefault();
-        e.returnValue = 'Tienes una transmisión en vivo. ¿Seguro que quieres salir?';
+        e.returnValue = t('doctorGoLive.confirmExit');
         return e.returnValue;
       }
     };
@@ -182,7 +182,7 @@ export default function DoctorGoLive() {
       toast.success('¡Transmisión iniciada!');
     } catch (error: any) {
       console.error('Error starting live:', error);
-      toast.error(error.message || 'Error al iniciar la transmisión');
+      toast.error(error.message || t('doctorGoLive.startError'));
     } finally {
       setIsCreating(false);
     }
@@ -240,7 +240,7 @@ export default function DoctorGoLive() {
       }
     } catch (error: any) {
       console.error('Error ending live:', error);
-      toast.error('Error al finalizar la transmisión');
+      toast.error(t('doctorGoLive.endError'));
       localRecording.cleanup();
       try {
         await supabase.from('lives').update({
