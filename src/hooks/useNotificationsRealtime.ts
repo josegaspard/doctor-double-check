@@ -65,6 +65,22 @@ export function useNotificationsRealtime() {
           duration: 15000,
         });
         break;
+
+      case 'video_call':
+        // Handled by useIncomingCall hook for modal display
+        // Also show a toast as backup
+        toast.info(notification.title, {
+          description: notification.message,
+          action: {
+            label: '📹 Unirse',
+            onClick: () => {
+              const cId = notification.data?.consultationId;
+              if (cId) navigate(`/video-call?consultation=${cId}`);
+            },
+          },
+          duration: 30000,
+        });
+        break;
         
       default:
         toast(notification.title, {

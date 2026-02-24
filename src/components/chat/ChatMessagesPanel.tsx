@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,9 @@ import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { EmptyState } from '@/components/chat/EmptyState';
+import { CallWaitingBanner } from '@/components/videocall/CallWaitingBanner';
 import { ChatSession } from '@/contexts/ChatContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SessionDisplayInfo {
   name: string;
@@ -77,10 +79,49 @@ export function ChatMessagesPanel({
   onDoctorProfileClick,
 }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [activeVideoRoom, setActiveVideoRoom] = useState<boolean>(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
+
+  // Check if there's an active video room for this consultation
+  useEffect(() => {
+    if (!consultationId || isClosed) {
+      setActiveVideoRoom(false);
+      return;
+    }
+
+    const checkVideoRoom = async () => {
+      const { data } = await supabase
+        .from('consultations')
+        .select('video_room_name')
+        .eq('id', consultationId)
+        .single();
+      setActiveVideoRoom(!!data?.video_room_name);
+    };
+
+    checkVideoRoom();
+
+    // Subscribe to changes on this consultation
+    const channel = supabase
+      .channel(`video-room-${consultationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'consultations',
+          filter: `id=eq.${consultationId}`,
+        },
+        (payload: any) => {
+          setActiveVideoRoom(!!payload.new?.video_room_name);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [consultationId, isClosed]);
 
   return (
     <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-gradient-to-b from-blue-50/50 to-sky-50/30 dark:from-primary/[0.06] dark:to-secondary/[0.04] ${hidden ? 'hidden md:flex' : 'flex'}`}>
@@ -102,6 +143,13 @@ export function ChatMessagesPanel({
           />
 
           <CardContent className="flex-1 p-0 flex flex-col min-h-0 overflow-hidden bg-gradient-to-b from-sky-100/60 via-blue-50/40 to-sky-100/50 dark:from-primary/15 dark:via-secondary/10 dark:to-primary/15">
+            {/* Active video call banner */}
+            {activeVideoRoom && !isClosed && userRole === 'patient' && consultationId && (
+              <CallWaitingBanner
+                doctorName={getDisplayInfo(session).name}
+                consultationId={consultationId}
+              />
+            )}
             <ScrollArea className="flex-1 min-h-0 px-3 sm:px-4 py-4">
               <div className="space-y-3">
                 {messages.map(msg => (
