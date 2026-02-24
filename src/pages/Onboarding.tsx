@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -166,6 +167,7 @@ type OnboardingRole = Exclude<UserRole, 'visitor' | 'admin'>;
 export default function Onboarding() {
   const navigate = useNavigate();
   const { user, supabaseUser, refreshUser, isLoading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
   
   const [step, setStep] = useState(1);
   const [selectedRole, setSelectedRole] = useState<OnboardingRole>('patient');
@@ -213,7 +215,7 @@ export default function Onboarding() {
     
     if (selectedRole === 'doctor' || selectedRole === 'resident') {
       if (!specialty) {
-        errors.specialty = 'Debes seleccionar una especialidad';
+        errors.specialty = t('onboarding.validationSpecialty');
       }
     }
 
@@ -223,23 +225,23 @@ export default function Onboarding() {
       const cedulaRegex = /^\d{7,8}$/;
       
       if (!trimmedLicense) {
-        errors.license = 'El número de cédula profesional es obligatorio';
+        errors.license = t('onboarding.validationCedula');
       } else if (!cedulaRegex.test(trimmedLicense)) {
-        errors.license = 'La cédula debe contener entre 7 y 8 dígitos numéricos';
+        errors.license = t('onboarding.validationCedulaFormat');
       }
     }
 
     if (selectedRole === 'resident') {
       if (!institution.trim()) {
-        errors.institution = 'La institución es obligatoria';
+        errors.institution = t('onboarding.validationInstitution');
       } else if (institution.trim().length < 3) {
-        errors.institution = 'La institución debe tener al menos 3 caracteres';
+        errors.institution = t('onboarding.validationInstitutionMin');
       } else if (institution.trim().length > 150) {
-        errors.institution = 'La institución no puede exceder 150 caracteres';
+        errors.institution = t('onboarding.validationInstitutionMax');
       }
 
       if (year < 1 || year > 7) {
-        errors.year = 'El año debe estar entre 1 y 7';
+        errors.year = t('onboarding.validationYear');
       }
     }
 
@@ -365,7 +367,7 @@ export default function Onboarding() {
         if (savedProgress.avatar_url) setAvatarUrl(savedProgress.avatar_url);
         
         // Show toast when restoring previous session
-        toast.success('Continuando desde tu última sesión', {
+        toast.success(t('onboarding.restoringSession'), {
           duration: 3000,
           icon: '🔄'
         });
@@ -416,7 +418,7 @@ export default function Onboarding() {
       setValidationErrors(errors);
       
       if (Object.keys(errors).length > 0) {
-        toast.error('Por favor completa todos los campos obligatorios');
+        toast.error(t('onboarding.requiredFields'));
         return;
       }
     }
@@ -576,10 +578,10 @@ export default function Onboarding() {
       // Show welcome screen
       setShowWelcome(true);
       
-      toast.success('¡Perfil completado exitosamente!');
+      toast.success(t('onboarding.profileCompleted'));
     } catch (error: any) {
       console.error('Onboarding error:', error);
-      toast.error(error.message || 'Error al completar el perfil');
+      toast.error(error.message || t('onboarding.completeError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -596,13 +598,13 @@ export default function Onboarding() {
   const getRoleLabel = () => {
     switch (selectedRole) {
       case 'patient':
-        return 'Paciente';
+        return t('onboarding.patient');
       case 'doctor':
-        return 'Médico';
+        return t('onboarding.doctor');
       case 'resident':
-        return 'Residente';
+        return t('onboarding.resident');
       default:
-        return 'Usuario';
+        return t('roles.visitor');
     }
   };
 
@@ -623,7 +625,7 @@ export default function Onboarding() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Cargando tu progreso...</p>
+        <p className="text-sm text-muted-foreground">{t('onboarding.loadingProgress')}</p>
       </div>
     );
   }
@@ -668,7 +670,7 @@ export default function Onboarding() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.4 }}
             >
-              ¡Bienvenido{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
+              {t('onboarding.welcomeTitle').replace('{name}', user?.name ? `, ${user.name.split(' ')[0]}` : '')}
             </motion.h1>
 
             <motion.p 
@@ -677,7 +679,7 @@ export default function Onboarding() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.4 }}
             >
-              Tu cuenta ha sido configurada exitosamente
+              {t('onboarding.accountConfigured')}
             </motion.p>
 
             <motion.div
@@ -705,7 +707,7 @@ export default function Onboarding() {
                 onClick={handleContinueToApp}
                 className="gap-2"
               >
-                {selectedRole === 'patient' ? 'Explorar contenido' : 'Continuar con verificación'}
+                {selectedRole === 'patient' ? t('onboarding.exploreContent') : t('onboarding.continueVerification')}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </motion.div>
@@ -717,7 +719,7 @@ export default function Onboarding() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1, duration: 0.4 }}
               >
-                Tu perfil será verificado por nuestro equipo
+                {t('onboarding.profileVerification')}
               </motion.p>
             )}
           </motion.div>
@@ -809,7 +811,7 @@ export default function Onboarding() {
             </div>
             <div className="flex items-center justify-center gap-2 mt-3">
               <p className="text-sm text-muted-foreground">
-                Paso {step} de {totalSteps}
+                {t('onboarding.step')} {step} {t('onboarding.of')} {totalSteps}
               </p>
               <AnimatePresence>
                 {isSavingProgress && (
@@ -820,7 +822,7 @@ export default function Onboarding() {
                     className="flex items-center gap-1 text-xs text-muted-foreground"
                   >
                     <Loader2 className="w-3 h-3 animate-spin" />
-                    <span>Guardando...</span>
+                    <span>{t('onboarding.saving')}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -860,9 +862,9 @@ export default function Onboarding() {
                         <Sparkles className="w-8 h-8 text-primary" />
                       </motion.div>
                     </motion.div>
-                    <CardTitle className="text-2xl">¡Bienvenido a Dr Double Check!</CardTitle>
+                    <CardTitle className="text-2xl">{t('onboarding.welcomeSubtitle')}</CardTitle>
                     <CardDescription className="text-base">
-                      Para personalizar tu experiencia, cuéntanos más sobre ti
+                      {t('onboarding.personalizeExperience')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -885,16 +887,16 @@ export default function Onboarding() {
                       )}
 
                       <motion.div className="space-y-3" variants={itemVariants}>
-                        <Label className="text-base font-medium">¿Cuál es tu rol?</Label>
+                        <Label className="text-base font-medium">{t('onboarding.selectRole')}</Label>
                         <RadioGroup 
                           value={selectedRole} 
                           onValueChange={(v) => handleRoleSelect(v as OnboardingRole)}
                           className="grid gap-3"
                         >
                           {[
-                            { value: 'patient', icon: User, label: 'Paciente', desc: 'Accede a consultas médicas y contenido educativo' },
-                            { value: 'doctor', icon: Stethoscope, label: 'Médico', desc: 'Ofrece consultas y comparte conocimiento médico' },
-                            { value: 'resident', icon: GraduationCap, label: 'Residente', desc: 'Accede a grupos de estudio y contenido con descuento' }
+                            { value: 'patient', icon: User, label: t('onboarding.patient'), desc: t('onboarding.patientDesc') },
+                            { value: 'doctor', icon: Stethoscope, label: t('onboarding.doctor'), desc: t('onboarding.doctorDesc') },
+                            { value: 'resident', icon: GraduationCap, label: t('onboarding.resident'), desc: t('onboarding.residentDesc') }
                           ].map((role, index) => (
                             <motion.div
                               key={role.value}
@@ -954,7 +956,7 @@ export default function Onboarding() {
                           {isSubmitting ? (
                             <Loader2 className="w-4 h-4 animate-spin mr-2" />
                           ) : null}
-                          {selectedRole === 'patient' ? 'Continuar' : 'Continuar'}
+                          {t('onboarding.continue')}
                         </Button>
                       </motion.div>
                     </motion.div>
@@ -980,14 +982,16 @@ export default function Onboarding() {
                     >
                       <CardTitle>
                         {selectedRole === 'patient' 
-                          ? 'Historial Clínico Básico' 
-                          : `Completa tu perfil de ${selectedRole === 'doctor' ? 'médico' : 'residente'}`
+                          ? t('onboarding.clinicalHistoryTitle')
+                          : selectedRole === 'doctor' 
+                            ? t('onboarding.doctorProfileTitle')
+                            : t('onboarding.residentProfileTitle')
                         }
                       </CardTitle>
                       <CardDescription>
                         {selectedRole === 'patient'
-                          ? 'Esta información ayudará a los médicos a atenderte mejor (Opcional)'
-                          : 'Esta información nos ayudará a verificar tu identidad profesional'
+                          ? t('onboarding.clinicalHistorySubtitle')
+                          : t('onboarding.professionalInfo')
                         }
                       </CardDescription>
                     </motion.div>
@@ -1010,7 +1014,7 @@ export default function Onboarding() {
                         <>
                           <motion.div className="space-y-2" variants={itemVariants}>
                         <Label htmlFor="specialty" className="flex items-center gap-1">
-                          Especialidad <span className="text-destructive">*</span>
+                          {t('onboarding.specialty')} <span className="text-destructive">*</span>
                         </Label>
                         <Select
                           value={specialty}
@@ -1020,7 +1024,7 @@ export default function Onboarding() {
                             id="specialty"
                             className={validationErrors.specialty ? 'border-destructive focus:ring-destructive' : ''}
                           >
-                            <SelectValue placeholder="Selecciona tu especialidad" />
+                            <SelectValue placeholder={t('onboarding.selectSpecialty')} />
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px]">
                             {MEDICAL_SPECIALTIES.map((spec) => (
@@ -1049,11 +1053,11 @@ export default function Onboarding() {
                       {selectedRole === 'doctor' && (
                         <motion.div className="space-y-3" variants={itemVariants}>
                           <Label htmlFor="license" className="flex items-center gap-1">
-                            Cédula Profesional <span className="text-destructive">*</span>
+                            {t('onboarding.cedula')} <span className="text-destructive">*</span>
                           </Label>
                           <Input
                             id="license"
-                            placeholder="Ej: 1234567 o 12345678"
+                            placeholder={t('onboarding.cedulaPlaceholder')}
                             value={license}
                             onChange={(e) => {
                               // Only allow numeric input
@@ -1093,7 +1097,7 @@ export default function Onboarding() {
                               userId={supabaseUser.id}
                               onVerified={handleCedulaVerified}
                               onClaimed={handleCedulaClaimed}
-                              language="es"
+                              language={language}
                             />
                           )}
                         </motion.div>
@@ -1103,11 +1107,11 @@ export default function Onboarding() {
                         <>
                           <motion.div className="space-y-2" variants={itemVariants}>
                             <Label htmlFor="institution" className="flex items-center gap-1">
-                              Institución <span className="text-destructive">*</span>
+                              {t('onboarding.institution')} <span className="text-destructive">*</span>
                             </Label>
                             <Input
                               id="institution"
-                              placeholder="Nombre del hospital o universidad"
+                              placeholder={t('onboarding.institutionPlaceholder')}
                               value={institution}
                               onChange={(e) => setInstitution(e.target.value)}
                               className={validationErrors.institution ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -1130,7 +1134,7 @@ export default function Onboarding() {
                           </motion.div>
                           <motion.div className="space-y-2" variants={itemVariants}>
                             <Label htmlFor="year" className="flex items-center gap-1">
-                              Año de residencia <span className="text-destructive">*</span>
+                              {t('onboarding.residencyYear')} <span className="text-destructive">*</span>
                             </Label>
                             <Input
                               id="year"
@@ -1187,7 +1191,7 @@ export default function Onboarding() {
                           onClick={() => setStep(1)}
                           className="flex-1"
                         >
-                          Atrás
+                          {t('onboarding.back')}
                         </Button>
                         <Button 
                           onClick={handleSubmit} 
@@ -1197,7 +1201,7 @@ export default function Onboarding() {
                           {isSubmitting ? (
                             <Loader2 className="w-4 h-4 animate-spin mr-2" />
                           ) : null}
-                          Completar registro
+                          {t('onboarding.completeRegistration')}
                         </Button>
                       </motion.div>
                     </motion.div>

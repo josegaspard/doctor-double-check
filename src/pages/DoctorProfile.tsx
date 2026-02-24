@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 
 interface DoctorData {
@@ -51,6 +52,7 @@ export default function DoctorProfile() {
   const { user, role, isAuthenticated } = useAuth();
   const { createSession } = useChat();
   const { balance, purchase, canAfford } = useWallet();
+  const { t } = useLanguage();
   const [doctor, setDoctor] = useState<DoctorData | null>(null);
   const [activeLive, setActiveLive] = useState<LiveData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,7 +64,6 @@ export default function DoctorProfile() {
     const fetchDoctor = async () => {
       if (!id) return;
 
-      // Use the secure RPC function to get doctor's public profile
       const { data: doctorData, error } = await supabase.rpc(
         'get_doctor_public_profile',
         { p_user_id: id }
@@ -74,7 +75,6 @@ export default function DoctorProfile() {
         return;
       }
 
-      // The RPC returns an array, get first result
       const doctorProfile = Array.isArray(doctorData) ? doctorData[0] : doctorData;
 
       if (doctorProfile) {
@@ -92,7 +92,6 @@ export default function DoctorProfile() {
           avatarUrl: doctorProfile.avatar_url || undefined,
         });
 
-        // Check if doctor has an active live
         const { data: liveData } = await supabase
           .from('lives')
           .select('id, title, viewer_count')
@@ -113,7 +112,6 @@ export default function DoctorProfile() {
 
     fetchDoctor();
 
-    // Subscribe to live status changes
     const channel = supabase
       .channel('doctor-live-status')
       .on(
@@ -141,16 +139,10 @@ export default function DoctorProfile() {
     };
   }, [id]);
 
-  // Check if user has chat entitlement
   const hasChatEntitlement = user?.entitlements?.some(e => e.type === 'chat' && e.isActive) ?? false;
-  
-  // Check if consultation is free
   const isFreeConsultation = doctor?.consultationFee === 0;
-  
-  // Can start chat without payment?
   const canChatDirectly = role === 'doctor' || hasChatEntitlement || isFreeConsultation;
 
-  // Start the chat session and notify doctor
   const startChatSession = async () => {
     if (!user?.id || !doctor) return;
 
@@ -159,7 +151,6 @@ export default function DoctorProfile() {
       const result = await createSession(doctor.id, 'doctor', false);
       
       if (result.success && result.session) {
-        // Notify doctor about new chat
         try {
           await supabase.functions.invoke('notify-new-chat', {
             body: {
@@ -174,51 +165,43 @@ export default function DoctorProfile() {
         }
         
         navigate('/chat');
-        toast.success(`Chat iniciado con ${doctor.name}`);
+        toast.success(`${t('doctorProfile.chatStarted')} ${doctor.name}`);
       } else {
-        toast.error(result.error || 'Error al iniciar orientación');
+        toast.error(result.error || t('doctorProfile.chatError'));
       }
     } catch (error) {
-      toast.error('Error al iniciar consulta');
+      toast.error(t('doctorProfile.chatError'));
     } finally {
       setIsStartingChat(false);
     }
   };
 
-  // Handle starting a consultation with this doctor
   const handleStartConsultation = async () => {
-    // Not authenticated - redirect to login
     if (!isAuthenticated || !user?.id) {
       navigate('/login');
       return;
     }
 
-    // Only patients can start consultations
     if (role !== 'patient') {
-      toast.error('Solo los pacientes pueden iniciar orientaciones médicas');
+      toast.error(t('doctorProfile.onlyPatients'));
       return;
     }
 
     if (!doctor) return;
 
-    // If can chat directly (free or has entitlement), start chat
     if (canChatDirectly) {
       await startChatSession();
       return;
     }
 
-    // Otherwise, show payment modal
     setShowPaymentModal(true);
   };
 
-  // Handle wallet payment using secure RPC
   const handleWalletPayment = async () => {
     if (!doctor || !user?.id) return;
 
     setIsProcessingPayment(true);
     try {
-      // Use the secure server-side function that handles everything atomically
-      // This creates chat session, consultation record, entitlement, and notifies doctor
       const { data, error } = await supabase.rpc('process_consultation_purchase', {
         p_doctor_id: doctor.id,
         p_amount: doctor.consultationFee,
@@ -227,7 +210,7 @@ export default function DoctorProfile() {
 
       if (error) {
         console.error('Consultation purchase error:', error);
-        toast.error(error.message || 'Error al procesar el pago');
+        toast.error(error.message || t('doctorProfile.paymentError'));
         return;
       }
 
@@ -241,21 +224,19 @@ export default function DoctorProfile() {
 
       if (result.success) {
         setShowPaymentModal(false);
-        toast.success('¡Pago exitoso!');
-        // Navigate directly to chat - session was already created by RPC
+        toast.success(t('doctorProfile.paymentSuccess'));
         navigate('/chat');
       } else {
-        toast.error(result.error || 'Error al procesar el pago');
+        toast.error(result.error || t('doctorProfile.paymentError'));
       }
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error('Error al procesar el pago');
+      toast.error(t('doctorProfile.paymentError'));
     } finally {
       setIsProcessingPayment(false);
     }
   };
 
-  // Handle Stripe payment (redirect to checkout)
   const handleStripePayment = async () => {
     if (!doctor) return;
 
@@ -274,11 +255,11 @@ export default function DoctorProfile() {
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        toast.error('Error al crear sesión de pago');
+        toast.error(t('doctorProfile.paymentError'));
       }
     } catch (error) {
       console.error('Stripe checkout error:', error);
-      toast.error('Error al procesar el pago');
+      toast.error(t('doctorProfile.paymentError'));
     } finally {
       setIsProcessingPayment(false);
     }
@@ -301,8 +282,8 @@ export default function DoctorProfile() {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-6 max-w-3xl text-center">
-          <h1 className="text-2xl font-bold mb-4">Doctor no encontrado</h1>
-          <Button onClick={() => navigate('/lives')}>Volver a Lives</Button>
+          <h1 className="text-2xl font-bold mb-4">{t('doctorProfile.notFound')}</h1>
+          <Button onClick={() => navigate('/lives')}>{t('doctorProfile.backToLives')}</Button>
         </div>
       </MainLayout>
     );
@@ -313,7 +294,7 @@ export default function DoctorProfile() {
       <div className="container mx-auto px-4 py-6 max-w-3xl">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Volver
+          {t('doctorProfile.back')}
         </Button>
 
         {/* Live Indicator Banner */}
@@ -335,11 +316,11 @@ export default function DoctorProfile() {
                     <div className="flex items-center gap-2">
                       <Badge variant="destructive" className="gap-1">
                         <Radio className="w-3 h-3" />
-                        EN VIVO
+                        {t('doctorProfile.live')}
                       </Badge>
                       <span className="text-sm text-muted-foreground flex items-center gap-1">
                         <Users className="w-3 h-3" />
-                        {activeLive.viewerCount} viendo
+                        {activeLive.viewerCount} {t('doctorProfile.watching')}
                       </span>
                     </div>
                     <p className="font-medium text-sm mt-1">{activeLive.title}</p>
@@ -347,7 +328,7 @@ export default function DoctorProfile() {
                 </div>
                 <Button size="sm" variant="destructive" className="gap-1">
                   <Video className="w-4 h-4" />
-                  Ver Ahora
+                  {t('doctorProfile.watchNow')}
                 </Button>
               </div>
             </CardContent>
@@ -385,7 +366,7 @@ export default function DoctorProfile() {
                       <DoctorBadge type={getDoctorBadgeType(doctor.totalConsultations, doctor.rating)} />
                       <Badge variant="verified" className="gap-1">
                         <Award className="w-3 h-3" />
-                        Verificado
+                        {t('doctorProfile.verified')}
                       </Badge>
                       <Badge variant="secondary" className="gap-1 overflow-hidden">
                         <Users className="w-3 h-3" />
@@ -400,7 +381,7 @@ export default function DoctorProfile() {
                             {doctor.followersCount}
                           </motion.span>
                         </AnimatePresence>
-                        {' '}seguidores
+                        {' '}{t('doctorProfile.followers')}
                       </Badge>
                     </div>
                   </div>
@@ -419,15 +400,15 @@ export default function DoctorProfile() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
                   <div className="text-center p-3 bg-muted/50 rounded-lg">
                     <p className="text-xl font-bold text-foreground">{doctor.totalConsultations}</p>
-                    <p className="text-xs text-muted-foreground">Orientaciones</p>
+                    <p className="text-xs text-muted-foreground">{t('doctorProfile.consultations')}</p>
                   </div>
                   <div className="text-center p-3 bg-muted/50 rounded-lg">
                     {isFreeConsultation ? (
-                      <p className="text-xl font-bold text-success">Gratis</p>
+                      <p className="text-xl font-bold text-success">{t('doctorProfile.free')}</p>
                     ) : (
                       <p className="text-xl font-bold text-premium">${doctor.consultationFee}</p>
                     )}
-                    <p className="text-xs text-muted-foreground">Orientación</p>
+                    <p className="text-xs text-muted-foreground">{t('doctorProfile.consultation')}</p>
                   </div>
                   {doctor.location && (
                     <div className="text-center p-3 bg-muted/50 rounded-lg">
@@ -439,7 +420,6 @@ export default function DoctorProfile() {
 
                 <div className="flex flex-wrap gap-3">
                   <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} onSubscriptionChange={async () => {
-                    // Wait for DB trigger to complete, then refetch
                     await new Promise(r => setTimeout(r, 1000));
                     const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
                     const profile = Array.isArray(data) ? data[0] : data;
@@ -457,17 +437,17 @@ export default function DoctorProfile() {
                       <MessageSquare className="w-4 h-4" />
                     )}
                     {isStartingChat 
-                      ? 'Iniciando...' 
+                      ? t('doctorProfile.starting')
                       : isFreeConsultation 
-                        ? 'Orientación Gratis'
+                        ? t('doctorProfile.freeConsultation')
                         : canChatDirectly 
-                          ? 'Iniciar Orientación'
-                          : `Orientación ($${doctor.consultationFee})`
+                          ? t('doctorProfile.startConsultation')
+                          : `${t('doctorProfile.consultation')} ($${doctor.consultationFee})`
                     }
                   </Button>
                   <Button variant="outline" className="gap-2" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
                     <Video className="w-4 h-4" />
-                    Ver Lives
+                    {t('doctorProfile.viewLives')}
                   </Button>
                   <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
                 </div>
@@ -488,10 +468,10 @@ export default function DoctorProfile() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-primary" />
-                Iniciar Orientación Médica
+                {t('doctorProfile.paymentTitle')}
               </DialogTitle>
               <DialogDescription>
-                Orientación con {doctor.name} - ${doctor.consultationFee} MXN
+                {t('doctorProfile.paymentDescription').replace('{name}', doctor.name).replace('${price}', String(doctor.consultationFee))}
               </DialogDescription>
             </DialogHeader>
 
@@ -512,16 +492,16 @@ export default function DoctorProfile() {
                         <Wallet className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium">Pagar con Saldo</p>
+                        <p className="font-medium">{t('doctorProfile.payWithBalance')}</p>
                         <p className="text-sm text-muted-foreground">
-                          Saldo disponible: ${balance.toFixed(2)} MXN
+                          {t('doctorProfile.availableBalance').replace('${balance}', balance.toFixed(2))}
                         </p>
                       </div>
                     </div>
                     {canAfford(doctor.consultationFee) ? (
-                      <Badge variant="secondary">Disponible</Badge>
+                      <Badge variant="secondary">{t('doctorProfile.available')}</Badge>
                     ) : (
-                      <Badge variant="outline">Saldo insuficiente</Badge>
+                      <Badge variant="outline">{t('doctorProfile.insufficientBalance')}</Badge>
                     )}
                   </div>
                 </CardContent>
@@ -539,7 +519,7 @@ export default function DoctorProfile() {
                         <CreditCard className="w-5 h-5 text-foreground" />
                       </div>
                       <div>
-                        <p className="font-medium">Pagar con Tarjeta</p>
+                        <p className="font-medium">{t('doctorProfile.payWithCard')}</p>
                         <p className="text-sm text-muted-foreground">
                           Visa, Mastercard, AMEX
                         </p>
@@ -554,13 +534,13 @@ export default function DoctorProfile() {
             {isProcessingPayment && (
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Procesando pago...
+                {t('doctorProfile.processing')}
               </div>
             )}
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowPaymentModal(false)}>
-                Cancelar
+                {t('common.cancel')}
               </Button>
             </DialogFooter>
           </DialogContent>

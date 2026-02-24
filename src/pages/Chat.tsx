@@ -19,7 +19,7 @@ export default function Chat() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { getSessionsByUser, getSessionMessages, sendMessage, markAsRead, loadMessages, closeSession, createSession, refreshSessions } = useChat();
   const { user, role } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const isMobile = useIsMobile();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -68,7 +68,7 @@ export default function Chat() {
           );
           if (existingSession) {
             setSelectedSession(existingSession.id);
-            toast.success('Orientación lista — puedes comenzar a chatear');
+            toast.success(t('chat.sessionClosed'));
           } else {
             const result = await createSession(doctorId, 'doctor', false);
             if (result.success && result.session) {
@@ -78,14 +78,14 @@ export default function Chat() {
                 });
               } catch (e) { console.error('Error notifying doctor:', e); }
               setSelectedSession(result.session.id);
-              toast.success('¡Pago exitoso! Ya puedes chatear con tu médico');
+              toast.success(t('doctorProfile.paymentSuccess'));
             } else {
-              toast.error(result.error || 'Error al crear sesión de chat');
+              toast.error(result.error || t('doctorProfile.chatError'));
             }
           }
         } catch (error) {
           console.error('Error creating session after payment:', error);
-          toast.error('Error al iniciar el chat');
+          toast.error(t('doctorProfile.chatError'));
         } finally {
           setIsCreatingSession(false);
         }
@@ -160,11 +160,11 @@ export default function Chat() {
     const result = await closeSession(selectedSession);
     setIsClosingSession(false);
     if (result.success) {
-      toast.success('Orientación cerrada exitosamente');
+      toast.success(t('chat.sessionClosed'));
       setSelectedSession(null);
       setActiveTab('history');
     } else {
-      toast.error(result.error || 'Error al cerrar la orientación');
+      toast.error(result.error || t('doctorProfile.chatError'));
     }
   };
 
@@ -178,15 +178,17 @@ export default function Chat() {
 
   const getSessionDisplayInfo = (session: ChatSession) => {
     if (role === 'patient') {
-      return { name: session.participant2Name || 'Médico', specialty: session.participant2Specialty, avatar: session.participant2Avatar, type: session.participant2Type };
+      return { name: session.participant2Name || t('chat.doctor'), specialty: session.participant2Specialty, avatar: session.participant2Avatar, type: session.participant2Type };
     }
-    return { name: session.participant1Name || 'Paciente', specialty: session.participant1Specialty, avatar: session.participant1Avatar, type: session.participant1Type };
+    return { name: session.participant1Name || t('chat.patient'), specialty: session.participant1Specialty, avatar: session.participant1Avatar, type: session.participant1Type };
   };
 
   const formatOfficeHours = (session: ChatSession) => {
     if (!session.officeHoursStart || !session.officeHoursEnd) return null;
-    const dayNames: Record<string, string> = { monday: 'Lun', tuesday: 'Mar', wednesday: 'Mié', thursday: 'Jue', friday: 'Vie', saturday: 'Sáb', sunday: 'Dom' };
-    const days = session.officeDays?.map(d => dayNames[d] || d).join(', ') || 'Lun-Vie';
+    const dayNames: Record<string, string> = language === 'en' 
+      ? { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun' }
+      : { monday: 'Lun', tuesday: 'Mar', wednesday: 'Mié', thursday: 'Jue', friday: 'Vie', saturday: 'Sáb', sunday: 'Dom' };
+    const days = session.officeDays?.map(d => dayNames[d] || d).join(', ') || (language === 'en' ? 'Mon-Fri' : 'Lun-Vie');
     return `${session.officeHoursStart.slice(0, 5)} - ${session.officeHoursEnd.slice(0, 5)} | ${days}`;
   };
 
@@ -208,7 +210,7 @@ export default function Chat() {
         <div className="container mx-auto px-4 py-12">
           <Card className="max-w-lg mx-auto text-center p-8">
             <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary mb-4" />
-            <p className="text-muted-foreground">Cargando...</p>
+            <p className="text-muted-foreground">{t('common.loading')}</p>
           </Card>
         </div>
       </MainLayout>
@@ -224,12 +226,12 @@ export default function Chat() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
               <MessageSquare className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h2 className="font-heading text-xl font-bold text-foreground mb-2">Chat 1:1</h2>
+            <h2 className="font-heading text-xl font-bold text-foreground mb-2">{t('chat.oneOnOne')}</h2>
             <p className="text-muted-foreground mb-6">
-              {role === 'visitor' ? 'Inicia sesión para acceder al chat con médicos.' : 'El chat está disponible solo para pacientes y médicos.'}
+              {role === 'visitor' ? t('chat.chatUnavailable') : t('chat.chatUnavailable')}
             </p>
             <Button onClick={() => navigate(role === 'visitor' ? '/login' : '/lives')}>
-              {role === 'visitor' ? 'Iniciar Sesión' : 'Ir a Lives'}
+              {role === 'visitor' ? t('nav.login') : t('chat.goToLives')}
             </Button>
           </Card>
         </div>
@@ -247,13 +249,13 @@ export default function Chat() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-premium/10 flex items-center justify-center">
               <MessageSquare className="w-8 h-8 text-premium" />
             </div>
-            <h2 className="font-heading text-xl font-bold text-foreground mb-2">Activa el Chat 1:1</h2>
+            <h2 className="font-heading text-xl font-bold text-foreground mb-2">{t('chat.activateChat')}</h2>
             <p className="text-muted-foreground mb-6">
-              La orientación médica por chat es un servicio premium. Adquiere el servicio para comunicarte directamente con profesionales de la salud.
+              {t('chat.premiumService')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button onClick={() => navigate('/wallet')}>Ver Opciones</Button>
-              <Button variant="outline" onClick={() => navigate('/lives')}>Ir a Lives</Button>
+              <Button onClick={() => navigate('/wallet')}>{t('chat.viewOptions')}</Button>
+              <Button variant="outline" onClick={() => navigate('/lives')}>{t('chat.goToLives')}</Button>
             </div>
           </Card>
         </div>
@@ -278,7 +280,7 @@ export default function Chat() {
             {activeSessions.length > 0 && (
               <Badge variant="secondary" className="gap-1">
                 <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                {activeSessions.length} activa{activeSessions.length !== 1 ? 's' : ''}
+                {activeSessions.length} {t('chat.active').toLowerCase()}{activeSessions.length !== 1 ? 's' : ''}
               </Badge>
             )}
           </div>

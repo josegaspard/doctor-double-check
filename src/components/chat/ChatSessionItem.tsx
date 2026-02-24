@@ -11,7 +11,7 @@ import {
   Circle
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { ChatSession } from '@/contexts/ChatContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -45,8 +45,9 @@ export function ChatSessionItem({
   onClick,
   onDoctorProfileClick,
 }: ChatSessionItemProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const isClosed = session.status === 'closed';
+  const dateLocale = language === 'en' ? enUS : es;
   
   const getParticipantIcon = () => {
     if (displayInfo.type === 'doctor') {
@@ -147,7 +148,7 @@ export function ChatSessionItem({
               )}
               {displayInfo.type === 'resident' && (
                 <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
-                  Residente
+                  {t('roles.resident')}
                 </Badge>
               )}
             </div>
@@ -155,20 +156,20 @@ export function ChatSessionItem({
           
           {/* Last message preview */}
           <p className="text-xs text-muted-foreground truncate pr-6">
-            {session.lastMessage || 'Sin mensajes aún...'}
+            {session.lastMessage || t('chat.noConversations')}
           </p>
           
           {/* Office hours or closed date */}
           {isClosed && session.lastMessageAt ? (
             <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <Lock className="w-3 h-3" />
-              <span>Cerrada el {format(session.lastMessageAt, 'dd MMM yyyy', { locale: es })}</span>
+              <span>{t('chat.sessionClosed')} {format(session.lastMessageAt, 'dd MMM yyyy', { locale: dateLocale })}</span>
             </div>
           ) : officeHours && userRole === 'patient' ? (
             <div className={`flex items-center gap-1 text-[11px] ${isAvailable ? 'text-success' : 'text-warning'}`}>
               <Clock className="w-3 h-3" />
               <span>{officeHours}</span>
-              {!isAvailable && <span className="text-muted-foreground">• Fuera de horario</span>}
+              {!isAvailable && <span className="text-muted-foreground">• {t('dashboard.notAvailable')}</span>}
             </div>
           ) : null}
         </div>
@@ -177,7 +178,7 @@ export function ChatSessionItem({
         <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
           {session.lastMessageAt && (
             <span className="text-[10px] text-muted-foreground">
-              {format(session.lastMessageAt, 'HH:mm', { locale: es })}
+              {format(session.lastMessageAt, 'HH:mm', { locale: dateLocale })}
             </span>
           )}
           {!isClosed && session.unreadCount > 0 && (
