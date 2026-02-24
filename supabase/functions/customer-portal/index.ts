@@ -41,12 +41,20 @@ Deno.serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-03-31.basil" });
+    let customerId: string;
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     if (customers.data.length === 0) {
-      throw new Error("No Stripe customer found for this user");
+      logStep("No Stripe customer found, creating one");
+      const newCustomer = await stripe.customers.create({
+        email: user.email,
+        metadata: { user_id: user.id },
+      });
+      customerId = newCustomer.id;
+      logStep("Created Stripe customer", { customerId });
+    } else {
+      customerId = customers.data[0].id;
+      logStep("Found Stripe customer", { customerId });
     }
-    const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
 
     const origin = req.headers.get("origin") || "https://doc-seek-relay.lovable.app";
     const portalSession = await stripe.billingPortal.sessions.create({
