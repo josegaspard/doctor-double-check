@@ -482,7 +482,7 @@ export default function DoctorProfile() {
         {/* Patient Reviews */}
         <DoctorReviews 
           doctorId={doctor.id} 
-          averageRating={doctor.rating} 
+          onRatingCalculated={(avg) => setDoctor(prev => prev ? { ...prev, rating: avg } : prev)}
         />
 
         {/* Payment Modal */}
