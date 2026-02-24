@@ -2497,6 +2497,7 @@ export type Database = {
         | "chat_message"
         | "system"
         | "rating_request"
+        | "video_call"
       subscription_tier: "free" | "basic" | "premium"
       supported_language: "es" | "en"
       transaction_status: "initiated" | "paid" | "failed"
@@ -2664,6 +2665,7 @@ export const Constants = {
         "chat_message",
         "system",
         "rating_request",
+        "video_call",
       ],
       subscription_tier: ["free", "basic", "premium"],
       supported_language: ["es", "en"],
