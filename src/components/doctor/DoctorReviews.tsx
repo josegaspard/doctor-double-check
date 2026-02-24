@@ -19,12 +19,13 @@ interface Review {
 
 interface DoctorReviewsProps {
   doctorId: string;
-  averageRating: number;
+  onRatingCalculated?: (avg: number) => void;
 }
 
-export default function DoctorReviews({ doctorId, averageRating }: DoctorReviewsProps) {
+export default function DoctorReviews({ doctorId, onRatingCalculated }: DoctorReviewsProps) {
   const { t, language } = useLanguage();
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [computedAverage, setComputedAverage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const dateLocale = language === 'es' ? es : enUS;
 
@@ -53,16 +54,21 @@ export default function DoctorReviews({ doctorId, averageRating }: DoctorReviews
           (profiles || []).map((p: any) => [p.id, { name: p.name, avatar: p.avatar_url }])
         );
 
-        setReviews(
-          data.map(r => ({
-            id: r.id,
-            rating: r.rating,
-            comment: r.comment,
-            createdAt: new Date(r.created_at),
-            patientName: profileMap.get(r.patient_id)?.name || t('doctorProfile.anonymousPatient'),
-            patientAvatar: profileMap.get(r.patient_id)?.avatar || undefined,
-          }))
-        );
+        const mappedReviews = data.map(r => ({
+          id: r.id,
+          rating: r.rating,
+          comment: r.comment,
+          createdAt: new Date(r.created_at),
+          patientName: profileMap.get(r.patient_id)?.name || t('doctorProfile.anonymousPatient'),
+          patientAvatar: profileMap.get(r.patient_id)?.avatar || undefined,
+        }));
+
+        setReviews(mappedReviews);
+
+        // Compute average from actual data
+        const avg = mappedReviews.reduce((sum, r) => sum + r.rating, 0) / mappedReviews.length;
+        setComputedAverage(avg);
+        onRatingCalculated?.(avg);
       } catch (err) {
         console.error('Error fetching reviews:', err);
       } finally {
@@ -91,8 +97,8 @@ export default function DoctorReviews({ doctorId, averageRating }: DoctorReviews
           {t('doctorProfile.reviewsTitle')}
         </CardTitle>
         <div className="flex items-center gap-3 mt-1">
-          <RatingStars rating={Math.round(averageRating)} size="sm" />
-          <span className="text-sm font-semibold">{averageRating.toFixed(1)}</span>
+          <RatingStars rating={Math.round(computedAverage)} size="sm" />
+          <span className="text-sm font-semibold">{computedAverage.toFixed(1)}</span>
           <span className="text-xs text-muted-foreground">
             ({reviews.length} {reviews.length === 1 ? t('doctorProfile.review') : t('doctorProfile.reviews')})
           </span>
