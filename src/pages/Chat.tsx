@@ -128,18 +128,58 @@ export default function Chat() {
     if (selectedSession) {
       loadMessages(selectedSession);
       markAsRead(selectedSession);
-      const fetchConsultation = async () => {
+      const fetchOrCreateConsultation = async () => {
+        // First try to find an existing consultation for this session
         const { data } = await supabase
           .from('consultations')
           .select('id')
           .eq('chat_session_id', selectedSession)
-          .eq('status', 'active')
           .order('started_at', { ascending: false })
           .limit(1)
           .maybeSingle();
-        setConsultationId(data?.id || null);
+
+        if (data?.id) {
+          setConsultationId(data.id);
+          return;
+        }
+
+        // No consultation exists — auto-create one for active sessions
+        const session = allSessions.find(s => s.id === selectedSession);
+        if (!session || session.status !== 'active') {
+          setConsultationId(null);
+          return;
+        }
+
+        // Determine doctor and patient IDs
+        const doctorId = session.participant1Type === 'doctor' ? session.participant1Id
+          : session.participant2Type === 'doctor' ? session.participant2Id : null;
+        const patientId = session.participant1Type === 'patient' ? session.participant1Id
+          : session.participant2Type === 'patient' ? session.participant2Id : null;
+
+        if (!doctorId || !patientId) {
+          setConsultationId(null);
+          return;
+        }
+
+        const { data: newConsultation, error } = await supabase
+          .from('consultations')
+          .insert({
+            doctor_id: doctorId,
+            patient_id: patientId,
+            chat_session_id: selectedSession,
+            status: 'active',
+          })
+          .select('id')
+          .single();
+
+        if (!error && newConsultation) {
+          setConsultationId(newConsultation.id);
+        } else {
+          console.error('Error creating consultation:', error);
+          setConsultationId(null);
+        }
       };
-      fetchConsultation();
+      fetchOrCreateConsultation();
     } else {
       setConsultationId(null);
     }
@@ -239,8 +279,8 @@ export default function Chat() {
     );
   }
 
-  // Check entitlement
-  const hasEntitlement = role === 'doctor' || user?.entitlements?.some(e => e.type === 'chat' && e.isActive) || activeSessions.length > 0 || isCreatingSession;
+  // Patient can access chat if they have active sessions, closed history, or are being redirected after payment
+  const hasEntitlement = role === 'doctor' || activeSessions.length > 0 || closedSessions.length > 0 || isCreatingSession;
   if (role === 'patient' && !hasEntitlement) {
     return (
       <MainLayout>
