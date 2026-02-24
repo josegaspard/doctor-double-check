@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,6 +69,7 @@ interface ClinicalSession {
 export default function ClinicalSessions() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t, language } = useLanguage();
   const [sessions, setSessions] = useState<ClinicalSession[]>([]);
   const [invitations, setInvitations] = useState<ClinicalSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,24 +85,21 @@ export default function ClinicalSessions() {
 
   const isApproved = role === 'doctor' && user?.doctorProfile?.status === 'approved';
 
-  // Redirect non-doctors
+  // Redirect non-doctors using declarative Navigate
   if (role !== 'doctor') {
-    navigate('/lives');
-    return null;
+    return <Navigate to="/lives" replace />;
   }
 
   const fetchSessions = async () => {
     if (!user?.id) return;
 
     try {
-      // Fetch sessions I organized
       const { data: mySessions } = await supabase
         .from('clinical_sessions')
         .select('*')
         .eq('organizer_id', user.id)
         .order('created_at', { ascending: false });
 
-      // Fetch invitations
       const { data: myInvitations } = await supabase
         .from('clinical_session_invitations')
         .select('*, clinical_sessions (*)')
@@ -166,12 +165,12 @@ export default function ClinicalSessions() {
 
       if (error) throw error;
 
-      toast.success('Sesión clínica creada');
+      toast.success(t('clinicalSessions.created'));
       setShowCreateDialog(false);
       setNewSession({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '' });
       await fetchSessions();
     } catch (error: any) {
-      toast.error(error.message || 'Error al crear sesión');
+      toast.error(error.message || t('clinicalSessions.createError'));
     } finally {
       setIsCreating(false);
     }
@@ -192,32 +191,32 @@ export default function ClinicalSessions() {
 
       if (error) throw error;
 
-      toast.success(accept ? 'Invitación aceptada' : 'Invitación rechazada');
+      toast.success(accept ? t('clinicalSessions.accepted') : t('clinicalSessions.rejected'));
       await fetchSessions();
     } catch (error: any) {
-      toast.error(error.message || 'Error al responder');
+      toast.error(error.message || t('clinicalSessions.respondError'));
     }
   };
 
   const getStatusBadge = (status: SessionStatus) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="warning" className="gap-1"><Clock className="w-3 h-3" />Pendiente</Badge>;
+        return <Badge variant="warning" className="gap-1"><Clock className="w-3 h-3" />{t('clinicalSessions.statusPending')}</Badge>;
       case 'accepted':
-        return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />Aceptada</Badge>;
+        return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />{t('clinicalSessions.statusAccepted')}</Badge>;
       case 'rejected':
-        return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />Rechazada</Badge>;
+        return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />{t('clinicalSessions.statusRejected')}</Badge>;
       case 'completed':
-        return <Badge variant="secondary" className="gap-1"><CheckCircle className="w-3 h-3" />Completada</Badge>;
+        return <Badge variant="secondary" className="gap-1"><CheckCircle className="w-3 h-3" />{t('clinicalSessions.statusCompleted')}</Badge>;
       case 'cancelled':
-        return <Badge variant="outline" className="gap-1"><XCircle className="w-3 h-3" />Cancelada</Badge>;
+        return <Badge variant="outline" className="gap-1"><XCircle className="w-3 h-3" />{t('clinicalSessions.statusCancelled')}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-MX', {
+    return new Intl.DateTimeFormat(language === 'es' ? 'es-MX' : 'en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -229,15 +228,14 @@ export default function ClinicalSessions() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
               <Users className="w-6 h-6 text-primary" />
-              Sesiones Clínicas
+              {t('clinicalSessions.title')}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Colabora con especialistas en casos complejos
+              {t('clinicalSessions.subtitle')}
             </p>
           </div>
           
@@ -245,16 +243,16 @@ export default function ClinicalSessions() {
             <DialogTrigger asChild>
               <Button className="gap-2" disabled={!isApproved}>
                 <Plus className="w-4 h-4" />
-                Nueva Sesión
+                {t('clinicalSessions.newSession')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle>Crear Sesión Clínica</DialogTitle>
+                <DialogTitle>{t('clinicalSessions.createTitle')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
-                  <label className="text-sm font-medium">Título *</label>
+                  <label className="text-sm font-medium">{t('clinicalSessions.sessionTitle')} *</label>
                   <Input
                     value={newSession.title}
                     onChange={(e) => setNewSession({ ...newSession, title: e.target.value })}
@@ -262,13 +260,13 @@ export default function ClinicalSessions() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Especialidad requerida *</label>
+                  <label className="text-sm font-medium">{t('clinicalSessions.requiredSpecialty')} *</label>
                   <Select
                     value={newSession.specialty}
                     onValueChange={(value) => setNewSession({ ...newSession, specialty: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecciona especialidad" />
+                      <SelectValue placeholder={t('clinicalSessions.selectSpecialty')} />
                     </SelectTrigger>
                     <SelectContent>
                       {SPECIALTIES.map((s) => (
@@ -278,16 +276,16 @@ export default function ClinicalSessions() {
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Resumen del caso</label>
+                  <label className="text-sm font-medium">{t('clinicalSessions.caseSummary')}</label>
                   <Textarea
                     value={newSession.caseSummary}
                     onChange={(e) => setNewSession({ ...newSession, caseSummary: e.target.value })}
-                    placeholder="Describe el caso clínico que necesita revisión..."
+                    placeholder={t('clinicalSessions.caseSummaryPlaceholder')}
                     rows={4}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Fecha programada</label>
+                  <label className="text-sm font-medium">{t('clinicalSessions.scheduledDate')}</label>
                   <Input
                     type="datetime-local"
                     value={newSession.scheduledAt}
@@ -300,7 +298,7 @@ export default function ClinicalSessions() {
                   disabled={isCreating || !newSession.title.trim() || !newSession.specialty}
                 >
                   {isCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Crear Sesión
+                  {t('clinicalSessions.createButton')}
                 </Button>
               </div>
             </DialogContent>
@@ -313,20 +311,19 @@ export default function ClinicalSessions() {
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-warning flex-shrink-0" />
                 <p className="text-sm text-muted-foreground">
-                  Tu cuenta debe estar verificada para crear sesiones clínicas.
+                  {t('clinicalSessions.verificationRequired')}
                 </p>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Invitations */}
         {invitations.filter(i => i.invitationStatus === 'pending').length > 0 && (
           <Card className="mb-6 border-primary/50">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-primary" />
-                Invitaciones Pendientes
+                {t('clinicalSessions.pendingInvitations')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -351,7 +348,7 @@ export default function ClinicalSessions() {
                           onClick={() => handleRespondToInvitation(inv.id, true)}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
-                          Aceptar
+                          {t('clinicalSessions.accept')}
                         </Button>
                         <Button
                           size="sm"
@@ -359,7 +356,7 @@ export default function ClinicalSessions() {
                           onClick={() => handleRespondToInvitation(inv.id, false)}
                         >
                           <XCircle className="w-4 h-4 mr-1" />
-                          Rechazar
+                          {t('clinicalSessions.reject')}
                         </Button>
                       </div>
                     </div>
@@ -369,10 +366,9 @@ export default function ClinicalSessions() {
           </Card>
         )}
 
-        {/* My Sessions */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Mis Sesiones</CardTitle>
+            <CardTitle className="text-lg">{t('clinicalSessions.mySessions')}</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -398,12 +394,12 @@ export default function ClinicalSessions() {
                         <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            Creada {formatDate(session.createdAt)}
+                            {t('clinicalSessions.created2')} {formatDate(session.createdAt)}
                           </span>
                           {session.scheduledAt && (
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              Programada {formatDate(session.scheduledAt)}
+                              {t('clinicalSessions.scheduled')} {formatDate(session.scheduledAt)}
                             </span>
                           )}
                         </div>
@@ -416,7 +412,7 @@ export default function ClinicalSessions() {
               <div className="text-center py-8">
                 <Stethoscope className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  No tienes sesiones clínicas
+                  {t('clinicalSessions.noSessions')}
                 </p>
               </div>
             )}

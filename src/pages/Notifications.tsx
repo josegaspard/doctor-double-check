@@ -36,7 +36,6 @@ function navigateByType(notification: Notification, navigate: ReturnType<typeof 
       navigate(data.session_id || data.sessionId ? `/chat?session=${data.session_id || data.sessionId}` : '/chat');
       break;
     case 'rating_request':
-      // Open rating modal immediately
       window.dispatchEvent(new CustomEvent('trigger-rating-check'));
       break;
     case 'doctor_availability':
@@ -53,7 +52,7 @@ function navigateByType(notification: Notification, navigate: ReturnType<typeof 
 
 export default function Notifications() {
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
 
   const handleClick = (notification: Notification) => {
@@ -71,25 +70,25 @@ export default function Notifications() {
           className="mb-4 gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          {language === 'es' ? 'Volver' : 'Back'}
+          {t('notificationsPage.back')}
         </Button>
 
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
               <Bell className="w-6 h-6" />
-              {language === 'es' ? 'Notificaciones' : 'Notifications'}
+              {t('notificationsPage.title')}
             </h1>
             {unreadCount > 0 && (
               <p className="text-muted-foreground text-sm mt-1">
-                {unreadCount} {language === 'es' ? 'sin leer' : 'unread'}
+                {unreadCount} {t('notificationsPage.unread')}
               </p>
             )}
           </div>
           {unreadCount > 0 && (
             <Button variant="outline" size="sm" onClick={markAllAsRead}>
               <Check className="w-4 h-4 mr-2" />
-              {language === 'es' ? 'Marcar todas como leídas' : 'Mark all as read'}
+              {t('notificationsPage.markAllRead')}
             </Button>
           )}
         </div>
@@ -103,10 +102,10 @@ export default function Notifications() {
             <CardContent className="text-center py-12">
               <Bell className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-50" />
               <h3 className="font-semibold text-lg mb-2">
-                {language === 'es' ? 'No hay notificaciones' : 'No notifications'}
+                {t('notificationsPage.noNotifications')}
               </h3>
               <p className="text-muted-foreground">
-                {language === 'es' ? 'Las notificaciones aparecerán aquí' : 'Notifications will appear here'}
+                {t('notificationsPage.notificationsAppearHere')}
               </p>
             </CardContent>
           </Card>
@@ -126,7 +125,7 @@ export default function Notifications() {
                         <p className="font-medium text-sm">{notification.title}</p>
                         {!notification.isRead && (
                           <Badge variant="default" className="text-xs px-1.5 py-0">
-                            {language === 'es' ? 'Nuevo' : 'New'}
+                            {t('notificationsPage.new')}
                           </Badge>
                         )}
                       </div>

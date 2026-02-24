@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Newspaper, Search, Clock, MessageCircle, Loader2, Filter, PenSquare } from 'lucide-react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es as esLocale, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const CATEGORIES = [
@@ -32,7 +32,7 @@ interface NewsItem {
 export default function MedicalNews() {
   const { role } = useAuth();
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -48,7 +48,6 @@ export default function MedicalNews() {
         .limit(100);
 
       if (data) {
-        // Fetch comment counts
         const ids = data.map(d => d.id);
         const { data: commentCounts } = await supabase
           .from('news_comments')
@@ -72,6 +71,8 @@ export default function MedicalNews() {
     return matchesSearch && matchesCategory;
   });
 
+  const dateLocale = language === 'es' ? esLocale : enUS;
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-5xl">
@@ -79,32 +80,30 @@ export default function MedicalNews() {
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
               <Newspaper className="w-6 h-6 text-primary" />
-              {language === 'es' ? 'Noticias Médicas' : 'Medical News'}
+              {t('medicalNews.title')}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {language === 'es' ? 'Últimas noticias e innovaciones médicas' : 'Latest medical news and innovations'}
+              {t('medicalNews.subtitle')}
             </p>
           </div>
           {(role === 'admin' || role === 'doctor') && (
             <Button onClick={() => navigate('/admin/news')} className="gap-2">
               <PenSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">{language === 'es' ? 'Escribir artículo' : 'Write article'}</span>
+              <span className="hidden sm:inline">{t('medicalNews.writeArticle')}</span>
             </Button>
           )}
         </div>
 
-        {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder={language === 'es' ? 'Buscar noticias...' : 'Search news...'}
+            placeholder={t('medicalNews.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
 
-        {/* Category Filters */}
         <div className="flex flex-wrap gap-2 mb-6">
           {CATEGORIES.map(cat => (
             <Button
@@ -143,7 +142,7 @@ export default function MedicalNews() {
                       <Badge variant="secondary" className="text-[10px]">{item.category}</Badge>
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {format(new Date(item.published_at || item.created_at), 'd MMM yyyy', { locale: es })}
+                        {format(new Date(item.published_at || item.created_at), 'd MMM yyyy', { locale: dateLocale })}
                       </span>
                     </div>
                     <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
@@ -154,7 +153,7 @@ export default function MedicalNews() {
                     )}
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <MessageCircle className="w-3 h-3" />
-                      {item.comment_count || 0} comentarios
+                      {item.comment_count || 0} {t('medicalNews.comments')}
                     </div>
                   </CardContent>
                 </Card>
@@ -165,10 +164,10 @@ export default function MedicalNews() {
           <Card className="p-12 text-center">
             <Newspaper className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              {language === 'es' ? 'No hay noticias disponibles' : 'No news available'}
+              {t('medicalNews.noNews')}
             </h3>
             <p className="text-muted-foreground">
-              {language === 'es' ? 'Las noticias médicas se publicarán próximamente' : 'Medical news will be published soon'}
+              {t('medicalNews.noNewsSubtitle')}
             </p>
           </Card>
         )}

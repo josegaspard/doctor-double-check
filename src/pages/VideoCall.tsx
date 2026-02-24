@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useDaily } from '@/hooks/useDaily';
 import { useCallTimer } from '@/hooks/useCallTimer';
@@ -27,6 +28,7 @@ export default function VideoCall() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, role } = useAuth();
+  const { t, language } = useLanguage();
   const { createRoom, endRoom } = useDaily();
   const timer = useCallTimer();
 
@@ -46,6 +48,8 @@ export default function VideoCall() {
   const callFrameRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const timeLocale = language === 'es' ? 'es-MX' : 'en-US';
+
   // Fetch consultation info
   useEffect(() => {
     if (!consultationId) return;
@@ -62,7 +66,7 @@ export default function VideoCall() {
           .select('name')
           .eq('id', otherId)
           .single();
-        setOtherParticipantName(profile?.name || 'Participante');
+        setOtherParticipantName(profile?.name || t('videoCall.participant'));
       }
     };
     fetchInfo();
@@ -74,9 +78,9 @@ export default function VideoCall() {
 
     try {
       if (isDoctor) {
-        const room = await createRoom(consultationId, `Orientación médica - ${user.name}`);
+        const room = await createRoom(consultationId, `${t('videoCall.title')} - ${user.name}`);
         if (!room) {
-          toast.error('Error al crear la sala');
+          toast.error(t('videoCall.createRoomError'));
           setCallState('idle');
           return;
         }
@@ -86,7 +90,6 @@ export default function VideoCall() {
           .update({ video_room_name: room.name, video_room_url: room.url })
           .eq('id', consultationId);
 
-        // Notify patient via notification + realtime broadcast
         const { data: consultation } = await supabase
           .from('consultations')
           .select('patient_id')
@@ -94,19 +97,17 @@ export default function VideoCall() {
           .single();
 
         if (consultation?.patient_id) {
-          // Get doctor profile info for notification
           const { data: doctorProfile } = await supabase
             .from('doctor_profiles')
             .select('specialty')
             .eq('user_id', user.id)
             .single();
 
-          // Insert notification for patient
           await supabase.from('notifications').insert({
             user_id: consultation.patient_id,
             type: 'video_call' as any,
-            title: '📹 Videollamada entrante',
-            message: `${user.name} te está llamando`,
+            title: '📹 ' + t('videoCall.title'),
+            message: `${user.name} ${t('videoCall.withParticipant')}`,
             data: {
               consultationId,
               doctorName: user.name,
@@ -115,7 +116,6 @@ export default function VideoCall() {
             },
           });
 
-          // Also broadcast via realtime for instant UI update
           await supabase.channel(`incoming-call-${consultation.patient_id}`).send({
             type: 'broadcast',
             event: 'incoming_call',
@@ -138,7 +138,7 @@ export default function VideoCall() {
           .single();
 
         if (!consultation?.video_room_name) {
-          toast.error('El doctor aún no ha iniciado la videollamada');
+          toast.error(t('videoCall.doctorNotStarted'));
           setCallState('idle');
           return;
         }
@@ -148,7 +148,7 @@ export default function VideoCall() {
         });
 
         if (tokenError || !tokenData?.success) {
-          toast.error('Error al unirse a la llamada');
+          toast.error(t('videoCall.joinError'));
           setCallState('idle');
           return;
         }
@@ -158,10 +158,10 @@ export default function VideoCall() {
       }
     } catch (error) {
       console.error('Error starting call:', error);
-      toast.error('Error al iniciar la videollamada');
+      toast.error(t('videoCall.startError'));
       setCallState('idle');
     }
-  }, [consultationId, user?.id, isDoctor, createRoom, user?.name]);
+  }, [consultationId, user?.id, isDoctor, createRoom, user?.name, t]);
 
   // Initialize Daily iframe
   useEffect(() => {
@@ -192,21 +192,20 @@ export default function VideoCall() {
 
     callFrame.on('error', (e: any) => {
       console.error('Daily error:', e);
-      toast.error('Error en la videollamada');
+      toast.error(t('videoCall.callError'));
       setCallState('ended');
       timer.stop();
     });
 
-    // Listen for in-call chat messages
     callFrame.on('app-message', (event: any) => {
       if (event?.data?.type === 'chat') {
         setChatMessages((prev) => [
           ...prev,
           {
             id: Date.now().toString(),
-            sender: event.data.senderName || 'Participante',
+            sender: event.data.senderName || t('videoCall.participant'),
             text: event.data.text,
-            time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+            time: new Date().toLocaleTimeString(timeLocale, { hour: '2-digit', minute: '2-digit' }),
             isOwn: false,
           },
         ]);
@@ -228,18 +227,16 @@ export default function VideoCall() {
     };
   }, [roomUrl]);
 
-  // Auto-end at 1 hour
   useEffect(() => {
     if (timer.isExpired) {
-      toast.warning('La videollamada ha alcanzado el límite de 1 hora');
+      toast.warning(t('videoCall.timeLimit'));
       handleEndCall();
     }
   }, [timer.isExpired]);
 
-  // 5-minute warning
   useEffect(() => {
     if (timer.isNearEnd && timer.timeRemaining === 300) {
-      toast.warning('Quedan 5 minutos de videollamada');
+      toast.warning(t('videoCall.fiveMinWarning'));
     }
   }, [timer.isNearEnd, timer.timeRemaining]);
 
@@ -268,7 +265,7 @@ export default function VideoCall() {
       setIsScreenSharing(!isScreenSharing);
     } catch (error) {
       console.error('Screen share error:', error);
-      toast.error('Error al compartir pantalla');
+      toast.error(t('videoCall.screenShareError'));
     }
   };
 
@@ -284,9 +281,9 @@ export default function VideoCall() {
       ...prev,
       {
         id: Date.now().toString(),
-        sender: 'Tú',
+        sender: t('videoCall.you'),
         text,
-        time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+        time: new Date().toLocaleTimeString(timeLocale, { hour: '2-digit', minute: '2-digit' }),
         isOwn: true,
       },
     ]);
@@ -299,7 +296,6 @@ export default function VideoCall() {
     }
     if (isDoctor && roomName) {
       await endRoom(roomName);
-      // Clear room from consultation
       if (consultationId) {
         await supabase
           .from('consultations')
@@ -314,8 +310,8 @@ export default function VideoCall() {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-12 text-center">
-          <h2 className="text-xl font-bold mb-4">No se especificó una orientación</h2>
-          <Button onClick={() => navigate('/chat')}>Volver al Chat</Button>
+          <h2 className="text-xl font-bold mb-4">{t('videoCall.noConsultation')}</h2>
+          <Button onClick={() => navigate('/chat')}>{t('videoCall.backToChat')}</Button>
         </div>
       </MainLayout>
     );
@@ -324,11 +320,10 @@ export default function VideoCall() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-4 max-w-6xl">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver
+            {t('videoCall.back')}
           </Button>
           <div className="flex items-center gap-2">
             {callState === 'connected' && timer.isNearEnd && (
@@ -339,56 +334,49 @@ export default function VideoCall() {
             )}
             <Badge variant="info" className="gap-1">
               <Video className="w-3 h-3" />
-              Videollamada
+              {t('videoCall.title')}
             </Badge>
           </div>
         </div>
 
         <Card className="overflow-hidden border-0 shadow-xl">
           <CardContent className="p-0">
-            {/* Idle State */}
             {callState === 'idle' && (
               <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-gradient-to-b from-muted/30 to-background">
                 <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6 ring-4 ring-primary/5">
                   <Video className="w-12 h-12 text-primary" />
                 </div>
                 <h2 className="text-2xl font-bold text-foreground mb-2">
-                  {isDoctor ? 'Iniciar videollamada' : 'Unirse a videollamada'}
+                  {isDoctor ? t('videoCall.startCall') : t('videoCall.joinCall')}
                 </h2>
                 {otherParticipantName && (
                   <p className="text-muted-foreground mb-1">
-                    con <span className="font-semibold text-foreground">{otherParticipantName}</span>
+                    {t('videoCall.withParticipant')} <span className="font-semibold text-foreground">{otherParticipantName}</span>
                   </p>
                 )}
                 <p className="text-sm text-muted-foreground mb-8 max-w-md">
-                  {isDoctor
-                    ? 'Se notificará al paciente automáticamente. La llamada tiene una duración máxima de 1 hora.'
-                    : 'Tu médico debe iniciar la llamada primero. Haz clic para unirte.'}
+                  {isDoctor ? t('videoCall.doctorStartInfo') : t('videoCall.patientJoinInfo')}
                 </p>
                 <Button size="lg" onClick={startCall} className="gap-2 px-8 h-12 text-base">
                   <Video className="w-5 h-5" />
-                  {isDoctor ? 'Iniciar Llamada' : 'Unirse'}
+                  {isDoctor ? t('videoCall.startButton') : t('videoCall.joinButton')}
                 </Button>
               </div>
             )}
 
-            {/* Joining State */}
             {callState === 'joining' && (
               <div className="flex flex-col items-center justify-center py-20 bg-gradient-to-b from-muted/30 to-background">
                 <Loader2 className="w-14 h-14 animate-spin text-primary mb-4" />
-                <p className="text-lg font-medium text-foreground mb-1">Conectando...</p>
+                <p className="text-lg font-medium text-foreground mb-1">{t('videoCall.connecting')}</p>
                 <p className="text-sm text-muted-foreground">
-                  {isDoctor ? 'Creando sala y notificando al paciente' : 'Uniéndose a la llamada'}
+                  {isDoctor ? t('videoCall.creatingRoom') : t('videoCall.joiningCall')}
                 </p>
               </div>
             )}
 
-            {/* Active Call */}
             {(callState === 'connected' || roomUrl) && callState !== 'ended' && (
-              <div className="relative bg-slate-900 rounded-lg overflow-hidden">
+              <div className="relative bg-dark rounded-lg overflow-hidden">
                 <div ref={containerRef} className="w-full aspect-video" />
-
-                {/* In-call chat panel */}
                 <AnimatePresence>
                   {showChat && (
                     <VideoCallChat
@@ -398,8 +386,6 @@ export default function VideoCall() {
                     />
                   )}
                 </AnimatePresence>
-
-                {/* Controls overlay */}
                 {callState === 'connected' && (
                   <VideoCallControls
                     isMuted={isMuted}
@@ -417,20 +403,19 @@ export default function VideoCall() {
               </div>
             )}
 
-            {/* Ended State */}
             {callState === 'ended' && (
               <div className="flex flex-col items-center justify-center py-16 text-center bg-gradient-to-b from-muted/30 to-background">
                 <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
                   <VideoOff className="w-10 h-10 text-muted-foreground" />
                 </div>
-                <h2 className="text-xl font-bold text-foreground mb-2">Llamada finalizada</h2>
+                <h2 className="text-xl font-bold text-foreground mb-2">{t('videoCall.callEnded')}</h2>
                 <p className="text-muted-foreground mb-2">
-                  Duración: {timer.timeElapsed}
+                  {t('videoCall.duration')}: {timer.timeElapsed}
                 </p>
                 <p className="text-sm text-muted-foreground mb-6">
-                  La videollamada con {otherParticipantName} ha terminado
+                  {t('videoCall.callEndedWith').replace('{name}', otherParticipantName)}
                 </p>
-                <Button onClick={() => navigate('/chat')}>Volver al Chat</Button>
+                <Button onClick={() => navigate('/chat')}>{t('videoCall.backToChat')}</Button>
               </div>
             )}
           </CardContent>
