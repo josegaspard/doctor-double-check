@@ -14,6 +14,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { formatDistanceToNow } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 
+// Strip leading emojis from text to avoid duplicate icons
+function stripLeadingEmoji(text: string): string {
+  return text.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\uFE0F]+\s*/u, '').trim();
+}
+
 function NotificationItem({
   notification,
   onMarkAsRead,
@@ -38,6 +43,8 @@ function NotificationItem({
       case 'chat_message':
         return '💬';
       case 'subscription_update':
+        return '⭐';
+      case 'rating_request':
         return '⭐';
       default:
         return '🔔';
@@ -114,7 +121,7 @@ function NotificationItem({
         <span className="text-xl">{getNotificationIcon()}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-medium text-sm truncate">{notification.title}</p>
+            <p className="font-medium text-sm truncate">{stripLeadingEmoji(notification.title)}</p>
             {!notification.isRead && (
               <Badge variant="default" className="text-xs px-1.5 py-0">
                 {language === 'es' ? 'Nuevo' : 'New'}

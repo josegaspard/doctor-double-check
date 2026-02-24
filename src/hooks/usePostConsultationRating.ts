@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -12,6 +12,7 @@ export function usePostConsultationRating() {
   const { user, role } = useAuth();
   const [pendingRating, setPendingRating] = useState<PendingRating | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const recentlyRatedIds = useRef<Set<string>>(new Set());
 
   // Check for consultations that were closed but not yet rated
   const checkPendingRatings = useCallback(async () => {
@@ -38,8 +39,8 @@ export function usePostConsultationRating() {
 
       const ratedIds = new Set(existingRatings?.map(r => r.consultation_id) || []);
       
-      // Find the first unrated consultation
-      const unrated = closedConsultations.find(c => !ratedIds.has(c.id));
+      // Find the first unrated consultation (also skip recently rated ones)
+      const unrated = closedConsultations.find(c => !ratedIds.has(c.id) && !recentlyRatedIds.current.has(c.id));
       
       if (unrated) {
         // Fetch doctor name
@@ -145,11 +146,13 @@ export function usePostConsultationRating() {
   }, []);
 
   const onRated = useCallback(() => {
+    // Mark as recently rated to prevent re-showing
+    if (pendingRating) {
+      recentlyRatedIds.current.add(pendingRating.consultationId);
+    }
     setIsDialogOpen(false);
     setPendingRating(null);
-    // Check if there are more pending ratings
-    setTimeout(checkPendingRatings, 1000);
-  }, [checkPendingRatings]);
+  }, [pendingRating]);
 
   return {
     pendingRating,
