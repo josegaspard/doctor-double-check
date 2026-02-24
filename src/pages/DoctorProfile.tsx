@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import MainLayout from '@/components/layout/MainLayout';
 import DoctorCredentials from '@/components/doctor/DoctorCredentials';
+import DoctorReviews from '@/components/doctor/DoctorReviews';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +60,23 @@ export default function DoctorProfile() {
   const [isStartingChat, setIsStartingChat] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [hasActiveSession, setHasActiveSession] = useState(false);
+
+  // Check if there's an active chat session with this specific doctor
+  useEffect(() => {
+    const checkActiveSession = async () => {
+      if (!user?.id || !id || role !== 'patient') return;
+      const { data } = await supabase
+        .from('chat_sessions')
+        .select('id')
+        .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${id}),and(participant1_id.eq.${id},participant2_id.eq.${user.id})`)
+        .eq('status', 'active')
+        .eq('is_double_check', false)
+        .maybeSingle();
+      setHasActiveSession(!!data);
+    };
+    checkActiveSession();
+  }, [user?.id, id, role]);
 
   useEffect(() => {
     const fetchDoctor = async () => {
@@ -139,9 +157,8 @@ export default function DoctorProfile() {
     };
   }, [id]);
 
-  const hasChatEntitlement = user?.entitlements?.some(e => e.type === 'chat' && e.isActive) ?? false;
   const isFreeConsultation = doctor?.consultationFee === 0;
-  const canChatDirectly = role === 'doctor' || hasChatEntitlement || isFreeConsultation;
+  const canChatDirectly = role === 'doctor' || hasActiveSession || isFreeConsultation;
 
   const startChatSession = async () => {
     if (!user?.id || !doctor) return;
@@ -460,6 +477,12 @@ export default function DoctorProfile() {
         <DoctorCredentials 
           doctorId={doctor.id} 
           isOwner={user?.id === doctor.id} 
+        />
+
+        {/* Patient Reviews */}
+        <DoctorReviews 
+          doctorId={doctor.id} 
+          averageRating={doctor.rating} 
         />
 
         {/* Payment Modal */}
