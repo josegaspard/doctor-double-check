@@ -50,6 +50,8 @@ export default function DoctorGoLive() {
   const [enableRecording, setEnableRecording] = useState(true);
   const [tags, setTags] = useState<string[]>([]);
   const [recordingPrice, setRecordingPrice] = useState(0);
+  const reconnectingRef = useRef(false);
+  const disconnectedChecksRef = useRef(0);
 
   // Hooks
   const {
@@ -107,7 +109,63 @@ export default function DoctorGoLive() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isLive, isEnding]);
 
-  // Start live
+
+  // Keep Cloudflare ingest alive: auto-reconnect if input becomes disconnected
+  useEffect(() => {
+    if (!isLive || !streamData?.uid || !streamData.webRTCUrl || isEnding) return;
+
+    let isCancelled = false;
+
+    const checkCloudflareHealth = async () => {
+      if (isCancelled) return;
+
+      const { data, error } = await supabase.functions.invoke('get-cloudflare-playback', {
+        body: {
+          liveInputUid: streamData.uid,
+          type: 'live',
+        },
+      });
+
+      if (isCancelled || error) return;
+
+      if (data?.success) {
+        disconnectedChecksRef.current = 0;
+        return;
+      }
+
+      if (data?.status === 'disconnected') {
+        disconnectedChecksRef.current += 1;
+
+        if (disconnectedChecksRef.current >= 2 && !reconnectingRef.current) {
+          reconnectingRef.current = true;
+          toast.warning('Se perdió la señal del live. Reconectando...');
+
+          const ok = await startBroadcast(streamData.webRTCUrl);
+
+          if (ok) {
+            disconnectedChecksRef.current = 0;
+            toast.success('Se recuperó la señal del live');
+          } else {
+            toast.error('No se pudo recuperar la señal. Finaliza y vuelve a iniciar el live.');
+          }
+
+          reconnectingRef.current = false;
+        }
+      }
+    };
+
+    const initialCheck = setTimeout(checkCloudflareHealth, 6000);
+    const interval = setInterval(checkCloudflareHealth, 8000);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(initialCheck);
+      clearInterval(interval);
+      disconnectedChecksRef.current = 0;
+      reconnectingRef.current = false;
+    };
+  }, [isLive, streamData?.uid, streamData?.webRTCUrl, isEnding, startBroadcast]);
+
   const handleStartLive = async (config: LiveConfig) => {
     if (!user?.id) return;
 

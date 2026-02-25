@@ -140,7 +140,25 @@ export function useCloudflareWebRTC() {
       // Add all tracks to the peer connection
       mediaStream.getTracks().forEach(track => {
         console.log('[Cloudflare] Adding track:', track.kind, track.label, 'enabled:', track.enabled, 'readyState:', track.readyState);
-        pc.addTrack(track, mediaStream);
+        const sender = pc.addTrack(track, mediaStream);
+
+        // Strongly prefer H.264 for Cloudflare live compatibility
+        if (track.kind === 'video' && RTCRtpSender.getCapabilities) {
+          const capabilities = RTCRtpSender.getCapabilities('video');
+          const codecs = capabilities?.codecs || [];
+          const h264Codecs = codecs.filter(codec => codec.mimeType.toLowerCase() === 'video/h264');
+
+          if (h264Codecs.length > 0) {
+            const otherCodecs = codecs.filter(codec => codec.mimeType.toLowerCase() !== 'video/h264');
+            const preferredCodecs = [...h264Codecs, ...otherCodecs];
+            const transceiver = pc.getTransceivers().find(t => t.sender === sender);
+
+            if (transceiver?.setCodecPreferences) {
+              transceiver.setCodecPreferences(preferredCodecs);
+              console.log('[Cloudflare] H.264 codec preference applied');
+            }
+          }
+        }
       });
 
       // Create offer

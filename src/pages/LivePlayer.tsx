@@ -119,14 +119,17 @@ export default function LivePlayer() {
       setPlaybackError(null);
       setIsJoiningStream(true);
 
-      const directUrl = `https://${CLOUD_FLARE_LIVE_SUBDOMAIN}/${streamUid}/manifest/video.m3u8`;
-      setPlaybackUrl(directUrl);
-
       const backendUrl = await getPlaybackUrl(streamUid, 'live');
 
       if (cancelled) return;
 
-      setPlaybackUrl(backendUrl || directUrl);
+      if (backendUrl) {
+        setPlaybackUrl(backendUrl);
+        setPlaybackError(null);
+      } else {
+        setPlaybackUrl(null);
+        setPlaybackError('El doctor está en vivo, pero su señal no está llegando todavía. Reintenta en unos segundos.');
+      }
       setIsJoiningStream(false);
     };
 
