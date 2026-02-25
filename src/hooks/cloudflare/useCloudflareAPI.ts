@@ -98,6 +98,9 @@ export function useCloudflareAPI() {
 
       if (!data.success) {
         if (type === 'live') {
+          if (data.status === 'disconnected' || data.status === 'offline') {
+            return null;
+          }
           return directLiveUrl;
         }
         if (data.status === 'processing') {
@@ -109,7 +112,7 @@ export function useCloudflareAPI() {
       return data.playbackUrl || (type === 'live' ? directLiveUrl : null);
     } catch (err: any) {
       console.error('[Cloudflare] Error getting playback URL:', err);
-      return type === 'live' ? directLiveUrl : null;
+      return null;
     }
   }, []);
 

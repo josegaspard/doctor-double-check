@@ -99,8 +99,24 @@ Deno.serve(async (req) => {
 
       const inputData = await accountResponse.json();
       const input = inputData.result;
+      const liveState = input?.status?.current?.state || "unknown";
 
-      logStep("Live input info retrieved", { uid: input.uid });
+      logStep("Live input info retrieved", { uid: input.uid, liveState });
+
+      if (liveState !== "connected") {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            type: "live",
+            status: liveState,
+            error: "Live input is not connected",
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
 
       return new Response(
         JSON.stringify({
