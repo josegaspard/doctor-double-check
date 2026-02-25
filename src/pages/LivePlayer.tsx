@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 import { useViewerCount } from '@/hooks/useViewerCount';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { useCloudflareStream } from '@/hooks/cloudflare';
 import MainLayout from '@/components/layout/MainLayout';
 import { CloudflareStreamPlayer } from '@/components/live/CloudflareStreamPlayer';
 import { LiveChat } from '@/components/live/LiveChat';
@@ -49,7 +50,7 @@ export default function LivePlayer() {
   const { user, role } = useAuth();
   const { t } = useLanguage();
   const { getSubscription } = useSubscriptions();
-  const CUSTOMER_STREAM_SUBDOMAIN = 'customer-3afz9zesalmyroc9.cloudflarestream.com';
+  const { getPlaybackUrl } = useCloudflareStream();
   
   const [isLiking, setIsLiking] = useState(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
@@ -76,25 +77,40 @@ export default function LivePlayer() {
   
   const isLiked = live ? hasLiked(live.id) : false;
 
-  // Resolve live playback URL directly from stream UID (single-step)
+  // Resolve live playback URL from backend (single attempt)
   useEffect(() => {
-    if (!live || !isLiveActive) {
-      setPlaybackUrl(null);
-      setIsJoiningStream(false);
-      return;
-    }
+    let cancelled = false;
 
-    const streamUid = live.dailyRoomName;
-    if (!streamUid) {
-      console.error('No stream UID found for live:', live.id);
-      setPlaybackUrl(null);
-      setIsJoiningStream(false);
-      return;
-    }
+    const resolvePlaybackUrl = async () => {
+      if (!live || !isLiveActive) {
+        setPlaybackUrl(null);
+        setIsJoiningStream(false);
+        return;
+      }
 
-    setIsJoiningStream(false);
-    setPlaybackUrl(`https://${CUSTOMER_STREAM_SUBDOMAIN}/${streamUid}/manifest/video.m3u8`);
-  }, [live, isLiveActive, CUSTOMER_STREAM_SUBDOMAIN]);
+      const streamUid = live.dailyRoomName;
+      if (!streamUid) {
+        console.error('No stream UID found for live:', live.id);
+        setPlaybackUrl(null);
+        setIsJoiningStream(false);
+        return;
+      }
+
+      setIsJoiningStream(true);
+      const url = await getPlaybackUrl(streamUid, 'live');
+
+      if (cancelled) return;
+
+      setPlaybackUrl(url);
+      setIsJoiningStream(false);
+    };
+
+    resolvePlaybackUrl();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [live, isLiveActive, getPlaybackUrl]);
 
   if (isLoading) {
     return (
