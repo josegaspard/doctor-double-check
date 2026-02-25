@@ -371,10 +371,12 @@ export default function DoctorRecordings() {
     setStatsDialogOpen(true);
   };
 
-  const formatDuration = (minutes: number) => {
-    if (minutes < 60) return `${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+  const formatDuration = (seconds: number) => {
+    if (seconds <= 0) return 'Procesando...';
+    const totalMinutes = Math.floor(seconds / 60);
+    if (totalMinutes < 60) return `${totalMinutes} min`;
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
     return `${hours}h ${mins}m`;
   };
 
