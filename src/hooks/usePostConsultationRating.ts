@@ -100,7 +100,11 @@ export function usePostConsultationRating() {
     };
     window.addEventListener('trigger-rating-check', handleTrigger);
 
-    if (!user?.id || role !== 'patient') return;
+    if (!user?.id || role !== 'patient') {
+      return () => {
+        window.removeEventListener('trigger-rating-check', handleTrigger);
+      };
+    }
     
     const channel = supabase
       .channel(`consultation-rating-check-${user.id}`)
@@ -133,7 +137,6 @@ export function usePostConsultationRating() {
           if (payload.new?.status === 'closed' && payload.old?.status === 'active') {
             const isParticipant = payload.new.participant1_id === user.id || payload.new.participant2_id === user.id;
             if (isParticipant && !isCheckingRef.current) {
-              // Don't trigger if consultation channel already handled it
               setTimeout(checkPendingRatings, 3000);
             }
           }
