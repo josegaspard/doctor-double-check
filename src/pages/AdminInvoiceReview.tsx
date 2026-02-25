@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
@@ -27,6 +28,7 @@ import {
   Calendar,
   DollarSign,
   Download,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -60,11 +62,16 @@ export default function AdminInvoiceReview() {
   const [adminNotes, setAdminNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (role !== 'admin') { navigate('/'); return; }
     loadInvoices();
   }, [role]);
+
+  useEffect(() => {
+    setSelectedInvoiceIds(new Set());
+  }, [activeTab]);
 
   const loadInvoices = async () => {
     setIsLoading(true);
@@ -124,41 +131,29 @@ export default function AdminInvoiceReview() {
     }
   };
 
-  const extractFilePath = (fileUrl: string) => {
-    if (fileUrl.startsWith('http')) {
-      // Handle Supabase storage URLs: /object/public/doctor-invoices/PATH or /object/sign/doctor-invoices/PATH
-      const match = fileUrl.match(/\/(?:object\/(?:public|sign)\/)?doctor-invoices\/(.+?)(?:\?|$)/);
-      if (match) return decodeURIComponent(match[1]);
-      // Fallback: split by bucket name
-      const parts = fileUrl.split('/doctor-invoices/');
-      if (parts.length > 1) return decodeURIComponent(parts[parts.length - 1].split('?')[0]);
-    }
-    return fileUrl;
-  };
-
-  const getSignedUrl = async (fileUrl: string): Promise<string | null> => {
+  const getSignedUrl = async (invoice: Invoice): Promise<string | null> => {
     try {
-      const filePath = extractFilePath(fileUrl);
-      console.log('Extracting path from:', fileUrl, '→', filePath);
-      const { data, error } = await supabase.storage.from('doctor-invoices').createSignedUrl(filePath, 3600);
+      const { data, error } = await supabase.functions.invoke('admin-invoice-file-url', {
+        body: { invoiceId: invoice.id },
+      });
+
       if (error) {
-        console.error('Signed URL error:', error);
-        // Fallback: try the raw file_url directly if it's already a valid URL
-        if (fileUrl.startsWith('http')) return fileUrl;
-        throw error;
+        console.error('Invoice file URL function error:', error);
+        if (invoice.file_url?.startsWith('http')) return invoice.file_url;
+        return null;
       }
+
       return data?.signedUrl || null;
     } catch (error) {
       console.error('Error getting signed URL:', error);
-      // Last resort: if the URL is already a full URL, use it directly
-      if (fileUrl.startsWith('http')) return fileUrl;
+      if (invoice.file_url?.startsWith('http')) return invoice.file_url;
       return null;
     }
   };
 
   const handleDownload = async (invoice: Invoice) => {
     try {
-      const url = await getSignedUrl(invoice.file_url);
+      const url = await getSignedUrl(invoice);
       if (url) {
         const a = document.createElement('a');
         a.href = url;
@@ -180,14 +175,13 @@ export default function AdminInvoiceReview() {
     const invoicesToDownload = filtered.length > 0 ? filtered : invoices;
     for (const invoice of invoicesToDownload) {
       await handleDownload(invoice);
-      // Small delay between downloads
       await new Promise(r => setTimeout(r, 500));
     }
   };
 
   const handlePreview = async (invoice: Invoice) => {
     try {
-      const url = await getSignedUrl(invoice.file_url);
+      const url = await getSignedUrl(invoice);
       if (url) {
         setPreviewUrl(url);
       } else {
@@ -196,6 +190,74 @@ export default function AdminInvoiceReview() {
     } catch (error) {
       console.error('Error getting preview URL:', error);
       toast.error(language === 'es' ? 'Error al cargar vista previa' : 'Error loading preview');
+    }
+  };
+
+  const toggleInvoiceSelection = (invoiceId: string) => {
+    setSelectedInvoiceIds(prev => {
+      const next = new Set(prev);
+      if (next.has(invoiceId)) {
+        next.delete(invoiceId);
+      } else {
+        next.add(invoiceId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAllFiltered = () => {
+    const filteredIds = filtered.map(invoice => invoice.id);
+    const areAllSelected = filteredIds.every(id => selectedInvoiceIds.has(id));
+
+    setSelectedInvoiceIds(prev => {
+      const next = new Set(prev);
+      if (areAllSelected) {
+        filteredIds.forEach(id => next.delete(id));
+      } else {
+        filteredIds.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const handleDeleteSelected = async () => {
+    const selectedIds = filtered
+      .filter(invoice => selectedInvoiceIds.has(invoice.id))
+      .map(invoice => invoice.id);
+
+    if (selectedIds.length === 0) {
+      toast.error(language === 'es' ? 'No hay facturas seleccionadas' : 'No selected invoices');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      language === 'es'
+        ? `¿Eliminar ${selectedIds.length} factura(s) seleccionada(s)? Esta acción no se puede deshacer.`
+        : `Delete ${selectedIds.length} selected invoice(s)? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from('doctor_invoices')
+        .delete()
+        .in('id', selectedIds);
+
+      if (error) throw error;
+
+      toast.success(
+        language === 'es'
+          ? `${selectedIds.length} factura(s) eliminada(s)`
+          : `${selectedIds.length} invoice(s) deleted`
+      );
+      setSelectedInvoiceIds(new Set());
+      await loadInvoices();
+    } catch (error: any) {
+      toast.error(error.message || (language === 'es' ? 'Error al eliminar facturas' : 'Error deleting invoices'));
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -217,6 +279,8 @@ export default function AdminInvoiceReview() {
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const pendingCount = invoices.filter(i => i.status === 'pending').length;
+  const selectedFilteredCount = filtered.filter(invoice => selectedInvoiceIds.has(invoice.id)).length;
+  const allFilteredSelected = filtered.length > 0 && selectedFilteredCount === filtered.length;
 
   if (role !== 'admin') return null;
 
@@ -261,39 +325,73 @@ export default function AdminInvoiceReview() {
               ) : (
                 <div className="space-y-3">
                   {/* Download all button */}
-                  <div className="flex justify-end">
-                    <Button size="sm" variant="outline" onClick={handleDownloadAll} className="gap-2">
-                      <Download className="w-4 h-4" />
-                      {language === 'es' ? `Descargar todas (${filtered.length})` : `Download all (${filtered.length})`}
-                    </Button>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={allFilteredSelected}
+                        onCheckedChange={toggleSelectAllFiltered}
+                        aria-label={language === 'es' ? 'Seleccionar todas las facturas visibles' : 'Select all visible invoices'}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {language === 'es' ? `${selectedFilteredCount} seleccionada(s)` : `${selectedFilteredCount} selected`}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {selectedFilteredCount > 0 && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={handleDeleteSelected}
+                          disabled={isProcessing}
+                          className="gap-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          {language === 'es'
+                            ? `Eliminar seleccionadas (${selectedFilteredCount})`
+                            : `Delete selected (${selectedFilteredCount})`}
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" onClick={handleDownloadAll} className="gap-2">
+                        <Download className="w-4 h-4" />
+                        {language === 'es' ? `Descargar todas (${filtered.length})` : `Download all (${filtered.length})`}
+                      </Button>
+                    </div>
                   </div>
                   {filtered.map(invoice => (
                     <Card key={invoice.id}>
                       <CardContent className="p-4">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <FileText className="w-4 h-4 text-primary flex-shrink-0" />
-                              <span className="font-semibold">{invoice.invoice_number}</span>
-                              {getStatusBadge(invoice.status)}
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <Checkbox
+                              checked={selectedInvoiceIds.has(invoice.id)}
+                              onCheckedChange={() => toggleInvoiceSelection(invoice.id)}
+                              className="mt-1"
+                              aria-label={language === 'es' ? `Seleccionar factura ${invoice.invoice_number}` : `Select invoice ${invoice.invoice_number}`}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                                <span className="font-semibold">{invoice.invoice_number}</span>
+                                {getStatusBadge(invoice.status)}
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-1">
+                                <strong>{invoice.doctor_name}</strong>
+                              </p>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {format(new Date(invoice.period_start), 'dd/MM/yy')} - {format(new Date(invoice.period_end), 'dd/MM/yy')}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <DollarSign className="w-3 h-3" />
+                                  {formatCurrency(invoice.amount)}
+                                </span>
+                                <span>{format(new Date(invoice.created_at), 'dd MMM yyyy, HH:mm', { locale })}</span>
+                              </div>
+                              {invoice.admin_notes && (
+                                <p className="text-xs mt-2 p-2 bg-muted rounded">{invoice.admin_notes}</p>
+                              )}
                             </div>
-                            <p className="text-sm text-muted-foreground mb-1">
-                              <strong>{invoice.doctor_name}</strong>
-                            </p>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {format(new Date(invoice.period_start), 'dd/MM/yy')} - {format(new Date(invoice.period_end), 'dd/MM/yy')}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <DollarSign className="w-3 h-3" />
-                                {formatCurrency(invoice.amount)}
-                              </span>
-                              <span>{format(new Date(invoice.created_at), 'dd MMM yyyy, HH:mm', { locale })}</span>
-                            </div>
-                            {invoice.admin_notes && (
-                              <p className="text-xs mt-2 p-2 bg-muted rounded">{invoice.admin_notes}</p>
-                            )}
                           </div>
 
                           <div className="flex gap-2 flex-shrink-0 flex-wrap">
