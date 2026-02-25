@@ -1,103 +1,73 @@
 project_id = "jbthjpnxiwnegzgfzfth"
 
-[functions.create-daily-room]
-verify_jwt = false
-
-[functions.end-daily-room]
-verify_jwt = false
-
-[functions.get-daily-token]
-verify_jwt = false
-
-[functions.daily-webhook]
-verify_jwt = false
-
-[functions.purchase-recording-wallet]
-verify_jwt = false
-
-[functions.create-subscription-checkout]
-verify_jwt = false
-
-[functions.send-push-notification]
-verify_jwt = false
-
-[functions.send-availability-reminders]
-verify_jwt = false
-
-[functions.send-content-notification-email]
-verify_jwt = false
-
-[functions.verify-cedula-sep]
-verify_jwt = false
-
-[functions.claim-cedula]
-verify_jwt = false
-
-[functions.stripe-connect-onboarding]
-verify_jwt = false
-
-[functions.check-stripe-account-status]
-verify_jwt = false
-
-[functions.process-doctor-payouts]
-verify_jwt = false
-
-[functions.create-wallet-checkout]
-verify_jwt = false
-
-[functions.create-recording-checkout]
-verify_jwt = false
-
-[functions.send-live-notification-email]
-verify_jwt = false
-
-[functions.send-purchase-email]
-verify_jwt = false
-
-[functions.send-verification-email]
-verify_jwt = false
-
-[functions.send-welcome-email]
-verify_jwt = false
-
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.unsubscribe-email]
-verify_jwt = false
-
-[functions.seed-demo-users]
-verify_jwt = false
-
-[functions.trigger-post-consultation-ratings]
-verify_jwt = false
-
-[functions.cloudflare-webhook]
-verify_jwt = false
-
-[functions.setup-cloudflare-webhook]
-verify_jwt = false
-
-[functions.check-subscription]
-verify_jwt = false
-
-[functions.customer-portal]
-verify_jwt = false
-
-[functions.upload-payout-receipt]
-verify_jwt = false
-
-[functions.cloudflare-whip]
-verify_jwt = false
-
-[functions.create-cloudflare-stream]
-verify_jwt = false
-
-[functions.end-cloudflare-stream]
-verify_jwt = false
-
-[functions.get-cloudflare-playback]
-verify_jwt = false
-
-[functions.cloudflare-debug]
-verify_jwt = false
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.check-stripe-account-status]
+    verify_jwt = false
+  [functions.check-subscription]
+    verify_jwt = false
+  [functions.claim-cedula]
+    verify_jwt = false
+  [functions.cloudflare-debug]
+    verify_jwt = false
+  [functions.cloudflare-webhook]
+    verify_jwt = false
+  [functions.cloudflare-whip]
+    verify_jwt = false
+  [functions.create-cloudflare-stream]
+    verify_jwt = false
+  [functions.create-daily-room]
+    verify_jwt = false
+  [functions.create-recording-checkout]
+    verify_jwt = false
+  [functions.create-subscription-checkout]
+    verify_jwt = false
+  [functions.create-wallet-checkout]
+    verify_jwt = false
+  [functions.customer-portal]
+    verify_jwt = false
+  [functions.daily-webhook]
+    verify_jwt = false
+  [functions.end-cloudflare-stream]
+    verify_jwt = false
+  [functions.end-daily-room]
+    verify_jwt = false
+  [functions.get-cloudflare-playback]
+    verify_jwt = false
+  [functions.get-daily-token]
+    verify_jwt = false
+  [functions.process-doctor-payouts]
+    verify_jwt = false
+  [functions.purchase-recording-wallet]
+    verify_jwt = false
+  [functions.seed-demo-users]
+    verify_jwt = false
+  [functions.send-availability-reminders]
+    verify_jwt = false
+  [functions.send-content-notification-email]
+    verify_jwt = false
+  [functions.send-live-notification-email]
+    verify_jwt = false
+  [functions.send-purchase-email]
+    verify_jwt = false
+  [functions.send-push-notification]
+    verify_jwt = false
+  [functions.send-verification-email]
+    verify_jwt = false
+  [functions.send-welcome-email]
+    verify_jwt = false
+  [functions.setup-cloudflare-webhook]
+    verify_jwt = false
+  [functions.stripe-connect-onboarding]
+    verify_jwt = false
+  [functions.stripe-webhook]
+    verify_jwt = false
+  [functions.trigger-post-consultation-ratings]
+    verify_jwt = false
+  [functions.unsubscribe-email]
+    verify_jwt = false
+  [functions.upload-payout-receipt]
+    verify_jwt = false
+  [functions.verify-cedula-sep]
+    verify_jwt = false
