@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 
 import { useViewerCount } from '@/hooks/useViewerCount';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -98,10 +99,19 @@ export default function LivePlayer() {
         return;
       }
 
-      const streamUid = live.dailyRoomName;
+      let streamUid = live.dailyRoomName;
+      if (!streamUid && live.id) {
+        const { data: freshLive } = await supabase
+          .from('lives')
+          .select('daily_room_name')
+          .eq('id', live.id)
+          .maybeSingle();
+        streamUid = freshLive?.daily_room_name || undefined;
+      }
+
       if (!streamUid) {
         setPlaybackUrl(null);
-        setPlaybackError('No se encontró el identificador del stream en vivo.');
+        setPlaybackError('El stream aún se está inicializando. Reintenta en unos segundos.');
         setIsJoiningStream(false);
         return;
       }

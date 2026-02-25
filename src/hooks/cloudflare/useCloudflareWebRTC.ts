@@ -12,6 +12,50 @@ export function useCloudflareWebRTC() {
   const whipResourceUrlRef = useRef<string | null>(null);
   const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const requestMediaStream = useCallback(async (): Promise<MediaStream> => {
+    if (mediaStreamRef.current) {
+      return mediaStreamRef.current;
+    }
+
+    console.log('[Cloudflare] Requesting media devices from user gesture...');
+    const mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1280, max: 1920 },
+        height: { ideal: 720, max: 1080 },
+        frameRate: { ideal: 30, max: 30 },
+      },
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    });
+
+    mediaStreamRef.current = mediaStream;
+    console.log('[Cloudflare] Media stream prepared:', {
+      videoTracks: mediaStream.getVideoTracks().length,
+      audioTracks: mediaStream.getAudioTracks().length,
+      videoSettings: mediaStream.getVideoTracks()[0]?.getSettings(),
+    });
+
+    return mediaStream;
+  }, []);
+
+  const prepareMediaStream = useCallback(async (): Promise<boolean> => {
+    try {
+      await requestMediaStream();
+      return true;
+    } catch (err: any) {
+      console.error('[Cloudflare] Error preparing media stream:', err);
+      if (err?.name === 'NotAllowedError') {
+        toast.error('Permiso de cámara/micrófono denegado. Activa permisos del navegador.');
+      } else {
+        toast.error('No se pudo acceder a cámara/micrófono.');
+      }
+      return false;
+    }
+  }, [requestMediaStream]);
+
   const startBroadcast = useCallback(async (webRTCUrl: string): Promise<boolean> => {
     try {
       console.log('[Cloudflare] Starting broadcast to:', webRTCUrl);
@@ -19,29 +63,9 @@ export function useCloudflareWebRTC() {
       // Reset any previous WHIP resource
       whipResourceUrlRef.current = null;
       setNegotiatedCodec(null);
-      
-      // Request camera and microphone access
-      console.log('[Cloudflare] Requesting media devices...');
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 },
-          frameRate: { ideal: 30, max: 30 },
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
 
-      console.log('[Cloudflare] Media stream obtained:', {
-        videoTracks: mediaStream.getVideoTracks().length,
-        audioTracks: mediaStream.getAudioTracks().length,
-        videoSettings: mediaStream.getVideoTracks()[0]?.getSettings(),
-      });
-
-      mediaStreamRef.current = mediaStream;
+      // IMPORTANT: Reuse stream captured from direct user gesture when available
+      const mediaStream = mediaStreamRef.current ?? await requestMediaStream();
 
       // Create RTCPeerConnection for WHIP
       const pc = new RTCPeerConnection({
@@ -315,6 +339,7 @@ export function useCloudflareWebRTC() {
   return {
     connectionState,
     negotiatedCodec,
+    prepareMediaStream,
     startBroadcast,
     stopBroadcast,
     toggleMute,
