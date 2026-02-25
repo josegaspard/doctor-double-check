@@ -47,7 +47,12 @@ import {
   Trash2,
   Upload,
   Paperclip,
+  ChevronDown,
+  ChevronUp,
+  Video,
+  MessageSquare,
 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
@@ -104,6 +109,11 @@ export default function AdminPayouts() {
   const [selectedDoctors, setSelectedDoctors] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState('pending');
   
+  // Expandable detail
+  const [expandedDoctor, setExpandedDoctor] = useState<string | null>(null);
+  const [doctorBreakdown, setDoctorBreakdown] = useState<Record<string, { source: string; amount: number; date: string; description: string }[]>>({});
+  const [loadingBreakdown, setLoadingBreakdown] = useState<string | null>(null);
+
   // Payout dialog
   const [payoutDialog, setPayoutDialog] = useState<{ open: boolean; doctor: DoctorPayoutInfo | null; bulk: boolean }>({ open: false, doctor: null, bulk: false });
   const [payoutMethod, setPayoutMethod] = useState<'stripe' | 'manual'>('stripe');
@@ -460,6 +470,68 @@ export default function AdminPayouts() {
     }
   };
 
+  const toggleDoctorDetail = async (doctorId: string) => {
+    if (expandedDoctor === doctorId) {
+      setExpandedDoctor(null);
+      return;
+    }
+    setExpandedDoctor(doctorId);
+    if (!doctorBreakdown[doctorId]) {
+      setLoadingBreakdown(doctorId);
+      try {
+        const { data } = await supabase
+          .from('wallet_transactions')
+          .select('amount, description, created_at, metadata')
+          .eq('user_id', doctorId)
+          .eq('type', 'earning')
+          .eq('status', 'paid')
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        const items = (data || []).map(tx => ({
+          source: (tx.metadata as any)?.source || 'other',
+          amount: tx.amount,
+          date: tx.created_at,
+          description: tx.description,
+        }));
+        setDoctorBreakdown(prev => ({ ...prev, [doctorId]: items }));
+      } catch (err) {
+        console.error('Error loading breakdown:', err);
+      } finally {
+        setLoadingBreakdown(null);
+      }
+    }
+  };
+
+  const getBreakdownSummary = (doctorId: string) => {
+    const items = doctorBreakdown[doctorId] || [];
+    const bySource: Record<string, number> = {};
+    items.forEach(i => {
+      bySource[i.source] = (bySource[i.source] || 0) + i.amount;
+    });
+    return bySource;
+  };
+
+  const getSourceIcon = (source: string) => {
+    switch (source) {
+      case 'consultation': return <MessageSquare className="w-3.5 h-3.5 text-info" />;
+      case 'recording': return <Video className="w-3.5 h-3.5 text-primary" />;
+      case 'subscription':
+      case 'subscription_renewal': return <Users className="w-3.5 h-3.5 text-warning" />;
+      default: return <DollarSign className="w-3.5 h-3.5 text-success" />;
+    }
+  };
+
+  const getSourceLabel = (source: string) => {
+    const labels: Record<string, string> = {
+      consultation: language === 'es' ? 'Orientaciones' : 'Consultations',
+      recording: language === 'es' ? 'Grabaciones' : 'Recordings',
+      subscription: language === 'es' ? 'Suscripciones' : 'Subscriptions',
+      subscription_renewal: language === 'es' ? 'Renovaciones' : 'Renewals',
+    };
+    return labels[source] || (language === 'es' ? 'Otros' : 'Other');
+  };
+
   const filteredDoctors = doctors.filter(d => 
     d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.specialty.toLowerCase().includes(searchTerm.toLowerCase())
@@ -636,7 +708,6 @@ export default function AdminPayouts() {
                                 <Badge variant="warning" className="text-xs gap-1"><AlertTriangle className="w-3 h-3" />Sin factura</Badge>
                               )}
                             </div>
-                            {/* Bank details for manual transfers */}
                             {(doctor.bank_name || doctor.clabe_last4) && (
                               <p className="text-xs text-muted-foreground mt-1">
                                 {doctor.account_holder_name && <span>{doctor.account_holder_name} · </span>}
@@ -658,16 +729,72 @@ export default function AdminPayouts() {
                             </div>
                           </div>
 
-                          <Button
-                            size="sm"
-                            disabled={doctor.pending_earnings <= 0 || doctor.has_processing_payout}
-                            onClick={() => openPayoutDialog(doctor, false)}
-                            className="flex-shrink-0"
-                          >
-                            <Send className="w-4 h-4 mr-1" />
-                            {doctor.has_processing_payout ? (language === 'es' ? 'En proceso' : 'Processing') : (language === 'es' ? 'Pagar' : 'Pay')}
-                          </Button>
+                          <div className="flex flex-col gap-1 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              disabled={doctor.pending_earnings <= 0 || doctor.has_processing_payout}
+                              onClick={() => openPayoutDialog(doctor, false)}
+                            >
+                              <Send className="w-4 h-4 mr-1" />
+                              {doctor.has_processing_payout ? (language === 'es' ? 'En proceso' : 'Processing') : (language === 'es' ? 'Pagar' : 'Pay')}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleDoctorDetail(doctor.user_id)}
+                              className="text-xs gap-1"
+                            >
+                              {expandedDoctor === doctor.user_id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                              {language === 'es' ? 'Detalle' : 'Detail'}
+                            </Button>
+                          </div>
                         </div>
+
+                        {/* Expandable breakdown */}
+                        {expandedDoctor === doctor.user_id && (
+                          <div className="mt-4 pt-4 border-t border-border">
+                            {loadingBreakdown === doctor.user_id ? (
+                              <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+                            ) : (
+                              <>
+                                {/* Summary by source */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                                  {Object.entries(getBreakdownSummary(doctor.user_id)).map(([source, total]) => (
+                                    <div key={source} className="p-3 rounded-lg bg-muted/50 flex items-center gap-2">
+                                      {getSourceIcon(source)}
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">{getSourceLabel(source)}</p>
+                                        <p className="font-semibold text-sm">{formatCurrency(total)}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                  {Object.keys(getBreakdownSummary(doctor.user_id)).length === 0 && (
+                                    <p className="text-sm text-muted-foreground col-span-4">
+                                      {language === 'es' ? 'Sin transacciones de ganancia registradas' : 'No earning transactions recorded'}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* Recent transactions */}
+                                {(doctorBreakdown[doctor.user_id] || []).length > 0 && (
+                                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                                    <p className="text-xs font-medium text-muted-foreground mb-2">
+                                      {language === 'es' ? 'Últimas transacciones' : 'Recent transactions'}
+                                    </p>
+                                    {(doctorBreakdown[doctor.user_id] || []).slice(0, 15).map((tx, i) => (
+                                      <div key={i} className="flex items-center gap-2 text-xs py-1.5 px-2 rounded hover:bg-muted/30">
+                                        {getSourceIcon(tx.source)}
+                                        <span className="flex-1 truncate text-muted-foreground">{tx.description}</span>
+                                        <span className="text-muted-foreground">{format(new Date(tx.date), 'dd/MM/yy', { locale })}</span>
+                                        <span className="font-medium">{formatCurrency(tx.amount)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
