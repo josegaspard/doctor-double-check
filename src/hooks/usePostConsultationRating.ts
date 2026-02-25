@@ -13,13 +13,17 @@ export function usePostConsultationRating() {
   const [pendingRating, setPendingRating] = useState<PendingRating | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const recentlyRatedIds = useRef<Set<string>>(new Set());
+  const isCheckingRef = useRef(false);
+  const dialogShownForId = useRef<string | null>(null);
 
   // Check for consultations that were closed but not yet rated
   const checkPendingRatings = useCallback(async () => {
     if (!user?.id || role !== 'patient') return;
+    // Prevent concurrent checks
+    if (isCheckingRef.current) return;
+    isCheckingRef.current = true;
 
     try {
-      // Find consultations that ended (closed or with ended_at set) and don't have a rating yet
       const { data: closedConsultations } = await supabase
         .from('consultations')
         .select('id, doctor_id, ended_at')
@@ -28,9 +32,11 @@ export function usePostConsultationRating() {
         .order('ended_at', { ascending: false })
         .limit(5);
 
-      if (!closedConsultations || closedConsultations.length === 0) return;
+      if (!closedConsultations || closedConsultations.length === 0) {
+        isCheckingRef.current = false;
+        return;
+      }
 
-      // Check which ones are already rated
       const { data: existingRatings } = await supabase
         .from('consultation_ratings')
         .select('consultation_id')
@@ -39,11 +45,13 @@ export function usePostConsultationRating() {
 
       const ratedIds = new Set(existingRatings?.map(r => r.consultation_id) || []);
       
-      // Find the first unrated consultation (also skip recently rated ones)
-      const unrated = closedConsultations.find(c => !ratedIds.has(c.id) && !recentlyRatedIds.current.has(c.id));
+      const unrated = closedConsultations.find(c => 
+        !ratedIds.has(c.id) && 
+        !recentlyRatedIds.current.has(c.id) &&
+        dialogShownForId.current !== c.id
+      );
       
       if (unrated) {
-        // Fetch doctor name
         const { data: doctorProfile } = await supabase
           .from('profiles_public')
           .select('name')
@@ -56,28 +64,29 @@ export function usePostConsultationRating() {
           doctorName: doctorProfile?.name || 'tu médico',
         });
 
-        // Auto-show dialog if consultation ended recently (within 24h)
         const endedAt = new Date(unrated.ended_at);
         const hoursAgo = (Date.now() - endedAt.getTime()) / (1000 * 60 * 60);
         
-        if (hoursAgo < 24) {
+        if (hoursAgo < 24 && dialogShownForId.current !== unrated.id) {
+          dialogShownForId.current = unrated.id;
           setTimeout(() => setIsDialogOpen(true), 1500);
         }
       }
     } catch (error) {
       console.error('Error checking pending ratings:', error);
+    } finally {
+      isCheckingRef.current = false;
     }
   }, [user?.id, role]);
 
   // Force open the dialog immediately (used when clicking notification)
   const forceOpenDialog = useCallback(() => {
     if (pendingRating) {
+      dialogShownForId.current = pendingRating.consultationId;
       setIsDialogOpen(true);
     } else {
-      // No pending rating cached yet — fetch and open immediately
       (async () => {
         await checkPendingRatings();
-        // After check, force open
         setIsDialogOpen(true);
       })();
     }
@@ -86,13 +95,11 @@ export function usePostConsultationRating() {
   useEffect(() => {
     checkPendingRatings();
 
-    // Listen for manual trigger from notification click — open immediately
     const handleTrigger = () => {
       forceOpenDialog();
     };
     window.addEventListener('trigger-rating-check', handleTrigger);
 
-    // Listen for consultation updates (e.g., doctor closes the session)
     if (!user?.id || role !== 'patient') return;
     
     const channel = supabase
@@ -106,8 +113,8 @@ export function usePostConsultationRating() {
           filter: `patient_id=eq.${user.id}`,
         },
         (payload) => {
-          if (payload.new?.ended_at && !payload.old?.ended_at && !isDialogOpen) {
-            setTimeout(checkPendingRatings, 1000);
+          if (payload.new?.ended_at && !payload.old?.ended_at && !isCheckingRef.current) {
+            setTimeout(checkPendingRatings, 1500);
           }
         }
       )
@@ -125,8 +132,9 @@ export function usePostConsultationRating() {
         (payload) => {
           if (payload.new?.status === 'closed' && payload.old?.status === 'active') {
             const isParticipant = payload.new.participant1_id === user.id || payload.new.participant2_id === user.id;
-            if (isParticipant && !isDialogOpen) {
-              setTimeout(checkPendingRatings, 1500);
+            if (isParticipant && !isCheckingRef.current) {
+              // Don't trigger if consultation channel already handled it
+              setTimeout(checkPendingRatings, 3000);
             }
           }
         }
@@ -138,7 +146,7 @@ export function usePostConsultationRating() {
       supabase.removeChannel(channel);
       supabase.removeChannel(chatChannel);
     };
-  }, [checkPendingRatings, forceOpenDialog, user?.id, role, isDialogOpen]);
+  }, [checkPendingRatings, forceOpenDialog, user?.id, role]);
 
   const closeDialog = useCallback(() => {
     setIsDialogOpen(false);
