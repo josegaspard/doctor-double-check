@@ -14,11 +14,9 @@ interface ChatMessage {
 interface RecordingChatReplayProps {
   /** The live_id associated with this recording */
   liveId: string;
-  /** Current playback time in seconds – messages up to this time will show */
-  currentTime?: number;
 }
 
-export function RecordingChatReplay({ liveId, currentTime }: RecordingChatReplayProps) {
+export function RecordingChatReplay({ liveId }: RecordingChatReplayProps) {
   const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -44,10 +42,8 @@ export function RecordingChatReplay({ liveId, currentTime }: RecordingChatReplay
     load();
   }, [liveId]);
 
-  // Filter messages up to current playback time
-  const visibleMessages = currentTime != null
-    ? allMessages.filter(m => m.elapsedSeconds <= currentTime)
-    : allMessages;
+  // Show all messages immediately
+  const visibleMessages = allMessages;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

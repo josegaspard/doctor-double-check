@@ -269,7 +269,7 @@ export default function RecordingPlayer() {
           <div className="space-y-3 sm:space-y-4">
             {/* Chat replay synced with video */}
             {recording.liveId && (
-              <RecordingChatReplay liveId={recording.liveId} currentTime={videoCurrentTime} />
+              <RecordingChatReplay liveId={recording.liveId} />
             )}
             <Card>
               <CardContent className="p-3 sm:p-4">
