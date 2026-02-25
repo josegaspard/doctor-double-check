@@ -1,5 +1,4 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CloudflareStreamPlayer } from './CloudflareStreamPlayer';
 import { LiveChat } from './LiveChat';
@@ -58,13 +57,6 @@ export function LiveStreamView({
       {/* Header with controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive" />
-            </span>
-            <Badge variant="destructive">EN VIVO</Badge>
-          </div>
           <div>
             <h1 className="font-heading text-lg font-bold">{liveData.title}</h1>
             <p className="text-xs text-muted-foreground">{liveData.specialty}</p>

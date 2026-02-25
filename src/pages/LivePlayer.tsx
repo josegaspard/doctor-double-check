@@ -76,33 +76,46 @@ export default function LivePlayer() {
   
   const isLiked = live ? hasLiked(live.id) : false;
 
-  // Get playback URL when component mounts and live is active
+  // Get playback URL when component mounts and live is active (with retries)
   useEffect(() => {
-    const getStreamUrl = async () => {
-      if (!live || !isLiveActive) return;
-      if (playbackUrl) return; // Already have URL
-      
-      // Use the stream UID from the database (stored in daily_room_name column)
-      const streamUid = live.dailyRoomName;
-      if (!streamUid) {
-        console.error('No stream UID found for live:', live.id);
-        return;
-      }
-      
+    if (!live || !isLiveActive) return;
+    if (playbackUrl) return;
+
+    const streamUid = live.dailyRoomName;
+    if (!streamUid) {
+      console.error('No stream UID found for live:', live.id);
+      return;
+    }
+
+    let cancelled = false;
+    let retryTimeout: ReturnType<typeof setTimeout>;
+
+    const attempt = async (retryCount = 0) => {
+      if (cancelled) return;
       setIsJoiningStream(true);
       try {
         const url = await getPlaybackUrl(streamUid, 'live');
-        if (url) {
+        if (!cancelled && url) {
           setPlaybackUrl(url);
+          setIsJoiningStream(false);
+          return;
         }
       } catch (error) {
         console.error('Error getting stream URL:', error);
-      } finally {
+      }
+      // Retry up to 15 times (37.5 seconds total)
+      if (!cancelled && retryCount < 15) {
+        retryTimeout = setTimeout(() => attempt(retryCount + 1), 2500);
+      } else if (!cancelled) {
         setIsJoiningStream(false);
       }
     };
 
-    getStreamUrl();
+    attempt();
+    return () => {
+      cancelled = true;
+      clearTimeout(retryTimeout);
+    };
   }, [live, isLiveActive, getPlaybackUrl, playbackUrl]);
 
   if (isLoading) {
@@ -275,7 +288,7 @@ export default function LivePlayer() {
             {/* Video Info */}
             <div>
               <h1 className="font-heading text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-2 sm:mb-3">
-                {live.title}
+                {live.title.replace(/^EN VIVO\s*[-–:]\s*/i, '')}
               </h1>
               
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
