@@ -669,8 +669,8 @@ export default function AdminPayouts() {
               )}
 
               {payoutMethod === 'stripe' && !payoutDialog.bulk && payoutDialog.doctor && !payoutDialog.doctor.stripe_account_id && (
-                <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg text-sm text-warning-foreground flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg text-sm text-foreground flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-warning" />
                   {language === 'es' 
                     ? 'Este doctor no tiene cuenta Stripe configurada. Usa transferencia manual.' 
                     : 'This doctor has no Stripe account. Use manual transfer.'}

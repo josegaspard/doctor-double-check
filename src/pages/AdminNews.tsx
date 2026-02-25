@@ -10,7 +10,7 @@ import { Newspaper, Plus, Edit, Trash2, Eye, EyeOff, Loader2, ArrowLeft, Pencil 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 interface NewsItem {
   id: string;
@@ -31,6 +31,7 @@ interface NewsItem {
 
 export default function AdminNews() {
   const { role } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -139,6 +140,11 @@ export default function AdminNews() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-5xl">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-4 -ml-2 text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Volver al panel
+        </Button>
+
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
