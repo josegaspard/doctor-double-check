@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.customer-portal]
 verify_jwt = false
+
+[functions.upload-payout-receipt]
+verify_jwt = false
