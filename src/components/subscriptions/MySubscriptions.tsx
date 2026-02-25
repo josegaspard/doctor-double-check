@@ -47,7 +47,11 @@ export function MySubscriptions() {
     setConfirmCancelSub(null);
 
     if (result.success) {
-      toast.success('Suscripción cancelada exitosamente');
+      if (confirmCancelSub.tier !== 'free' && confirmCancelSub.expiresAt) {
+        toast.success(`Suscripción cancelada. Mantendrás acceso hasta el ${format(confirmCancelSub.expiresAt, "dd 'de' MMMM", { locale: es })}`);
+      } else {
+        toast.success('Suscripción cancelada exitosamente');
+      }
       refresh();
     } else {
       toast.error(result.error || 'Error al cancelar suscripción');
@@ -221,14 +225,32 @@ export function MySubscriptions() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Cancelar suscripción?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Dejarás de seguir a <strong>{confirmCancelSub?.creatorName}</strong> y no recibirás 
-              más notificaciones de sus lives, contenido ni disponibilidad.
-              {confirmCancelSub?.tier !== 'free' && (
-                <span className="block mt-2 text-warning">
-                  ⚠️ Si tienes una suscripción de pago, se cancelará al final del período actual.
-                </span>
-              )}
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Dejarás de seguir a <strong>{confirmCancelSub?.creatorName}</strong> y no recibirás 
+                  más notificaciones de sus lives, contenido ni disponibilidad.
+                </p>
+                {confirmCancelSub?.tier !== 'free' && confirmCancelSub?.expiresAt && (
+                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                    <p className="text-sm font-medium text-warning flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      Tu suscripción de pago se mantendrá activa hasta el{' '}
+                      <strong>{format(confirmCancelSub.expiresAt, "dd 'de' MMMM yyyy", { locale: es })}</strong>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Después de esa fecha no se realizarán más cobros y perderás los beneficios de tu plan {confirmCancelSub.tier === 'premium' ? 'Premium' : 'Básico'}.
+                    </p>
+                  </div>
+                )}
+                {confirmCancelSub?.tier !== 'free' && !confirmCancelSub?.expiresAt && (
+                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                    <p className="text-sm text-warning">
+                      ⚠️ Tu suscripción de pago se cancelará al final del período de facturación actual. No se realizarán más cobros.
+                    </p>
+                  </div>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

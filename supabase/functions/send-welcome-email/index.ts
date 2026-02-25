@@ -58,7 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
     const message = roleMessages[role] || roleMessages.patient;
 
     const emailResponse = await resend.emails.send({
-      from: "Cirugía Estética Uribe <noreply@cirugiaesteticauribe.com>",
+      from: "Dr Double Check <onboarding@resend.dev>",
       to: [email],
       subject: message.subject,
       html: `

@@ -1,0 +1,1 @@
+ALTER TYPE public.content_audience ADD VALUE IF NOT EXISTS 'subscribers';

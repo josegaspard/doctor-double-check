@@ -2482,7 +2482,7 @@ export type Database = {
         | "rejected"
         | "completed"
         | "cancelled"
-      content_audience: "all" | "patients" | "professionals"
+      content_audience: "all" | "patients" | "professionals" | "subscribers"
       content_type: "video" | "pdf" | "image"
       doctor_status: "pending" | "approved" | "rejected"
       identity_verification_status:
@@ -2649,7 +2649,7 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
-      content_audience: ["all", "patients", "professionals"],
+      content_audience: ["all", "patients", "professionals", "subscribers"],
       content_type: ["video", "pdf", "image"],
       doctor_status: ["pending", "approved", "rejected"],
       identity_verification_status: [

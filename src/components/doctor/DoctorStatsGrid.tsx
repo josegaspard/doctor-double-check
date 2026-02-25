@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Radio, PlayCircle, Folder, Star } from 'lucide-react';
+import { Radio, PlayCircle, Folder, Star, Users } from 'lucide-react';
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   activeLivesCount: number;
@@ -15,12 +17,34 @@ interface Props {
 export function DoctorStatsGrid({ activeLivesCount, recordingsCount, vaultFilesCount, rating }: Props) {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const [subscriberCounts, setSubscriberCounts] = useState({ total: 0, paid: 0 });
+
+  useEffect(() => {
+    const fetchSubscriberCounts = async () => {
+      if (!user?.id) return;
+      const { data: allSubs } = await supabase
+        .from('subscriptions')
+        .select('id, tier')
+        .eq('creator_id', user.id)
+        .eq('is_active', true);
+      
+      if (allSubs) {
+        setSubscriberCounts({
+          total: allSubs.length,
+          paid: allSubs.filter(s => s.tier === 'basic' || s.tier === 'premium').length,
+        });
+      }
+    };
+    fetchSubscriberCounts();
+  }, [user?.id]);
 
   const stats = [
     { label: t('dashboard.activeLives'), value: activeLivesCount, icon: Radio, color: 'live' },
     { label: t('dashboard.totalRecordings'), value: recordingsCount, icon: PlayCircle, color: 'premium', onClick: () => navigate('/doctor/recordings') },
     { label: t('dashboard.vaultAccess'), value: vaultFilesCount, icon: Folder, color: 'primary' },
     { label: t('dashboard.rating'), value: rating, icon: Star, color: 'success' },
+    { label: `Suscriptores (${subscriberCounts.paid} de pago)`, value: subscriberCounts.total, icon: Users, color: 'info' },
   ];
 
   return (

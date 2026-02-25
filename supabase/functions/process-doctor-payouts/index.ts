@@ -244,7 +244,7 @@ Deno.serve(async (req) => {
                   Authorization: `Bearer ${resendKey}`,
                 },
                 body: JSON.stringify({
-                  from: "Cirugía Estética Uribe <noreply@cirugiaesteticauribe.com>",
+                  from: "Dr Double Check <onboarding@resend.dev>",
                   to: [doctorProfile.email],
                   subject: "💰 Pago procesado - Medical Masters",
                   html: `

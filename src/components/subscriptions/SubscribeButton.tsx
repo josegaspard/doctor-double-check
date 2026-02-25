@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { AlertTriangle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +49,7 @@ export function SubscribeButton({
   const [isLoading, setIsLoading] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const isSubscribed = isSubscribedTo(doctorId);
   const subscription = getSubscription(doctorId);
@@ -93,10 +95,16 @@ export function SubscribeButton({
     if (result.success) {
       await new Promise(resolve => setTimeout(resolve, 1200));
       onSubscriptionChange?.();
-      toast({
-        description: t('subscriptions.unsubscribe'),
-      });
+      if (subscription?.tier !== 'free' && subscription?.expiresAt) {
+        toast({
+          title: 'Suscripción cancelada',
+          description: `Mantendrás acceso hasta el fin del período pagado.`,
+        });
+      } else {
+        toast({ description: t('subscriptions.unsubscribe') });
+      }
     }
+    setShowCancelConfirm(false);
     setIsLoading(false);
   };
 
@@ -220,7 +228,7 @@ export function SubscribeButton({
             variant="destructive"
             size="sm"
             className="w-full"
-            onClick={handleUnsubscribe}
+            onClick={() => setShowCancelConfirm(true)}
             disabled={isLoading}
           >
             <BellOff className="h-4 w-4 mr-2" />
@@ -228,6 +236,37 @@ export function SubscribeButton({
           </Button>
         </div>
       </PopoverContent>
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Cancelar suscripción?</DialogTitle>
+            <DialogDescription>
+              {subscription?.tier !== 'free' ? (
+                <div className="space-y-3 mt-2">
+                  <p>Al cancelar tu suscripción de pago con <strong>{doctorName || 'este doctor'}</strong>:</p>
+                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg text-sm">
+                    <p className="font-medium text-warning">⚠️ Tu suscripción se mantendrá activa hasta el fin del período pagado.</p>
+                    <p className="text-muted-foreground mt-1">No se realizarán más cobros después de esa fecha.</p>
+                  </div>
+                </div>
+              ) : (
+                <p>Dejarás de seguir a <strong>{doctorName || 'este doctor'}</strong> y no recibirás más notificaciones.</p>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button variant="outline" onClick={() => setShowCancelConfirm(false)}>
+              Mantener suscripción
+            </Button>
+            <Button variant="destructive" onClick={handleUnsubscribe} disabled={isLoading}>
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Confirmar cancelación
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Upgrade Modal */}
       <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
