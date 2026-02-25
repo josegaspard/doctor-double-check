@@ -54,7 +54,7 @@ Deno.serve(async (req: Request) => {
 
     let totalEmailsSent = 0;
     const baseUrl = supabaseUrl.replace('.supabase.co', '.functions.supabase.co');
-    const appUrl = "https://doc-seek-relay.lovable.app";
+    const appUrl = "https://cirugiaesteticauribe.com";
 
     for (const availability of upcomingAvailabilities) {
       const { data: doctorProfile } = await supabase

@@ -100,7 +100,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const baseUrl = Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.functions.supabase.co') || '';
-    const appUrl = Deno.env.get("APP_URL") || "https://doc-seek-relay.lovable.app";
+    const appUrl = "https://cirugiaesteticauribe.com";
 
     let sentCount = 0;
     let failedCount = 0;

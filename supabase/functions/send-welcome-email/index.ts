@@ -19,7 +19,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const appUrl = Deno.env.get("APP_URL") || "https://doc-seek-relay.lovable.app";
+    const appUrl = "https://cirugiaesteticauribe.com";
     const { email, name, role }: WelcomeEmailRequest = await req.json();
 
     const roleMessages = {
