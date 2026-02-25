@@ -66,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "Cirugía Estética Uribe <noreply@cirugiaesteticauribe.com>",
+      from: "Dr Double Check <onboarding@resend.dev>",
       to: [doctor_email],
       subject: `💰 Pago procesado - ${formattedAmount} | Cirugía Estética Uribe`,
       attachments: attachments.length > 0 ? attachments : undefined,

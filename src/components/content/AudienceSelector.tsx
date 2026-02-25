@@ -1,10 +1,10 @@
 import React from 'react';
-import { Users, UserCheck, GraduationCap } from 'lucide-react';
+import { Users, UserCheck, GraduationCap, Crown } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-export type ContentAudience = 'all' | 'patients' | 'professionals';
+export type ContentAudience = 'all' | 'patients' | 'professionals' | 'subscribers';
 
 interface AudienceSelectorProps {
   value: ContentAudience;
@@ -68,6 +68,22 @@ export function AudienceSelector({ value, onChange, disabled }: AudienceSelector
             <p className="font-medium">{t('content.professionals')}</p>
             <p className="text-xs text-muted-foreground">
               {t('content.professionalsDescription')}
+            </p>
+          </div>
+        </Label>
+
+        <Label
+          htmlFor="audience-subscribers"
+          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+            value === 'subscribers' ? 'border-warning bg-warning/5' : 'border-border hover:border-muted-foreground'
+          } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <RadioGroupItem value="subscribers" id="audience-subscribers" />
+          <Crown className="h-5 w-5 text-warning" />
+          <div>
+            <p className="font-medium">Suscriptores de pago</p>
+            <p className="text-xs text-muted-foreground">
+              Solo visible para pacientes con suscripción Básica o Premium activa
             </p>
           </div>
         </Label>

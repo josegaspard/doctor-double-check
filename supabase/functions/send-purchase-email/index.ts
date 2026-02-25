@@ -29,7 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
     }).format(amount);
 
     const emailResponse = await resend.emails.send({
-      from: "Cirugía Estética Uribe <noreply@cirugiaesteticauribe.com>",
+      from: "Dr Double Check <onboarding@resend.dev>",
       to: [email],
       subject: `Compra exitosa - ${productName} | Cirugía Estética Uribe`,
       html: `

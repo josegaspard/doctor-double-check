@@ -55,7 +55,7 @@ interface DoctorContent {
   thumbnail_url: string | null;
   is_public: boolean;
   price: number;
-  audience_type: 'all' | 'patients' | 'professionals';
+  audience_type: 'all' | 'patients' | 'professionals' | 'subscribers';
   category: string | null;
   created_at: string;
 }

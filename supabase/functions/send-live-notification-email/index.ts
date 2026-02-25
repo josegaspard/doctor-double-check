@@ -173,7 +173,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       try {
         await resend.emails.send({
-          from: "Cirugía Estética Uribe <noreply@cirugiaesteticauribe.com>",
+          from: "Dr Double Check <onboarding@resend.dev>",
           to: [profile.email],
           subject,
           html,

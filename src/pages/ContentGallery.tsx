@@ -29,7 +29,10 @@ import {
   Loader2,
   Library,
   User,
+  Crown,
+  Lock,
 } from 'lucide-react';
+import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 
@@ -42,7 +45,7 @@ interface DoctorContent {
   thumbnail_url: string | null;
   is_public: boolean;
   price: number;
-  audience_type: 'all' | 'patients' | 'professionals';
+  audience_type: 'all' | 'patients' | 'professionals' | 'subscribers';
   category: string | null;
   created_at: string;
   creator_id: string;
@@ -89,6 +92,7 @@ const getTypeIcon = (type: string) => {
 export default function ContentGallery() {
   const { user, role } = useAuth();
   const { language, t } = useLanguage();
+  const { isSubscribedTo, getSubscription } = useSubscriptions();
   const locale = language === 'es' ? es : enUS;
   const [contents, setContents] = useState<DoctorContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -136,7 +140,7 @@ export default function ContentGallery() {
       setContents((data || []).map(c => ({
         ...c,
         type: c.type as 'video' | 'pdf' | 'image',
-        audience_type: c.audience_type as 'all' | 'patients' | 'professionals',
+        audience_type: c.audience_type as 'all' | 'patients' | 'professionals' | 'subscribers',
         creator_name: profileMap.get(c.creator_id)?.name,
         creator_avatar: profileMap.get(c.creator_id)?.avatar_url,
         creator_specialty: specialtyMap.get(c.creator_id),
@@ -151,6 +155,15 @@ export default function ContentGallery() {
   useEffect(() => {
     fetchContents();
   }, [fetchContents]);
+
+  // Check if user can see subscriber-only content
+  const canViewSubscriberContent = (content: DoctorContent) => {
+    if (content.audience_type !== 'subscribers') return true;
+    if (!user?.id) return false;
+    if (content.creator_id === user.id) return true; // Creator can always see
+    const sub = getSubscription(content.creator_id);
+    return sub && (sub.tier === 'basic' || sub.tier === 'premium');
+  };
 
   const filteredContents = contents.filter(content => {
     const matchesSearch = content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -222,8 +235,13 @@ export default function ContentGallery() {
             {filteredContents.map((content) => (
               <Card 
                 key={content.id} 
-                className="group overflow-hidden hover:shadow-lg transition-all cursor-pointer"
-                onClick={() => setPreviewContent(content)}
+                className={`group overflow-hidden hover:shadow-lg transition-all cursor-pointer ${!canViewSubscriberContent(content) ? 'opacity-75' : ''}`}
+                onClick={() => {
+                  if (!canViewSubscriberContent(content)) {
+                    return; // Don't open preview for locked content
+                  }
+                  setPreviewContent(content);
+                }}
               >
                 {/* Thumbnail */}
                 <div className="relative aspect-video bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
@@ -251,10 +269,19 @@ export default function ContentGallery() {
                   {/* Audience Badge */}
                   {content.audience_type !== 'all' && (
                     <div className="absolute top-2 right-2">
-                      <Badge variant="outline" className="bg-background/80">
-                        {getAudienceIcon(content.audience_type)}
-                        <span className="ml-1">{getAudienceLabel(content.audience_type, t)}</span>
+                      <Badge variant={content.audience_type === 'subscribers' ? 'default' : 'outline'} className={content.audience_type === 'subscribers' ? 'bg-warning text-warning-foreground gap-1' : 'bg-background/80'}>
+                        {content.audience_type === 'subscribers' ? <Crown className="w-3 h-3" /> : getAudienceIcon(content.audience_type)}
+                        <span className="ml-1">{content.audience_type === 'subscribers' ? 'Suscriptores' : getAudienceLabel(content.audience_type, t)}</span>
                       </Badge>
+                    </div>
+                  )}
+                  {/* Lock overlay for non-subscribers */}
+                  {!canViewSubscriberContent(content) && (
+                    <div className="absolute inset-0 bg-background/60 flex items-center justify-center backdrop-blur-sm">
+                      <div className="text-center">
+                        <Lock className="w-8 h-8 text-warning mx-auto mb-1" />
+                        <p className="text-xs font-medium text-foreground">Solo suscriptores</p>
+                      </div>
                     </div>
                   )}
                 </div>
