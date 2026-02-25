@@ -126,27 +126,49 @@ export default function AdminInvoiceReview() {
 
   const extractFilePath = (fileUrl: string) => {
     if (fileUrl.startsWith('http')) {
-      const match = fileUrl.match(/\/doctor-invoices\/(.+?)(?:\?|$)/);
-      if (match) return match[1];
+      // Handle Supabase storage URLs: /object/public/doctor-invoices/PATH or /object/sign/doctor-invoices/PATH
+      const match = fileUrl.match(/\/(?:object\/(?:public|sign)\/)?doctor-invoices\/(.+?)(?:\?|$)/);
+      if (match) return decodeURIComponent(match[1]);
+      // Fallback: split by bucket name
       const parts = fileUrl.split('/doctor-invoices/');
-      if (parts.length > 1) return parts[parts.length - 1].split('?')[0];
+      if (parts.length > 1) return decodeURIComponent(parts[parts.length - 1].split('?')[0]);
     }
     return fileUrl;
   };
 
+  const getSignedUrl = async (fileUrl: string): Promise<string | null> => {
+    try {
+      const filePath = extractFilePath(fileUrl);
+      console.log('Extracting path from:', fileUrl, '→', filePath);
+      const { data, error } = await supabase.storage.from('doctor-invoices').createSignedUrl(filePath, 3600);
+      if (error) {
+        console.error('Signed URL error:', error);
+        // Fallback: try the raw file_url directly if it's already a valid URL
+        if (fileUrl.startsWith('http')) return fileUrl;
+        throw error;
+      }
+      return data?.signedUrl || null;
+    } catch (error) {
+      console.error('Error getting signed URL:', error);
+      // Last resort: if the URL is already a full URL, use it directly
+      if (fileUrl.startsWith('http')) return fileUrl;
+      return null;
+    }
+  };
+
   const handleDownload = async (invoice: Invoice) => {
     try {
-      const filePath = extractFilePath(invoice.file_url);
-      const { data, error } = await supabase.storage.from('doctor-invoices').createSignedUrl(filePath, 3600);
-      if (error) throw error;
-      if (data?.signedUrl) {
+      const url = await getSignedUrl(invoice.file_url);
+      if (url) {
         const a = document.createElement('a');
-        a.href = data.signedUrl;
+        a.href = url;
         a.download = invoice.file_name || `factura-${invoice.invoice_number}.pdf`;
         a.target = '_blank';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+      } else {
+        throw new Error('Could not generate download URL');
       }
     } catch (error) {
       console.error('Error downloading invoice:', error);
@@ -165,11 +187,11 @@ export default function AdminInvoiceReview() {
 
   const handlePreview = async (invoice: Invoice) => {
     try {
-      const filePath = extractFilePath(invoice.file_url);
-      const { data, error } = await supabase.storage.from('doctor-invoices').createSignedUrl(filePath, 3600);
-      if (error) throw error;
-      if (data?.signedUrl) {
-        setPreviewUrl(data.signedUrl);
+      const url = await getSignedUrl(invoice.file_url);
+      if (url) {
+        setPreviewUrl(url);
+      } else {
+        throw new Error('Could not generate preview URL');
       }
     } catch (error) {
       console.error('Error getting preview URL:', error);

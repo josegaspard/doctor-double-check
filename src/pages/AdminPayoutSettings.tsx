@@ -114,8 +114,8 @@ export default function AdminPayoutSettings() {
 
   const handleProcessPayouts = async () => {
     if (!confirm(language === 'es' 
-      ? '¿Procesar todos los pagos pendientes ahora?' 
-      : 'Process all pending payouts now?')) return;
+      ? '¿Procesar todos los pagos pendientes vía Stripe ahora?\n\nSolo se procesarán doctores con cuenta Stripe configurada. Los pagos por depósito/transferencia deben gestionarse manualmente desde "Gestión de Pagos a Doctores".' 
+      : 'Process all pending Stripe payouts now?\n\nOnly doctors with Stripe accounts will be processed. Manual transfers must be handled from "Doctor Payouts Management".')) return;
 
     setIsProcessing(true);
     try {
@@ -125,12 +125,17 @@ export default function AdminPayoutSettings() {
 
       if (data?.processed > 0) {
         toast.success(language === 'es' 
-          ? `${data.processed} pagos procesados` 
-          : `${data.processed} payouts processed`);
+          ? `${data.processed} pagos Stripe procesados exitosamente` 
+          : `${data.processed} Stripe payouts processed`);
+        if (data?.errors?.length > 0) {
+          toast.warning(language === 'es' 
+            ? `${data.errors.length} pago(s) no pudieron procesarse` 
+            : `${data.errors.length} payout(s) could not be processed`);
+        }
       } else {
         toast.info(language === 'es' 
-          ? 'No hay pagos pendientes para procesar' 
-          : 'No pending payouts to process');
+          ? 'No hay pagos Stripe pendientes para procesar. Los doctores sin cuenta Stripe deben pagarse manualmente.' 
+          : 'No pending Stripe payouts to process. Doctors without Stripe must be paid manually.');
       }
     } catch (error: any) {
       console.error('Error processing payouts:', error);
@@ -329,7 +334,7 @@ export default function AdminPayoutSettings() {
                 {isProcessing ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'es' ? 'Procesando...' : 'Processing...'}</>
                 ) : (
-                  <><Play className="w-4 h-4 mr-2" />{language === 'es' ? 'Procesar Pagos Ahora' : 'Process Payouts Now'}</>
+                  <><Play className="w-4 h-4 mr-2" />{language === 'es' ? 'Procesar Pagos Stripe Ahora' : 'Process Stripe Payouts Now'}</>
                 )}
               </Button>
             </div>

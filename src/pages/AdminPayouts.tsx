@@ -44,6 +44,7 @@ import {
   AlertTriangle,
   Banknote,
   History,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -329,6 +330,35 @@ export default function AdminPayouts() {
     }
   };
 
+  const handleDeleteSelected = async () => {
+    const selectedList = doctors.filter(d => selectedDoctors.has(d.user_id));
+    const names = selectedList.map(d => d.name).join(', ');
+    if (!confirm(language === 'es' 
+      ? `¿Eliminar las ganancias pendientes de ${selectedDoctors.size} doctor(es)?\n\n${names}\n\nEsto pondrá en 0 sus ganancias pendientes.` 
+      : `Delete pending earnings for ${selectedDoctors.size} doctor(s)?`)) return;
+    
+    setIsProcessing(true);
+    try {
+      let successCount = 0;
+      for (const doctor of selectedList) {
+        const { error } = await supabase
+          .from('doctor_profiles')
+          .update({ pending_earnings: 0 })
+          .eq('user_id', doctor.user_id);
+        if (!error) successCount++;
+      }
+      toast.success(language === 'es' 
+        ? `${successCount} ganancias pendientes eliminadas` 
+        : `${successCount} pending earnings cleared`);
+      setSelectedDoctors(new Set());
+      await loadData();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const filteredDoctors = doctors.filter(d => 
     d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.specialty.toLowerCase().includes(searchTerm.toLowerCase())
@@ -449,10 +479,16 @@ export default function AdminPayouts() {
                     {selectedDoctors.size > 0 ? (language === 'es' ? 'Deseleccionar todo' : 'Deselect all') : (language === 'es' ? 'Seleccionar todos' : 'Select all')}
                   </Button>
                   {selectedDoctors.size > 0 && (
-                    <Button onClick={() => openPayoutDialog(null, true)} className="gap-2">
-                      <Send className="w-4 h-4" />
-                      {language === 'es' ? `Pagar ${selectedDoctors.size} seleccionados` : `Pay ${selectedDoctors.size} selected`}
-                    </Button>
+                    <>
+                      <Button onClick={() => openPayoutDialog(null, true)} className="gap-2">
+                        <Send className="w-4 h-4" />
+                        {language === 'es' ? `Pagar ${selectedDoctors.size} seleccionados` : `Pay ${selectedDoctors.size} selected`}
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={handleDeleteSelected} className="gap-2">
+                        <Trash2 className="w-4 h-4" />
+                        {language === 'es' ? `Eliminar ${selectedDoctors.size} seleccionados` : `Delete ${selectedDoctors.size} selected`}
+                      </Button>
+                    </>
                   )}
                 </div>
 
