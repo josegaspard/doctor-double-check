@@ -54,31 +54,7 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
   const [error, setError] = useState<string | null>(null);
 
   const retryCountRef = useRef(0);
-  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const MAX_STARTUP_RETRIES = 20;
-  const RETRY_DELAY_MS = 3000;
-
-  const clearRetryTimeout = useCallback(() => {
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-      retryTimeoutRef.current = null;
-    }
-  }, []);
-
-  const scheduleRetry = useCallback((reason: string) => {
-    if (retryCountRef.current >= MAX_STARTUP_RETRIES) {
-      console.error('[Cloudflare] Playback retry limit reached:', reason);
-      setError('Error al cargar la transmisión');
-      setIsConnecting(false);
-      return;
-    }
-
-    retryCountRef.current += 1;
-    clearRetryTimeout();
-    retryTimeoutRef.current = setTimeout(() => {
-      setReloadKey((prev) => prev + 1);
-    }, RETRY_DELAY_MS);
-  }, [MAX_STARTUP_RETRIES, RETRY_DELAY_MS, clearRetryTimeout]);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const tryPlay = useCallback(async (video: HTMLVideoElement) => {
     try {
