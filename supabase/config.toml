@@ -86,3 +86,18 @@ verify_jwt = false
 
 [functions.upload-payout-receipt]
 verify_jwt = false
+
+[functions.cloudflare-whip]
+verify_jwt = false
+
+[functions.create-cloudflare-stream]
+verify_jwt = false
+
+[functions.end-cloudflare-stream]
+verify_jwt = false
+
+[functions.get-cloudflare-playback]
+verify_jwt = false
+
+[functions.cloudflare-debug]
+verify_jwt = false
