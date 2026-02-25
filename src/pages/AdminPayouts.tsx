@@ -45,6 +45,8 @@ import {
   Banknote,
   History,
   Trash2,
+  Upload,
+  Paperclip,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -105,6 +107,8 @@ export default function AdminPayouts() {
   const [manualReference, setManualReference] = useState('');
   const [manualNotes, setManualNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [stripeError, setStripeError] = useState(false);
 
   useEffect(() => {
     if (role !== 'admin') { navigate('/'); return; }
@@ -222,11 +226,10 @@ export default function AdminPayouts() {
   };
 
   const selectAll = () => {
-    const eligible = filteredDoctors.filter(d => d.pending_earnings > 0);
-    if (selectedDoctors.size === eligible.length) {
+    if (selectedDoctors.size === filteredDoctors.length) {
       setSelectedDoctors(new Set());
     } else {
-      setSelectedDoctors(new Set(eligible.map(d => d.user_id)));
+      setSelectedDoctors(new Set(filteredDoctors.map(d => d.user_id)));
     }
   };
 
@@ -235,19 +238,54 @@ export default function AdminPayouts() {
     setPayoutMethod(doctor?.stripe_account_id ? 'stripe' : 'manual');
     setManualReference('');
     setManualNotes('');
+    setReceiptFile(null);
+    setStripeError(false);
   };
 
   const handleProcessPayout = async () => {
     setIsProcessing(true);
+    setStripeError(false);
     try {
       const doctorsToProcess = payoutDialog.bulk
         ? doctors.filter(d => selectedDoctors.has(d.user_id) && d.pending_earnings > 0)
         : payoutDialog.doctor ? [payoutDialog.doctor] : [];
 
       if (doctorsToProcess.length === 0) {
-        toast.error(language === 'es' ? 'No hay doctores seleccionados' : 'No doctors selected');
+        toast.error(language === 'es' ? 'No hay doctores seleccionados con saldo' : 'No doctors selected with balance');
         setIsProcessing(false);
         return;
+      }
+
+      // Check Stripe accounts for stripe method
+      if (payoutMethod === 'stripe') {
+        const noStripe = doctorsToProcess.filter(d => !d.stripe_account_id);
+        if (noStripe.length > 0) {
+          const names = noStripe.map(d => d.name).join(', ');
+          toast.error(
+            language === 'es'
+              ? `No se pudo procesar: ${names} no tiene(n) cuenta Stripe conectada. Selecciona otro método de pago.`
+              : `Cannot process: ${names} has no Stripe account connected. Select another payment method.`
+          );
+          setStripeError(true);
+          setIsProcessing(false);
+          return;
+        }
+      }
+
+      // Upload receipt file if manual + file provided
+      let receiptPath: string | null = null;
+      if (payoutMethod === 'manual' && receiptFile) {
+        const ext = receiptFile.name.split('.').pop() || 'pdf';
+        const path = `receipts/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: uploadErr } = await supabase.storage
+          .from('doctor-invoices')
+          .upload(path, receiptFile);
+        if (uploadErr) {
+          console.error('Upload error:', uploadErr);
+          toast.error(language === 'es' ? 'Error subiendo comprobante' : 'Error uploading receipt');
+        } else {
+          receiptPath = path;
+        }
       }
 
       let successCount = 0;
@@ -255,7 +293,6 @@ export default function AdminPayouts() {
 
       for (const doctor of doctorsToProcess) {
         try {
-          // FIX #3: Double-payment protection
           if (doctor.has_processing_payout) {
             toast.warning(`${doctor.name} ya tiene un pago en proceso`);
             errorCount++;
@@ -272,7 +309,6 @@ export default function AdminPayouts() {
             if (error) throw error;
             if (!data?.success) throw new Error(data?.error || 'Error processing');
           } else {
-            // Manual payment - record in DB and use atomic function
             const now = new Date().toISOString().split('T')[0];
             const { error: insertError } = await supabase.from('doctor_payouts').insert({
               doctor_id: doctor.user_id,
@@ -285,7 +321,6 @@ export default function AdminPayouts() {
             });
             if (insertError) throw insertError;
 
-            // FIX #1: Use atomic DB function for earnings update
             const { error: rpcError } = await supabase.rpc('process_doctor_payout' as any, {
               p_doctor_id: doctor.user_id,
               p_payout_amount: netAmount,
@@ -293,7 +328,7 @@ export default function AdminPayouts() {
             });
             if (rpcError) throw rpcError;
 
-            // Notify doctor
+            // Notify doctor in-app
             await supabase.from('notifications').insert({
               user_id: doctor.user_id,
               type: 'system',
@@ -302,6 +337,32 @@ export default function AdminPayouts() {
               data: { amount: netAmount, method: 'manual', reference: manualReference },
             });
           }
+
+          // Send email notification to doctor
+          try {
+            const { data: doctorProfile } = await supabase
+              .from('profiles')
+              .select('email, name')
+              .eq('id', doctor.user_id)
+              .single();
+
+            if (doctorProfile?.email) {
+              await supabase.functions.invoke('send-payout-email', {
+                body: {
+                  doctor_email: doctorProfile.email,
+                  doctor_name: doctorProfile.name,
+                  amount: getNetAmount(doctor.pending_earnings),
+                  method,
+                  reference: manualReference || undefined,
+                  notes: manualNotes || undefined,
+                  receipt_url: receiptPath || undefined,
+                },
+              });
+            }
+          } catch (emailErr) {
+            console.error('Email notification failed:', emailErr);
+          }
+
           successCount++;
         } catch (err: any) {
           console.error(`Error paying doctor ${doctor.user_id}:`, err);
@@ -332,24 +393,33 @@ export default function AdminPayouts() {
 
   const handleDeleteSelected = async () => {
     const selectedList = doctors.filter(d => selectedDoctors.has(d.user_id));
-    const names = selectedList.map(d => d.name).join(', ');
+    const names = selectedList.map(d => `${d.name} ($${d.pending_earnings.toFixed(2)})`).join('\n');
     if (!confirm(language === 'es' 
-      ? `¿Eliminar las ganancias pendientes de ${selectedDoctors.size} doctor(es)?\n\n${names}\n\nEsto pondrá en 0 sus ganancias pendientes.` 
-      : `Delete pending earnings for ${selectedDoctors.size} doctor(s)?`)) return;
+      ? `¿Eliminar ${selectedDoctors.size} registro(s) seleccionado(s)?\n\n${names}\n\nEsto pondrá en 0 sus ganancias pendientes y eliminará pagos pendientes asociados.` 
+      : `Delete ${selectedDoctors.size} selected record(s)?`)) return;
     
     setIsProcessing(true);
     try {
       let successCount = 0;
       for (const doctor of selectedList) {
+        // Reset pending earnings to 0
         const { error } = await supabase
           .from('doctor_profiles')
           .update({ pending_earnings: 0 })
           .eq('user_id', doctor.user_id);
+        
+        // Also delete any "pending" payout records for this doctor
+        await supabase
+          .from('doctor_payouts')
+          .delete()
+          .eq('doctor_id', doctor.user_id)
+          .eq('status', 'pending');
+        
         if (!error) successCount++;
       }
       toast.success(language === 'es' 
-        ? `${successCount} ganancias pendientes eliminadas` 
-        : `${successCount} pending earnings cleared`);
+        ? `${successCount} registro(s) eliminado(s)` 
+        : `${successCount} record(s) cleared`);
       setSelectedDoctors(new Set());
       await loadData();
     } catch (error: any) {
@@ -502,12 +572,10 @@ export default function AdminPayouts() {
                     <Card key={doctor.user_id} className={`transition-colors ${selectedDoctors.has(doctor.user_id) ? 'border-primary bg-primary/5' : ''}`}>
                       <CardContent className="p-4">
                         <div className="flex items-center gap-4">
-                          {doctor.pending_earnings > 0 && (
-                            <Checkbox
-                              checked={selectedDoctors.has(doctor.user_id)}
-                              onCheckedChange={() => toggleDoctor(doctor.user_id)}
-                            />
-                          )}
+                          <Checkbox
+                            checked={selectedDoctors.has(doctor.user_id)}
+                            onCheckedChange={() => toggleDoctor(doctor.user_id)}
+                          />
                           
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                             {doctor.avatar_url ? (
@@ -693,6 +761,31 @@ export default function AdminPayouts() {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label>{language === 'es' ? 'Comprobante de pago (PDF o imagen)' : 'Payment receipt (PDF or image)'}</Label>
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-2 px-3 py-2 border border-input rounded-md cursor-pointer hover:bg-muted transition-colors text-sm flex-1">
+                        <Upload className="w-4 h-4 text-muted-foreground" />
+                        <span className="truncate">{receiptFile ? receiptFile.name : (language === 'es' ? 'Seleccionar archivo...' : 'Select file...')}</span>
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          className="hidden"
+                          onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                        />
+                      </label>
+                      {receiptFile && (
+                        <Button variant="ghost" size="sm" onClick={() => setReceiptFile(null)}>
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'es' 
+                        ? 'Este comprobante se enviará por correo al doctor como prueba de pago' 
+                        : 'This receipt will be emailed to the doctor as proof of payment'}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
                     <Label>{language === 'es' ? 'Notas (opcional)' : 'Notes (optional)'}</Label>
                     <Textarea
                       placeholder={language === 'es' ? 'Notas sobre el pago...' : 'Payment notes...'}
@@ -704,12 +797,21 @@ export default function AdminPayouts() {
                 </>
               )}
 
-              {payoutMethod === 'stripe' && !payoutDialog.bulk && payoutDialog.doctor && !payoutDialog.doctor.stripe_account_id && (
+              {stripeError && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-foreground flex items-start gap-2">
+                  <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-destructive" />
+                  {language === 'es' 
+                    ? 'El doctor no tiene cuenta Stripe conectada. Selecciona "Transferencia bancaria manual" para continuar.' 
+                    : 'Doctor has no Stripe account. Select "Manual bank transfer" to continue.'}
+                </div>
+              )}
+
+              {payoutMethod === 'stripe' && !payoutDialog.bulk && payoutDialog.doctor && !payoutDialog.doctor.stripe_account_id && !stripeError && (
                 <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg text-sm text-foreground flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-warning" />
                   {language === 'es' 
-                    ? 'Este doctor no tiene cuenta Stripe configurada. Usa transferencia manual.' 
-                    : 'This doctor has no Stripe account. Use manual transfer.'}
+                    ? 'Este doctor no tiene cuenta Stripe configurada. El pago fallará. Usa transferencia manual.' 
+                    : 'This doctor has no Stripe account. Payment will fail. Use manual transfer.'}
                 </div>
               )}
             </div>
@@ -718,7 +820,7 @@ export default function AdminPayouts() {
               <Button variant="outline" onClick={() => setPayoutDialog({ open: false, doctor: null, bulk: false })} disabled={isProcessing}>
                 {language === 'es' ? 'Cancelar' : 'Cancel'}
               </Button>
-              <Button onClick={handleProcessPayout} disabled={isProcessing || (payoutMethod === 'stripe' && !payoutDialog.bulk && !payoutDialog.doctor?.stripe_account_id)}>
+              <Button onClick={handleProcessPayout} disabled={isProcessing}>
                 {isProcessing ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'es' ? 'Procesando...' : 'Processing...'}</>
                 ) : (
