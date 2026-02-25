@@ -272,19 +272,35 @@ export default function AdminPayouts() {
         }
       }
 
-      // Upload receipt file if manual + file provided
+      // Upload receipt file via edge function (service role bypasses storage RLS)
       let receiptPath: string | null = null;
       if (payoutMethod === 'manual' && receiptFile) {
-        const ext = receiptFile.name.split('.').pop() || 'pdf';
-        const path = `receipts/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: uploadErr } = await supabase.storage
-          .from('doctor-invoices')
-          .upload(path, receiptFile);
-        if (uploadErr) {
+        try {
+          const formData = new FormData();
+          formData.append('file', receiptFile);
+          
+          const { data: session } = await supabase.auth.getSession();
+          const token = session?.session?.access_token;
+          
+          const uploadRes = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-payout-receipt`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+              body: formData,
+            }
+          );
+          
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok || uploadData.error) {
+            throw new Error(uploadData.error || 'Upload failed');
+          }
+          receiptPath = uploadData.path;
+        } catch (uploadErr: any) {
           console.error('Upload error:', uploadErr);
           toast.error(language === 'es' ? 'Error subiendo comprobante' : 'Error uploading receipt');
-        } else {
-          receiptPath = path;
         }
       }
 
@@ -398,6 +414,11 @@ export default function AdminPayouts() {
       ? `¿Eliminar ${selectedDoctors.size} registro(s) seleccionado(s)?\n\n${names}\n\nEsto pondrá en 0 sus ganancias pendientes y eliminará pagos pendientes asociados.` 
       : `Delete ${selectedDoctors.size} selected record(s)?`)) return;
     
+    // Immediately remove from UI BEFORE async operations
+    const deletedIds = new Set(selectedList.map(d => d.user_id));
+    setDoctors(prev => prev.filter(d => !deletedIds.has(d.user_id)));
+    setSelectedDoctors(new Set());
+    
     setIsProcessing(true);
     try {
       let successCount = 0;
@@ -418,17 +439,12 @@ export default function AdminPayouts() {
         if (!error) successCount++;
       }
       
-      // Immediately remove from local state
-      const deletedIds = new Set(selectedList.map(d => d.user_id));
-      setDoctors(prev => prev.filter(d => !deletedIds.has(d.user_id)));
-      setSelectedDoctors(new Set());
-      
       toast.success(language === 'es' 
         ? `${successCount} registro(s) eliminado(s)` 
         : `${successCount} record(s) cleared`);
       
-      // Background refresh
-      loadData();
+      // Do NOT call loadData() here — it would re-fetch all approved doctors
+      // and bring back the ones we just "deleted" (they still exist with pending_earnings=0)
     } catch (error: any) {
       toast.error(error.message);
     } finally {
