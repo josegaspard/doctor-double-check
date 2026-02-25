@@ -725,6 +725,7 @@ export type Database = {
           available_for_clinical_sessions: boolean
           available_for_double_check: boolean
           bio: string | null
+          can_publish_news: boolean
           cedula_profesional: string | null
           cedula_verification_id: string | null
           consultation_fee: number
@@ -752,6 +753,7 @@ export type Database = {
           available_for_clinical_sessions?: boolean
           available_for_double_check?: boolean
           bio?: string | null
+          can_publish_news?: boolean
           cedula_profesional?: string | null
           cedula_verification_id?: string | null
           consultation_fee?: number
@@ -779,6 +781,7 @@ export type Database = {
           available_for_clinical_sessions?: boolean
           available_for_double_check?: boolean
           bio?: string | null
+          can_publish_news?: boolean
           cedula_profesional?: string | null
           cedula_verification_id?: string | null
           consultation_fee?: number

@@ -30,7 +30,7 @@ interface NewsItem {
 }
 
 export default function AdminNews() {
-  const { role } = useAuth();
+  const { role, supabaseUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -39,6 +39,20 @@ export default function AdminNews() {
   const [isCreating, setIsCreating] = useState(false);
   const [editorNames, setEditorNames] = useState<Record<string, string>>({});
   const [pendingEditId, setPendingEditId] = useState<string | null>((location.state as any)?.editId || null);
+  const [canPublish, setCanPublish] = useState(role === 'admin');
+
+  useEffect(() => {
+    if (role === 'doctor' && supabaseUser?.id) {
+      supabase
+        .from('doctor_profiles')
+        .select('can_publish_news')
+        .eq('user_id', supabaseUser.id)
+        .single()
+        .then(({ data }) => {
+          setCanPublish((data as any)?.can_publish_news || false);
+        });
+    }
+  }, [role, supabaseUser?.id]);
 
   const fetchNews = async () => {
     setIsLoading(true);
@@ -76,7 +90,7 @@ export default function AdminNews() {
     }
   }, [pendingEditId, news]);
 
-  if (role !== 'admin' && role !== 'doctor') return <Navigate to="/" replace />;
+  if (role !== 'admin' && !canPublish) return <Navigate to="/" replace />;
 
   const togglePublish = async (item: NewsItem) => {
     const { error } = await supabase
