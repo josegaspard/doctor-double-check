@@ -417,11 +417,18 @@ export default function AdminPayouts() {
         
         if (!error) successCount++;
       }
+      
+      // Immediately remove from local state
+      const deletedIds = new Set(selectedList.map(d => d.user_id));
+      setDoctors(prev => prev.filter(d => !deletedIds.has(d.user_id)));
+      setSelectedDoctors(new Set());
+      
       toast.success(language === 'es' 
         ? `${successCount} registro(s) eliminado(s)` 
         : `${successCount} record(s) cleared`);
-      setSelectedDoctors(new Set());
-      await loadData();
+      
+      // Background refresh
+      loadData();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
