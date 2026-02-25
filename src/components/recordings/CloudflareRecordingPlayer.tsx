@@ -19,12 +19,14 @@ interface CloudflareRecordingPlayerProps {
   videoUrl: string;
   recordingId: string;
   onDurationUpdate?: (duration: number) => void;
+  onTimeUpdate?: (currentTime: number) => void;
 }
 
 export function CloudflareRecordingPlayer({
   videoUrl,
   recordingId,
   onDurationUpdate,
+  onTimeUpdate: onTimeUpdateProp,
 }: CloudflareRecordingPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -207,6 +209,7 @@ export function CloudflareRecordingPlayer({
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       setCurrentTime(videoRef.current.currentTime);
+      onTimeUpdateProp?.(Math.floor(videoRef.current.currentTime));
     }
   };
 

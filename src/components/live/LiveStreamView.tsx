@@ -18,6 +18,7 @@ interface LiveStreamViewProps {
     specialty: string;
     viewerCount: number;
     likesCount: number;
+    startedAt: Date;
   };
   elapsedTime: number;
   viewerCount: number;
@@ -110,7 +111,7 @@ export function LiveStreamView({
 
         {showChat && (
           <div className="lg:col-span-1">
-            <LiveChat liveId={liveData.id} isOwner={true} />
+            <LiveChat liveId={liveData.id} isOwner={true} liveStartedAt={liveData.startedAt} />
           </div>
         )}
       </div>

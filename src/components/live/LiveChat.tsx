@@ -13,31 +13,74 @@ interface LiveChatMessage {
   userName: string;
   content: string;
   createdAt: Date;
+  elapsedSeconds: number;
 }
 
 interface LiveChatProps {
   liveId: string;
   isOwner?: boolean;
+  /** When the live started – used to compute elapsed_seconds for each message */
+  liveStartedAt?: Date;
 }
 
-export function LiveChat({ liveId, isOwner = false }: LiveChatProps) {
+export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatProps) {
   const { user, role } = useAuth();
   const [messages, setMessages] = useState<LiveChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Subscribe to live chat messages via realtime
+  // Load existing persisted messages on mount
   useEffect(() => {
-    // For now, use a simple in-memory chat since we don't have a live_messages table
-    // This could be extended to use Supabase Realtime with a dedicated table
-    
+    const loadMessages = async () => {
+      const { data } = await supabase
+        .from('live_chat_messages')
+        .select('*')
+        .eq('live_id', liveId)
+        .order('elapsed_seconds', { ascending: true });
+
+      if (data && data.length > 0) {
+        setMessages(data.map(m => ({
+          id: m.id,
+          userId: m.user_id,
+          userName: m.user_name,
+          content: m.content,
+          createdAt: new Date(m.created_at),
+          elapsedSeconds: m.elapsed_seconds,
+        })));
+      }
+    };
+    loadMessages();
+  }, [liveId]);
+
+  // Subscribe to new messages via realtime (postgres_changes on the persisted table)
+  useEffect(() => {
     const channel = supabase
-      .channel(`live-chat-${liveId}`)
-      .on('broadcast', { event: 'message' }, (payload) => {
-        const msg = payload.payload as LiveChatMessage;
-        setMessages((prev) => [...prev, { ...msg, createdAt: new Date(msg.createdAt) }]);
-      })
+      .channel(`live-chat-db-${liveId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'live_chat_messages',
+          filter: `live_id=eq.${liveId}`,
+        },
+        (payload) => {
+          const m = payload.new as any;
+          setMessages((prev) => {
+            // Avoid duplicates (we also add locally on send)
+            if (prev.some(p => p.id === m.id)) return prev;
+            return [...prev, {
+              id: m.id,
+              userId: m.user_id,
+              userName: m.user_name,
+              content: m.content,
+              createdAt: new Date(m.created_at),
+              elapsedSeconds: m.elapsed_seconds,
+            }];
+          });
+        }
+      )
       .subscribe();
 
     return () => {
@@ -55,24 +98,34 @@ export function LiveChat({ liveId, isOwner = false }: LiveChatProps) {
 
     setIsSending(true);
     try {
+      const elapsed = liveStartedAt
+        ? Math.max(0, Math.floor((Date.now() - liveStartedAt.getTime()) / 1000))
+        : 0;
+
+      const msgId = crypto.randomUUID();
+
       const message: LiveChatMessage = {
-        id: crypto.randomUUID(),
+        id: msgId,
         userId: user.id,
         userName: user.name || 'Usuario',
         content: newMessage.trim(),
         createdAt: new Date(),
+        elapsedSeconds: elapsed,
       };
 
-      // Broadcast to all subscribers
-      await supabase.channel(`live-chat-${liveId}`).send({
-        type: 'broadcast',
-        event: 'message',
-        payload: message,
-      });
-
-      // Add to local state
+      // Add to local state immediately for responsiveness
       setMessages((prev) => [...prev, message]);
       setNewMessage('');
+
+      // Persist to database (realtime will deliver to other viewers)
+      await supabase.from('live_chat_messages').insert({
+        id: msgId,
+        live_id: liveId,
+        user_id: user.id,
+        user_name: user.name || 'Usuario',
+        content: newMessage.trim(),
+        elapsed_seconds: elapsed,
+      });
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {

@@ -11,6 +11,7 @@ interface RecordingVideoPlayerProps {
   videoUrl: string;
   recordingId: string;
   onDurationUpdate?: (duration: number) => void;
+  onTimeUpdate?: (currentTime: number) => void;
 }
 
 function isStorageRef(url: string) {
@@ -26,7 +27,7 @@ function getStoragePath(url: string) {
  * - Cloudflare (UID / pending:UID) via CloudflareRecordingPlayer
  * - Almacenamiento (storage:path) via signed URL + HTML5 video
  */
-export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate }: RecordingVideoPlayerProps) {
+export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, onTimeUpdate }: RecordingVideoPlayerProps) {
   const storagePath = useMemo(() => (isStorageRef(videoUrl) ? getStoragePath(videoUrl) : null), [videoUrl]);
 
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
@@ -69,7 +70,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate }
 
   if (!storagePath) {
     return (
-      <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} />
+      <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} />
     );
   }
 
@@ -108,6 +109,9 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate }
         onLoadedMetadata={(e) => {
           const d = (e.currentTarget as HTMLVideoElement).duration;
           if (onDurationUpdate && Number.isFinite(d) && d > 0) onDurationUpdate(Math.floor(d));
+        }}
+        onTimeUpdate={(e) => {
+          if (onTimeUpdate) onTimeUpdate(Math.floor((e.currentTarget as HTMLVideoElement).currentTime));
         }}
       />
     </div>

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { RecordingVideoPlayer } from '@/components/recordings/RecordingVideoPlayer';
+import { RecordingChatReplay } from '@/components/recordings/RecordingChatReplay';
 import {
   PlayCircle,
   ArrowLeft,
@@ -29,6 +30,7 @@ interface Recording {
   price: number;
   thumbnailUrl?: string;
   videoUrl?: string;
+  liveId?: string;
   createdAt: Date;
   tags: string[];
 }
@@ -42,6 +44,7 @@ export default function RecordingPlayer() {
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const [recording, setRecording] = useState<Recording | null>(null);
   const [isLoadingRecording, setIsLoadingRecording] = useState(true);
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
 
   // Fetch recording directly from database
   useEffect(() => {
@@ -82,6 +85,7 @@ export default function RecordingPlayer() {
           price: Number(data.price),
           thumbnailUrl: data.thumbnail_url || undefined,
           videoUrl: data.video_url || undefined,
+          liveId: data.live_id || undefined,
           createdAt: new Date(data.created_at),
           tags: data.tags || [],
         });
@@ -225,6 +229,7 @@ export default function RecordingPlayer() {
                   videoUrl={recording.videoUrl}
                   recordingId={recording.id}
                   onDurationUpdate={handleDurationUpdate}
+                  onTimeUpdate={setVideoCurrentTime}
                 />
               ) : (
                 <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
@@ -262,6 +267,10 @@ export default function RecordingPlayer() {
           </div>
 
           <div className="space-y-3 sm:space-y-4">
+            {/* Chat replay synced with video */}
+            {recording.liveId && (
+              <RecordingChatReplay liveId={recording.liveId} currentTime={videoCurrentTime} />
+            )}
             <Card>
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-start gap-3">
