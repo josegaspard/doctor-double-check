@@ -30,13 +30,29 @@ interface NewsItem {
 }
 
 export default function MedicalNews() {
-  const { role } = useAuth();
+  const { role, supabaseUser } = useAuth();
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const [canPublish, setCanPublish] = useState(false);
+
+  useEffect(() => {
+    if (role === 'admin') {
+      setCanPublish(true);
+    } else if (role === 'doctor' && supabaseUser?.id) {
+      supabase
+        .from('doctor_profiles')
+        .select('can_publish_news')
+        .eq('user_id', supabaseUser.id)
+        .single()
+        .then(({ data }) => {
+          setCanPublish((data as any)?.can_publish_news || false);
+        });
+    }
+  }, [role, supabaseUser?.id]);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -86,7 +102,7 @@ export default function MedicalNews() {
               {t('medicalNews.subtitle')}
             </p>
           </div>
-          {(role === 'admin' || role === 'doctor') && (
+          {canPublish && (
             <Button onClick={() => navigate('/admin/news')} className="gap-2">
               <PenSquare className="w-4 h-4" />
               <span className="hidden sm:inline">{t('medicalNews.writeArticle')}</span>
