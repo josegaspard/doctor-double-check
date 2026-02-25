@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     // Get the live record to get stream UID if not provided
     const { data: liveRecord, error: liveError } = await supabaseClient
       .from('lives')
-      .select('daily_room_name, recording_price, title, specialty, description, tags, started_at')
+      .select('daily_room_name, recording_price, title, specialty, description, tags, started_at, thumbnail_url')
       .eq('id', liveId)
       .eq('doctor_id', userId)
       .single();
@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
               price: liveRecord.recording_price || 0,
               // Store Cloudflare video UID - we'll use signed URLs for playback
               video_url: recording.uid,
-              thumbnail_url: recording.thumbnail || null,
+              thumbnail_url: liveRecord.thumbnail_url || recording.thumbnail || null,
             })
             .select()
             .single();
@@ -181,7 +181,7 @@ Deno.serve(async (req) => {
               duration: liveDurationSeconds,
               price: liveRecord.recording_price || 0,
               video_url: `pending:${actualStreamUid}`, // Marker for pending processing
-              thumbnail_url: null,
+              thumbnail_url: liveRecord.thumbnail_url || null,
             })
             .select()
             .single();

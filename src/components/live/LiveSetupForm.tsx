@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import {
   ExternalLink,
   CheckCircle2,
   XCircle,
+  ImagePlus,
 } from 'lucide-react';
 import { checkH264Support } from '@/hooks/cloudflare';
 
@@ -38,6 +39,7 @@ export interface LiveConfig {
   tags: string[];
   recordingPrice: number;
   enableRecording: boolean;
+  thumbnailFile?: File | null;
 }
 
 export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
@@ -49,6 +51,9 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const [recordingPrice, setRecordingPrice] = useState(0);
   const [enableRecording, setEnableRecording] = useState(true);
   const [showRtmpsInfo, setShowRtmpsInfo] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [codecCheck, setCodecCheck] = useState<{
     checked: boolean;
@@ -78,8 +83,24 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
     setTags(tags.filter(t => t !== tagToRemove));
   };
 
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    setThumbnailFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setThumbnailPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const removeThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSubmit = () => {
-    onStartLive({ title, description, specialty, tags, recordingPrice, enableRecording });
+    onStartLive({ title, description, specialty, tags, recordingPrice, enableRecording, thumbnailFile });
   };
 
   return (
@@ -127,7 +148,45 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             <p className="text-xs text-muted-foreground">{description.length}/500 caracteres</p>
           </div>
 
-          {/* Specialty */}
+          {/* Thumbnail */}
+          <div className="space-y-2">
+            <Label>Portada del Live (opcional)</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleThumbnailChange}
+              className="hidden"
+            />
+            {thumbnailPreview ? (
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border">
+                <img src={thumbnailPreview} alt="Portada" className="w-full h-full object-cover" />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-7 w-7 rounded-full"
+                  onClick={removeThumbnail}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-24 border-dashed gap-2"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <ImagePlus className="w-5 h-5 text-muted-foreground" />
+                <span className="text-muted-foreground">Subir imagen de portada</span>
+              </Button>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Se mostrará en el catálogo de grabaciones premium. Si no subes una, se generará automáticamente.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="specialty">Especialidad *</Label>
             <select

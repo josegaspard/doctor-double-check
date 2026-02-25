@@ -117,6 +117,20 @@ export default function DoctorGoLive() {
     setRecordingPrice(config.recordingPrice);
 
     try {
+      // Upload thumbnail if provided
+      let thumbnailUrl: string | null = null;
+      if (config.thumbnailFile) {
+        const ext = config.thumbnailFile.name.split('.').pop() || 'jpg';
+        const path = `live-thumbnails/${user.id}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('thumbnails')
+          .upload(path, config.thumbnailFile, { upsert: true });
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage.from('thumbnails').getPublicUrl(path);
+          thumbnailUrl = urlData.publicUrl;
+        }
+      }
+
       const { data: live, error: liveError } = await supabase
         .from('lives')
         .insert({
@@ -126,6 +140,7 @@ export default function DoctorGoLive() {
           specialty: config.specialty,
           tags: config.tags.length > 0 ? config.tags : null,
           recording_price: config.enableRecording ? config.recordingPrice : null,
+          thumbnail_url: thumbnailUrl,
           status: 'live',
         })
         .select()
