@@ -131,22 +131,41 @@ export default function AdminInvoiceReview() {
     }
   };
 
+  const extractStoragePath = (fileUrl: string): string => {
+    if (!fileUrl) return '';
+    const decoded = decodeURIComponent(fileUrl.trim());
+    if (decoded.startsWith('http')) {
+      const match = decoded.match(/\/(?:object\/(?:public|sign)\/)?doctor-invoices\/(.+?)(?:\?|$)/);
+      if (match?.[1]) return decodeURIComponent(match[1]);
+      const parts = decoded.split('/doctor-invoices/');
+      if (parts.length > 1) return decodeURIComponent(parts[parts.length - 1].split('?')[0]);
+    }
+    return decoded.replace(/^doctor-invoices\//, '');
+  };
+
   const getSignedUrl = async (invoice: Invoice): Promise<string | null> => {
     try {
+      // First try the edge function (uses service role, more reliable for admins)
       const { data, error } = await supabase.functions.invoke('admin-invoice-file-url', {
         body: { invoiceId: invoice.id },
       });
 
-      if (error) {
-        console.error('Invoice file URL function error:', error);
-        if (invoice.file_url?.startsWith('http')) return invoice.file_url;
-        return null;
-      }
+      if (!error && data?.signedUrl) return data.signedUrl;
 
-      return data?.signedUrl || null;
+      // Fallback: try direct signed URL with extracted path
+      console.warn('Edge function failed, trying direct signed URL');
+      const filePath = extractStoragePath(invoice.file_url);
+      if (!filePath) return null;
+
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from('doctor-invoices')
+        .createSignedUrl(filePath, 3600);
+
+      if (!signedError && signedData?.signedUrl) return signedData.signedUrl;
+
+      return null;
     } catch (error) {
       console.error('Error getting signed URL:', error);
-      if (invoice.file_url?.startsWith('http')) return invoice.file_url;
       return null;
     }
   };

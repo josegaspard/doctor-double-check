@@ -31,53 +31,58 @@ interface InvoicePreviewModalProps {
   invoice: Invoice | null;
 }
 
+/**
+ * Extracts the storage path from a file_url that may be a full URL or just a path.
+ */
+function extractStoragePath(fileUrl: string): string {
+  if (!fileUrl) return '';
+  const decoded = decodeURIComponent(fileUrl.trim());
+  
+  if (decoded.startsWith('http')) {
+    // Match patterns like /doctor-invoices/userId/file.pdf
+    const match = decoded.match(/\/(?:object\/(?:public|sign)\/)?doctor-invoices\/(.+?)(?:\?|$)/);
+    if (match?.[1]) return decodeURIComponent(match[1]);
+    
+    const parts = decoded.split('/doctor-invoices/');
+    if (parts.length > 1) {
+      return decodeURIComponent(parts[parts.length - 1].split('?')[0]);
+    }
+  }
+  
+  return decoded.replace(/^doctor-invoices\//, '');
+}
+
 export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreviewModalProps) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const getSignedUrl = async () => {
-      if (!invoice?.file_url || !isOpen) {
-        setSignedUrl(null);
-        return;
-      }
+    if (!invoice?.file_url || !isOpen) {
+      setSignedUrl(null);
+      setError(null);
+      return;
+    }
 
+    const getSignedUrl = async () => {
       setIsLoading(true);
       setError(null);
       
       try {
-        // Extract the file path - handle both old format (full URL) and new format (just path)
-        let filePath = invoice.file_url;
-        
-        // If it's a full URL, extract just the path
-        if (filePath.startsWith('http')) {
-          // Handle both /object/public/ and /object/sign/ URL formats
-          const match = filePath.match(/\/doctor-invoices\/(.+?)(?:\?|$)/);
-          if (match) {
-            filePath = match[1];
-          } else {
-            // Try extracting after the bucket name
-            const parts = filePath.split('/doctor-invoices/');
-            if (parts.length > 1) {
-              filePath = parts[parts.length - 1].split('?')[0];
-            }
-          }
-        }
+        const filePath = extractStoragePath(invoice.file_url);
+        console.log('Invoice file_url:', invoice.file_url, '→ path:', filePath);
 
-        console.log('Getting signed URL for path:', filePath);
+        if (!filePath) throw new Error('Invalid file path');
 
         const { data, error: urlError } = await supabase.storage
           .from('doctor-invoices')
-          .createSignedUrl(filePath, 60 * 60); // 1 hour
+          .createSignedUrl(filePath, 3600); // 1 hour
 
-        if (urlError) {
-          console.error('Signed URL error:', urlError);
-          throw urlError;
-        }
+        if (urlError) throw urlError;
         
-        setSignedUrl(data?.signedUrl || null);
-      } catch (err) {
+        if (!data?.signedUrl) throw new Error('No signed URL returned');
+        setSignedUrl(data.signedUrl);
+      } catch (err: any) {
         console.error('Error getting signed URL:', err);
         setError('Error al cargar el archivo. Verifica que el archivo existe.');
         setSignedUrl(null);
@@ -91,12 +96,8 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
 
   if (!invoice) return null;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -114,7 +115,22 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
     }
   };
 
-  const isPdf = invoice.file_name.toLowerCase().endsWith('.pdf');
+  const isPdf = invoice.file_name?.toLowerCase().endsWith('.pdf');
+
+  const handleOpenNewTab = () => {
+    if (signedUrl) window.open(signedUrl, '_blank');
+  };
+
+  const handleDownload = () => {
+    if (!signedUrl) return;
+    const a = document.createElement('a');
+    a.href = signedUrl;
+    a.download = invoice.file_name;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -197,7 +213,7 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
           {/* Actions */}
           <div className="flex gap-2 pt-2">
             <Button 
-              onClick={() => signedUrl && window.open(signedUrl, '_blank')}
+              onClick={handleOpenNewTab}
               disabled={!signedUrl}
               className="flex-1 gap-2"
             >
@@ -207,13 +223,7 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
             <Button 
               variant="outline"
               disabled={!signedUrl}
-              onClick={() => {
-                if (!signedUrl) return;
-                const a = document.createElement('a');
-                a.href = signedUrl;
-                a.download = invoice.file_name;
-                a.click();
-              }}
+              onClick={handleDownload}
               className="gap-2"
             >
               <Download className="w-4 h-4" />
