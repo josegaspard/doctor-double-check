@@ -10,7 +10,7 @@ export const es = {
     vault: 'Mi Vault',
     doctorVault: 'Vault Pacientes',
     doctorVaultShort: 'Pacientes',
-    dashboard: 'Mi Panel',
+    dashboard: 'Panel',
     availability: 'Disponibilidad',
     news: 'Noticias',
     upload: 'Subir Contenido',

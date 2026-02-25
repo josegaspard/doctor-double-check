@@ -192,15 +192,11 @@ export function GlobalSearch() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
-          size="sm"
-          className="w-full sm:w-[200px] justify-start text-muted-foreground"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground"
         >
-          <Search className="w-4 h-4 mr-2" />
-          <span>{t('common.search')}...</span>
-          <kbd className="pointer-events-none ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-            <span className="text-xs">⌘</span>K
-          </kbd>
+          <Search className="w-4 h-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[400px] p-0" align="start">
