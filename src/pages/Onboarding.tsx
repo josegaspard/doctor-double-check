@@ -572,6 +572,28 @@ export default function Onboarding() {
       // Refresh user data
       await refreshUser();
 
+      // Send welcome email
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email, name')
+          .eq('id', supabaseUser.id)
+          .single();
+
+        if (profileData) {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              email: profileData.email,
+              name: profileData.name,
+              role: selectedRole,
+            },
+          });
+        }
+      } catch (emailErr) {
+        console.error('Welcome email error:', emailErr);
+        // Don't block onboarding for email failure
+      }
+
       // Trigger celebration confetti
       triggerConfetti();
 
