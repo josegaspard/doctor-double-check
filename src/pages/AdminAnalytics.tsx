@@ -50,6 +50,11 @@ interface AnalyticsData {
   totalUsers: number;
   totalDoctors: number;
   totalLives: number;
+  purchasesRevenue: number;
+  subscriptionsRevenue: number;
+  walletTopupsRevenue: number;
+  totalRecordings: number;
+  totalPurchases: number;
   revenueByMonth: { month: string; revenue: number; transactions: number }[];
   usersByRole: { role: string; count: number }[];
   topDoctors: { name: string; consultations: number; rating: number; revenue: number }[];
@@ -87,14 +92,27 @@ export default function AdminAnalytics() {
       setIsLoading(true);
       try {
         // Fetch all wallet transactions for revenue calculations
-        const { data: transactions } = await supabase
-          .from('wallet_transactions')
-          .select('amount, type, created_at, status')
-          .eq('status', 'paid');
+        const [
+          { data: transactions },
+          { data: purchases },
+          { data: subscriptions },
+          { count: totalRecordings },
+        ] = await Promise.all([
+          supabase.from('wallet_transactions').select('amount, type, created_at, status').eq('status', 'paid'),
+          supabase.from('purchases').select('amount, created_at'),
+          supabase.from('subscriptions').select('price_paid, created_at').eq('is_active', true),
+          supabase.from('recordings').select('*', { count: 'exact', head: true }),
+        ]);
 
-        const totalRevenue = transactions?.reduce((sum, t) => {
+        const walletTopupsRevenue = transactions?.reduce((sum, t) => {
           return t.type === 'topup' ? sum + Number(t.amount) : sum;
         }, 0) || 0;
+
+        const purchasesRevenue = purchases?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+        const subscriptionsRevenue = subscriptions?.reduce((sum, s) => sum + Number(s.price_paid), 0) || 0;
+        const totalPurchases = purchases?.length || 0;
+
+        const totalRevenue = walletTopupsRevenue;
 
         // Fetch users count
         const { count: totalUsers } = await supabase
@@ -211,6 +229,11 @@ export default function AdminAnalytics() {
           totalUsers: totalUsers || 0,
           totalDoctors: totalDoctors || 0,
           totalLives: totalLives || 0,
+          purchasesRevenue,
+          subscriptionsRevenue,
+          walletTopupsRevenue,
+          totalRecordings: totalRecordings || 0,
+          totalPurchases,
           revenueByMonth,
           usersByRole,
           topDoctors,
@@ -326,6 +349,53 @@ export default function AdminAnalytics() {
                       </p>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Revenue Breakdown */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <Card className="border-l-4 border-l-premium">
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {language === 'es' ? 'Compras de Videos' : 'Video Purchases'}
+                  </p>
+                  <p className="text-xl font-bold text-foreground">
+                    ${analytics.purchasesRevenue.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {analytics.totalPurchases} {language === 'es' ? 'compras' : 'purchases'}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-l-4 border-l-info">
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {language === 'es' ? 'Suscripciones Activas' : 'Active Subscriptions'}
+                  </p>
+                  <p className="text-xl font-bold text-foreground">
+                    ${analytics.subscriptionsRevenue.toLocaleString()}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-l-4 border-l-success">
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {language === 'es' ? 'Recargas Wallet' : 'Wallet Top-ups'}
+                  </p>
+                  <p className="text-xl font-bold text-foreground">
+                    ${analytics.walletTopupsRevenue.toLocaleString()}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-l-4 border-l-primary">
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {language === 'es' ? 'Grabaciones' : 'Recordings'}
+                  </p>
+                  <p className="text-xl font-bold text-foreground">
+                    {analytics.totalRecordings}
+                  </p>
                 </CardContent>
               </Card>
             </div>
