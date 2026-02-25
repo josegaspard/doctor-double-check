@@ -87,7 +87,7 @@ export default function DoctorDashboard() {
 
             <DoctorQuickActions isApproved={isApproved} userId={user?.id} />
 
-            <div className="grid gap-3 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:gap-6 sm:grid-cols-2 lg:grid-cols-2">
               <EarningsCard />
               <EmailStatsCard />
               <EmailTrendsChart />
