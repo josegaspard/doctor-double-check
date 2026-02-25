@@ -124,9 +124,21 @@ export default function AdminInvoiceReview() {
     }
   };
 
+  const extractFilePath = (fileUrl: string) => {
+    if (fileUrl.startsWith('http')) {
+      const match = fileUrl.match(/\/doctor-invoices\/(.+?)(?:\?|$)/);
+      if (match) return match[1];
+      const parts = fileUrl.split('/doctor-invoices/');
+      if (parts.length > 1) return parts[parts.length - 1].split('?')[0];
+    }
+    return fileUrl;
+  };
+
   const handleDownload = async (invoice: Invoice) => {
     try {
-      const { data } = await supabase.storage.from('doctor-invoices').createSignedUrl(invoice.file_url, 3600);
+      const filePath = extractFilePath(invoice.file_url);
+      const { data, error } = await supabase.storage.from('doctor-invoices').createSignedUrl(filePath, 3600);
+      if (error) throw error;
       if (data?.signedUrl) {
         const a = document.createElement('a');
         a.href = data.signedUrl;
@@ -153,7 +165,9 @@ export default function AdminInvoiceReview() {
 
   const handlePreview = async (invoice: Invoice) => {
     try {
-      const { data } = await supabase.storage.from('doctor-invoices').createSignedUrl(invoice.file_url, 3600);
+      const filePath = extractFilePath(invoice.file_url);
+      const { data, error } = await supabase.storage.from('doctor-invoices').createSignedUrl(filePath, 3600);
+      if (error) throw error;
       if (data?.signedUrl) {
         setPreviewUrl(data.signedUrl);
       }
