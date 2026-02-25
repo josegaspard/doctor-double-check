@@ -65,9 +65,9 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'] },
   { labelKey: 'nav.vault', href: '/vault', icon: Folder, roles: ['patient'] },
   { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
-  { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
   { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'] },
   { labelKey: 'nav.upload', href: '/doctor/upload', icon: Upload, roles: ['doctor'] },
+  { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];
 
@@ -173,20 +173,29 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   )}
                   
                   <nav className="flex flex-col gap-1">
-                    {filteredNavItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                          location.pathname === item.href
-                            ? 'bg-accent text-accent-foreground'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
-                      >
-                        <item.icon className="w-5 h-5" />
-                        {t(item.labelKey)}
-                      </Link>
-                    ))}
+                    {filteredNavItems.map((item) => {
+                      const isActive = location.pathname === item.href;
+                      const isPanelItem = item.href === '/doctor/dashboard';
+
+                      return (
+                        <Link
+                          key={item.href}
+                          to={item.href}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                            isActive
+                              ? isPanelItem
+                                ? 'bg-primary/20 text-primary'
+                                : 'bg-accent text-accent-foreground'
+                              : isPanelItem
+                                ? 'bg-primary/10 text-primary hover:bg-primary/15'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          }`}
+                        >
+                          <item.icon className="w-5 h-5" />
+                          {t(item.labelKey)}
+                        </Link>
+                      );
+                    })}
                     
                     {/* Mobile-only menu items */}
                     {isAuthenticated && (
@@ -251,6 +260,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               <div className="flex items-center gap-0.5 lg:gap-1">
                 {filteredNavItems.map((item) => {
                   const isActive = location.pathname === item.href;
+                  const isPanelItem = item.href === '/doctor/dashboard';
                   return (
                     <Link
                       key={item.href}
@@ -258,13 +268,15 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       className={`relative flex items-center gap-0.5 lg:gap-1 px-1.5 lg:px-2 xl:px-2.5 py-1.5 rounded-md text-[11px] lg:text-xs xl:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                         isActive
                           ? 'text-primary'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          : isPanelItem
+                            ? 'bg-primary/10 text-primary hover:bg-primary/15'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                       }`}
                     >
                       {isActive && (
                         <motion.span
                           layoutId="nav-pill"
-                          className="absolute inset-0 bg-primary/10 rounded-md"
+                          className={isPanelItem ? 'absolute inset-0 bg-primary/20 rounded-md' : 'absolute inset-0 bg-primary/10 rounded-md'}
                           transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                         />
                       )}

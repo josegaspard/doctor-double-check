@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Hls from 'hls.js';
@@ -53,10 +53,16 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
   const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  const effectivePlaybackUrl = useMemo(() => {
+    if (!playbackUrl) return undefined;
+    const separator = playbackUrl.includes('?') ? '&' : '?';
+    return `${playbackUrl}${separator}cb=${reloadKey}`;
+  }, [playbackUrl, reloadKey]);
+
   const retryCountRef = useRef(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const MAX_RETRIES = 5;
-  const RETRY_DELAY_MS = 3000;
+  const MAX_RETRIES = 12;
+  const RETRY_DELAY_MS = 2500;
 
   const clearRetryTimeout = useCallback(() => {
     if (retryTimeoutRef.current) {
@@ -66,18 +72,21 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
   }, []);
 
   const scheduleRetry = useCallback((reason: string) => {
+    if (retryTimeoutRef.current) return;
+
     if (retryCountRef.current >= MAX_RETRIES) {
       console.error('[Cloudflare] Retry limit reached:', reason);
-      setError('Error al cargar la transmisión');
+      setError('Error al cargar la transmisión. Verifica tu conexión e intenta de nuevo.');
       setIsConnecting(false);
       return;
     }
+
     retryCountRef.current += 1;
-    clearRetryTimeout();
     retryTimeoutRef.current = setTimeout(() => {
+      retryTimeoutRef.current = null;
       setReloadKey((prev) => prev + 1);
     }, RETRY_DELAY_MS);
-  }, [clearRetryTimeout]);
+  }, []);
 
   const tryPlay = useCallback(async (video: HTMLVideoElement) => {
     try {
@@ -106,10 +115,11 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
 
   // For viewers: play HLS stream
   useEffect(() => {
-    if (isOwner || !playbackUrl || !videoRef.current) return;
+    if (isOwner || !effectivePlaybackUrl || !videoRef.current) return;
 
     const video = videoRef.current;
     setIsConnecting(true);
+    setError(null);
     setNeedsUserPlay(false);
 
     if (hlsRef.current) {
@@ -126,7 +136,7 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
       });
 
       hlsRef.current = hls;
-      hls.loadSource(playbackUrl);
+      hls.loadSource(effectivePlaybackUrl);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -156,7 +166,7 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = playbackUrl;
+      video.src = effectivePlaybackUrl;
 
       const onCanPlay = () => {
         setError(null);
@@ -187,7 +197,7 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
         hlsRef.current = null;
       }
     };
-  }, [isOwner, playbackUrl, reloadKey, scheduleRetry, tryPlay, clearRetryTimeout]);
+  }, [isOwner, effectivePlaybackUrl, scheduleRetry, tryPlay, clearRetryTimeout]);
 
   const handleToggleMute = useCallback(() => {
     const newMuted = !isMuted;
