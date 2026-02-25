@@ -57,22 +57,27 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Authenticate user
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("User not authenticated");
-
-    const userId = userData.user.id;
-    logStep("User authenticated", { userId });
-
-    // Parse request body
+    // Parse request body first so we can allow public live playback
     const { videoUid, liveInputUid, type = "recording", recordingId } = await req.json();
-    
+
     if (!videoUid && !liveInputUid) {
       throw new Error("videoUid or liveInputUid is required");
+    }
+
+    const isLiveRequest = type === "live" && !!liveInputUid;
+
+    // Keep auth required for recordings, but allow live playback for any viewer
+    if (!isLiveRequest) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) throw new Error("No authorization header");
+
+      const token = authHeader.replace("Bearer ", "");
+      const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+      if (userError || !userData.user) throw new Error("User not authenticated");
+
+      logStep("User authenticated", { userId: userData.user.id });
+    } else {
+      logStep("Public live playback request", { liveInputUid });
     }
 
     // Use the constant subdomain
