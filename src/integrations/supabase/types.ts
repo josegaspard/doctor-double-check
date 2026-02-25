@@ -367,42 +367,54 @@ export type Database = {
       doctor_bank_accounts: {
         Row: {
           account_holder_name: string | null
+          bank_branch: string | null
           bank_name: string | null
+          clabe: string | null
           clabe_last4: string | null
           created_at: string
           doctor_id: string
           id: string
           is_verified: boolean | null
           onboarding_completed: boolean | null
+          payment_method: string | null
           payouts_enabled: boolean | null
+          rfc: string | null
           stripe_account_id: string | null
           stripe_account_status: string | null
           updated_at: string
         }
         Insert: {
           account_holder_name?: string | null
+          bank_branch?: string | null
           bank_name?: string | null
+          clabe?: string | null
           clabe_last4?: string | null
           created_at?: string
           doctor_id: string
           id?: string
           is_verified?: boolean | null
           onboarding_completed?: boolean | null
+          payment_method?: string | null
           payouts_enabled?: boolean | null
+          rfc?: string | null
           stripe_account_id?: string | null
           stripe_account_status?: string | null
           updated_at?: string
         }
         Update: {
           account_holder_name?: string | null
+          bank_branch?: string | null
           bank_name?: string | null
+          clabe?: string | null
           clabe_last4?: string | null
           created_at?: string
           doctor_id?: string
           id?: string
           is_verified?: boolean | null
           onboarding_completed?: boolean | null
+          payment_method?: string | null
           payouts_enabled?: boolean | null
+          rfc?: string | null
           stripe_account_id?: string | null
           stripe_account_status?: string | null
           updated_at?: string

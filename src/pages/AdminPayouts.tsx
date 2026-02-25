@@ -62,10 +62,13 @@ interface DoctorPayoutInfo {
   payouts_enabled: boolean;
   stripe_account_id: string | null;
   has_approved_invoice: boolean;
-  // FIX #6: Bank details for admin visibility
   bank_name: string | null;
   clabe_last4: string | null;
+  clabe: string | null;
   account_holder_name: string | null;
+  rfc: string | null;
+  bank_branch: string | null;
+  payment_method: string | null;
   has_processing_payout: boolean;
 }
 
@@ -153,9 +156,9 @@ export default function AdminPayouts() {
         // FIX #6: Fetch bank details for admin visibility
         const { data: bankAccounts } = await supabase
           .from('doctor_bank_accounts')
-          .select('doctor_id, bank_name, clabe_last4, account_holder_name')
+          .select('*')
           .in('doctor_id', doctorIds);
-        const bankMap = new Map(bankAccounts?.map(b => [b.doctor_id, b]) || []);
+        const bankMap = new Map(bankAccounts?.map(b => [b.doctor_id, b as any]) || []);
 
         // FIX #3: Fetch existing processing payouts
         const { data: processingPayouts } = await supabase
@@ -179,7 +182,11 @@ export default function AdminPayouts() {
             has_approved_invoice: invoiceSet.has(dp.user_id),
             bank_name: bank?.bank_name || null,
             clabe_last4: bank?.clabe_last4 || null,
+            clabe: bank?.clabe || null,
             account_holder_name: bank?.account_holder_name || null,
+            rfc: bank?.rfc || null,
+            bank_branch: bank?.bank_branch || null,
+            payment_method: bank?.payment_method || null,
             has_processing_payout: processingSet.has(dp.user_id),
           };
         });
@@ -615,8 +622,12 @@ export default function AdminPayouts() {
                               <Badge variant="outline" className="text-xs">{doctor.specialty}</Badge>
                               {doctor.stripe_account_id ? (
                                 <Badge variant="verified" className="text-xs gap-1"><CreditCard className="w-3 h-3" />Stripe</Badge>
-                              ) : (
-                                <Badge variant="secondary" className="text-xs gap-1"><Building className="w-3 h-3" />Manual</Badge>
+                              ) : null}
+                              {(doctor.clabe || doctor.bank_name) ? (
+                                <Badge variant="secondary" className="text-xs gap-1"><Building className="w-3 h-3" />{doctor.bank_name || 'Banco'}</Badge>
+                              ) : null}
+                              {!doctor.stripe_account_id && !doctor.clabe && (
+                                <Badge variant="warning" className="text-xs gap-1"><AlertTriangle className="w-3 h-3" />Sin método</Badge>
                               )}
                               {doctor.has_processing_payout && (
                                 <Badge variant="warning" className="text-xs gap-1"><Clock className="w-3 h-3" />En proceso</Badge>
@@ -625,12 +636,13 @@ export default function AdminPayouts() {
                                 <Badge variant="warning" className="text-xs gap-1"><AlertTriangle className="w-3 h-3" />Sin factura</Badge>
                               )}
                             </div>
-                            {/* FIX #6: Show bank details for manual transfers */}
+                            {/* Bank details for manual transfers */}
                             {(doctor.bank_name || doctor.clabe_last4) && (
                               <p className="text-xs text-muted-foreground mt-1">
                                 {doctor.account_holder_name && <span>{doctor.account_holder_name} · </span>}
                                 {doctor.bank_name && <span>{doctor.bank_name} </span>}
-                                {doctor.clabe_last4 && <span>****{doctor.clabe_last4}</span>}
+                                {doctor.clabe_last4 && <span>CLABE: ****{doctor.clabe_last4}</span>}
+                                {doctor.rfc && <span> · RFC: {doctor.rfc}</span>}
                               </p>
                             )}
                           </div>
@@ -776,6 +788,40 @@ export default function AdminPayouts() {
 
               {payoutMethod === 'manual' && (
                 <>
+                  {/* Show full bank details for the doctor */}
+                  {!payoutDialog.bulk && payoutDialog.doctor && (payoutDialog.doctor.clabe || payoutDialog.doctor.bank_name) && (
+                    <div className="p-4 bg-info/10 border border-info/20 rounded-lg space-y-2">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Building className="w-4 h-4" />
+                        {language === 'es' ? 'Datos bancarios del doctor' : 'Doctor bank details'}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {payoutDialog.doctor.account_holder_name && (
+                          <div><span className="text-muted-foreground">{language === 'es' ? 'Titular:' : 'Holder:'}</span> <span className="font-medium">{payoutDialog.doctor.account_holder_name}</span></div>
+                        )}
+                        {payoutDialog.doctor.bank_name && (
+                          <div><span className="text-muted-foreground">{language === 'es' ? 'Banco:' : 'Bank:'}</span> <span className="font-medium">{payoutDialog.doctor.bank_name}</span></div>
+                        )}
+                        {payoutDialog.doctor.clabe && (
+                          <div className="col-span-2"><span className="text-muted-foreground">CLABE:</span> <span className="font-mono font-medium">{payoutDialog.doctor.clabe}</span></div>
+                        )}
+                        {payoutDialog.doctor.rfc && (
+                          <div><span className="text-muted-foreground">RFC:</span> <span className="font-medium">{payoutDialog.doctor.rfc}</span></div>
+                        )}
+                        {payoutDialog.doctor.bank_branch && (
+                          <div><span className="text-muted-foreground">{language === 'es' ? 'Sucursal:' : 'Branch:'}</span> <span className="font-medium">{payoutDialog.doctor.bank_branch}</span></div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {!payoutDialog.bulk && payoutDialog.doctor && !payoutDialog.doctor.clabe && !payoutDialog.doctor.bank_name && (
+                    <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg text-sm flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-warning" />
+                      {language === 'es'
+                        ? 'Este doctor no tiene datos bancarios configurados. Solicita que los ingrese desde su panel.'
+                        : 'This doctor has no bank details configured. Ask them to enter it from their dashboard.'}
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label>{language === 'es' ? 'Referencia de transferencia' : 'Transfer reference'}</Label>
                     <Input
