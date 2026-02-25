@@ -128,11 +128,12 @@ export default function AdminPayouts() {
         });
       }
 
-      // Fetch all doctors with earnings info
+      // Fetch only doctors with actual pending earnings (> 0)
       const { data: doctorProfiles } = await supabase
         .from('doctor_profiles')
         .select('user_id, specialty, pending_earnings, total_earnings, payouts_enabled, stripe_account_id')
-        .eq('status', 'approved');
+        .eq('status', 'approved')
+        .gt('pending_earnings', 0);
 
       if (doctorProfiles) {
         const doctorIds = doctorProfiles.map(d => d.user_id);
