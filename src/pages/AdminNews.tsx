@@ -102,27 +102,68 @@ export default function AdminNews() {
   const fetchDoctors = async () => {
     setDoctorsLoading(true);
     try {
+      // Only fetch doctors who already have publish permission (fast initial load)
       const { data: doctorProfiles } = await supabase
         .from('doctor_profiles')
         .select('id, user_id, specialty, can_publish_news, status')
         .eq('status', 'approved')
+        .eq('can_publish_news', true)
         .order('created_at', { ascending: false });
 
       if (doctorProfiles) {
-        const withProfiles = await Promise.all(
-          doctorProfiles.map(async (doc) => {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('name, email, avatar_url')
-              .eq('id', doc.user_id)
-              .single();
-            return { ...doc, profile } as DoctorPermission;
-          })
-        );
-        setDoctors(withProfiles);
+        const userIds = doctorProfiles.map(d => d.user_id);
+        const { data: profiles } = userIds.length > 0
+          ? await supabase.from('profiles').select('id, name, email, avatar_url').in('id', userIds)
+          : { data: [] as any[] };
+        const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+
+        setDoctors(doctorProfiles.map(doc => ({
+          ...doc,
+          profile: profileMap.get(doc.user_id) as any,
+        })));
       }
     } catch (error) {
       console.error('Error fetching doctors:', error);
+    } finally {
+      setDoctorsLoading(false);
+    }
+  };
+
+  const searchDoctors = async (term: string) => {
+    if (term.length < 2) return;
+    setDoctorsLoading(true);
+    try {
+      // Search profiles first, then match to doctor_profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name, email, avatar_url')
+        .or(`name.ilike.%${term}%,email.ilike.%${term}%`)
+        .limit(20);
+
+      if (profiles && profiles.length > 0) {
+        const userIds = profiles.map(p => p.id);
+        const { data: doctorProfiles } = await supabase
+          .from('doctor_profiles')
+          .select('id, user_id, specialty, can_publish_news, status')
+          .eq('status', 'approved')
+          .in('user_id', userIds);
+
+        if (doctorProfiles) {
+          const profileMap = new Map(profiles.map(p => [p.id, p]));
+          const searchResults = doctorProfiles.map(doc => ({
+            ...doc,
+            profile: profileMap.get(doc.user_id) as any,
+          }));
+
+          // Merge with existing (keep those with permission that aren't in search)
+          setDoctors(prev => {
+            const existing = prev.filter(d => d.can_publish_news && !searchResults.find(s => s.id === d.id));
+            return [...existing, ...searchResults];
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error searching doctors:', error);
     } finally {
       setDoctorsLoading(false);
     }
@@ -193,11 +234,12 @@ export default function AdminNews() {
     }
   };
 
-  const filteredDoctors = doctors.filter(d =>
-    d.profile?.name?.toLowerCase().includes(doctorSearch.toLowerCase()) ||
-    d.profile?.email?.toLowerCase().includes(doctorSearch.toLowerCase()) ||
-    d.specialty?.toLowerCase().includes(doctorSearch.toLowerCase())
-  );
+  const filteredDoctors = doctorSearch.length >= 2 
+    ? doctors 
+    : doctors.filter(d => d.can_publish_news || 
+        d.profile?.name?.toLowerCase().includes(doctorSearch.toLowerCase()) ||
+        d.profile?.email?.toLowerCase().includes(doctorSearch.toLowerCase())
+      );
 
   if (isCreating || editingItem) {
     return (
@@ -347,12 +389,22 @@ export default function AdminNews() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Buscar por nombre, email o especialidad..."
+                      placeholder="Buscar por nombre o email para agregar doctores..."
                       value={doctorSearch}
-                      onChange={(e) => setDoctorSearch(e.target.value)}
+                      onChange={(e) => {
+                        setDoctorSearch(e.target.value);
+                        if (e.target.value.length >= 2) {
+                          searchDoctors(e.target.value);
+                        } else if (e.target.value.length === 0) {
+                          fetchDoctors(); // Reset to only show those with permission
+                        }
+                      }}
                       className="pl-10"
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Se muestran doctores con permiso. Busca por nombre o email para agregar más.
+                  </p>
 
                   {doctorsLoading ? (
                     <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
