@@ -785,10 +785,10 @@ export default function AdminPayouts() {
                   </div>
                   <div className="space-y-2">
                     <Label>{language === 'es' ? 'Comprobante de pago (PDF o imagen)' : 'Payment receipt (PDF or image)'}</Label>
-                    <div className="flex items-center gap-2">
-                      <label className="flex items-center gap-2 px-3 py-2 border border-input rounded-md cursor-pointer hover:bg-muted transition-colors text-sm flex-1">
-                        <Upload className="w-4 h-4 text-muted-foreground" />
-                        <span className="truncate">{receiptFile ? receiptFile.name : (language === 'es' ? 'Seleccionar archivo...' : 'Select file...')}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <label className="flex items-center gap-2 px-3 py-2 border border-input rounded-md cursor-pointer hover:bg-muted transition-colors text-sm flex-1 min-w-0 overflow-hidden">
+                        <Upload className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate block">{receiptFile ? receiptFile.name : (language === 'es' ? 'Seleccionar archivo...' : 'Select file...')}</span>
                         <input
                           type="file"
                           accept=".pdf,.png,.jpg,.jpeg"
