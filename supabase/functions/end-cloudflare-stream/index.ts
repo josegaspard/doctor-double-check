@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     // Get the live record to get stream UID if not provided
     const { data: liveRecord, error: liveError } = await supabaseClient
       .from('lives')
-      .select('daily_room_name, recording_price, title, specialty, description, tags')
+      .select('daily_room_name, recording_price, title, specialty, description, tags, started_at')
       .eq('id', liveId)
       .eq('doctor_id', userId)
       .single();
@@ -163,6 +163,11 @@ Deno.serve(async (req) => {
         } else {
           logStep("No recording found yet - it may still be processing");
           
+          // Calculate duration from live start time
+          const liveDurationSeconds = liveRecord.started_at
+            ? Math.floor((Date.now() - new Date(liveRecord.started_at).getTime()) / 1000)
+            : 0;
+
           // Create a placeholder recording that will be updated via webhook
           const { data: newRecording, error: recError } = await supabaseClient
             .from('recordings')
@@ -173,7 +178,7 @@ Deno.serve(async (req) => {
               description: liveRecord.description,
               specialty: liveRecord.specialty,
               tags: liveRecord.tags,
-              duration: 0, // Will be updated via webhook
+              duration: liveDurationSeconds,
               price: liveRecord.recording_price || 0,
               video_url: `pending:${actualStreamUid}`, // Marker for pending processing
               thumbnail_url: null,
@@ -183,7 +188,7 @@ Deno.serve(async (req) => {
 
           if (!recError && newRecording) {
             recordingId = newRecording.id;
-            logStep("Placeholder recording created", { recordingId });
+            logStep("Placeholder recording created", { recordingId, duration: liveDurationSeconds });
           }
         }
       }

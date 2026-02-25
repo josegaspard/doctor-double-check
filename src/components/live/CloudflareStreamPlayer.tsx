@@ -55,8 +55,8 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
 
   const retryCountRef = useRef(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const MAX_STARTUP_RETRIES = 12;
-  const RETRY_DELAY_MS = 2500;
+  const MAX_STARTUP_RETRIES = 20;
+  const RETRY_DELAY_MS = 3000;
 
   const clearRetryTimeout = useCallback(() => {
     if (retryTimeoutRef.current) {
