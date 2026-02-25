@@ -71,37 +71,26 @@ export function useAuthState() {
         setUser(profile);
         setIsLoading(false);
 
-        // Handle OAuth redirect - if user just signed in with OAuth
-        if (event === 'SIGNED_IN') {
-          const provider = session.user.app_metadata?.provider;
-          const isOAuthProvider = provider && provider !== 'email';
+        // Redirect signed users away from login/root regardless of provider metadata.
+        // Some linked accounts can report provider=email even when login happened with Google.
+        const currentPath = window.location.pathname;
+        const shouldRedirect = currentPath === '/' || currentPath === '/login';
+        const shouldHandleRedirectEvent = event === 'SIGNED_IN' || event === 'INITIAL_SESSION';
 
-          console.log(
-            '[Auth] OAuth check - Provider:',
-            provider,
-            'IsOAuth:',
-            isOAuthProvider,
-            'OnboardingCompleted:',
-            profile?.onboardingCompleted
-          );
+        if (shouldHandleRedirectEvent && shouldRedirect) {
+          console.log('[Auth] Post-login redirect check - Event:', event, 'Role:', profile?.role, 'OnboardingCompleted:', profile?.onboardingCompleted);
 
-          // Only redirect if we're on the root page or login (just came back from OAuth)
-          const currentPath = window.location.pathname;
-          const shouldRedirect = currentPath === '/' || currentPath === '/login';
-
-          if (isOAuthProvider && shouldRedirect) {
-            if (!profile?.onboardingCompleted) {
-              console.log('[Auth] Redirecting to onboarding');
-              window.location.replace('/onboarding');
+          if (!profile?.onboardingCompleted) {
+            console.log('[Auth] Redirecting to onboarding');
+            window.location.replace('/onboarding');
+          } else {
+            console.log('[Auth] Redirecting based on role:', profile?.role);
+            if (profile?.role === 'doctor') {
+              window.location.replace('/doctor/dashboard');
+            } else if (profile?.role === 'admin') {
+              window.location.replace('/admin');
             } else {
-              console.log('[Auth] Redirecting based on role:', profile?.role);
-              if (profile?.role === 'doctor') {
-                window.location.replace('/doctor/dashboard');
-              } else if (profile?.role === 'admin') {
-                window.location.replace('/admin');
-              } else {
-                window.location.replace('/lives');
-              }
+              window.location.replace('/lives');
             }
           }
         }
