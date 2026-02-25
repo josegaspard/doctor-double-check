@@ -191,9 +191,18 @@ export default function RecordingsGrid() {
                 >
                   {/* Thumbnail */}
                   <div className="relative aspect-video bg-gradient-to-br from-premium/10 to-primary/10">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <PlayCircle className="w-12 h-12 text-premium/40" />
-                    </div>
+                    {recording.thumbnailUrl ? (
+                      <img
+                        src={recording.thumbnailUrl}
+                        alt={recording.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <PlayCircle className="w-12 h-12 text-premium/40" />
+                      </div>
+                    )}
                     
                     {/* Status Badge */}
                     <div className="absolute top-2 left-2">

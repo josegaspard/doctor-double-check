@@ -111,6 +111,8 @@ export function CloudflareRecordingPlayer({
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
+        liveDurationInfinity: false,
+        backBufferLength: Infinity,
       });
       
       hlsRef.current = hls;
