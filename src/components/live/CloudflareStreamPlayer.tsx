@@ -54,7 +54,30 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
   const [error, setError] = useState<string | null>(null);
 
   const retryCountRef = useRef(0);
-  const [reloadKey, setReloadKey] = useState(0);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const MAX_RETRIES = 5;
+  const RETRY_DELAY_MS = 3000;
+
+  const clearRetryTimeout = useCallback(() => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleRetry = useCallback((reason: string) => {
+    if (retryCountRef.current >= MAX_RETRIES) {
+      console.error('[Cloudflare] Retry limit reached:', reason);
+      setError('Error al cargar la transmisión');
+      setIsConnecting(false);
+      return;
+    }
+    retryCountRef.current += 1;
+    clearRetryTimeout();
+    retryTimeoutRef.current = setTimeout(() => {
+      setReloadKey((prev) => prev + 1);
+    }, RETRY_DELAY_MS);
+  }, [clearRetryTimeout]);
 
   const tryPlay = useCallback(async (video: HTMLVideoElement) => {
     try {
@@ -81,7 +104,7 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
     setIsConnected(true);
   }, [isOwner, localStream]);
 
-  // For viewers: play HLS stream (retry while stream warms up)
+  // For viewers: play HLS stream
   useEffect(() => {
     if (isOwner || !playbackUrl || !videoRef.current) return;
 
@@ -116,7 +139,6 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
 
       hls.on(Hls.Events.ERROR, (_, data) => {
         console.error('[Cloudflare] HLS error:', data);
-
         if (!data.fatal) return;
 
         switch (data.type) {
@@ -265,7 +287,7 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
             <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
             <p className="text-white/80">Conectando...</p>
             {!isConnected && retryCountRef.current > 0 && (
-              <p className="text-white/60 text-xs mt-2">Intento {retryCountRef.current}/{MAX_STARTUP_RETRIES}</p>
+              <p className="text-white/60 text-xs mt-2">Intento {retryCountRef.current}/{5}</p>
             )}
           </div>
         </div>
