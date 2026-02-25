@@ -26,7 +26,7 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
       <Container style={wrapper}>
         <Section style={header}>
           <Img
-            src="https://jbthjpnxiwnegzgfzfth.supabase.co/storage/v1/object/public/email-assets/logo.png"
+            src="https://jbthjpnxiwnegzgfzfth.supabase.co/storage/v1/object/public/email-assets/logo-white.png"
             width="180"
             alt="Medical Masters"
             style={{ margin: '0 auto' }}
