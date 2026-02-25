@@ -53,7 +53,7 @@ export default function DoctorGoLive() {
 
   // Hooks
   const {
-    createStream, startBroadcast, endStream, toggleMute, toggleVideo,
+    createStream, prepareMediaStream, startBroadcast, stopBroadcast, endStream, toggleMute, toggleVideo,
     getLocalStream, isLoading: isStreamLoading,
   } = useCloudflareStream();
   const localRecording = useLocalRecording();
@@ -110,6 +110,10 @@ export default function DoctorGoLive() {
   // Start live
   const handleStartLive = async (config: LiveConfig) => {
     if (!user?.id) return;
+
+    // IMPORTANT: media capture must happen directly from user gesture
+    const mediaReady = await prepareMediaStream();
+    if (!mediaReady) return;
 
     setIsCreating(true);
     setEnableRecording(config.enableRecording);
@@ -203,6 +207,7 @@ export default function DoctorGoLive() {
       toast.success('¡Transmisión iniciada!');
     } catch (error: any) {
       console.error('Error starting live:', error);
+      await stopBroadcast().catch(() => {});
       toast.error(error.message || t('doctorGoLive.startError'));
     } finally {
       setIsCreating(false);

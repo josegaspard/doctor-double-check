@@ -38,6 +38,7 @@ export function useCloudflareStream() {
     getPlaybackUrl: api.getPlaybackUrl,
     
     // WebRTC methods
+    prepareMediaStream: webrtc.prepareMediaStream,
     startBroadcast: webrtc.startBroadcast,
     stopBroadcast: webrtc.stopBroadcast,
     toggleMute: webrtc.toggleMute,
