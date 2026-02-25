@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle } from 'lucide-react';
+import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import { toast } from 'sonner';
 import { AppRole as UserRole } from '@/types/database';
 import { AvatarUpload } from '@/components/onboarding/AvatarUpload';
@@ -657,14 +658,13 @@ export default function Onboarding() {
     const RoleIcon = getRoleIcon();
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        {/* Header */}
-        <header className="border-b border-border bg-card">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="font-heading font-bold text-foreground">Dr Double Check</span>
+      <header className="border-b border-border bg-card/95 backdrop-blur">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <Link to="/" className="flex items-center">
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+              </Link>
+              <span className="text-xs text-muted-foreground font-medium">Configuración de cuenta</span>
             </div>
           </div>
         </header>
@@ -746,6 +746,13 @@ export default function Onboarding() {
             )}
           </motion.div>
         </main>
+
+        {/* Footer */}
+        <footer className="border-t border-border bg-card py-4 mt-auto">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-xs text-muted-foreground">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
+          </div>
+        </footer>
       </div>
     );
   }
@@ -754,14 +761,13 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="font-heading font-bold text-foreground">Dr Double Check</span>
+      <header className="border-b border-border bg-card/95 backdrop-blur">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex items-center">
+              <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+            </Link>
+            <span className="text-xs text-muted-foreground font-medium">Configuración de cuenta</span>
           </div>
         </div>
       </header>
@@ -1234,6 +1240,13 @@ export default function Onboarding() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-card py-4 mt-auto">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-xs text-muted-foreground">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
+        </div>
+      </footer>
     </div>
   );
 }
