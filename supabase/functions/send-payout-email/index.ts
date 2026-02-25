@@ -68,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "Dr Double Check <onboarding@resend.dev>",
       to: [doctor_email],
-      subject: `💰 Pago procesado - ${formattedAmount} | Cirugía Estética Uribe`,
+      subject: `💰 Pago procesado - ${formattedAmount} | Medical Masters`,
       attachments: attachments.length > 0 ? attachments : undefined,
       html: `
         <!DOCTYPE html>
@@ -97,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p style="color: #64748b; font-size: 14px; margin-top: 24px;">Si tienes alguna duda, contáctanos a través de la plataforma.</p>
             </div>
             <div style="background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
-              <p style="color: #94a3b8; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} Cirugía Estética Uribe. Todos los derechos reservados.</p>
+              <p style="color: #94a3b8; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} Medical Masters. Todos los derechos reservados.</p>
             </div>
           </div>
         </body>

@@ -100,7 +100,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const baseUrl = Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.functions.supabase.co') || '';
-    const appUrl = "https://cirugiaesteticauribe.com";
+    const appUrl = Deno.env.get("APP_URL") || "https://doc-seek-relay.lovable.app";
 
     let sentCount = 0;
     let failedCount = 0;
@@ -158,7 +158,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     
     <div style="text-align: center; padding: 24px;">
       <p style="color: #94a3b8; font-size: 12px; margin: 0 0 8px;">
-        Recibiste este email porque sigues a ${doctorName} en Cirugía Estética Uribe.
+        Recibiste este email porque sigues a ${doctorName} en Medical Masters.
       </p>
       <p style="color: #94a3b8; font-size: 12px; margin: 0;">
         <a href="${baseUrl}/unsubscribe-email?token=${unsubscribeLiveToken}" style="color: #64748b;">Desuscribirse de notificaciones de lives</a>

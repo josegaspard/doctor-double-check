@@ -19,6 +19,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    const appUrl = Deno.env.get("APP_URL") || "https://doc-seek-relay.lovable.app";
     const { email, name, role }: WelcomeEmailRequest = await req.json();
 
     const roleMessages = {
@@ -71,7 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">
           <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <div style="background: linear-gradient(135deg, #0ea5e9, #6366f1); padding: 32px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 24px;">Cirugía Estética Uribe</h1>
+              <h1 style="color: white; margin: 0; font-size: 24px;">Medical Masters</h1>
             </div>
             <div style="padding: 32px;">
               <h2 style="color: #1e293b; margin-top: 0;">Hola, ${name}!</h2>
@@ -80,13 +81,13 @@ const handler = async (req: Request): Promise<Response> => {
                 ${message.content}
               </div>
               <div style="margin-top: 24px; text-align: center;">
-                <a href="https://cirugiaesteticauribe.com" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                <a href="${appUrl}" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
                   Ir a la plataforma
                 </a>
               </div>
             </div>
             <div style="background: #f1f5f9; padding: 16px; text-align: center; color: #64748b; font-size: 12px;">
-              <p style="margin: 0;">© 2026 Cirugía Estética Uribe. Todos los derechos reservados.</p>
+              <p style="margin: 0;">© 2026 Medical Masters. Todos los derechos reservados.</p>
             </div>
           </div>
         </body>
