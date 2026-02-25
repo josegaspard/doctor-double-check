@@ -26,6 +26,7 @@ import {
   Eye,
   Calendar,
   DollarSign,
+  Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -123,6 +124,33 @@ export default function AdminInvoiceReview() {
     }
   };
 
+  const handleDownload = async (invoice: Invoice) => {
+    try {
+      const { data } = await supabase.storage.from('doctor-invoices').createSignedUrl(invoice.file_url, 3600);
+      if (data?.signedUrl) {
+        const a = document.createElement('a');
+        a.href = data.signedUrl;
+        a.download = invoice.file_name || `factura-${invoice.invoice_number}.pdf`;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast.error(language === 'es' ? 'Error al descargar factura' : 'Error downloading invoice');
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    const invoicesToDownload = filtered.length > 0 ? filtered : invoices;
+    for (const invoice of invoicesToDownload) {
+      await handleDownload(invoice);
+      // Small delay between downloads
+      await new Promise(r => setTimeout(r, 500));
+    }
+  };
+
   const handlePreview = async (invoice: Invoice) => {
     try {
       const { data } = await supabase.storage.from('doctor-invoices').createSignedUrl(invoice.file_url, 3600);
@@ -150,7 +178,7 @@ export default function AdminInvoiceReview() {
     if (activeTab === 'approved') return i.status === 'approved';
     if (activeTab === 'rejected') return i.status === 'rejected';
     return true;
-  });
+  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const pendingCount = invoices.filter(i => i.status === 'pending').length;
 
@@ -196,6 +224,13 @@ export default function AdminInvoiceReview() {
                 </CardContent></Card>
               ) : (
                 <div className="space-y-3">
+                  {/* Download all button */}
+                  <div className="flex justify-end">
+                    <Button size="sm" variant="outline" onClick={handleDownloadAll} className="gap-2">
+                      <Download className="w-4 h-4" />
+                      {language === 'es' ? `Descargar todas (${filtered.length})` : `Download all (${filtered.length})`}
+                    </Button>
+                  </div>
                   {filtered.map(invoice => (
                     <Card key={invoice.id}>
                       <CardContent className="p-4">
@@ -218,16 +253,19 @@ export default function AdminInvoiceReview() {
                                 <DollarSign className="w-3 h-3" />
                                 {formatCurrency(invoice.amount)}
                               </span>
-                              <span>{format(new Date(invoice.created_at), 'dd MMM yyyy', { locale })}</span>
+                              <span>{format(new Date(invoice.created_at), 'dd MMM yyyy, HH:mm', { locale })}</span>
                             </div>
                             {invoice.admin_notes && (
                               <p className="text-xs mt-2 p-2 bg-muted rounded">{invoice.admin_notes}</p>
                             )}
                           </div>
 
-                          <div className="flex gap-2 flex-shrink-0">
+                          <div className="flex gap-2 flex-shrink-0 flex-wrap">
                             <Button size="sm" variant="outline" onClick={() => handlePreview(invoice)}>
                               <Eye className="w-4 h-4 mr-1" />{language === 'es' ? 'Ver' : 'View'}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => handleDownload(invoice)}>
+                              <Download className="w-4 h-4 mr-1" />{language === 'es' ? 'Descargar' : 'Download'}
                             </Button>
                             {invoice.status === 'pending' && (
                               <>
