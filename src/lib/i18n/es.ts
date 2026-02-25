@@ -13,7 +13,7 @@ export const es = {
     dashboard: 'Panel',
     availability: 'Disponibilidad',
     news: 'Noticias',
-    upload: 'Subir Contenido',
+    upload: 'Subir',
     admin: 'Admin',
     notifications: 'Notificaciones',
     settings: 'Configuración',

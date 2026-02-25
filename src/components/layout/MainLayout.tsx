@@ -255,7 +255,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     <Link
                       key={item.href}
                       to={item.href}
-                      className={`relative flex items-center gap-1 px-2 lg:px-2.5 xl:px-3 py-1.5 rounded-md text-xs lg:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      className={`relative flex items-center gap-0.5 lg:gap-1 px-1.5 lg:px-2 xl:px-2.5 py-1.5 rounded-md text-[11px] lg:text-xs xl:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                         isActive
                           ? 'text-primary'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -268,7 +268,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                           transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                         />
                       )}
-                      <item.icon className="w-3.5 h-3.5 lg:w-4 lg:h-4 flex-shrink-0 relative z-10" />
+                      <item.icon className="w-3 h-3 lg:w-3.5 lg:h-3.5 flex-shrink-0 relative z-10" />
                       <span className="relative z-10">{t(item.shortLabelKey || item.labelKey)}</span>
                     </Link>
                   );
