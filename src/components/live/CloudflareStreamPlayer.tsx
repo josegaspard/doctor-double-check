@@ -297,7 +297,7 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
             <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
             <p className="text-white/80">Conectando...</p>
             {!isConnected && retryCountRef.current > 0 && (
-              <p className="text-white/60 text-xs mt-2">Intento {retryCountRef.current}/{5}</p>
+              <p className="text-white/60 text-xs mt-2">Intento {retryCountRef.current}/{MAX_RETRIES}</p>
             )}
           </div>
         </div>

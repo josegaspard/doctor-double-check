@@ -62,6 +62,8 @@ export default function LivePlayer() {
   // Cloudflare Stream state
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
   const [isJoiningStream, setIsJoiningStream] = useState(false);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
+  const CLOUD_FLARE_LIVE_SUBDOMAIN = 'customer-3afz9zesalmyroc9.cloudflarestream.com';
   
   const live = getLive(id || '');
   const isOwner = user?.id === live?.doctorId;
@@ -77,31 +79,44 @@ export default function LivePlayer() {
   
   const isLiked = live ? hasLiked(live.id) : false;
 
-  // Resolve live playback URL from backend (single attempt)
+  // Resolve live playback URL with hard fallback + live status refresh
   useEffect(() => {
     let cancelled = false;
 
     const resolvePlaybackUrl = async () => {
-      if (!live || !isLiveActive) {
+      if (!live) {
         setPlaybackUrl(null);
+        setPlaybackError(null);
+        setIsJoiningStream(false);
+        return;
+      }
+
+      if (!isLiveActive) {
+        setPlaybackUrl(null);
+        setPlaybackError('Este live ya terminó. Vuelve al listado para entrar a uno activo.');
         setIsJoiningStream(false);
         return;
       }
 
       const streamUid = live.dailyRoomName;
       if (!streamUid) {
-        console.error('No stream UID found for live:', live.id);
         setPlaybackUrl(null);
+        setPlaybackError('No se encontró el identificador del stream en vivo.');
         setIsJoiningStream(false);
         return;
       }
 
+      setPlaybackError(null);
       setIsJoiningStream(true);
-      const url = await getPlaybackUrl(streamUid, 'live');
+
+      const directUrl = `https://${CLOUD_FLARE_LIVE_SUBDOMAIN}/${streamUid}/manifest/video.m3u8`;
+      setPlaybackUrl(directUrl);
+
+      const backendUrl = await getPlaybackUrl(streamUid, 'live');
 
       if (cancelled) return;
 
-      setPlaybackUrl(url);
+      setPlaybackUrl(backendUrl || directUrl);
       setIsJoiningStream(false);
     };
 
@@ -111,6 +126,15 @@ export default function LivePlayer() {
       cancelled = true;
     };
   }, [live, isLiveActive, getPlaybackUrl]);
+
+  useEffect(() => {
+    refreshLives();
+    const interval = setInterval(() => {
+      refreshLives();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [refreshLives, id]);
 
   if (isLoading) {
     return (
@@ -239,6 +263,26 @@ export default function LivePlayer() {
                     <div className="text-center">
                       <Loader2 className="w-12 h-12 mx-auto mb-4 text-white animate-spin" />
                       <p className="text-white/80 text-sm">Conectando a la transmisión...</p>
+                    </div>
+                  </div>
+                ) : !isLiveActive ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/60 to-muted/40">
+                    <div className="text-center px-4">
+                      <p className="text-foreground font-medium">Este live ya no está activo.</p>
+                      <p className="text-muted-foreground text-xs mt-1">Actualiza para ver los en vivo disponibles ahora.</p>
+                      <Button size="sm" variant="outline" className="mt-3" onClick={() => refreshLives()}>
+                        Actualizar lista
+                      </Button>
+                    </div>
+                  </div>
+                ) : playbackError ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-destructive/20 to-muted/40">
+                    <div className="text-center px-4">
+                      <p className="text-foreground font-medium">No se pudo abrir este live.</p>
+                      <p className="text-muted-foreground text-xs mt-1">{playbackError}</p>
+                      <Button size="sm" variant="outline" className="mt-3" onClick={() => refreshLives()}>
+                        Reintentar
+                      </Button>
                     </div>
                   </div>
                 ) : (
