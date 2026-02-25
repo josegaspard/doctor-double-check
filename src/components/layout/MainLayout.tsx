@@ -147,7 +147,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-72">
+                <SheetContent side="left" className="w-72 overflow-y-auto">
                   <div className="flex items-center gap-2 mb-6">
                     <img src={logoMedicalMasters} alt="Medical Masters" className="h-12 w-auto" />
                   </div>
@@ -172,7 +172,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     </div>
                   )}
                   
-                  <nav className="flex flex-col gap-1">
+                  <nav className="flex flex-col gap-1 pb-8">
                     {filteredNavItems.map((item) => {
                       const isActive = location.pathname === item.href;
                       const isPanelItem = item.href === '/doctor/dashboard';

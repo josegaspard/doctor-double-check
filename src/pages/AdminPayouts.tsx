@@ -479,7 +479,78 @@ export default function AdminPayouts() {
     if (!doctorBreakdown[doctorId]) {
       setLoadingBreakdown(doctorId);
       try {
-        const { data } = await supabase
+        const items: { source: string; amount: number; date: string; description: string }[] = [];
+
+        // 1. Purchases on doctor's recordings
+        const { data: recordings } = await supabase
+          .from('recordings')
+          .select('id, title')
+          .eq('doctor_id', doctorId);
+        
+        if (recordings && recordings.length > 0) {
+          const recIds = recordings.map(r => r.id);
+          const recMap = new Map(recordings.map(r => [r.id, r.title]));
+          const { data: purchases } = await supabase
+            .from('purchases')
+            .select('amount, created_at, recording_id')
+            .in('recording_id', recIds)
+            .order('created_at', { ascending: false });
+          
+          purchases?.forEach(p => {
+            items.push({
+              source: 'recording',
+              amount: Number(p.amount),
+              date: p.created_at,
+              description: recMap.get(p.recording_id) || 'Grabación',
+            });
+          });
+        }
+
+        // 2. Subscriptions to this doctor
+        const { data: subs } = await supabase
+          .from('subscriptions')
+          .select('price_paid, created_at, tier')
+          .eq('creator_id', doctorId)
+          .order('created_at', { ascending: false });
+        
+        subs?.forEach(s => {
+          items.push({
+            source: 'subscription',
+            amount: Number(s.price_paid),
+            date: s.created_at,
+            description: `Suscripción ${s.tier}`,
+          });
+        });
+
+        // 3. Consultations (completed)
+        const { data: consults } = await supabase
+          .from('consultations')
+          .select('id, started_at, status')
+          .eq('doctor_id', doctorId)
+          .eq('status', 'completed')
+          .order('started_at', { ascending: false })
+          .limit(50);
+
+        const { data: dpData } = await supabase
+          .from('doctor_profiles')
+          .select('consultation_fee')
+          .eq('user_id', doctorId)
+          .single();
+        const fee = dpData?.consultation_fee || 0;
+        
+        consults?.forEach(c => {
+          if (fee > 0) {
+            items.push({
+              source: 'consultation',
+              amount: Number(fee),
+              date: c.started_at,
+              description: 'Orientación médica',
+            });
+          }
+        });
+
+        // 4. Wallet transactions as additional source
+        const { data: walletTxs } = await supabase
           .from('wallet_transactions')
           .select('amount, description, created_at, metadata')
           .eq('user_id', doctorId)
@@ -488,12 +559,18 @@ export default function AdminPayouts() {
           .order('created_at', { ascending: false })
           .limit(50);
 
-        const items = (data || []).map(tx => ({
-          source: (tx.metadata as any)?.source || 'other',
-          amount: tx.amount,
-          date: tx.created_at,
-          description: tx.description,
-        }));
+        walletTxs?.forEach(tx => {
+          items.push({
+            source: (tx.metadata as any)?.source || 'other',
+            amount: tx.amount,
+            date: tx.created_at,
+            description: tx.description,
+          });
+        });
+
+        // Sort all items by date descending
+        items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
         setDoctorBreakdown(prev => ({ ...prev, [doctorId]: items }));
       } catch (err) {
         console.error('Error loading breakdown:', err);

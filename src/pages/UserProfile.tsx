@@ -427,7 +427,7 @@ export default function UserProfile() {
   return (
     <MainLayout>
       <motion.div 
-        className="container mx-auto px-4 py-6 max-w-3xl"
+        className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl"
         variants={containerVariants}
         initial="initial"
         animate="animate"
@@ -446,14 +446,14 @@ export default function UserProfile() {
         <motion.div variants={cardVariants}>
           <Card className="mb-6 overflow-hidden">
             <CardContent className="p-6 pt-8">
-              <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                 {/* Avatar */}
                 <motion.div 
                   className="relative group"
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 >
-                  <Avatar className="w-28 h-28 border-4 border-background shadow-xl">
+                  <Avatar className="w-20 h-20 sm:w-28 sm:h-28 border-4 border-background shadow-xl">
                     <AvatarImage src={user.avatarUrl} alt={user.name} />
                     <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                       {getInitials(user.name)}
@@ -477,8 +477,8 @@ export default function UserProfile() {
                 </motion.div>
 
                 {/* User Info */}
-                <div className="flex-1 text-center md:text-left">
-                  <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                <div className="flex-1 text-center sm:text-left min-w-0">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
                     <AnimatePresence mode="wait">
                       {isEditingName ? (
                         <motion.div 
@@ -525,11 +525,11 @@ export default function UserProfile() {
                       )}
                     </AnimatePresence>
                   </div>
-                  <p className="text-muted-foreground flex items-center justify-center md:justify-start gap-2">
+                  <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2 text-sm sm:text-base break-all sm:break-normal">
                     <Mail className="w-4 h-4" />
                     {user.email}
                   </p>
-                  <div className="flex items-center justify-center md:justify-start gap-2 mt-3">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 mt-3 flex-wrap">
                     <Badge variant={roleBadge.variant} className="gap-1.5">
                       <RoleIcon className="w-3.5 h-3.5" />
                       {roleBadge.label}
@@ -697,7 +697,7 @@ export default function UserProfile() {
                 <Separator />
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-2">
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
                       <Star className="w-4 h-4 fill-current" />
@@ -747,7 +747,7 @@ export default function UserProfile() {
                     <Building className="w-4 h-4 text-muted-foreground" />
                     <span className="text-muted-foreground">{t('profile.institution')}</span>
                   </div>
-                  <span className="font-medium text-right max-w-[200px]">{residentProfile.institution}</span>
+                  <span className="font-medium text-right max-w-[150px] sm:max-w-[200px] truncate">{residentProfile.institution}</span>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between py-2">
@@ -889,7 +889,7 @@ export default function UserProfile() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {role === 'patient' && (
                     <>
                       <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/wallet')}>

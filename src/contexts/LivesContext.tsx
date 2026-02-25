@@ -201,21 +201,25 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        // For recordings without thumbnails, try to get Cloudflare thumbnail from linked live
-        const liveIds = recordingsData
+        // For recordings without thumbnails, try to get thumbnail from linked live
+        const liveIdsForThumbnails = recordingsData
           .filter(r => !r.thumbnail_url && r.live_id)
           .map(r => r.live_id!);
         
         const liveStreamUids = new Map<string, string>();
-        if (liveIds.length > 0) {
+        const liveThumbnails = new Map<string, string>();
+        if (liveIdsForThumbnails.length > 0) {
           const { data: livesData } = await supabase
             .from('lives')
-            .select('id, daily_room_name')
-            .in('id', liveIds);
+            .select('id, daily_room_name, thumbnail_url')
+            .in('id', liveIdsForThumbnails);
           
           livesData?.forEach(l => {
             if (l.daily_room_name) {
               liveStreamUids.set(l.id, l.daily_room_name);
+            }
+            if (l.thumbnail_url) {
+              liveThumbnails.set(l.id, l.thumbnail_url);
             }
           });
         }
@@ -223,7 +227,12 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         setRecordings(recordingsData.map(r => {
           let thumbnailUrl = r.thumbnail_url || undefined;
           
-          // Auto-generate Cloudflare thumbnail if none exists
+          // Try live's own uploaded thumbnail first
+          if (!thumbnailUrl && r.live_id && liveThumbnails.has(r.live_id)) {
+            thumbnailUrl = liveThumbnails.get(r.live_id)!;
+          }
+          
+          // Auto-generate Cloudflare thumbnail if still none
           if (!thumbnailUrl && r.live_id && liveStreamUids.has(r.live_id)) {
             const streamUid = liveStreamUids.get(r.live_id)!;
             thumbnailUrl = `https://${CLOUDFLARE_CUSTOMER_SUBDOMAIN}/${streamUid}/thumbnails/thumbnail.jpg`;
