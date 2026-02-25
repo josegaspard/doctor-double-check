@@ -80,12 +80,14 @@ export function useCloudflareAPI() {
   }, []);
 
   const getPlaybackUrl = useCallback(async (
-    videoUid: string, 
+    videoUid: string,
     type: 'live' | 'recording' = 'recording'
   ): Promise<string | null> => {
+    const directLiveUrl = `https://customer-3afz9zesalmyroc9.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
+
     try {
       const { data, error } = await supabase.functions.invoke('get-cloudflare-playback', {
-        body: { 
+        body: {
           videoUid: type === 'recording' ? videoUid : undefined,
           liveInputUid: type === 'live' ? videoUid : undefined,
           type,
@@ -93,17 +95,21 @@ export function useCloudflareAPI() {
       });
 
       if (error) throw error;
+
       if (!data.success) {
+        if (type === 'live') {
+          return directLiveUrl;
+        }
         if (data.status === 'processing') {
-          return null; // Still processing
+          return null;
         }
         throw new Error(data.error);
       }
 
-      return data.playbackUrl;
+      return data.playbackUrl || (type === 'live' ? directLiveUrl : null);
     } catch (err: any) {
       console.error('[Cloudflare] Error getting playback URL:', err);
-      return null;
+      return type === 'live' ? directLiveUrl : null;
     }
   }, []);
 
