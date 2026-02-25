@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { lovable } from '@/integrations/lovable/index';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,16 +44,61 @@ export default function Login() {
   const [registerError, setRegisterError] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  const resolvePostLoginRoute = async (userId: string) => {
+    const [profileResult, roleResult] = await Promise.all([
+      supabase.from('profiles').select('onboarding_completed').eq('id', userId).single(),
+      supabase.from('user_roles').select('role').eq('user_id', userId).single(),
+    ]);
+
+    if (!profileResult.data?.onboarding_completed) return '/onboarding';
+
+    const role = roleResult.data?.role;
+    if (role === 'doctor') return '/doctor/dashboard';
+    if (role === 'admin') return '/admin';
+    return '/lives';
+  };
+
+  const recoverGoogleSession = async () => {
+    // cloud auth can return a "cancelled" error even after the session was established in background
+    for (let i = 0; i < 6; i += 1) {
+      const { data } = await supabase.auth.getSession();
+      const sessionUser = data.session?.user;
+
+      if (sessionUser) {
+        const destination = await resolvePostLoginRoute(sessionUser.id);
+        navigate(destination, { replace: true });
+        return true;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+
+    return false;
+  };
+
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: window.location.origin,
+      const result = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: `${window.location.origin}/login`,
       });
-      
-      if (error) {
+
+      if (result.error) {
+        const message = result.error.message?.toLowerCase() || '';
+        const isFalseCancellation = message.includes('cancelled') || message.includes('canceled');
+
+        if (isFalseCancellation) {
+          const recovered = await recoverGoogleSession();
+          if (recovered) return;
+        }
+
         toast.error(t('authErrors.googleLoginError'));
-        console.error('Google login error:', error);
+        console.error('Google login error:', result.error);
+        return;
+      }
+
+      if (!result.redirected) {
+        await recoverGoogleSession();
       }
     } catch (error) {
       toast.error(t('authErrors.googleConnectError'));
