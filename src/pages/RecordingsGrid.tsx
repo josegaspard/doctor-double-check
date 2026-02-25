@@ -197,12 +197,15 @@ export default function RecordingsGrid() {
                         alt={recording.title}
                         loading="lazy"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Hide broken image and show fallback
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <PlayCircle className="w-12 h-12 text-premium/40" />
-                      </div>
-                    )}
+                    ) : null}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      {!recording.thumbnailUrl && <PlayCircle className="w-12 h-12 text-premium/40" />}
+                    </div>
                     
                     {/* Status Badge */}
                     <div className="absolute top-2 left-2">
