@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useCloudflareStream } from '@/hooks/cloudflare';
+
 import { useViewerCount } from '@/hooks/useViewerCount';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import MainLayout from '@/components/layout/MainLayout';
@@ -49,7 +49,7 @@ export default function LivePlayer() {
   const { user, role } = useAuth();
   const { t } = useLanguage();
   const { getSubscription } = useSubscriptions();
-  const { getPlaybackUrl, isLoading: isStreamLoading } = useCloudflareStream();
+  const CUSTOMER_STREAM_SUBDOMAIN = 'customer-3afz9zesalmyroc9.cloudflarestream.com';
   
   const [isLiking, setIsLiking] = useState(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
@@ -76,47 +76,25 @@ export default function LivePlayer() {
   
   const isLiked = live ? hasLiked(live.id) : false;
 
-  // Get playback URL when component mounts and live is active (with retries)
+  // Resolve live playback URL directly from stream UID (single-step)
   useEffect(() => {
-    if (!live || !isLiveActive) return;
-    if (playbackUrl) return;
+    if (!live || !isLiveActive) {
+      setPlaybackUrl(null);
+      setIsJoiningStream(false);
+      return;
+    }
 
     const streamUid = live.dailyRoomName;
     if (!streamUid) {
       console.error('No stream UID found for live:', live.id);
+      setPlaybackUrl(null);
+      setIsJoiningStream(false);
       return;
     }
 
-    let cancelled = false;
-    let retryTimeout: ReturnType<typeof setTimeout>;
-
-    const attempt = async (retryCount = 0) => {
-      if (cancelled) return;
-      setIsJoiningStream(true);
-      try {
-        const url = await getPlaybackUrl(streamUid, 'live');
-        if (!cancelled && url) {
-          setPlaybackUrl(url);
-          setIsJoiningStream(false);
-          return;
-        }
-      } catch (error) {
-        console.error('Error getting stream URL:', error);
-      }
-      // Retry up to 15 times (37.5 seconds total)
-      if (!cancelled && retryCount < 15) {
-        retryTimeout = setTimeout(() => attempt(retryCount + 1), 2500);
-      } else if (!cancelled) {
-        setIsJoiningStream(false);
-      }
-    };
-
-    attempt();
-    return () => {
-      cancelled = true;
-      clearTimeout(retryTimeout);
-    };
-  }, [live, isLiveActive, getPlaybackUrl, playbackUrl]);
+    setIsJoiningStream(false);
+    setPlaybackUrl(`https://${CUSTOMER_STREAM_SUBDOMAIN}/${streamUid}/manifest/video.m3u8`);
+  }, [live, isLiveActive, CUSTOMER_STREAM_SUBDOMAIN]);
 
   if (isLoading) {
     return (
