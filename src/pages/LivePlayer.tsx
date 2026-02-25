@@ -335,7 +335,7 @@ export default function LivePlayer() {
             {/* Live Chat - Always visible on desktop, toggleable on mobile */}
             {showChat && role !== 'visitor' && (
               <div className="h-[280px] sm:h-[350px]">
-                <LiveChat liveId={live.id} isOwner={isOwner} />
+                <LiveChat liveId={live.id} isOwner={isOwner} liveStartedAt={live.startedAt} />
               </div>
             )}
             

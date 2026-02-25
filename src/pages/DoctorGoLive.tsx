@@ -145,14 +145,18 @@ export default function DoctorGoLive() {
         throw new Error('Error starting broadcast');
       }
 
-      // Start local recording fallback
+      // Start local recording IMMEDIATELY from second 0
       if (config.enableRecording) {
-        setTimeout(() => {
-          const localStream = getLocalStream();
-          if (localStream) {
-            localRecording.startRecording(localStream);
-          }
-        }, 1000);
+        const localStream = getLocalStream();
+        if (localStream) {
+          localRecording.startRecording(localStream);
+        } else {
+          // Retry once after a short delay if stream not ready yet
+          setTimeout(() => {
+            const retryStream = getLocalStream();
+            if (retryStream) localRecording.startRecording(retryStream);
+          }, 300);
+        }
       }
 
       setLiveData({

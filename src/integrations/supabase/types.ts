@@ -1028,6 +1028,44 @@ export type Database = {
         }
         Relationships: []
       }
+      live_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          elapsed_seconds: number
+          id: string
+          live_id: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          elapsed_seconds?: number
+          id?: string
+          live_id: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          elapsed_seconds?: number
+          id?: string
+          live_id?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_chat_messages_live_id_fkey"
+            columns: ["live_id"]
+            isOneToOne: false
+            referencedRelation: "lives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_likes: {
         Row: {
           created_at: string
