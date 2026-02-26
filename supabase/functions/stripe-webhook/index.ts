@@ -183,6 +183,37 @@ async function handleWalletTopup(db: ReturnType<typeof supabaseAdmin>, session: 
   }
   
   logStep("Wallet topup completed", { userId, amount });
+
+  // Send confirmation email (legal requirement)
+  try {
+    const { data: userProfile } = await db
+      .from("profiles")
+      .select("email, name")
+      .eq("id", userId)
+      .single();
+
+    if (userProfile?.email) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+      await fetch(`${supabaseUrl}/functions/v1/send-purchase-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({
+          email: userProfile.email,
+          name: userProfile.name || 'Usuario',
+          productName: 'Recarga de Wallet',
+          amount: amount,
+          currency: 'MXN',
+        }),
+      });
+      logStep("Wallet topup confirmation email sent", { userId, email: userProfile.email });
+    }
+  } catch (emailErr) {
+    logStep("Error sending topup confirmation email (non-critical)", { error: emailErr instanceof Error ? emailErr.message : emailErr });
+  }
 }
 
 async function handleRecordingPurchase(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
