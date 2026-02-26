@@ -736,6 +736,7 @@ export type Database = {
         Row: {
           available_for_clinical_sessions: boolean
           available_for_double_check: boolean
+          badge_override: string | null
           bio: string | null
           can_publish_news: boolean
           cedula_profesional: string | null
@@ -764,6 +765,7 @@ export type Database = {
         Insert: {
           available_for_clinical_sessions?: boolean
           available_for_double_check?: boolean
+          badge_override?: string | null
           bio?: string | null
           can_publish_news?: boolean
           cedula_profesional?: string | null
@@ -792,6 +794,7 @@ export type Database = {
         Update: {
           available_for_clinical_sessions?: boolean
           available_for_double_check?: boolean
+          badge_override?: string | null
           bio?: string | null
           can_publish_news?: boolean
           cedula_profesional?: string | null
@@ -923,6 +926,36 @@ export type Database = {
           is_active?: boolean
           type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      expediente_otp: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          expires_at: string
+          id: string
+          otp_code: string
+          patient_id: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          expires_at: string
+          id?: string
+          otp_code: string
+          patient_id: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          expires_at?: string
+          id?: string
+          otp_code?: string
+          patient_id?: string
+          used_at?: string | null
         }
         Relationships: []
       }
@@ -1461,7 +1494,12 @@ export type Database = {
       payout_settings: {
         Row: {
           auto_payout_enabled: boolean | null
+          commission_chat: number | null
+          commission_consultation: number | null
+          commission_content: number | null
+          commission_live: number | null
           commission_percentage: number | null
+          commission_recording: number | null
           id: string
           minimum_payout_amount: number | null
           payout_day: number | null
@@ -1472,7 +1510,12 @@ export type Database = {
         }
         Insert: {
           auto_payout_enabled?: boolean | null
+          commission_chat?: number | null
+          commission_consultation?: number | null
+          commission_content?: number | null
+          commission_live?: number | null
           commission_percentage?: number | null
+          commission_recording?: number | null
           id?: string
           minimum_payout_amount?: number | null
           payout_day?: number | null
@@ -1483,7 +1526,12 @@ export type Database = {
         }
         Update: {
           auto_payout_enabled?: boolean | null
+          commission_chat?: number | null
+          commission_consultation?: number | null
+          commission_content?: number | null
+          commission_live?: number | null
           commission_percentage?: number | null
+          commission_recording?: number | null
           id?: string
           minimum_payout_amount?: number | null
           payout_day?: number | null
@@ -2227,6 +2275,7 @@ export type Database = {
         Row: {
           available_for_clinical_sessions: boolean | null
           available_for_double_check: boolean | null
+          badge_override: string | null
           bio: string | null
           consultation_fee: number | null
           created_at: string | null
@@ -2246,6 +2295,7 @@ export type Database = {
         Insert: {
           available_for_clinical_sessions?: boolean | null
           available_for_double_check?: boolean | null
+          badge_override?: string | null
           bio?: string | null
           consultation_fee?: number | null
           created_at?: string | null
@@ -2265,6 +2315,7 @@ export type Database = {
         Update: {
           available_for_clinical_sessions?: boolean | null
           available_for_double_check?: boolean | null
+          badge_override?: string | null
           bio?: string | null
           consultation_fee?: number | null
           created_at?: string | null
