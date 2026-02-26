@@ -53,11 +53,12 @@ export function DoctorBadge({ type, size = 'md', className }: DoctorBadgeProps) 
 }
 
 /**
- * Determine badge type based on doctor stats.
- * Pro = 50+ consultations AND rating >= 4.5
- * Otherwise = new
+ * Determine badge type based on admin override or doctor stats.
+ * If badgeOverride is set by admin, use that directly.
+ * Otherwise: Pro = 50+ consultations AND rating >= 4.5
  */
-export function getDoctorBadgeType(totalConsultations: number, rating: number): 'pro' | 'new' {
+export function getDoctorBadgeType(totalConsultations: number, rating: number, badgeOverride?: string | null): 'pro' | 'new' {
+  if (badgeOverride === 'pro' || badgeOverride === 'new') return badgeOverride;
   if (totalConsultations >= 50 && rating >= 4.5) return 'pro';
   return 'new';
 }

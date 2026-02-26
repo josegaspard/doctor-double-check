@@ -5,6 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,6 +34,11 @@ interface PayoutSettings {
   payout_frequency: string;
   payout_day: number;
   commission_percentage: number;
+  commission_consultation: number | null;
+  commission_recording: number | null;
+  commission_live: number | null;
+  commission_chat: number | null;
+  commission_content: number | null;
   minimum_payout_amount: number;
   auto_payout_enabled: boolean;
   require_invoice: boolean;
@@ -49,6 +55,11 @@ export default function AdminPayoutSettings() {
     payout_frequency: 'weekly',
     payout_day: 1,
     commission_percentage: 20,
+    commission_consultation: null,
+    commission_recording: null,
+    commission_live: null,
+    commission_chat: null,
+    commission_content: null,
     minimum_payout_amount: 100,
     auto_payout_enabled: true,
     require_invoice: true,
@@ -78,6 +89,11 @@ export default function AdminPayoutSettings() {
           payout_frequency: data.payout_frequency || 'weekly',
           payout_day: data.payout_day || 1,
           commission_percentage: data.commission_percentage || 20,
+          commission_consultation: data.commission_consultation ?? null,
+          commission_recording: data.commission_recording ?? null,
+          commission_live: data.commission_live ?? null,
+          commission_chat: data.commission_chat ?? null,
+          commission_content: data.commission_content ?? null,
           minimum_payout_amount: data.minimum_payout_amount || 100,
           auto_payout_enabled: data.auto_payout_enabled ?? true,
           require_invoice: data.require_invoice ?? true,
@@ -238,7 +254,7 @@ export default function AdminPayoutSettings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{language === 'es' ? 'Comisión de plataforma (%)' : 'Platform commission (%)'}</Label>
+                  <Label>{language === 'es' ? 'Comisión general (%)' : 'General commission (%)'}</Label>
                   <Input
                     type="number"
                     min={0}
@@ -248,10 +264,53 @@ export default function AdminPayoutSettings() {
                   />
                   <p className="text-xs text-muted-foreground">
                     {language === 'es' 
-                      ? 'Porcentaje que se descuenta de las ganancias del doctor'
-                      : 'Percentage deducted from doctor earnings'}
+                      ? 'Se aplica cuando no hay comisión específica por tipo'
+                      : 'Applied when no specific commission is set for a type'}
                   </p>
                 </div>
+
+                <Separator />
+
+                <div className="space-y-1">
+                  <Label className="text-sm font-semibold">{language === 'es' ? 'Comisiones por tipo de negocio' : 'Commission by business type'}</Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    {language === 'es' 
+                      ? 'Deja vacío para usar la comisión general'
+                      : 'Leave empty to use general commission'}
+                  </p>
+                </div>
+
+                {[
+                  { key: 'commission_consultation' as const, label: language === 'es' ? 'Orientaciones médicas / Consultas' : 'Medical consultations', icon: '💬' },
+                  { key: 'commission_recording' as const, label: language === 'es' ? 'Videos / Grabaciones premium' : 'Premium recordings', icon: '🎥' },
+                  { key: 'commission_live' as const, label: language === 'es' ? 'Lives (si monetizados)' : 'Lives (if monetized)', icon: '📡' },
+                  { key: 'commission_chat' as const, label: language === 'es' ? 'Chat con doctores' : 'Doctor chat', icon: '💬' },
+                  { key: 'commission_content' as const, label: language === 'es' ? 'Contenido descargable' : 'Downloadable content', icon: '📄' },
+                ].map(item => (
+                  <div key={item.key} className="flex items-center gap-3">
+                    <span className="text-lg">{item.icon}</span>
+                    <div className="flex-1">
+                      <Label className="text-xs">{item.label}</Label>
+                    </div>
+                    <div className="w-24">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        placeholder={`${settings.commission_percentage}%`}
+                        value={settings[item.key] ?? ''}
+                        onChange={(e) => setSettings(s => ({ 
+                          ...s, 
+                          [item.key]: e.target.value === '' ? null : parseFloat(e.target.value) 
+                        }))}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground w-4">%</span>
+                  </div>
+                ))}
+
+                <Separator />
 
                 <div className="space-y-2">
                   <Label>{language === 'es' ? 'Monto mínimo de pago (MXN)' : 'Minimum payout amount (MXN)'}</Label>

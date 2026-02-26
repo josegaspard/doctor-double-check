@@ -29,7 +29,9 @@ import {
   Save,
   Mail,
   HardDrive,
+  Plus,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface SocialLinks {
   facebook: string;
@@ -606,7 +608,7 @@ export default function AdminSiteSettings() {
                   <div className="space-y-3">
                     <Label className="text-xs font-semibold">Planes disponibles</Label>
                     {storagePricing.plans.map((plan, idx) => (
-                      <div key={idx} className="grid grid-cols-3 gap-2 items-end">
+                      <div key={idx} className="grid grid-cols-4 gap-2 items-end">
                         <div>
                           <Label className="text-xs">GB</Label>
                           <Input
@@ -646,11 +648,43 @@ export default function AdminSiteSettings() {
                             className="text-sm"
                           />
                         </div>
+                        <div>
+                          <Label className="text-xs opacity-0">X</Label>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive w-full h-10"
+                            onClick={() => {
+                              const plans = storagePricing.plans.filter((_, i) => i !== idx);
+                              setStoragePricing({ ...storagePricing, plans });
+                            }}
+                            disabled={storagePricing.plans.length <= 1}
+                          >
+                            Eliminar
+                          </Button>
+                        </div>
                       </div>
                     ))}
-                    <p className="text-xs text-muted-foreground">
-                      Precio total por plan = GB × ${storagePricing.price_per_gb} MXN
-                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const plans = [...storagePricing.plans, { gb: 1, label: '+1 GB' }];
+                        setStoragePricing({ ...storagePricing, plans });
+                      }}
+                      className="w-full"
+                    >
+                      <Plus className="w-4 h-4 mr-1" /> Agregar plan
+                    </Button>
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                      <p className="text-xs font-semibold text-foreground">Vista previa de precios:</p>
+                      {storagePricing.plans.map((plan, idx) => (
+                        <p key={idx} className="text-xs text-muted-foreground">
+                          {plan.label || `+${plan.gb} GB`}: <span className="font-semibold text-foreground">${plan.gb * storagePricing.price_per_gb} MXN</span>
+                          {plan.badge && <Badge variant="secondary" className="ml-2 text-[10px]">{plan.badge}</Badge>}
+                        </p>
+                      ))}
+                    </div>
                   </div>
 
                   <Button onClick={handleSaveStoragePricing} disabled={isSaving} className="w-full">
