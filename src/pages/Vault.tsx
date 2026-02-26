@@ -79,11 +79,12 @@ export default function Vault() {
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [isStripeProcessing, setIsStripeProcessing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<{ gb: number; price: number; label?: string } | null>(null);
-  const [storagePlans, setStoragePlans] = useState([
+  const [storagePlans, setStoragePlans] = useState<any[]>([
     { gb: 1, label: '+1 GB' },
     { gb: 5, label: '+5 GB', badge: 'Popular' },
     { gb: 10, label: '+10 GB', badge: 'Mejor valor' },
   ]);
+  const [pricePerGb, setPricePerGb] = useState(49);
 
   // Fetch storage usage
   const fetchStorage = useCallback(async () => {
@@ -106,7 +107,8 @@ export default function Vault() {
       .single();
     if (pricingData?.value) {
       const pricing = pricingData.value as any;
-      if (pricing.plans) setStoragePlans(pricing.plans);
+      if (pricing.plans && pricing.plans.length > 0) setStoragePlans(pricing.plans);
+      if (pricing.price_per_gb) setPricePerGb(pricing.price_per_gb);
     }
   }, [supabaseUser?.id]);
 
@@ -738,7 +740,7 @@ export default function Vault() {
               /* Step 1: Pick a plan */
               <div className="space-y-3 mt-2">
                 {storagePlans.map((plan: any) => {
-                  const price = (plan.price != null) ? plan.price : plan.gb * 49;
+                  const price = (plan.price != null) ? plan.price : plan.gb * pricePerGb;
                   return (
                     <button
                       key={plan.gb}
