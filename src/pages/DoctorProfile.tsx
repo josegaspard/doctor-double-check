@@ -380,7 +380,7 @@ export default function DoctorProfile() {
                     <h1 className="font-heading text-2xl font-bold text-foreground">{doctor.name}</h1>
                     <p className="text-muted-foreground">{doctor.specialty}</p>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <DoctorBadge type={getDoctorBadgeType(doctor.totalConsultations, doctor.rating)} />
+                      <DoctorBadge type={getDoctorBadgeType(doctor.totalConsultations, doctor.rating, (doctor as any).badgeOverride)} />
                       <Badge variant="verified" className="gap-1">
                         <Award className="w-3 h-3" />
                         {t('doctorProfile.verified')}

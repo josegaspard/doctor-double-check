@@ -10,9 +10,16 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2 } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2, Star, Shield } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +40,7 @@ interface DoctorRequest {
   numero_consejo: string | null;
   bio: string | null;
   status: 'pending' | 'approved' | 'rejected';
+  badge_override: string | null;
   created_at: string;
   profile?: {
     name: string;
@@ -125,6 +133,7 @@ export default function AdminDoctors() {
   };
 
   const [togglingNewsId, setTogglingNewsId] = useState<string | null>(null);
+  const [updatingBadgeId, setUpdatingBadgeId] = useState<string | null>(null);
 
   const toggleNewsPermission = async (doctor: DoctorRequest) => {
     setTogglingNewsId(doctor.id);
@@ -137,7 +146,6 @@ export default function AdminDoctors() {
 
       if (error) throw error;
 
-      // Send notification to the doctor
       if (newValue) {
         await supabase.from('notifications').insert({
           user_id: doctor.user_id,
@@ -158,6 +166,30 @@ export default function AdminDoctors() {
       toast({ title: t('common.error'), description: 'Error al cambiar permiso', variant: 'destructive' });
     } finally {
       setTogglingNewsId(null);
+    }
+  };
+
+  const updateBadge = async (doctor: DoctorRequest, badgeValue: string) => {
+    setUpdatingBadgeId(doctor.id);
+    try {
+      const newValue = badgeValue === 'auto' ? null : badgeValue;
+      const { error } = await supabase
+        .from('doctor_profiles')
+        .update({ badge_override: newValue } as any)
+        .eq('id', doctor.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Badge actualizado',
+        description: `${doctor.profile?.name}: ${badgeValue === 'pro' ? 'Doctor Pro ⭐' : badgeValue === 'new' ? 'Doctor Nuevo 🔵' : 'Automático'}`,
+      });
+      fetchDoctors();
+    } catch (error) {
+      console.error('Error updating badge:', error);
+      toast({ title: t('common.error'), description: 'Error al cambiar badge', variant: 'destructive' });
+    } finally {
+      setUpdatingBadgeId(null);
     }
   };
 
@@ -281,21 +313,44 @@ export default function AdminDoctors() {
                           {t('admin.registered')}: {new Date(doctor.created_at).toLocaleDateString()}
                         </p>
                         {doctor.status === 'approved' && (
-                          <div className="flex items-center gap-2 mt-2 p-2 rounded-md bg-muted/50">
-                            <Newspaper className="w-4 h-4 text-primary" />
-                            <Label htmlFor={`news-${doctor.id}`} className="text-xs cursor-pointer flex-1">
-                              Puede publicar noticias
-                            </Label>
-                            {togglingNewsId === doctor.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Switch
-                                id={`news-${doctor.id}`}
-                                checked={(doctor as any).can_publish_news || false}
-                                onCheckedChange={() => toggleNewsPermission(doctor)}
-                              />
-                            )}
-                          </div>
+                          <>
+                            <div className="flex items-center gap-2 mt-2 p-2 rounded-md bg-muted/50">
+                              <Star className="w-4 h-4 text-premium" />
+                              <Label className="text-xs flex-1">Badge</Label>
+                              {updatingBadgeId === doctor.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Select
+                                  value={doctor.badge_override || 'auto'}
+                                  onValueChange={(v) => updateBadge(doctor, v)}
+                                >
+                                  <SelectTrigger className="w-32 h-7 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="auto">Automático</SelectItem>
+                                    <SelectItem value="pro">⭐ Doctor Pro</SelectItem>
+                                    <SelectItem value="new">🔵 Nuevo</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-2 p-2 rounded-md bg-muted/50">
+                              <Newspaper className="w-4 h-4 text-primary" />
+                              <Label htmlFor={`news-${doctor.id}`} className="text-xs cursor-pointer flex-1">
+                                Puede publicar noticias
+                              </Label>
+                              {togglingNewsId === doctor.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Switch
+                                  id={`news-${doctor.id}`}
+                                  checked={(doctor as any).can_publish_news || false}
+                                  onCheckedChange={() => toggleNewsPermission(doctor)}
+                                />
+                              )}
+                            </div>
+                          </>
                         )}
                       </div>
                     </div>

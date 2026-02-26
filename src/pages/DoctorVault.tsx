@@ -1,13 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useVault } from '@/contexts/VaultContext';
+import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { VaultFilePreviewModal } from '@/components/vault/VaultFilePreviewModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   Folder,
   FileText,
@@ -17,8 +27,12 @@ import {
   User,
   Calendar,
   Eye,
+  KeyRound,
+  Loader2,
+  ShieldCheck,
 } from 'lucide-react';
 import { VaultFile } from '@/contexts/VaultContext';
+import { toast } from 'sonner';
 
 export default function DoctorVault() {
   const navigate = useNavigate();
@@ -27,6 +41,13 @@ export default function DoctorVault() {
   const { getAccessibleFiles } = useVault();
   const [selectedFile, setSelectedFile] = useState<VaultFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // OTP state
+  const [otpDialog, setOtpDialog] = useState<{ open: boolean; patientId: string; patientName: string } | null>(null);
+  const [otpCode, setOtpCode] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
+  const [verifiedPatients, setVerifiedPatients] = useState<Set<string>>(new Set());
 
   if (role !== 'doctor') {
     navigate('/lives');
@@ -47,8 +68,102 @@ export default function DoctorVault() {
   };
 
   const handleViewFile = (file: VaultFile) => {
+    // Check if we've verified OTP for this patient
+    if (!verifiedPatients.has(file.patientId)) {
+      setOtpDialog({
+        open: true,
+        patientId: file.patientId,
+        patientName: file.patientName || `Paciente`,
+      });
+      setSelectedFile(file);
+      return;
+    }
     setSelectedFile(file);
     setIsPreviewOpen(true);
+  };
+
+  const handleRequestOtp = async (patientId: string) => {
+    if (!user?.id) return;
+    setIsRequesting(true);
+    try {
+      // Generate a 6-digit OTP
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+
+      const { error } = await supabase
+        .from('expediente_otp')
+        .insert({
+          patient_id: patientId,
+          doctor_id: user.id,
+          otp_code: code,
+          expires_at: expiresAt.toISOString(),
+        });
+
+      if (error) throw error;
+
+      // Send notification to the patient with the OTP
+      await supabase.from('notifications').insert({
+        user_id: patientId,
+        type: 'system' as any,
+        title: 'Código de acceso a tu expediente',
+        message: `Tu médico solicita acceso a tu expediente. Código de verificación: ${code}. Expira en 10 minutos. Comparte este código con tu médico para autorizar el acceso.`,
+        data: { otp_code: code, doctor_id: user.id },
+      });
+
+      toast.success('Código OTP enviado al paciente. Pide al paciente que te comparta el código.');
+    } catch (error) {
+      console.error('Error requesting OTP:', error);
+      toast.error('Error al solicitar código');
+    } finally {
+      setIsRequesting(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!user?.id || !otpDialog) return;
+    setIsVerifying(true);
+    try {
+      const { data, error } = await supabase
+        .from('expediente_otp')
+        .select('*')
+        .eq('patient_id', otpDialog.patientId)
+        .eq('doctor_id', user.id)
+        .eq('otp_code', otpCode.trim())
+        .is('used_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        toast.error('Código inválido o expirado. Solicita uno nuevo.');
+        return;
+      }
+
+      // Mark OTP as used
+      await supabase
+        .from('expediente_otp')
+        .update({ used_at: new Date().toISOString() })
+        .eq('id', data.id);
+
+      // Grant access for this session
+      setVerifiedPatients(prev => new Set([...prev, otpDialog.patientId]));
+      setOtpDialog(null);
+      setOtpCode('');
+      toast.success('Verificación exitosa. Acceso al expediente concedido.');
+
+      // Open the file that was originally requested
+      if (selectedFile) {
+        setIsPreviewOpen(true);
+      }
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      toast.error('Error al verificar código');
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   // Group files by patient
@@ -85,10 +200,10 @@ export default function DoctorVault() {
             <div className="flex items-start gap-3">
               <Lock className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-foreground text-sm">Acceso Controlado por el Paciente</h3>
+                <h3 className="font-semibold text-foreground text-sm">Acceso Controlado por el Paciente + OTP</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Solo puedes ver expedientes cuando el paciente te ha concedido permiso explícito. 
-                  El paciente puede revocar el acceso en cualquier momento.
+                  Para ver el expediente, necesitas un código de verificación (OTP) que el paciente te proporcionará. 
+                  El código expira en 10 minutos y solo puede usarse una vez por sesión.
                 </p>
               </div>
             </div>
@@ -105,14 +220,42 @@ export default function DoctorVault() {
                     <User className="w-4 h-4 text-muted-foreground" />
                     {patientName}
                     <Badge variant="outline" className="ml-auto">{files.length} expedientes</Badge>
+                    {verifiedPatients.has(patientId) && (
+                      <Badge variant="success" className="gap-1">
+                        <ShieldCheck className="w-3 h-3" />
+                        Verificado
+                      </Badge>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
+                  {!verifiedPatients.has(patientId) && (
+                    <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 mb-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <KeyRound className="w-4 h-4 text-warning" />
+                        <span className="text-xs text-warning-foreground">Requiere verificación OTP para acceder</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setOtpDialog({ open: true, patientId, patientName });
+                          setOtpCode('');
+                        }}
+                        className="h-7 text-xs gap-1"
+                      >
+                        <KeyRound className="w-3 h-3" />
+                        Verificar
+                      </Button>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     {files.map(file => (
                       <div 
                         key={file.id} 
-                        className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors"
+                        className={`flex items-center gap-3 p-3 bg-muted/50 rounded-lg transition-colors ${
+                          verifiedPatients.has(patientId) ? 'cursor-pointer hover:bg-muted' : 'opacity-60'
+                        }`}
                         onClick={() => handleViewFile(file)}
                       >
                         <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center">
@@ -131,17 +274,21 @@ export default function DoctorVault() {
                             <Calendar className="w-3 h-3" />
                             {new Date(file.uploadedAt).toLocaleDateString('es-MX')}
                           </span>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            title={t('common.viewFile')}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewFile(file);
-                            }}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
+                          {verifiedPatients.has(patientId) ? (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              title={t('common.viewFile')}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewFile(file);
+                              }}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Lock className="w-4 h-4 text-muted-foreground" />
+                          )}
                         </div>
                       </div>
                     ))}
@@ -163,6 +310,73 @@ export default function DoctorVault() {
           </Card>
         )}
       </div>
+
+      {/* OTP Verification Dialog */}
+      <Dialog open={!!otpDialog?.open} onOpenChange={(open) => {
+        if (!open) {
+          setOtpDialog(null);
+          setOtpCode('');
+        }
+      }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-primary" />
+              Verificación de Acceso
+            </DialogTitle>
+            <DialogDescription>
+              Para acceder al expediente de <strong>{otpDialog?.patientName}</strong>, ingresa el código OTP que el paciente te proporcionará.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Input
+                placeholder="Código de 6 dígitos"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="text-center text-2xl tracking-[0.5em] font-mono"
+                maxLength={6}
+              />
+              <p className="text-xs text-muted-foreground text-center">
+                El paciente recibirá el código en sus notificaciones
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => otpDialog && handleRequestOtp(otpDialog.patientId)}
+              disabled={isRequesting}
+            >
+              {isRequesting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <KeyRound className="w-4 h-4" />
+              )}
+              Solicitar código al paciente
+            </Button>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setOtpDialog(null); setOtpCode(''); }}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleVerifyOtp} 
+              disabled={otpCode.length !== 6 || isVerifying}
+              className="gap-2"
+            >
+              {isVerifying ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-4 h-4" />
+              )}
+              Verificar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* File Preview Modal */}
       <VaultFilePreviewModal

@@ -42,6 +42,10 @@ interface DoctorWithProfile {
   total_consultations: number;
   location: string | null;
   available_for_double_check: boolean;
+  badge_override: string | null;
+  office_hours_start: string | null;
+  office_hours_end: string | null;
+  office_days: string[] | null;
   profile: {
     name: string;
     avatar_url: string | null;
@@ -104,7 +108,11 @@ export default function Doctors() {
           consultation_fee,
           location,
           available_for_double_check,
-          total_consultations
+          total_consultations,
+          badge_override,
+          office_hours_start,
+          office_hours_end,
+          office_days
         `)
         .order('rating', { ascending: false });
 
@@ -313,7 +321,7 @@ export default function Doctors() {
                           <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
                         )}
                       </div>
-                      <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0)} size="sm" />
+                      <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
                       <Badge variant="secondary" className="mb-2">
                         <Stethoscope className="w-3 h-3 mr-1" />
                         {doctor.specialty}
@@ -335,6 +343,21 @@ export default function Doctors() {
                           </span>
                         )}
                       </div>
+                      {/* Availability indicator */}
+                      {(() => {
+                        const now = new Date();
+                        const currentDay = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][now.getDay()];
+                        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                        const isAvailable = doctor.office_days?.includes(currentDay) && 
+                          doctor.office_hours_start && doctor.office_hours_end &&
+                          currentTime >= doctor.office_hours_start && currentTime <= doctor.office_hours_end;
+                        return (
+                          <div className={`flex items-center gap-1.5 mt-1.5 text-xs ${isAvailable ? 'text-success' : 'text-muted-foreground'}`}>
+                            <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-success animate-pulse' : 'bg-muted-foreground/40'}`} />
+                            {isAvailable ? 'Disponible ahora' : 'No disponible'}
+                          </div>
+                        );
+                      })()}
 
                       {doctor.bio && (
                         <p className="text-xs text-muted-foreground mt-2 line-clamp-2">

@@ -13,9 +13,10 @@ interface Props {
   isRejected: boolean;
   totalConsultations?: number;
   rating?: number;
+  badgeOverride?: string | null;
 }
 
-export function DoctorDashboardHeader({ userName, isApproved, isPending, isRejected, totalConsultations = 0, rating = 0 }: Props) {
+export function DoctorDashboardHeader({ userName, isApproved, isPending, isRejected, totalConsultations = 0, rating = 0, badgeOverride }: Props) {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -45,7 +46,7 @@ export function DoctorDashboardHeader({ userName, isApproved, isPending, isRejec
               <span className="hidden sm:inline">{t('dashboard.verified')}</span>
               <span className="sm:hidden">✓</span>
             </Badge>
-            <DoctorBadge type={getDoctorBadgeType(totalConsultations, rating)} />
+            <DoctorBadge type={getDoctorBadgeType(totalConsultations, rating, badgeOverride)} />
           </>
         )}
         {isPending && (
