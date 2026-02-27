@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Radio,
@@ -32,13 +31,23 @@ export function LiveEndedOverlay({
   duration,
 }: LiveEndedOverlayProps) {
   const navigate = useNavigate();
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    if (countdown <= 0) {
+      navigate('/lives');
+      return;
+    }
+    const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, navigate]);
 
   return (
-    <div className="aspect-video bg-gradient-to-br from-muted/80 to-muted/60 rounded-xl flex items-center justify-center animate-fade-in">
-      <Card className="max-w-sm w-full mx-4 shadow-xl border-0 bg-card/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
+      <Card className="max-w-sm w-full mx-4 shadow-2xl border-0 bg-card">
         <CardContent className="p-6 text-center space-y-4">
-          <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center">
-            <Radio className="w-6 h-6 text-muted-foreground" />
+          <div className="w-14 h-14 mx-auto rounded-full bg-destructive/10 flex items-center justify-center">
+            <Radio className="w-7 h-7 text-destructive" />
           </div>
 
           <div>
@@ -89,13 +98,18 @@ export function LiveEndedOverlay({
             </div>
           </div>
 
+          {/* Countdown */}
+          <p className="text-sm text-muted-foreground">
+            En <span className="font-bold text-foreground">{countdown}</span> segundo{countdown !== 1 ? 's' : ''} te vamos a redirigir al inicio
+          </p>
+
           <div className="flex flex-col gap-2">
             <Button onClick={() => navigate(`/doctor/${doctorId}`)} className="w-full gap-2">
               <UserCircle className="w-4 h-4" />
               Ver Perfil del Doctor
             </Button>
             <Button variant="outline" onClick={() => navigate('/lives')} className="w-full">
-              Volver a Lives
+              Ir al inicio ahora
             </Button>
           </div>
         </CardContent>
