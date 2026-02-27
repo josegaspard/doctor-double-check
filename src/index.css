@@ -265,6 +265,11 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Touch feedback for mobile */
+  .touch-feedback {
+    @apply active:scale-95 transition-transform duration-150;
+  }
   
   /* Prevent context menu on protected content */
   .no-context-menu {

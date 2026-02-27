@@ -170,46 +170,32 @@ export default function Doctors() {
     const subscription = getSubscription(doctor.user_id);
     const isPaid = subscription?.tier === 'basic' || subscription?.tier === 'premium';
 
-    if (!isFollowing) {
-      return (
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={(e) => { e.stopPropagation(); handleFollow(doctor.user_id); }}
-        >
-          <Heart className="w-4 h-4 mr-1.5" />
-          Seguir
-        </Button>
-      );
-    }
-
     return (
       <div className="flex gap-2 w-full">
+        {/* Primary CTA: Always show Ver Perfil */}
         <Button
-          variant="secondary"
+          variant="default"
           size="sm"
-          className="flex-1"
+          className="flex-1 h-10 text-sm active:scale-95 transition-transform"
+          onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
+        >
+          Ver Perfil
+        </Button>
+        {/* Follow/Unfollow heart button */}
+        <Button
+          variant={isFollowing ? "secondary" : "outline"}
+          size="icon"
+          className="h-10 w-10 flex-shrink-0 active:scale-95 transition-transform"
           onClick={(e) => { e.stopPropagation(); handleFollow(doctor.user_id); }}
         >
-          <Heart className="w-4 h-4 mr-1 fill-current" />
-          Siguiendo
+          <Heart className={`w-4 h-4 ${isFollowing ? 'fill-current text-destructive' : ''}`} />
         </Button>
-        {isPaid ? (
-          <Badge variant="secondary" className="h-9 px-3 flex items-center gap-1 bg-warning/10 text-warning border-warning/20">
+        {/* Pro badge if subscribed */}
+        {isPaid && (
+          <Badge variant="secondary" className="h-10 px-2.5 flex items-center gap-1 bg-warning/10 text-warning border-warning/20">
             <Crown className="w-3.5 h-3.5" />
             Pro
           </Badge>
-        ) : (
-          <Button
-            variant="premium"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
-            className="gap-1"
-          >
-            <Crown className="w-3.5 h-3.5" />
-            Pro
-          </Button>
         )}
       </div>
     );
@@ -218,6 +204,22 @@ export default function Doctors() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
+        {/* Onboarding banner explaining follow vs subscribe */}
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-primary/5 to-info/5 border border-primary/15 rounded-xl">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 hidden sm:flex">
+              <Stethoscope className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm text-foreground mb-1">¿Cómo funciona?</h3>
+              <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
+                <p><Heart className="w-3 h-3 inline text-destructive mr-1" /><strong>Seguir</strong> — Gratis. Recibe notificaciones cuando el doctor transmita en vivo.</p>
+                <p><Crown className="w-3 h-3 inline text-warning mr-1" /><strong>Suscripción Pro</strong> — Acceso a chat privado, contenido exclusivo y grabaciones.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="mb-4 sm:mb-6">
           <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-1 sm:mb-2">Explorar Doctores</h1>
           <p className="text-sm sm:text-base text-muted-foreground">Encuentra y sigue a los mejores especialistas médicos</p>

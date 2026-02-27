@@ -117,10 +117,10 @@ export default function Notifications() {
             {notifications.map((notification) => (
               <Card
                 key={notification.id}
-                className={`cursor-pointer hover:shadow-md transition-all ${!notification.isRead ? 'border-primary/30 bg-primary/5' : ''}`}
+                className={`cursor-pointer hover:shadow-md transition-all active:scale-[0.98] ${!notification.isRead ? 'border-primary/30 bg-primary/5' : ''}`}
                 onClick={() => handleClick(notification)}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-3 sm:p-4">
                   <div className="flex items-start gap-3">
                     <span className="text-xl mt-0.5">{getNotificationIcon(notification.type)}</span>
                     <div className="flex-1 min-w-0">
@@ -147,7 +147,7 @@ export default function Notifications() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-10 w-10"
                           onClick={(e) => { e.stopPropagation(); markAsRead(notification.id); }}
                         >
                           <Check className="h-4 w-4" />
@@ -156,7 +156,7 @@ export default function Notifications() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-destructive"
+                        className="h-10 w-10 text-destructive"
                         onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
                       >
                         <Trash2 className="h-4 w-4" />

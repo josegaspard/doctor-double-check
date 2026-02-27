@@ -5,7 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useSocialLinks } from '@/hooks/useSiteSettings';
+import { useChat } from '@/contexts/ChatContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -43,10 +45,11 @@ import {
   Calendar,
   FileText,
   Search,
+  Bell,
+  Radio,
 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
-// GlobalSearch import removed — replaced with prominent search button linking to /doctors
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
@@ -72,6 +75,41 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];
+
+// Bottom tab items per role
+function getBottomTabs(role: string | undefined, t: (key: string) => string) {
+  const common = [
+    { label: 'Lives', href: '/lives', icon: Radio },
+  ];
+
+  if (role === 'doctor') {
+    return [
+      ...common,
+      { label: 'Chat', href: '/chat', icon: MessageSquare },
+      { label: t('nav.doctors') || 'Doctores', href: '/doctors', icon: Stethoscope },
+      { label: t('nav.notifications') || 'Avisos', href: '/notifications', icon: Bell },
+      { label: 'Panel', href: '/doctor/dashboard', icon: LayoutDashboard },
+    ];
+  }
+
+  if (role === 'patient') {
+    return [
+      ...common,
+      { label: 'Chat', href: '/chat', icon: MessageSquare },
+      { label: 'Doctores', href: '/doctors', icon: Stethoscope },
+      { label: t('nav.notifications') || 'Avisos', href: '/notifications', icon: Bell },
+      { label: 'Perfil', href: '/profile', icon: User },
+    ];
+  }
+
+  // visitor / resident / admin
+  return [
+    ...common,
+    { label: 'Doctores', href: '/doctors', icon: Stethoscope },
+    { label: t('nav.notifications') || 'Avisos', href: '/notifications', icon: Bell },
+    { label: role === 'admin' ? 'Admin' : 'Perfil', href: role === 'admin' ? '/admin' : '/profile', icon: role === 'admin' ? Settings : User },
+  ];
+}
 
 // Animated wallet balance component
 function AnimatedBalance({ balance }: { balance: number }) {
@@ -107,9 +145,24 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const { balance } = useWallet();
   const { t } = useLanguage();
   const { socialLinks } = useSocialLinks();
+  const { unreadCount: notifUnread } = useNotifications();
   
   // Enable realtime notifications
   useNotificationsRealtime();
+
+  // Get unread chat count
+  const chatUnread = (() => {
+    try {
+      const { getSessionsByUser } = useChat();
+      const sessions = getSessionsByUser();
+      return sessions.reduce((sum, s) => {
+        if (s.status !== 'active') return sum;
+        return sum + (s.unreadCount || 0);
+      }, 0);
+    } catch {
+      return 0;
+    }
+  })();
 
   const filteredNavItems = navItems.filter(item => 
     role && item.roles.includes(role)
@@ -117,7 +170,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
   const handleLogout = () => {
     logout();
-    // Note: logout() handles the navigation internally to /lives
   };
 
   const getRoleBadge = () => {
@@ -135,6 +187,11 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     }
   };
 
+  const bottomTabs = getBottomTabs(role, t);
+
+  // Hide bottom nav on certain pages (video call, live player full experience)
+  const hideBottomNav = location.pathname.startsWith('/video-call');
+
   return (
     <div ref={ref} className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -143,9 +200,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
           <div className="flex h-14 items-center justify-between">
             {/* Logo & Mobile Menu */}
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Hamburger menu - hidden on mobile (replaced by bottom nav), visible on tablet */}
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0">
+                  <Button variant="ghost" size="icon" className="hidden sm:flex md:hidden flex-shrink-0">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
@@ -154,7 +212,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     <img src={logoMedicalMasters} alt="Medical Masters" className="h-12 w-auto" />
                   </div>
                   
-                  {/* User Info in Mobile Menu */}
                   {isAuthenticated && user && role !== 'visitor' && (
                     <div className="mb-6 p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
@@ -174,7 +231,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     </div>
                   )}
 
-                  {/* Visitor prompt to login */}
                   {role === 'visitor' && (
                     <div className="mb-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
                       <p className="text-sm text-muted-foreground mb-3">Inicia sesión para acceder a todas las funciones</p>
@@ -182,10 +238,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         <Button size="sm" onClick={() => navigate('/login')} className="w-full gap-2">
                           <LogIn className="w-4 h-4" />
                           {t('nav.login')}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => navigate('/login')} className="w-full gap-2">
-                          <User className="w-4 h-4" />
-                          Crear cuenta
                         </Button>
                       </div>
                     </div>
@@ -195,19 +247,14 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     {filteredNavItems.map((item) => {
                       const isActive = location.pathname === item.href;
                       const isPanelItem = item.href === '/doctor/dashboard';
-
                       return (
                         <Link
                           key={item.href}
                           to={item.href}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                             isActive
-                              ? isPanelItem
-                                ? 'bg-primary/20 text-primary'
-                                : 'bg-accent text-accent-foreground'
-                              : isPanelItem
-                                ? 'bg-primary/10 text-primary hover:bg-primary/15'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                              ? isPanelItem ? 'bg-primary/20 text-primary' : 'bg-accent text-accent-foreground'
+                              : isPanelItem ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                           }`}
                         >
                           <item.icon className="w-5 h-5" />
@@ -216,49 +263,24 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       );
                     })}
                     
-                    {/* Mobile-only menu items - only for non-visitor authenticated users */}
                     {isAuthenticated && role !== 'visitor' && (
                       <>
                         <div className="my-2 border-t border-border" />
-                        <Link
-                          to="/profile"
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                            location.pathname === '/profile'
-                              ? 'bg-accent text-accent-foreground'
-                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                          }`}
-                        >
+                        <Link to="/profile" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/profile' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                           <User className="w-5 h-5" />
                           {t('nav.profile')}
                         </Link>
                         {(role === 'patient' || role === 'resident') && (
-                          <Link
-                            to="/wallet"
-                            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                              location.pathname === '/wallet'
-                                ? 'bg-accent text-accent-foreground'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            }`}
-                          >
-                          <Wallet className="w-5 h-5" />
+                          <Link to="/wallet" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/wallet' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                            <Wallet className="w-5 h-5" />
                             {t('nav.wallet')} (<AnimatedBalance balance={balance} />)
                           </Link>
                         )}
-                        <Link
-                          to="/settings"
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                            location.pathname === '/settings'
-                              ? 'bg-accent text-accent-foreground'
-                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                          }`}
-                        >
+                        <Link to="/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/settings' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                           <Settings className="w-5 h-5" />
                           {t('nav.settings')}
                         </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-destructive hover:bg-destructive/10 w-full text-left"
-                        >
+                        <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-destructive hover:bg-destructive/10 w-full text-left">
                           <LogOut className="w-5 h-5" />
                           {t('nav.logout')}
                         </button>
@@ -268,13 +290,18 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 </SheetContent>
               </Sheet>
 
-              {/* Logo - hidden on md, visible on lg+ to save space on tablets */}
+              {/* Logo on mobile - small */}
+              <Link to="/lives" className="flex sm:hidden items-center">
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-7 w-auto" />
+              </Link>
+
+              {/* Logo - hidden on md, visible on lg+ */}
               <Link to="/lives" className="hidden lg:flex items-center">
                 <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 xl:h-10 w-auto" />
               </Link>
             </div>
 
-            {/* Desktop Nav - compact on tablet, full on desktop */}
+            {/* Desktop Nav */}
             <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start overflow-x-auto scrollbar-hide mx-2">
               <div className="flex items-center gap-0.5 lg:gap-1">
                 {filteredNavItems.map((item) => {
@@ -309,24 +336,23 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
             {/* Right Side */}
             <div className="flex items-center gap-1.5">
-              {/* Global Search - prominent button */}
+              {/* Search - hidden on mobile (accessible via Doctores tab) */}
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 text-muted-foreground hover:text-foreground"
+                className="gap-2 text-muted-foreground hover:text-foreground hidden sm:flex"
                 onClick={() => navigate('/doctors')}
               >
                 <Search className="w-4 h-4" />
                 <span className="hidden sm:inline text-xs">{t('common.search')}</span>
               </Button>
               
-              {/* Language Switcher */}
               <LanguageSwitcher />
               
-              {/* Notifications */}
-              {isAuthenticated && <NotificationBell />}
+              {/* Notifications - hidden on mobile (in bottom nav) */}
+              {isAuthenticated && <span className="hidden sm:block"><NotificationBell /></span>}
               
-              {/* Wallet (for patients/residents) - hidden on small screens, visible in mobile menu */}
+              {/* Wallet */}
               {(role === 'patient' || role === 'resident') && (
                 <Link to="/wallet" className="hidden sm:block">
                   <Button variant="outline" size="sm" className="gap-2">
@@ -348,7 +374,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                           <User className="w-4 h-4 text-primary" />
                         )}
                       </div>
-                      <span className="text-xs sm:text-sm max-w-[60px] sm:max-w-none truncate">{user.name.split(' ')[0]}</span>
+                      <span className="text-xs sm:text-sm max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -384,7 +410,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               ) : (
                 <Button onClick={() => navigate('/login')} size="sm" className="gap-2">
                   <LogIn className="w-4 h-4" />
-                  {t('nav.login')}
+                  <span className="hidden sm:inline">{t('nav.login')}</span>
                 </Button>
               )}
             </div>
@@ -392,8 +418,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1">
+      {/* Main Content - add bottom padding on mobile for tab bar */}
+      <main className="flex-1 pb-[72px] sm:pb-0">
         <motion.div
           key={location.pathname}
           initial={{ opacity: 0 }}
@@ -404,18 +430,62 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         </motion.div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-dark text-dark-foreground py-8 mt-auto">
+      {/* Mobile Bottom Navigation Bar */}
+      {!hideBottomNav && (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border sm:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="flex items-center justify-around h-16 px-1">
+            {bottomTabs.map((tab) => {
+              const isActive = location.pathname === tab.href || (tab.href !== '/lives' && location.pathname.startsWith(tab.href));
+              const Icon = tab.icon;
+              
+              // Badge count
+              let badgeCount = 0;
+              if (tab.href === '/chat') badgeCount = chatUnread;
+              if (tab.href === '/notifications') badgeCount = notifUnread;
+
+              return (
+                <Link
+                  key={tab.href}
+                  to={tab.href}
+                  className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors active:scale-95 ${
+                    isActive ? 'text-primary' : 'text-muted-foreground'
+                  }`}
+                >
+                  <div className="relative">
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-primary' : ''}`} />
+                    {badgeCount > 0 && (
+                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                        {badgeCount > 99 ? '99+' : badgeCount}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-[10px] font-medium leading-tight ${isActive ? 'text-primary' : ''}`}>
+                    {tab.label}
+                  </span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="bottom-nav-indicator"
+                      className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+
+      {/* Footer - hidden on mobile (bottom nav takes its place) */}
+      <footer className="bg-dark text-dark-foreground py-8 mt-auto hidden sm:block">
         <div className="container mx-auto px-4">
           <div className="flex flex-col gap-6">
-            {/* Top row */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-3">
                 <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
                 <span className="text-sm text-light">{t('footer.platform')}</span>
               </div>
               
-              {/* Social Media Icons */}
               <div className="flex items-center gap-4">
                 {socialLinks.facebook && (
                   <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
@@ -445,10 +515,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               </div>
             </div>
             
-            {/* Divider */}
             <div className="border-t border-light/20" />
             
-            {/* Bottom row */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <nav className="flex items-center gap-6">
                 <Link to="/terms" className="text-sm text-light/70 hover:text-light transition-colors">
