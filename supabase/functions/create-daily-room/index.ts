@@ -50,45 +50,43 @@ Deno.serve(async (req) => {
       || userData.user.user_metadata?.name
       || "Doctor";
 
-    // Parse request body
-    const { liveId, title, enableRecording = false } = await req.json();
+    // Parse request body — now accepts `mode` parameter
+    const { liveId, title, enableRecording = false, mode = 'live' } = await req.json();
     if (!liveId) throw new Error("liveId is required");
 
-    logStep("Creating Daily.co room", { liveId, title, enableRecording });
+    const isConsultation = mode === 'consultation';
+    logStep("Creating Daily.co room", { liveId, title, enableRecording, mode });
 
     // Create a room in Daily.co
-    // Room name must be unique and URL-safe
-    const roomName = `live-${liveId.slice(0, 8)}-${Date.now()}`;
+    const roomName = `${isConsultation ? 'call' : 'live'}-${liveId.slice(0, 8)}-${Date.now()}`;
     
-    // Configure room properties
-    // NOTE: For 200+ participants, you need a paid Daily.co plan
-    // The free plan limits to ~4-10 participants
-    // With a paid plan, set max_participants to 200-1000 based on your plan
+    // Configure room properties based on mode
     const roomProperties: Record<string, any> = {
-      // For free plan: 10 participants max
-      // For paid plan: Change to 200-1000 based on your needs
-      max_participants: 200,
       enable_chat: true,
       enable_screenshare: true,
       start_video_off: false,
       start_audio_off: false,
-      // Room expires in 24 hours
       exp: Math.floor(Date.now() / 1000) + 86400,
-      // Enable large meetings mode for scalability
       enable_people_ui: true,
-      // Optimize for large audiences (viewers mostly watch, don't transmit)
-      owner_only_broadcast: true,
-      // Enable network quality monitoring
       enable_network_ui: true,
     };
 
-    // Only add recording if explicitly enabled AND you have a paid plan
-    // The free plan does NOT support cloud recording
+    if (isConsultation) {
+      // 1:1 consultation — both participants can broadcast
+      roomProperties.max_participants = 4;
+      roomProperties.owner_only_broadcast = false;
+    } else {
+      // Live streaming — only owner broadcasts
+      roomProperties.max_participants = 200;
+      roomProperties.owner_only_broadcast = true;
+    }
+
+    // Only add recording if explicitly enabled
     if (enableRecording) {
       roomProperties.enable_recording = "cloud";
     }
 
-    logStep("Room properties configured", { maxParticipants: roomProperties.max_participants, ownerOnlyBroadcast: true });
+    logStep("Room properties configured", { maxParticipants: roomProperties.max_participants, ownerOnlyBroadcast: roomProperties.owner_only_broadcast, mode });
 
     const dailyResponse = await fetch("https://api.daily.co/v1/rooms", {
       method: "POST",
@@ -106,19 +104,18 @@ Deno.serve(async (req) => {
       const errorData = await dailyResponse.json();
       logStep("Daily.co API error", errorData);
       
-      // If the error is about max_participants, try with a lower limit
       if (errorData.info?.includes("max_participants") || errorData.info?.includes("cannot be set")) {
         logStep("Retrying with free tier limits");
         
-        // Fallback to free tier settings
         const freeTierProperties: Record<string, any> = {
-          max_participants: 10,
+          max_participants: isConsultation ? 4 : 10,
           enable_chat: true,
           enable_screenshare: true,
           start_video_off: false,
           start_audio_off: false,
           exp: Math.floor(Date.now() / 1000) + 86400,
           enable_people_ui: true,
+          owner_only_broadcast: isConsultation ? false : true,
         };
 
         const retryResponse = await fetch("https://api.daily.co/v1/rooms", {
@@ -140,9 +137,8 @@ Deno.serve(async (req) => {
         }
 
         const retryRoomData = await retryResponse.json();
-        logStep("Room created with free tier limits", { roomName: retryRoomData.name, url: retryRoomData.url, maxParticipants: 10 });
+        logStep("Room created with free tier limits", { roomName: retryRoomData.name, url: retryRoomData.url });
 
-        // Continue with the retry room data
         return await createTokenAndRespond(
           retryRoomData,
           liveId,
@@ -151,7 +147,8 @@ Deno.serve(async (req) => {
           dailyApiKey,
           supabaseClient,
           corsHeaders,
-          logStep
+          logStep,
+          isConsultation
         );
       }
       
@@ -159,7 +156,7 @@ Deno.serve(async (req) => {
     }
 
     const roomData = await dailyResponse.json();
-    logStep("Room created", { roomName: roomData.name, url: roomData.url, maxParticipants: roomProperties.max_participants });
+    logStep("Room created", { roomName: roomData.name, url: roomData.url });
 
     return await createTokenAndRespond(
       roomData,
@@ -169,7 +166,8 @@ Deno.serve(async (req) => {
       dailyApiKey,
       supabaseClient,
       corsHeaders,
-      logStep
+      logStep,
+      isConsultation
     );
 
   } catch (error) {
@@ -193,33 +191,32 @@ async function createTokenAndRespond(
   dailyApiKey: string,
   supabaseClient: any,
   corsHeaders: Record<string, string>,
-  logStep: (step: string, details?: any) => void
+  logStep: (step: string, details?: any) => void,
+  isConsultation: boolean
 ) {
-  // Try to save the daily_room_name to the lives table (for live streams)
-  // For consultations, this will simply not match any row — that's expected
-  const { error: updateError, count } = await supabaseClient
-    .from('lives')
-    .update({ daily_room_name: roomData.name })
-    .eq('id', liveId)
-    .eq('doctor_id', userId);
+  // For live streams, save room name to lives table
+  if (!isConsultation) {
+    const { count } = await supabaseClient
+      .from('lives')
+      .update({ daily_room_name: roomData.name })
+      .eq('id', liveId)
+      .eq('doctor_id', userId);
 
-  if (count && count > 0) {
-    logStep("Saved daily_room_name to lives table", { liveId, roomName: roomData.name });
-  } else {
-    logStep("No lives row updated (may be a consultation room)", { liveId });
+    if (count && count > 0) {
+      logStep("Saved daily_room_name to lives table", { liveId, roomName: roomData.name });
+    } else {
+      logStep("No lives row updated", { liveId });
+    }
   }
 
   // Create meeting token for the owner (doctor)
-  // Owner token has special permissions
   const tokenProperties: Record<string, any> = {
     room_name: roomData.name,
     is_owner: true,
     user_id: userId,
     user_name: doctorName,
     exp: Math.floor(Date.now() / 1000) + 86400,
-    // Owner can start/stop recording if available
     enable_recording_ui: true,
-    // Owner can manage participants
     start_video_off: false,
     start_audio_off: false,
   };

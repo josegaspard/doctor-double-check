@@ -88,7 +88,7 @@ export function ChatSessionItem({
       <div className="flex items-start gap-3">
         {/* Avatar with online indicator */}
         <div className="relative flex-shrink-0">
-          <Avatar className={`w-12 h-12 ${isClosed ? 'opacity-75' : ''} ring-2 ring-background`}>
+          <Avatar className={`w-10 h-10 sm:w-12 sm:h-12 ${isClosed ? 'opacity-75' : ''} ring-2 ring-background`}>
             <AvatarImage src={displayInfo.avatar} alt={displayInfo.name} />
             <AvatarFallback className={`
               ${displayInfo.type === 'doctor' 
