@@ -7,9 +7,10 @@ import { Radio, Upload, UserCircle, Newspaper, MessageSquare } from 'lucide-reac
 interface Props {
   isApproved: boolean;
   userId?: string;
+  canPublishNews?: boolean;
 }
 
-export function DoctorQuickActions({ isApproved, userId }: Props) {
+export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props) {
   const navigate = useNavigate();
 
   const actions = [
@@ -41,15 +42,15 @@ export function DoctorQuickActions({ isApproved, userId }: Props) {
       onClick: () => navigate(`/doctor/${userId}`),
       buttonLabel: 'Ver y editar perfil',
     },
-    {
+    ...(canPublishNews ? [{
       title: 'Escribir Artículo',
       description: 'Publica noticias y artículos médicos para la comunidad',
       icon: Newspaper,
       color: 'warning',
       requiresApproval: true,
-      onClick: () => navigate('/admin/news'),
+      onClick: () => navigate('/doctor/news'),
       buttonLabel: 'Escribir',
-    },
+    }] : []),
     {
       title: 'Orientaciones',
       description: 'Revisa tus chats con pacientes',
