@@ -321,16 +321,16 @@ export default function DoctorProfile() {
             onClick={() => navigate(`/live/${activeLive.id}`)}
           >
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <span className="flex h-4 w-4">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-4 w-4 bg-destructive"></span>
                     </span>
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="destructive" className="gap-1">
                         <Radio className="w-3 h-3" />
                         {t('doctorProfile.live')}
@@ -343,7 +343,7 @@ export default function DoctorProfile() {
                     <p className="font-medium text-sm mt-1">{activeLive.title}</p>
                   </div>
                 </div>
-                <Button size="sm" variant="destructive" className="gap-1">
+                <Button size="sm" variant="destructive" className="gap-1 w-full sm:w-auto">
                   <Video className="w-4 h-4" />
                   {t('doctorProfile.watchNow')}
                 </Button>
@@ -435,7 +435,7 @@ export default function DoctorProfile() {
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3">
                   <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} onSubscriptionChange={async () => {
                     await new Promise(r => setTimeout(r, 1000));
                     const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
@@ -443,7 +443,7 @@ export default function DoctorProfile() {
                     if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
                   }} />
                   <Button 
-                    className="gap-2 h-11 active:scale-95 transition-transform" 
+                    className="gap-2 h-11 active:scale-95 transition-transform w-full sm:w-auto" 
                     onClick={handleStartConsultation}
                     disabled={isStartingChat}
                     variant={isFreeConsultation ? 'default' : canChatDirectly ? 'default' : 'secondary'}
@@ -462,7 +462,7 @@ export default function DoctorProfile() {
                           : `${t('doctorProfile.consultation')} ($${doctor.consultationFee})`
                     }
                   </Button>
-                  <Button variant="outline" className="gap-2 h-11 active:scale-95 transition-transform" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
+                  <Button variant="outline" className="gap-2 h-11 active:scale-95 transition-transform w-full sm:w-auto" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
                     <Video className="w-4 h-4" />
                     {t('doctorProfile.viewLives')}
                   </Button>

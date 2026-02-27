@@ -165,31 +165,31 @@ export default function MedicalHistory() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <div className="flex items-center justify-between gap-3 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-primary" />
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             </div>
-            <div>
-              <h1 className="font-heading text-2xl font-bold text-foreground">
+            <div className="min-w-0">
+              <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground">
                 {t('medicalHistory.title')}
               </h1>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground text-xs sm:text-sm">
                 {t('medicalHistory.subtitle')}
               </p>
             </div>
           </div>
           
           {medicalHistory.length > 0 && (
-            <Button variant="outline" onClick={handleExportPDF} className="gap-2">
+            <Button variant="outline" onClick={handleExportPDF} className="gap-2 w-full sm:w-auto">
               <Download className="w-4 h-4" />
               {t('medicalHistory.exportPdf')}
             </Button>
           )}
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -248,7 +248,7 @@ export default function MedicalHistory() {
               <div>
                 <Label>{t('medicalHistory.file')} *</Label>
                 <div className="mt-1">
-                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 cursor-pointer hover:border-primary/50 transition-colors">
+                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 sm:p-6 cursor-pointer hover:border-primary/50 transition-colors">
                     {selectedFile ? (
                       <div className="text-center">
                         <FileText className="w-8 h-8 mx-auto text-primary mb-2" />
