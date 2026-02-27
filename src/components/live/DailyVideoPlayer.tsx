@@ -172,14 +172,16 @@ export function DailyVideoPlayer({
 
   const toggleMute = () => {
     if (!callRef.current) return;
-    callRef.current.setLocalAudio(!isMuted);
-    setIsMuted(!isMuted);
+    const newMuted = !isMuted;
+    callRef.current.setLocalAudio(!newMuted);
+    setIsMuted(newMuted);
   };
 
   const toggleVideo = () => {
     if (!callRef.current) return;
-    callRef.current.setLocalVideo(!isVideoOff);
-    setIsVideoOff(!isVideoOff);
+    const newVideoOff = !isVideoOff;
+    callRef.current.setLocalVideo(!newVideoOff);
+    setIsVideoOff(newVideoOff);
   };
 
   const leaveCall = () => {

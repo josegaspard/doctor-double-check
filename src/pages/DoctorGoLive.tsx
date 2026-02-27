@@ -48,6 +48,8 @@ export default function DoctorGoLive() {
 
   // Local media stream for preview + recording
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [dailyRoomUrl, setDailyRoomUrl] = useState<string | null>(null);
+  const [dailyOwnerToken, setDailyOwnerToken] = useState<string | null>(null);
 
   // Hooks
   const { createRoom, endRoom } = useDaily();
@@ -102,19 +104,7 @@ export default function DoctorGoLive() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isLive, isEnding]);
 
-  // Provide getLocalStream for LiveStreamView
-  const getLocalStream = useCallback(() => localStream, [localStream]);
-
-  // Toggle mute/video on local stream
-  const handleToggleMute = useCallback(() => {
-    if (!localStream) return;
-    localStream.getAudioTracks().forEach(t => { t.enabled = !t.enabled; });
-  }, [localStream]);
-
-  const handleToggleVideo = useCallback(() => {
-    if (!localStream) return;
-    localStream.getVideoTracks().forEach(t => { t.enabled = !t.enabled; });
-  }, [localStream]);
+  // No longer need local stream controls - Daily handles mute/video
 
   const handleStartLive = async (config: LiveConfig) => {
     if (!user?.id) return;
@@ -184,6 +174,8 @@ export default function DoctorGoLive() {
         .eq('id', live.id);
 
       setDailyRoomName(room.name);
+      setDailyRoomUrl(room.url);
+      setDailyOwnerToken(room.ownerToken || '');
 
       // Start local recording from second 0
       if (config.enableRecording) {
@@ -387,9 +379,8 @@ export default function DoctorGoLive() {
           showChat={showChat}
           onToggleChat={() => setShowChat(!showChat)}
           onEndClick={() => setShowEndDialog(true)}
-          getLocalStream={getLocalStream}
-          onToggleMute={handleToggleMute}
-          onToggleVideo={handleToggleVideo}
+          roomUrl={dailyRoomUrl || ''}
+          ownerToken={dailyOwnerToken || ''}
         />
         <LiveDialogs
           showEndDialog={showEndDialog}

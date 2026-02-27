@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { CloudflareStreamPlayer } from './CloudflareStreamPlayer';
+import { DailyVideoPlayer } from './DailyVideoPlayer';
 import { LiveChat } from './LiveChat';
 import { AnimatedViewerCount } from './AnimatedViewerCount';
 import {
@@ -25,9 +25,8 @@ interface LiveStreamViewProps {
   showChat: boolean;
   onToggleChat: () => void;
   onEndClick: () => void;
-  getLocalStream: () => MediaStream | null;
-  onToggleMute: (muted: boolean) => void;
-  onToggleVideo: (videoOff: boolean) => void;
+  roomUrl: string;
+  ownerToken: string;
 }
 
 export function LiveStreamView({
@@ -38,9 +37,8 @@ export function LiveStreamView({
   showChat,
   onToggleChat,
   onEndClick,
-  getLocalStream,
-  onToggleMute,
-  onToggleVideo,
+  roomUrl,
+  ownerToken,
 }: LiveStreamViewProps) {
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
@@ -91,13 +89,12 @@ export function LiveStreamView({
       {/* Video + Chat */}
       <div className="grid lg:grid-cols-4 gap-4">
         <div className={showChat ? 'lg:col-span-3' : 'lg:col-span-4'}>
-          <CloudflareStreamPlayer
-            localStream={getLocalStream()}
+          <DailyVideoPlayer
+            roomUrl={roomUrl}
+            token={ownerToken}
             isOwner={true}
-            onToggleMute={onToggleMute}
-            onToggleVideo={onToggleVideo}
             onLeave={onEndClick}
-            viewerCount={viewerCount || liveData.viewerCount}
+            onParticipantCountChange={() => {}}
           />
         </div>
 
