@@ -18,7 +18,7 @@ import {
   XCircle,
   ImagePlus,
 } from 'lucide-react';
-import { checkH264Support } from '@/hooks/cloudflare';
+// Codec check removed — local recording supports all codecs
 
 const SPECIALTIES = [
   'Cardiología', 'Dermatología', 'Endocrinología', 'Gastroenterología',
@@ -55,21 +55,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [codecCheck, setCodecCheck] = useState<{
-    checked: boolean;
-    h264Supported: boolean;
-    availableCodecs: string[];
-  }>({ checked: false, h264Supported: false, availableCodecs: [] });
-
-  useEffect(() => {
-    checkH264Support().then(result => {
-      setCodecCheck({
-        checked: true,
-        h264Supported: result.h264Supported,
-        availableCodecs: result.availableCodecs,
-      });
-    });
-  }, []);
+  // Codec check removed — local recording supports all browser codecs
 
   const addTag = () => {
     const trimmed = tagInput.trim().toLowerCase();
@@ -262,39 +248,13 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             )}
           </div>
 
-          {/* Codec warnings */}
-          {codecCheck.checked && enableRecording && !codecCheck.h264Supported && (
-            <Alert variant="destructive">
-              <XCircle className="h-4 w-4" />
-              <AlertTitle>Tu navegador no soporta grabaciones</AlertTitle>
-              <AlertDescription className="space-y-2">
-                <p>
-                  Tu navegador solo soporta: {codecCheck.availableCodecs.join(', ') || 'VP8'}.
-                  Cloudflare requiere <strong>H.264</strong> para generar grabaciones.
-                </p>
-                <p className="font-medium">Opciones:</p>
-                <ul className="list-disc list-inside text-sm space-y-1">
-                  <li>Usa <strong>Google Chrome</strong> (mejor soporte H.264)</li>
-                  <li>Usa <strong>OBS con RTMPS</strong> para transmitir</li>
-                </ul>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => setShowRtmpsInfo(!showRtmpsInfo)}
-                >
-                  {showRtmpsInfo ? 'Ocultar info RTMPS' : 'Ver cómo usar OBS'}
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {codecCheck.checked && enableRecording && codecCheck.h264Supported && (
+          {/* Recording info */}
+          {enableRecording && (
             <Alert className="border-primary/50 bg-primary/5">
               <CheckCircle2 className="h-4 w-4 text-primary" />
-              <AlertTitle>Navegador compatible</AlertTitle>
+              <AlertTitle>Grabación local activa</AlertTitle>
               <AlertDescription className="text-muted-foreground">
-                Tu navegador soporta H.264. Las grabaciones funcionarán correctamente.
+                La grabación se guardará localmente y se subirá al finalizar el live.
               </AlertDescription>
             </Alert>
           )}

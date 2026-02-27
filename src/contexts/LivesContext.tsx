@@ -510,43 +510,27 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
 
     try {
-      // Get the live data first
       const live = lives.find(l => l.id === liveId);
       if (!live) return { success: false, error: tContext('contextErrors.liveNotFound') };
 
-      let recordingId: string | undefined;
-
-      if (saveAsRecording) {
-        // End the Cloudflare stream and create/update the recording via backend
-        if (!live.dailyRoomName) {
-          return { success: false, error: tContext('contextErrors.streamUidMissing') };
-        }
-
-        const { data, error: fnError } = await supabase.functions.invoke('end-cloudflare-stream', {
-          body: {
-            liveId,
-            streamUid: live.dailyRoomName,
-            saveRecording: true,
-          },
-        });
-
-        if (fnError) throw fnError;
-        if (!data?.success) throw new Error(data?.error || tContext('contextErrors.endLiveError'));
-
-        recordingId = data.recordingId || undefined;
-      } else {
-        // Just end the live in DB
-        const { error } = await supabase
-          .from('lives')
-          .update({ status: 'ended', ended_at: new Date().toISOString() })
-          .eq('id', liveId)
-          .eq('doctor_id', user.id);
-
-        if (error) throw error;
+      // End Daily room if it exists
+      if (live.dailyRoomName) {
+        await supabase.functions.invoke('end-daily-room', {
+          body: { roomName: live.dailyRoomName },
+        }).catch(err => console.warn('end-daily-room error (non-fatal):', err));
       }
 
+      // Update live status in DB
+      const { error } = await supabase
+        .from('lives')
+        .update({ status: 'ended', ended_at: new Date().toISOString() })
+        .eq('id', liveId)
+        .eq('doctor_id', user.id);
+
+      if (error) throw error;
+
       await Promise.all([fetchLives(true), fetchRecordings()]);
-      return { success: true, recordingId };
+      return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message || tContext('contextErrors.endLiveGenericError') };
     }

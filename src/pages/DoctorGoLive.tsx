@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useViewerCount } from '@/hooks/useViewerCount';
-import { useCloudflareStream, useLocalRecording } from '@/hooks/cloudflare';
+import { useDaily } from '@/hooks/useDaily';
+import { useLocalRecording } from '@/hooks/cloudflare/useLocalRecording';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { LiveSetupForm, LiveConfig } from '@/components/live/LiveSetupForm';
@@ -24,12 +25,6 @@ interface LiveData {
   startedAt: Date;
 }
 
-interface StreamData {
-  uid: string;
-  webRTCUrl: string;
-  playbackUrl: string;
-}
-
 export default function DoctorGoLive() {
   const navigate = useNavigate();
   const { user, role, isLoading: isAuthLoading } = useAuth();
@@ -39,7 +34,7 @@ export default function DoctorGoLive() {
   const [isCreating, setIsCreating] = useState(false);
   const [isLive, setIsLive] = useState(false);
   const [liveData, setLiveData] = useState<LiveData | null>(null);
-  const [streamData, setStreamData] = useState<StreamData | null>(null);
+  const [dailyRoomName, setDailyRoomName] = useState<string | null>(null);
   const [showChat, setShowChat] = useState(true);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
@@ -50,14 +45,12 @@ export default function DoctorGoLive() {
   const [enableRecording, setEnableRecording] = useState(true);
   const [tags, setTags] = useState<string[]>([]);
   const [recordingPrice, setRecordingPrice] = useState(0);
-  const reconnectingRef = useRef(false);
-  const disconnectedChecksRef = useRef(0);
+
+  // Local media stream for preview + recording
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 
   // Hooks
-  const {
-    createStream, prepareMediaStream, startBroadcast, stopBroadcast, endStream, toggleMute, toggleVideo,
-    getLocalStream, isLoading: isStreamLoading,
-  } = useCloudflareStream();
+  const { createRoom, endRoom } = useDaily();
   const localRecording = useLocalRecording();
 
   // Real-time viewer count
@@ -109,69 +102,35 @@ export default function DoctorGoLive() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isLive, isEnding]);
 
+  // Provide getLocalStream for LiveStreamView
+  const getLocalStream = useCallback(() => localStream, [localStream]);
 
-  // Keep Cloudflare ingest alive: auto-reconnect if input becomes disconnected
-  useEffect(() => {
-    if (!isLive || !streamData?.uid || !streamData.webRTCUrl || isEnding) return;
+  // Toggle mute/video on local stream
+  const handleToggleMute = useCallback(() => {
+    if (!localStream) return;
+    localStream.getAudioTracks().forEach(t => { t.enabled = !t.enabled; });
+  }, [localStream]);
 
-    let isCancelled = false;
-
-    const checkCloudflareHealth = async () => {
-      if (isCancelled) return;
-
-      const { data, error } = await supabase.functions.invoke('get-cloudflare-playback', {
-        body: {
-          liveInputUid: streamData.uid,
-          type: 'live',
-        },
-      });
-
-      if (isCancelled || error) return;
-
-      if (data?.success) {
-        disconnectedChecksRef.current = 0;
-        return;
-      }
-
-      if (data?.status === 'disconnected') {
-        disconnectedChecksRef.current += 1;
-
-        if (disconnectedChecksRef.current >= 2 && !reconnectingRef.current) {
-          reconnectingRef.current = true;
-          toast.warning('Se perdió la señal del live. Reconectando...');
-
-          const ok = await startBroadcast(streamData.webRTCUrl);
-
-          if (ok) {
-            disconnectedChecksRef.current = 0;
-            toast.success('Se recuperó la señal del live');
-          } else {
-            toast.error('No se pudo recuperar la señal. Finaliza y vuelve a iniciar el live.');
-          }
-
-          reconnectingRef.current = false;
-        }
-      }
-    };
-
-    const initialCheck = setTimeout(checkCloudflareHealth, 6000);
-    const interval = setInterval(checkCloudflareHealth, 8000);
-
-    return () => {
-      isCancelled = true;
-      clearTimeout(initialCheck);
-      clearInterval(interval);
-      disconnectedChecksRef.current = 0;
-      reconnectingRef.current = false;
-    };
-  }, [isLive, streamData?.uid, streamData?.webRTCUrl, isEnding, startBroadcast]);
+  const handleToggleVideo = useCallback(() => {
+    if (!localStream) return;
+    localStream.getVideoTracks().forEach(t => { t.enabled = !t.enabled; });
+  }, [localStream]);
 
   const handleStartLive = async (config: LiveConfig) => {
     if (!user?.id) return;
 
-    // IMPORTANT: media capture must happen directly from user gesture
-    const mediaReady = await prepareMediaStream();
-    if (!mediaReady) return;
+    // Capture media first (user gesture)
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+        audio: { echoCancellation: true, noiseSuppression: true },
+      });
+      setLocalStream(stream);
+    } catch (err) {
+      toast.error('No se pudo acceder a la cámara/micrófono');
+      return;
+    }
 
     setIsCreating(true);
     setEnableRecording(config.enableRecording);
@@ -193,6 +152,7 @@ export default function DoctorGoLive() {
         }
       }
 
+      // Create live record in DB
       const { data: live, error: liveError } = await supabase
         .from('lives')
         .insert({
@@ -210,30 +170,24 @@ export default function DoctorGoLive() {
 
       if (liveError) throw liveError;
 
-      const stream = await createStream(live.id, config.title.trim(), config.enableRecording);
-      if (!stream) {
+      // Create Daily.co room for live broadcast
+      const room = await createRoom(live.id, config.title.trim(), 'live');
+      if (!room) {
         await supabase.from('lives').delete().eq('id', live.id);
-        throw new Error('Error creating stream');
+        throw new Error('Error creating broadcast room');
       }
 
-      const broadcastStarted = await startBroadcast(stream.webRTCUrl);
-      if (!broadcastStarted) {
-        await supabase.from('lives').delete().eq('id', live.id);
-        throw new Error('Error starting broadcast');
-      }
+      // Save room name to lives table
+      await supabase
+        .from('lives')
+        .update({ daily_room_name: room.name })
+        .eq('id', live.id);
 
-      // Start local recording IMMEDIATELY from second 0
+      setDailyRoomName(room.name);
+
+      // Start local recording from second 0
       if (config.enableRecording) {
-        const localStream = getLocalStream();
-        if (localStream) {
-          localRecording.startRecording(localStream);
-        } else {
-          // Retry once after a short delay if stream not ready yet
-          setTimeout(() => {
-            const retryStream = getLocalStream();
-            if (retryStream) localRecording.startRecording(retryStream);
-          }, 300);
-        }
+        localRecording.startRecording(stream);
       }
 
       setLiveData({
@@ -241,7 +195,6 @@ export default function DoctorGoLive() {
         specialty: live.specialty, viewerCount: 0, likesCount: 0,
         startedAt: new Date(live.started_at),
       });
-      setStreamData({ uid: stream.uid, webRTCUrl: stream.webRTCUrl, playbackUrl: stream.playbackUrl });
       setIsLive(true);
 
       // Notify subscribers (fire-and-forget)
@@ -265,7 +218,8 @@ export default function DoctorGoLive() {
       toast.success('¡Transmisión iniciada!');
     } catch (error: any) {
       console.error('Error starting live:', error);
-      await stopBroadcast().catch(() => {});
+      stream.getTracks().forEach(t => t.stop());
+      setLocalStream(null);
       toast.error(error.message || t('doctorGoLive.startError'));
     } finally {
       setIsCreating(false);
@@ -282,11 +236,12 @@ export default function DoctorGoLive() {
     setEndingStage('ending');
 
     try {
+      // Stop local recording
       if (localRecording.isRecording) {
         await localRecording.stopRecording();
       }
 
-      // Save peak viewers before ending
+      // Save peak viewers
       if (viewerCount > 0) {
         await supabase
           .from('lives')
@@ -294,23 +249,31 @@ export default function DoctorGoLive() {
           .eq('id', liveData.id);
       }
 
-      setEndingStage('saving');
-      const result = await endStream(liveData.id, streamData?.uid, enableRecording);
-      const cloudflareRecordingId = result.success ? result.recordingId : undefined;
-      let recordingCreated = !!cloudflareRecordingId;
+      // End Daily room
+      if (dailyRoomName) {
+        await endRoom(dailyRoomName);
+      }
 
+      // Update live status in DB
+      setEndingStage('saving');
+      await supabase.from('lives').update({
+        status: 'ended', ended_at: new Date().toISOString(),
+      }).eq('id', liveData.id);
+
+      // Upload local recording
+      let recordingCreated = false;
       const localBlob = enableRecording ? localRecording.getRecordingBlob() : null;
       if (enableRecording && localBlob && localBlob.size > 0) {
         setEndingStage('uploading');
         const uploadResult = await localRecording.uploadRecording({
           liveId: liveData.id, doctorId: user.id, title: liveData.title,
           description: liveData.description, specialty: liveData.specialty,
-          tags, price: recordingPrice, recordingId: cloudflareRecordingId,
+          tags, price: recordingPrice,
         });
         if (uploadResult.success) {
           recordingCreated = true;
-          
-          // Auto-save as premium content in doctor_content (with retry for timing)
+
+          // Auto-save as premium content
           const saveAsContent = async (retries = 3) => {
             for (let i = 0; i < retries; i++) {
               const { data: recData } = await supabase
@@ -321,7 +284,7 @@ export default function DoctorGoLive() {
                 .order('created_at', { ascending: false })
                 .limit(1)
                 .maybeSingle();
-              
+
               if (recData?.video_url) {
                 await supabase.from('doctor_content').insert({
                   creator_id: user.id,
@@ -337,7 +300,6 @@ export default function DoctorGoLive() {
                 });
                 return;
               }
-              // Wait before retry
               if (i < retries - 1) await new Promise(r => setTimeout(r, 2000));
             }
           };
@@ -345,13 +307,11 @@ export default function DoctorGoLive() {
         }
       }
 
-      if (!result.success) {
-        await supabase.from('lives').update({
-          status: 'ended', ended_at: new Date().toISOString(),
-        }).eq('id', liveData.id);
-      }
-
+      // Stop local media
+      localStream?.getTracks().forEach(t => t.stop());
+      setLocalStream(null);
       localRecording.cleanup();
+
       setEndingStage('done');
       await new Promise(resolve => setTimeout(resolve, 1500));
 
@@ -368,6 +328,8 @@ export default function DoctorGoLive() {
     } catch (error: any) {
       console.error('Error ending live:', error);
       toast.error(t('doctorGoLive.endError'));
+      localStream?.getTracks().forEach(t => t.stop());
+      setLocalStream(null);
       localRecording.cleanup();
       try {
         await supabase.from('lives').update({
@@ -414,7 +376,7 @@ export default function DoctorGoLive() {
   }
 
   // Live streaming view
-  if (isLive && streamData && liveData) {
+  if (isLive && liveData) {
     return (
       <MainLayout>
         <LiveStreamView
@@ -426,8 +388,8 @@ export default function DoctorGoLive() {
           onToggleChat={() => setShowChat(!showChat)}
           onEndClick={() => setShowEndDialog(true)}
           getLocalStream={getLocalStream}
-          onToggleMute={toggleMute}
-          onToggleVideo={toggleVideo}
+          onToggleMute={handleToggleMute}
+          onToggleVideo={handleToggleVideo}
         />
         <LiveDialogs
           showEndDialog={showEndDialog}
