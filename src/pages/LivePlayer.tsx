@@ -79,21 +79,48 @@ export default function LivePlayer() {
   
   const isLiked = live ? hasLiked(live.id) : false;
   const [liveEnded, setLiveEnded] = useState(false);
-  const prevStatusRef = useRef<string | undefined>(undefined);
 
   // Scroll to top on mount / live change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
 
-  // Detect live ending while watching
+  // Direct realtime subscription on this specific live to detect ending reliably
   useEffect(() => {
-    if (!live) return;
+    if (!id || isOwner) return;
+
+    const channel = supabase
+      .channel(`live-status-${id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'lives', filter: `id=eq.${id}` },
+        (payload) => {
+          const newStatus = (payload.new as any)?.status;
+          if (newStatus === 'ended') {
+            setLiveEnded(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, isOwner]);
+
+  // Also check via context updates (fallback) + initial state
+  const prevStatusRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!live || isOwner) return;
+    // If live is already ended on load, show overlay
+    if (live.status === 'ended' && !liveEnded) {
+      setLiveEnded(true);
+    }
     if (prevStatusRef.current === 'live' && live.status === 'ended') {
       setLiveEnded(true);
     }
     prevStatusRef.current = live.status;
-  }, [live?.status]);
+  }, [live?.status, isOwner, liveEnded]);
 
   // Resolve Daily room for viewers
   useEffect(() => {

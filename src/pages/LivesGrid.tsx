@@ -23,7 +23,7 @@ import {
   LogIn,
 } from 'lucide-react';
 
-function LiveCard({ live, isPremiumSub, isNew }: { live: any; isPremiumSub: boolean; isNew: boolean }) {
+const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boolean; isNew: boolean }>(function LiveCard({ live, isPremiumSub, isNew }, ref) {
   const { t } = useLanguage();
 
   const formatDuration = (startedAt: Date) => {
@@ -35,6 +35,7 @@ function LiveCard({ live, isPremiumSub, isNew }: { live: any; isPremiumSub: bool
   };
 
   return (
+    <div ref={ref}>
     <Link to={`/live/${live.id}`}>
       <Card className="card-live group cursor-pointer overflow-hidden hover:shadow-lg transition-all relative ring-2 ring-live animate-pulse-ring">
         <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-info/20">
@@ -113,8 +114,9 @@ function LiveCard({ live, isPremiumSub, isNew }: { live: any; isPremiumSub: bool
         </CardContent>
       </Card>
     </Link>
+    </div>
   );
-}
+});
 
 export default function LivesGrid() {
   const { lives, isLoading } = useLives();
@@ -198,7 +200,7 @@ export default function LivesGrid() {
           </div>
         ) : activeLives.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="sync">
               {activeLives.map((live) => {
                 const sub = getSubscription(live.doctorId);
                 const isPremiumSub = sub?.tier === 'premium';
