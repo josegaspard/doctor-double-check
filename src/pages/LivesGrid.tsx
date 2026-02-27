@@ -115,9 +115,20 @@ export default function LivesGrid() {
                 <Card className="card-live group cursor-pointer overflow-hidden hover:shadow-lg transition-all relative ring-2 ring-live animate-pulse-ring">
                   {/* Thumbnail */}
                   <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-info/20">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Video className="w-12 h-12 text-primary/40" />
-                    </div>
+                    {live.thumbnailUrl ? (
+                      <img
+                        src={live.thumbnailUrl}
+                        alt={live.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : null}
+                    {!live.thumbnailUrl && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Video className="w-12 h-12 text-primary/40" />
+                      </div>
+                    )}
                     
                     {/* Live Badge */}
                     <div className="absolute top-2 left-2 flex items-center gap-1.5">

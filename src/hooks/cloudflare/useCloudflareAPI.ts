@@ -86,30 +86,54 @@ export function useCloudflareAPI() {
     const directLiveUrl = `https://customer-3afz9zesalmyroc9.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
 
     try {
+      // For live requests, use direct fetch without auth headers to support visitors
+      if (type === 'live') {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        
+        const response = await fetch(`${supabaseUrl}/functions/v1/get-cloudflare-playback`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': anonKey,
+          },
+          body: JSON.stringify({
+            liveInputUid: videoUid,
+            type: 'live',
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          if (data.status === 'disconnected' || data.status === 'offline') {
+            return null;
+          }
+          // Fallback to direct URL if connected but backend had issues
+          return directLiveUrl;
+        }
+
+        return data.playbackUrl || directLiveUrl;
+      }
+
+      // For recordings, use supabase SDK (auth required)
       const { data, error } = await supabase.functions.invoke('get-cloudflare-playback', {
         body: {
-          videoUid: type === 'recording' ? videoUid : undefined,
-          liveInputUid: type === 'live' ? videoUid : undefined,
-          type,
+          videoUid,
+          type: 'recording',
         },
       });
 
       if (error) throw error;
 
       if (!data.success) {
-        if (type === 'live') {
-          if (data.status === 'disconnected' || data.status === 'offline') {
-            return null;
-          }
-          return directLiveUrl;
-        }
         if (data.status === 'processing') {
           return null;
         }
         throw new Error(data.error);
       }
 
-      return data.playbackUrl || (type === 'live' ? directLiveUrl : null);
+      return data.playbackUrl || null;
     } catch (err: any) {
       console.error('[Cloudflare] Error getting playback URL:', err);
       return null;

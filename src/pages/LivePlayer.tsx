@@ -64,6 +64,8 @@ export default function LivePlayer() {
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
   const [isJoiningStream, setIsJoiningStream] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const retryTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const CLOUD_FLARE_LIVE_SUBDOMAIN = 'customer-3afz9zesalmyroc9.cloudflarestream.com';
   
   const live = getLive(id || '');
@@ -80,7 +82,7 @@ export default function LivePlayer() {
   
   const isLiked = live ? hasLiked(live.id) : false;
 
-  // Resolve live playback URL with hard fallback + live status refresh
+  // Resolve live playback URL with auto-retry
   useEffect(() => {
     let cancelled = false;
 
@@ -113,6 +115,13 @@ export default function LivePlayer() {
         setPlaybackUrl(null);
         setPlaybackError('El stream aún se está inicializando. Reintenta en unos segundos.');
         setIsJoiningStream(false);
+        // Auto-retry
+        if (!cancelled && retryCount < 5) {
+          const delay = Math.min(3000 * Math.pow(2, retryCount), 15000);
+          retryTimerRef.current = setTimeout(() => {
+            if (!cancelled) setRetryCount(c => c + 1);
+          }, delay);
+        }
         return;
       }
 
@@ -126,9 +135,17 @@ export default function LivePlayer() {
       if (backendUrl) {
         setPlaybackUrl(backendUrl);
         setPlaybackError(null);
+        setRetryCount(0);
       } else {
         setPlaybackUrl(null);
-        setPlaybackError('El doctor está en vivo, pero su señal no está llegando todavía. Reintenta en unos segundos.');
+        setPlaybackError('El doctor está en vivo, pero su señal no está llegando todavía.');
+        // Auto-retry with backoff
+        if (!cancelled && retryCount < 5) {
+          const delay = Math.min(3000 * Math.pow(2, retryCount), 15000);
+          retryTimerRef.current = setTimeout(() => {
+            if (!cancelled) setRetryCount(c => c + 1);
+          }, delay);
+        }
       }
       setIsJoiningStream(false);
     };
@@ -137,8 +154,9 @@ export default function LivePlayer() {
 
     return () => {
       cancelled = true;
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
     };
-  }, [live, isLiveActive, getPlaybackUrl]);
+  }, [live, isLiveActive, getPlaybackUrl, retryCount]);
 
   useEffect(() => {
     refreshLives();
@@ -289,13 +307,23 @@ export default function LivePlayer() {
                     </div>
                   </div>
                 ) : playbackError ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-destructive/20 to-muted/40">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-info/30">
                     <div className="text-center px-4">
-                      <p className="text-foreground font-medium">No se pudo abrir este live.</p>
-                      <p className="text-muted-foreground text-xs mt-1">{playbackError}</p>
-                      <Button size="sm" variant="outline" className="mt-3" onClick={() => refreshLives()}>
-                        Reintentar
-                      </Button>
+                      {retryCount < 5 ? (
+                        <>
+                          <Loader2 className="w-10 h-10 mx-auto mb-3 text-white animate-spin" />
+                          <p className="text-white font-medium">Conectando...</p>
+                          <p className="text-white/60 text-xs mt-1">Intento {retryCount + 1} de 5</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-white font-medium">No se pudo conectar al live.</p>
+                          <p className="text-white/60 text-xs mt-1">{playbackError}</p>
+                          <Button size="sm" variant="outline" className="mt-3" onClick={() => { setRetryCount(0); refreshLives(); }}>
+                            Reintentar
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ) : (

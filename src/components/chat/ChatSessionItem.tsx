@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { 
   Stethoscope, 
   User, 
@@ -8,7 +9,7 @@ import {
   Lock, 
   Clock,
   GraduationCap,
-  Circle
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
@@ -32,6 +33,7 @@ interface ChatSessionItemProps {
   userRole: string | null;
   onClick: () => void;
   onDoctorProfileClick: (e: React.MouseEvent) => void;
+  onDelete?: (e: React.MouseEvent) => void;
 }
 
 export function ChatSessionItem({
@@ -44,6 +46,7 @@ export function ChatSessionItem({
   userRole,
   onClick,
   onDoctorProfileClick,
+  onDelete,
 }: ChatSessionItemProps) {
   const { t, language } = useLanguage();
   const isClosed = session.status === 'closed';
@@ -186,7 +189,18 @@ export function ChatSessionItem({
               {session.unreadCount}
             </Badge>
           )}
-          {isClosed && (
+          {isClosed && onDelete && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+              onClick={onDelete}
+              title="Eliminar chat"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          )}
+          {isClosed && !onDelete && (
             <Lock className="w-3.5 h-3.5 text-muted-foreground/50" />
           )}
         </div>
