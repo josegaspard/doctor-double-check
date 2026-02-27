@@ -11,11 +11,10 @@ import {
   VideoOff,
   PhoneOff,
   Users,
-  Settings,
   Maximize,
   Minimize,
-  Volume2,
-  VolumeX,
+  Monitor,
+  MonitorOff,
 } from 'lucide-react';
 
 interface DailyVideoPlayerProps {
@@ -34,6 +33,7 @@ export function DailyVideoPlayer({
   onParticipantCountChange,
 }: DailyVideoPlayerProps) {
   const videoContainerRef = useRef<HTMLDivElement>(null);
+  const screenShareRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
   
   const [isJoining, setIsJoining] = useState(true);
@@ -41,16 +41,18 @@ export function DailyVideoPlayer({
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [hasRemoteScreenShare, setHasRemoteScreenShare] = useState(false);
   const [participantCount, setParticipantCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize Daily call
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!roomUrl || !token) return;
 
     const initCall = async () => {
       try {
-        // Create Daily call object
         const call = Daily.createCallObject({
           videoSource: isOwner,
           audioSource: isOwner,
@@ -58,7 +60,6 @@ export function DailyVideoPlayer({
         
         callRef.current = call;
 
-        // Event listeners
         call.on('joined-meeting', handleJoinedMeeting);
         call.on('left-meeting', handleLeftMeeting);
         call.on('participant-joined', handleParticipantUpdate);
@@ -66,12 +67,7 @@ export function DailyVideoPlayer({
         call.on('participant-updated', handleParticipantUpdate);
         call.on('error', handleError);
 
-        // Join the room
-        await call.join({
-          url: roomUrl,
-          token: token,
-        });
-
+        await call.join({ url: roomUrl, token });
       } catch (err: any) {
         console.error('Error joining Daily room:', err);
         setError(err.message || 'Error al conectar');
@@ -81,7 +77,6 @@ export function DailyVideoPlayer({
 
     initCall();
 
-    // Cleanup
     return () => {
       if (callRef.current) {
         callRef.current.leave();
@@ -91,11 +86,8 @@ export function DailyVideoPlayer({
     };
   }, [roomUrl, token, isOwner]);
 
-  // Update video container when connected
   useEffect(() => {
     if (!isConnected || !videoContainerRef.current || !callRef.current) return;
-
-    // Get local and remote participants
     const participants = callRef.current.participants();
     updateVideoElements(participants);
   }, [isConnected]);
@@ -118,8 +110,16 @@ export function DailyVideoPlayer({
     const count = Object.keys(participants).length;
     setParticipantCount(count);
     onParticipantCountChange?.(count);
+
+    // Detect screen shares
+    let foundScreenShare = false;
+    Object.values(participants).forEach(p => {
+      if (p.screen && p.screenVideoTrack) {
+        foundScreenShare = true;
+      }
+    });
+    setHasRemoteScreenShare(foundScreenShare);
     
-    // Update video elements
     if (videoContainerRef.current) {
       updateVideoElements(participants);
     }
@@ -127,8 +127,6 @@ export function DailyVideoPlayer({
 
   const handleError = useCallback((event: DailyEventObject) => {
     console.error('Daily error:', event);
-    
-    // Handle specific error types with user-friendly messages
     const errorMsg = (event as any).errorMsg || '';
     let userMessage = 'Error de conexión';
     
@@ -146,25 +144,42 @@ export function DailyVideoPlayer({
 
   const updateVideoElements = (participants: Record<string, DailyParticipant>) => {
     if (!videoContainerRef.current) return;
-    
-    // Clear existing videos
     videoContainerRef.current.innerHTML = '';
+
+    // Also clear screen share container
+    if (screenShareRef.current) {
+      screenShareRef.current.innerHTML = '';
+    }
     
     Object.values(participants).forEach((participant) => {
-      if (participant.video) {
+      // Handle screen share track
+      if (participant.screen && participant.screenVideoTrack && screenShareRef.current) {
+        const screenEl = document.createElement('video');
+        screenEl.autoplay = true;
+        screenEl.playsInline = true;
+        screenEl.muted = true;
+        screenEl.className = 'w-full h-full object-contain';
+        const stream = new MediaStream([participant.screenVideoTrack]);
+        screenEl.srcObject = stream;
+        screenShareRef.current.appendChild(screenEl);
+      }
+
+      if (participant.video && participant.videoTrack) {
         const videoEl = document.createElement('video');
         videoEl.autoplay = true;
         videoEl.playsInline = true;
         videoEl.muted = participant.local;
-        videoEl.className = participant.local 
-          ? 'absolute bottom-4 right-4 w-32 h-24 rounded-lg object-cover z-10 border-2 border-primary'
-          : 'w-full h-full object-cover';
+
+        const showingScreenShare = isScreenSharing || hasRemoteScreenShare;
         
-        if (participant.videoTrack) {
-          const stream = new MediaStream([participant.videoTrack]);
-          videoEl.srcObject = stream;
-        }
+        videoEl.className = participant.local && showingScreenShare
+          ? 'absolute bottom-2 right-2 w-24 h-18 sm:w-32 sm:h-24 rounded-lg object-cover z-10 border-2 border-primary shadow-lg'
+          : showingScreenShare && !participant.local
+            ? 'absolute bottom-2 left-2 w-24 h-18 sm:w-32 sm:h-24 rounded-lg object-cover z-10 border-2 border-muted shadow-lg'
+            : 'w-full h-full object-cover';
         
+        const stream = new MediaStream([participant.videoTrack]);
+        videoEl.srcObject = stream;
         videoContainerRef.current?.appendChild(videoEl);
       }
     });
@@ -184,33 +199,53 @@ export function DailyVideoPlayer({
     setIsVideoOff(newVideoOff);
   };
 
-  const leaveCall = () => {
-    if (callRef.current) {
-      callRef.current.leave();
+  const toggleScreenShare = async () => {
+    if (!callRef.current) return;
+    try {
+      if (isScreenSharing) {
+        await callRef.current.stopScreenShare();
+        setIsScreenSharing(false);
+      } else {
+        await callRef.current.startScreenShare();
+        setIsScreenSharing(true);
+      }
+    } catch (err) {
+      console.error('Screen share error:', err);
+      toast.error('No se pudo compartir pantalla');
     }
+  };
+
+  const leaveCall = () => {
+    if (callRef.current) callRef.current.leave();
     onLeave?.();
   };
 
   const toggleFullscreen = () => {
-    if (!videoContainerRef.current) return;
-    
+    if (!wrapperRef.current) return;
     if (!isFullscreen) {
-      videoContainerRef.current.requestFullscreen?.();
+      wrapperRef.current.requestFullscreen?.();
     } else {
       document.exitFullscreen?.();
     }
     setIsFullscreen(!isFullscreen);
   };
 
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  const showingScreenShare = isScreenSharing || hasRemoteScreenShare;
+
   if (error) {
     return (
       <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center px-4">
           <VideoOff className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground">{error}</p>
-          <Button onClick={onLeave} className="mt-4" variant="outline">
-            Volver
-          </Button>
+          <Button onClick={onLeave} className="mt-4" variant="outline">Volver</Button>
         </div>
       </div>
     );
@@ -218,7 +253,7 @@ export function DailyVideoPlayer({
 
   if (isJoining) {
     return (
-      <div className="aspect-video bg-muted rounded-xl overflow-hidden">
+      <div className="aspect-video bg-muted rounded-xl overflow-hidden relative">
         <Skeleton className="w-full h-full" />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center">
@@ -231,11 +266,24 @@ export function DailyVideoPlayer({
   }
 
   return (
-    <div className="relative aspect-video bg-black rounded-xl overflow-hidden group">
-      {/* Video Container */}
+    <div
+      ref={wrapperRef}
+      className={`relative bg-black rounded-xl overflow-hidden group ${
+        isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'aspect-video'
+      }`}
+    >
+      {/* Screen share layer (main area when active) */}
+      {showingScreenShare && (
+        <div
+          ref={screenShareRef}
+          className="absolute inset-0 flex items-center justify-center bg-black z-0"
+        />
+      )}
+
+      {/* Camera video container */}
       <div 
         ref={videoContainerRef} 
-        className="absolute inset-0 flex items-center justify-center"
+        className={`absolute ${showingScreenShare ? 'inset-0 pointer-events-none' : 'inset-0'} flex items-center justify-center`}
       >
         {!isConnected && (
           <Video className="w-16 h-16 text-muted-foreground/30" />
@@ -243,7 +291,7 @@ export function DailyVideoPlayer({
       </div>
       
       {/* Live Indicator */}
-      <div className="absolute top-4 left-4 z-20">
+      <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20">
         <Badge variant="live" className="gap-1">
           <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
           EN VIVO
@@ -251,23 +299,37 @@ export function DailyVideoPlayer({
       </div>
       
       {/* Participant Count */}
-      <div className="absolute top-4 right-4 z-20">
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
         <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
           <Users className="w-3 h-3" />
           {participantCount} viendo
         </Badge>
       </div>
+
+      {/* Screen share indicator */}
+      {showingScreenShare && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
+          <Badge variant="secondary" className="gap-1 bg-blue-600/80 text-white border-0">
+            <Monitor className="w-3 h-3" />
+            Pantalla compartida
+          </Badge>
+        </div>
+      )}
       
       {/* Controls */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-20">
-        <div className="flex items-center justify-center gap-2">
+      <div className={`absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/80 to-transparent z-20 transition-opacity ${
+        isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+      }`}
+        style={{ paddingBottom: isFullscreen ? 'max(0.75rem, env(safe-area-inset-bottom))' : undefined }}
+      >
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
           {isOwner && (
             <>
               <Button
                 size="icon"
                 variant={isMuted ? "destructive" : "secondary"}
                 onClick={toggleMute}
-                className="rounded-full"
+                className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
               >
                 {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </Button>
@@ -276,9 +338,18 @@ export function DailyVideoPlayer({
                 size="icon"
                 variant={isVideoOff ? "destructive" : "secondary"}
                 onClick={toggleVideo}
-                className="rounded-full"
+                className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
               >
                 {isVideoOff ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+              </Button>
+
+              <Button
+                size="icon"
+                variant={isScreenSharing ? "default" : "secondary"}
+                onClick={toggleScreenShare}
+                className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
+              >
+                {isScreenSharing ? <MonitorOff className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
               </Button>
             </>
           )}
@@ -287,7 +358,7 @@ export function DailyVideoPlayer({
             size="icon"
             variant="secondary"
             onClick={toggleFullscreen}
-            className="rounded-full"
+            className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
           >
             {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
           </Button>
@@ -297,7 +368,7 @@ export function DailyVideoPlayer({
               size="icon"
               variant="destructive"
               onClick={leaveCall}
-              className="rounded-full"
+              className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
             >
               <PhoneOff className="w-4 h-4" />
             </Button>

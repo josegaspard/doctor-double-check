@@ -249,11 +249,11 @@ export default function RecordingsGrid() {
                     </div>
 
                     {/* Viewer count badge */}
-                    {(recording as any).peakViewers > 0 && (
+                    {recording.peakViewers && recording.peakViewers > 0 && (
                       <div className="absolute top-2 right-2">
                         <Badge variant="secondary" className="gap-1 bg-black/50 text-white border-0">
                           <Eye className="w-3 h-3" />
-                          {(recording as any).peakViewers}
+                          {recording.peakViewers}
                         </Badge>
                       </div>
                     )}
