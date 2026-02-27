@@ -327,23 +327,6 @@ export default function Chat() {
         </div>
 
         <div className="grid md:grid-cols-[340px,1fr] gap-3 sm:gap-4 flex-1 min-h-0 overflow-hidden">
-          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-              <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
-            </div>
-            <span>Chat 1:1</span>
-          </h1>
-          <div className="flex items-center gap-2">
-            {activeSessions.length > 0 && (
-              <Badge variant="secondary" className="gap-1">
-                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                {activeSessions.length} {t('chat.active').toLowerCase()}{activeSessions.length !== 1 ? 's' : ''}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-[340px,1fr] gap-3 sm:gap-4 flex-1 min-h-0 overflow-hidden">
           <ChatSessionsList
             activeSessions={activeSessions}
             closedSessions={closedSessions}
