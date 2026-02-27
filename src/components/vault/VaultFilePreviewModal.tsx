@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface VaultFilePreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
+  viewOnly?: boolean; // When true, hides download/open buttons (doctor OTP access)
   file: {
     id: string;
     name: string;
@@ -27,7 +28,7 @@ interface VaultFilePreviewModalProps {
   } | null;
 }
 
-export function VaultFilePreviewModal({ isOpen, onClose, file }: VaultFilePreviewModalProps) {
+export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false }: VaultFilePreviewModalProps) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -174,7 +175,7 @@ export function VaultFilePreviewModal({ isOpen, onClose, file }: VaultFilePrevie
 
         {/* Actions */}
         <div className="flex justify-end gap-2 pt-4 flex-shrink-0">
-          {signedUrl && (
+          {signedUrl && !viewOnly && (
             <>
               <Button variant="outline" asChild>
                 <a href={signedUrl} target="_blank" rel="noopener noreferrer">
@@ -189,6 +190,11 @@ export function VaultFilePreviewModal({ isOpen, onClose, file }: VaultFilePrevie
                 </a>
               </Button>
             </>
+          )}
+          {viewOnly && (
+            <p className="text-xs text-muted-foreground mr-auto flex items-center gap-1">
+              🔒 Solo lectura — acceso temporal por OTP
+            </p>
           )}
           <Button onClick={onClose}>Cerrar</Button>
         </div>

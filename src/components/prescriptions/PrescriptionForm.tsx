@@ -84,6 +84,18 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
   const handleSubmit = async () => {
     if (!user?.id || !user.doctorProfile) return;
 
+    // Fetch doctor signature
+    let doctorSignatureUrl: string | undefined;
+    try {
+      const { data: dp } = await supabase
+        .from('doctor_profiles')
+        .select('signature_url')
+        .eq('user_id', user.id)
+        .single();
+      doctorSignatureUrl = (dp as any)?.signature_url || undefined;
+    } catch {}
+
+
     const validMeds = medications.filter(m => m.name.trim());
     
     // Must have at least one medication OR an attached file
@@ -159,6 +171,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
           doctorSpecialty: user.doctorProfile.specialty,
           doctorLicense: user.doctorProfile.license,
           doctorCedula: user.doctorProfile.cedulaProfesional || undefined,
+          doctorSignatureUrl,
           signedAt: new Date(data.signed_at),
         });
       }

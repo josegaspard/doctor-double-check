@@ -18,6 +18,7 @@ export interface PrescriptionData {
   doctorSpecialty: string;
   doctorLicense: string;
   doctorCedula?: string;
+  doctorSignatureUrl?: string;
   signedAt: Date;
 }
 
@@ -140,6 +141,11 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
 
       <!-- Signature -->
       <div style="margin-top: 40px; text-align: center; border-top: 2px solid #d1d9e6; padding-top: 24px;">
+        ${rx.doctorSignatureUrl ? `
+        <div style="margin-bottom: 12px;">
+          <img src="${rx.doctorSignatureUrl}" alt="Firma del doctor" style="max-height: 80px; width: auto; margin: 0 auto; display: block;" onerror="this.style.display='none'" />
+        </div>
+        ` : ''}
         <div style="display: inline-block; border-bottom: 2px solid #163a83; padding: 0 40px 4px;">
           <p style="margin: 0; font-weight: 700; font-size: 16px; color: #163a83;">${rx.doctorName}</p>
         </div>

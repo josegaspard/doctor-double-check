@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -31,8 +32,11 @@ import {
   User,
   Crown,
   Lock,
+  ShoppingBag,
+  Sparkles,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { usePurchases } from '@/hooks/usePurchases';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 
@@ -93,6 +97,7 @@ export default function ContentGallery() {
   const { user, role } = useAuth();
   const { language, t } = useLanguage();
   const { isSubscribedTo, getSubscription } = useSubscriptions();
+  const { purchases } = usePurchases();
   const locale = language === 'es' ? es : enUS;
   const [contents, setContents] = useState<DoctorContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,6 +106,7 @@ export default function ContentGallery() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [previewContent, setPreviewContent] = useState<DoctorContent | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
+  const [contentTab, setContentTab] = useState('all');
 
   const fetchContents = useCallback(async () => {
     try {
@@ -165,11 +171,18 @@ export default function ContentGallery() {
     return sub && (sub.tier === 'basic' || sub.tier === 'premium');
   };
 
+  // Build purchased recording IDs set for quick lookup
+  const purchasedIds = new Set(purchases?.map(p => p.recordingId) || []);
+
   const filteredContents = contents.filter(content => {
     const matchesSearch = content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       content.creator_name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = typeFilter === 'all' || content.type === typeFilter;
     const matchesCategory = categoryFilter === 'all' || content.category === categoryFilter;
+    const isPurchased = purchasedIds.has(content.id);
+    
+    if (contentTab === 'purchased') return matchesSearch && matchesType && matchesCategory && isPurchased;
+    if (contentTab === 'new') return matchesSearch && matchesType && matchesCategory && !isPurchased;
     return matchesSearch && matchesType && matchesCategory;
   });
 
@@ -186,6 +199,24 @@ export default function ContentGallery() {
             {t('content.explore')}
           </p>
         </div>
+
+        {/* Content Tabs */}
+        <Tabs value={contentTab} onValueChange={setContentTab} className="mb-4">
+          <TabsList>
+            <TabsTrigger value="all" className="gap-1.5">
+              <Library className="w-3.5 h-3.5" />
+              {language === 'es' ? 'Todo' : 'All'}
+            </TabsTrigger>
+            <TabsTrigger value="purchased" className="gap-1.5">
+              <ShoppingBag className="w-3.5 h-3.5" />
+              {language === 'es' ? 'Comprados' : 'Purchased'}
+            </TabsTrigger>
+            <TabsTrigger value="new" className="gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              {language === 'es' ? 'Nuevos' : 'New'}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">

@@ -77,10 +77,15 @@ export default function AdminNews() {
 
   const fetchNews = async () => {
     setIsLoading(true);
-    const { data } = await supabase
+    // Doctors only see their own news; admins see all
+    let query = supabase
       .from('medical_news')
       .select('*')
       .order('created_at', { ascending: false });
+    if (role === 'doctor' && supabaseUser?.id) {
+      query = query.eq('created_by', supabaseUser.id);
+    }
+    const { data } = await query;
     if (data) {
       setNews(data as NewsItem[]);
       const editorIds = [...new Set(data.filter(d => d.last_edited_by).map(d => d.last_edited_by))];
@@ -282,9 +287,9 @@ export default function AdminNews() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-5xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-4 -ml-2 text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" size="sm" onClick={() => navigate(role === 'admin' ? '/admin' : '/news')} className="mb-4 -ml-2 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Volver al panel
+          {role === 'admin' ? 'Volver al panel' : 'Volver a noticias'}
         </Button>
 
         <div className="flex items-center justify-between mb-6">
