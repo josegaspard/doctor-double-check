@@ -46,7 +46,9 @@ Deno.serve(async (req) => {
       .eq("id", userId)
       .single();
 
-    const doctorName = profile?.name || "Doctor";
+    const doctorName = profile?.name
+      || userData.user.user_metadata?.name
+      || "Doctor";
 
     // Parse request body
     const { liveId, title, enableRecording = false } = await req.json();

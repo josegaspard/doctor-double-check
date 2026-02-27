@@ -32,8 +32,9 @@ import {
 } from 'lucide-react';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
+import { useDebounce } from '@/hooks/use-debounce';
 
-interface DoctorWithProfile {
+interface DoctorRow {
   id: string;
   user_id: string;
   specialty: string;
@@ -48,11 +49,10 @@ interface DoctorWithProfile {
   office_hours_start: string | null;
   office_hours_end: string | null;
   office_days: string[] | null;
-  profile: {
-    name: string;
-    avatar_url: string | null;
-    is_identity_verified: boolean;
-  } | null;
+  name: string;
+  avatar_url: string | null;
+  is_identity_verified: boolean;
+  total_count: number;
 }
 
 const SPECIALTIES = [
@@ -73,70 +73,51 @@ const SPECIALTIES = [
   'Urología',
 ];
 
+const DOCTORS_PER_PAGE = 20;
+
 export default function Doctors() {
   const navigate = useNavigate();
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const { t } = useLanguage();
-  const [doctors, setDoctors] = useState<DoctorWithProfile[]>([]);
-  const [filteredDoctors, setFilteredDoctors] = useState<DoctorWithProfile[]>([]);
+  const [doctors, setDoctors] = useState<DoctorRow[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
   const [followedDoctors, setFollowedDoctors] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
-  const DOCTORS_PER_PAGE = 20;
+
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, selectedSpecialty]);
+
+  // Fetch doctors from paginated RPC
   useEffect(() => {
     fetchDoctors();
-    if (user?.id) {
-      fetchFollowedDoctors();
-    }
-  }, [user?.id]);
+  }, [currentPage, debouncedSearch, selectedSpecialty]);
 
   useEffect(() => {
-    filterDoctors();
-    setCurrentPage(1);
-  }, [doctors, searchQuery, selectedSpecialty]);
+    if (user?.id) fetchFollowedDoctors();
+  }, [user?.id]);
 
   const fetchDoctors = async () => {
+    setIsLoading(true);
     try {
-      // Use the public view which only exposes non-sensitive columns
-      const { data, error } = await supabase
-        .from('doctor_profiles_public')
-        .select(`
-          id,
-          user_id,
-          specialty,
-          bio,
-          rating,
-          followers_count,
-          consultation_fee,
-          location,
-          available_for_double_check,
-          total_consultations,
-          badge_override,
-          office_hours_start,
-          office_hours_end,
-          office_days
-        `)
-        .order('rating', { ascending: false });
+      const { data, error } = await supabase.rpc('get_doctors_paginated', {
+        p_page: currentPage,
+        p_page_size: DOCTORS_PER_PAGE,
+        p_search: debouncedSearch,
+        p_specialty: selectedSpecialty === 'Todas' ? '' : selectedSpecialty,
+      });
 
       if (error) throw error;
 
-      // Fetch profiles from public view (no emails exposed)
-      const userIds = data?.map(d => d.user_id).filter(Boolean) as string[] || [];
-      const { data: profiles } = await supabase
-        .from('profiles_public')
-        .select('id, name, avatar_url, is_identity_verified')
-        .in('id', userIds);
-
-      const profileMap = new Map(profiles?.map(p => [p.id, p]));
-      
-      const doctorsWithProfiles = data?.map(d => ({
-        ...d,
-        profile: profileMap.get(d.user_id) || null
-      })) || [];
-
-      setDoctors(doctorsWithProfiles);
+      const rows = (data || []) as DoctorRow[];
+      setDoctors(rows);
+      setTotalCount(rows.length > 0 ? Number(rows[0].total_count) : 0);
     } catch (error) {
       console.error('Error fetching doctors:', error);
       toast.error('Error al cargar doctores');
@@ -147,34 +128,13 @@ export default function Doctors() {
 
   const fetchFollowedDoctors = async () => {
     if (!user?.id) return;
-    
     const { data } = await supabase
       .from('followers')
       .select('followed_id')
       .eq('follower_id', user.id);
-
     if (data) {
       setFollowedDoctors(new Set(data.map(f => f.followed_id)));
     }
-  };
-
-  const filterDoctors = () => {
-    let filtered = [...doctors];
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(d => 
-        d.profile?.name?.toLowerCase().includes(query) ||
-        d.specialty.toLowerCase().includes(query) ||
-        d.bio?.toLowerCase().includes(query)
-      );
-    }
-
-    if (selectedSpecialty !== 'Todas') {
-      filtered = filtered.filter(d => d.specialty === selectedSpecialty);
-    }
-
-    setFilteredDoctors(filtered);
   };
 
   const handleFollow = async (doctorUserId: string) => {
@@ -183,54 +143,32 @@ export default function Doctors() {
       navigate('/login');
       return;
     }
-
     try {
       if (followedDoctors.has(doctorUserId)) {
-        await supabase
-          .from('followers')
-          .delete()
-          .eq('follower_id', user.id)
-          .eq('followed_id', doctorUserId);
-        
-        setFollowedDoctors(prev => {
-          const next = new Set(prev);
-          next.delete(doctorUserId);
-          return next;
-        });
+        await supabase.from('followers').delete().eq('follower_id', user.id).eq('followed_id', doctorUserId);
+        setFollowedDoctors(prev => { const next = new Set(prev); next.delete(doctorUserId); return next; });
         toast.success('Dejaste de seguir al doctor');
       } else {
-        await supabase
-          .from('followers')
-          .insert({ follower_id: user.id, followed_id: doctorUserId });
-        
+        await supabase.from('followers').insert({ follower_id: user.id, followed_id: doctorUserId });
         setFollowedDoctors(prev => new Set([...prev, doctorUserId]));
         toast.success('Ahora sigues a este doctor');
       }
-    } catch (error) {
+    } catch {
       toast.error('Error al actualizar seguimiento');
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitials = (name: string) =>
+    name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const totalPages = Math.ceil(totalCount / DOCTORS_PER_PAGE);
 
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        {/* Header */}
         <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold text-foreground mb-2">
-            Explorar Doctores
-          </h1>
-          <p className="text-muted-foreground">
-            Encuentra y sigue a los mejores especialistas médicos
-          </p>
+          <h1 className="font-heading text-2xl font-bold text-foreground mb-2">Explorar Doctores</h1>
+          <p className="text-muted-foreground">Encuentra y sigue a los mejores especialistas médicos</p>
         </div>
 
         {/* Filters */}
@@ -257,19 +195,10 @@ export default function Doctors() {
           </Select>
         </div>
 
-        {/* Results count & pagination info */}
-        {(() => {
-          const totalPages = Math.ceil(filteredDoctors.length / DOCTORS_PER_PAGE);
-          const startIdx = (currentPage - 1) * DOCTORS_PER_PAGE;
-          const endIdx = startIdx + DOCTORS_PER_PAGE;
-          const paginatedDoctors = filteredDoctors.slice(startIdx, endIdx);
-          
-          return (
-            <>
-              <p className="text-sm text-muted-foreground mb-4">
-                {filteredDoctors.length} doctores encontrados
-                {totalPages > 1 && ` — Página ${currentPage} de ${totalPages}`}
-              </p>
+        <p className="text-sm text-muted-foreground mb-4">
+          {totalCount} doctores encontrados
+          {totalPages > 1 && ` — Página ${currentPage} de ${totalPages}`}
+        </p>
 
         {/* Doctors Grid */}
         {isLoading ? (
@@ -289,46 +218,38 @@ export default function Doctors() {
               </Card>
             ))}
           </div>
-        ) : filteredDoctors.length === 0 ? (
+        ) : doctors.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <Stethoscope className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="font-semibold text-lg mb-2">No se encontraron doctores</h3>
-              <p className="text-muted-foreground">
-                Intenta ajustar los filtros de búsqueda
-              </p>
+              <p className="text-muted-foreground">Intenta ajustar los filtros de búsqueda</p>
             </CardContent>
           </Card>
         ) : (
           <>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {paginatedDoctors.map(doctor => (
-                <Card 
-                  key={doctor.id} 
-                  className="hover:shadow-lg transition-shadow cursor-pointer group"
-                >
+              {doctors.map(doctor => (
+                <Card key={doctor.id} className="hover:shadow-lg transition-shadow cursor-pointer group">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
-                      <div 
-                        className="cursor-pointer"
-                        onClick={() => navigate(`/doctor/${doctor.user_id}`)}
-                      >
+                      <div className="cursor-pointer" onClick={() => navigate(`/doctor/${doctor.user_id}`)}>
                         <Avatar className="w-16 h-16 border-2 border-background shadow-md">
-                          <AvatarImage src={doctor.profile?.avatar_url || undefined} />
+                          <AvatarImage src={doctor.avatar_url || undefined} />
                           <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                            {getInitials(doctor.profile?.name || 'Dr')}
+                            {getInitials(doctor.name || 'Dr')}
                           </AvatarFallback>
                         </Avatar>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 
+                          <h3
                             className="font-semibold truncate group-hover:text-primary transition-colors cursor-pointer"
                             onClick={() => navigate(`/doctor/${doctor.user_id}`)}
                           >
-                            {doctor.profile?.name || 'Doctor'}
+                            {doctor.name || 'Doctor'}
                           </h3>
-                          {doctor.profile?.is_identity_verified && (
+                          {doctor.is_identity_verified && (
                             <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
                           )}
                         </div>
@@ -340,7 +261,7 @@ export default function Doctors() {
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Star className="w-3.5 h-3.5 text-warning fill-warning" />
-                            {doctor.rating.toFixed(1)}
+                            {Number(doctor.rating).toFixed(1)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="w-3.5 h-3.5" />
@@ -357,7 +278,7 @@ export default function Doctors() {
                           const now = new Date();
                           const currentDay = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][now.getDay()];
                           const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                          const isAvailable = doctor.office_days?.includes(currentDay) && 
+                          const isAvailable = doctor.office_days?.includes(currentDay) &&
                             doctor.office_hours_start && doctor.office_hours_end &&
                             currentTime >= doctor.office_hours_start && currentTime <= doctor.office_hours_end;
                           return (
@@ -368,9 +289,7 @@ export default function Doctors() {
                           );
                         })()}
                         {doctor.bio && (
-                          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                            {doctor.bio}
-                          </p>
+                          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{doctor.bio}</p>
                         )}
                       </div>
                     </div>
@@ -379,17 +298,14 @@ export default function Doctors() {
                         variant={followedDoctors.has(doctor.user_id) ? "secondary" : "outline"}
                         size="sm"
                         className="flex-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleFollow(doctor.user_id);
-                        }}
+                        onClick={(e) => { e.stopPropagation(); handleFollow(doctor.user_id); }}
                       >
                         <Heart className={`w-4 h-4 mr-1 ${followedDoctors.has(doctor.user_id) ? 'fill-current' : ''}`} />
                         {followedDoctors.has(doctor.user_id) ? 'Siguiendo' : 'Seguir'}
                       </Button>
-                      <SubscribeButton 
+                      <SubscribeButton
                         doctorId={doctor.user_id}
-                        doctorName={doctor.profile?.name || 'Doctor'}
+                        doctorName={doctor.name || 'Doctor'}
                         size="sm"
                       />
                     </div>
@@ -398,7 +314,7 @@ export default function Doctors() {
               ))}
             </div>
 
-            {/* Pagination controls */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-8 pb-4">
                 <Button
@@ -447,9 +363,6 @@ export default function Doctors() {
             )}
           </>
         )}
-            </>
-          );
-        })()}
       </div>
     </MainLayout>
   );
