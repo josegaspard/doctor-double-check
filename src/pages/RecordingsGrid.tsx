@@ -58,7 +58,7 @@ export default function RecordingsGrid() {
     if (!doctorFilter) { setDoctorName(null); return; }
     const fetchName = async () => {
       const { data } = await supabase
-        .from('profiles_public')
+        .from('profiles')
         .select('name')
         .eq('id', doctorFilter)
         .single();
