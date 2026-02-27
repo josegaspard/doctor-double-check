@@ -31,17 +31,19 @@ export default function DoctorDashboard() {
   const { getLivesByDoctor } = useLives();
   const { getAccessibleFiles } = useVault();
   const [recordingsCount, setRecordingsCount] = useState(0);
+  const [canPublishNews, setCanPublishNews] = useState(false);
 
   useEffect(() => {
-    const fetchRecordingsCount = async () => {
-      if (!user?.id) return;
-      const { count, error } = await supabase
-        .from('recordings')
-        .select('*', { count: 'exact', head: true })
-        .eq('doctor_id', user.id);
-      if (!error && count !== null) setRecordingsCount(count);
+    if (!user?.id) return;
+    const fetchData = async () => {
+      const [recResult, permResult] = await Promise.all([
+        supabase.from('recordings').select('*', { count: 'exact', head: true }).eq('doctor_id', user.id),
+        supabase.from('doctor_profiles').select('can_publish_news').eq('user_id', user.id).single(),
+      ]);
+      if (!recResult.error && recResult.count !== null) setRecordingsCount(recResult.count);
+      if (permResult.data) setCanPublishNews((permResult.data as any)?.can_publish_news || false);
     };
-    fetchRecordingsCount();
+    fetchData();
   }, [user?.id]);
 
   if (role !== 'doctor') {
@@ -86,7 +88,7 @@ export default function DoctorDashboard() {
               rating={doctorProfile?.rating || 0}
             />
 
-            <DoctorQuickActions isApproved={isApproved} userId={user?.id} />
+            <DoctorQuickActions isApproved={isApproved} userId={user?.id} canPublishNews={canPublishNews} />
 
             <div className="grid gap-3 sm:gap-6 sm:grid-cols-2 lg:grid-cols-2">
               <EarningsCard />

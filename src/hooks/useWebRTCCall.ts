@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 type CallState = 'idle' | 'connecting' | 'connected' | 'ended' | 'error';
 
 interface SignalPayload {
-  type: 'offer' | 'answer' | 'ice-candidate';
+  type: 'offer' | 'answer' | 'ice-candidate' | 'ready';
   sdp?: string;
   candidate?: RTCIceCandidateInit;
   senderId: string;
@@ -28,12 +28,11 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const originalVideoTrackRef = useRef<MediaStreamTrack | null>(null);
+  const storedOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
+  const isCallerRef = useRef(false);
 
-  // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      cleanup();
-    };
+    return () => { cleanup(); };
   }, []);
 
   const cleanup = useCallback(() => {
@@ -45,6 +44,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       channelRef.current = null;
     }
     pendingCandidatesRef.current = [];
+    storedOfferRef.current = null;
   }, [localStream]);
 
   const getMedia = useCallback(async (): Promise<MediaStream> => {
@@ -56,13 +56,25 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     return stream;
   }, []);
 
+  const sendOffer = useCallback(() => {
+    if (storedOfferRef.current && channelRef.current && userId) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'signal',
+        payload: {
+          type: 'offer',
+          sdp: storedOfferRef.current.sdp,
+          senderId: userId,
+        } as SignalPayload,
+      });
+    }
+  }, [userId]);
+
   const createPeerConnection = useCallback((stream: MediaStream) => {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
-    // Add local tracks
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-    // Handle remote tracks
     const remote = new MediaStream();
     setRemoteStream(remote);
 
@@ -70,11 +82,9 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       event.streams[0]?.getTracks().forEach(track => {
         remote.addTrack(track);
       });
-      // Force re-render
       setRemoteStream(new MediaStream(remote.getTracks()));
     };
 
-    // Send ICE candidates via signaling
     pc.onicecandidate = (event) => {
       if (event.candidate && channelRef.current && userId) {
         channelRef.current.send({
@@ -97,34 +107,34 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       }
     };
 
+    pc.onnegotiationneeded = async () => {
+      if (!isCallerRef.current) return;
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        storedOfferRef.current = offer;
+        sendOffer();
+      } catch (err) {
+        console.error('[WebRTC] negotiationneeded error:', err);
+      }
+    };
+
     pcRef.current = pc;
     return pc;
-  }, [userId]);
-
-  const setupSignaling = useCallback((onSignal: (payload: SignalPayload) => void) => {
-    if (!consultationId) return;
-
-    const channel = supabase
-      .channel(`call-signal-${consultationId}`)
-      .on('broadcast', { event: 'signal' }, ({ payload }) => {
-        const signal = payload as SignalPayload;
-        // Ignore own signals
-        if (signal.senderId === userId) return;
-        onSignal(signal);
-      })
-      .subscribe();
-
-    channelRef.current = channel;
-  }, [consultationId, userId]);
+  }, [userId, sendOffer]);
 
   const handleSignal = useCallback(async (signal: SignalPayload) => {
     const pc = pcRef.current;
     if (!pc) return;
 
     try {
-      if (signal.type === 'offer') {
+      if (signal.type === 'ready') {
+        // The other side is ready — if we're the caller, re-send the offer
+        if (isCallerRef.current) {
+          sendOffer();
+        }
+      } else if (signal.type === 'offer') {
         await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
-        // Flush pending candidates
         for (const c of pendingCandidatesRef.current) {
           await pc.addIceCandidate(new RTCIceCandidate(c));
         }
@@ -144,7 +154,6 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
         });
       } else if (signal.type === 'answer') {
         await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
-        // Flush pending candidates
         for (const c of pendingCandidatesRef.current) {
           await pc.addIceCandidate(new RTCIceCandidate(c));
         }
@@ -159,49 +168,69 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     } catch (err) {
       console.error('[WebRTC] Signal handling error:', err);
     }
-  }, [userId]);
+  }, [userId, sendOffer]);
+
+  const setupSignaling = useCallback((onSignal: (payload: SignalPayload) => void) => {
+    if (!consultationId) return;
+
+    const channel = supabase
+      .channel(`call-signal-${consultationId}`)
+      .on('broadcast', { event: 'signal' }, ({ payload }) => {
+        const signal = payload as SignalPayload;
+        if (signal.senderId === userId) return;
+        onSignal(signal);
+      })
+      .subscribe();
+
+    channelRef.current = channel;
+  }, [consultationId, userId]);
 
   /** Doctor initiates the call (creates offer) */
   const startCall = useCallback(async () => {
     if (!consultationId || !userId) return;
     setCallState('connecting');
+    isCallerRef.current = true;
 
     try {
       const stream = await getMedia();
       const pc = createPeerConnection(stream);
-
       setupSignaling(handleSignal);
 
-      // Small delay to ensure channel is subscribed
-      await new Promise(r => setTimeout(r, 500));
+      // Wait for channel to be fully subscribed
+      await new Promise(r => setTimeout(r, 1000));
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-
-      channelRef.current?.send({
-        type: 'broadcast',
-        event: 'signal',
-        payload: {
-          type: 'offer',
-          sdp: offer.sdp,
-          senderId: userId,
-        } as SignalPayload,
-      });
+      storedOfferRef.current = offer;
+      sendOffer();
     } catch (err) {
       console.error('[WebRTC] startCall error:', err);
       setCallState('error');
     }
-  }, [consultationId, userId, getMedia, createPeerConnection, setupSignaling, handleSignal]);
+  }, [consultationId, userId, getMedia, createPeerConnection, setupSignaling, handleSignal, sendOffer]);
 
   /** Patient joins the call (waits for offer, sends answer) */
   const joinCall = useCallback(async () => {
     if (!consultationId || !userId) return;
     setCallState('connecting');
+    isCallerRef.current = false;
 
     try {
       const stream = await getMedia();
       createPeerConnection(stream);
       setupSignaling(handleSignal);
+
+      // Wait for channel subscription, then notify the caller we're ready
+      await new Promise(r => setTimeout(r, 1000));
+
+      channelRef.current?.send({
+        type: 'broadcast',
+        event: 'signal',
+        payload: {
+          type: 'ready',
+          senderId: userId,
+        } as SignalPayload,
+      });
     } catch (err) {
       console.error('[WebRTC] joinCall error:', err);
       setCallState('error');
@@ -243,7 +272,6 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
           await sender.replaceTrack(screenTrack);
         }
         screenTrack.onended = () => {
-          // Revert to camera when screen share stops
           if (sender && originalVideoTrackRef.current) {
             sender.replaceTrack(originalVideoTrackRef.current);
           }

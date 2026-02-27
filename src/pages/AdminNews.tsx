@@ -54,6 +54,7 @@ export default function AdminNews() {
   const [editorNames, setEditorNames] = useState<Record<string, string>>({});
   const [pendingEditId, setPendingEditId] = useState<string | null>((location.state as any)?.editId || null);
   const [canPublish, setCanPublish] = useState(role === 'admin');
+  const [permissionLoading, setPermissionLoading] = useState(role === 'doctor');
   const [mainTab, setMainTab] = useState('articles');
 
   // Doctor permissions state
@@ -71,7 +72,8 @@ export default function AdminNews() {
         .single()
         .then(({ data }) => {
           setCanPublish((data as any)?.can_publish_news || false);
-        });
+          setPermissionLoading(false);
+        }, () => setPermissionLoading(false));
     }
   }, [role, supabaseUser?.id]);
 
@@ -184,6 +186,16 @@ export default function AdminNews() {
       setPendingEditId(null);
     }
   }, [pendingEditId, news]);
+
+  if (permissionLoading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center py-24">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (role !== 'admin' && !canPublish) return <Navigate to="/" replace />;
 
