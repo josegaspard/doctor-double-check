@@ -491,7 +491,7 @@ export default function UserProfile() {
                           <Input
                             value={editedName}
                             onChange={(e) => setEditedName(e.target.value)}
-                            className="max-w-[200px]"
+                            className="max-w-[160px] sm:max-w-[200px]"
                             autoFocus
                             onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
                           />

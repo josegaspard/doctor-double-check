@@ -383,7 +383,7 @@ export default function LivePlayer() {
           {/* Sidebar */}
           <div className="space-y-3 sm:space-y-4">
             {showChat && (
-              <div className="h-[280px] sm:h-[350px]">
+              <div className="h-[300px] sm:h-[350px]">
                 <LiveChat liveId={live.id} isOwner={isOwner} liveStartedAt={live.startedAt} />
               </div>
             )}
@@ -391,8 +391,8 @@ export default function LivePlayer() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Stethoscope className="w-7 h-7 text-primary" />
+                  <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Stethoscope className="w-5 h-5 sm:w-7 sm:h-7 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground">{live.doctorName}</h3>

@@ -193,7 +193,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const hideBottomNav = location.pathname.startsWith('/video-call');
 
   return (
-    <div ref={ref} className="min-h-screen bg-background flex flex-col">
+    <div ref={ref} className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container mx-auto px-4">

@@ -65,7 +65,7 @@ export default function Notifications() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-3xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
         <Button
           variant="ghost"
           size="sm"
@@ -76,9 +76,9 @@ export default function Notifications() {
           {t('notificationsPage.back')}
         </Button>
 
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="min-w-0">
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
               <Bell className="w-6 h-6" />
               {t('notificationsPage.title')}
             </h1>

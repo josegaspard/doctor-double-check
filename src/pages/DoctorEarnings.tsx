@@ -274,66 +274,66 @@ export default function DoctorEarnings() {
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
               <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-success/10">
-                      <DollarSign className="w-5 h-5 text-success" />
+                <CardContent className="p-3 sm:pt-6 sm:px-6">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 rounded-lg bg-success/10">
+                      <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
                         {language === 'es' ? 'Total Ganado' : 'Total Earned'}
                       </p>
-                      <p className="text-2xl font-bold">${summary.totalEarnings.toLocaleString()}</p>
+                      <p className="text-lg sm:text-2xl font-bold">${summary.totalEarnings.toLocaleString()}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-warning/10">
-                      <Clock className="w-5 h-5 text-warning" />
+                <CardContent className="p-3 sm:pt-6 sm:px-6">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 rounded-lg bg-warning/10">
+                      <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        {language === 'es' ? 'Pendiente de Pago' : 'Pending Payout'}
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                        {language === 'es' ? 'Pendiente' : 'Pending'}
                       </p>
-                      <p className="text-2xl font-bold">${summary.pendingEarnings.toLocaleString()}</p>
+                      <p className="text-lg sm:text-2xl font-bold">${summary.pendingEarnings.toLocaleString()}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-info/10">
-                      <TrendingUp className="w-5 h-5 text-info" />
+                <CardContent className="p-3 sm:pt-6 sm:px-6">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 rounded-lg bg-info/10">
+                      <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-info" />
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
                         {language === 'es' ? 'Este Mes' : 'This Month'}
                       </p>
-                      <p className="text-2xl font-bold">${summary.thisMonthEarnings.toLocaleString()}</p>
+                      <p className="text-lg sm:text-2xl font-bold">${summary.thisMonthEarnings.toLocaleString()}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-success/10">
-                      <CheckCircle className="w-5 h-5 text-success" />
+                <CardContent className="p-3 sm:pt-6 sm:px-6">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 rounded-lg bg-success/10">
+                      <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        {language === 'es' ? 'Ya Pagado' : 'Already Paid'}
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                        {language === 'es' ? 'Pagado' : 'Paid'}
                       </p>
-                      <p className="text-2xl font-bold">${summary.paidEarnings.toLocaleString()}</p>
+                      <p className="text-lg sm:text-2xl font-bold">${summary.paidEarnings.toLocaleString()}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -351,7 +351,7 @@ export default function DoctorEarnings() {
                 </CardHeader>
                 <CardContent>
                   {monthlyData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={250}>
+                    <ResponsiveContainer width="100%" height={200} className="sm:!h-[250px]">
                       <BarChart data={monthlyData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="month" className="text-xs" />

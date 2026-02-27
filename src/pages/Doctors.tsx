@@ -364,8 +364,8 @@ export default function Doctors() {
                   disabled={currentPage === 1}
                   onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Anterior
+                  <ChevronLeft className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Anterior</span>
                 </Button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -397,8 +397,8 @@ export default function Doctors() {
                   disabled={currentPage === totalPages}
                   onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 >
-                  Siguiente
-                  <ChevronRight className="w-4 h-4 ml-1" />
+                  <span className="hidden sm:inline">Siguiente</span>
+                  <ChevronRight className="w-4 h-4 sm:ml-1" />
                 </Button>
               </div>
             )}

@@ -118,8 +118,8 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="email-notifications" className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="email-notifications" className="flex flex-col gap-1 flex-1 min-w-0">
                   <span>{t('settings.enableEmails')}</span>
                   <span className="text-xs text-muted-foreground font-normal">
                     {t('settings.masterSwitch')}
@@ -204,8 +204,8 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="push-notifications" className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="push-notifications" className="flex flex-col gap-1 flex-1 min-w-0">
                   <span>{t('settings.pushNotifications')}</span>
                   <span className="text-xs text-muted-foreground font-normal">
                     {t('settings.pushDescription')}
@@ -225,8 +225,8 @@ export default function Settings() {
 
               <Separator />
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="inapp-notifications" className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="inapp-notifications" className="flex flex-col gap-1 flex-1 min-w-0">
                   <span>{t('settings.inAppNotifications')}</span>
                   <span className="text-xs text-muted-foreground font-normal">
                     {t('settings.inAppDescription')}
@@ -253,21 +253,21 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                <div className="flex items-center gap-3 min-w-0">
                   {user?.avatarUrl ? (
                     <img
                       src={user.avatarUrl}
                       alt="Avatar"
-                      className="h-12 w-12 rounded-full object-cover"
+                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover flex-shrink-0"
                     />
                   ) : (
-                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                      <span className="text-xl">{user?.name?.charAt(0) || '?'}</span>
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                      <span className="text-lg sm:text-xl">{user?.name?.charAt(0) || '?'}</span>
                     </div>
                   )}
-                  <div>
-                    <p className="font-medium">{user?.name}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{user?.name}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="secondary" className="text-xs">
                         <CheckCircle className="h-3 w-3 mr-1" />
@@ -276,7 +276,7 @@ export default function Settings() {
                     </div>
                   </div>
                 </div>
-                <Button variant="outline">
+                <Button variant="outline" className="w-full sm:w-auto flex-shrink-0">
                   {t('verification.startVerification')}
                 </Button>
               </div>

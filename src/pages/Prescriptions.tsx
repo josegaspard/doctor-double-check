@@ -97,21 +97,21 @@ export default function Prescriptions() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-3xl">
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="flex-shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-primary" />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
-              <div>
-                <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+              <div className="min-w-0">
+                <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground truncate">
                   {language === 'es' ? 'Recetas Electrónicas' : 'Electronic Prescriptions'}
                 </h1>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-xs sm:text-sm truncate">
                   {role === 'doctor'
                     ? (language === 'es' ? 'Crea y gestiona recetas para tus pacientes' : 'Create and manage prescriptions')
                     : (language === 'es' ? 'Tus recetas médicas' : 'Your medical prescriptions')}
@@ -122,14 +122,14 @@ export default function Prescriptions() {
 
           {role === 'doctor' && (
             <Button 
-              className="gap-2" 
+              className="gap-2 w-full sm:w-auto flex-shrink-0" 
               onClick={() => {
                 setShowPatientPicker(true);
                 fetchPatients();
               }}
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Nueva Receta</span>
+              {language === 'es' ? 'Nueva Receta' : 'New Prescription'}
             </Button>
           )}
         </div>
