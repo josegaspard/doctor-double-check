@@ -115,6 +115,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       const { data: livesData, error } = await supabase
         .from('lives')
         .select('*')
+        .eq('status', 'live')
         .order('started_at', { ascending: false });
 
       if (error) {

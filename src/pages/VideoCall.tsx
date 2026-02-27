@@ -209,8 +209,8 @@ export default function VideoCall() {
 
   const isInCall = callState === 'connecting' || callState === 'connected';
 
-  // Shared video layout
-  const VideoLayout = () => (
+  // Inline video layout JSX to avoid re-mounting video elements on every render
+  const videoLayoutJSX = (
     <div className="relative w-full h-full bg-black">
       {/* Remote video (full) */}
       <video
@@ -246,7 +246,7 @@ export default function VideoCall() {
     return (
       <div className="fixed inset-0 z-50 bg-black flex flex-col" style={{ height: '100dvh' }}>
         <div className="flex-1 w-full relative">
-          <VideoLayout />
+          {videoLayoutJSX}
         </div>
         <AnimatePresence>
           {showChat && (
@@ -321,7 +321,7 @@ export default function VideoCall() {
             {isInCall && (
               <div className="relative bg-black rounded-lg overflow-hidden">
                 <div className="w-full aspect-video">
-                  <VideoLayout />
+                  {videoLayoutJSX}
                 </div>
                 <AnimatePresence>
                   {showChat && (

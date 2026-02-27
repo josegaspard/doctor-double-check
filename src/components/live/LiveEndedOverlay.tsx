@@ -55,7 +55,10 @@ export function LiveEndedOverlay({
               Transmisión finalizada
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              El doctor ha terminado la transmisión en vivo
+              El doctor ha terminado la transmisión en vivo.
+            </p>
+            <p className="text-sm text-primary font-medium mt-1">
+              Si te interesa, en breve podrás comprar la grabación de este live.
             </p>
           </div>
 
