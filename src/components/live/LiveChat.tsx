@@ -202,7 +202,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
               placeholder="Escribe un mensaje..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); handleSend(); } }}
               disabled={isSending}
               className="text-xs sm:text-sm"
               maxLength={500}

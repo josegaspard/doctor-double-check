@@ -265,6 +265,13 @@ export default function DoctorGoLive() {
         if (uploadResult.success) {
           recordingCreated = true;
 
+          // Update the recording with peak_viewers from the live
+          await supabase
+            .from('recordings')
+            .update({ peak_viewers: viewerCount || 0 })
+            .eq('live_id', liveData.id)
+            .eq('doctor_id', user.id);
+
           // Auto-save as premium content
           const saveAsContent = async (retries = 3) => {
             for (let i = 0; i < retries; i++) {
