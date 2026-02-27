@@ -103,7 +103,7 @@ export default function MedicalNews() {
             </p>
           </div>
           {canPublish && (
-            <Button onClick={() => navigate('/admin/news')} className="gap-2">
+            <Button onClick={() => navigate('/doctor/news')} className="gap-2">
               <PenSquare className="w-4 h-4" />
               <span className="hidden sm:inline">{t('medicalNews.writeArticle')}</span>
             </Button>

@@ -110,7 +110,7 @@ export default function DoctorVault() {
         data: { otp_code: code, doctor_id: user.id },
       });
 
-      // Send email with OTP (via edge function)
+      // Send email with OTP (via dedicated edge function)
       try {
         const { data: patientProfile } = await supabase
           .from('profiles')
@@ -119,13 +119,12 @@ export default function DoctorVault() {
           .single();
         
         if (patientProfile?.email) {
-          await supabase.functions.invoke('send-verification-email', {
+          await supabase.functions.invoke('send-otp-email', {
             body: {
-              to: patientProfile.email,
-              subject: '🔐 Código de acceso a tu expediente médico',
-              otpCode: code,
+              patientEmail: patientProfile.email,
               patientName: patientProfile.name || 'Paciente',
               doctorName: user.name || 'Tu médico',
+              otpCode: code,
               expiresInMinutes: 2,
             },
           });

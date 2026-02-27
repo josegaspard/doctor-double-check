@@ -1661,6 +1661,7 @@ export type Database = {
       purchases: {
         Row: {
           amount: number
+          content_id: string | null
           created_at: string
           id: string
           recording_id: string
@@ -1668,6 +1669,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          content_id?: string | null
           created_at?: string
           id?: string
           recording_id: string
@@ -1675,12 +1677,20 @@ export type Database = {
         }
         Update: {
           amount?: number
+          content_id?: string | null
           created_at?: string
           id?: string
           recording_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "purchases_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "doctor_content"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchases_recording_id_fkey"
             columns: ["recording_id"]
@@ -2490,6 +2500,10 @@ export type Database = {
           total_consultations: number
           user_id: string
         }[]
+      }
+      get_doctor_signature: {
+        Args: { p_doctor_user_id: string }
+        Returns: string
       }
       get_price_for_user: {
         Args: { _base_price: number; _user_id: string }
