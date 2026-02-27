@@ -2,6 +2,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Stethoscope, 
   User, 
@@ -34,6 +35,9 @@ interface ChatSessionItemProps {
   onClick: () => void;
   onDoctorProfileClick: (e: React.MouseEvent) => void;
   onDelete?: (e: React.MouseEvent) => void;
+  isSelecting?: boolean;
+  isChecked?: boolean;
+  onCheckChange?: (checked: boolean) => void;
 }
 
 export function ChatSessionItem({
@@ -47,6 +51,9 @@ export function ChatSessionItem({
   onClick,
   onDoctorProfileClick,
   onDelete,
+  isSelecting = false,
+  isChecked = false,
+  onCheckChange,
 }: ChatSessionItemProps) {
   const { t, language } = useLanguage();
   const isClosed = session.status === 'closed';
@@ -73,10 +80,17 @@ export function ChatSessionItem({
 
   return (
     <div
-      onClick={onClick}
+      onClick={() => {
+        if (isSelecting && onCheckChange) {
+          onCheckChange(!isChecked);
+        } else {
+          onClick();
+        }
+      }}
       className={`
         group relative p-3 rounded-xl cursor-pointer transition-all duration-200
-        ${isSelected 
+        ${isSelecting && isChecked ? 'bg-primary/10 ring-2 ring-primary/30' : ''}
+        ${!isSelecting && isSelected 
           ? 'bg-primary/10 ring-2 ring-primary/20 shadow-sm' 
           : isClosed 
             ? 'bg-muted/30 hover:bg-muted/50' 
@@ -86,6 +100,17 @@ export function ChatSessionItem({
       `}
     >
       <div className="flex items-start gap-3">
+        {/* Checkbox for selection mode */}
+        {isSelecting && (
+          <div className="flex items-center pt-1 flex-shrink-0">
+            <Checkbox
+              checked={isChecked}
+              onCheckedChange={(checked) => onCheckChange?.(!!checked)}
+              onClick={(e) => e.stopPropagation()}
+              className="h-5 w-5"
+            />
+          </div>
+        )}
         {/* Avatar with online indicator */}
         <div className="relative flex-shrink-0">
           <Avatar className={`w-10 h-10 sm:w-12 sm:h-12 ${isClosed ? 'opacity-75' : ''} ring-2 ring-background`}>
