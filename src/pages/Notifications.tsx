@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
@@ -6,7 +6,18 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Bell, Check, Trash2, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { ArrowLeft, Bell, Check, Trash2, Loader2, CheckSquare, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 
@@ -56,11 +67,51 @@ function navigateByType(notification: Notification, navigate: ReturnType<typeof 
 export default function Notifications() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification, deleteNotifications } = useNotifications();
+
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleClick = (notification: Notification) => {
+    if (isSelecting) {
+      toggleSelect(notification.id);
+      return;
+    }
     if (!notification.isRead) markAsRead(notification.id);
     navigateByType(notification, navigate);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === notifications.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(notifications.map(n => n.id)));
+    }
+  };
+
+  const exitSelectionMode = () => {
+    setIsSelecting(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsDeleting(true);
+    await deleteNotifications(Array.from(selectedIds));
+    exitSelectionMode();
+    setIsDeleting(false);
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -76,7 +127,7 @@ export default function Notifications() {
           {t('notificationsPage.back')}
         </Button>
 
-        <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div className="min-w-0">
             <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
               <Bell className="w-6 h-6" />
@@ -88,13 +139,43 @@ export default function Notifications() {
               </p>
             )}
           </div>
-          {unreadCount > 0 && (
-            <Button variant="outline" size="sm" onClick={markAllAsRead}>
-              <Check className="w-4 h-4 mr-2" />
-              {t('notificationsPage.markAllRead')}
-            </Button>
-          )}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {notifications.length > 0 && (
+              <Button
+                variant={isSelecting ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => isSelecting ? exitSelectionMode() : setIsSelecting(true)}
+                className="gap-1.5"
+              >
+                {isSelecting ? <X className="w-4 h-4" /> : <CheckSquare className="w-4 h-4" />}
+                {isSelecting ? 'Cancelar' : 'Seleccionar'}
+              </Button>
+            )}
+            {!isSelecting && unreadCount > 0 && (
+              <Button variant="outline" size="sm" onClick={markAllAsRead}>
+                <Check className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">{t('notificationsPage.markAllRead')}</span>
+                <span className="sm:hidden">Leídas</span>
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Select all bar */}
+        {isSelecting && notifications.length > 0 && (
+          <div className="flex items-center gap-3 mb-3 px-1">
+            <Checkbox
+              checked={selectedIds.size === notifications.length && notifications.length > 0}
+              onCheckedChange={toggleSelectAll}
+              className="h-5 w-5"
+            />
+            <span className="text-sm text-muted-foreground">
+              {selectedIds.size === 0
+                ? 'Seleccionar todas'
+                : `${selectedIds.size} de ${notifications.length} seleccionada(s)`}
+            </span>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="flex justify-center py-12">
@@ -113,15 +194,28 @@ export default function Notifications() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 pb-20">
             {notifications.map((notification) => (
               <Card
                 key={notification.id}
-                className={`cursor-pointer hover:shadow-md transition-all active:scale-[0.98] ${!notification.isRead ? 'border-primary/30 bg-primary/5' : ''}`}
+                className={`cursor-pointer hover:shadow-md transition-all active:scale-[0.98] ${
+                  isSelecting && selectedIds.has(notification.id) ? 'ring-2 ring-primary/30 bg-primary/5' :
+                  !notification.isRead ? 'border-primary/30 bg-primary/5' : ''
+                }`}
                 onClick={() => handleClick(notification)}
               >
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-start gap-3">
+                    {isSelecting && (
+                      <div className="pt-0.5 flex-shrink-0">
+                        <Checkbox
+                          checked={selectedIds.has(notification.id)}
+                          onCheckedChange={() => toggleSelect(notification.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-5 w-5"
+                        />
+                      </div>
+                    )}
                     <span className="text-xl mt-0.5">{getNotificationIcon(notification.type)}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -142,33 +236,71 @@ export default function Notifications() {
                         })}
                       </p>
                     </div>
-                    <div className="flex gap-1 flex-shrink-0">
-                      {!notification.isRead && (
+                    {!isSelecting && (
+                      <div className="flex gap-1 flex-shrink-0">
+                        {!notification.isRead && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10"
+                            onClick={(e) => { e.stopPropagation(); markAsRead(notification.id); }}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-10 w-10"
-                          onClick={(e) => { e.stopPropagation(); markAsRead(notification.id); }}
+                          className="h-10 w-10 text-destructive"
+                          onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
                         >
-                          <Check className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 text-destructive"
-                        onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
+
+        {/* Floating bulk delete bar */}
+        {isSelecting && selectedIds.size > 0 && (
+          <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-lg">
+            <Button
+              variant="destructive"
+              className="w-full gap-2 shadow-lg"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <Trash2 className="w-4 h-4" />
+              Eliminar ({selectedIds.size})
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Bulk delete confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar {selectedIds.size} notificación(es)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Las notificaciones seleccionadas se eliminarán permanentemente. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }
