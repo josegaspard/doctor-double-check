@@ -13,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -29,6 +30,10 @@ import {
   CheckCircle,
   Wallet,
   Crown,
+  Eye,
+  ShoppingBag,
+  Sparkles,
+  Library,
 } from 'lucide-react';
 
 export default function RecordingsGrid() {
@@ -37,7 +42,7 @@ export default function RecordingsGrid() {
   const doctorFilter = searchParams.get('doctor');
   const { recordings } = useLives();
   const { user, role, isAuthenticated } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { balance } = useWallet();
   const { hasPurchased, purchaseWithWallet, isPurchasing } = usePurchases();
   const { getEffectiveRecordingPrice, hasPremiumTo } = useSubscriptions();
@@ -46,6 +51,7 @@ export default function RecordingsGrid() {
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [doctorName, setDoctorName] = useState<string | null>(null);
+  const [contentTab, setContentTab] = useState('all');
 
   // Fetch doctor name if filtering by doctor
   useEffect(() => {
@@ -61,19 +67,8 @@ export default function RecordingsGrid() {
     fetchName();
   }, [doctorFilter]);
 
-  // Everyone can browse — purchase requires authentication
-
   // Get unique specialties
   const specialties = [...new Set(recordings.map(r => r.specialty))];
-
-  // Filter recordings
-  const filteredRecordings = recordings.filter(rec => {
-    const matchesSearch = rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         rec.doctorName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialty = specialtyFilter === 'all' || rec.specialty === specialtyFilter;
-    const matchesDoctor = !doctorFilter || rec.doctorId === doctorFilter;
-    return matchesSearch && matchesSpecialty && matchesDoctor;
-  });
 
   // Check if user owns recording or has free access
   const ownsRecording = (recording: Recording): boolean => {
@@ -82,6 +77,20 @@ export default function RecordingsGrid() {
     if (recording.price === 0) return true;
     return hasPurchased(recording.id);
   };
+
+  // Filter recordings
+  const filteredRecordings = recordings.filter(rec => {
+    const matchesSearch = rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         rec.doctorName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSpecialty = specialtyFilter === 'all' || rec.specialty === specialtyFilter;
+    const matchesDoctor = !doctorFilter || rec.doctorId === doctorFilter;
+    
+    if (!matchesSearch || !matchesSpecialty || !matchesDoctor) return false;
+    
+    if (contentTab === 'purchased') return ownsRecording(rec);
+    if (contentTab === 'available') return !ownsRecording(rec);
+    return true;
+  });
 
   const handleRecordingClick = (recording: Recording) => {
     if (!isAuthenticated || role === 'visitor') {
@@ -150,6 +159,24 @@ export default function RecordingsGrid() {
           )}
         </div>
 
+        {/* Content Tabs */}
+        <Tabs value={contentTab} onValueChange={setContentTab} className="mb-4">
+          <TabsList>
+            <TabsTrigger value="all" className="gap-1.5">
+              <Library className="w-3.5 h-3.5" />
+              {language === 'es' ? 'Todo' : 'All'}
+            </TabsTrigger>
+            <TabsTrigger value="purchased" className="gap-1.5">
+              <ShoppingBag className="w-3.5 h-3.5" />
+              {language === 'es' ? 'Comprados' : 'Purchased'}
+            </TabsTrigger>
+            <TabsTrigger value="available" className="gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              {language === 'es' ? 'Disponibles' : 'Available'}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
@@ -198,7 +225,6 @@ export default function RecordingsGrid() {
                         loading="lazy"
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          // Hide broken image and show fallback
                           e.currentTarget.style.display = 'none';
                         }}
                       />
@@ -221,6 +247,16 @@ export default function RecordingsGrid() {
                         </Badge>
                       )}
                     </div>
+
+                    {/* Viewer count badge */}
+                    {(recording as any).peakViewers > 0 && (
+                      <div className="absolute top-2 right-2">
+                        <Badge variant="secondary" className="gap-1 bg-black/50 text-white border-0">
+                          <Eye className="w-3 h-3" />
+                          {(recording as any).peakViewers}
+                        </Badge>
+                      </div>
+                    )}
                     
                     {/* Duration */}
                     <div className="absolute bottom-2 right-2">

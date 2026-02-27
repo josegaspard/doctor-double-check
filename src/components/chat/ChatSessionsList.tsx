@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -6,7 +6,18 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessageSquare, History } from 'lucide-react';
 import { ChatSessionItem } from '@/components/chat/ChatSessionItem';
 import { EmptyState } from '@/components/chat/EmptyState';
-import { ChatSession } from '@/contexts/ChatContext';
+import { ChatSession, useChat } from '@/contexts/ChatContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 interface SessionDisplayInfo {
   name: string;
@@ -47,8 +58,22 @@ export function ChatSessionsList({
   hidden = false,
 }: Props) {
   const sessions = activeTab === 'active' ? activeSessions : closedSessions;
+  const { deleteSession } = useChat();
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const handleDeleteSession = async () => {
+    if (!deleteConfirmId) return;
+    const result = await deleteSession(deleteConfirmId);
+    if (result.success) {
+      toast.success('Chat eliminado');
+    } else {
+      toast.error(result.error || 'Error al eliminar');
+    }
+    setDeleteConfirmId(null);
+  };
 
   return (
+    <>
     <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-gradient-to-b from-blue-50/70 to-sky-50/30 dark:from-primary/[0.06] dark:to-transparent ${hidden ? 'hidden md:flex' : 'flex'}`}>
       <CardHeader className="pb-3 pt-4 px-3 flex-shrink-0 space-y-3">
         <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as 'active' | 'history')} className="w-full">
@@ -85,7 +110,7 @@ export function ChatSessionsList({
                 const isAvailable = isWithinOfficeHours(session);
                 const canOpenDoctorProfile = userRole === 'patient' && getDoctorId(session) !== null;
 
-                return (
+                  return (
                   <ChatSessionItem
                     key={session.id}
                     session={session}
@@ -97,6 +122,10 @@ export function ChatSessionsList({
                     userRole={userRole}
                     onClick={() => onSelectSession(session.id)}
                     onDoctorProfileClick={(e) => onDoctorProfileClick(e, session)}
+                    onDelete={session.status === 'closed' ? (e) => {
+                      e.stopPropagation();
+                      setDeleteConfirmId(session.id);
+                    } : undefined}
                   />
                 );
               })
@@ -107,5 +136,24 @@ export function ChatSessionsList({
         </ScrollArea>
       </CardContent>
     </Card>
+
+    {/* Delete Confirmation */}
+    <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Eliminar este chat?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Se eliminarán todos los mensajes de esta conversación. Esta acción no se puede deshacer.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDeleteSession} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

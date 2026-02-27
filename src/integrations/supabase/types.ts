@@ -1139,6 +1139,7 @@ export type Database = {
           ended_at: string | null
           id: string
           likes_count: number
+          peak_viewers: number
           recording_price: number | null
           specialty: string
           started_at: string
@@ -1155,6 +1156,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           likes_count?: number
+          peak_viewers?: number
           recording_price?: number | null
           specialty: string
           started_at?: string
@@ -1171,6 +1173,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           likes_count?: number
+          peak_viewers?: number
           recording_price?: number | null
           specialty?: string
           started_at?: string
@@ -1738,6 +1741,7 @@ export type Database = {
           duration: number
           id: string
           live_id: string | null
+          peak_viewers: number
           price: number
           specialty: string
           tags: string[] | null
@@ -1752,6 +1756,7 @@ export type Database = {
           duration?: number
           id?: string
           live_id?: string | null
+          peak_viewers?: number
           price?: number
           specialty: string
           tags?: string[] | null
@@ -1766,6 +1771,7 @@ export type Database = {
           duration?: number
           id?: string
           live_id?: string | null
+          peak_viewers?: number
           price?: number
           specialty?: string
           tags?: string[] | null

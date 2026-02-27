@@ -286,6 +286,14 @@ export default function DoctorGoLive() {
         await localRecording.stopRecording();
       }
 
+      // Save peak viewers before ending
+      if (viewerCount > 0) {
+        await supabase
+          .from('lives')
+          .update({ peak_viewers: viewerCount })
+          .eq('id', liveData.id);
+      }
+
       setEndingStage('saving');
       const result = await endStream(liveData.id, streamData?.uid, enableRecording);
       const cloudflareRecordingId = result.success ? result.recordingId : undefined;

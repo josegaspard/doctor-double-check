@@ -71,7 +71,6 @@ export function SubscribeButton({
     const result = await subscribe(doctorId, 'free', 0);
     
     if (result.success) {
-      // Wait for DB trigger (update_followers_count_on_subscription) to complete
       await new Promise(resolve => setTimeout(resolve, 1200));
       onSubscriptionChange?.();
       toast({
@@ -153,89 +152,116 @@ export function SubscribeButton({
     );
   }
 
+  // User is subscribed — show split UI for free followers
+  const isFreeFollower = subscription?.tier === 'free';
+  const isPaid = subscription?.tier === 'basic' || subscription?.tier === 'premium';
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size={size}>
-          <Check className="h-4 w-4 mr-2" />
-          {t('subscriptions.subscribed')}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64" align="end">
-        <div className="space-y-4">
-          <h4 className="font-medium flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            {t('subscriptions.notificationPreferences')}
-          </h4>
+    <>
+      <div className="flex items-center gap-2">
+        {/* Following button with settings popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size={size}>
+              <Check className="h-4 w-4 mr-2" />
+              {isPaid ? (
+                <span className="flex items-center gap-1">
+                  <Crown className="h-3 w-3 text-warning" />
+                  {subscription?.tier === 'premium' ? 'Premium' : 'Básica'}
+                </span>
+              ) : (
+                t('subscriptions.subscribed')
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64" align="end">
+            <div className="space-y-4">
+              <h4 className="font-medium flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                {t('subscriptions.notificationPreferences')}
+              </h4>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="notify-live" className="text-sm flex items-center gap-2">
-                <span className="text-destructive">🔴</span>
-                {t('subscriptions.notifyLive')}
-              </Label>
-              <Switch
-                id="notify-live"
-                checked={subscription?.notifyOnLive ?? true}
-                onCheckedChange={(checked) => handleToggleNotification('notifyOnLive', checked)}
-              />
-            </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="notify-live" className="text-sm flex items-center gap-2">
+                    <span className="text-destructive">🔴</span>
+                    {t('subscriptions.notifyLive')}
+                  </Label>
+                  <Switch
+                    id="notify-live"
+                    checked={subscription?.notifyOnLive ?? true}
+                    onCheckedChange={(checked) => handleToggleNotification('notifyOnLive', checked)}
+                  />
+                </div>
 
-            <div className="flex items-center justify-between">
-              <Label htmlFor="notify-content" className="text-sm flex items-center gap-2">
-                <span>📄</span>
-                {t('subscriptions.notifyContent')}
-              </Label>
-              <Switch
-                id="notify-content"
-                checked={subscription?.notifyOnContent ?? true}
-                onCheckedChange={(checked) => handleToggleNotification('notifyOnContent', checked)}
-              />
-            </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="notify-content" className="text-sm flex items-center gap-2">
+                    <span>📄</span>
+                    {t('subscriptions.notifyContent')}
+                  </Label>
+                  <Switch
+                    id="notify-content"
+                    checked={subscription?.notifyOnContent ?? true}
+                    onCheckedChange={(checked) => handleToggleNotification('notifyOnContent', checked)}
+                  />
+                </div>
 
-            <div className="flex items-center justify-between">
-              <Label htmlFor="notify-availability" className="text-sm flex items-center gap-2">
-                <span>📅</span>
-                {t('subscriptions.notifyAvailability')}
-              </Label>
-              <Switch
-                id="notify-availability"
-                checked={subscription?.notifyOnAvailability ?? true}
-                onCheckedChange={(checked) =>
-                  handleToggleNotification('notifyOnAvailability', checked)
-                }
-              />
-            </div>
-          </div>
-
-          {showUpgrade && subscription?.tier === 'free' && (
-            <>
-              <div className="border-t pt-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-2"
-                  onClick={() => setShowUpgradeModal(true)}
-                >
-                  <Crown className="h-4 w-4 text-warning" />
-                  {t('subscriptions.upgradeSubscription')}
-                </Button>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="notify-availability" className="text-sm flex items-center gap-2">
+                    <span>📅</span>
+                    {t('subscriptions.notifyAvailability')}
+                  </Label>
+                  <Switch
+                    id="notify-availability"
+                    checked={subscription?.notifyOnAvailability ?? true}
+                    onCheckedChange={(checked) =>
+                      handleToggleNotification('notifyOnAvailability', checked)
+                    }
+                  />
+                </div>
               </div>
-            </>
-          )}
 
+              {showUpgrade && isFreeFollower && (
+                <div className="border-t pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() => setShowUpgradeModal(true)}
+                  >
+                    <Crown className="h-4 w-4 text-warning" />
+                    {t('subscriptions.upgradeSubscription')}
+                  </Button>
+                </div>
+              )}
+
+              <Button
+                variant="destructive"
+                size="sm"
+                className="w-full"
+                onClick={() => setShowCancelConfirm(true)}
+                disabled={isLoading}
+              >
+                <BellOff className="h-4 w-4 mr-2" />
+                {t('subscriptions.unsubscribe')}
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Prominent upgrade CTA for free followers */}
+        {showUpgrade && isFreeFollower && (
           <Button
-            variant="destructive"
-            size="sm"
-            className="w-full"
-            onClick={() => setShowCancelConfirm(true)}
-            disabled={isLoading}
+            variant="premium"
+            size={size}
+            onClick={() => setShowUpgradeModal(true)}
+            className="gap-1.5"
           >
-            <BellOff className="h-4 w-4 mr-2" />
-            {t('subscriptions.unsubscribe')}
+            <Crown className="h-4 w-4" />
+            Suscribirse
           </Button>
-        </div>
-      </PopoverContent>
+        )}
+      </div>
 
       {/* Cancel Confirmation Dialog */}
       <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
@@ -281,7 +307,13 @@ export function SubscribeButton({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
+          {/* Explainer */}
+          <div className="p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground border">
+            <p><strong>Seguir</strong> es gratis — recibes notificaciones cuando el doctor transmite en vivo o sube contenido.</p>
+            <p className="mt-1"><strong>Suscribirte</strong> te da acceso a contenido exclusivo, chat prioritario y descuentos en grabaciones.</p>
+          </div>
+
+          <div className="grid gap-4 py-2">
             {/* Basic Tier */}
             <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => handleUpgrade('basic')}>
               <CardContent className="p-4">
@@ -331,6 +363,6 @@ export function SubscribeButton({
           )}
         </DialogContent>
       </Dialog>
-    </Popover>
+    </>
   );
 }
