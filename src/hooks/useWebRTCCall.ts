@@ -170,19 +170,29 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     }
   }, [userId, sendOffer]);
 
-  const setupSignaling = useCallback((onSignal: (payload: SignalPayload) => void) => {
-    if (!consultationId) return;
+  const setupSignaling = useCallback((onSignal: (payload: SignalPayload) => void): Promise<ReturnType<typeof supabase.channel>> => {
+    return new Promise((resolve, reject) => {
+      if (!consultationId) { reject(new Error('No consultationId')); return; }
 
-    const channel = supabase
-      .channel(`call-signal-${consultationId}`)
-      .on('broadcast', { event: 'signal' }, ({ payload }) => {
-        const signal = payload as SignalPayload;
-        if (signal.senderId === userId) return;
-        onSignal(signal);
-      })
-      .subscribe();
+      const channel = supabase
+        .channel(`call-signal-${consultationId}`)
+        .on('broadcast', { event: 'signal' }, ({ payload }) => {
+          const signal = payload as SignalPayload;
+          if (signal.senderId === userId) return;
+          onSignal(signal);
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            channelRef.current = channel;
+            resolve(channel);
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            reject(new Error(`Channel failed: ${status}`));
+          }
+        });
 
-    channelRef.current = channel;
+      // Safety timeout
+      setTimeout(() => reject(new Error('Channel subscription timed out')), 8000);
+    });
   }, [consultationId, userId]);
 
   /** Doctor initiates the call (creates offer) */
@@ -194,10 +204,9 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     try {
       const stream = await getMedia();
       const pc = createPeerConnection(stream);
-      setupSignaling(handleSignal);
 
-      // Wait for channel to be fully subscribed
-      await new Promise(r => setTimeout(r, 1000));
+      // Wait for channel to be fully SUBSCRIBED before sending offer
+      await setupSignaling(handleSignal);
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
@@ -218,10 +227,9 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     try {
       const stream = await getMedia();
       createPeerConnection(stream);
-      setupSignaling(handleSignal);
 
-      // Wait for channel subscription, then notify the caller we're ready
-      await new Promise(r => setTimeout(r, 1000));
+      // Wait for channel to be fully SUBSCRIBED before sending ready
+      await setupSignaling(handleSignal);
 
       channelRef.current?.send({
         type: 'broadcast',

@@ -54,7 +54,7 @@ export default function AdminNews() {
   const [editorNames, setEditorNames] = useState<Record<string, string>>({});
   const [pendingEditId, setPendingEditId] = useState<string | null>((location.state as any)?.editId || null);
   const [canPublish, setCanPublish] = useState(role === 'admin');
-  const [permissionLoading, setPermissionLoading] = useState(role === 'doctor');
+  const [permissionLoading, setPermissionLoading] = useState(true);
   const [mainTab, setMainTab] = useState('articles');
 
   // Doctor permissions state
@@ -64,16 +64,27 @@ export default function AdminNews() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (role === 'doctor' && supabaseUser?.id) {
+    if (!role) return; // Auth still loading, keep permissionLoading=true
+    
+    if (role === 'admin') {
+      setCanPublish(true);
+      setPermissionLoading(false);
+    } else if (role === 'doctor' && supabaseUser?.id) {
       supabase
         .from('doctor_profiles')
         .select('can_publish_news')
         .eq('user_id', supabaseUser.id)
         .single()
         .then(({ data }) => {
-          setCanPublish((data as any)?.can_publish_news || false);
+          setCanPublish(data?.can_publish_news || false);
           setPermissionLoading(false);
-        }, () => setPermissionLoading(false));
+        }, () => {
+          setCanPublish(false);
+          setPermissionLoading(false);
+        });
+    } else {
+      setCanPublish(false);
+      setPermissionLoading(false);
     }
   }, [role, supabaseUser?.id]);
 
