@@ -13,11 +13,11 @@ export function useDaily() {
   const [room, setRoom] = useState<DailyRoom | null>(null);
   const [viewerToken, setViewerToken] = useState<string | null>(null);
 
-  const createRoom = useCallback(async (liveId: string, title: string): Promise<DailyRoom | null> => {
+  const createRoom = useCallback(async (liveId: string, title: string, mode: 'live' | 'consultation' = 'live'): Promise<DailyRoom | null> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-daily-room', {
-        body: { liveId, title },
+        body: { liveId, title, mode },
       });
 
       if (error) throw error;

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,8 +30,9 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
+  Crown,
 } from 'lucide-react';
-import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
+import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import { useDebounce } from '@/hooks/use-debounce';
 
@@ -79,6 +81,8 @@ export default function Doctors() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
+  const { isSubscribedTo, getSubscription } = useSubscriptions();
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,12 +93,10 @@ export default function Doctors() {
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch, selectedSpecialty]);
 
-  // Fetch doctors from paginated RPC
   useEffect(() => {
     fetchDoctors();
   }, [currentPage, debouncedSearch, selectedSpecialty]);
@@ -163,16 +165,66 @@ export default function Doctors() {
 
   const totalPages = Math.ceil(totalCount / DOCTORS_PER_PAGE);
 
+  const renderCardFooter = (doctor: DoctorRow) => {
+    const isFollowing = followedDoctors.has(doctor.user_id);
+    const subscription = getSubscription(doctor.user_id);
+    const isPaid = subscription?.tier === 'basic' || subscription?.tier === 'premium';
+
+    if (!isFollowing) {
+      return (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={(e) => { e.stopPropagation(); handleFollow(doctor.user_id); }}
+        >
+          <Heart className="w-4 h-4 mr-1.5" />
+          Seguir
+        </Button>
+      );
+    }
+
+    return (
+      <div className="flex gap-2 w-full">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex-1"
+          onClick={(e) => { e.stopPropagation(); handleFollow(doctor.user_id); }}
+        >
+          <Heart className="w-4 h-4 mr-1 fill-current" />
+          Siguiendo
+        </Button>
+        {isPaid ? (
+          <Badge variant="secondary" className="h-9 px-3 flex items-center gap-1 bg-warning/10 text-warning border-warning/20">
+            <Crown className="w-3.5 h-3.5" />
+            Pro
+          </Badge>
+        ) : (
+          <Button
+            variant="premium"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
+            className="gap-1"
+          >
+            <Crown className="w-3.5 h-3.5" />
+            Pro
+          </Button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold text-foreground mb-2">Explorar Doctores</h1>
-          <p className="text-muted-foreground">Encuentra y sigue a los mejores especialistas médicos</p>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-1 sm:mb-2">Explorar Doctores</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Encuentra y sigue a los mejores especialistas médicos</p>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -195,19 +247,19 @@ export default function Doctors() {
           </Select>
         </div>
 
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="text-sm text-muted-foreground mb-3 sm:mb-4">
           {totalCount} doctores encontrados
           {totalPages > 1 && ` — Página ${currentPage} de ${totalPages}`}
         </p>
 
         {/* Doctors Grid */}
         {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map(i => (
               <Card key={i}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <Skeleton className="w-16 h-16 rounded-full" />
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <Skeleton className="w-12 h-12 sm:w-16 sm:h-16 rounded-full" />
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-5 w-32" />
                       <Skeleton className="h-4 w-24" />
@@ -228,13 +280,13 @@ export default function Doctors() {
           </Card>
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {doctors.map(doctor => (
                 <Card key={doctor.id} className="hover:shadow-lg transition-shadow cursor-pointer group">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className="cursor-pointer" onClick={() => navigate(`/doctor/${doctor.user_id}`)}>
-                        <Avatar className="w-16 h-16 border-2 border-background shadow-md">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="cursor-pointer flex-shrink-0" onClick={() => navigate(`/doctor/${doctor.user_id}`)}>
+                        <Avatar className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} border-2 border-background shadow-md`}>
                           <AvatarImage src={doctor.avatar_url || undefined} />
                           <AvatarFallback className="bg-primary text-primary-foreground text-lg">
                             {getInitials(doctor.name || 'Dr')}
@@ -244,7 +296,7 @@ export default function Doctors() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3
-                            className="font-semibold truncate group-hover:text-primary transition-colors cursor-pointer"
+                            className="font-semibold truncate group-hover:text-primary transition-colors cursor-pointer text-sm sm:text-base"
                             onClick={() => navigate(`/doctor/${doctor.user_id}`)}
                           >
                             {doctor.name || 'Doctor'}
@@ -254,11 +306,11 @@ export default function Doctors() {
                           )}
                         </div>
                         <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
-                        <Badge variant="secondary" className="mb-2">
+                        <Badge variant="secondary" className="mb-1.5 sm:mb-2">
                           <Stethoscope className="w-3 h-3 mr-1" />
                           {doctor.specialty}
                         </Badge>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Star className="w-3.5 h-3.5 text-warning fill-warning" />
                             {Number(doctor.rating).toFixed(1)}
@@ -267,7 +319,7 @@ export default function Doctors() {
                             <Users className="w-3.5 h-3.5" />
                             {doctor.followers_count}
                           </span>
-                          {doctor.location && (
+                          {doctor.location && !isMobile && (
                             <span className="flex items-center gap-1 truncate">
                               <MapPin className="w-3.5 h-3.5" />
                               {doctor.location}
@@ -282,32 +334,19 @@ export default function Doctors() {
                             doctor.office_hours_start && doctor.office_hours_end &&
                             currentTime >= doctor.office_hours_start && currentTime <= doctor.office_hours_end;
                           return (
-                            <div className={`flex items-center gap-1.5 mt-1.5 text-xs ${isAvailable ? 'text-success' : 'text-muted-foreground'}`}>
+                            <div className={`flex items-center gap-1.5 mt-1 text-xs ${isAvailable ? 'text-success' : 'text-muted-foreground'}`}>
                               <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-success animate-pulse' : 'bg-muted-foreground/40'}`} />
                               {isAvailable ? 'Disponible ahora' : 'No disponible'}
                             </div>
                           );
                         })()}
-                        {doctor.bio && (
+                        {doctor.bio && !isMobile && (
                           <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{doctor.bio}</p>
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-4 pt-4 border-t">
-                      <Button
-                        variant={followedDoctors.has(doctor.user_id) ? "secondary" : "outline"}
-                        size="sm"
-                        className="flex-1"
-                        onClick={(e) => { e.stopPropagation(); handleFollow(doctor.user_id); }}
-                      >
-                        <Heart className={`w-4 h-4 mr-1 ${followedDoctors.has(doctor.user_id) ? 'fill-current' : ''}`} />
-                        {followedDoctors.has(doctor.user_id) ? 'Siguiendo' : 'Seguir'}
-                      </Button>
-                      <SubscribeButton
-                        doctorId={doctor.user_id}
-                        doctorName={doctor.name || 'Doctor'}
-                        size="sm"
-                      />
+                    <div className="mt-3 pt-3 border-t">
+                      {renderCardFooter(doctor)}
                     </div>
                   </CardContent>
                 </Card>

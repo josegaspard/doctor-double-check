@@ -258,7 +258,7 @@ export function SubscribeButton({
             className="gap-1.5"
           >
             <Crown className="h-4 w-4" />
-            Suscribirse
+            Suscripción Pro
           </Button>
         )}
       </div>

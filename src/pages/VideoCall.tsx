@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useDaily } from '@/hooks/useDaily';
 import { useCallTimer } from '@/hooks/useCallTimer';
@@ -29,6 +30,7 @@ export default function VideoCall() {
   const [searchParams] = useSearchParams();
   const { user, role } = useAuth();
   const { t, language } = useLanguage();
+  const isMobile = useIsMobile();
   const { createRoom, endRoom } = useDaily();
   const timer = useCallTimer();
 
@@ -80,7 +82,8 @@ export default function VideoCall() {
 
     try {
       if (isDoctor) {
-        const room = await createRoom(consultationId, `${t('videoCall.title')} - ${user.name}`);
+        // Pass mode: 'consultation' so both participants can broadcast
+        const room = await createRoom(consultationId, `${t('videoCall.title')} - ${user.name}`, 'consultation');
         if (!room) {
           toast.error(t('videoCall.createRoomError'));
           setCallState('idle');
@@ -182,10 +185,10 @@ export default function VideoCall() {
         width: '100%',
         height: '100%',
         border: '0',
-        borderRadius: '12px',
+        borderRadius: isMobile ? '0' : '12px',
       },
       showLeaveButton: false,
-      showFullscreenButton: true,
+      showFullscreenButton: !isMobile,
     });
 
     callFrame.on('joined-meeting', () => {
@@ -327,6 +330,40 @@ export default function VideoCall() {
     );
   }
 
+  // Mobile fullscreen when in call
+  const isInCall = (callState === 'connected' || roomUrl) && callState !== 'ended';
+
+  if (isMobile && isInCall) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex flex-col">
+        <div ref={containerRef} className="flex-1 w-full h-full" />
+        <AnimatePresence>
+          {showChat && (
+            <VideoCallChat
+              messages={chatMessages}
+              onSend={handleSendChatMessage}
+              onClose={() => setShowChat(false)}
+            />
+          )}
+        </AnimatePresence>
+        {callState === 'connected' && (
+          <VideoCallControls
+            isMuted={isMuted}
+            isCameraOff={isCameraOff}
+            isScreenSharing={isScreenSharing}
+            timeElapsed={timer.timeElapsed}
+            onToggleMute={handleToggleMute}
+            onToggleCamera={handleToggleCamera}
+            onToggleScreenShare={handleToggleScreenShare}
+            onToggleChat={() => setShowChat(!showChat)}
+            onEndCall={handleEndCall}
+            showChat={showChat}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-4 max-w-6xl">
@@ -384,7 +421,7 @@ export default function VideoCall() {
               </div>
             )}
 
-            {(callState === 'connected' || roomUrl) && callState !== 'ended' && (
+            {isInCall && (
               <div className="relative bg-dark rounded-lg overflow-hidden">
                 <div ref={containerRef} className="w-full aspect-video" />
                 <AnimatePresence>

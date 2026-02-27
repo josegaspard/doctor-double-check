@@ -172,14 +172,14 @@ export function ChatMessagesPanel({
             </ScrollArea>
 
             {isClosed ? (
-              <div className="p-4 border-t bg-muted/30 flex-shrink-0">
+              <div className="p-3 sm:p-4 border-t bg-muted/30 flex-shrink-0" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
                 <div className="flex items-center justify-center gap-2 text-muted-foreground">
                   <Lock className="w-4 h-4" />
                   <p className="text-sm">{t('chat.sessionClosed')}</p>
                 </div>
               </div>
             ) : (
-              <div className="p-3 sm:p-4 border-t bg-card flex-shrink-0">
+              <div className="p-2 sm:p-4 border-t bg-card flex-shrink-0" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
                 <div className="flex gap-2 items-center">
                   <ChatFileUpload
                     sessionId={session.id}
@@ -190,13 +190,13 @@ export function ChatMessagesPanel({
                     value={newMessage}
                     onChange={onInputChange}
                     onKeyDown={e => e.key === 'Enter' && !e.shiftKey && onSend()}
-                    className="flex-1 h-11 bg-muted/50 border-0 focus-visible:ring-1"
+                    className="flex-1 h-10 sm:h-11 bg-muted/50 border-0 focus-visible:ring-1"
                   />
                   <Button
                     onClick={onSend}
                     size="icon"
                     disabled={!newMessage.trim()}
-                    className="h-11 w-11 rounded-xl flex-shrink-0"
+                    className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl flex-shrink-0"
                   >
                     <Send className="w-4 h-4" />
                   </Button>
