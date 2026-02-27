@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, History, Trash2, X, CheckSquare } from 'lucide-react';
+import { MessageSquare, History, Trash2, X, CheckSquare, Info } from 'lucide-react';
 import { ChatSessionItem } from '@/components/chat/ChatSessionItem';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { ChatSession, useChat } from '@/contexts/ChatContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +62,7 @@ export function ChatSessionsList({
 }: Props) {
   const sessions = activeTab === 'active' ? activeSessions : closedSessions;
   const { deleteSession, deleteSessions } = useChat();
+  const { t } = useLanguage();
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -122,7 +124,7 @@ export function ChatSessionsList({
           <TabsList className="w-full grid grid-cols-2 h-11">
             <TabsTrigger value="active" className="gap-1.5 data-[state=active]:shadow-sm">
               <MessageSquare className="w-4 h-4" />
-              <span>Activas</span>
+              <span>{t('chat.active')}</span>
               {activeSessions.length > 0 && (
                 <Badge className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">
                   {activeSessions.length}
@@ -131,7 +133,7 @@ export function ChatSessionsList({
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-1.5 data-[state=active]:shadow-sm">
               <History className="w-4 h-4" />
-              <span>Historial</span>
+              <span>{t('chat.history')}</span>
               {closedSessions.length > 0 && (
                 <Badge variant="outline" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">
                   {closedSessions.length}
@@ -145,31 +147,41 @@ export function ChatSessionsList({
         {activeTab === 'history' && closedSessions.length > 0 && (
           <div className="flex items-center justify-between gap-2 pt-1">
             {isSelecting ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={selectedIds.size === closedSessions.length && closedSessions.length > 0}
-                    onCheckedChange={toggleSelectAll}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    {selectedIds.size} seleccionado(s)
-                  </span>
+              <div className="space-y-2 w-full">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={selectedIds.size === closedSessions.length && closedSessions.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-xs font-medium">
+                      {selectedIds.size > 0
+                        ? `${selectedIds.size} ${t('chat.selected')}`
+                        : t('chat.selectAll')}
+                    </span>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={exitSelectionMode} className="h-7 px-2 text-xs gap-1">
+                    <X className="w-3 h-3" />
+                    {t('common.cancel')}
+                  </Button>
                 </div>
-                <Button variant="ghost" size="sm" onClick={exitSelectionMode} className="h-7 px-2 text-xs gap-1">
-                  <X className="w-3 h-3" />
-                  Cancelar
-                </Button>
-              </>
+                {selectedIds.size === 0 && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-muted/60 rounded-md px-2.5 py-1.5">
+                    <Info className="w-3 h-3 flex-shrink-0" />
+                    {t('chat.selectHint')}
+                  </div>
+                )}
+              </div>
             ) : (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => setIsSelecting(true)}
-                className="h-7 px-2 text-xs gap-1 ml-auto"
+                className="h-7 px-2.5 text-xs gap-1.5 ml-auto text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
               >
-                <CheckSquare className="w-3.5 h-3.5" />
-                Seleccionar
+                <Trash2 className="w-3.5 h-3.5" />
+                {t('chat.selectToDelete')}
               </Button>
             )}
           </div>
@@ -217,15 +229,15 @@ export function ChatSessionsList({
 
       {/* Floating bulk delete bar */}
       {isSelecting && selectedIds.size > 0 && (
-        <div className="p-2 border-t bg-background/95 backdrop-blur-sm">
+        <div className="p-2.5 border-t border-destructive/20 bg-destructive/5 backdrop-blur-sm">
           <Button
             variant="destructive"
             size="sm"
-            className="w-full gap-2"
+            className="w-full gap-2 h-10 text-sm font-medium"
             onClick={() => setShowBulkDeleteConfirm(true)}
           >
             <Trash2 className="w-4 h-4" />
-            Eliminar ({selectedIds.size})
+            {t('common.delete')} ({selectedIds.size})
           </Button>
         </div>
       )}
@@ -235,15 +247,15 @@ export function ChatSessionsList({
     <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Eliminar este chat?</AlertDialogTitle>
+          <AlertDialogTitle>{t('chat.deleteChat')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Se eliminarán todos los mensajes de esta conversación. Esta acción no se puede deshacer.
+            {t('chat.deleteChatDescription')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction onClick={handleDeleteSession} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            Eliminar
+            {t('common.delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -253,19 +265,19 @@ export function ChatSessionsList({
     <AlertDialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Eliminar {selectedIds.size} chat(s)?</AlertDialogTitle>
+          <AlertDialogTitle>{t('chat.deleteBulkTitle')} ({selectedIds.size})</AlertDialogTitle>
           <AlertDialogDescription>
-            Se eliminarán todos los mensajes de las conversaciones seleccionadas. Esta acción no se puede deshacer.
+            {t('chat.deleteBulkDescription')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isBulkDeleting}>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel disabled={isBulkDeleting}>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleBulkDelete}
             disabled={isBulkDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isBulkDeleting ? 'Eliminando...' : 'Eliminar'}
+            {isBulkDeleting ? t('chat.deleting') : t('common.delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

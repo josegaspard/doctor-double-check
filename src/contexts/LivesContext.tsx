@@ -389,8 +389,31 @@ export function LivesProvider({ children }: { children: ReactNode }) {
               if (existing) {
                 return prev.map(l => l.id === record.id ? updatedLive : l);
               } else {
+                // New live - fetch profile inline if not cached
                 if (!profileCache.current.has(record.doctor_id)) {
-                  throttledFetchLives();
+                  (async () => {
+                    try {
+                      const [profileRes, doctorRes] = await Promise.all([
+                        supabase.from('profiles_public').select('id, name, avatar_url').eq('id', record.doctor_id).single(),
+                        supabase.from('doctor_profiles_public').select('user_id, followers_count').eq('user_id', record.doctor_id).single(),
+                      ]);
+                      if (profileRes.data) {
+                        profileCache.current.set(record.doctor_id, { name: profileRes.data.name || 'Doctor', avatar_url: profileRes.data.avatar_url || undefined });
+                      }
+                      if (doctorRes.data) {
+                        doctorProfileCache.current.set(record.doctor_id, { followers_count: doctorRes.data.followers_count || 0 });
+                      }
+                      // Update the live in state with correct name
+                      setLives(prev => prev.map(l => l.id === record.id ? {
+                        ...l,
+                        doctorName: profileCache.current.get(record.doctor_id)?.name || 'Doctor',
+                        doctorAvatar: profileCache.current.get(record.doctor_id)?.avatar_url,
+                        followersCount: doctorProfileCache.current.get(record.doctor_id)?.followers_count || 0,
+                      } : l));
+                    } catch (e) {
+                      console.error('Error fetching profile for new live:', e);
+                    }
+                  })();
                 }
                 return [updatedLive, ...prev];
               }

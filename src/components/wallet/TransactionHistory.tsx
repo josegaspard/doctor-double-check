@@ -80,13 +80,13 @@ export function TransactionHistory() {
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'topup':
-        return <Badge variant="outline" className="bg-success/10 text-success border-success/30">Recarga</Badge>;
+        return <Badge variant="outline" className="bg-success/10 text-success border-success/30">{t('transactions.topup')}</Badge>;
       case 'purchase':
-        return <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">Compra</Badge>;
+        return <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">{t('transactions.purchase')}</Badge>;
       case 'earning':
-        return <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">Ganancia</Badge>;
+        return <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">{t('transactions.earning')}</Badge>;
       case 'refund':
-        return <Badge variant="outline" className="bg-info/10 text-info border-info/30">Reembolso</Badge>;
+        return <Badge variant="outline" className="bg-info/10 text-info border-info/30">{t('transactions.refund')}</Badge>;
       default:
         return <Badge variant="outline">{type}</Badge>;
     }
@@ -95,11 +95,11 @@ export function TransactionHistory() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <Badge variant="outline" className="text-success">Completado</Badge>;
+        return <Badge variant="outline" className="text-success">{t('transactions.completed')}</Badge>;
       case 'pending':
-        return <Badge variant="outline" className="text-warning">Pendiente</Badge>;
+        return <Badge variant="outline" className="text-warning">{t('transactions.pending')}</Badge>;
       case 'failed':
-        return <Badge variant="destructive">Fallido</Badge>;
+        return <Badge variant="destructive">{t('transactions.failed')}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -112,7 +112,7 @@ export function TransactionHistory() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <CardTitle className="text-lg flex items-center gap-2">
               <Receipt className="w-5 h-5" />
-              Historial de Transacciones
+              {t('transactions.title')}
             </CardTitle>
             
             <div className="flex items-center gap-2">
@@ -131,11 +131,11 @@ export function TransactionHistory() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="topup">Recargas</SelectItem>
-                  <SelectItem value="purchase">Compras</SelectItem>
-                  <SelectItem value="earning">Ganancias</SelectItem>
-                  <SelectItem value="refund">Reembolsos</SelectItem>
+                <SelectItem value="all">{t('common.all')}</SelectItem>
+                  <SelectItem value="topup">{t('transactions.topups')}</SelectItem>
+                  <SelectItem value="purchase">{t('transactions.purchases')}</SelectItem>
+                  <SelectItem value="earning">{t('transactions.earnings')}</SelectItem>
+                  <SelectItem value="refund">{t('transactions.refunds')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -144,21 +144,21 @@ export function TransactionHistory() {
 
         <CardContent>
           {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="p-3 bg-success/10 rounded-lg text-center">
-              <TrendingUp className="w-5 h-5 text-success mx-auto mb-1" />
-              <p className="text-lg font-bold text-success">+${stats.deposits.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">Recargas</p>
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+            <div className="p-2 sm:p-3 bg-success/10 rounded-lg text-center">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success mx-auto mb-0.5 sm:mb-1" />
+              <p className="text-xs sm:text-lg font-bold text-success whitespace-nowrap">+${stats.deposits.toLocaleString()}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{t('transactions.topups')}</p>
             </div>
-            <div className="p-3 bg-muted rounded-lg text-center">
-              <TrendingDown className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-              <p className="text-lg font-bold">-${stats.purchases.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">Compras</p>
+            <div className="p-2 sm:p-3 bg-muted rounded-lg text-center">
+              <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground mx-auto mb-0.5 sm:mb-1" />
+              <p className="text-xs sm:text-lg font-bold whitespace-nowrap">-${stats.purchases.toLocaleString()}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{t('transactions.purchases')}</p>
             </div>
-            <div className="p-3 bg-amber-500/10 rounded-lg text-center">
-              <TrendingUp className="w-5 h-5 text-amber-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-amber-600">+${stats.earnings.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">Ganancias</p>
+            <div className="p-2 sm:p-3 bg-amber-500/10 rounded-lg text-center">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 mx-auto mb-0.5 sm:mb-1" />
+              <p className="text-xs sm:text-lg font-bold text-amber-600 whitespace-nowrap">+${stats.earnings.toLocaleString()}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{t('transactions.earnings')}</p>
             </div>
           </div>
 
@@ -207,10 +207,10 @@ export function TransactionHistory() {
           ) : (
             <div className="text-center py-8">
               <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">No se encontraron transacciones</p>
+              <p className="text-muted-foreground">{t('transactions.noTransactions')}</p>
               {filterType !== 'all' && (
                 <Button variant="link" onClick={() => setFilterType('all')}>
-                  Ver todas las transacciones
+                  {t('transactions.viewAll')}
                 </Button>
               )}
             </div>
@@ -224,7 +224,7 @@ export function TransactionHistory() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Receipt className="w-5 h-5" />
-              Detalle de Transacción
+              {t('transactions.detail')}
             </DialogTitle>
           </DialogHeader>
 
@@ -245,17 +245,17 @@ export function TransactionHistory() {
                 </div>
               </div>
 
-              <div className="space-y-3 bg-muted/50 rounded-lg p-4">
+                <div className="space-y-3 bg-muted/50 rounded-lg p-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Descripción</span>
+                  <span className="text-muted-foreground">{t('transactions.description')}</span>
                   <span className="font-medium text-right max-w-[60%]">{selectedTx.description}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Fecha</span>
+                  <span className="text-muted-foreground">{t('transactions.date')}</span>
                   <span>{format(selectedTx.createdAt, 'dd MMMM yyyy, HH:mm:ss', { locale: es })}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">ID de Transacción</span>
+                  <span className="text-muted-foreground">{t('transactions.transactionId')}</span>
                   <code className="text-xs bg-muted px-2 py-1 rounded">{selectedTx.id.slice(0, 8)}...</code>
                 </div>
                 {selectedTx.metadata && Object.keys(selectedTx.metadata).length > 0 && (
