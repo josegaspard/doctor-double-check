@@ -39,6 +39,7 @@ export interface Recording {
   videoUrl?: string;
   createdAt: Date;
   tags: string[];
+  peakViewers?: number;
 }
 
 interface LivesContextType {
@@ -252,6 +253,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
             videoUrl: r.video_url || undefined,
             createdAt: new Date(r.created_at),
             tags: r.tags || [],
+            peakViewers: (r as any).peak_viewers ?? undefined,
           };
         }));
       }

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
+import { LiveEndedOverlay } from '@/components/live/LiveEndedOverlay';
 
 import { useViewerCount } from '@/hooks/useViewerCount';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -77,6 +78,22 @@ export default function LivePlayer() {
   });
   
   const isLiked = live ? hasLiked(live.id) : false;
+  const [liveEnded, setLiveEnded] = useState(false);
+  const prevStatusRef = useRef<string | undefined>(undefined);
+
+  // Scroll to top on mount / live change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  // Detect live ending while watching
+  useEffect(() => {
+    if (!live) return;
+    if (prevStatusRef.current === 'live' && live.status === 'ended') {
+      setLiveEnded(true);
+    }
+    prevStatusRef.current = live.status;
+  }, [live?.status]);
 
   // Resolve Daily room for viewers
   useEffect(() => {
@@ -226,8 +243,18 @@ export default function LivePlayer() {
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Video Player */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Daily player for viewers */}
-            {roomUrl && viewerToken ? (
+            {/* Live ended overlay */}
+            {liveEnded && !isOwner ? (
+              <LiveEndedOverlay
+                doctorId={live.doctorId}
+                doctorName={live.doctorName}
+                doctorAvatar={live.doctorAvatar}
+                specialty={live.specialty}
+                likesCount={realtimeLikesCount || live.likesCount}
+                peakViewers={live.viewerCount}
+                duration={formatDuration(live.startedAt)}
+              />
+            ) : roomUrl && viewerToken ? (
               <DailyVideoPlayer
                 roomUrl={roomUrl}
                 token={viewerToken}
@@ -322,7 +349,7 @@ export default function LivePlayer() {
                 </Button>
               </div>
               <Separator className="my-3 sm:my-4" />
-              <p className="text-muted-foreground text-sm">{live.description}</p>
+              <p className="text-muted-foreground text-sm break-words whitespace-pre-wrap overflow-hidden">{live.description}</p>
             </div>
           </div>
 

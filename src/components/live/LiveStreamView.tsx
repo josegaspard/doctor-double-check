@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { DailyVideoPlayer } from './DailyVideoPlayer';
 import { LiveChat } from './LiveChat';
 import { AnimatedViewerCount } from './AnimatedViewerCount';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Clock,
   Heart,
   MessageSquare,
   StopCircle,
+  X,
 } from 'lucide-react';
 
 interface LiveStreamViewProps {
@@ -40,6 +43,9 @@ export function LiveStreamView({
   roomUrl,
   ownerToken,
 }: LiveStreamViewProps) {
+  const isMobile = useIsMobile();
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
+
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -50,18 +56,96 @@ export function LiveStreamView({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  if (isMobile) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex flex-col" style={{ height: '100dvh' }}>
+        {/* Compact header overlay */}
+        <div className="absolute top-0 left-0 right-0 z-30 p-2 bg-gradient-to-b from-black/70 to-transparent">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 min-w-0 mr-2">
+              <p className="text-white text-sm font-semibold truncate">{liveData.title}</p>
+              <p className="text-white/60 text-[10px]">{liveData.specialty}</p>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-white/80 shrink-0">
+              <span className="flex items-center gap-0.5">
+                <Clock className="w-3 h-3" />
+                {formatTime(elapsedTime)}
+              </span>
+              <AnimatedViewerCount count={viewerCount || liveData.viewerCount} variant="inline" />
+              <span className="flex items-center gap-0.5">
+                <Heart className="w-3 h-3" />
+                {likesCount || liveData.likesCount}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Video fills the screen */}
+        <div className="flex-1 relative">
+          <DailyVideoPlayer
+            roomUrl={roomUrl}
+            token={ownerToken}
+            isOwner={true}
+            onLeave={onEndClick}
+            onParticipantCountChange={() => {}}
+          />
+        </div>
+
+        {/* Bottom controls */}
+        <div
+          className="absolute bottom-0 left-0 right-0 z-30 flex items-center justify-center gap-3 p-3 bg-gradient-to-t from-black/80 to-transparent"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMobileChatOpen(true)}
+            className="gap-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+          >
+            <MessageSquare className="w-4 h-4" />
+            Chat
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={onEndClick}
+            className="gap-1"
+          >
+            <StopCircle className="w-4 h-4" />
+            Finalizar
+          </Button>
+        </div>
+
+        {/* Mobile chat overlay */}
+        {mobileChatOpen && (
+          <div className="absolute inset-x-0 bottom-0 z-40 h-[60dvh] bg-background rounded-t-2xl shadow-2xl flex flex-col animate-slide-in-bottom">
+            <div className="flex items-center justify-between px-4 py-2 border-b">
+              <span className="font-semibold text-sm">Chat en vivo</span>
+              <Button variant="ghost" size="icon" onClick={() => setMobileChatOpen(false)} className="h-8 w-8">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <LiveChat liveId={liveData.id} isOwner={true} liveStartedAt={liveData.startedAt} />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <div className="container mx-auto px-4 py-4">
-      {/* Header with controls */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="font-heading text-lg font-bold">{liveData.title}</h1>
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="min-w-0">
+            <h1 className="font-heading text-lg font-bold truncate">{liveData.title}</h1>
             <p className="text-xs text-muted-foreground">{liveData.specialty}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 shrink-0">
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
@@ -86,7 +170,6 @@ export function LiveStreamView({
         </div>
       </div>
 
-      {/* Video + Chat */}
       <div className="grid lg:grid-cols-4 gap-4">
         <div className={showChat ? 'lg:col-span-3' : 'lg:col-span-4'}>
           <DailyVideoPlayer

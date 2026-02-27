@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UpcomingAvailabilities } from '@/components/availability/UpcomingAvailabilities';
 import { NewsFeed } from '@/components/news/NewsFeed';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Video, 
   Users, 
@@ -22,18 +23,8 @@ import {
   LogIn,
 } from 'lucide-react';
 
-export default function LivesGrid() {
-  const { lives, isLoading, refreshLives } = useLives();
-  const { role, isAuthenticated } = useAuth();
+function LiveCard({ live, isPremiumSub, isNew }: { live: any; isPremiumSub: boolean; isNew: boolean }) {
   const { t } = useLanguage();
-  const { getSubscription } = useSubscriptions();
-
-  const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
-
-  // Refresh on mount
-  React.useEffect(() => {
-    refreshLives();
-  }, [refreshLives]);
 
   const formatDuration = (startedAt: Date) => {
     const diff = Date.now() - startedAt.getTime();
@@ -44,21 +35,123 @@ export default function LivesGrid() {
   };
 
   return (
+    <Link to={`/live/${live.id}`}>
+      <Card className="card-live group cursor-pointer overflow-hidden hover:shadow-lg transition-all relative ring-2 ring-live animate-pulse-ring">
+        <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-info/20">
+          {live.thumbnailUrl ? (
+            <img
+              src={live.thumbnailUrl}
+              alt={live.title}
+              loading="lazy"
+              className="w-full h-full object-cover"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          ) : null}
+          {!live.thumbnailUrl && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Video className="w-10 h-10 sm:w-12 sm:h-12 text-primary/40" />
+            </div>
+          )}
+          
+          <div className="absolute top-2 left-2 flex items-center gap-1.5">
+            <Badge variant="live" className="gap-1">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              {t('lives.liveBadge')}
+            </Badge>
+            {isPremiumSub && (
+              <Badge className="gap-1 bg-yellow-500/90 text-white border-0 text-[10px]">
+                <Crown className="w-3 h-3" />
+                Premium
+              </Badge>
+            )}
+          </div>
+          
+          <div className="absolute top-2 right-2">
+            <Badge variant="secondary" className="gap-1 bg-black/50 text-white border-0">
+              <Users className="w-3 h-3" />
+              {live.viewerCount}
+            </Badge>
+          </div>
+          
+          <div className="absolute bottom-2 right-2">
+            <Badge variant="secondary" className="gap-1 bg-black/50 text-white border-0">
+              <Clock className="w-3 h-3" />
+              {formatDuration(live.startedAt)}
+            </Badge>
+          </div>
+          
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-white/0 group-hover:bg-white/90 flex items-center justify-center transition-colors">
+              <Video className="w-6 h-6 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </div>
+        </div>
+        
+        <CardContent className="p-3 sm:p-4">
+          <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors text-sm sm:text-base">
+            {live.title}
+          </h3>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-[10px] sm:text-xs font-semibold text-primary">
+                {live.doctorName.charAt(0)}
+              </span>
+            </div>
+            <span className="truncate text-xs sm:text-sm">{live.doctorName}</span>
+          </div>
+          <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
+            <Badge variant="outline" className="text-xs">
+              {live.specialty}
+            </Badge>
+            {isPremiumSub && (
+              <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-300 gap-1">
+                <Crown className="w-3 h-3" />
+                {t('lives.earlyAccess')}
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+export default function LivesGrid() {
+  const { lives, isLoading } = useLives();
+  const { role, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
+  const { getSubscription } = useSubscriptions();
+
+  const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
+
+  // Track known IDs to detect new ones for animation
+  const knownIdsRef = useRef<Set<string>>(new Set());
+  const newIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const currentIds = new Set(activeLives.map(l => l.id));
+    const freshIds = new Set<string>();
+    currentIds.forEach(id => {
+      if (!knownIdsRef.current.has(id)) freshIds.add(id);
+    });
+    newIdsRef.current = freshIds;
+    knownIdsRef.current = currentIds;
+  }, [activeLives]);
+
+  return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6">
-        {/* Upcoming Availabilities - for authenticated users */}
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {isAuthenticated && role !== 'visitor' && (
           <UpcomingAvailabilities />
         )}
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-              <Radio className="w-6 h-6 text-live animate-pulse" />
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+              <Radio className="w-5 h-5 sm:w-6 sm:h-6 text-live animate-pulse" />
               {t('lives.title')}
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               {activeLives.length} de 20 {t('lives.activeLives')}
             </p>
           </div>
@@ -74,9 +167,9 @@ export default function LivesGrid() {
             )}
             {role === 'visitor' && (
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-accent/50 rounded-lg px-4 py-2">
+                <div className="flex items-center gap-2 bg-accent/50 rounded-lg px-3 sm:px-4 py-2">
                   <Eye className="w-4 h-4 text-accent-foreground" />
-                  <span className="text-sm text-accent-foreground">
+                  <span className="text-xs sm:text-sm text-accent-foreground">
                     {t('lives.viewerMode')}
                   </span>
                 </div>
@@ -91,13 +184,12 @@ export default function LivesGrid() {
           </div>
         </div>
 
-        {/* Lives Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {[...Array(8)].map((_, i) => (
               <Card key={i} className="overflow-hidden">
                 <div className="aspect-video bg-muted animate-pulse" />
-                <CardContent className="p-4 space-y-2">
+                <CardContent className="p-3 sm:p-4 space-y-2">
                   <div className="h-4 bg-muted animate-pulse rounded" />
                   <div className="h-3 bg-muted animate-pulse rounded w-2/3" />
                 </CardContent>
@@ -105,120 +197,49 @@ export default function LivesGrid() {
             ))}
           </div>
         ) : activeLives.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {activeLives.map((live) => {
-              const sub = getSubscription(live.doctorId);
-              const isPremiumSub = sub?.tier === 'premium';
-              
-              return (
-              <Link key={live.id} to={`/live/${live.id}`}>
-                <Card className="card-live group cursor-pointer overflow-hidden hover:shadow-lg transition-all relative ring-2 ring-live animate-pulse-ring">
-                  {/* Thumbnail */}
-                  <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-info/20">
-                    {live.thumbnailUrl ? (
-                      <img
-                        src={live.thumbnailUrl}
-                        alt={live.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                      />
-                    ) : null}
-                    {!live.thumbnailUrl && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Video className="w-12 h-12 text-primary/40" />
-                      </div>
-                    )}
-                    
-                    {/* Live Badge */}
-                    <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                      <Badge variant="live" className="gap-1">
-                        <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                        {t('lives.liveBadge')}
-                      </Badge>
-                      {isPremiumSub && (
-                        <Badge className="gap-1 bg-yellow-500/90 text-white border-0 text-[10px]">
-                          <Crown className="w-3 h-3" />
-                          Premium
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {/* Viewers */}
-                    <div className="absolute top-2 right-2">
-                      <Badge variant="secondary" className="gap-1 bg-black/50 text-white border-0">
-                        <Users className="w-3 h-3" />
-                        {live.viewerCount}
-                      </Badge>
-                    </div>
-                    
-                    {/* Duration */}
-                    <div className="absolute bottom-2 right-2">
-                      <Badge variant="secondary" className="gap-1 bg-black/50 text-white border-0">
-                        <Clock className="w-3 h-3" />
-                        {formatDuration(live.startedAt)}
-                      </Badge>
-                    </div>
-                    
-                    {/* Play overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-white/0 group-hover:bg-white/90 flex items-center justify-center transition-colors">
-                        <Video className="w-6 h-6 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
-                      {live.title}
-                    </h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-xs font-semibold text-primary">
-                          {live.doctorName.charAt(0)}
-                        </span>
-                      </div>
-                      <span className="truncate">{live.doctorName}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-3">
-                      <Badge variant="outline" className="text-xs">
-                        {live.specialty}
-                      </Badge>
-                      {isPremiumSub && (
-                        <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-300 gap-1">
-                          <Crown className="w-3 h-3" />
-                          {t('lives.earlyAccess')}
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+            <AnimatePresence mode="popLayout">
+              {activeLives.map((live) => {
+                const sub = getSubscription(live.doctorId);
+                const isPremiumSub = sub?.tier === 'premium';
+                const isNew = newIdsRef.current.has(live.id);
+                
+                return (
+                  <motion.div
+                    key={live.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                  >
+                    <LiveCard live={live} isPremiumSub={isPremiumSub} isNew={isNew} />
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         ) : (
-          <Card className="p-12 text-center">
-            <Video className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
+          <Card className="p-8 sm:p-12 text-center">
+            <Video className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
               {t('lives.noLives')}
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {t('lives.noLivesDescription')}
             </p>
           </Card>
         )}
 
-        {/* Info Banner for Visitors */}
         {role === 'visitor' && (
-          <Card className="mt-8 p-6 bg-gradient-to-r from-primary/5 to-info/5 border-primary/20">
+          <Card className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-r from-primary/5 to-info/5 border-primary/20">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <Lock className="w-5 h-5 text-primary" />
                   <h3 className="font-semibold text-foreground">{t('lives.wantMore')}</h3>
                 </div>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t('lives.registerPrompt')}
                 </p>
               </div>
@@ -229,7 +250,6 @@ export default function LivesGrid() {
           </Card>
         )}
 
-        {/* News Feed below Lives */}
         <NewsFeed />
       </div>
     </MainLayout>
