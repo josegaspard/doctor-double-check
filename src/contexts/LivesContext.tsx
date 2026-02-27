@@ -253,7 +253,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
             videoUrl: r.video_url || undefined,
             createdAt: new Date(r.created_at),
             tags: r.tags || [],
-            peakViewers: (r as any).peak_viewers ?? undefined,
+            peakViewers: r.peak_viewers ?? undefined,
           };
         }));
       }

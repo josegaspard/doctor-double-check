@@ -150,6 +150,14 @@ export function DailyVideoPlayer({
     if (screenShareRef.current) {
       screenShareRef.current.innerHTML = '';
     }
+
+    // Detect screen share directly from participants (avoid stale closure)
+    let hasAnyScreenShare = false;
+    Object.values(participants).forEach(p => {
+      if (p.screen && p.screenVideoTrack) {
+        hasAnyScreenShare = true;
+      }
+    });
     
     Object.values(participants).forEach((participant) => {
       // Handle screen share track
@@ -170,11 +178,9 @@ export function DailyVideoPlayer({
         videoEl.playsInline = true;
         videoEl.muted = participant.local;
 
-        const showingScreenShare = isScreenSharing || hasRemoteScreenShare;
-        
-        videoEl.className = participant.local && showingScreenShare
+        videoEl.className = participant.local && hasAnyScreenShare
           ? 'absolute bottom-2 right-2 w-24 h-18 sm:w-32 sm:h-24 rounded-lg object-cover z-10 border-2 border-primary shadow-lg'
-          : showingScreenShare && !participant.local
+          : hasAnyScreenShare && !participant.local
             ? 'absolute bottom-2 left-2 w-24 h-18 sm:w-32 sm:h-24 rounded-lg object-cover z-10 border-2 border-muted shadow-lg'
             : 'w-full h-full object-cover';
         
@@ -272,13 +278,11 @@ export function DailyVideoPlayer({
         isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'aspect-video'
       }`}
     >
-      {/* Screen share layer (main area when active) */}
-      {showingScreenShare && (
-        <div
-          ref={screenShareRef}
-          className="absolute inset-0 flex items-center justify-center bg-black z-0"
-        />
-      )}
+      {/* Screen share layer — always rendered so ref is available when tracks arrive */}
+      <div
+        ref={screenShareRef}
+        className={`absolute inset-0 flex items-center justify-center bg-black z-0 ${showingScreenShare ? '' : 'hidden'}`}
+      />
 
       {/* Camera video container */}
       <div 

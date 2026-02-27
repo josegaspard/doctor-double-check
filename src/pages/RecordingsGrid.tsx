@@ -248,15 +248,6 @@ export default function RecordingsGrid() {
                       )}
                     </div>
 
-                    {/* Viewer count badge */}
-                    {recording.peakViewers && recording.peakViewers > 0 && (
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="secondary" className="gap-1 bg-black/50 text-white border-0">
-                          <Eye className="w-3 h-3" />
-                          {recording.peakViewers}
-                        </Badge>
-                      </div>
-                    )}
                     
                     {/* Duration */}
                     <div className="absolute bottom-2 right-2">
@@ -278,7 +269,7 @@ export default function RecordingsGrid() {
                     <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
                       {recording.title}
                     </h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                       <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
                         <span className="text-xs font-semibold text-primary">
                           {recording.doctorName.charAt(0)}
@@ -286,6 +277,13 @@ export default function RecordingsGrid() {
                       </div>
                       <span className="truncate">{recording.doctorName}</span>
                     </div>
+                    {recording.peakViewers != null && recording.peakViewers > 0 && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>{recording.peakViewers.toLocaleString()} espectadores</span>
+                      </div>
+                    )}
+                    {(!recording.peakViewers || recording.peakViewers === 0) && <div className="mb-3" />}
                     
                     <div className="flex items-center justify-between">
                       <Badge variant="outline" className="text-xs">
