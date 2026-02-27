@@ -43,16 +43,32 @@ export default function VideoCall() {
     toggleMute, toggleCamera, toggleScreenShare,
   } = useWebRTCCall(consultationId, user?.id || null);
 
-  const autoJoinTriggered = useRef(false);
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState<InCallMessage[]>([]);
   const [otherParticipantName, setOtherParticipantName] = useState('');
 
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const chatChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const timeLocale = language === 'es' ? 'es-MX' : 'en-US';
+
+  // ── Callback refs: attach srcObject the instant the <video> mounts ──
+  const localVideoRefCallback = useCallback((el: HTMLVideoElement | null) => {
+    localVideoRef.current = el;
+    if (el && localStream) {
+      el.srcObject = localStream;
+      el.play().catch(() => {});
+    }
+  }, [localStream]);
+
+  const remoteVideoRefCallback = useCallback((el: HTMLVideoElement | null) => {
+    remoteVideoRef.current = el;
+    if (el && remoteStream) {
+      el.srcObject = remoteStream;
+      el.play().catch(() => {});
+    }
+  }, [remoteStream]);
 
   // Fetch other participant name
   useEffect(() => {
@@ -91,32 +107,11 @@ export default function VideoCall() {
     return () => { supabase.removeChannel(ch); };
   }, [consultationId, user?.id]);
 
-  // Attach streams to video elements
-  useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-    }
-  }, [localStream]);
-
-  useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
-    }
-  }, [remoteStream]);
-
   // Start timer when connected
   useEffect(() => {
     if (callState === 'connected') timer.start();
     if (callState === 'ended') timer.stop();
   }, [callState]);
-
-  // Auto-join for patient from incoming call
-  useEffect(() => {
-    if (autoJoin && !autoJoinTriggered.current && callState === 'idle' && consultationId && user?.id) {
-      autoJoinTriggered.current = true;
-      handleStart();
-    }
-  }, [autoJoin, callState, consultationId, user?.id]);
 
   // Timer warnings
   useEffect(() => {
@@ -131,7 +126,6 @@ export default function VideoCall() {
     if (!consultationId || !user?.id || callState !== 'idle') return;
 
     if (isDoctor) {
-      // Send notification to patient
       const { data: consultation } = await supabase
         .from('consultations')
         .select('patient_id')
@@ -209,12 +203,12 @@ export default function VideoCall() {
 
   const isInCall = callState === 'connecting' || callState === 'connected';
 
-  // Inline video layout JSX to avoid re-mounting video elements on every render
+  // ── Shared video layout using callback refs ──
   const videoLayoutJSX = (
     <div className="relative w-full h-full bg-black">
       {/* Remote video (full) */}
       <video
-        ref={remoteVideoRef}
+        ref={remoteVideoRefCallback}
         autoPlay
         playsInline
         className="w-full h-full object-cover"
@@ -232,7 +226,7 @@ export default function VideoCall() {
       )}
       {/* Local video PiP */}
       <video
-        ref={localVideoRef}
+        ref={localVideoRefCallback}
         autoPlay
         playsInline
         muted
@@ -240,6 +234,27 @@ export default function VideoCall() {
       />
     </div>
   );
+
+  // ── Autojoin: show a "Tap to join" button instead of auto-calling from useEffect ──
+  if (autoJoin && callState === 'idle') {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center" style={{ height: '100dvh' }}>
+        <div className="text-center">
+          <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mb-6 mx-auto">
+            <Video className="w-12 h-12 text-primary" />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">Videollamada</h2>
+          {otherParticipantName && (
+            <p className="text-white/70 mb-6">con {otherParticipantName}</p>
+          )}
+          <Button size="lg" onClick={handleStart} className="gap-2 px-8 h-12 text-base">
+            <Video className="w-5 h-5" />
+            Toca para unirte
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Mobile fullscreen when in call
   if (isMobile && isInCall) {
@@ -253,7 +268,7 @@ export default function VideoCall() {
             <VideoCallChat messages={chatMessages} onSend={handleSendChat} onClose={() => setShowChat(false)} />
           )}
         </AnimatePresence>
-        {callState === 'connected' && (
+        {isInCall && (
           <VideoCallControls
             isMuted={isMuted}
             isCameraOff={isCameraOff}
@@ -328,7 +343,7 @@ export default function VideoCall() {
                     <VideoCallChat messages={chatMessages} onSend={handleSendChat} onClose={() => setShowChat(false)} />
                   )}
                 </AnimatePresence>
-                {callState === 'connected' && (
+                {isInCall && (
                   <VideoCallControls
                     isMuted={isMuted}
                     isCameraOff={isCameraOff}
