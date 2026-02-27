@@ -1,136 +1,90 @@
+# Plan: Real-time Lives Grid, Doctor Fullscreen + Screen Share, Mobile Optimization, Live Ended Screen, and Peak Viewers
 
-# Plan: Replace Video Call System + Migrate Lives to Daily
+## 1. Real-time animated LivesGrid updates
 
-## Problem Summary
+The `LivesContext` already has Supabase Realtime subscriptions that update the `lives` array when new lives are inserted. The problem is `LivesGrid` doesn't animate new cards appearing.
 
-1. **Video calls broken**: The edge function logs confirm the last consultation was created with `mode: "live"` (broadcast-only), not `"consultation"`. The Daily.co iframe-based approach uses a conference model that only shows the doctor's video.
-2. **Cloudflare Stream is unused**: Zero activity in `create-cloudflare-stream`, `end-cloudflare-stream`, `cloudflare-whip`, and `cloudflare-webhook` edge functions. The live streaming system using Cloudflare WHIP never connected to your account properly (no billing because no data ever flowed).
-3. **Recordings lost**: Since Cloudflare never received video data, no VOD recordings were generated.
+**Changes to `src/pages/LivesGrid.tsx`:**
 
-## Solution Architecture
+- Track previously seen live IDs using a `useRef<Set<string>>`.
+- When a new live appears (ID not in the set), apply a `animate-fade-in` CSS class to the card.
+- Remove the manual `refreshLives()` on mount since Realtime already handles it.
+- Use `framer-motion`'s `AnimatePresence` + `motion.div` to animate cards entering/leaving the grid smoothly.
 
-### 1:1 Video Calls -- Native WebRTC (No third-party service)
+## 2. Doctor fullscreen broadcast + screen sharing
 
-Replace Daily.co entirely for consultations with browser-native WebRTC using Supabase Realtime for signaling. This gives true peer-to-peer video between doctor and patient with zero cost.
+**Changes to `src/components/live/DailyVideoPlayer.tsx`:**
 
-**How it works:**
-- Doctor clicks "Start Call" -- browser captures camera/mic, creates WebRTC offer
-- SDP offer and ICE candidates are exchanged via a Supabase Realtime broadcast channel (the same mechanism already used for `incoming_call` events)
-- Patient accepts -- browser captures camera/mic, creates WebRTC answer
-- Direct peer-to-peer connection established -- both videos visible simultaneously
-- No server processes video data, so there's no billing
+- Add screen sharing support: new `isScreenSharing` state and `toggleScreenShare()` using `callRef.current.startScreenShare()` / `stopScreenShare()`.
+- When screen share is active, show a split layout: screen share takes the main area, camera moves to a small PiP corner.
+- Add a screen share button in the controls bar (only for owner).
+- Make the video container fullscreen-friendly with proper aspect ratios.
 
-### Live Streams -- Daily.co in broadcast mode + local recording backup
+**Changes to `src/components/live/LiveStreamView.tsx`:**
 
-Migrate lives from Cloudflare Stream (which never worked) to Daily.co rooms. Daily is already configured and proven working (the rooms and tokens are created successfully).
+- On mobile, render the broadcast in fullscreen mode (`fixed inset-0 z-50`) with controls overlaid at the bottom with safe-area padding.
+- Reduce header to a compact single-line overlay on mobile.
+- Make the chat panel slide up from bottom on mobile as an overlay instead of a side column.
 
-**How it works:**
-- Doctor starts live -- creates a Daily.co room with `owner_only_broadcast: true` (existing flow, already working)
-- Viewers join with viewer tokens via `DailyVideoPlayer` component (already exists)
-- Local recording runs in parallel via `useLocalRecording` (already implemented)
-- When live ends, local recording is uploaded to `recordings` Storage bucket and saved to DB
+## 3. Description text respecting layout boundaries
 
----
+**Changes to `src/pages/LivePlayer.tsx`:**
 
-## Technical Changes
+- Add `break-words whitespace-pre-wrap overflow-hidden` to the description paragraph so long text doesn't overflow or break lateral spacing.
 
-### Phase 1: Native WebRTC for 1:1 Calls
+## 4. Mobile: scroll to top on live load (not footer)
 
-**New file: `src/hooks/useWebRTCCall.ts`**
-- Custom hook managing the full WebRTC peer-to-peer lifecycle
-- Uses `navigator.mediaDevices.getUserMedia()` for camera/mic
-- Creates `RTCPeerConnection` with public STUN servers (Google, Cloudflare)
-- Signaling via Supabase Realtime broadcast channel (`call-signal-{consultationId}`)
-- Handles offer/answer/ICE candidate exchange
-- Exposes: `localStream`, `remoteStream`, `callState`, `startCall()`, `joinCall()`, `endCall()`, `toggleMute()`, `toggleCamera()`, `toggleScreenShare()`
+**Changes to `src/pages/LivePlayer.tsx`:**
 
-**Modified: `src/pages/VideoCall.tsx`**
-- Remove `DailyIframe` import and all Daily-related logic
-- Replace with `useWebRTCCall` hook
-- Render two `<video>` elements: large for remote stream, small PiP for local stream
-- Doctor flow: `startCall()` creates offer, sends signaling, waits for patient
-- Patient flow: `joinCall()` receives offer, sends answer
-- Keep existing mobile fullscreen layout, timer, chat, and controls
+- Add `useEffect` that scrolls to top (`window.scrollTo(0, 0)`) when the component mounts or when `live?.id` changes.
+- This ensures entering a live room always shows the video first, not the footer.
 
-**Removed dependencies:**
-- Remove `useDaily` hook usage from VideoCall
-- Remove `create-daily-room` invocation for consultations
-- Remove `get-daily-token` invocation for consultations
-- Remove `end-daily-room` invocation for consultations
+## 5. "Live Ended" screen with doctor info
 
-**Signaling flow (no new edge functions needed):**
-```text
-Doctor                          Supabase Realtime                      Patient
-  |                                   |                                   |
-  |-- create offer ------------------>|                                   |
-  |   (broadcast: "offer" + SDP)      |--- forward to channel ---------->|
-  |                                   |                                   |
-  |                                   |<-- "answer" + SDP ---------------|
-  |<-- receive answer ----------------|                                   |
-  |                                   |                                   |
-  |<------------ ICE candidates exchanged via same channel ------------->|
-  |                                   |                                   |
-  |<================== Direct P2P video/audio connection ===============>|
-```
+**New component: `src/components/live/LiveEndedOverlay.tsx**`
 
-### Phase 2: Lives via Daily.co + Local Recording
+- Shown when a viewer is watching and the live status changes to `ended`.
+- Displays: "El doctor ha finalizado la transmision", doctor name, specialty, avatar/initial, and a "Ver Perfil" button linking to `/doctor/{doctorId}`.
+- Also shows final stats: total likes, peak viewers, duration.
+- Animate in with `animate-fade-in`.
 
-**Modified: `src/pages/DoctorGoLive.tsx`**
-- Replace `useCloudflareStream()` with `useDaily()` for room creation
-- Create Daily room with `mode: 'live'` (broadcast mode, already working)
-- Use existing `useLocalRecording` for recording (already captures the local MediaStream)
-- On end: stop local recording, upload to Storage, create DB entry + auto-create premium content
-- Remove all Cloudflare WHIP/WebRTC broadcast logic
-- Show local camera preview using `<video srcObject={localStream}>` instead of Cloudflare player
+**Changes to `src/pages/LivePlayer.tsx`:**
 
-**Modified: `src/pages/LivePlayer.tsx`**
-- Replace Cloudflare HLS player with Daily.co viewer
-- Use `DailyVideoPlayer` component (already exists and works)
-- Get viewer token via `get-daily-token` (already working)
-- Remove all Cloudflare playback URL resolution logic and retry mechanism
+- Detect when `live.status` changes from `'live'` to `'ended'` while user is on the page.
+- Show `LiveEndedOverlay` instead of redirecting.
 
-**Modified: `src/contexts/LivesContext.tsx`**
-- `endLive()`: call `end-daily-room` instead of `end-cloudflare-stream`
-- Remove Cloudflare thumbnail generation logic (use uploaded thumbnails or a default)
+## 6. Peak viewers in recordings (public metric)
 
-**Modified: `src/hooks/cloudflare/index.ts`**
-- Keep only `useLocalRecording` export
-- Remove Cloudflare API and WebRTC exports (or keep as dead code for future use)
+**Changes to `src/contexts/LivesContext.tsx`:**
 
-### Phase 3: Cleanup
+- Add `peakViewers?: number` to the `Recording` interface.
+- Populate it from `r.peak_viewers` in the `fetchRecordings` mapping.
 
-**Edge functions to remove/deprecate:**
-- `create-cloudflare-stream` -- no longer needed
-- `end-cloudflare-stream` -- no longer needed
-- `cloudflare-whip` -- no longer needed
-- `cloudflare-webhook` -- no longer needed
-- `get-cloudflare-playback` -- no longer needed for lives (keep for existing recording playback)
+**Changes to `src/pages/RecordingsGrid.tsx`:**
 
-**Edge functions to keep:**
-- `create-daily-room` -- used for lives
-- `get-daily-token` -- used for live viewers
-- `end-daily-room` -- used to clean up live rooms
+- Replace `(recording as any).peakViewers` with properly typed `recording.peakViewers`.
+- Display the eye icon + count badge on all recording cards that have peak viewers > 0.
+
+## 7. Comprehensive mobile optimization
+
+All components above will be built mobile-first:
+
+- `LiveStreamView`: fullscreen fixed overlay on mobile with `h-[100dvh]`, controls with `pb-[env(safe-area-inset-bottom)]`.
+- `LivePlayer.tsx`: tighter padding (`px-2 py-2` on mobile), compact sidebar stacking.
+- `LivesGrid.tsx`: single-column cards on small screens, reduced padding.
+- `LiveEndedOverlay`: centered modal with responsive sizing.
 
 ---
 
-## File Change Summary
+## Technical File Changes
 
-| File | Action |
-|------|--------|
-| `src/hooks/useWebRTCCall.ts` | **NEW** -- Native WebRTC peer-to-peer call hook |
-| `src/pages/VideoCall.tsx` | **REWRITE** -- Use native WebRTC, dual video layout |
-| `src/pages/DoctorGoLive.tsx` | **MODIFY** -- Use Daily rooms instead of Cloudflare |
-| `src/pages/LivePlayer.tsx` | **MODIFY** -- Use DailyVideoPlayer instead of Cloudflare HLS |
-| `src/contexts/LivesContext.tsx` | **MODIFY** -- endLive uses end-daily-room |
-| `src/hooks/cloudflare/index.ts` | **MODIFY** -- Simplify to just local recording |
-| `src/components/videocall/VideoCallControls.tsx` | **KEEP** -- No changes needed |
-| `src/components/videocall/IncomingCallModal.tsx` | **KEEP** -- No changes needed |
 
-## Risks and Mitigations
-
-| Risk | Mitigation |
-|------|------------|
-| WebRTC P2P may fail behind strict NATs/firewalls | Use multiple STUN servers; show clear error message suggesting retry on different network |
-| Daily free tier limits (10 participants for lives) | Already handled with retry logic in `create-daily-room` |
-| Existing Cloudflare recordings in DB | `RecordingVideoPlayer` already handles `storage:` and Cloudflare UIDs -- no migration needed |
-| Local recording quality | Already configured at 2.5 Mbps in `useLocalRecording` -- good for educational content |
+| File                                       | Action                                                                  |
+| ------------------------------------------ | ----------------------------------------------------------------------- |
+| `src/pages/LivesGrid.tsx`                  | Add framer-motion animated card enter/exit                              |
+| `src/components/live/DailyVideoPlayer.tsx` | Add screen sharing, split layout, mobile fullscreen                     |
+| `src/components/live/LiveStreamView.tsx`   | Mobile fullscreen layout, compact controls                              |
+| `src/pages/LivePlayer.tsx`                 | Scroll to top on mount, description text wrapping, live ended detection |
+| `src/components/live/LiveEndedOverlay.tsx` | **NEW** -- end-of-live overlay with doctor info                         |
+| `src/contexts/LivesContext.tsx`            | Add `peakViewers` to Recording interface and mapping                    |
+| `src/pages/RecordingsGrid.tsx`             | Use typed `peakViewers` field                                           |
