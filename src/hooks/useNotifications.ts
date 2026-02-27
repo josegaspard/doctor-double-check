@@ -201,6 +201,24 @@ export function useNotifications() {
       .eq('id', notificationId);
 
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    setUnreadCount(prev => {
+      const wasUnread = notifications.find(n => n.id === notificationId && !n.isRead);
+      return wasUnread ? Math.max(0, prev - 1) : prev;
+    });
+  };
+
+  const deleteNotifications = async (notificationIds: string[]) => {
+    if (notificationIds.length === 0) return;
+
+    await supabase
+      .from('notifications')
+      .delete()
+      .in('id', notificationIds);
+
+    const idsSet = new Set(notificationIds);
+    const unreadDeleted = notifications.filter(n => idsSet.has(n.id) && !n.isRead).length;
+    setNotifications(prev => prev.filter(n => !idsSet.has(n.id)));
+    setUnreadCount(prev => Math.max(0, prev - unreadDeleted));
   };
 
   const updatePreferences = async (updates: Partial<NotificationPreferences>) => {
@@ -230,6 +248,7 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    deleteNotifications,
     updatePreferences,
     refresh: fetchNotifications,
   };

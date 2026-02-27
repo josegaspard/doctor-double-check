@@ -60,6 +60,7 @@ interface ChatContextType {
   loadMessages: (sessionId: string) => Promise<void>;
   closeSession: (sessionId: string) => Promise<{ success: boolean; error?: string }>;
   deleteSession: (sessionId: string) => Promise<{ success: boolean; error?: string }>;
+  deleteSessions: (sessionIds: string[]) => Promise<{ success: boolean; error?: string }>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -601,6 +602,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const deleteSessions = async (sessionIds: string[]): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id) return { success: false, error: 'No autenticado' };
+    if (sessionIds.length === 0) return { success: true };
+
+    try {
+      // Verify all are closed
+      const toDelete = sessions.filter(s => sessionIds.includes(s.id) && s.status === 'closed');
+      if (toDelete.length === 0) return { success: false, error: 'No hay chats cerrados para eliminar' };
+
+      const { error } = await supabase
+        .from('chat_sessions')
+        .delete()
+        .in('id', toDelete.map(s => s.id));
+
+      if (error) throw error;
+
+      const deletedIds = new Set(toDelete.map(s => s.id));
+      setSessions(prev => prev.filter(s => !deletedIds.has(s.id)));
+      setMessages(prev => {
+        const next = { ...prev };
+        deletedIds.forEach(id => delete next[id]);
+        return next;
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Error al eliminar chats' };
+    }
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -617,6 +648,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         loadMessages,
         closeSession,
         deleteSession,
+        deleteSessions,
       }}
     >
       {children}
@@ -638,6 +670,7 @@ const CHAT_DEFAULTS: ChatContextType = {
   loadMessages: async () => {},
   closeSession: async () => ({ success: false, error: 'Context not ready' }),
   deleteSession: async () => ({ success: false, error: 'Context not ready' }),
+  deleteSessions: async () => ({ success: false, error: 'Context not ready' }),
 };
 
 export function useChat() {
