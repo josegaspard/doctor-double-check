@@ -1,60 +1,93 @@
 
+# Plan: Multi-Feature Update - Chat UX, Wallet Layout, Doctor Cards, Translations, and Live Realtime
 
-# Plan: Bulk Delete for Chat History & Notifications + UX Polish
+## 1. Chat Header Mobile Layout Fix
 
-## 1. Chat History: Multi-Select & Bulk Delete
+**File: `src/components/chat/ChatHeader.tsx`**
+
+The uploaded screenshot shows text wrapping badly on mobile (specialty and office hours text breaking into multiple lines and overlapping). Fix:
+- Wrap specialty + office hours in a single truncated line with `truncate` and `max-w` constraints
+- Reduce font sizes on mobile for the info section
+- Ensure the "Fuera de horario" text truncates instead of wrapping across 3 lines
+- Add `overflow-hidden` to the info container
+
+## 2. Wallet Transaction Stats - Horizontal 1-Row Layout on Mobile
+
+**File: `src/components/wallet/TransactionHistory.tsx`**
+
+Currently the stats grid is `grid-cols-3` but the amounts break into multiple lines on mobile (as shown in screenshot: "+$250,000" and "-$69,295" wrap). Fix:
+- Keep `grid-cols-3` but use `text-sm` instead of `text-lg` on mobile for the amounts
+- Add `truncate` or `whitespace-nowrap` to prevent line breaks in currency amounts
+- Reduce padding on mobile: `p-2 sm:p-3`
+- Use `text-xs` for amounts on very small screens and `text-base sm:text-lg` for larger
+
+## 3. Doctor Cards - Full Card Clickable
+
+**File: `src/pages/Doctors.tsx`**
+
+Make the entire card navigate to the doctor profile (except the heart button and Pro badge area):
+- Add `onClick={() => navigate(`/doctor/${doctor.user_id}`)}` to the Card component itself
+- Ensure `e.stopPropagation()` is already on the heart button (it is)
+- Remove the redundant individual `onClick` handlers from the avatar and name
+
+## 4. Chat History Selection Mode - Better UX
 
 **File: `src/components/chat/ChatSessionsList.tsx`**
 
-Add a selection mode toggle in the History tab:
-- When on "Historial" tab, show a toolbar with "Seleccionar" toggle button
-- In selection mode: show checkboxes on each closed session item, a "Select All" checkbox, and a floating action bar at the bottom with count + "Eliminar seleccionados" button
-- The delete button triggers the existing `deleteSessions()` from ChatContext
-- Exiting selection mode clears all selections
-- Uses the existing `AlertDialog` for confirmation before bulk delete
+The user says clicking "Seleccionar" isn't intuitive. Improvements:
+- Change "Seleccionar" button to include a descriptive tooltip/text: use an icon + label like "Seleccionar para eliminar"
+- When entering selection mode, show an instructional text: "Toca los chats que deseas eliminar" as a small helper banner
+- Make the selection mode visually distinct: add a colored top banner (destructive/warning color) indicating "Modo seleccion - N seleccionados"
+- The floating delete bar at the bottom should be more prominent with a fixed position
 
-**File: `src/components/chat/ChatSessionItem.tsx`**
+## 5. Missing Translations
 
-Add an optional `checkbox` prop:
-- When `isSelecting` is true, show a Checkbox on the left side of the item (before the avatar)
-- `isChecked` and `onCheckChange` props for controlled state
+**Files: `src/lib/i18n/es.ts`, `src/lib/i18n/en.ts`**
 
-## 2. Notifications: Multi-Select & Bulk Delete
+Add missing translation keys for hardcoded Spanish strings found in:
+- `ChatHeader.tsx`: "Disponible", "Fuera de horario", "Cerrar esta orientacion", dialog texts
+- `ChatSessionsList.tsx`: "Seleccionar", "seleccionado(s)", "Eliminar este chat?", etc.
+- `Doctors.tsx`: "Como funciona?", "Seguir", "Suscripcion Pro", "Ver Perfil", "Explorar Doctores", specialty names
+- `TransactionHistory.tsx`: "Historial de Transacciones", "Recargas", "Compras", "Ganancias", badge labels
+- `ChatSessionItem.tsx`: various hardcoded strings
+- Update all components to use `t()` calls instead of hardcoded strings
 
-**File: `src/pages/Notifications.tsx`**
+## 6. Realtime Live Cards on /lives
 
-Add selection mode to the notifications page:
-- Add a "Seleccionar" toggle button next to "Marcar todo como leido"
-- In selection mode: show checkboxes on each notification card, a "Select All" checkbox, and a sticky bottom action bar with count + "Eliminar" button
-- Add a "Eliminar todas" button that selects all and confirms
-- Uses `deleteNotifications()` from useNotifications hook (already implemented)
-- Confirmation dialog before bulk delete
+**File: `src/contexts/LivesContext.tsx`**
 
-## 3. Implementation Details
+The realtime subscription already handles INSERT events and adds new lives to state (line 395: `return [updatedLive, ...prev]`). However, when the doctor name isn't in the profile cache, it falls back to "Doctor" and calls `throttledFetchLives()`. This should already work. The issue may be that the profile cache miss causes a delayed name display.
 
-### ChatSessionsList changes:
-- New state: `isSelecting: boolean`, `selectedIds: Set<string>`
-- When `activeTab === 'history'` and `closedSessions.length > 0`, show a small "Seleccionar" button in the header area
-- In selection mode, the header shows: checkbox for "Select All" + count label + "Cancelar" button
-- Bottom of the card: sticky bar with "Eliminar (N)" destructive button
-- Clicking "Eliminar" opens the existing AlertDialog with updated text for bulk delete
-- On successful delete, exit selection mode
+Fix: When a new live INSERT arrives with an uncached doctor ID, immediately fetch just that doctor's profile inline before adding to state, rather than triggering a full refetch. This ensures the card appears with the correct name instantly.
 
-### ChatSessionItem changes:
-- Add optional props: `isSelecting?: boolean`, `isChecked?: boolean`, `onCheckChange?: (checked: boolean) => void`
-- When `isSelecting`, render a Checkbox before the avatar; clicking the row toggles the checkbox instead of opening the session
+**File: `src/contexts/LivesContext.tsx` (line ~392)**
+- When `!profileCache.current.has(record.doctor_id)`, fetch the single profile from `profiles_public` and update the cache before setting state, instead of calling `throttledFetchLives()`
 
-### Notifications page changes:
-- New state: `isSelecting: boolean`, `selectedIds: Set<string>`
-- Header bar: add "Seleccionar" button (toggles mode)
-- In selection mode: replace individual action buttons with checkboxes; show sticky bottom bar with "Eliminar (N)"
-- Add `AlertDialog` for confirmation
-- "Delete All" option: selects all visible notifications and confirms
+## 7. Onboarding & Cedula Verification (Answer)
 
-## 4. Technical Notes
+The onboarding flow is already fully implemented:
+- After email verification, users are redirected to `/onboarding`
+- Step 1: Role selection (Patient/Doctor/Resident) + avatar upload
+- Step 2: For patients: clinical history form. For doctors: specialty + cedula profesional (7-8 digit number) with auto-verification via SEP API (`verify-cedula-sep` edge function using RapidAPI). For residents: institution + year.
+- Step 3: Document signatures (Terms, Privacy, Doctor contract)
+- Step 4: Welcome screen with confetti
 
-- Both `deleteSessions` and `deleteNotifications` are already implemented in their respective contexts/hooks
-- RLS policies on `chat_sessions` and `notifications` tables already allow DELETE for the owning user
-- No database migrations needed
-- The Checkbox component from `@/components/ui/checkbox` is already available
+The cedula auto-verification (`CedulaAutoVerify` component) calls the `verify-cedula-sep` edge function which validates the number against the SEP registry. After admin approval, the doctor gets their badge.
 
+---
+
+## Technical Summary
+
+| File | Changes |
+|------|---------|
+| `src/components/chat/ChatHeader.tsx` | Fix mobile text overflow for specialty + office hours |
+| `src/components/wallet/TransactionHistory.tsx` | Responsive stat amounts - `whitespace-nowrap`, smaller text on mobile |
+| `src/pages/Doctors.tsx` | Make entire card clickable to navigate to doctor profile |
+| `src/components/chat/ChatSessionsList.tsx` | Better selection mode UX with instructional banner and prominent delete bar |
+| `src/lib/i18n/es.ts` | Add ~30 missing translation keys for chat, wallet, doctors |
+| `src/lib/i18n/en.ts` | Add matching English translation keys |
+| `src/components/chat/ChatHeader.tsx` | Use `t()` for hardcoded strings |
+| `src/components/chat/ChatSessionsList.tsx` | Use `t()` for hardcoded strings |
+| `src/components/wallet/TransactionHistory.tsx` | Use `t()` for hardcoded strings |
+| `src/pages/Doctors.tsx` | Use `t()` for hardcoded strings |
+| `src/contexts/LivesContext.tsx` | Inline single-profile fetch on new live INSERT for instant name display |
