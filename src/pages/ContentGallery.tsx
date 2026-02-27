@@ -171,8 +171,11 @@ export default function ContentGallery() {
     return sub && (sub.tier === 'basic' || sub.tier === 'premium');
   };
 
-  // Build purchased recording IDs set for quick lookup
-  const purchasedIds = new Set(purchases?.map(p => p.recordingId) || []);
+  // Build purchased IDs set — check both recording_id and content_id
+  const purchasedIds = new Set([
+    ...(purchases?.map(p => p.recordingId) || []),
+    ...(purchases?.filter(p => (p as any).contentId).map(p => (p as any).contentId) || []),
+  ]);
 
   const filteredContents = contents.filter(content => {
     const matchesSearch = content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

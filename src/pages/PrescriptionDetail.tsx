@@ -88,14 +88,11 @@ export default function PrescriptionDetail() {
         doctorId: data.doctor_id,
       });
 
-      // Fetch doctor signature
-      const { data: dp } = await supabase
-        .from('doctor_profiles')
-        .select('signature_url')
-        .eq('user_id', data.doctor_id)
-        .single();
-      if ((dp as any)?.signature_url) {
-        setPrescription(prev => prev ? { ...prev, doctorSignatureUrl: (dp as any).signature_url } : prev);
+      // Fetch doctor signature via security definer function (accessible to patients)
+      const { data: sigUrl } = await supabase
+        .rpc('get_doctor_signature', { p_doctor_user_id: data.doctor_id });
+      if (sigUrl) {
+        setPrescription(prev => prev ? { ...prev, doctorSignatureUrl: sigUrl } : prev);
       }
 
       // Get signed URL for the file

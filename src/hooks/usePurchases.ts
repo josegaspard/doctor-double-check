@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 export interface Purchase {
   id: string;
   recordingId: string;
+  contentId?: string;
   amount: number;
   createdAt: Date;
 }
@@ -40,6 +41,7 @@ export function usePurchases() {
         (data || []).map(p => ({
           id: p.id,
           recordingId: p.recording_id,
+          contentId: (p as any).content_id || undefined,
           amount: Number(p.amount),
           createdAt: new Date(p.created_at),
         }))

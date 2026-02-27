@@ -49,20 +49,21 @@ export function SignatureUpload() {
       const path = `signatures/${user.id}/signature.${ext}`;
       
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from('documents')
         .upload(path, file, { upsert: true });
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-      const publicUrl = urlData.publicUrl;
+      // Generate a public-like URL for the signature (documents bucket is private, use signed URL)
+      const { data: signedData } = await supabase.storage.from('documents').createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
+      const signatureUrl2 = signedData?.signedUrl;
 
       const { error: updateError } = await supabase
         .from('doctor_profiles')
-        .update({ signature_url: publicUrl })
+        .update({ signature_url: signatureUrl2 })
         .eq('user_id', user.id);
       if (updateError) throw updateError;
 
-      setSignatureUrl(publicUrl);
+      setSignatureUrl(signatureUrl2 || null);
       toast.success(language === 'es' ? 'Firma actualizada' : 'Signature updated');
     } catch (err: any) {
       toast.error(err.message || 'Error');
