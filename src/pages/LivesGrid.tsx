@@ -163,7 +163,7 @@ export default function LivesGrid() {
               <Link to="/doctor/go-live">
                 <Button className="gap-2 bg-live hover:bg-live/90 text-white">
                   <Plus className="w-4 h-4" />
-                  Ir en vivo
+                  {t('livePlayer.goLive')}
                 </Button>
               </Link>
             )}
