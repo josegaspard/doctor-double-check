@@ -83,6 +83,17 @@ export function useAuthActions(
         return { success: false, error: authError.message };
       }
 
+      // Detect duplicate email: when email confirmation is enabled and the email
+      // already exists, Supabase returns a user object with an empty identities array.
+      const identities = authData.user?.identities;
+      if (authData.user && (!identities || identities.length === 0)) {
+        setIsLoading(false);
+        return { 
+          success: false, 
+          error: 'Este correo electrónico ya está registrado. Por favor, inicia sesión o usa otro correo.' 
+        };
+      }
+
       // If email confirmation is required, Supabase returns user but NO session.
       // Only set the authenticated state when we actually have a session.
       if (authData.session?.user) {
