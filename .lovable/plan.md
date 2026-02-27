@@ -1,158 +1,138 @@
 
 
-# Plan: Mobile Optimization, Live Audio Fix, and UX/UI Overhaul
+# Plan: Full Mobile Optimization and UX/UI Polish
 
-## Critical Bug Fix: Doctor Audio Not Heard in Lives
-
-**Root cause found in `src/components/live/DailyVideoPlayer.tsx`**, line 187:
-```typescript
-const stream = new MediaStream([participant.videoTrack]);
-```
-Only the **video track** is attached to the MediaStream. The **audio track** is completely ignored. Viewers never hear the doctor because the audio is never played through any element.
-
-**Fix**: Include `participant.audioTrack` in the MediaStream when available:
-```typescript
-const tracks = [participant.videoTrack];
-if (!participant.local && participant.audioTrack) {
-  tracks.push(participant.audioTrack);
-}
-const stream = new MediaStream(tracks);
-```
-Also add a dedicated audio element fallback for participants who have audio but no video (e.g., camera off).
+## Overview
+Systematic pass through every page to fix overflow issues, ensure minimum touch targets (44x44px), apply responsive typography, and guarantee nothing breaks screen width on mobile. Also includes UX clarity improvements.
 
 ---
 
-## Phase 1: Mobile-First Layout Overhaul
+## 1. Global CSS Fixes (`src/index.css`)
+- Add `overflow-wrap: anywhere` to body to prevent long text from breaking layouts
+- Add utility class `.mobile-container` with `px-3` and `max-w-full overflow-x-hidden`
+- Ensure all buttons have minimum `h-10` (40px) touch target via base layer override
+- Add `.btn-mobile-full` utility: buttons that go `w-full` on mobile, `w-auto` on `sm:`
 
-### 1.1 Bottom Navigation Bar for Mobile
-Replace the hamburger menu with a fixed bottom tab bar (like Instagram/TikTok) for the 4-5 most important routes. This is the single biggest mobile UX improvement.
+## 2. MainLayout (`src/components/layout/MainLayout.tsx`)
+- Add `overflow-x-hidden` to the root `div` to prevent any horizontal scroll globally
+- Ensure header actions don't overflow: wrap right-side icons in a flex container with `gap-1 flex-shrink-0`
 
-**File**: `src/components/layout/MainLayout.tsx`
-- Add a `<nav>` fixed at the bottom with icons for: Lives, Chat, Doctores, Notificaciones, Perfil
-- Hide the hamburger menu on mobile, keep it for tablet
-- Adjust main content padding-bottom to account for the tab bar
-- Use `safe-area-inset-bottom` for notch devices
+## 3. Page-by-Page Fixes
 
-### 1.2 Chat Page Mobile Polish
-**File**: `src/pages/Chat.tsx` and `src/components/chat/*`
-- Make the session list full-width on mobile with larger touch targets (min 48px height per item)
-- When a session is selected, slide the message panel in from the right (full screen)
-- Add a sticky input bar at the bottom with proper keyboard-aware spacing
-- Enlarge send button and file upload icon for touch
+### 3.1 Prescriptions (`src/pages/Prescriptions.tsx`)
+**Issues**: Header `flex items-center justify-between gap-4` can overflow on mobile when title + button are too wide
+- Change header layout: stack vertically on mobile (`flex-col sm:flex-row`)
+- Make "Nueva Receta" button full-width on mobile
+- Reduce icon+title combo to single line on mobile (smaller text)
 
-### 1.3 Video Call Mobile Improvements
-**File**: `src/pages/VideoCall.tsx`
-- The current mobile fullscreen layout is good but the PiP local video overlaps controls; move it to top-right
-- Add swipe-down gesture hint to dismiss chat overlay
-- Make control buttons larger (min 48x48px touch targets)
+### 3.2 MedicalHistory (`src/pages/MedicalHistory.tsx`)
+**Issues**: Header with title + export button overflows; `lg:grid-cols-2` starts too late
+- Stack header vertically on mobile: title on top, export button below (full width)
+- Change grid to `md:grid-cols-2` instead of `lg:grid-cols-2`
+- Add `px-3` on mobile
+- Reduce file drop zone padding on mobile
 
-### 1.4 Lives Grid Mobile
-**File**: `src/pages/LivesGrid.tsx`
-- Single column on small phones (< 380px), 2 columns on larger phones
-- Reduce card padding, use compact typography
-- Make the "Ir en vivo" button floating (FAB style) for doctors on mobile
+### 3.3 RecordingsGrid (`src/pages/RecordingsGrid.tsx`)
+**Issues**: `px-4` without `sm:` prefix; tabs + filters row can overflow; wallet button text overflow
+- Change to `px-3 sm:px-4`
+- Make TabsList horizontally scrollable with `overflow-x-auto` on mobile
+- Truncate wallet balance text on mobile
+- Stack header vertically on mobile
 
-### 1.5 Live Player Mobile
-**File**: `src/pages/LivePlayer.tsx`
-- Force landscape-friendly layout for the video
-- Make the chat panel a bottom sheet (swipe up to open) instead of taking sidebar space
-- Collapse doctor info card into a mini bar below the video
+### 3.4 DoctorEarnings (`src/pages/DoctorEarnings.tsx`)
+**Issues**: Summary cards grid `grid-cols-1 md:grid-cols-2 lg:grid-cols-4` - on mobile, text is fine but the charts section uses fixed heights that look cramped
+- Change summary grid to `grid-cols-2 md:grid-cols-4` (2 cols even on mobile for compact stats)
+- Reduce card padding on mobile
+- Make chart `ResponsiveContainer` height responsive: `h-[200px] sm:h-[250px]`
+- Transaction history table: ensure description column truncates properly
+- Export CSV button: icon-only on mobile
 
-### 1.6 Notifications Mobile
-**File**: `src/pages/Notifications.tsx`
-- Swipe-to-dismiss individual notifications
-- Larger touch targets for mark-as-read and delete buttons
-- Group notifications by date
+### 3.5 DoctorProfile (`src/pages/DoctorProfile.tsx`)
+**Issues**: Action buttons (`flex-wrap gap-3`) can overflow width; Live banner button overflows; stats grid on mobile
+- Change action buttons: full-width stacked on mobile, wrap on desktop
+- `flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3` for the action buttons section
+- Make SubscribeButton and consultation button `w-full sm:w-auto`
+- Live banner: stack content vertically on small screens
+- "How it works" grid: single column on mobile (already has `sm:grid-cols-3`)
 
-### 1.7 Doctor Profile Mobile
-**File**: `src/pages/DoctorProfile.tsx`
-- Sticky CTA bar at the bottom with "Consultar" and "Seguir/Suscribir" buttons always visible
-- Collapse bio/credentials into expandable sections
-- Full-width action buttons
+### 3.6 Doctors (`src/pages/Doctors.tsx`)
+**Issues**: Mostly good, but card footer can overflow when Pro badge + buttons are present
+- Ensure card footer wraps properly: add `flex-wrap` to footer container
+- Pagination buttons: reduce text on mobile ("Ant." / "Sig." instead of "Anterior" / "Siguiente")
 
----
+### 3.7 Settings (`src/pages/Settings.tsx`)
+**Issues**: Identity verification row (`flex items-center justify-between`) overflows on mobile when avatar + name + button are too wide
+- Stack verification section vertically on mobile
+- Make "Start Verification" button full-width on mobile
+- Switch labels: ensure text wraps properly with `flex-1 min-w-0`
 
-## Phase 2: UX/UI Usability Improvements
+### 3.8 Wallet (`src/pages/Wallet.tsx`)
+- Mostly good already. Just ensure top-up amount buttons don't overflow on very small screens
+- Add `text-xs` to button labels on mobile
 
-### 2.1 Doctor Discovery & Subscription Flow
-**Problem**: Users don't understand how to subscribe or what "Seguir" vs "Suscripcion Pro" means.
+### 3.9 Vault (`src/pages/Vault.tsx`)
+- Storage card: ensure the "Ver planes" button doesn't overflow
+- Upload section: stack category + description inputs vertically on smallest screens
+- Permission dialog: ensure doctor cards don't overflow
 
-**File**: `src/pages/Doctors.tsx`
-- Add a brief onboarding tooltip/banner at the top: "Sigue gratis para recibir notificaciones. Suscribete Pro para chat y contenido exclusivo."
-- Change card footer: Show a single prominent "Ver Perfil" button + a small heart icon for follow (instead of confusing dual-button layout)
-- Add visual indicator of subscription benefits directly on the card
+### 3.10 LivePlayer (`src/pages/LivePlayer.tsx`)
+- Chat height: increase mobile height from `h-[280px]` to `h-[300px]`
+- Sidebar doctor card: reduce avatar size on mobile
+- Action buttons: ensure they wrap without overflow
 
-**File**: `src/pages/DoctorProfile.tsx`
-- Add a clear benefits comparison section: Free (follow) vs Basic vs Premium
-- Make the "Consultar por Chat" flow more prominent with a price tag visible
-- Add a "How it works" mini-guide section
+### 3.11 DoctorGoLive / LiveSetupForm
+- Ensure form inputs are full-width
+- Tags and price inputs should stack on mobile
 
-### 2.2 Navigation Clarity
-**File**: `src/components/layout/MainLayout.tsx`
-- Add labels under mobile bottom nav icons (always visible, not tooltip)
-- Use distinct colors for active state
-- Show unread badge count on Chat and Notifications icons
+### 3.12 Notifications (`src/pages/Notifications.tsx`)
+- Increase touch target for action buttons (already `h-10 w-10`, good)
+- Ensure notification card text doesn't overflow
 
-### 2.3 Chat UX Improvements
-**Files**: `src/components/chat/ChatMessagesPanel.tsx`, `src/components/chat/ChatHeader.tsx`
-- Add message status indicators (sent, delivered, read)
-- Show "online now" / "last seen" status for the other participant
-- Add quick-action buttons in chat header: Video Call, View Profile, Close Session
-- Improve empty state with clear CTA: "Busca un doctor para iniciar una consulta"
+### 3.13 DoctorDashboard (`src/pages/DoctorDashboard.tsx`)
+- Already has responsive classes, verify quick actions grid doesn't overflow
+- Ensure tab triggers fit on mobile (already `grid-cols-2`, good)
 
-### 2.4 Prescriptions UX
-**File**: `src/pages/Prescriptions.tsx`
-- Add visual status pills (active, expired, pending)
-- Quick-view modal instead of navigating to a separate page
-- Download/share button prominently placed
+### 3.14 Chat (`src/pages/Chat.tsx`)
+- Already fixed in last edit, verify no regressions
 
-### 2.5 Dashboard UX for Doctors
-**File**: `src/pages/DoctorDashboard.tsx`
-- Reorganize quick actions into a 2x2 grid with larger icons and descriptions
-- Add "Today's summary" card at the top showing pending chats, upcoming availability, earnings
-- Highlight actionable items with notification dots
+### 3.15 VideoCall (`src/pages/VideoCall.tsx`)
+- Already optimized, just verify PiP video doesn't overlap with controls
 
-### 2.6 Global UX Patterns
-- All interactive elements: minimum 44x44px touch targets on mobile
-- Add loading skeletons to all pages that fetch data
-- Consistent back-button placement (top-left)
-- Toast notifications positioned at the top on mobile (not bottom where they overlap with nav)
+### 3.16 UserProfile (`src/pages/UserProfile.tsx`)
+- Ensure edit name input + save button wrap properly on very small screens
+- Make buttons full width on mobile where they appear inline
 
----
+## 4. Global UX Improvements
 
-## Phase 3: CSS & Animation Polish
+### 4.1 Button touch feedback
+Add `active:scale-[0.97] transition-transform` to the base Button component via a small CSS class, so every button across the app gives tactile feedback.
 
-### 3.1 Global Mobile Styles
-**File**: `src/index.css`
-- Add bottom navigation safe area variables
-- Add slide-in-from-right animation for chat panel transitions
-- Add haptic feedback CSS (active states with scale transform)
-- Improve focus-visible styles for accessibility
+### 4.2 Card interactions
+Add `touch-action: manipulation` to interactive cards to prevent double-tap zoom on mobile.
 
-### 3.2 Touch Feedback
-- Add `active:scale-95` to all buttons on mobile
-- Add subtle press animations to cards
-- Smooth transitions between views (300ms ease)
+### 4.3 Toast positioning
+Ensure toasts appear at the top on mobile (above the bottom nav) by configuring Sonner's position.
 
 ---
 
 ## Technical File Changes Summary
 
-| File | Changes |
-|------|---------|
-| `src/components/live/DailyVideoPlayer.tsx` | **CRITICAL**: Add audioTrack to MediaStream for remote participants |
-| `src/components/layout/MainLayout.tsx` | Add fixed bottom tab bar for mobile; unread badges on Chat/Notifications |
-| `src/pages/Chat.tsx` | Full-screen message panel on mobile; larger touch targets |
-| `src/pages/VideoCall.tsx` | Reposition PiP video; larger control buttons |
-| `src/pages/LivesGrid.tsx` | Responsive grid improvements; FAB for doctors |
-| `src/pages/LivePlayer.tsx` | Bottom sheet chat; compact doctor info |
-| `src/pages/Notifications.tsx` | Larger touch targets; date grouping |
-| `src/pages/Doctors.tsx` | Onboarding banner; simplified card actions |
-| `src/pages/DoctorProfile.tsx` | Sticky CTA bar; benefits comparison; clearer subscription flow |
-| `src/pages/DoctorDashboard.tsx` | Reorganized quick actions; today's summary |
-| `src/pages/Prescriptions.tsx` | Status pills; quick-view |
-| `src/components/chat/ChatMessagesPanel.tsx` | Quick-action header buttons; improved empty state |
-| `src/index.css` | Bottom nav styles; slide animations; touch feedback; safe areas |
+| File | Key Changes |
+|------|-------------|
+| `src/index.css` | Add overflow-wrap, touch-action utilities |
+| `src/components/layout/MainLayout.tsx` | Add `overflow-x-hidden` to root |
+| `src/pages/Prescriptions.tsx` | Stack header on mobile; full-width button |
+| `src/pages/MedicalHistory.tsx` | Stack header; responsive grid breakpoint |
+| `src/pages/RecordingsGrid.tsx` | Responsive padding; scrollable tabs; stacked header |
+| `src/pages/DoctorEarnings.tsx` | 2-col summary grid on mobile; responsive chart height |
+| `src/pages/DoctorProfile.tsx` | Full-width stacked action buttons on mobile |
+| `src/pages/Doctors.tsx` | Flex-wrap card footer; shorter pagination labels |
+| `src/pages/Settings.tsx` | Stack verification row on mobile |
+| `src/pages/Vault.tsx` | Prevent overflow in storage card and upload form |
+| `src/pages/LivePlayer.tsx` | Minor sizing adjustments for mobile sidebar |
+| `src/pages/Notifications.tsx` | Minor touch target verification |
+| `src/pages/UserProfile.tsx` | Responsive inline edit controls |
+| `src/components/ui/sonner.tsx` | Position toasts at top on mobile |
 
-**Implementation order**: Audio fix first (critical), then bottom nav (highest UX impact), then remaining mobile optimizations, then UX/UI improvements.
+**Implementation order**: Global CSS first, then MainLayout, then page-by-page alphabetically.
 
