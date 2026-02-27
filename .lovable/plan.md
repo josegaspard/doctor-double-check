@@ -1,46 +1,132 @@
 
-# Plan: Fix Critical Live Stream Display and Navigation Issues
+# Plan: Live Interactions, UX/UI Polish, Translations, and Chat Navigation
 
-## Root Cause Analysis
+## Overview
+This plan addresses 5 major areas: (1) Like & Share buttons in lives, (2) "Start Private Chat" navigation logic, (3) Bottom nav & LivePlayer i18n, (4) LivePlayer UX/UI improvements, and (5) remaining hardcoded strings translation.
 
-Two distinct bugs are causing the problems:
+---
 
-**Bug 1 - Lives not showing on /lives page:**
-The console logs reveal `"useLives called outside LivesProvider - returning defaults"`. This happens during Vite's Hot Module Replacement (HMR): when modules are re-evaluated, the `LivesContext` object gets a new reference, but the existing `LivesProvider` in the DOM still holds the old one. The `useContext` call with the new reference returns `undefined`, triggering the fallback with `isLoading: true` permanently. The skeleton loading state never ends.
+## 1. Make "Like" Button Functional with Real-Time Feedback
 
-**Bug 2 - Clicking notification doesn't load the live:**
-The `LivePlayer` page depends entirely on `getLive(id)` from context to find the live. If the context hasn't finished loading or returns defaults (due to Bug 1), `getLive()` returns `undefined`. The page then shows either an infinite skeleton or "Transmision no encontrada". There is no direct database fallback fetch.
+The like/unlike logic already exists in `LivesContext` (`likeLive`, `unlikeLive`, `hasLiked`), and the DB trigger (`update_live_likes_count`) increments/decrements `likes_count` on the `lives` table automatically. The button in `LivePlayer.tsx` (line 435) already calls `handleLike`. 
 
-## Fix 1: Make `useLives` resilient to HMR context loss
-
-Instead of returning static defaults when context is undefined, the `useLives` hook should throw an error (standard React pattern) OR better yet, use `React.createContext` with a non-undefined default. However, since HMR is the issue, the simplest fix is to **not use `initialLoadDone` ref** and instead let the effect re-run when needed, plus add a safety timeout.
+**What needs fixing:**
+- The `likeLive` function (line 475 of LivesContext) doesn't update local `lives` state optimistically -- the count only updates after a full refetch. 
+- Add optimistic update: after inserting/deleting from `live_likes`, immediately update the local `lives` state count.
+- The realtime subscription on `lives` table already handles `UPDATE` events, so the count will also sync from the DB trigger.
 
 **File: `src/contexts/LivesContext.tsx`**
-- Remove the `initialLoadDone` ref guard. Instead, use a state flag `hasLoaded` that resets properly.
-- Change the initial load `useEffect` to NOT have an empty dependency array -- instead depend on a stable identity. This ensures HMR re-runs the fetch.
-- Add a safety timeout: if `isLoading` is still true after 8 seconds, force `setIsLoading(false)` so the page doesn't hang forever.
+- In `likeLive()`: After inserting, also update `setLives()` to increment the matching live's `likesCount` by 1.
+- In `unlikeLive()`: After deleting, decrement the matching live's `likesCount` by 1.
 
-## Fix 2: LivePlayer direct DB fetch fallback
+## 2. Make "Share" Button Functional
 
 **File: `src/pages/LivePlayer.tsx`**
-- Add a `directLive` state that fetches the live directly from the database when `getLive(id)` returns undefined AND `isLoading` is false (context loaded but live not in list).
-- Also fetch directly if `isLoading` has been true for more than 5 seconds (timeout fallback).
-- This ensures clicking a notification ALWAYS loads the live, regardless of context state.
+- Add an `onClick` handler to the Share button (line 439) that uses the Web Share API (`navigator.share`) if available, otherwise falls back to copying the URL to clipboard.
+- Share data: title = live title, url = current page URL.
+- Show a toast on success ("Link copied" / "Shared").
 
-Changes:
-- Add `useState` for `directLive` and `directLoading`
-- Add `useEffect` that triggers when `!live && !isLoading && id` -- fetches from `supabase.from('lives').select('*').eq('id', id).single()` and maps to a `Live` object
-- Also add a timeout: if `isLoading` remains true for 5s, trigger the direct fetch
-- Use `directLive` as fallback: `const activeLive = live || directLive`
+## 3. Fix "Start Private Chat" Button Logic
 
-## Fix 3: Safety timeout in LivesProvider
+Currently (line 496) the button just navigates to `/chat` without context. The correct behavior:
 
-**File: `src/contexts/LivesContext.tsx`**
-- Add a `setTimeout` in the initial load effect: after 10 seconds, if `isLoading` is still true, force it to false. This prevents infinite loading in any edge case.
+**File: `src/pages/LivePlayer.tsx`**
+- When clicked, check if the user has an active chat session with this doctor (using `ChatContext.getSessionsByUser()` filtered by `doctorId`).
+- If an active session exists: navigate to `/chat` with that session selected (e.g., `/chat?session=SESSION_ID`).
+- If no active session: navigate to the doctor's profile (`/doctor/${live.doctorId}`) so the user can initiate a consultation/orientation.
+- Show a brief toast explaining: "Inicia una orientacion con este doctor para chatear" (translated).
+
+## 4. Bottom Navigation Translation Fix
+
+**File: `src/components/layout/MainLayout.tsx`**
+- The `getBottomTabs` function (line 80) has hardcoded labels: `'Lives'`, `'Chat'`, `'Doctores'`, `'Perfil'`, `'Panel'`. These don't change when language switches to English.
+- Replace all hardcoded labels with `t()` calls:
+  - `'Lives'` -> `t('nav.lives')`
+  - `'Chat'` -> `t('nav.chat')`
+  - `'Doctores'` -> `t('nav.doctors')` (already partially done for one case)
+  - `'Perfil'` -> `t('nav.profile')`
+  - `'Panel'` -> `t('nav.dashboard')`
+  - `'Avisos'` -> `t('nav.notifications')`
+  - `'Admin'` -> `t('nav.admin')`
+
+**Files: `src/lib/i18n/en.ts` and `es.ts`**
+- Add `nav.doctors: 'Doctors'` / `'Doctores'` if not already present.
+
+## 5. LivePlayer Page Full i18n
+
+**File: `src/pages/LivePlayer.tsx`**
+All hardcoded Spanish strings need `t()` calls. Key strings to translate:
+- "Volver a Lives", "Transmision no encontrada", "Acceso anticipado Premium"
+- "Me gusta", "Compartir", "Ver Perfil", "Iniciar Chat Privado"
+- "Verificado", "Likes", "Seguidores", "Grabacion Premium"
+- "Panel del Doctor", "Terminar Live", "Crear Cuenta"
+- Dialog: "Terminar transmision", "Guardar como grabacion"
+- Status messages: "Conectando a la transmision...", "Este live ya no esta activo"
+
+**Files: `src/lib/i18n/en.ts` and `es.ts`**
+- Add a `livePlayer` section with ~25 new keys covering all the above strings.
+
+## 6. LivePlayer UX/UI Responsive Improvements
+
+**File: `src/pages/LivePlayer.tsx`**
+- **Mobile**: On small screens, stack the sidebar (doctor card + chat) below the video instead of a 3-column grid. Chat should be collapsible with a toggle button overlay on the video.
+- **Tablet**: Use 2-column layout (video takes 2/3, sidebar 1/3).
+- **Desktop**: Keep current 3-column layout.
+- Make the action buttons (Like, Share, Chat toggle) sticky at the bottom on mobile for easy thumb access.
+- Doctor info card: show avatar image if available (currently only shows Stethoscope icon).
+- Increase touch targets to min 44px on mobile.
+
+## 7. LivesGrid Page i18n Completion
+
+**File: `src/pages/LivesGrid.tsx`**
+- "Ir en vivo" button -> `t('lives.goLive')` 
+- Add `lives.goLive` key to both language files.
+
+## 8. LiveChat Component i18n
+
+**File: `src/components/live/LiveChat.tsx`**
+- "Chat en vivo" -> `t('livePlayer.liveChat')`
+- "mensajes" -> `t('livePlayer.messages')`
+- "Se el primero en enviar un mensaje" -> `t('livePlayer.firstMessage')`
+- "Escribe un mensaje..." -> `t('livePlayer.writeMessage')`
+- "Inicia sesion para participar en el chat" -> `t('livePlayer.loginToChat')`
+- "Iniciar sesion" -> `t('nav.login')`
+
+## 9. Translation Keys Summary
+
+**New keys to add to both `es.ts` and `en.ts`:**
+
+```text
+livePlayer:
+  backToLives, streamNotFound, premiumEarlyAccess, like, share,
+  verified, likes, followers, viewProfile, startPrivateChat,
+  premiumRecording, premiumRecordingDescription, doctorPanel,
+  endLive, endLiveTitle, endLiveDescription, saveAsRecording,
+  saveAsRecordingDescription, ending, createAccount, registerToChat,
+  connecting, streamInitializing, notActive, refreshList,
+  liveChat, messages, firstMessage, writeMessage, loginToChat,
+  noActiveSession, goToProfile, minutes, sharedSuccessfully,
+  linkCopied
+
+lives:
+  goLive
+
+nav:
+  doctors (if missing)
+```
+
+---
 
 ## Technical Summary
 
 | File | Changes |
 |------|---------|
-| `src/contexts/LivesContext.tsx` | Remove `initialLoadDone` ref guard; add safety timeout for `isLoading`; ensure effect re-runs on HMR |
-| `src/pages/LivePlayer.tsx` | Add direct DB fetch fallback when context can't find the live; add loading timeout |
+| `src/contexts/LivesContext.tsx` | Optimistic like count update in `likeLive()` and `unlikeLive()` |
+| `src/pages/LivePlayer.tsx` | Share button handler, private chat navigation logic, full i18n, responsive UX improvements |
+| `src/components/live/LiveChat.tsx` | i18n for all hardcoded strings |
+| `src/pages/LivesGrid.tsx` | i18n for "Ir en vivo" button |
+| `src/components/layout/MainLayout.tsx` | Fix bottom nav hardcoded labels to use `t()` |
+| `src/lib/i18n/es.ts` | Add ~30 new translation keys (livePlayer section) |
+| `src/lib/i18n/en.ts` | Add matching English translations |
+
+No database changes needed -- the likes trigger and RLS policies are already in place.
