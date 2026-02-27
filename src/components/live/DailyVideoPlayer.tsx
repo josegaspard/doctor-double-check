@@ -184,9 +184,21 @@ export function DailyVideoPlayer({
             ? 'absolute bottom-2 left-2 w-24 h-18 sm:w-32 sm:h-24 rounded-lg object-cover z-10 border-2 border-muted shadow-lg'
             : 'w-full h-full object-cover';
         
-        const stream = new MediaStream([participant.videoTrack]);
+        // Include audio track for remote participants so viewers can hear the doctor
+        const tracks: MediaStreamTrack[] = [participant.videoTrack];
+        if (!participant.local && participant.audioTrack) {
+          tracks.push(participant.audioTrack);
+        }
+        const stream = new MediaStream(tracks);
         videoEl.srcObject = stream;
         videoContainerRef.current?.appendChild(videoEl);
+      } else if (!participant.local && participant.audioTrack && !participant.video) {
+        // Audio-only fallback: participant has audio but no video (e.g., camera off)
+        const audioEl = document.createElement('audio');
+        audioEl.autoplay = true;
+        const audioStream = new MediaStream([participant.audioTrack]);
+        audioEl.srcObject = audioStream;
+        videoContainerRef.current?.appendChild(audioEl);
       }
     });
   };

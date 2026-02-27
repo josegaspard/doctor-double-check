@@ -443,7 +443,7 @@ export default function DoctorProfile() {
                     if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
                   }} />
                   <Button 
-                    className="gap-2" 
+                    className="gap-2 h-11 active:scale-95 transition-transform" 
                     onClick={handleStartConsultation}
                     disabled={isStartingChat}
                     variant={isFreeConsultation ? 'default' : canChatDirectly ? 'default' : 'secondary'}
@@ -462,11 +462,30 @@ export default function DoctorProfile() {
                           : `${t('doctorProfile.consultation')} ($${doctor.consultationFee})`
                     }
                   </Button>
-                  <Button variant="outline" className="gap-2" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
+                  <Button variant="outline" className="gap-2 h-11 active:scale-95 transition-transform" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
                     <Video className="w-4 h-4" />
                     {t('doctorProfile.viewLives')}
                   </Button>
                   <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
+                </div>
+
+                {/* How it works section */}
+                <div className="mt-4 p-3 bg-muted/40 rounded-lg border border-border/50">
+                  <h4 className="text-sm font-semibold text-foreground mb-2">¿Cómo funciona?</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-start gap-2 p-2 rounded-md bg-background/60">
+                      <span className="text-lg">1️⃣</span>
+                      <span><strong>Seguir</strong> — Recibe alertas gratis cuando transmita en vivo</span>
+                    </div>
+                    <div className="flex items-start gap-2 p-2 rounded-md bg-background/60">
+                      <span className="text-lg">2️⃣</span>
+                      <span><strong>Suscribirse</strong> — Accede a chat, contenido y grabaciones exclusivas</span>
+                    </div>
+                    <div className="flex items-start gap-2 p-2 rounded-md bg-background/60">
+                      <span className="text-lg">3️⃣</span>
+                      <span><strong>Consultar</strong> — Inicia una consulta por chat o videollamada</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
