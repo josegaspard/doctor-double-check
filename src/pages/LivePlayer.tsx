@@ -119,8 +119,8 @@ export default function LivePlayer() {
         return;
       }
 
-      // Construct room URL (Daily.co standard)
-      setRoomUrl(`https://docseek.daily.co/${roomName}`);
+      // Construct room URL using the Daily domain from edge function
+      setRoomUrl(`https://doctores.daily.co/${roomName}`);
       setViewerToken(token);
       setIsJoiningStream(false);
     };

@@ -41,15 +41,20 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-03-31.basil" });
 
-    // Find user's Stripe customer
+    // Use service role for all DB operations
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Try to cancel Stripe subscription if exists
+    let stripeCancelled = false;
     const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
     
     if (customers.data.length > 0) {
       const customerId = customers.data[0].id;
       logStep("Found Stripe customer", { customerId });
 
-      // Find active subscription for this creator
-      // We'll look for subscriptions with matching metadata
       const subscriptions = await stripe.subscriptions.list({
         customer: customerId,
         status: "active",
@@ -57,30 +62,16 @@ Deno.serve(async (req) => {
       });
 
       for (const sub of subscriptions.data) {
-        // Check if this subscription has creator_id metadata matching
         if (sub.metadata?.creator_id === creator_id) {
-          logStep("Found matching subscription, canceling at period end", { subscriptionId: sub.id });
-          
-          // Cancel at period end (user keeps access until end of billing period)
-          await stripe.subscriptions.update(sub.id, {
-            cancel_at_period_end: true,
-          });
-
-          logStep("Subscription scheduled for cancellation", { 
-            subscriptionId: sub.id,
-            cancelAt: sub.current_period_end 
-          });
+          logStep("Found matching Stripe subscription, canceling immediately", { subscriptionId: sub.id });
+          await stripe.subscriptions.cancel(sub.id);
+          stripeCancelled = true;
+          logStep("Stripe subscription canceled");
         }
       }
     }
 
-    // Use service role to update local subscription
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
-    // Get the subscription record
+    // Deactivate subscription in DB - ALWAYS set is_active = false
     const { data: subscription } = await supabaseAdmin
       .from("subscriptions")
       .select("*")
@@ -90,28 +81,17 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (subscription) {
-      // If it's a paid subscription, just mark it for cancellation but keep active until expires_at
-      if (subscription.tier !== 'free' && subscription.expires_at) {
-        await supabaseAdmin
-          .from("subscriptions")
-          .update({ 
-            // Keep active but mark that it won't renew
-            // The webhook will deactivate when Stripe confirms cancellation
-          })
-          .eq("id", subscription.id);
-        
-        logStep("Paid subscription - will remain active until", { expiresAt: subscription.expires_at });
-      } else {
-        // Free subscription - deactivate immediately
-        await supabaseAdmin
-          .from("subscriptions")
-          .update({ is_active: false })
-          .eq("id", subscription.id);
-        
-        logStep("Free subscription deactivated immediately");
-      }
+      await supabaseAdmin
+        .from("subscriptions")
+        .update({ is_active: false })
+        .eq("id", subscription.id);
+      
+      logStep("Subscription deactivated in DB", { 
+        subscriptionId: subscription.id, 
+        tier: subscription.tier 
+      });
 
-      // Create notification for creator
+      // Notify the creator
       const { data: profile } = await supabaseAdmin
         .from("profiles")
         .select("name")
@@ -124,17 +104,19 @@ Deno.serve(async (req) => {
           user_id: creator_id,
           type: "subscription_update",
           title: "Suscripción cancelada",
-          message: `${profile?.name || "Un usuario"} ha cancelado su suscripción`,
-          data: { subscriber_id: user.id },
+          message: `${profile?.name || "Un usuario"} ha cancelado su suscripción ${subscription.tier !== 'free' ? subscription.tier : ''}`.trim(),
+          data: { subscriber_id: user.id, tier: subscription.tier },
         });
+
+      logStep("Creator notified of cancellation");
+    } else {
+      logStep("No active subscription found to cancel");
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: subscription?.tier !== 'free' 
-          ? "Suscripción cancelada. Mantendrás acceso hasta el fin del período pagado."
-          : "Suscripción cancelada exitosamente."
+        message: "Suscripción cancelada exitosamente."
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
