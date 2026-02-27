@@ -91,8 +91,6 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   const [likedLives, setLikedLives] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   
-  // Track if initial load is done
-  const initialLoadDone = useRef(false);
   // Track last fetch time to prevent rapid re-fetches
   const lastFetchTime = useRef<number>(0);
   const MIN_FETCH_INTERVAL = 5000; // Minimum 5 seconds between fetches
@@ -286,10 +284,8 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     [fetchLives]
   );
 
-  // Initial data load - only once
+  // Initial data load - runs on mount and re-runs if provider remounts (HMR)
   useEffect(() => {
-    if (initialLoadDone.current) return;
-    
     let isMounted = true;
     
     const loadData = async () => {
@@ -298,17 +294,30 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       await Promise.all([fetchLives(true), fetchRecordings(), fetchLikedLives()]);
       if (isMounted) {
         setIsLoading(false);
-        initialLoadDone.current = true;
       }
     };
 
     loadData();
     
+    // Safety timeout: if isLoading is still true after 10s, force it off
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted) {
+        setIsLoading(prev => {
+          if (prev) {
+            console.warn('LivesProvider: safety timeout triggered, forcing isLoading=false');
+            return false;
+          }
+          return prev;
+        });
+      }
+    }, 10000);
+    
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimeout);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - only run on mount
+  }, []);
 
   // Auto-cleanup stuck lives for the current user (doctor only)
   useEffect(() => {
@@ -604,7 +613,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
 const LIVES_DEFAULTS: LivesContextType = {
   lives: [],
   recordings: [],
-  isLoading: true,
+  isLoading: false,
   getLive: () => undefined,
   getRecording: () => undefined,
   getLivesByDoctor: () => [],

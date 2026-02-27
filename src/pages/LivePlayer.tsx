@@ -65,8 +65,78 @@ export default function LivePlayer() {
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
   const [isJoiningStream, setIsJoiningStream] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
+
+  // Direct DB fallback state
+  const [directLive, setDirectLive] = useState<any>(null);
+  const [directLoading, setDirectLoading] = useState(false);
   
-  const live = getLive(id || '');
+  const contextLive = getLive(id || '');
+  const live = contextLive || directLive;
+  
+  // Direct DB fetch fallback when context can't find the live
+  useEffect(() => {
+    if (!id || contextLive || directLive || directLoading) return;
+    
+    // If context is still loading, wait up to 5s before trying direct fetch
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    const doDirectFetch = async () => {
+      setDirectLoading(true);
+      try {
+        const { data } = await supabase
+          .from('lives')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (data) {
+          // Fetch doctor profile
+          const { data: profile } = await supabase
+            .from('profiles_public')
+            .select('id, name, avatar_url')
+            .eq('id', data.doctor_id)
+            .single();
+          
+          setDirectLive({
+            id: data.id,
+            title: data.title,
+            description: data.description || undefined,
+            doctorId: data.doctor_id,
+            doctorName: profile?.name || 'Doctor',
+            doctorAvatar: profile?.avatar_url || undefined,
+            specialty: data.specialty,
+            status: data.status as any,
+            viewerCount: data.viewer_count,
+            likesCount: data.likes_count,
+            startedAt: new Date(data.started_at),
+            endedAt: data.ended_at ? new Date(data.ended_at) : undefined,
+            thumbnailUrl: data.thumbnail_url || undefined,
+            recordingPrice: data.recording_price ? Number(data.recording_price) : undefined,
+            tags: data.tags || [],
+            followersCount: 0,
+            dailyRoomName: data.daily_room_name || undefined,
+          });
+        }
+      } catch (e) {
+        console.error('Direct live fetch failed:', e);
+      } finally {
+        setDirectLoading(false);
+      }
+    };
+    
+    if (isLoading) {
+      // Wait 5s then try direct fetch
+      timeoutId = setTimeout(doDirectFetch, 5000);
+    } else {
+      // Context loaded but live not found - fetch directly now
+      doDirectFetch();
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [id, contextLive, directLive, directLoading, isLoading]);
+  
   const isOwner = user?.id === live?.doctorId;
   const isLiveActive = live?.status === 'live';
   const mySubToDoctor = live?.doctorId ? getSubscription(live.doctorId) : undefined;
@@ -180,7 +250,7 @@ export default function LivePlayer() {
     return () => clearInterval(interval);
   }, [refreshLives, id]);
 
-  if (isLoading) {
+  if ((isLoading || directLoading) && !live) {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-6 max-w-6xl">
