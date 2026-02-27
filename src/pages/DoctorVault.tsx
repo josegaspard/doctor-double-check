@@ -88,7 +88,7 @@ export default function DoctorVault() {
     try {
       // Generate a 6-digit OTP
       const code = String(Math.floor(100000 + Math.random() * 900000));
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+      const expiresAt = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
 
       const { error } = await supabase
         .from('expediente_otp')
@@ -101,16 +101,40 @@ export default function DoctorVault() {
 
       if (error) throw error;
 
-      // Send notification to the patient with the OTP
+      // Send in-app notification with OTP
       await supabase.from('notifications').insert({
         user_id: patientId,
         type: 'system' as any,
-        title: 'Código de acceso a tu expediente',
-        message: `Tu médico solicita acceso a tu expediente. Código de verificación: ${code}. Expira en 10 minutos. Comparte este código con tu médico para autorizar el acceso.`,
+        title: '🔐 Código de acceso a tu expediente',
+        message: `Tu médico solicita acceso a tu expediente. Código: ${code}. Expira en 2 minutos.`,
         data: { otp_code: code, doctor_id: user.id },
       });
 
-      toast.success('Código OTP enviado al paciente. Pide al paciente que te comparta el código.');
+      // Send email with OTP (via edge function)
+      try {
+        const { data: patientProfile } = await supabase
+          .from('profiles')
+          .select('email, name')
+          .eq('id', patientId)
+          .single();
+        
+        if (patientProfile?.email) {
+          await supabase.functions.invoke('send-verification-email', {
+            body: {
+              to: patientProfile.email,
+              subject: '🔐 Código de acceso a tu expediente médico',
+              otpCode: code,
+              patientName: patientProfile.name || 'Paciente',
+              doctorName: user.name || 'Tu médico',
+              expiresInMinutes: 2,
+            },
+          });
+        }
+      } catch (emailErr) {
+        console.warn('Email OTP send failed (non-critical):', emailErr);
+      }
+
+      toast.success('Código OTP enviado al paciente (notificación + correo). Expira en 2 minutos.');
     } catch (error) {
       console.error('Error requesting OTP:', error);
       toast.error('Error al solicitar código');
@@ -202,8 +226,8 @@ export default function DoctorVault() {
               <div>
                 <h3 className="font-semibold text-foreground text-sm">Acceso Controlado por el Paciente + OTP</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Para ver el expediente, necesitas un código de verificación (OTP) que el paciente te proporcionará. 
-                  El código expira en 10 minutos y solo puede usarse una vez por sesión.
+                  Para ver el expediente, necesitas un código de verificación (OTP) que el paciente recibirá por notificación y correo electrónico. 
+                  El código expira en 2 minutos y solo puede usarse una vez. El acceso es de solo lectura (sin descarga).
                 </p>
               </div>
             </div>
@@ -339,7 +363,7 @@ export default function DoctorVault() {
                 maxLength={6}
               />
               <p className="text-xs text-muted-foreground text-center">
-                El paciente recibirá el código en sus notificaciones
+                El paciente recibirá el código por notificación y correo electrónico. Expira en 2 minutos.
               </p>
             </div>
 
@@ -378,7 +402,7 @@ export default function DoctorVault() {
         </DialogContent>
       </Dialog>
 
-      {/* File Preview Modal */}
+      {/* File Preview Modal - view only for doctors */}
       <VaultFilePreviewModal
         isOpen={isPreviewOpen}
         onClose={() => {
@@ -386,6 +410,7 @@ export default function DoctorVault() {
           setSelectedFile(null);
         }}
         file={selectedFile}
+        viewOnly={true}
       />
     </MainLayout>
   );

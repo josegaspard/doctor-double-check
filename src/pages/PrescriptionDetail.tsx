@@ -38,9 +38,11 @@ interface PrescriptionDetail {
   doctorSpecialty: string;
   doctorLicense: string;
   doctorCedula?: string;
+  doctorSignatureUrl?: string;
   signedAt: Date;
   createdAt: Date;
   fileUrl?: string;
+  doctorId: string;
 }
 
 export default function PrescriptionDetail() {
@@ -83,7 +85,18 @@ export default function PrescriptionDetail() {
         signedAt: new Date(data.signed_at),
         createdAt: new Date(data.created_at),
         fileUrl: (data as any).file_url || undefined,
+        doctorId: data.doctor_id,
       });
+
+      // Fetch doctor signature
+      const { data: dp } = await supabase
+        .from('doctor_profiles')
+        .select('signature_url')
+        .eq('user_id', data.doctor_id)
+        .single();
+      if ((dp as any)?.signature_url) {
+        setPrescription(prev => prev ? { ...prev, doctorSignatureUrl: (dp as any).signature_url } : prev);
+      }
 
       // Get signed URL for the file
       if ((data as any).file_url) {
@@ -117,6 +130,7 @@ export default function PrescriptionDetail() {
       doctorSpecialty: prescription.doctorSpecialty,
       doctorLicense: prescription.doctorLicense,
       doctorCedula: prescription.doctorCedula,
+      doctorSignatureUrl: prescription.doctorSignatureUrl,
       signedAt: prescription.signedAt,
     });
   };

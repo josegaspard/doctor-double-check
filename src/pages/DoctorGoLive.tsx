@@ -299,7 +299,38 @@ export default function DoctorGoLive() {
           description: liveData.description, specialty: liveData.specialty,
           tags, price: recordingPrice, recordingId: cloudflareRecordingId,
         });
-        if (uploadResult.success) recordingCreated = true;
+        if (uploadResult.success) {
+          recordingCreated = true;
+          
+          // Auto-save as premium content in doctor_content
+          try {
+            const { data: recData } = await supabase
+              .from('recordings')
+              .select('video_url, thumbnail_url')
+              .eq('live_id', liveData.id)
+              .eq('doctor_id', user.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            if (recData?.video_url) {
+              await supabase.from('doctor_content').insert({
+                creator_id: user.id,
+                title: `📹 ${liveData.title}`,
+                description: liveData.description || `Grabación del en vivo: ${liveData.title}`,
+                type: 'video',
+                file_url: recData.video_url,
+                thumbnail_url: recData.thumbnail_url || null,
+                is_public: true,
+                price: recordingPrice,
+                audience_type: recordingPrice > 0 ? 'subscribers' : 'all',
+                category: liveData.specialty,
+              });
+            }
+          } catch (contentErr) {
+            console.warn('Auto-save to premium content failed (non-critical):', contentErr);
+          }
+        }
       }
 
       if (!result.success) {
@@ -313,7 +344,7 @@ export default function DoctorGoLive() {
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       if (enableRecording && recordingCreated) {
-        toast.success('¡Transmisión finalizada! La grabación está disponible.');
+        toast.success('¡Transmisión finalizada! La grabación está disponible como contenido premium.');
         navigate('/doctor/recordings');
       } else if (enableRecording) {
         toast.warning('La transmisión finalizó pero no se pudo guardar la grabación.');

@@ -754,6 +754,7 @@ export type Database = {
           payouts_enabled: boolean | null
           pending_earnings: number | null
           rating: number
+          signature_url: string | null
           specialty: string
           status: Database["public"]["Enums"]["doctor_status"]
           stripe_account_id: string | null
@@ -783,6 +784,7 @@ export type Database = {
           payouts_enabled?: boolean | null
           pending_earnings?: number | null
           rating?: number
+          signature_url?: string | null
           specialty: string
           status?: Database["public"]["Enums"]["doctor_status"]
           stripe_account_id?: string | null
@@ -812,6 +814,7 @@ export type Database = {
           payouts_enabled?: boolean | null
           pending_earnings?: number | null
           rating?: number
+          signature_url?: string | null
           specialty?: string
           status?: Database["public"]["Enums"]["doctor_status"]
           stripe_account_id?: string | null

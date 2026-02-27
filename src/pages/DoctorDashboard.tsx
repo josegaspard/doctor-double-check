@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Folder, BarChart3 } from 'lucide-react';
 import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
+import { SignatureUpload } from '@/components/doctor/SignatureUpload';
 import { EmailStatsCard } from '@/components/doctor/EmailStatsCard';
 import { EmailTrendsChart } from '@/components/doctor/EmailTrendsChart';
 import { EarningsCard } from '@/components/doctor/EarningsCard';
@@ -92,6 +93,7 @@ export default function DoctorDashboard() {
               <EmailStatsCard />
               <EmailTrendsChart />
               <OfficeHoursConfig />
+              <SignatureUpload />
             </div>
 
             <EmailHistoryCard />
