@@ -27,6 +27,8 @@ import {
   Heart,
   CheckCircle,
   Filter,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
@@ -81,7 +83,8 @@ export default function Doctors() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
   const [followedDoctors, setFollowedDoctors] = useState<Set<string>>(new Set());
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const DOCTORS_PER_PAGE = 20;
   useEffect(() => {
     fetchDoctors();
     if (user?.id) {
@@ -91,6 +94,7 @@ export default function Doctors() {
 
   useEffect(() => {
     filterDoctors();
+    setCurrentPage(1);
   }, [doctors, searchQuery, selectedSpecialty]);
 
   const fetchDoctors = async () => {
@@ -253,10 +257,19 @@ export default function Doctors() {
           </Select>
         </div>
 
-        {/* Results count */}
-        <p className="text-sm text-muted-foreground mb-4">
-          {filteredDoctors.length} doctores encontrados
-        </p>
+        {/* Results count & pagination info */}
+        {(() => {
+          const totalPages = Math.ceil(filteredDoctors.length / DOCTORS_PER_PAGE);
+          const startIdx = (currentPage - 1) * DOCTORS_PER_PAGE;
+          const endIdx = startIdx + DOCTORS_PER_PAGE;
+          const paginatedDoctors = filteredDoctors.slice(startIdx, endIdx);
+          
+          return (
+            <>
+              <p className="text-sm text-muted-foreground mb-4">
+                {filteredDoctors.length} doctores encontrados
+                {totalPages > 1 && ` — Página ${currentPage} de ${totalPages}`}
+              </p>
 
         {/* Doctors Grid */}
         {isLoading ? (
@@ -287,111 +300,156 @@ export default function Doctors() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredDoctors.map(doctor => (
-              <Card 
-                key={doctor.id} 
-                className="hover:shadow-lg transition-shadow cursor-pointer group"
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    {/* Avatar */}
-                    <div 
-                      className="cursor-pointer"
-                      onClick={() => navigate(`/doctor/${doctor.user_id}`)}
-                    >
-                      <Avatar className="w-16 h-16 border-2 border-background shadow-md">
-                        <AvatarImage src={doctor.profile?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                          {getInitials(doctor.profile?.name || 'Dr')}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 
-                          className="font-semibold truncate group-hover:text-primary transition-colors cursor-pointer"
-                          onClick={() => navigate(`/doctor/${doctor.user_id}`)}
-                        >
-                          {doctor.profile?.name || 'Doctor'}
-                        </h3>
-                        {doctor.profile?.is_identity_verified && (
-                          <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-                        )}
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {paginatedDoctors.map(doctor => (
+                <Card 
+                  key={doctor.id} 
+                  className="hover:shadow-lg transition-shadow cursor-pointer group"
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div 
+                        className="cursor-pointer"
+                        onClick={() => navigate(`/doctor/${doctor.user_id}`)}
+                      >
+                        <Avatar className="w-16 h-16 border-2 border-background shadow-md">
+                          <AvatarImage src={doctor.profile?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                            {getInitials(doctor.profile?.name || 'Dr')}
+                          </AvatarFallback>
+                        </Avatar>
                       </div>
-                      <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
-                      <Badge variant="secondary" className="mb-2">
-                        <Stethoscope className="w-3 h-3 mr-1" />
-                        {doctor.specialty}
-                      </Badge>
-
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Star className="w-3.5 h-3.5 text-warning fill-warning" />
-                          {doctor.rating.toFixed(1)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3.5 h-3.5" />
-                          {doctor.followers_count}
-                        </span>
-                        {doctor.location && (
-                          <span className="flex items-center gap-1 truncate">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {doctor.location}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 
+                            className="font-semibold truncate group-hover:text-primary transition-colors cursor-pointer"
+                            onClick={() => navigate(`/doctor/${doctor.user_id}`)}
+                          >
+                            {doctor.profile?.name || 'Doctor'}
+                          </h3>
+                          {doctor.profile?.is_identity_verified && (
+                            <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                          )}
+                        </div>
+                        <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
+                        <Badge variant="secondary" className="mb-2">
+                          <Stethoscope className="w-3 h-3 mr-1" />
+                          {doctor.specialty}
+                        </Badge>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Star className="w-3.5 h-3.5 text-warning fill-warning" />
+                            {doctor.rating.toFixed(1)}
                           </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5" />
+                            {doctor.followers_count}
+                          </span>
+                          {doctor.location && (
+                            <span className="flex items-center gap-1 truncate">
+                              <MapPin className="w-3.5 h-3.5" />
+                              {doctor.location}
+                            </span>
+                          )}
+                        </div>
+                        {(() => {
+                          const now = new Date();
+                          const currentDay = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][now.getDay()];
+                          const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                          const isAvailable = doctor.office_days?.includes(currentDay) && 
+                            doctor.office_hours_start && doctor.office_hours_end &&
+                            currentTime >= doctor.office_hours_start && currentTime <= doctor.office_hours_end;
+                          return (
+                            <div className={`flex items-center gap-1.5 mt-1.5 text-xs ${isAvailable ? 'text-success' : 'text-muted-foreground'}`}>
+                              <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-success animate-pulse' : 'bg-muted-foreground/40'}`} />
+                              {isAvailable ? 'Disponible ahora' : 'No disponible'}
+                            </div>
+                          );
+                        })()}
+                        {doctor.bio && (
+                          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                            {doctor.bio}
+                          </p>
                         )}
                       </div>
-                      {/* Availability indicator */}
-                      {(() => {
-                        const now = new Date();
-                        const currentDay = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][now.getDay()];
-                        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                        const isAvailable = doctor.office_days?.includes(currentDay) && 
-                          doctor.office_hours_start && doctor.office_hours_end &&
-                          currentTime >= doctor.office_hours_start && currentTime <= doctor.office_hours_end;
-                        return (
-                          <div className={`flex items-center gap-1.5 mt-1.5 text-xs ${isAvailable ? 'text-success' : 'text-muted-foreground'}`}>
-                            <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-success animate-pulse' : 'bg-muted-foreground/40'}`} />
-                            {isAvailable ? 'Disponible ahora' : 'No disponible'}
-                          </div>
-                        );
-                      })()}
-
-                      {doctor.bio && (
-                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                          {doctor.bio}
-                        </p>
-                      )}
                     </div>
-                  </div>
+                    <div className="flex gap-2 mt-4 pt-4 border-t">
+                      <Button
+                        variant={followedDoctors.has(doctor.user_id) ? "secondary" : "outline"}
+                        size="sm"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleFollow(doctor.user_id);
+                        }}
+                      >
+                        <Heart className={`w-4 h-4 mr-1 ${followedDoctors.has(doctor.user_id) ? 'fill-current' : ''}`} />
+                        {followedDoctors.has(doctor.user_id) ? 'Siguiendo' : 'Seguir'}
+                      </Button>
+                      <SubscribeButton 
+                        doctorId={doctor.user_id}
+                        doctorName={doctor.profile?.name || 'Doctor'}
+                        size="sm"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2 mt-4 pt-4 border-t">
-                    <Button
-                      variant={followedDoctors.has(doctor.user_id) ? "secondary" : "outline"}
-                      size="sm"
-                      className="flex-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleFollow(doctor.user_id);
-                      }}
-                    >
-                      <Heart className={`w-4 h-4 mr-1 ${followedDoctors.has(doctor.user_id) ? 'fill-current' : ''}`} />
-                      {followedDoctors.has(doctor.user_id) ? 'Siguiendo' : 'Seguir'}
-                    </Button>
-                    <SubscribeButton 
-                      doctorId={doctor.user_id}
-                      doctorName={doctor.profile?.name || 'Doctor'}
-                      size="sm"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8 pb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Anterior
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 2)
+                    .reduce<(number | string)[]>((acc, page, idx, arr) => {
+                      if (idx > 0 && page - (arr[idx - 1] as number) > 1) acc.push('...');
+                      acc.push(page);
+                      return acc;
+                    }, [])
+                    .map((item, idx) =>
+                      item === '...' ? (
+                        <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">…</span>
+                      ) : (
+                        <Button
+                          key={item}
+                          variant={currentPage === item ? "default" : "outline"}
+                          size="sm"
+                          className="w-9 h-9 p-0"
+                          onClick={() => { setCurrentPage(item as number); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        >
+                          {item}
+                        </Button>
+                      )
+                    )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                >
+                  Siguiente
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            )}
+          </>
         )}
+            </>
+          );
+        })()}
       </div>
     </MainLayout>
   );
