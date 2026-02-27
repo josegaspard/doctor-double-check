@@ -42,7 +42,7 @@ export function IncomingCallModal({
 
   const handleAccept = () => {
     onClose();
-    navigate(`/video-call?consultation=${consultationId}`);
+    navigate(`/video-call?consultation=${consultationId}&autojoin=1`);
   };
 
   const getInitials = (name: string) =>

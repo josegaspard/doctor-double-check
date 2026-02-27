@@ -39,12 +39,16 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
     logStep("User authenticated", { userId });
 
-    // Get user profile
+    // Get user profile with robust fallback
     const { data: profile } = await supabaseClient
       .from("profiles")
       .select("name")
       .eq("id", userId)
       .single();
+
+    const userName = profile?.name
+      || userData.user.user_metadata?.name
+      || (userData.user.email ? userData.user.email.split('@')[0] : 'Usuario');
 
     // Parse request body
     const { roomName, isOwner = false, enableMedia = false } = await req.json();
@@ -57,7 +61,7 @@ Deno.serve(async (req) => {
       room_name: roomName,
       is_owner: isOwner,
       user_id: userId,
-      user_name: profile?.name || "Usuario",
+      user_name: userName,
       // Token expires in 24 hours
       exp: Math.floor(Date.now() / 1000) + 86400,
       // For 1:1 calls (enableMedia=true) start with video/audio on

@@ -33,9 +33,11 @@ export default function VideoCall() {
   const timer = useCallTimer();
 
   const consultationId = searchParams.get('consultation');
+  const autoJoin = searchParams.get('autojoin') === '1';
   const isDoctor = role === 'doctor';
 
   const [callState, setCallState] = useState<'idle' | 'joining' | 'connected' | 'ended'>('idle');
+  const autoJoinTriggered = useRef(false);
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
   const [roomName, setRoomName] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -73,7 +75,7 @@ export default function VideoCall() {
   }, [consultationId, isDoctor]);
 
   const startCall = useCallback(async () => {
-    if (!consultationId || !user?.id) return;
+    if (!consultationId || !user?.id || callState === 'joining') return;
     setCallState('joining');
 
     try {
@@ -161,7 +163,15 @@ export default function VideoCall() {
       toast.error(t('videoCall.startError'));
       setCallState('idle');
     }
-  }, [consultationId, user?.id, isDoctor, createRoom, user?.name, t]);
+  }, [consultationId, user?.id, isDoctor, createRoom, user?.name, t, callState]);
+
+  // Auto-join when coming from incoming call modal
+  useEffect(() => {
+    if (autoJoin && !autoJoinTriggered.current && callState === 'idle' && consultationId && user?.id) {
+      autoJoinTriggered.current = true;
+      startCall();
+    }
+  }, [autoJoin, callState, consultationId, user?.id, startCall]);
 
   // Initialize Daily iframe
   useEffect(() => {
