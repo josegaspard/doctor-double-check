@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,12 +21,12 @@ interface LiveChatMessage {
 interface LiveChatProps {
   liveId: string;
   isOwner?: boolean;
-  /** When the live started – used to compute elapsed_seconds for each message */
   liveStartedAt?: Date;
 }
 
 export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatProps) {
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<LiveChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -54,7 +55,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     loadMessages();
   }, [liveId]);
 
-  // Subscribe to new messages via realtime (postgres_changes on the persisted table)
+  // Subscribe to new messages via realtime
   useEffect(() => {
     const channel = supabase
       .channel(`live-chat-db-${liveId}`)
@@ -69,7 +70,6 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         (payload) => {
           const m = payload.new as any;
           setMessages((prev) => {
-            // Avoid duplicates (we also add locally on send)
             if (prev.some(p => p.id === m.id)) return prev;
             return [...prev, {
               id: m.id,
@@ -114,11 +114,9 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         elapsedSeconds: elapsed,
       };
 
-      // Add to local state immediately for responsiveness
       setMessages((prev) => [...prev, message]);
       setNewMessage('');
 
-      // Persist to database (realtime will deliver to other viewers)
       await supabase.from('live_chat_messages').insert({
         id: msgId,
         live_id: liveId,
@@ -142,10 +140,10 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       <div className="p-2 sm:p-3 border-b flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-          <span className="font-medium text-xs sm:text-sm">Chat en vivo</span>
+          <span className="font-medium text-xs sm:text-sm">{t('livePlayer.liveChat')}</span>
         </div>
         <Badge variant="secondary" className="text-[10px] sm:text-xs">
-          {messages.length} mensajes
+          {messages.length} {t('livePlayer.messages')}
         </Badge>
       </div>
 
@@ -154,7 +152,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         <div className="space-y-2 sm:space-y-3">
           {messages.length === 0 ? (
             <div className="text-center py-6 sm:py-8 text-muted-foreground text-xs sm:text-sm">
-              Sé el primero en enviar un mensaje
+              {t('livePlayer.firstMessage')}
             </div>
           ) : (
             messages.map((msg) => (
@@ -187,19 +185,19 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         {isDisabled ? (
           <div className="text-center py-2 sm:py-3">
             <p className="text-[10px] sm:text-xs text-muted-foreground mb-2">
-              Inicia sesión para participar en el chat
+              {t('livePlayer.loginToChat')}
             </p>
             <Link to="/login">
-              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs">
+              <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs min-w-[44px]">
                 <LogIn className="w-3 h-3" />
-                Iniciar sesión
+                {t('livePlayer.loginButton')}
               </Button>
             </Link>
           </div>
         ) : (
           <div className="flex gap-1 sm:gap-2">
             <Input
-              placeholder="Escribe un mensaje..."
+              placeholder={t('livePlayer.writeMessage')}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); handleSend(); } }}
@@ -211,7 +209,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
               size="icon" 
               onClick={handleSend} 
               disabled={isSending || !newMessage.trim()}
-              className="flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
+              className="flex-shrink-0 h-9 w-9 min-w-[44px]"
             >
               <Send className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>

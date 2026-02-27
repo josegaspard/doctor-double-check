@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
   Dialog,
   DialogContent,
@@ -77,7 +78,6 @@ export default function LivePlayer() {
   useEffect(() => {
     if (!id || contextLive || directLive || directLoading) return;
     
-    // If context is still loading, wait up to 5s before trying direct fetch
     let timeoutId: NodeJS.Timeout | null = null;
     
     const doDirectFetch = async () => {
@@ -90,7 +90,6 @@ export default function LivePlayer() {
           .single();
         
         if (data) {
-          // Fetch doctor profile
           const { data: profile } = await supabase
             .from('profiles_public')
             .select('id, name, avatar_url')
@@ -125,10 +124,8 @@ export default function LivePlayer() {
     };
     
     if (isLoading) {
-      // Wait 5s then try direct fetch
       timeoutId = setTimeout(doDirectFetch, 5000);
     } else {
-      // Context loaded but live not found - fetch directly now
       doDirectFetch();
     }
     
@@ -182,7 +179,6 @@ export default function LivePlayer() {
   const prevStatusRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (!live || isOwner) return;
-    // If live is already ended on load, show overlay
     if (live.status === 'ended' && !liveEnded) {
       setLiveEnded(true);
     }
@@ -202,7 +198,6 @@ export default function LivePlayer() {
       setIsJoiningStream(true);
       setPlaybackError(null);
 
-      // Get daily_room_name
       let roomName = live.dailyRoomName;
       if (!roomName) {
         const { data: freshLive } = await supabase
@@ -214,26 +209,23 @@ export default function LivePlayer() {
       }
 
       if (!roomName) {
-        setPlaybackError('La transmisión aún se está inicializando.');
+        setPlaybackError(t('livePlayer.streamInitializing'));
         setIsJoiningStream(false);
-        // Retry after delay
         if (!cancelled) {
           setTimeout(() => { if (!cancelled) resolveViewer(); }, 4000);
         }
         return;
       }
 
-      // Get viewer token
       const token = await getViewerToken(roomName);
       if (cancelled) return;
 
       if (!token) {
-        setPlaybackError('No se pudo obtener acceso a la transmisión.');
+        setPlaybackError(t('livePlayer.streamAccessError'));
         setIsJoiningStream(false);
         return;
       }
 
-      // Construct room URL using the Daily domain from edge function
       setRoomUrl(`https://doctores.daily.co/${roomName}`);
       setViewerToken(token);
       setIsJoiningStream(false);
@@ -276,8 +268,8 @@ export default function LivePlayer() {
       <MainLayout>
         <div className="container mx-auto px-4 py-12 text-center">
           <Video className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Transmisión no encontrada</h2>
-          <Button onClick={() => navigate('/lives')}>Volver a Lives</Button>
+          <h2 className="text-xl font-semibold mb-2">{t('livePlayer.streamNotFound')}</h2>
+          <Button onClick={() => navigate('/lives')}>{t('livePlayer.backToLives')}</Button>
         </div>
       </MainLayout>
     );
@@ -286,7 +278,7 @@ export default function LivePlayer() {
   const formatDuration = (startedAt: Date) => {
     const diff = Date.now() - startedAt.getTime();
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 60) return `${minutes} minutos`;
+    if (minutes < 60) return `${minutes} ${t('livePlayer.minutes')}`;
     const hours = Math.floor(minutes / 60);
     return `${hours}h ${minutes % 60}m`;
   };
@@ -299,13 +291,63 @@ export default function LivePlayer() {
     } finally { setIsLiking(false); }
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: live.title,
+      text: `${live.doctorName} - ${live.title}`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        toast.success(t('livePlayer.sharedSuccessfully'));
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success(t('livePlayer.linkCopied'));
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        // Fallback to clipboard
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          toast.success(t('livePlayer.linkCopied'));
+        } catch {
+          toast.error(t('livePlayer.shareError'));
+        }
+      }
+    }
+  };
+
+  const handleStartPrivateChat = async () => {
+    if (!user || !live) return;
+    
+    try {
+      // Check if user has an active chat session with this doctor
+      const { data: sessions } = await supabase
+        .from('chat_sessions')
+        .select('id, status')
+        .eq('status', 'active')
+        .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${live.doctorId}),and(participant1_id.eq.${live.doctorId},participant2_id.eq.${user.id})`);
+      
+      if (sessions && sessions.length > 0) {
+        navigate(`/chat?session=${sessions[0].id}`);
+      } else {
+        toast.info(t('livePlayer.noActiveSession'));
+        navigate(`/doctor/${live.doctorId}`);
+      }
+    } catch {
+      navigate(`/doctor/${live.doctorId}`);
+    }
+  };
+
   const handleEndLive = async () => {
     if (!live) return;
     setIsEnding(true);
     try {
       const result = await endLive(live.id, saveAsRecording);
       if (result.success) {
-        toast.success(saveAsRecording ? 'Live terminado y grabación guardada' : 'Live terminado exitosamente');
+        toast.success(saveAsRecording ? t('livePlayer.liveSaved') : t('livePlayer.liveEnded'));
         setShowEndDialog(false);
         navigate('/lives');
       } else {
@@ -334,10 +376,11 @@ export default function LivePlayer() {
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 max-w-6xl">
         <Button variant="ghost" size="sm" onClick={() => navigate('/lives')} className="mb-3 sm:mb-4 h-8 text-xs sm:text-sm">
           <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-          Volver a Lives
+          {t('livePlayer.backToLives')}
         </Button>
 
-        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Responsive grid: stack on mobile, 2-col tablet, 3-col desktop */}
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Video Player */}
           <div className="lg:col-span-2 space-y-4">
             {/* Live ended overlay */}
@@ -365,15 +408,15 @@ export default function LivePlayer() {
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-info/30">
                     <div className="text-center">
                       <Loader2 className="w-12 h-12 mx-auto mb-4 text-white animate-spin" />
-                      <p className="text-white/80 text-sm">Conectando a la transmisión...</p>
+                      <p className="text-white/80 text-sm">{t('livePlayer.connecting')}</p>
                     </div>
                   </div>
                 ) : !isLiveActive ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/60 to-muted/40">
                     <div className="text-center px-4">
-                      <p className="text-foreground font-medium">Este live ya no está activo.</p>
+                      <p className="text-foreground font-medium">{t('livePlayer.notActive')}</p>
                       <Button size="sm" variant="outline" className="mt-3" onClick={() => refreshLives()}>
-                        Actualizar lista
+                        {t('livePlayer.refreshList')}
                       </Button>
                     </div>
                   </div>
@@ -381,7 +424,7 @@ export default function LivePlayer() {
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-info/30">
                     <div className="text-center px-4">
                       <Loader2 className="w-10 h-10 mx-auto mb-3 text-white animate-spin" />
-                      <p className="text-white font-medium">Conectando...</p>
+                      <p className="text-white font-medium">{t('livePlayer.connecting')}...</p>
                       <p className="text-white/60 text-xs mt-1">{playbackError}</p>
                     </div>
                   </div>
@@ -391,7 +434,7 @@ export default function LivePlayer() {
                       <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
                         <Radio className="w-10 h-10 text-white animate-pulse" />
                       </div>
-                      <p className="text-white/80 text-sm">Transmisión en vivo</p>
+                      <p className="text-white/80 text-sm">{t('livePlayer.liveTransmission')}</p>
                     </div>
                   </div>
                 )}
@@ -399,7 +442,7 @@ export default function LivePlayer() {
                 <div className="absolute top-4 left-4 z-10">
                   <Badge variant="live" className="gap-1">
                     <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    EN VIVO
+                    {t('livePlayer.liveBadge')}
                   </Badge>
                 </div>
                 <div className="absolute top-4 right-4 z-10">
@@ -423,25 +466,43 @@ export default function LivePlayer() {
                 {mySubToDoctor?.tier === 'premium' && (
                   <Badge className="gap-1 bg-yellow-500/10 text-yellow-600 border-yellow-300">
                     <Star className="w-3 h-3" />
-                    Acceso anticipado Premium
+                    {t('livePlayer.premiumEarlyAccess')}
                   </Badge>
                 )}
-                {live.tags.map((tag) => (
+                {live.tags.map((tag: string) => (
                   <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
                 ))}
               </div>
               <Separator className="my-3 sm:my-4" />
+              {/* Action buttons - sticky on mobile */}
               <div className="flex flex-wrap gap-2">
-                <Button variant={isLiked ? "default" : "outline"} size="sm" onClick={handleLike} disabled={role === 'visitor' || isLiking} className="gap-1 sm:gap-2 h-8 text-xs sm:text-sm">
-                  <Heart className={`w-3 h-3 sm:w-4 sm:h-4 ${isLiked ? 'fill-current' : ''}`} />
-                  <span className="hidden xs:inline">{realtimeLikesCount || live.likesCount}</span> Me gusta
+                <Button 
+                  variant={isLiked ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={handleLike} 
+                  disabled={role === 'visitor' || isLiking} 
+                  className="gap-1.5 h-9 sm:h-8 text-xs sm:text-sm min-w-[44px]"
+                >
+                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                  <span>{realtimeLikesCount || live.likesCount}</span>
+                  <span className="hidden xs:inline">{t('livePlayer.like')}</span>
                 </Button>
-                <Button variant="outline" size="sm" className="gap-1 sm:gap-2 h-8 text-xs sm:text-sm">
-                  <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Compartir</span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleShare}
+                  className="gap-1.5 h-9 sm:h-8 text-xs sm:text-sm min-w-[44px]"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t('livePlayer.share')}</span>
                 </Button>
-                <Button variant={showChat ? "default" : "outline"} size="sm" className="gap-1 sm:gap-2 h-8 text-xs sm:text-sm lg:hidden" onClick={() => setShowChat(!showChat)}>
-                  <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />
+                <Button 
+                  variant={showChat ? "default" : "outline"} 
+                  size="sm" 
+                  className="gap-1.5 h-9 sm:h-8 text-xs sm:text-sm lg:hidden min-w-[44px]" 
+                  onClick={() => setShowChat(!showChat)}
+                >
+                  <MessageSquare className="w-4 h-4" />
                   Chat
                 </Button>
               </div>
@@ -452,24 +513,31 @@ export default function LivePlayer() {
 
           {/* Sidebar */}
           <div className="space-y-3 sm:space-y-4">
+            {/* Chat - shown/hidden on mobile via toggle */}
             {showChat && (
-              <div className="h-[300px] sm:h-[350px]">
+              <div className="h-[300px] sm:h-[350px] lg:h-[400px]">
                 <LiveChat liveId={live.id} isOwner={isOwner} liveStartedAt={live.startedAt} />
               </div>
             )}
 
+            {/* Doctor Info Card */}
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Stethoscope className="w-5 h-5 sm:w-7 sm:h-7 text-primary" />
-                  </div>
+                  <Avatar className="w-11 h-11 sm:w-14 sm:h-14 flex-shrink-0">
+                    {live.doctorAvatar ? (
+                      <AvatarImage src={live.doctorAvatar} alt={live.doctorName} />
+                    ) : null}
+                    <AvatarFallback className="bg-primary/10">
+                      <Stethoscope className="w-5 h-5 sm:w-7 sm:h-7 text-primary" />
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground">{live.doctorName}</h3>
                     <p className="text-sm text-muted-foreground">{live.specialty}</p>
                     <Badge variant="verified" className="mt-2 gap-1">
                       <Award className="w-3 h-3" />
-                      Verificado
+                      {t('livePlayer.verified')}
                     </Badge>
                   </div>
                 </div>
@@ -479,28 +547,29 @@ export default function LivePlayer() {
                     <p className="text-2xl font-bold text-foreground">{realtimeLikesCount || live.likesCount}</p>
                     <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
                       <Heart className="w-3 h-3 fill-destructive text-destructive" />
-                      Likes
+                      {t('livePlayer.likes')}
                     </p>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-foreground">{live.followersCount || 0}</p>
                     <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
                       <Star className="w-3 h-3 fill-premium text-premium" />
-                      Seguidores
+                      {t('livePlayer.followers')}
                     </p>
                   </div>
                 </div>
                 <Separator className="my-4" />
-                <Button className="w-full" onClick={() => navigate(`/doctor/${live.doctorId}`)}>Ver Perfil</Button>
+                <Button className="w-full h-10" onClick={() => navigate(`/doctor/${live.doctorId}`)}>{t('livePlayer.viewProfile')}</Button>
                 {role === 'patient' && (
-                  <Button variant="outline" className="w-full mt-2" onClick={() => navigate('/chat')}>
+                  <Button variant="outline" className="w-full mt-2 h-10" onClick={handleStartPrivateChat}>
                     <MessageSquare className="w-4 h-4 mr-2" />
-                    Iniciar Chat Privado
+                    {t('livePlayer.startPrivateChat')}
                   </Button>
                 )}
               </CardContent>
             </Card>
 
+            {/* Premium Recording Card */}
             <Card className="bg-premium/5 border-premium/20">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
@@ -508,15 +577,16 @@ export default function LivePlayer() {
                     <Video className="w-5 h-5 text-premium" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-foreground text-sm">Grabación Premium</h4>
+                    <h4 className="font-semibold text-foreground text-sm">{t('livePlayer.premiumRecording')}</h4>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Cuando termine este live, la grabación estará disponible para usuarios premium.
+                      {t('livePlayer.premiumRecordingDesc')}
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Doctor Controls */}
             {isOwner && isLiveActive && (
               <Card className="bg-destructive/5 border-destructive/20">
                 <CardContent className="p-4">
@@ -525,11 +595,11 @@ export default function LivePlayer() {
                       <StopCircle className="w-5 h-5 text-destructive" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-foreground text-sm">Panel del Doctor</h4>
-                      <p className="text-xs text-muted-foreground mt-1 mb-3">Controles de tu transmisión en vivo.</p>
-                      <Button variant="destructive" size="sm" className="w-full" onClick={() => setShowEndDialog(true)}>
+                      <h4 className="font-semibold text-foreground text-sm">{t('livePlayer.doctorPanel')}</h4>
+                      <p className="text-xs text-muted-foreground mt-1 mb-3">{t('livePlayer.doctorPanelDesc')}</p>
+                      <Button variant="destructive" size="sm" className="w-full h-10" onClick={() => setShowEndDialog(true)}>
                         <StopCircle className="w-4 h-4 mr-2" />
-                        Terminar Live
+                        {t('livePlayer.endLive')}
                       </Button>
                     </div>
                   </div>
@@ -537,11 +607,12 @@ export default function LivePlayer() {
               </Card>
             )}
 
+            {/* Visitor CTA */}
             {role === 'visitor' && (
               <Card className="bg-info/5 border-info/20">
                 <CardContent className="p-4 text-center">
-                  <p className="text-sm text-muted-foreground mb-3">Regístrate para participar en el chat y más</p>
-                  <Button size="sm" onClick={() => navigate('/login')}>Crear Cuenta</Button>
+                  <p className="text-sm text-muted-foreground mb-3">{t('livePlayer.registerToChat')}</p>
+                  <Button size="sm" className="h-10" onClick={() => navigate('/login')}>{t('livePlayer.createAccount')}</Button>
                 </CardContent>
               </Card>
             )}
@@ -553,8 +624,8 @@ export default function LivePlayer() {
       <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Terminar transmisión</DialogTitle>
-            <DialogDescription>¿Estás seguro de que deseas terminar esta transmisión en vivo?</DialogDescription>
+            <DialogTitle>{t('livePlayer.endLiveTitle')}</DialogTitle>
+            <DialogDescription>{t('livePlayer.endLiveDesc')}</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="flex items-start space-x-3 p-4 rounded-lg bg-muted/50">
@@ -562,16 +633,16 @@ export default function LivePlayer() {
               <div className="flex-1">
                 <label htmlFor="saveRecording" className="text-sm font-medium cursor-pointer flex items-center gap-2">
                   <Save className="w-4 h-4" />
-                  Guardar como grabación
+                  {t('livePlayer.saveAsRecording')}
                 </label>
-                <p className="text-xs text-muted-foreground mt-1">La grabación estará disponible para que tus suscriptores la vean después.</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('livePlayer.saveAsRecordingDesc')}</p>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEndDialog(false)} disabled={isEnding}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setShowEndDialog(false)} disabled={isEnding}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleEndLive} disabled={isEnding}>
-              {isEnding ? 'Terminando...' : 'Terminar Live'}
+              {isEnding ? t('livePlayer.ending') : t('livePlayer.endLive')}
             </Button>
           </DialogFooter>
         </DialogContent>

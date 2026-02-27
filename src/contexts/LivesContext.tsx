@@ -476,12 +476,17 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     if (!user?.id || user.role === 'visitor') return;
 
     try {
+      // Optimistic update
+      setLikedLives(prev => new Set([...prev, liveId]));
+      setLives(prev => prev.map(l => l.id === liveId ? { ...l, likesCount: l.likesCount + 1 } : l));
+
       await supabase
         .from('live_likes')
         .insert({ live_id: liveId, user_id: user.id });
-
-      setLikedLives(prev => new Set([...prev, liveId]));
     } catch (error) {
+      // Rollback on error
+      setLikedLives(prev => { const s = new Set(prev); s.delete(liveId); return s; });
+      setLives(prev => prev.map(l => l.id === liveId ? { ...l, likesCount: Math.max(0, l.likesCount - 1) } : l));
       console.error('Error liking live:', error);
     }
   };
@@ -490,18 +495,19 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     if (!user?.id) return;
 
     try {
+      // Optimistic update
+      setLikedLives(prev => { const s = new Set(prev); s.delete(liveId); return s; });
+      setLives(prev => prev.map(l => l.id === liveId ? { ...l, likesCount: Math.max(0, l.likesCount - 1) } : l));
+
       await supabase
         .from('live_likes')
         .delete()
         .eq('live_id', liveId)
         .eq('user_id', user.id);
-
-      setLikedLives(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(liveId);
-        return newSet;
-      });
     } catch (error) {
+      // Rollback on error
+      setLikedLives(prev => new Set([...prev, liveId]));
+      setLives(prev => prev.map(l => l.id === liveId ? { ...l, likesCount: l.likesCount + 1 } : l));
       console.error('Error unliking live:', error);
     }
   };

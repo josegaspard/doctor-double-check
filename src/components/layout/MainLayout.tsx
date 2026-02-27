@@ -79,35 +79,35 @@ const navItems: NavItem[] = [
 // Bottom tab items per role
 function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   const common = [
-    { label: 'Lives', href: '/lives', icon: Radio },
+    { label: t('nav.lives'), href: '/lives', icon: Radio },
   ];
 
   if (role === 'doctor') {
     return [
       ...common,
-      { label: 'Chat', href: '/chat', icon: MessageSquare },
-      { label: t('nav.doctors') || 'Doctores', href: '/doctors', icon: Stethoscope },
-      { label: t('nav.notifications') || 'Avisos', href: '/notifications', icon: Bell },
-      { label: 'Panel', href: '/doctor/dashboard', icon: LayoutDashboard },
+      { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
+      { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
+      { label: t('nav.notifications'), href: '/notifications', icon: Bell },
+      { label: t('nav.dashboard'), href: '/doctor/dashboard', icon: LayoutDashboard },
     ];
   }
 
   if (role === 'patient') {
     return [
       ...common,
-      { label: 'Chat', href: '/chat', icon: MessageSquare },
-      { label: 'Doctores', href: '/doctors', icon: Stethoscope },
-      { label: t('nav.notifications') || 'Avisos', href: '/notifications', icon: Bell },
-      { label: 'Perfil', href: '/profile', icon: User },
+      { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
+      { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
+      { label: t('nav.notifications'), href: '/notifications', icon: Bell },
+      { label: t('nav.profile'), href: '/profile', icon: User },
     ];
   }
 
   // visitor / resident / admin
   return [
     ...common,
-    { label: 'Doctores', href: '/doctors', icon: Stethoscope },
-    { label: t('nav.notifications') || 'Avisos', href: '/notifications', icon: Bell },
-    { label: role === 'admin' ? 'Admin' : 'Perfil', href: role === 'admin' ? '/admin' : '/profile', icon: role === 'admin' ? Settings : User },
+    { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
+    { label: t('nav.notifications'), href: '/notifications', icon: Bell },
+    { label: role === 'admin' ? t('nav.admin') : t('nav.profile'), href: role === 'admin' ? '/admin' : '/profile', icon: role === 'admin' ? Settings : User },
   ];
 }
 
