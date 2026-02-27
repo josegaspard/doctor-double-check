@@ -154,41 +154,41 @@ export function ChatHeader({
             )}
             {displayInfo.type === 'resident' && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
-                Residente
+                {t('roles.resident')}
               </Badge>
             )}
           </div>
           
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-[11px] sm:text-xs text-muted-foreground min-w-0 overflow-hidden">
             {displayInfo.specialty && (
               canOpenDoctorProfile ? (
                 <button
                   type="button"
                   onClick={onDoctorProfileClick}
-                  className="text-primary hover:underline focus:outline-none font-medium"
+                  className="text-primary hover:underline focus:outline-none font-medium truncate flex-shrink-0 max-w-[120px] sm:max-w-none"
                   title={t('common.viewProfile')}
                 >
                   {displayInfo.specialty}
                 </button>
               ) : (
-                <span className="text-primary font-medium">{displayInfo.specialty}</span>
+                <span className="text-primary font-medium truncate flex-shrink-0 max-w-[120px] sm:max-w-none">{displayInfo.specialty}</span>
               )
             )}
             {officeHours && userRole === 'patient' && (
               <>
-                {displayInfo.specialty && <span className="text-muted-foreground/50">•</span>}
-                <span className={`flex items-center gap-1 ${isAvailable ? 'text-success' : 'text-warning'}`}>
-                  <Clock className="w-3 h-3" />
+                {displayInfo.specialty && <span className="text-muted-foreground/50 flex-shrink-0">•</span>}
+                <span className={`flex items-center gap-1 truncate flex-shrink min-w-0 ${isAvailable ? 'text-success' : 'text-warning'}`}>
+                  <Clock className="w-3 h-3 flex-shrink-0" />
                   {isAvailable ? (
                     <span className="flex items-center gap-1">
-                      <span className="relative flex h-2 w-2">
+                      <span className="relative flex h-2 w-2 flex-shrink-0">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
                       </span>
-                      Disponible
+                      {t('chat.available')}
                     </span>
                   ) : (
-                    `Fuera de horario · ${officeHours}`
+                    <span className="truncate">{t('chat.offHours')} · {officeHours}</span>
                   )}
                 </span>
               </>
@@ -243,7 +243,7 @@ export function ChatHeader({
           {isClosed ? (
             <Badge variant="secondary" className="gap-1 bg-muted/80 text-muted-foreground text-[11px] px-2 py-0.5">
               <Lock className="w-3 h-3" />
-              <span className="hidden sm:inline">Cerrada</span>
+              <span className="hidden sm:inline">{t('chat.closed')}</span>
             </Badge>
           ) : (
             userRole === 'doctor' && (
@@ -255,14 +255,13 @@ export function ChatHeader({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>¿Cerrar esta orientación?</AlertDialogTitle>
+                    <AlertDialogTitle>{t('chat.closeSessionTitle')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Al cerrar la orientación, el paciente ya no podrá enviar más mensajes. 
-                      El historial de la conversación se mantendrá disponible para ambas partes.
+                      {t('chat.closeSessionDescription')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={onCloseSession}
                       disabled={isClosing}
@@ -271,10 +270,10 @@ export function ChatHeader({
                       {isClosing ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Cerrando...
+                          {t('chat.closing')}
                         </>
                       ) : (
-                        'Sí, cerrar'
+                        t('chat.yesClose')
                       )}
                     </AlertDialogAction>
                   </AlertDialogFooter>

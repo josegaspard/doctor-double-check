@@ -179,7 +179,7 @@ export default function Doctors() {
           className="flex-1 h-10 text-sm active:scale-95 transition-transform"
           onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
         >
-          Ver Perfil
+          {t('doctors.viewProfile')}
         </Button>
         {/* Follow/Unfollow heart button */}
         <Button
@@ -211,18 +211,18 @@ export default function Doctors() {
               <Stethoscope className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm text-foreground mb-1">¿Cómo funciona?</h3>
+              <h3 className="font-semibold text-sm text-foreground mb-1">{t('doctors.howItWorks')}</h3>
               <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                <p><Heart className="w-3 h-3 inline text-destructive mr-1" /><strong>Seguir</strong> — Gratis. Recibe notificaciones cuando el doctor transmita en vivo.</p>
-                <p><Crown className="w-3 h-3 inline text-warning mr-1" /><strong>Suscripción Pro</strong> — Acceso a chat privado, contenido exclusivo y grabaciones.</p>
+                <p><Heart className="w-3 h-3 inline text-destructive mr-1" /><strong>{t('doctors.follow')}</strong> — {t('doctors.followDescription')}</p>
+                <p><Crown className="w-3 h-3 inline text-warning mr-1" /><strong>{t('doctors.proSubscription')}</strong> — {t('doctors.proDescription')}</p>
               </div>
             </div>
           </div>
         </div>
 
         <div className="mb-4 sm:mb-6">
-          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-1 sm:mb-2">Explorar Doctores</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Encuentra y sigue a los mejores especialistas médicos</p>
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-1 sm:mb-2">{t('doctors.exploreTitle')}</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">{t('doctors.exploreSubtitle')}</p>
         </div>
 
         {/* Filters */}
@@ -250,8 +250,8 @@ export default function Doctors() {
         </div>
 
         <p className="text-sm text-muted-foreground mb-3 sm:mb-4">
-          {totalCount} doctores encontrados
-          {totalPages > 1 && ` — Página ${currentPage} de ${totalPages}`}
+          {totalCount} {t('doctors.found')}
+          {totalPages > 1 && ` — ${t('doctors.page')} ${currentPage} ${t('doctors.of')} ${totalPages}`}
         </p>
 
         {/* Doctors Grid */}
@@ -276,18 +276,18 @@ export default function Doctors() {
           <Card>
             <CardContent className="p-12 text-center">
               <Stethoscope className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-semibold text-lg mb-2">No se encontraron doctores</h3>
-              <p className="text-muted-foreground">Intenta ajustar los filtros de búsqueda</p>
+              <h3 className="font-semibold text-lg mb-2">{t('doctors.noDoctors')}</h3>
+              <p className="text-muted-foreground">{t('doctors.adjustFilters')}</p>
             </CardContent>
           </Card>
         ) : (
           <>
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {doctors.map(doctor => (
-                <Card key={doctor.id} className="hover:shadow-lg transition-shadow cursor-pointer group">
+                <Card key={doctor.id} className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate(`/doctor/${doctor.user_id}`)}>
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex items-start gap-3">
-                      <div className="cursor-pointer flex-shrink-0" onClick={() => navigate(`/doctor/${doctor.user_id}`)}>
+                      <div className="flex-shrink-0">
                         <Avatar className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} border-2 border-background shadow-md`}>
                           <AvatarImage src={doctor.avatar_url || undefined} />
                           <AvatarFallback className="bg-primary text-primary-foreground text-lg">
@@ -298,8 +298,7 @@ export default function Doctors() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3
-                            className="font-semibold truncate group-hover:text-primary transition-colors cursor-pointer text-sm sm:text-base"
-                            onClick={() => navigate(`/doctor/${doctor.user_id}`)}
+                            className="font-semibold truncate group-hover:text-primary transition-colors text-sm sm:text-base"
                           >
                             {doctor.name || 'Doctor'}
                           </h3>
@@ -335,10 +334,10 @@ export default function Doctors() {
                           const isAvailable = doctor.office_days?.includes(currentDay) &&
                             doctor.office_hours_start && doctor.office_hours_end &&
                             currentTime >= doctor.office_hours_start && currentTime <= doctor.office_hours_end;
-                          return (
+                           return (
                             <div className={`flex items-center gap-1.5 mt-1 text-xs ${isAvailable ? 'text-success' : 'text-muted-foreground'}`}>
                               <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-success animate-pulse' : 'bg-muted-foreground/40'}`} />
-                              {isAvailable ? 'Disponible ahora' : 'No disponible'}
+                              {isAvailable ? t('doctors.availableNow') : t('doctors.notAvailable')}
                             </div>
                           );
                         })()}
@@ -365,7 +364,7 @@ export default function Doctors() {
                   onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 >
                   <ChevronLeft className="w-4 h-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Anterior</span>
+                  <span className="hidden sm:inline">{t('common.previous')}</span>
                 </Button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -397,7 +396,7 @@ export default function Doctors() {
                   disabled={currentPage === totalPages}
                   onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 >
-                  <span className="hidden sm:inline">Siguiente</span>
+                  <span className="hidden sm:inline">{t('common.next')}</span>
                   <ChevronRight className="w-4 h-4 sm:ml-1" />
                 </Button>
               </div>
