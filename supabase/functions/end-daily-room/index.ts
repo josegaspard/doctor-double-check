@@ -46,7 +46,32 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const { liveId, roomName, saveRecording = false } = await req.json();
-    if (!liveId) throw new Error("liveId is required");
+    
+    // If no liveId, this is a consultation-only room deletion
+    if (!liveId) {
+      logStep("Consultation-only room deletion", { roomName });
+      
+      if (roomName) {
+        try {
+          const deleteResponse = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${dailyApiKey}` },
+          });
+          if (deleteResponse.ok) {
+            logStep("Daily.co room deleted (consultation)", { roomName });
+          } else {
+            logStep("Warning: Could not delete room", { roomName });
+          }
+        } catch (roomError) {
+          logStep("Warning: Error deleting room", { error: String(roomError) });
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, status: "ended" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
 
     logStep("Ending live", { liveId, roomName, saveRecording });
 
