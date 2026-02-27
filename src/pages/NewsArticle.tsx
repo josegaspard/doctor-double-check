@@ -16,7 +16,7 @@ import {
   ArrowLeft, Clock, Share2, MessageCircle, Send, Loader2,
   Trash2, Stethoscope, User, GraduationCap, Facebook, Twitter, Link as LinkIcon,
   Globe, Instagram, Linkedin, Pencil, Reply, ChevronDown, ChevronUp,
-  Star, MapPin, Users, Edit
+  Star, MapPin, Users, Edit, LogIn
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -522,10 +522,23 @@ export default function NewsArticle() {
               </div>
             </div>
           ) : (
-            <Card className="p-4 mb-6 text-center">
-              <p className="text-muted-foreground text-sm">
-                <Link to="/login" className="text-primary hover:underline">Inicia sesión</Link> para comentar
+            <Card className="p-6 mb-6 text-center border-primary/20 bg-primary/5">
+              <LogIn className="w-8 h-8 mx-auto text-primary mb-2" />
+              <p className="text-foreground font-medium mb-1">Inicia sesión para comentar</p>
+              <p className="text-muted-foreground text-sm mb-3">
+                Crea una cuenta gratuita para participar en la conversación
               </p>
+              <div className="flex gap-2 justify-center">
+                <Link to="/login">
+                  <Button size="sm" className="gap-2">
+                    <LogIn className="w-4 h-4" />
+                    Iniciar sesión
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button size="sm" variant="outline">Crear cuenta</Button>
+                </Link>
+              </div>
             </Card>
           )}
 

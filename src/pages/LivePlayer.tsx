@@ -374,8 +374,7 @@ export default function LivePlayer() {
                   <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">Compartir</span>
                 </Button>
-                {role !== 'visitor' && (
-                  <Button 
+                <Button 
                     variant={showChat ? "default" : "outline"} 
                     size="sm" 
                     className="gap-1 sm:gap-2 h-8 text-xs sm:text-sm lg:hidden"
@@ -384,7 +383,6 @@ export default function LivePlayer() {
                     <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />
                     Chat
                   </Button>
-                )}
               </div>
               
               <Separator className="my-3 sm:my-4" />
@@ -396,8 +394,8 @@ export default function LivePlayer() {
 
           {/* Sidebar - Doctor Info & Chat */}
           <div className="space-y-3 sm:space-y-4">
-            {/* Live Chat - Always visible on desktop, toggleable on mobile */}
-            {showChat && role !== 'visitor' && (
+            {/* Live Chat - visible for all, but visitors see read-only + login prompt */}
+            {showChat && (
               <div className="h-[280px] sm:h-[350px]">
                 <LiveChat liveId={live.id} isOwner={isOwner} liveStartedAt={live.startedAt} />
               </div>

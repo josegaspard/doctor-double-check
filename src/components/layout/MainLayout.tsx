@@ -31,6 +31,7 @@ import {
   Wallet,
   Settings,
   LogOut,
+  LogIn,
   Stethoscope,
   LayoutDashboard,
   Upload,
@@ -41,10 +42,11 @@ import {
   Youtube,
   Calendar,
   FileText,
+  Search,
 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
-import { GlobalSearch } from '@/components/search/GlobalSearch';
+// GlobalSearch import removed — replaced with prominent search button linking to /doctors
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
@@ -153,7 +155,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   </div>
                   
                   {/* User Info in Mobile Menu */}
-                  {isAuthenticated && user && (
+                  {isAuthenticated && user && role !== 'visitor' && (
                     <div className="mb-6 p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -169,6 +171,23 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         </div>
                       </div>
                       <div className="mt-2">{getRoleBadge()}</div>
+                    </div>
+                  )}
+
+                  {/* Visitor prompt to login */}
+                  {role === 'visitor' && (
+                    <div className="mb-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                      <p className="text-sm text-muted-foreground mb-3">Inicia sesión para acceder a todas las funciones</p>
+                      <div className="flex flex-col gap-2">
+                        <Button size="sm" onClick={() => navigate('/login')} className="w-full gap-2">
+                          <LogIn className="w-4 h-4" />
+                          {t('nav.login')}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => navigate('/login')} className="w-full gap-2">
+                          <User className="w-4 h-4" />
+                          Crear cuenta
+                        </Button>
+                      </div>
                     </div>
                   )}
                   
@@ -197,8 +216,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       );
                     })}
                     
-                    {/* Mobile-only menu items */}
-                    {isAuthenticated && (
+                    {/* Mobile-only menu items - only for non-visitor authenticated users */}
+                    {isAuthenticated && role !== 'visitor' && (
                       <>
                         <div className="my-2 border-t border-border" />
                         <Link
@@ -290,8 +309,16 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
             {/* Right Side */}
             <div className="flex items-center gap-1.5">
-              {/* Global Search */}
-              <GlobalSearch />
+              {/* Global Search - prominent button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 text-muted-foreground hover:text-foreground"
+                onClick={() => navigate('/doctors')}
+              >
+                <Search className="w-4 h-4" />
+                <span className="hidden sm:inline text-xs">{t('common.search')}</span>
+              </Button>
               
               {/* Language Switcher */}
               <LanguageSwitcher />
@@ -310,7 +337,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               )}
 
               {/* User Menu */}
-              {isAuthenticated && user ? (
+              {isAuthenticated && user && role !== 'visitor' ? (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-1 sm:gap-2 px-2 sm:px-3">
@@ -355,7 +382,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button onClick={() => navigate('/login')} size="sm">
+                <Button onClick={() => navigate('/login')} size="sm" className="gap-2">
+                  <LogIn className="w-4 h-4" />
                   {t('nav.login')}
                 </Button>
               )}

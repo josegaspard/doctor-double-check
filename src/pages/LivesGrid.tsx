@@ -18,6 +18,8 @@ import {
   Eye,
   Lock,
   Crown,
+  Plus,
+  LogIn,
 } from 'lucide-react';
 
 export default function LivesGrid() {
@@ -61,14 +63,32 @@ export default function LivesGrid() {
             </p>
           </div>
           
-          {role === 'visitor' && (
-            <div className="flex items-center gap-2 bg-accent/50 rounded-lg px-4 py-2">
-              <Eye className="w-4 h-4 text-accent-foreground" />
-              <span className="text-sm text-accent-foreground">
-                {t('lives.viewerMode')}
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {role === 'doctor' && (
+              <Link to="/doctor/go-live">
+                <Button className="gap-2 bg-live hover:bg-live/90 text-white">
+                  <Plus className="w-4 h-4" />
+                  Ir en vivo
+                </Button>
+              </Link>
+            )}
+            {role === 'visitor' && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-accent/50 rounded-lg px-4 py-2">
+                  <Eye className="w-4 h-4 text-accent-foreground" />
+                  <span className="text-sm text-accent-foreground">
+                    {t('lives.viewerMode')}
+                  </span>
+                </div>
+                <Link to="/login">
+                  <Button size="sm" variant="outline" className="gap-2">
+                    <LogIn className="w-4 h-4" />
+                    {t('nav.login')}
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Lives Grid */}

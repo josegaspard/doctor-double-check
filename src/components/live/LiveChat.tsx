@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Send, MessageSquare, User } from 'lucide-react';
+import { Send, MessageSquare, User, LogIn } from 'lucide-react';
 
 interface LiveChatMessage {
   id: string;
@@ -184,8 +185,16 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       {/* Input */}
       <div className="p-2 sm:p-3 border-t flex-shrink-0">
         {isDisabled ? (
-          <div className="text-center text-[10px] sm:text-xs text-muted-foreground py-1 sm:py-2">
-            Inicia sesión para participar en el chat
+          <div className="text-center py-2 sm:py-3">
+            <p className="text-[10px] sm:text-xs text-muted-foreground mb-2">
+              Inicia sesión para participar en el chat
+            </p>
+            <Link to="/login">
+              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs">
+                <LogIn className="w-3 h-3" />
+                Iniciar sesión
+              </Button>
+            </Link>
           </div>
         ) : (
           <div className="flex gap-1 sm:gap-2">
