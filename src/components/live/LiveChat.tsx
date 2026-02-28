@@ -30,7 +30,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const [messages, setMessages] = useState<LiveChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load existing persisted messages on mount
   useEffect(() => {
@@ -89,12 +89,9 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     };
   }, [liveId]);
 
-  // Auto-scroll to bottom (contained within chat panel only)
+  // Auto-scroll to bottom
   useEffect(() => {
-    const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
-    if (viewport) {
-      viewport.scrollTop = viewport.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSend = async () => {
@@ -151,7 +148,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       </div>
 
       {/* Messages */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 min-h-0 p-2 sm:p-3">
+      <ScrollArea className="flex-1 min-h-0 p-2 sm:p-3">
         <div className="space-y-2 sm:space-y-3">
           {messages.length === 0 ? (
             <div className="text-center py-6 sm:py-8 text-muted-foreground text-xs sm:text-sm">
@@ -179,7 +176,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
               </div>
             ))
           )}
-          
+          <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
 
