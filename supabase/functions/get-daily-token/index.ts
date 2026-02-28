@@ -23,20 +23,32 @@ Deno.serve(async (req) => {
       throw new Error("DAILY_API_KEY is not configured");
     }
 
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "No authorization header" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Authenticate user
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
-
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("User not authenticated");
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ success: false, error: "User not authenticated" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
 
-    const userId = userData.user.id;
+    const userId = claimsData.claims.sub;
+    const userEmail = claimsData.claims.email as string || '';
+
     logStep("User authenticated", { userId });
 
     // Get user profile with robust fallback
@@ -47,8 +59,7 @@ Deno.serve(async (req) => {
       .single();
 
     const userName = profile?.name
-      || userData.user.user_metadata?.name
-      || (userData.user.email ? userData.user.email.split('@')[0] : 'Usuario');
+      || (userEmail ? userEmail.split('@')[0] : 'Usuario');
 
     // Parse request body
     const { roomName, isOwner = false, enableMedia = false } = await req.json();
