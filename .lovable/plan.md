@@ -1,53 +1,88 @@
 
+# Plan: Fix Critical Bugs and UX/UI Improvements
 
-# Plan: Fix "Duplicate DailyIframe instances" Error
+## 1. Fix "nav.doctors" Translation Key Missing
 
-## Problem
+The `nav.doctors` key doesn't exist in either `es.ts` or `en.ts`, causing "Nav.doctors" to display in the bottom navigation bar.
 
-The `DailyVideoPlayer` component crashes with "Duplicate DailyIframe instances are not allowed" because:
+**Files:** `src/lib/i18n/es.ts`, `src/lib/i18n/en.ts`
+- Add `doctors: 'Doctores'` to `nav` section in `es.ts`
+- Add `doctors: 'Doctors'` to `nav` section in `en.ts`
 
-1. React StrictMode unmounts and remounts the component rapidly
-2. The cleanup calls `callRef.current.destroy()` but this is asynchronous
-3. The second mount tries `Daily.createCallObject()` before the first instance finishes destroying
-4. The `initializedRef` guard doesn't help because cleanup resets it to `false`
+## 2. Fix Notifications Page Infinite Loading
 
-The edge function (`get-daily-token`) is working correctly -- logs confirm tokens are being generated. The error is purely on the client side.
+The `useNotifications` hook initializes `isLoading = true` but only sets it to `false` inside `fetchNotifications()`, which requires `supabaseUser?.id`. If auth hasn't resolved yet or user is a visitor, the page stays loading forever.
 
-## Solution
+**File:** `src/hooks/useNotifications.ts`
+- Add early return in `useEffect`: if `!supabaseUser?.id`, set `isLoading(false)` immediately
+- This ensures visitors and unauthenticated users see the empty state instead of infinite spinner
 
-Modify `src/components/live/DailyVideoPlayer.tsx` to handle the singleton constraint of Daily.js:
+## 3. Fix Logout Not Working
 
-1. Before calling `Daily.createCallObject()`, check if an existing instance exists by wrapping the creation in a try/catch
-2. If "Duplicate DailyIframe" error is caught, wait briefly for the previous instance to finish destroying, then retry once
-3. Add a module-level variable to track the active call object so cleanup can properly await destruction before re-initialization
+The `logout` function calls `window.location.replace('/lives')` before `supabase.auth.signOut()` completes. The page redirect triggers `onAuthStateChange` which sees the still-active session and re-authenticates. 
 
-### Implementation Details
+**File:** `src/hooks/auth/useAuthActions.ts`
+- Change logout to `await supabase.auth.signOut()` FIRST, then redirect
+- Remove the "fire and forget" pattern -- sign out must complete before navigation
 
-**File: `src/components/live/DailyVideoPlayer.tsx`**
+## 4. Video Call Hang-Up Button Size
 
-- Add a module-level `let activeCall: DailyCall | null = null` outside the component to track the global Daily singleton
-- In `initCall()`:
-  - If `activeCall` exists, destroy it first and await the destruction
-  - Create the new call object only after the previous one is fully destroyed
-  - Assign the new instance to both `callRef.current` and `activeCall`
-- In cleanup:
-  - Do NOT reset `initializedRef` (so StrictMode's remount is blocked)
-  - Only destroy and clean up when the component truly unmounts (use a mounted flag)
-- Remove the `initializedRef` pattern entirely since the module-level singleton tracking handles it better
+The end-call button is currently `w-13 h-13 sm:w-16 sm:h-16` while other buttons are `w-11 h-11 sm:w-14 sm:h-14`. This makes it visually inconsistent.
 
-```text
-Before (broken):
-  Mount 1 -> createCallObject() -> OK
-  Cleanup 1 -> destroy() (async, not awaited) -> initializedRef = false
-  Mount 2 -> initializedRef is false -> createCallObject() -> CRASH (previous not fully destroyed)
+**File:** `src/components/videocall/VideoCallControls.tsx`
+- Change end-call button from `w-13 h-13 sm:w-16 sm:h-16` to `w-11 h-11 sm:w-14 sm:h-14` to match all other control buttons
 
-After (fixed):
-  Mount 1 -> destroy activeCall if exists -> createCallObject() -> OK
-  Cleanup 1 -> destroy activeCall, set activeCall = null (awaited)
-  Mount 2 -> activeCall is null -> createCallObject() -> OK
-```
+## 5. Chat Mobile UX/UI Improvements
 
-| File | Change |
-|------|--------|
-| `src/components/live/DailyVideoPlayer.tsx` | Replace initializedRef with module-level singleton + async cleanup |
+The chat page has layout issues on mobile -- the grid doesn't adapt well and elements can overflow.
 
+**File:** `src/pages/Chat.tsx`
+- Improve the height calculation for the chat container on mobile
+- Ensure the sessions list and messages panel don't overflow horizontally
+
+**File:** `src/components/chat/ChatMessagesPanel.tsx`
+- Add `overflow-hidden` to prevent horizontal overflow on mobile
+- Ensure input area respects safe-area insets properly
+
+## 6. Improve Mobile Menu Sizes (Profile Dropdown & Language Switcher)
+
+The dropdown menus for profile and language are too small for older adult users.
+
+**File:** `src/components/layout/MainLayout.tsx`
+- Increase `DropdownMenuContent` width from `w-56` to `w-64`
+- Increase dropdown menu item padding and font sizes for touch friendliness
+- Increase the profile avatar button touch target
+
+**File:** `src/components/settings/LanguageSwitcher.tsx`
+- Increase dropdown item sizes and touch targets (min 44px height per item)
+
+## 7. Notifications Page Hardcoded Spanish Strings
+
+Several strings in `Notifications.tsx` are hardcoded in Spanish.
+
+**File:** `src/pages/Notifications.tsx`
+- Replace "Cancelar" / "Seleccionar" / "Leidas" / "Seleccionar todas" / "Eliminar" with `t()` calls
+- Add corresponding keys to both i18n files
+
+## 8. Admin Panel UX - Back Navigation
+
+Ensure all admin sub-pages have clear back arrows to return to the admin dashboard. Most already have them (like `AdminUsers.tsx`), but verify consistency.
+
+**File:** `src/pages/AdminDashboard.tsx`
+- Verify module cards are clearly clickable with visual affordance
+- Add descriptive headers
+
+## Technical Summary
+
+| File | Changes |
+|------|---------|
+| `src/lib/i18n/es.ts` | Add `nav.doctors` + notification page keys |
+| `src/lib/i18n/en.ts` | Add `nav.doctors` + notification page keys |
+| `src/hooks/useNotifications.ts` | Fix infinite loading for visitors/unauthenticated users |
+| `src/hooks/auth/useAuthActions.ts` | Fix logout: await signOut before redirect |
+| `src/components/videocall/VideoCallControls.tsx` | Normalize hang-up button size |
+| `src/pages/Chat.tsx` | Mobile layout improvements |
+| `src/components/chat/ChatMessagesPanel.tsx` | Prevent horizontal overflow on mobile |
+| `src/components/layout/MainLayout.tsx` | Increase dropdown menu sizes for accessibility |
+| `src/components/settings/LanguageSwitcher.tsx` | Increase touch targets |
+| `src/pages/Notifications.tsx` | Replace hardcoded Spanish with i18n keys |

@@ -686,8 +686,6 @@ export const en = {
     viewProfile: 'View Profile',
     startPrivateChat: 'Start Private Chat',
     noActiveSession: 'Start a consultation with this doctor to chat',
-    startingChat: 'Starting chat with the doctor...',
-    orientationRequired: 'A medical consultation is required with this doctor',
     goToProfile: 'Go to doctor profile',
     premiumRecording: 'Premium Recording',
     premiumRecordingDesc: 'When this live ends, the recording will be available for premium users.',

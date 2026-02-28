@@ -17,10 +17,6 @@ import {
   MonitorOff,
 } from 'lucide-react';
 
-// Module-level singleton to track the active Daily call object
-let activeCall: DailyCall | null = null;
-let destroyPromise: Promise<void> | null = null;
-
 interface DailyVideoPlayerProps {
   roomUrl: string;
   token: string;
@@ -54,33 +50,14 @@ export function DailyVideoPlayer({
 
   useEffect(() => {
     if (!roomUrl || !token) return;
-    let mounted = true;
 
     const initCall = async () => {
-      // Wait for any in-progress destroy to finish
-      if (destroyPromise) {
-        await destroyPromise;
-        destroyPromise = null;
-      }
-
-      // Destroy any leftover singleton
-      if (activeCall) {
-        try {
-          activeCall.leave();
-          await activeCall.destroy();
-        } catch (_) { /* already destroyed */ }
-        activeCall = null;
-      }
-
-      if (!mounted) return;
-
       try {
         const call = Daily.createCallObject({
           videoSource: isOwner,
           audioSource: isOwner,
         });
         
-        activeCall = call;
         callRef.current = call;
 
         call.on('joined-meeting', handleJoinedMeeting);
@@ -93,27 +70,18 @@ export function DailyVideoPlayer({
         await call.join({ url: roomUrl, token });
       } catch (err: any) {
         console.error('Error joining Daily room:', err);
-        if (mounted) {
-          setError(err.message || 'Error al conectar');
-          setIsJoining(false);
-        }
+        setError(err.message || 'Error al conectar');
+        setIsJoining(false);
       }
     };
 
     initCall();
 
     return () => {
-      mounted = false;
       if (callRef.current) {
-        const call = callRef.current;
+        callRef.current.leave();
+        callRef.current.destroy();
         callRef.current = null;
-        destroyPromise = (async () => {
-          try {
-            call.leave();
-            await call.destroy();
-          } catch (_) { /* ignore */ }
-          if (activeCall === call) activeCall = null;
-        })();
       }
     };
   }, [roomUrl, token, isOwner]);
@@ -197,12 +165,10 @@ export function DailyVideoPlayer({
         const screenEl = document.createElement('video');
         screenEl.autoplay = true;
         screenEl.playsInline = true;
-        screenEl.setAttribute('webkit-playsinline', 'true');
         screenEl.muted = true;
         screenEl.className = 'w-full h-full object-contain';
         const stream = new MediaStream([participant.screenVideoTrack]);
         screenEl.srcObject = stream;
-        screenEl.play().catch(() => { screenEl.muted = true; screenEl.play().catch(() => {}); });
         screenShareRef.current.appendChild(screenEl);
       }
 
@@ -210,7 +176,6 @@ export function DailyVideoPlayer({
         const videoEl = document.createElement('video');
         videoEl.autoplay = true;
         videoEl.playsInline = true;
-        videoEl.setAttribute('webkit-playsinline', 'true');
         videoEl.muted = participant.local;
 
         videoEl.className = participant.local && hasAnyScreenShare
@@ -226,8 +191,6 @@ export function DailyVideoPlayer({
         }
         const stream = new MediaStream(tracks);
         videoEl.srcObject = stream;
-        // Explicit play() for iPad/iOS Safari compatibility
-        videoEl.play().catch(() => { videoEl.muted = true; videoEl.play().catch(() => {}); });
         videoContainerRef.current?.appendChild(videoEl);
       } else if (!participant.local && participant.audioTrack && !participant.video) {
         // Audio-only fallback: participant has audio but no video (e.g., camera off)
