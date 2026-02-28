@@ -1,125 +1,109 @@
 
 
-# Plan: Fix Video Calls -- Bidirectional Video + Audio
+# Plan: Complete Rewrite of WebRTC Video Call System
 
-## Root Causes Found
+## Root Cause (found after deep analysis)
 
-### Bug 1: Race Condition in Offer Creation (CRITICAL)
-In `startCall()`, `createPeerConnection()` calls `addTrack()` which triggers `onnegotiationneeded` asynchronously. This handler creates an offer and calls `setLocalDescription()`. Meanwhile, `startCall()` ALSO creates an offer and calls `setLocalDescription()`. These two async operations race each other, causing `InvalidStateError` (can't set local description while another is pending). Result: the connection silently fails.
+The call NEVER connects because of a **lost ICE candidates** bug:
 
-### Bug 2: Remote Audio Never Plays
-The remote `<video>` element starts `muted` for autoplay policy, then the code tries to programmatically unmute. But iOS Safari silently pauses the video when unmuted. The user sees a black screen. Even when the "Tap to unmute" button works, it only unmutes the video element -- but by then the WebRTC connection may have already failed due to Bug 1.
+1. Doctor calls `startCall()` which creates the offer AND immediately starts ICE gathering
+2. ICE candidates fire via `onicecandidate` and are broadcast to the signaling channel
+3. **The patient has NOT subscribed to the channel yet** -- all ICE candidates are lost forever
+4. When the patient finally joins and sends "ready", the doctor re-sends the offer SDP but **does NOT re-trigger ICE gathering** -- it just re-sends the stored SDP text
+5. Without ICE candidates, the WebRTC connection can never establish
+6. After 15 seconds, the timeout fires and shows "Error de conexion"
 
-### Bug 3: No Reliable TURN Server
-The OpenRelay TURN servers (`openrelay.metered.ca`) with `openrelayproject/openrelayproject` credentials may be offline or rate-limited. Without TURN, calls fail when either peer is behind a symmetric NAT (common on mobile data).
+This explains why it ALWAYS fails -- it's not a TURN server issue or an autoplay issue. The fundamental signaling handshake is broken.
 
----
+## Solution: Rewrite with correct signaling order
 
-## Solution
+The fix is simple: **don't create the offer until the other party is confirmed listening**.
 
-### A. Fix Race Condition (`src/hooks/useWebRTCCall.ts`)
-
-Remove `onnegotiationneeded` from the initial peer connection setup. Only the explicit offer in `startCall()` should create the initial offer. Add `onnegotiationneeded` only AFTER the initial connection is established (for screen share renegotiation):
-
-```typescript
-// In createPeerConnection: do NOT set onnegotiationneeded
-// In startCall: after creating offer manually, THEN set onnegotiationneeded for future renegotiations
+```text
+  DOCTOR                          PATIENT
+    |                                |
+    |-- subscribe to channel ------->|
+    |                                |-- subscribe to channel
+    |<-- "ready" signal -------------|
+    |                                |
+    |-- createOffer() -------------->|  (NOW patient is listening)
+    |-- ICE candidates flow -------->|  (patient receives them!)
+    |                                |
+    |<-- answer + ICE candidates ----|
+    |                                |
+    |===== CONNECTED ================|
 ```
 
-Also add a `negotiating` guard ref to prevent glare:
+### File 1: `src/hooks/useWebRTCCall.ts` (complete rewrite)
+
+**Changes:**
+- **`startCall()`**: Subscribe to channel, then send "caller-ready" signal. Do NOT create offer yet. Wait for patient's "ready" signal.
+- **`handleSignal("ready")`**: When the caller receives "ready", NOW create the offer. ICE candidates will flow to the patient who is already listening.
+- **Ready signal retry**: Send "ready" signal 3 times (at 0s, 2s, 4s) to handle timing where one side subscribes before the other.
+- **Use a `handleSignalRef`**: So the channel listener always calls the latest version of the handler (avoids stale closure bug).
+- **Increase timeout**: 30 seconds instead of 15 (mobile networks are slower).
+- **Guard `hasCreatedOffer` ref**: Prevent duplicate offer creation if multiple "ready" signals arrive.
+
+### File 2: `src/pages/VideoCall.tsx`
+
+**Changes:**
+- Keep the existing audio element approach (it's correct)
+- Add a "Retry" mechanism on the error screen that fully cleans up and restarts
+- Show better status messages during connection ("Connecting...", "Waiting for other party...")
+
+## Technical Details
+
+### New signaling flow in `startCall`:
 ```typescript
-const isNegotiatingRef = useRef(false);
+const startCall = async () => {
+  const stream = await getMedia();
+  createPeerConnection(stream);  // NO onnegotiationneeded
+  await setupSignaling();
+  
+  // Send "ready" -- do NOT create offer yet
+  sendSignal({ type: 'ready', senderId: userId });
+  
+  // Retry ready signal to handle timing
+  retryReadySignal();
+  startConnectionTimeout();
+};
 ```
 
-### B. Separate Audio Element for Remote Stream (`src/pages/VideoCall.tsx`)
-
-Instead of relying on the muted/unmuted video element for audio, create a separate hidden `<audio>` element specifically for the remote audio tracks. This element can be unmuted immediately after the user's "Start" / "Join" tap (which counts as a user gesture):
-
+### New signaling flow in `handleSignal`:
 ```typescript
-// Create a hidden <audio> element on user gesture (startCall/joinCall click)
-const audioElRef = useRef<HTMLAudioElement | null>(null);
+if (signal.type === 'ready' && isCallerRef.current && !hasCreatedOfferRef.current) {
+  hasCreatedOfferRef.current = true;
+  // NOW create offer -- patient is guaranteed to be listening
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  sendSignal({ type: 'offer', sdp: offer.sdp, senderId: userId });
+}
 
-// On user gesture (handleStart), pre-create and "unlock" the audio element
-const unlockAudio = useCallback(() => {
-  const audio = new Audio();
-  audio.volume = 1;
-  audioElRef.current = audio;
-}, []);
-
-// When remoteStream arrives, set it as srcObject of the audio element
-useEffect(() => {
-  if (audioElRef.current && remoteStream) {
-    audioElRef.current.srcObject = remoteStream;
-    audioElRef.current.play().catch(() => {});
-  }
-}, [remoteStream]);
-```
-
-The video element stays permanently muted (so autoplay always works for the visual). Audio goes through the separate `<audio>` element which was "unlocked" by the user's tap.
-
-### C. Add More TURN Servers + Validate Connectivity (`src/hooks/useWebRTCCall.ts`)
-
-Add multiple free TURN providers as fallback. Also add connection timeout -- if ICE doesn't connect within 15 seconds, show an error instead of hanging forever:
-
-```typescript
-const ICE_SERVERS: RTCIceServer[] = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun.cloudflare.com:3478' },
-  {
-    urls: 'turn:openrelay.metered.ca:80',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
-  {
-    urls: 'turn:openrelay.metered.ca:443',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
-  {
-    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
-];
-```
-
-Add a 15-second connection timeout:
-```typescript
-// In startCall/joinCall, after setting up signaling:
-const connectionTimeout = setTimeout(() => {
-  if (pcRef.current?.iceConnectionState !== 'connected' && 
-      pcRef.current?.iceConnectionState !== 'completed') {
-    console.error('[WebRTC] Connection timed out');
-    setCallState('error');
-  }
-}, 15000);
-```
-
-### D. Send "end-call" Signal (`src/hooks/useWebRTCCall.ts`)
-
-When one party ends the call, broadcast an `end-call` signal so the other party's UI also transitions to the "ended" state:
-
-```typescript
-// In endCall:
-channelRef.current?.send({
-  type: 'broadcast',
-  event: 'signal',
-  payload: { type: 'end-call', senderId: userId },
-});
-
-// In handleSignal, handle 'end-call':
-if (signal.type === 'end-call') {
-  endCall();
+if (signal.type === 'ready' && !isCallerRef.current) {
+  // Patient received doctor's ready -- re-send own ready in case doctor missed it
+  sendSignal({ type: 'ready', senderId: userId });
 }
 ```
 
----
+### handleSignalRef pattern (fixes stale closure):
+```typescript
+const handleSignalRef = useRef<(signal: SignalPayload) => void>(() => {});
+
+// Update ref whenever handleSignal changes
+useEffect(() => {
+  handleSignalRef.current = handleSignal;
+}, [handleSignal]);
+
+// In setupSignaling, use the ref:
+.on('broadcast', { event: 'signal' }, ({ payload }) => {
+  handleSignalRef.current(payload as SignalPayload);
+})
+```
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/hooks/useWebRTCCall.ts` | Fix race condition (remove early onnegotiationneeded), add connection timeout, add end-call signal, update SignalPayload type |
-| `src/pages/VideoCall.tsx` | Add separate hidden audio element for remote audio, unlock on user gesture, keep video permanently muted |
+| `src/hooks/useWebRTCCall.ts` | Complete rewrite: fix signaling order, add ready-retry, use handleSignalRef, increase timeout to 30s, guard duplicate offers |
+| `src/pages/VideoCall.tsx` | Better error/retry handling, keep audio element approach |
 
