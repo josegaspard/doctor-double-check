@@ -50,13 +50,29 @@ export function DailyVideoPlayer({
 
   useEffect(() => {
     if (!roomUrl || !token) return;
+    let cancelled = false;
 
     const initCall = async () => {
       try {
+        // Destroy any lingering instance first (handles React 18 StrictMode double-mount)
+        try {
+          const existing = Daily.getCallInstance();
+          if (existing) {
+            await existing.destroy();
+          }
+        } catch { /* no existing instance */ }
+
+        if (cancelled) return;
+
         const call = Daily.createCallObject({
           videoSource: isOwner,
           audioSource: isOwner,
         });
+
+        if (cancelled) {
+          call.destroy();
+          return;
+        }
         
         callRef.current = call;
 
@@ -69,6 +85,7 @@ export function DailyVideoPlayer({
 
         await call.join({ url: roomUrl, token });
       } catch (err: any) {
+        if (cancelled) return;
         console.error('Error joining Daily room:', err);
         setError(err.message || 'Error al conectar');
         setIsJoining(false);
@@ -78,9 +95,10 @@ export function DailyVideoPlayer({
     initCall();
 
     return () => {
+      cancelled = true;
       if (callRef.current) {
-        callRef.current.leave();
-        callRef.current.destroy();
+        callRef.current.leave().catch(() => {});
+        callRef.current.destroy().catch(() => {});
         callRef.current = null;
       }
     };
