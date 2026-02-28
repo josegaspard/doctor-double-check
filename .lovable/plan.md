@@ -1,70 +1,46 @@
 
 
-# Plan: Fix iPad Black Screen, Likes Count, Share Options, Private Chat, and Chat Scroll Issues
+# Plan: Fix Live Stream Access (get-daily-token + DailyVideoPlayer)
 
-## 1. iPad Black Screen Fix (DailyVideoPlayer)
+## Problem
 
-**Root Cause:** In `DailyVideoPlayer.tsx`, video elements are created programmatically with `document.createElement('video')` and `autoplay` is set as a property. On iPad/iOS Safari, the `autoplay` property alone is insufficient -- an explicit `.play()` call is required after setting `srcObject`, with a muted fallback for autoplay policy compliance.
+Two bugs introduced in the last edit are preventing users from joining live streams:
 
-**File: `src/components/live/DailyVideoPlayer.tsx`**
-- In `updateVideoElements()`, after setting `videoEl.srcObject = stream`, add `videoEl.play().catch(() => { videoEl.muted = true; videoEl.play().catch(() => {}); })` for each video element
-- Do the same for screen share video elements
-- Add `videoEl.setAttribute('webkit-playsinline', 'true')` for older iPads
+1. **`getClaims()` does not exist** on the Supabase JS client. The edge function crashes with "User not authenticated" for ALL users (patients, visitors, admins).
+2. **Visitors (unauthenticated)** have no auth token at all, so the function must support anonymous viewers.
+3. **Duplicate DailyIframe instances** error from React StrictMode double-mounting the effect.
 
-## 2. Likes Count Showing 0
+## Fix 1: Edge Function `get-daily-token` (supabase/functions/get-daily-token/index.ts)
 
-**Root Cause:** Two problems:
-1. `likeLive()` in LivesContext doesn't check the Supabase insert response for errors -- it only catches thrown exceptions. If the DB insert fails (e.g., RLS), the error is silently ignored but the optimistic update already happened, then gets rolled back by the realtime subscription
-2. In LivePlayer, the display uses `realtimeLikesCount || live.likesCount` -- the `||` operator treats `0` as falsy, so if the DB starts at 0 and the realtime hook hasn't fetched yet, it stays at 0 even after optimistic increment
+- Revert `getClaims()` back to `getUser(token)` with the Authorization header passed to the client (per the stack overflow pattern)
+- Make authentication **optional for viewers**: if no auth header is present AND `isOwner` is false, generate a token with a guest identity (`guest-{timestamp}`) instead of rejecting the request
+- Keep the 401 response only when `isOwner` is true but no valid auth is present
 
-**File: `src/contexts/LivesContext.tsx`**
-- In `likeLive()`: Destructure `{ error }` from the insert response and throw if error exists, so the catch block can rollback
-- In `unlikeLive()`: Same -- check for `{ error }` from the delete response
+## Fix 2: DailyVideoPlayer duplicate instance guard (src/components/live/DailyVideoPlayer.tsx)
 
-**File: `src/pages/LivePlayer.tsx`**
-- Change `realtimeLikesCount || live.likesCount` to `realtimeLikesCount > 0 ? realtimeLikesCount : live.likesCount` (3 occurrences) -- this ensures 0 from realtime doesn't override a valid context value
+- Add an `initializedRef` boolean ref that prevents `Daily.createCallObject()` from being called twice during React StrictMode's double-mount
+- In the cleanup function, set `initializedRef.current = false` and properly destroy the call object
+- Check `if (initializedRef.current) return;` at the start of `initCall`
 
-## 3. Share Button with Platform Options
+## Technical Details
 
-**Root Cause:** Currently uses Web Share API with clipboard fallback. User wants WhatsApp, email, and copy link options visible.
+### get-daily-token changes:
+```
+- Remove getClaims() call
+- Add: if no auth header AND isOwner is false -> use guest identity
+- Add: if auth header present -> use getUser(token) to validate
+- Keep existing Daily API token generation logic unchanged
+```
 
-**File: `src/pages/LivePlayer.tsx`**
-- Replace the simple share button with a Popover containing share options:
-  - Copy link (clipboard)
-  - WhatsApp (`https://wa.me/?text=...`)
-  - Email (`mailto:?subject=...&body=...`)
-  - Native share (if `navigator.share` is available)
-- Use existing Popover component from `@/components/ui/popover`
+### DailyVideoPlayer changes:
+```
+- Add: const initializedRef = useRef(false)
+- In initCall: if (initializedRef.current) return; initializedRef.current = true;
+- In cleanup: initializedRef.current = false;
+```
 
-## 4. "Start Private Chat" Error Fix
-
-**Root Cause:** The `.or()` filter syntax may fail, and the logic doesn't check whether the doctor offers free consultations. When no session exists, user should be redirected to the doctor's profile with a payment modal trigger.
-
-**File: `src/pages/LivePlayer.tsx`**
-- Rewrite `handleStartPrivateChat`:
-  1. Query `chat_sessions` using two separate `.eq()` conditions instead of `.or()` with complex filter
-  2. If active session found, navigate to `/chat?session=ID`
-  3. If no session, fetch `doctor_profiles_public.consultation_fee` for the doctor
-  4. If fee is 0 (free), navigate directly to `/chat` and create a new session
-  5. If fee > 0, navigate to `/doctor/{doctorId}?orientation=true` to trigger the payment modal
-  6. Show appropriate toast message
-
-## 5. Chat Scroll-to-Footer Bug (Critical)
-
-**Root Cause:** `messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })` scrolls the nearest scrollable ancestor. However, Radix ScrollArea uses `overflow: hidden` on the root and the actual scroll container is an inner `Viewport` element. Since the root has `overflow: hidden`, `scrollIntoView` traverses UP to the page-level scrollable element (the body/html), causing the entire page to scroll to the footer.
-
-**File: `src/components/live/LiveChat.tsx`**
-- Remove the `useEffect` that calls `messagesEndRef.current?.scrollIntoView()`
-- Instead, get a ref to the ScrollArea's viewport element and manually set `viewport.scrollTop = viewport.scrollHeight`
-- Use a ref on the ScrollArea component and query `.querySelector('[data-radix-scroll-area-viewport]')` to find the viewport
-- Only auto-scroll when a new message is added (not on every re-render), and only if user is already near the bottom (within 100px) to avoid disrupting manual scrolling
-
-## Technical Summary
-
-| File | Changes |
-|------|---------|
-| `src/components/live/DailyVideoPlayer.tsx` | Add `.play()` with muted fallback on programmatic video elements for iPad |
-| `src/contexts/LivesContext.tsx` | Check `{ error }` from Supabase insert/delete in likeLive/unlikeLive |
-| `src/pages/LivePlayer.tsx` | Fix likes display with nullish check; add share popover with WhatsApp/email/copy; fix private chat logic with consultation fee check |
-| `src/components/live/LiveChat.tsx` | Replace `scrollIntoView` with manual viewport scroll to prevent page scroll |
+| File | Change |
+|------|--------|
+| `supabase/functions/get-daily-token/index.ts` | Revert to getUser(), support anonymous viewers |
+| `src/components/live/DailyVideoPlayer.tsx` | Guard against duplicate Daily instances |
 
