@@ -35,6 +35,7 @@ export function DailyVideoPlayer({
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const screenShareRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
+  const initializedRef = useRef(false);
   
   const [isJoining, setIsJoining] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
@@ -52,6 +53,9 @@ export function DailyVideoPlayer({
     if (!roomUrl || !token) return;
 
     const initCall = async () => {
+      if (initializedRef.current) return;
+      initializedRef.current = true;
+
       try {
         const call = Daily.createCallObject({
           videoSource: isOwner,
@@ -72,12 +76,14 @@ export function DailyVideoPlayer({
         console.error('Error joining Daily room:', err);
         setError(err.message || 'Error al conectar');
         setIsJoining(false);
+        initializedRef.current = false;
       }
     };
 
     initCall();
 
     return () => {
+      initializedRef.current = false;
       if (callRef.current) {
         callRef.current.leave();
         callRef.current.destroy();
