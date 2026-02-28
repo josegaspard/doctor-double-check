@@ -1667,7 +1667,7 @@ export type Database = {
           content_id: string | null
           created_at: string
           id: string
-          recording_id: string
+          recording_id: string | null
           user_id: string
         }
         Insert: {
@@ -1675,7 +1675,7 @@ export type Database = {
           content_id?: string | null
           created_at?: string
           id?: string
-          recording_id: string
+          recording_id?: string | null
           user_id: string
         }
         Update: {
@@ -1683,7 +1683,7 @@ export type Database = {
           content_id?: string | null
           created_at?: string
           id?: string
-          recording_id?: string
+          recording_id?: string | null
           user_id?: string
         }
         Relationships: [
