@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VideoCallControls } from '@/components/videocall/VideoCallControls';
 import { VideoCallChat } from '@/components/videocall/VideoCallChat';
-import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle, Volume2 } from 'lucide-react';
+import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 
@@ -46,13 +46,29 @@ export default function VideoCall() {
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState<InCallMessage[]>([]);
   const [otherParticipantName, setOtherParticipantName] = useState('');
-  const [showUnmutePrompt, setShowUnmutePrompt] = useState(false);
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const chatChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
+  // ── Dedicated audio element for remote audio (unlocked on user gesture) ──
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
+
   const timeLocale = language === 'es' ? 'es-MX' : 'en-US';
+
+  /**
+   * "Unlock" audio on user gesture. Called inside handleStart (button click).
+   * Creates an <audio> element that the browser trusts for autoplay.
+   */
+  const unlockAudio = useCallback(() => {
+    if (audioElRef.current) return; // already unlocked
+    const audio = new Audio();
+    audio.volume = 1;
+    // Play a silent buffer to unlock on iOS
+    audio.play().catch(() => {});
+    audioElRef.current = audio;
+    console.log('[VideoCall] Audio element unlocked');
+  }, []);
 
   // ── Callback refs: attach srcObject the instant the <video> mounts ──
   const localVideoRefCallback = useCallback((el: HTMLVideoElement | null) => {
@@ -67,12 +83,12 @@ export default function VideoCall() {
     remoteVideoRef.current = el;
     if (el && remoteStream) {
       el.srcObject = remoteStream;
-      el.muted = true; // required for autoplay on iOS
+      // Video element stays PERMANENTLY muted — audio goes through audioElRef
       el.play().catch(() => {});
     }
   }, [remoteStream]);
 
-  // ── Sync streams to video elements when they update ──
+  // ── Sync local stream to video element when it updates ──
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
@@ -80,25 +96,19 @@ export default function VideoCall() {
     }
   }, [localStream]);
 
+  // ── Sync remote stream: video element (muted) + audio element (unmuted) ──
   useEffect(() => {
+    // Attach to video element (stays muted for autoplay compliance)
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.muted = true; // start muted for autoplay policy
-      remoteVideoRef.current.play().then(() => {
-        // Attempt to unmute programmatically
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.muted = false;
-          // iOS silently pauses when unmuted — detect and show prompt
-          setTimeout(() => {
-            if (remoteVideoRef.current?.paused) {
-              remoteVideoRef.current.muted = true;
-              remoteVideoRef.current.play().catch(() => {});
-              setShowUnmutePrompt(true);
-            }
-          }, 150);
-        }
-      }).catch(() => {
-        setShowUnmutePrompt(true);
+      remoteVideoRef.current.play().catch(() => {});
+    }
+
+    // Attach to dedicated audio element for sound
+    if (audioElRef.current && remoteStream) {
+      audioElRef.current.srcObject = remoteStream;
+      audioElRef.current.play().catch((e) => {
+        console.error('[VideoCall] Audio play failed:', e);
       });
     }
   }, [remoteStream]);
@@ -158,6 +168,9 @@ export default function VideoCall() {
   const handleStart = useCallback(async () => {
     if (!consultationId || !user?.id || callState !== 'idle') return;
 
+    // CRITICAL: unlock audio on user gesture BEFORE starting WebRTC
+    unlockAudio();
+
     if (isDoctor) {
       const { data: consultation } = await supabase
         .from('consultations')
@@ -201,11 +214,17 @@ export default function VideoCall() {
     } else {
       joinCall();
     }
-  }, [consultationId, user, isDoctor, callState, startCall, joinCall, t]);
+  }, [consultationId, user, isDoctor, callState, startCall, joinCall, t, unlockAudio]);
 
   const handleEndCall = useCallback(async () => {
     timer.stop();
     endCall();
+    // Clean up audio element
+    if (audioElRef.current) {
+      audioElRef.current.pause();
+      audioElRef.current.srcObject = null;
+      audioElRef.current = null;
+    }
   }, [endCall, timer]);
 
   const handleSendChat = (text: string) => {
@@ -236,10 +255,10 @@ export default function VideoCall() {
 
   const isInCall = callState === 'connecting' || callState === 'connected';
 
-  // ── Shared video layout using callback refs ──
+  // ── Shared video layout — video is ALWAYS muted, audio via separate element ──
   const videoLayoutJSX = (
     <div className="relative w-full h-full bg-black">
-      {/* Remote video (full) */}
+      {/* Remote video (full) — permanently muted, audio via audioElRef */}
       <video
         ref={remoteVideoRefCallback}
         autoPlay
@@ -249,24 +268,6 @@ export default function VideoCall() {
         webkit-playsinline="true"
         className="w-full h-full object-cover"
       />
-      {/* Tap to unmute overlay */}
-      {showUnmutePrompt && (
-        <button
-          onClick={() => {
-            if (remoteVideoRef.current) {
-              remoteVideoRef.current.muted = false;
-              remoteVideoRef.current.play().catch(() => {});
-            }
-            setShowUnmutePrompt(false);
-          }}
-          className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 cursor-pointer"
-        >
-          <div className="flex items-center gap-2 bg-background/90 text-foreground px-5 py-3 rounded-full shadow-lg text-sm font-medium">
-            <Volume2 className="w-5 h-5" />
-            Toca para activar el audio
-          </div>
-        </button>
-      )}
       {/* No remote stream placeholder */}
       {(!remoteStream || remoteStream.getTracks().length === 0) && callState === 'connecting' && (
         <div className="absolute inset-0 flex items-center justify-center">
