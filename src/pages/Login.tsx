@@ -115,7 +115,14 @@ export default function Login() {
     
     const result = await login(loginEmail, loginPassword);
     if (result.success) {
-      navigate('/lives');
+      const { data: sessionData } = await supabase.auth.getSession();
+      const uid = sessionData.session?.user?.id;
+      if (uid) {
+        const destination = await resolvePostLoginRoute(uid);
+        navigate(destination);
+      } else {
+        navigate('/lives');
+      }
     } else {
       setLoginError(result.error || t('authErrors.loginError'));
     }
@@ -203,7 +210,7 @@ export default function Login() {
               <Card>
                 <CardHeader>
                   <CardTitle>{t('login.title')}</CardTitle>
-                  <CardDescription>{t('login.email')}</CardDescription>
+                  <CardDescription>{t('login.loginDescription') || 'Ingresa con tu cuenta'}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleLogin} className="space-y-4">

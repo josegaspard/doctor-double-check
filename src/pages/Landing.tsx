@@ -214,7 +214,7 @@ export default function Landing() {
                 />
 
                 {/* Floating Card - Heart Rate */}
-                <div className="absolute top-[30%] left-0 lg:left-0 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-20 max-w-[160px] border border-white/50 shadow-xl animate-bounce" style={{ animationDuration: '6s' }}>
+                <div className="absolute top-[30%] left-0 lg:left-0 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-20 max-w-[160px] border border-white/50 shadow-xl animate-float" style={{ animationDuration: '6s' }}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="p-2 bg-red-100 rounded-lg text-red-500"><HeartPulse className="w-4 h-4" /></div>
                     <span className="text-xs font-bold text-gray-500">Live</span>
@@ -226,7 +226,7 @@ export default function Landing() {
                 </div>
 
                 {/* Floating Card - Record Ready */}
-                <div className="absolute bottom-24 right-4 lg:right-12 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-30 flex items-center gap-3 border-l-4 border-green-500 shadow-2xl animate-bounce" style={{ animationDuration: '4s' }}>
+                <div className="absolute bottom-24 right-4 lg:right-12 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-30 flex items-center gap-3 border-l-4 border-green-500 shadow-2xl animate-float" style={{ animationDuration: '4s' }}>
                   <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
                     <Check className="w-5 h-5" />
                   </div>
@@ -237,7 +237,7 @@ export default function Landing() {
                 </div>
 
                 {/* Floating Card - App Status */}
-                <div className="absolute top-[20%] right-0 lg:-right-8 bg-white/65 backdrop-blur-xl p-3 rounded-xl z-20 flex flex-col gap-2 border border-white/50 shadow-lg animate-bounce" style={{ animationDuration: '5s' }}>
+                <div className="absolute top-[20%] right-0 lg:-right-8 bg-white/65 backdrop-blur-xl p-3 rounded-xl z-20 flex flex-col gap-2 border border-white/50 shadow-lg animate-float" style={{ animationDuration: '5s' }}>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[#163a83] flex items-center justify-center text-white shadow-md">
                       <Smartphone className="w-4 h-4" />

@@ -25,6 +25,7 @@ interface VideoCallControlsProps {
   onToggleChat: () => void;
   onEndCall: () => void;
   showChat: boolean;
+  isDoctor?: boolean;
 }
 
 export function VideoCallControls({
@@ -38,6 +39,7 @@ export function VideoCallControls({
   onToggleChat,
   onEndCall,
   showChat,
+  isDoctor = false,
 }: VideoCallControlsProps) {
   return (
     <motion.div
@@ -89,20 +91,22 @@ export function VideoCallControls({
           {isCameraOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
         </Button>
 
-        {/* Screen Share — visible on all devices */}
-        <Button
-          variant="ghost"
-          size="lg"
-          className={`rounded-full w-11 h-11 sm:w-14 sm:h-14 ${
-            isScreenSharing
-              ? 'bg-primary/80 hover:bg-primary text-white'
-              : 'bg-white/20 hover:bg-white/30 text-white'
-          }`}
-          onClick={onToggleScreenShare}
-          title={isScreenSharing ? 'Dejar de compartir' : 'Compartir pantalla'}
-        >
-          {isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
-        </Button>
+        {/* Screen Share — only for doctors */}
+        {isDoctor && (
+          <Button
+            variant="ghost"
+            size="lg"
+            className={`rounded-full w-11 h-11 sm:w-14 sm:h-14 ${
+              isScreenSharing
+                ? 'bg-primary/80 hover:bg-primary text-white'
+                : 'bg-white/20 hover:bg-white/30 text-white'
+            }`}
+            onClick={onToggleScreenShare}
+            title={isScreenSharing ? 'Dejar de compartir' : 'Compartir pantalla'}
+          >
+            {isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
+          </Button>
+        )}
 
         {/* Chat */}
         <Button
