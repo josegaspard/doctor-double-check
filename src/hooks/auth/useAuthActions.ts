@@ -40,11 +40,10 @@ export function useAuthActions(
     setSupabaseUser(null);
     sessionStorage.removeItem('drDoubleCheck_visitor');
     
-    // Navigate immediately, sign out in background
-    window.location.replace('/lives');
+    // Sign out from Supabase FIRST, then redirect
+    await supabase.auth.signOut();
     
-    // Sign out from Supabase (will complete after redirect starts)
-    supabase.auth.signOut();
+    window.location.replace('/lives');
   };
 
   const loginAsVisitor = () => {

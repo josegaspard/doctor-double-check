@@ -21,6 +21,7 @@ export const en = {
     wallet: 'My Wallet',
     logout: 'Log Out',
     login: 'Log In',
+    doctors: 'Doctors',
   },
   // Common
   common: {
@@ -919,6 +920,14 @@ export const en = {
     notificationsAppearHere: 'Notifications will appear here',
     new: 'New',
     comments: 'comments',
+    cancel: 'Cancel',
+    select: 'Select',
+    read: 'Read',
+    selectAll: 'Select all',
+    deleteBtn: 'Delete',
+    deleting: 'Deleting...',
+    deleteConfirmTitle: 'Delete notification(s)?',
+    deleteConfirmDescription: 'Selected notifications will be permanently deleted. This action cannot be undone.',
   },
   // Medical News
   medicalNews: {

@@ -377,7 +377,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       <span className="text-xs sm:text-sm max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-64">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium">{user.name}</p>
@@ -386,22 +386,22 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <DropdownMenuItem onClick={() => navigate('/profile')} className="py-3 text-sm">
                       <User className="w-4 h-4 mr-2" />
                       {t('nav.profile')}
                     </DropdownMenuItem>
                     {(role === 'patient' || role === 'resident') && (
-                      <DropdownMenuItem onClick={() => navigate('/wallet')}>
+                      <DropdownMenuItem onClick={() => navigate('/wallet')} className="py-3 text-sm">
                         <Wallet className="w-4 h-4 mr-2" />
                         {t('nav.wallet')}
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <DropdownMenuItem onClick={() => navigate('/settings')} className="py-3 text-sm">
                       <Settings className="w-4 h-4 mr-2" />
                       {t('nav.settings')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive py-3 text-sm">
                       <LogOut className="w-4 h-4 mr-2" />
                       {t('nav.logout')}
                     </DropdownMenuItem>

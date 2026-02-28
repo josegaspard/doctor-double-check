@@ -123,10 +123,10 @@ export function VideoCallControls({
         <Button
           variant="destructive"
           size="lg"
-          className="rounded-full w-13 h-13 sm:w-16 sm:h-16 shadow-lg shadow-destructive/40"
+          className="rounded-full w-11 h-11 sm:w-14 sm:h-14 shadow-lg shadow-destructive/40"
           onClick={onEndCall}
         >
-          <PhoneOff className="w-6 h-6" />
+          <PhoneOff className="w-5 h-5" />
         </Button>
       </div>
     </motion.div>

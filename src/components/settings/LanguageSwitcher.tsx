@@ -24,23 +24,23 @@ export function LanguageSwitcher() {
           <Globe className="h-5 w-5" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-40 p-1">
+      <PopoverContent align="end" className="w-48 p-1.5">
         <button
           onClick={() => handleSelect('es')}
-          className={`flex items-center justify-between w-full px-3 py-2 text-sm rounded-md transition-colors ${
+          className={`flex items-center justify-between w-full px-4 py-3 text-sm rounded-md transition-colors min-h-[44px] ${
             language === 'es' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'
           }`}
         >
-          <span>🇪🇸 {t('settings.spanish')}</span>
+          <span className="text-base">🇪🇸 {t('settings.spanish')}</span>
           {language === 'es' && <Check className="h-4 w-4" />}
         </button>
         <button
           onClick={() => handleSelect('en')}
-          className={`flex items-center justify-between w-full px-3 py-2 text-sm rounded-md transition-colors ${
+          className={`flex items-center justify-between w-full px-4 py-3 text-sm rounded-md transition-colors min-h-[44px] ${
             language === 'en' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'
           }`}
         >
-          <span>🇺🇸 {t('settings.english')}</span>
+          <span className="text-base">🇺🇸 {t('settings.english')}</span>
           {language === 'en' && <Check className="h-4 w-4" />}
         </button>
       </PopoverContent>
