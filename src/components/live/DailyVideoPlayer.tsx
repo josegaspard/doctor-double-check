@@ -35,6 +35,7 @@ export function DailyVideoPlayer({
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const screenShareRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
+  const cleaningUpRef = useRef(false);
   
   const [isJoining, setIsJoining] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
@@ -74,6 +75,7 @@ export function DailyVideoPlayer({
           return;
         }
         
+        cleaningUpRef.current = false;
         callRef.current = call;
 
         call.on('joined-meeting', handleJoinedMeeting);
@@ -96,6 +98,7 @@ export function DailyVideoPlayer({
 
     return () => {
       cancelled = true;
+      cleaningUpRef.current = true;
       if (callRef.current) {
         callRef.current.leave().catch(() => {});
         callRef.current.destroy().catch(() => {});
@@ -117,6 +120,7 @@ export function DailyVideoPlayer({
   }, [isOwner]);
 
   const handleLeftMeeting = useCallback(() => {
+    if (cleaningUpRef.current) return;
     setIsConnected(false);
     onLeave?.();
   }, [onLeave]);
