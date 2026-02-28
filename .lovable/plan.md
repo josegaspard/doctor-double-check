@@ -1,84 +1,33 @@
 
 
-# Plan: Fix DailyVideoPlayer Duplicate Instance Error
+# Plan: Fix LivePlayer Redirecting Back to /lives
 
 ## Problem
-The console shows `"Duplicate DailyIframe instances are not allowed"` when a patient tries to watch a live stream. This happens because React 18 StrictMode (used in development) runs effects twice: mount -> unmount -> mount. The first `Daily.createCallObject()` hasn't fully destroyed by the time the second one tries to create, causing the error and preventing the video from loading.
+When clicking a live card, the user lands on `/live/:id` but is immediately redirected back to `/lives`. This happens because:
 
-## Root Cause
-In `src/components/live/DailyVideoPlayer.tsx` (line 56), `Daily.createCallObject()` is called inside a `useEffect`. When React re-runs the effect, the cleanup (line 80-86) calls `leave()` and `destroy()` asynchronously, but the new effect fires before destruction completes, triggering the duplicate instance error.
+1. React 18 StrictMode mounts the component, then unmounts it, then remounts it
+2. During the unmount cleanup, `callRef.current.leave()` is called
+3. This triggers the `left-meeting` Daily event
+4. `handleLeftMeeting` calls `onLeave?.()` which is `() => navigate('/lives')`
+5. The user gets sent back to `/lives` before the second mount can establish the connection
 
 ## Fix
 
 **File: `src/components/live/DailyVideoPlayer.tsx`**
 
-1. Before creating a new call object, check for and destroy any existing instance using `Daily.getCallInstance()`:
-   - If an existing instance exists, destroy it first and wait for it to complete
-   - Add a guard ref (`isInitializing`) to prevent concurrent initialization attempts
+Add a `cleaningUpRef` that is set to `true` during cleanup. The `handleLeftMeeting` callback checks this ref and skips calling `onLeave` if cleanup is in progress.
 
-2. Wrap `Daily.createCallObject()` in a try-catch that specifically handles the "Duplicate" error by:
-   - Getting the existing instance via `Daily.getCallInstance()`
-   - Destroying it
-   - Retrying the creation after a short delay
+### Changes:
+1. Add `const cleaningUpRef = useRef(false);` alongside other refs (around line 37)
+2. In `handleLeftMeeting` (line 113-117): check `if (cleaningUpRef.current) return;` before calling `onLeave`
+3. In the cleanup function (line 97-104): set `cleaningUpRef.current = true` before calling `leave()`
+4. In `initCall` (after creating the call object): reset `cleaningUpRef.current = false`
 
-3. Add a mounted/cancelled flag to the effect to prevent state updates after unmount.
+This is a single-file, 4-line fix that prevents the spurious navigation during React's StrictMode remount cycle while preserving intentional leave behavior (e.g., clicking the hang-up button via `leaveCall()`).
 
-### Specific Code Changes:
-
-```typescript
-useEffect(() => {
-  if (!roomUrl || !token) return;
-  let cancelled = false;
-
-  const initCall = async () => {
-    try {
-      // Destroy any lingering instance first
-      try {
-        const existing = Daily.getCallInstance();
-        if (existing) {
-          await existing.destroy();
-        }
-      } catch { /* no existing instance */ }
-
-      if (cancelled) return;
-
-      const call = Daily.createCallObject({
-        videoSource: isOwner,
-        audioSource: isOwner,
-      });
-      
-      if (cancelled) {
-        call.destroy();
-        return;
-      }
-      
-      callRef.current = call;
-      // ... rest of setup
-    } catch (err) {
-      if (cancelled) return;
-      console.error('Error joining Daily room:', err);
-      setError(err.message || 'Error connecting');
-      setIsJoining(false);
-    }
-  };
-
-  initCall();
-
-  return () => {
-    cancelled = true;
-    if (callRef.current) {
-      callRef.current.leave().catch(() => {});
-      callRef.current.destroy().catch(() => {});
-      callRef.current = null;
-    }
-  };
-}, [roomUrl, token, isOwner]);
-```
-
-## Files to Edit
+## Files
 
 | File | Change |
 |------|--------|
-| `src/components/live/DailyVideoPlayer.tsx` | Add `Daily.getCallInstance()` cleanup before creating new instance; add cancellation guard for StrictMode |
+| `src/components/live/DailyVideoPlayer.tsx` | Add `cleaningUpRef` guard to prevent `onLeave` firing during cleanup |
 
-This is a single-file fix that will resolve the video player not loading for patients (and all users).
