@@ -686,6 +686,8 @@ export const es = {
     viewProfile: 'Ver Perfil',
     startPrivateChat: 'Iniciar Chat Privado',
     noActiveSession: 'Inicia una orientación con este doctor para poder chatear',
+    startingChat: 'Iniciando chat con el doctor...',
+    orientationRequired: 'Se requiere iniciar una orientación médica con este doctor',
     goToProfile: 'Ir al perfil del doctor',
     premiumRecording: 'Grabación Premium',
     premiumRecordingDesc: 'Cuando termine este live, la grabación estará disponible para usuarios premium.',

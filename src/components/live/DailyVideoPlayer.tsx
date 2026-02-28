@@ -165,10 +165,12 @@ export function DailyVideoPlayer({
         const screenEl = document.createElement('video');
         screenEl.autoplay = true;
         screenEl.playsInline = true;
+        screenEl.setAttribute('webkit-playsinline', 'true');
         screenEl.muted = true;
         screenEl.className = 'w-full h-full object-contain';
         const stream = new MediaStream([participant.screenVideoTrack]);
         screenEl.srcObject = stream;
+        screenEl.play().catch(() => { screenEl.muted = true; screenEl.play().catch(() => {}); });
         screenShareRef.current.appendChild(screenEl);
       }
 
@@ -176,6 +178,7 @@ export function DailyVideoPlayer({
         const videoEl = document.createElement('video');
         videoEl.autoplay = true;
         videoEl.playsInline = true;
+        videoEl.setAttribute('webkit-playsinline', 'true');
         videoEl.muted = participant.local;
 
         videoEl.className = participant.local && hasAnyScreenShare
@@ -191,6 +194,8 @@ export function DailyVideoPlayer({
         }
         const stream = new MediaStream(tracks);
         videoEl.srcObject = stream;
+        // Explicit play() for iPad/iOS Safari compatibility
+        videoEl.play().catch(() => { videoEl.muted = true; videoEl.play().catch(() => {}); });
         videoContainerRef.current?.appendChild(videoEl);
       } else if (!participant.local && participant.audioTrack && !participant.video) {
         // Audio-only fallback: participant has audio but no video (e.g., camera off)
