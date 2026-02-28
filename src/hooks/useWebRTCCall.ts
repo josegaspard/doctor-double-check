@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 type CallState = 'idle' | 'connecting' | 'connected' | 'ended' | 'error';
 
 interface SignalPayload {
-  type: 'offer' | 'answer' | 'ice-candidate' | 'ready';
+  type: 'offer' | 'answer' | 'ice-candidate' | 'ready' | 'end-call';
   sdp?: string;
   candidate?: RTCIceCandidateInit;
   senderId: string;
@@ -31,6 +31,8 @@ const ICE_SERVERS: RTCIceServer[] = [
   },
 ];
 
+const CONNECTION_TIMEOUT_MS = 15000;
+
 export function useWebRTCCall(consultationId: string | null, userId: string | null) {
   const [callState, setCallState] = useState<CallState>('idle');
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -46,6 +48,9 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
   const storedOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
   const isCallerRef = useRef(false);
   const remoteTracksRef = useRef<MediaStream>(new MediaStream());
+  const isNegotiatingRef = useRef(false);
+  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const endCallRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     return () => { cleanup(); };
@@ -53,6 +58,10 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
 
   const cleanup = useCallback(() => {
     console.log('[WebRTC] cleanup');
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current);
+      connectionTimeoutRef.current = null;
+    }
     pcRef.current?.close();
     pcRef.current = null;
     localStream?.getTracks().forEach(t => t.stop());
@@ -62,6 +71,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     }
     pendingCandidatesRef.current = [];
     storedOfferRef.current = null;
+    isNegotiatingRef.current = false;
     remoteTracksRef.current = new MediaStream();
   }, [localStream]);
 
@@ -76,21 +86,33 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     return stream;
   }, []);
 
-  const sendOffer = useCallback(() => {
-    if (storedOfferRef.current && channelRef.current && userId) {
-      console.log('[WebRTC] Sending offer');
+  const sendSignal = useCallback((payload: SignalPayload) => {
+    if (channelRef.current) {
       channelRef.current.send({
         type: 'broadcast',
         event: 'signal',
-        payload: {
-          type: 'offer',
-          sdp: storedOfferRef.current.sdp,
-          senderId: userId,
-        } as SignalPayload,
+        payload,
       });
     }
-  }, [userId]);
+  }, []);
 
+  const sendOffer = useCallback(() => {
+    if (storedOfferRef.current && userId) {
+      console.log('[WebRTC] Sending offer');
+      sendSignal({
+        type: 'offer',
+        sdp: storedOfferRef.current.sdp,
+        senderId: userId,
+      });
+    }
+  }, [userId, sendSignal]);
+
+  /**
+   * Create peer connection WITHOUT onnegotiationneeded.
+   * The initial offer is created explicitly in startCall().
+   * onnegotiationneeded is attached AFTER the connection is established
+   * (for screen-share renegotiation).
+   */
   const createPeerConnection = useCallback((stream: MediaStream) => {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
@@ -99,30 +121,25 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       pc.addTrack(track, stream);
     });
 
-    // Use a ref to accumulate remote tracks and create fresh MediaStream for React
     remoteTracksRef.current = new MediaStream();
 
     pc.ontrack = (event) => {
       const track = event.track;
       console.log('[WebRTC] ontrack:', track.kind, 'readyState:', track.readyState);
-      // Use event.track directly (always available, unlike event.streams)
       const existing = remoteTracksRef.current.getTracks();
       if (!existing.find(t => t.id === track.id)) {
         remoteTracksRef.current.addTrack(track);
       }
+      // Create a new MediaStream so React detects the change
       setRemoteStream(new MediaStream(remoteTracksRef.current.getTracks()));
     };
 
     pc.onicecandidate = (event) => {
-      if (event.candidate && channelRef.current && userId) {
-        channelRef.current.send({
-          type: 'broadcast',
-          event: 'signal',
-          payload: {
-            type: 'ice-candidate',
-            candidate: event.candidate.toJSON(),
-            senderId: userId,
-          } as SignalPayload,
+      if (event.candidate && userId) {
+        sendSignal({
+          type: 'ice-candidate',
+          candidate: event.candidate.toJSON(),
+          senderId: userId,
         });
       }
     };
@@ -131,11 +148,32 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       console.log('[WebRTC] ICE connection state:', pc.iceConnectionState);
       if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
         setCallState('connected');
+        // Clear connection timeout
+        if (connectionTimeoutRef.current) {
+          clearTimeout(connectionTimeoutRef.current);
+          connectionTimeoutRef.current = null;
+        }
+        // NOW attach onnegotiationneeded for future renegotiations (screen share)
+        pc.onnegotiationneeded = async () => {
+          if (!isCallerRef.current) return;
+          if (isNegotiatingRef.current) return;
+          isNegotiatingRef.current = true;
+          try {
+            console.log('[WebRTC] Renegotiation needed — creating offer');
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            storedOfferRef.current = offer;
+            sendOffer();
+          } catch (err) {
+            console.error('[WebRTC] renegotiation error:', err);
+          } finally {
+            isNegotiatingRef.current = false;
+          }
+        };
       } else if (pc.iceConnectionState === 'failed') {
-        // Attempt ICE restart once before giving up
         console.log('[WebRTC] ICE failed — attempting restart');
         pc.restartIce();
-        const offer = pc.createOffer({ iceRestart: true }).then(async (o) => {
+        pc.createOffer({ iceRestart: true }).then(async (o) => {
           await pc.setLocalDescription(o);
           storedOfferRef.current = o;
           sendOffer();
@@ -157,28 +195,23 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       }
     };
 
-    pc.onnegotiationneeded = async () => {
-      if (!isCallerRef.current) return;
-      try {
-        console.log('[WebRTC] Negotiation needed — creating offer');
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        storedOfferRef.current = offer;
-        sendOffer();
-      } catch (err) {
-        console.error('[WebRTC] negotiationneeded error:', err);
-      }
-    };
+    // NOTE: onnegotiationneeded is NOT set here. It's set after ICE connects.
 
     pcRef.current = pc;
     return pc;
-  }, [userId, sendOffer]);
+  }, [userId, sendSignal, sendOffer]);
 
   const handleSignal = useCallback(async (signal: SignalPayload) => {
     const pc = pcRef.current;
     if (!pc) return;
 
     try {
+      if (signal.type === 'end-call') {
+        console.log('[WebRTC] Received end-call signal');
+        endCallRef.current();
+        return;
+      }
+
       if (signal.type === 'ready') {
         console.log('[WebRTC] Received ready signal');
         if (isCallerRef.current) {
@@ -196,15 +229,13 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
         await pc.setLocalDescription(answer);
         console.log('[WebRTC] Sending answer');
 
-        channelRef.current?.send({
-          type: 'broadcast',
-          event: 'signal',
-          payload: {
+        if (userId) {
+          sendSignal({
             type: 'answer',
             sdp: answer.sdp,
             senderId: userId,
-          } as SignalPayload,
-        });
+          });
+        }
       } else if (signal.type === 'answer') {
         console.log('[WebRTC] Received answer');
         await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
@@ -222,7 +253,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     } catch (err) {
       console.error('[WebRTC] Signal handling error:', err);
     }
-  }, [userId, sendOffer]);
+  }, [userId, sendOffer, sendSignal]);
 
   const setupSignaling = useCallback((onSignal: (payload: SignalPayload) => void): Promise<ReturnType<typeof supabase.channel>> => {
     return new Promise((resolve, reject) => {
@@ -249,6 +280,16 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     });
   }, [consultationId, userId]);
 
+  const startConnectionTimeout = useCallback(() => {
+    connectionTimeoutRef.current = setTimeout(() => {
+      const state = pcRef.current?.iceConnectionState;
+      if (state !== 'connected' && state !== 'completed') {
+        console.error('[WebRTC] Connection timed out after', CONNECTION_TIMEOUT_MS, 'ms');
+        setCallState('error');
+      }
+    }, CONNECTION_TIMEOUT_MS);
+  }, []);
+
   /** Doctor initiates the call (creates offer) */
   const startCall = useCallback(async () => {
     if (!consultationId || !userId) return;
@@ -261,15 +302,18 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
 
       await setupSignaling(handleSignal);
 
+      // Explicit offer — no race with onnegotiationneeded (it's not set yet)
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       storedOfferRef.current = offer;
       sendOffer();
+
+      startConnectionTimeout();
     } catch (err) {
       console.error('[WebRTC] startCall error:', err);
       setCallState('error');
     }
-  }, [consultationId, userId, getMedia, createPeerConnection, setupSignaling, handleSignal, sendOffer]);
+  }, [consultationId, userId, getMedia, createPeerConnection, setupSignaling, handleSignal, sendOffer, startConnectionTimeout]);
 
   /** Patient joins the call (waits for offer, sends answer) */
   const joinCall = useCallback(async () => {
@@ -284,21 +328,23 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       await setupSignaling(handleSignal);
 
       console.log('[WebRTC] Sending ready signal');
-      channelRef.current?.send({
-        type: 'broadcast',
-        event: 'signal',
-        payload: {
-          type: 'ready',
-          senderId: userId,
-        } as SignalPayload,
+      sendSignal({
+        type: 'ready',
+        senderId: userId,
       });
+
+      startConnectionTimeout();
     } catch (err) {
       console.error('[WebRTC] joinCall error:', err);
       setCallState('error');
     }
-  }, [consultationId, userId, getMedia, createPeerConnection, setupSignaling, handleSignal]);
+  }, [consultationId, userId, getMedia, createPeerConnection, setupSignaling, handleSignal, sendSignal, startConnectionTimeout]);
 
   const endCall = useCallback(() => {
+    // Broadcast end-call signal to the other party
+    if (channelRef.current && userId) {
+      sendSignal({ type: 'end-call', senderId: userId });
+    }
     cleanup();
     setLocalStream(null);
     setRemoteStream(null);
@@ -306,7 +352,12 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     setIsMuted(false);
     setIsCameraOff(false);
     setIsScreenSharing(false);
-  }, [cleanup]);
+  }, [cleanup, userId, sendSignal]);
+
+  // Keep endCallRef in sync so handleSignal can call it without circular deps
+  useEffect(() => {
+    endCallRef.current = endCall;
+  }, [endCall]);
 
   const toggleMute = useCallback(() => {
     if (!localStream) return;
