@@ -15,6 +15,7 @@ import {
   Minimize,
   Monitor,
   MonitorOff,
+  Volume2,
 } from 'lucide-react';
 
 interface DailyVideoPlayerProps {
@@ -46,6 +47,7 @@ export function DailyVideoPlayer({
   const [hasRemoteScreenShare, setHasRemoteScreenShare] = useState(false);
   const [participantCount, setParticipantCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [showUnmutePrompt, setShowUnmutePrompt] = useState(false);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -213,7 +215,9 @@ export function DailyVideoPlayer({
         const videoEl = document.createElement('video');
         videoEl.autoplay = true;
         videoEl.playsInline = true;
-        videoEl.muted = participant.local;
+        videoEl.setAttribute('webkit-playsinline', 'true');
+        // Start ALL videos muted so autoplay works on iOS/mobile
+        videoEl.muted = true;
 
         videoEl.className = participant.local && hasAnyScreenShare
           ? 'absolute bottom-2 right-2 w-24 h-18 sm:w-32 sm:h-24 rounded-lg object-cover z-10 border-2 border-primary shadow-lg'
@@ -221,7 +225,6 @@ export function DailyVideoPlayer({
             ? 'absolute bottom-2 left-2 w-24 h-18 sm:w-32 sm:h-24 rounded-lg object-cover z-10 border-2 border-muted shadow-lg'
             : 'w-full h-full object-cover';
         
-        // Include audio track for remote participants so viewers can hear the doctor
         const tracks: MediaStreamTrack[] = [participant.videoTrack];
         if (!participant.local && participant.audioTrack) {
           tracks.push(participant.audioTrack);
@@ -229,13 +232,35 @@ export function DailyVideoPlayer({
         const stream = new MediaStream(tracks);
         videoEl.srcObject = stream;
         videoContainerRef.current?.appendChild(videoEl);
+
+        // Attempt to play, then try unmuting for remote participants
+        videoEl.play().then(() => {
+          if (!participant.local) {
+            try {
+              videoEl.muted = false;
+            } catch {
+              setShowUnmutePrompt(true);
+            }
+          }
+        }).catch(() => {
+          if (!participant.local) {
+            setShowUnmutePrompt(true);
+          }
+        });
       } else if (!participant.local && participant.audioTrack && !participant.video) {
-        // Audio-only fallback: participant has audio but no video (e.g., camera off)
+        // Audio-only fallback
         const audioEl = document.createElement('audio');
         audioEl.autoplay = true;
+        audioEl.muted = true;
         const audioStream = new MediaStream([participant.audioTrack]);
         audioEl.srcObject = audioStream;
         videoContainerRef.current?.appendChild(audioEl);
+
+        audioEl.play().then(() => {
+          try { audioEl.muted = false; } catch { setShowUnmutePrompt(true); }
+        }).catch(() => {
+          setShowUnmutePrompt(true);
+        });
       }
     });
   };
@@ -274,6 +299,18 @@ export function DailyVideoPlayer({
     if (callRef.current) callRef.current.leave();
     onLeave?.();
   };
+
+  const handleUnmute = useCallback(() => {
+    const containers = [videoContainerRef.current, screenShareRef.current];
+    containers.forEach(container => {
+      if (!container) return;
+      container.querySelectorAll('video, audio').forEach((el) => {
+        (el as HTMLMediaElement).muted = false;
+        (el as HTMLMediaElement).play().catch(() => {});
+      });
+    });
+    setShowUnmutePrompt(false);
+  }, []);
 
   const toggleFullscreen = () => {
     if (!wrapperRef.current) return;
@@ -369,6 +406,19 @@ export function DailyVideoPlayer({
         </div>
       )}
       
+      {/* Tap to unmute overlay */}
+      {showUnmutePrompt && (
+        <button
+          onClick={handleUnmute}
+          className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 cursor-pointer"
+        >
+          <div className="flex items-center gap-2 bg-background/90 text-foreground px-5 py-3 rounded-full shadow-lg text-sm font-medium">
+            <Volume2 className="w-5 h-5" />
+            Toca para activar el sonido
+          </div>
+        </button>
+      )}
+
       {/* Controls */}
       <div className={`absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/80 to-transparent z-20 transition-opacity ${
         isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
