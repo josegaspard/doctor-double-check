@@ -15,19 +15,19 @@ const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun.cloudflare.com:3478' },
   {
-    urls: 'turn:a.relay.metered.ca:80',
-    username: 'free',
-    credential: 'free',
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
   },
   {
-    urls: 'turn:a.relay.metered.ca:443',
-    username: 'free',
-    credential: 'free',
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
   },
   {
-    urls: 'turn:a.relay.metered.ca:443?transport=tcp',
-    username: 'free',
-    credential: 'free',
+    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
   },
 ];
 
@@ -132,7 +132,18 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
         setCallState('connected');
       } else if (pc.iceConnectionState === 'failed') {
-        setCallState('error');
+        // Attempt ICE restart once before giving up
+        console.log('[WebRTC] ICE failed — attempting restart');
+        pc.restartIce();
+        const offer = pc.createOffer({ iceRestart: true }).then(async (o) => {
+          await pc.setLocalDescription(o);
+          storedOfferRef.current = o;
+          sendOffer();
+        }).catch(() => {
+          setCallState('error');
+        });
+      } else if (pc.iceConnectionState === 'disconnected') {
+        console.log('[WebRTC] ICE disconnected — waiting for recovery...');
       }
     };
 

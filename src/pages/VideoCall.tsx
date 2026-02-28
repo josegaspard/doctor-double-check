@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VideoCallControls } from '@/components/videocall/VideoCallControls';
 import { VideoCallChat } from '@/components/videocall/VideoCallChat';
-import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 
@@ -46,6 +46,7 @@ export default function VideoCall() {
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState<InCallMessage[]>([]);
   const [otherParticipantName, setOtherParticipantName] = useState('');
+  const [showUnmutePrompt, setShowUnmutePrompt] = useState(false);
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -66,6 +67,7 @@ export default function VideoCall() {
     remoteVideoRef.current = el;
     if (el && remoteStream) {
       el.srcObject = remoteStream;
+      el.muted = true; // required for autoplay on iOS
       el.play().catch(() => {});
     }
   }, [remoteStream]);
@@ -81,7 +83,23 @@ export default function VideoCall() {
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.play().catch(() => {});
+      remoteVideoRef.current.muted = true; // start muted for autoplay policy
+      remoteVideoRef.current.play().then(() => {
+        // Attempt to unmute programmatically
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.muted = false;
+          // iOS silently pauses when unmuted — detect and show prompt
+          setTimeout(() => {
+            if (remoteVideoRef.current?.paused) {
+              remoteVideoRef.current.muted = true;
+              remoteVideoRef.current.play().catch(() => {});
+              setShowUnmutePrompt(true);
+            }
+          }, 150);
+        }
+      }).catch(() => {
+        setShowUnmutePrompt(true);
+      });
     }
   }, [remoteStream]);
 
@@ -226,8 +244,29 @@ export default function VideoCall() {
         ref={remoteVideoRefCallback}
         autoPlay
         playsInline
+        muted
+        // @ts-ignore webkit-playsinline for older iOS
+        webkit-playsinline="true"
         className="w-full h-full object-cover"
       />
+      {/* Tap to unmute overlay */}
+      {showUnmutePrompt && (
+        <button
+          onClick={() => {
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.muted = false;
+              remoteVideoRef.current.play().catch(() => {});
+            }
+            setShowUnmutePrompt(false);
+          }}
+          className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 cursor-pointer"
+        >
+          <div className="flex items-center gap-2 bg-background/90 text-foreground px-5 py-3 rounded-full shadow-lg text-sm font-medium">
+            <Volume2 className="w-5 h-5" />
+            Toca para activar el audio
+          </div>
+        </button>
+      )}
       {/* No remote stream placeholder */}
       {(!remoteStream || remoteStream.getTracks().length === 0) && callState === 'connecting' && (
         <div className="absolute inset-0 flex items-center justify-center">

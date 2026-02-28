@@ -236,11 +236,15 @@ export function DailyVideoPlayer({
         // Attempt to play, then try unmuting for remote participants
         videoEl.play().then(() => {
           if (!participant.local) {
-            try {
-              videoEl.muted = false;
-            } catch {
-              setShowUnmutePrompt(true);
-            }
+            videoEl.muted = false;
+            // iOS Safari silently pauses the video when unmuted programmatically
+            setTimeout(() => {
+              if (videoEl.paused) {
+                videoEl.muted = true;
+                videoEl.play().catch(() => {});
+                setShowUnmutePrompt(true);
+              }
+            }, 150);
           }
         }).catch(() => {
           if (!participant.local) {
@@ -257,10 +261,15 @@ export function DailyVideoPlayer({
         videoContainerRef.current?.appendChild(audioEl);
 
         audioEl.play().then(() => {
-          try { audioEl.muted = false; } catch { setShowUnmutePrompt(true); }
-        }).catch(() => {
-          setShowUnmutePrompt(true);
-        });
+          audioEl.muted = false;
+          setTimeout(() => {
+            if (audioEl.paused) {
+              audioEl.muted = true;
+              audioEl.play().catch(() => {});
+              setShowUnmutePrompt(true);
+            }
+          }, 150);
+        }).catch(() => { setShowUnmutePrompt(true); });
       }
     });
   };
