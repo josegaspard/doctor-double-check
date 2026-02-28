@@ -39,7 +39,7 @@ export default function VideoCall() {
   const {
     callState, localStream, remoteStream,
     isMuted, isCameraOff, isScreenSharing,
-    startCall, joinCall, endCall,
+    startCall, joinCall, endCall, resetCall,
     toggleMute, toggleCamera, toggleScreenShare,
   } = useWebRTCCall(consultationId, user?.id || null);
 
@@ -440,7 +440,14 @@ export default function VideoCall() {
                 <p className="text-sm text-muted-foreground mb-6">
                   No se pudo establecer la conexión. Verifica tu cámara/micrófono e intenta de nuevo.
                 </p>
-                <Button onClick={handleStart}>Reintentar</Button>
+                <Button onClick={() => {
+                  if (audioElRef.current) {
+                    audioElRef.current.pause();
+                    audioElRef.current.srcObject = null;
+                    audioElRef.current = null;
+                  }
+                  resetCall();
+                }}>Reintentar</Button>
               </div>
             )}
           </CardContent>
