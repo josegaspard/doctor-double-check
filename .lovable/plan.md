@@ -1,88 +1,70 @@
 
-# Plan: Fix Critical Bugs and UX/UI Improvements
 
-## 1. Fix "nav.doctors" Translation Key Missing
+# Plan: Fix iPad Black Screen, Likes Count, Share Options, Private Chat, and Chat Scroll Issues
 
-The `nav.doctors` key doesn't exist in either `es.ts` or `en.ts`, causing "Nav.doctors" to display in the bottom navigation bar.
+## 1. iPad Black Screen Fix (DailyVideoPlayer)
 
-**Files:** `src/lib/i18n/es.ts`, `src/lib/i18n/en.ts`
-- Add `doctors: 'Doctores'` to `nav` section in `es.ts`
-- Add `doctors: 'Doctors'` to `nav` section in `en.ts`
+**Root Cause:** In `DailyVideoPlayer.tsx`, video elements are created programmatically with `document.createElement('video')` and `autoplay` is set as a property. On iPad/iOS Safari, the `autoplay` property alone is insufficient -- an explicit `.play()` call is required after setting `srcObject`, with a muted fallback for autoplay policy compliance.
 
-## 2. Fix Notifications Page Infinite Loading
+**File: `src/components/live/DailyVideoPlayer.tsx`**
+- In `updateVideoElements()`, after setting `videoEl.srcObject = stream`, add `videoEl.play().catch(() => { videoEl.muted = true; videoEl.play().catch(() => {}); })` for each video element
+- Do the same for screen share video elements
+- Add `videoEl.setAttribute('webkit-playsinline', 'true')` for older iPads
 
-The `useNotifications` hook initializes `isLoading = true` but only sets it to `false` inside `fetchNotifications()`, which requires `supabaseUser?.id`. If auth hasn't resolved yet or user is a visitor, the page stays loading forever.
+## 2. Likes Count Showing 0
 
-**File:** `src/hooks/useNotifications.ts`
-- Add early return in `useEffect`: if `!supabaseUser?.id`, set `isLoading(false)` immediately
-- This ensures visitors and unauthenticated users see the empty state instead of infinite spinner
+**Root Cause:** Two problems:
+1. `likeLive()` in LivesContext doesn't check the Supabase insert response for errors -- it only catches thrown exceptions. If the DB insert fails (e.g., RLS), the error is silently ignored but the optimistic update already happened, then gets rolled back by the realtime subscription
+2. In LivePlayer, the display uses `realtimeLikesCount || live.likesCount` -- the `||` operator treats `0` as falsy, so if the DB starts at 0 and the realtime hook hasn't fetched yet, it stays at 0 even after optimistic increment
 
-## 3. Fix Logout Not Working
+**File: `src/contexts/LivesContext.tsx`**
+- In `likeLive()`: Destructure `{ error }` from the insert response and throw if error exists, so the catch block can rollback
+- In `unlikeLive()`: Same -- check for `{ error }` from the delete response
 
-The `logout` function calls `window.location.replace('/lives')` before `supabase.auth.signOut()` completes. The page redirect triggers `onAuthStateChange` which sees the still-active session and re-authenticates. 
+**File: `src/pages/LivePlayer.tsx`**
+- Change `realtimeLikesCount || live.likesCount` to `realtimeLikesCount > 0 ? realtimeLikesCount : live.likesCount` (3 occurrences) -- this ensures 0 from realtime doesn't override a valid context value
 
-**File:** `src/hooks/auth/useAuthActions.ts`
-- Change logout to `await supabase.auth.signOut()` FIRST, then redirect
-- Remove the "fire and forget" pattern -- sign out must complete before navigation
+## 3. Share Button with Platform Options
 
-## 4. Video Call Hang-Up Button Size
+**Root Cause:** Currently uses Web Share API with clipboard fallback. User wants WhatsApp, email, and copy link options visible.
 
-The end-call button is currently `w-13 h-13 sm:w-16 sm:h-16` while other buttons are `w-11 h-11 sm:w-14 sm:h-14`. This makes it visually inconsistent.
+**File: `src/pages/LivePlayer.tsx`**
+- Replace the simple share button with a Popover containing share options:
+  - Copy link (clipboard)
+  - WhatsApp (`https://wa.me/?text=...`)
+  - Email (`mailto:?subject=...&body=...`)
+  - Native share (if `navigator.share` is available)
+- Use existing Popover component from `@/components/ui/popover`
 
-**File:** `src/components/videocall/VideoCallControls.tsx`
-- Change end-call button from `w-13 h-13 sm:w-16 sm:h-16` to `w-11 h-11 sm:w-14 sm:h-14` to match all other control buttons
+## 4. "Start Private Chat" Error Fix
 
-## 5. Chat Mobile UX/UI Improvements
+**Root Cause:** The `.or()` filter syntax may fail, and the logic doesn't check whether the doctor offers free consultations. When no session exists, user should be redirected to the doctor's profile with a payment modal trigger.
 
-The chat page has layout issues on mobile -- the grid doesn't adapt well and elements can overflow.
+**File: `src/pages/LivePlayer.tsx`**
+- Rewrite `handleStartPrivateChat`:
+  1. Query `chat_sessions` using two separate `.eq()` conditions instead of `.or()` with complex filter
+  2. If active session found, navigate to `/chat?session=ID`
+  3. If no session, fetch `doctor_profiles_public.consultation_fee` for the doctor
+  4. If fee is 0 (free), navigate directly to `/chat` and create a new session
+  5. If fee > 0, navigate to `/doctor/{doctorId}?orientation=true` to trigger the payment modal
+  6. Show appropriate toast message
 
-**File:** `src/pages/Chat.tsx`
-- Improve the height calculation for the chat container on mobile
-- Ensure the sessions list and messages panel don't overflow horizontally
+## 5. Chat Scroll-to-Footer Bug (Critical)
 
-**File:** `src/components/chat/ChatMessagesPanel.tsx`
-- Add `overflow-hidden` to prevent horizontal overflow on mobile
-- Ensure input area respects safe-area insets properly
+**Root Cause:** `messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })` scrolls the nearest scrollable ancestor. However, Radix ScrollArea uses `overflow: hidden` on the root and the actual scroll container is an inner `Viewport` element. Since the root has `overflow: hidden`, `scrollIntoView` traverses UP to the page-level scrollable element (the body/html), causing the entire page to scroll to the footer.
 
-## 6. Improve Mobile Menu Sizes (Profile Dropdown & Language Switcher)
-
-The dropdown menus for profile and language are too small for older adult users.
-
-**File:** `src/components/layout/MainLayout.tsx`
-- Increase `DropdownMenuContent` width from `w-56` to `w-64`
-- Increase dropdown menu item padding and font sizes for touch friendliness
-- Increase the profile avatar button touch target
-
-**File:** `src/components/settings/LanguageSwitcher.tsx`
-- Increase dropdown item sizes and touch targets (min 44px height per item)
-
-## 7. Notifications Page Hardcoded Spanish Strings
-
-Several strings in `Notifications.tsx` are hardcoded in Spanish.
-
-**File:** `src/pages/Notifications.tsx`
-- Replace "Cancelar" / "Seleccionar" / "Leidas" / "Seleccionar todas" / "Eliminar" with `t()` calls
-- Add corresponding keys to both i18n files
-
-## 8. Admin Panel UX - Back Navigation
-
-Ensure all admin sub-pages have clear back arrows to return to the admin dashboard. Most already have them (like `AdminUsers.tsx`), but verify consistency.
-
-**File:** `src/pages/AdminDashboard.tsx`
-- Verify module cards are clearly clickable with visual affordance
-- Add descriptive headers
+**File: `src/components/live/LiveChat.tsx`**
+- Remove the `useEffect` that calls `messagesEndRef.current?.scrollIntoView()`
+- Instead, get a ref to the ScrollArea's viewport element and manually set `viewport.scrollTop = viewport.scrollHeight`
+- Use a ref on the ScrollArea component and query `.querySelector('[data-radix-scroll-area-viewport]')` to find the viewport
+- Only auto-scroll when a new message is added (not on every re-render), and only if user is already near the bottom (within 100px) to avoid disrupting manual scrolling
 
 ## Technical Summary
 
 | File | Changes |
 |------|---------|
-| `src/lib/i18n/es.ts` | Add `nav.doctors` + notification page keys |
-| `src/lib/i18n/en.ts` | Add `nav.doctors` + notification page keys |
-| `src/hooks/useNotifications.ts` | Fix infinite loading for visitors/unauthenticated users |
-| `src/hooks/auth/useAuthActions.ts` | Fix logout: await signOut before redirect |
-| `src/components/videocall/VideoCallControls.tsx` | Normalize hang-up button size |
-| `src/pages/Chat.tsx` | Mobile layout improvements |
-| `src/components/chat/ChatMessagesPanel.tsx` | Prevent horizontal overflow on mobile |
-| `src/components/layout/MainLayout.tsx` | Increase dropdown menu sizes for accessibility |
-| `src/components/settings/LanguageSwitcher.tsx` | Increase touch targets |
-| `src/pages/Notifications.tsx` | Replace hardcoded Spanish with i18n keys |
+| `src/components/live/DailyVideoPlayer.tsx` | Add `.play()` with muted fallback on programmatic video elements for iPad |
+| `src/contexts/LivesContext.tsx` | Check `{ error }` from Supabase insert/delete in likeLive/unlikeLive |
+| `src/pages/LivePlayer.tsx` | Fix likes display with nullish check; add share popover with WhatsApp/email/copy; fix private chat logic with consultation fee check |
+| `src/components/live/LiveChat.tsx` | Replace `scrollIntoView` with manual viewport scroll to prevent page scroll |
+
