@@ -1,75 +1,70 @@
 
-# Plan: Fix Onboarding Redirect on Refresh + Fix Recording Deletion
 
-## Problem 1: Onboarding Page Appears on F5
+# Plan: Fix Live Video Not Playing on iPad/Mobile
 
-### Root Cause
-In `src/hooks/auth/useAuthState.ts` (lines 78-85), the redirect to `/onboarding` fires on both `SIGNED_IN` and `INITIAL_SESSION` events when the user is on `/` or `/login`. The issue is that `INITIAL_SESSION` fires on **every page load**, including refreshes.
+## Problem
+On iPad and mobile devices (especially iOS Safari), the live video doesn't play for viewers. This is because mobile browsers **block unmuted autoplay** -- they require either user interaction or muted video to autoplay.
 
-Here is the likely sequence:
-1. User presses F5 on any page
-2. The `validateAuthSession()` call inside the `onAuthStateChange` handler sometimes fails during page load (token not yet refreshed), which calls `signOut()` and redirects to `/lives`
-3. Or, the user happens to be on `/` when refreshing
-4. `INITIAL_SESSION` fires, the profile loads, and if `onboardingCompleted` evaluates to falsy for any reason, it redirects to `/onboarding`
+In `DailyVideoPlayer.tsx`, the `updateVideoElements` function creates video elements with `autoplay = true` but sets `muted = false` for remote participants (the doctor's stream). iOS Safari silently refuses to play these, resulting in a black screen with no error.
 
-### Fix
-The onboarding redirect should ONLY happen on `SIGNED_IN` events (fresh logins), NOT on `INITIAL_SESSION` (page refreshes). A user who already completed onboarding should never be redirected there on a page refresh.
+## Solution
 
-**File: `src/hooks/auth/useAuthState.ts`**
-- Change line 78 from:
+Apply a **muted autoplay with unmute fallback** pattern:
+
+1. Initially create all video elements as **muted** so autoplay works on all platforms
+2. After the video starts playing, attempt to **unmute programmatically**
+3. If unmuting fails (browser policy), show a visible **"Tap to unmute"** button
+4. Add `webkit-playsinline` attribute for older iOS compatibility
+5. Add explicit `.play()` call with error handling as a safety net
+
+## Technical Changes
+
+### File: `src/components/live/DailyVideoPlayer.tsx`
+
+**1. Add state for mute prompt** (around line 48):
+- Add `const [showUnmutePrompt, setShowUnmutePrompt] = useState(false);`
+
+**2. Update `updateVideoElements` (lines 212-231)**:
+- Set `videoEl.muted = true` for ALL participants initially (not just local)
+- Add `videoEl.setAttribute('webkit-playsinline', 'true')` for older iOS
+- After `videoEl.srcObject = stream`, call `videoEl.play()` with a `.then()` that attempts to unmute remote participant videos:
   ```typescript
-  const shouldHandleRedirectEvent = event === 'SIGNED_IN' || event === 'INITIAL_SESSION';
+  videoEl.play().then(() => {
+    if (!participant.local) {
+      videoEl.muted = false; // try unmuting
+    }
+  }).catch(() => {
+    // Autoplay completely blocked, show tap-to-play
+    if (!participant.local) {
+      setShowUnmutePrompt(true);
+    }
+  });
   ```
-  to:
-  ```typescript
-  const shouldHandleRedirectEvent = event === 'SIGNED_IN';
-  ```
-- For `INITIAL_SESSION`, only redirect away from `/` and `/login` to the user's dashboard (skip the onboarding check entirely, since completed users should never see it again on refresh)
-- The Onboarding page itself already has its own guard (lines 342-351) that checks `onboarding_completed` and redirects to `/lives` if already complete
 
----
+**3. Also handle audio-only fallback (lines 232-238)**:
+- Same muted-first pattern for audio elements
+- `audioEl.muted = true` initially, then attempt unmute after `.play()`
 
-## Problem 2: Deleting Recordings Breaks
+**4. Add "Tap to unmute" UI overlay** (in the JSX, around line 345):
+- Render a button overlay when `showUnmutePrompt` is true
+- On tap, find all video/audio elements in the container and set `muted = false`, then call `.play()`
+- This satisfies the browser's "user gesture" requirement
 
-### Root Cause
-The `purchases` table has a foreign key (`purchases_recording_id_fkey`) referencing `recordings.id`. When a doctor tries to delete a recording that has been purchased, the database rejects the DELETE because of the FK constraint (no CASCADE).
-
-### Fix
-
-**Database Migration:**
-- Alter the FK constraint on `purchases.recording_id` to add `ON DELETE CASCADE`, so deleting a recording automatically removes its purchase records
-- This is safe because purchases are financial history tied to the recording -- if the recording is gone, the purchase record is no longer meaningful
-
-Alternatively, if purchase history must be preserved:
-- Change to `ON DELETE SET NULL` and make `recording_id` nullable
-- This preserves the purchase record but detaches it from the deleted recording
-
-I will use `ON DELETE SET NULL` to preserve purchase history (safer for financial data).
-
-**Database Migration SQL:**
-```sql
-ALTER TABLE purchases
-  DROP CONSTRAINT purchases_recording_id_fkey;
-
-ALTER TABLE purchases
-  ALTER COLUMN recording_id DROP NOT NULL;
-
-ALTER TABLE purchases
-  ADD CONSTRAINT purchases_recording_id_fkey
-  FOREIGN KEY (recording_id) REFERENCES recordings(id) ON DELETE SET NULL;
+**5. Add unmute handler function**:
+```typescript
+const handleUnmute = useCallback(() => {
+  if (!videoContainerRef.current) return;
+  videoContainerRef.current.querySelectorAll('video, audio').forEach((el) => {
+    (el as HTMLMediaElement).muted = false;
+    (el as HTMLMediaElement).play().catch(() => {});
+  });
+  setShowUnmutePrompt(false);
+}, []);
 ```
 
-**File: `src/pages/DoctorRecordings.tsx`**
-- Also delete the recording's video file from the `recordings` storage bucket before deleting the DB row (cleanup)
-- Add better error handling with specific messages for the user
+## Files
 
----
+| File | Change |
+|------|--------|
+| `src/components/live/DailyVideoPlayer.tsx` | Muted autoplay + unmute fallback + tap-to-unmute UI |
 
-## Summary
-
-| Change | File/Location |
-|--------|--------------|
-| Restrict onboarding redirect to `SIGNED_IN` only | `src/hooks/auth/useAuthState.ts` |
-| Add `INITIAL_SESSION` dashboard redirect (without onboarding check) | `src/hooks/auth/useAuthState.ts` |
-| Fix FK constraint for recording deletion | Database migration (purchases table) |
-| Improve delete handler with storage cleanup | `src/pages/DoctorRecordings.tsx` |
