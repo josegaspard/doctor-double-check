@@ -144,8 +144,23 @@ export function DailyVideoPlayer({
   }, [onParticipantCountChange]);
 
   const handleError = useCallback((event: DailyEventObject) => {
-    console.error('Daily error:', event);
     const errorMsg = (event as any).errorMsg || '';
+    
+    // When the doctor ends the live, the room is destroyed and viewers get
+    // a "meeting has ended" or "exp" error — this is NOT a real error.
+    if (
+      errorMsg.includes('meeting has ended') ||
+      errorMsg.includes('exp') ||
+      errorMsg.includes('nbf') ||
+      (event as any).error?.type === 'meeting-session-state-error'
+    ) {
+      console.log('Daily room ended by host');
+      setIsConnected(false);
+      onLeave?.();
+      return;
+    }
+
+    console.error('Daily error:', event);
     let userMessage = 'Error de conexión';
     
     if (errorMsg.includes('account-missing-payment-method')) {
@@ -158,7 +173,7 @@ export function DailyVideoPlayer({
     
     setError(userMessage);
     toast.error(userMessage);
-  }, []);
+  }, [onLeave]);
 
   const updateVideoElements = (participants: Record<string, DailyParticipant>) => {
     if (!videoContainerRef.current) return;
