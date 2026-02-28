@@ -68,10 +68,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Fallback for HMR / context unavailability
+const LANGUAGE_DEFAULTS: LanguageContextType = {
+  language: (localStorage.getItem('preferred_language') as 'es' | 'en') || 'es',
+  setLanguage: async () => {},
+  t: (path: string) => translate((localStorage.getItem('preferred_language') as 'es' | 'en') || 'es', path),
+  translations: getTranslations((localStorage.getItem('preferred_language') as 'es' | 'en') || 'es'),
+};
+
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    console.warn('useLanguage called outside LanguageProvider – returning defaults');
+    return LANGUAGE_DEFAULTS;
   }
   return context;
 }
