@@ -75,15 +75,20 @@ export function useAuthState() {
         // Some linked accounts can report provider=email even when login happened with Google.
         const currentPath = window.location.pathname;
         const shouldRedirect = currentPath === '/' || currentPath === '/login';
-        const shouldHandleRedirectEvent = event === 'SIGNED_IN' || event === 'INITIAL_SESSION';
 
-        if (shouldHandleRedirectEvent && shouldRedirect) {
-          console.log('[Auth] Post-login redirect check - Event:', event, 'Role:', profile?.role, 'OnboardingCompleted:', profile?.onboardingCompleted);
+        if (shouldRedirect) {
+          if (event === 'SIGNED_IN') {
+            // Fresh login: check onboarding status
+            console.log('[Auth] SIGNED_IN redirect - Role:', profile?.role, 'OnboardingCompleted:', profile?.onboardingCompleted);
+            if (!profile?.onboardingCompleted) {
+              console.log('[Auth] Redirecting to onboarding');
+              window.location.replace('/onboarding');
+              return;
+            }
+          }
 
-          if (!profile?.onboardingCompleted) {
-            console.log('[Auth] Redirecting to onboarding');
-            window.location.replace('/onboarding');
-          } else {
+          // Both SIGNED_IN (with completed onboarding) and INITIAL_SESSION: redirect to dashboard
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
             console.log('[Auth] Redirecting based on role:', profile?.role);
             if (profile?.role === 'doctor') {
               window.location.replace('/doctor/dashboard');
