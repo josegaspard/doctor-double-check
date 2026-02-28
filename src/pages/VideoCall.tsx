@@ -16,6 +16,8 @@ import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle } from 'lucide-react
 import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 import type { DailyCall } from '@daily-co/daily-js';
+import { useConnectionQuality } from '@/hooks/useConnectionQuality';
+import { ConnectionQualityIndicator } from '@/components/videocall/ConnectionQualityIndicator';
 
 interface InCallMessage {
   id: string;
@@ -138,6 +140,8 @@ export default function VideoCall() {
     toggleMute, toggleCamera, toggleScreenShare,
     callObject,
   } = useWebRTCCall(consultationId, user?.id || null);
+
+  const connectionStats = useConnectionQuality(callObject, callState === 'connected');
 
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState<InCallMessage[]>([]);
@@ -313,6 +317,9 @@ export default function VideoCall() {
 
   const videoLayoutJSX = (
     <div ref={dailyContainerRef} className="relative w-full h-full bg-black" style={{ minHeight: 300 }}>
+      {callState === 'connected' && (
+        <ConnectionQualityIndicator stats={connectionStats} />
+      )}
       {callState === 'connecting' && (
         <div className="absolute inset-0 flex items-center justify-center z-20">
           <div className="text-center">
