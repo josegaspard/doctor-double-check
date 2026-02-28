@@ -70,6 +70,21 @@ export default function VideoCall() {
     }
   }, [remoteStream]);
 
+  // ── Sync streams to video elements when they update ──
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.play().catch(() => {});
+    }
+  }, [localStream]);
+
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play().catch(() => {});
+    }
+  }, [remoteStream]);
+
   // Fetch other participant name
   useEffect(() => {
     if (!consultationId) return;

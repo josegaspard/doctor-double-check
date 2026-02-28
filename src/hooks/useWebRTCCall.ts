@@ -14,6 +14,21 @@ const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun.cloudflare.com:3478' },
+  {
+    urls: 'turn:a.relay.metered.ca:80',
+    username: 'free',
+    credential: 'free',
+  },
+  {
+    urls: 'turn:a.relay.metered.ca:443',
+    username: 'free',
+    credential: 'free',
+  },
+  {
+    urls: 'turn:a.relay.metered.ca:443?transport=tcp',
+    username: 'free',
+    credential: 'free',
+  },
 ];
 
 export function useWebRTCCall(consultationId: string | null, userId: string | null) {
@@ -88,11 +103,13 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     remoteTracksRef.current = new MediaStream();
 
     pc.ontrack = (event) => {
-      console.log('[WebRTC] ontrack:', event.track.kind, 'readyState:', event.track.readyState);
-      event.streams[0]?.getTracks().forEach(track => {
+      const track = event.track;
+      console.log('[WebRTC] ontrack:', track.kind, 'readyState:', track.readyState);
+      // Use event.track directly (always available, unlike event.streams)
+      const existing = remoteTracksRef.current.getTracks();
+      if (!existing.find(t => t.id === track.id)) {
         remoteTracksRef.current.addTrack(track);
-      });
-      // Create a NEW MediaStream to trigger React re-render
+      }
       setRemoteStream(new MediaStream(remoteTracksRef.current.getTracks()));
     };
 
@@ -112,6 +129,11 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
 
     pc.oniceconnectionstatechange = () => {
       console.log('[WebRTC] ICE connection state:', pc.iceConnectionState);
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        setCallState('connected');
+      } else if (pc.iceConnectionState === 'failed') {
+        setCallState('error');
+      }
     };
 
     pc.onconnectionstatechange = () => {
