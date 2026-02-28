@@ -15,6 +15,7 @@ import { VideoCallChat } from '@/components/videocall/VideoCallChat';
 import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
+import DailyIframe from '@daily-co/daily-js';
 
 interface InCallMessage {
   id: string;
@@ -37,81 +38,142 @@ export default function VideoCall() {
   const isDoctor = role === 'doctor';
 
   const {
-    callState, localStream, remoteStream,
+    callState,
     isMuted, isCameraOff, isScreenSharing,
     startCall, joinCall, endCall, resetCall,
     toggleMute, toggleCamera, toggleScreenShare,
+    callObject,
   } = useWebRTCCall(consultationId, user?.id || null);
 
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState<InCallMessage[]>([]);
   const [otherParticipantName, setOtherParticipantName] = useState('');
 
-  const localVideoRef = useRef<HTMLVideoElement | null>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const dailyContainerRef = useRef<HTMLDivElement>(null);
+  const dailyFrameRef = useRef<ReturnType<typeof DailyIframe.wrap> | null>(null);
   const chatChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-
-  // ── Dedicated audio element for remote audio (unlocked on user gesture) ──
-  const audioElRef = useRef<HTMLAudioElement | null>(null);
 
   const timeLocale = language === 'es' ? 'es-MX' : 'en-US';
 
-  /**
-   * "Unlock" audio on user gesture. Called inside handleStart (button click).
-   * Creates an <audio> element that the browser trusts for autoplay.
-   */
-  const unlockAudio = useCallback(() => {
-    if (audioElRef.current) return; // already unlocked
-    const audio = new Audio();
-    audio.volume = 1;
-    // Play a silent buffer to unlock on iOS
-    audio.play().catch(() => {});
-    audioElRef.current = audio;
-    console.log('[VideoCall] Audio element unlocked');
-  }, []);
-
-  // ── Callback refs: attach srcObject the instant the <video> mounts ──
-  const localVideoRefCallback = useCallback((el: HTMLVideoElement | null) => {
-    localVideoRef.current = el;
-    if (el && localStream) {
-      el.srcObject = localStream;
-      el.play().catch(() => {});
-    }
-  }, [localStream]);
-
-  const remoteVideoRefCallback = useCallback((el: HTMLVideoElement | null) => {
-    remoteVideoRef.current = el;
-    if (el && remoteStream) {
-      el.srcObject = remoteStream;
-      // Video element stays PERMANENTLY muted — audio goes through audioElRef
-      el.play().catch(() => {});
-    }
-  }, [remoteStream]);
-
-  // ── Sync local stream to video element when it updates ──
+  // Embed Daily.co iframe when call object is ready and connected
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-      localVideoRef.current.play().catch(() => {});
-    }
-  }, [localStream]);
+    if (callState !== 'connected' || !callObject || !dailyContainerRef.current) return;
 
-  // ── Sync remote stream: video element (muted) + audio element (unmuted) ──
+    // Daily call object is already joined. Create an iframe for the UI.
+    const container = dailyContainerRef.current;
+    
+    // Clear any existing iframe
+    container.innerHTML = '';
+
+    // Create iframe from the call object
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.allow = 'camera; microphone; autoplay; display-capture';
+    
+    // Get the meeting URL from the call object
+    const meetingState = callObject.meetingState();
+    const participants = callObject.participants();
+    
+    console.log('[VideoCall] Meeting state:', meetingState, 'Participants:', Object.keys(participants).length);
+    
+    // We use call object mode — the video is managed by Daily's call object
+    // We need to render video tracks manually from the call object
+    renderDailyVideo(container);
+
+    return () => {
+      container.innerHTML = '';
+    };
+  }, [callState, callObject]);
+
+  // Render Daily video tracks into the container
+  const renderDailyVideo = useCallback((container: HTMLDivElement) => {
+    if (!callObject) return;
+
+    container.innerHTML = '';
+    container.style.position = 'relative';
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.backgroundColor = '#000';
+
+    const participants = callObject.participants();
+    
+    // Remote video (fullscreen)
+    const remoteParticipants = Object.values(participants).filter(p => !p.local);
+    const localParticipant = participants.local;
+
+    if (remoteParticipants.length > 0) {
+      const remote = remoteParticipants[0];
+      if (remote.tracks?.video?.persistentTrack) {
+        const remoteVideo = document.createElement('video');
+        remoteVideo.srcObject = new MediaStream([remote.tracks.video.persistentTrack]);
+        if (remote.tracks?.audio?.persistentTrack) {
+          remoteVideo.srcObject = new MediaStream([
+            remote.tracks.video.persistentTrack,
+            remote.tracks.audio.persistentTrack,
+          ]);
+        }
+        remoteVideo.autoplay = true;
+        remoteVideo.playsInline = true;
+        remoteVideo.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+        container.appendChild(remoteVideo);
+        remoteVideo.play().catch(() => {});
+      } else {
+        // Show waiting for video
+        const waiting = document.createElement('div');
+        waiting.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;';
+        waiting.innerHTML = `<p style="color:rgba(255,255,255,0.7);font-size:14px;">${remote.user_name || 'Participante'} conectado (sin video)</p>`;
+        container.appendChild(waiting);
+      }
+    } else {
+      const waiting = document.createElement('div');
+      waiting.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;';
+      waiting.innerHTML = `
+        <div style="width:48px;height:48px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite;"></div>
+        <p style="color:rgba(255,255,255,0.7);font-size:14px;">Esperando al otro participante...</p>
+        <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+      `;
+      container.appendChild(waiting);
+    }
+
+    // Local video (PiP)
+    if (localParticipant?.tracks?.video?.persistentTrack) {
+      const localVideo = document.createElement('video');
+      localVideo.srcObject = new MediaStream([localParticipant.tracks.video.persistentTrack]);
+      localVideo.autoplay = true;
+      localVideo.playsInline = true;
+      localVideo.muted = true;
+      localVideo.style.cssText = 'position:absolute;bottom:80px;right:16px;width:120px;height:90px;border-radius:8px;object-fit:cover;z-index:10;border:2px solid hsl(var(--primary));box-shadow:0 4px 12px rgba(0,0,0,0.5);';
+      container.appendChild(localVideo);
+      localVideo.play().catch(() => {});
+    }
+  }, [callObject]);
+
+  // Re-render video when participants change
   useEffect(() => {
-    // Attach to video element (stays muted for autoplay compliance)
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.play().catch(() => {});
-    }
+    if (!callObject || callState !== 'connected') return;
 
-    // Attach to dedicated audio element for sound
-    if (audioElRef.current && remoteStream) {
-      audioElRef.current.srcObject = remoteStream;
-      audioElRef.current.play().catch((e) => {
-        console.error('[VideoCall] Audio play failed:', e);
-      });
-    }
-  }, [remoteStream]);
+    const handleParticipantUpdate = () => {
+      if (dailyContainerRef.current) {
+        renderDailyVideo(dailyContainerRef.current);
+      }
+    };
+
+    callObject.on('participant-updated', handleParticipantUpdate);
+    callObject.on('participant-joined', handleParticipantUpdate);
+    callObject.on('participant-left', handleParticipantUpdate);
+    callObject.on('track-started', handleParticipantUpdate);
+    callObject.on('track-stopped', handleParticipantUpdate);
+
+    return () => {
+      callObject.off('participant-updated', handleParticipantUpdate);
+      callObject.off('participant-joined', handleParticipantUpdate);
+      callObject.off('participant-left', handleParticipantUpdate);
+      callObject.off('track-started', handleParticipantUpdate);
+      callObject.off('track-stopped', handleParticipantUpdate);
+    };
+  }, [callObject, callState, renderDailyVideo]);
 
   // Fetch other participant name
   useEffect(() => {
@@ -168,9 +230,6 @@ export default function VideoCall() {
   const handleStart = useCallback(async () => {
     if (!consultationId || !user?.id || callState !== 'idle') return;
 
-    // CRITICAL: unlock audio on user gesture BEFORE starting WebRTC
-    unlockAudio();
-
     if (isDoctor) {
       const { data: consultation } = await supabase
         .from('consultations')
@@ -214,17 +273,11 @@ export default function VideoCall() {
     } else {
       joinCall();
     }
-  }, [consultationId, user, isDoctor, callState, startCall, joinCall, t, unlockAudio]);
+  }, [consultationId, user, isDoctor, callState, startCall, joinCall, t]);
 
   const handleEndCall = useCallback(async () => {
     timer.stop();
     endCall();
-    // Clean up audio element
-    if (audioElRef.current) {
-      audioElRef.current.pause();
-      audioElRef.current.srcObject = null;
-      audioElRef.current = null;
-    }
   }, [endCall, timer]);
 
   const handleSendChat = (text: string) => {
@@ -255,42 +308,23 @@ export default function VideoCall() {
 
   const isInCall = callState === 'connecting' || callState === 'connected';
 
-  // ── Shared video layout — video is ALWAYS muted, audio via separate element ──
+  // Daily video container
   const videoLayoutJSX = (
-    <div className="relative w-full h-full bg-black">
-      {/* Remote video (full) — permanently muted, audio via audioElRef */}
-      <video
-        ref={remoteVideoRefCallback}
-        autoPlay
-        playsInline
-        muted
-        // @ts-ignore webkit-playsinline for older iOS
-        webkit-playsinline="true"
-        className="w-full h-full object-cover"
-      />
-      {/* No remote stream placeholder */}
-      {(!remoteStream || remoteStream.getTracks().length === 0) && callState === 'connecting' && (
-        <div className="absolute inset-0 flex items-center justify-center">
+    <div ref={dailyContainerRef} className="relative w-full h-full bg-black">
+      {callState === 'connecting' && (
+        <div className="absolute inset-0 flex items-center justify-center z-20">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-white mx-auto mb-3" />
             <p className="text-white/80 text-sm">
-              {isDoctor ? t('videoCall.waitingForPatient') || 'Esperando al paciente...' : t('videoCall.joiningCall')}
+              Conectando con Daily.co...
             </p>
           </div>
         </div>
       )}
-      {/* Local video PiP */}
-      <video
-        ref={localVideoRefCallback}
-        autoPlay
-        playsInline
-        muted
-        className="absolute bottom-20 right-4 w-28 h-20 sm:w-36 sm:h-28 rounded-lg object-cover z-10 border-2 border-primary shadow-lg"
-      />
     </div>
   );
 
-  // ── Autojoin: show a "Tap to join" button instead of auto-calling from useEffect ──
+  // Autojoin: show a "Tap to join" button
   if (autoJoin && callState === 'idle') {
     return (
       <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center" style={{ height: '100dvh' }}>
@@ -440,14 +474,7 @@ export default function VideoCall() {
                 <p className="text-sm text-muted-foreground mb-6">
                   No se pudo establecer la conexión. Verifica tu cámara/micrófono e intenta de nuevo.
                 </p>
-                <Button onClick={() => {
-                  if (audioElRef.current) {
-                    audioElRef.current.pause();
-                    audioElRef.current.srcObject = null;
-                    audioElRef.current = null;
-                  }
-                  resetCall();
-                }}>Reintentar</Button>
+                <Button onClick={() => resetCall()}>Reintentar</Button>
               </div>
             )}
           </CardContent>
