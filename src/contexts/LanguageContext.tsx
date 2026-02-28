@@ -68,19 +68,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Fallback for when context is unavailable (e.g. HMR race conditions)
-const fallbackContext: LanguageContextType = {
-  language: 'es',
-  setLanguage: async () => {},
-  t: (path: string) => translate('es', path),
-  translations: getTranslations('es'),
-};
-
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {
-    console.warn('[useLanguage] Used outside LanguageProvider – using fallback');
-    return fallbackContext;
+    throw new Error('useLanguage must be used within a LanguageProvider');
   }
   return context;
 }
