@@ -17,6 +17,10 @@ import {
   MonitorOff,
 } from 'lucide-react';
 
+// Module-level singleton to track the active Daily call object
+let activeCall: DailyCall | null = null;
+let destroyPromise: Promise<void> | null = null;
+
 interface DailyVideoPlayerProps {
   roomUrl: string;
   token: string;
@@ -35,7 +39,6 @@ export function DailyVideoPlayer({
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const screenShareRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
-  const initializedRef = useRef(false);
   
   const [isJoining, setIsJoining] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
@@ -51,10 +54,25 @@ export function DailyVideoPlayer({
 
   useEffect(() => {
     if (!roomUrl || !token) return;
+    let mounted = true;
 
     const initCall = async () => {
-      if (initializedRef.current) return;
-      initializedRef.current = true;
+      // Wait for any in-progress destroy to finish
+      if (destroyPromise) {
+        await destroyPromise;
+        destroyPromise = null;
+      }
+
+      // Destroy any leftover singleton
+      if (activeCall) {
+        try {
+          activeCall.leave();
+          await activeCall.destroy();
+        } catch (_) { /* already destroyed */ }
+        activeCall = null;
+      }
+
+      if (!mounted) return;
 
       try {
         const call = Daily.createCallObject({
@@ -62,6 +80,7 @@ export function DailyVideoPlayer({
           audioSource: isOwner,
         });
         
+        activeCall = call;
         callRef.current = call;
 
         call.on('joined-meeting', handleJoinedMeeting);
@@ -74,20 +93,27 @@ export function DailyVideoPlayer({
         await call.join({ url: roomUrl, token });
       } catch (err: any) {
         console.error('Error joining Daily room:', err);
-        setError(err.message || 'Error al conectar');
-        setIsJoining(false);
-        initializedRef.current = false;
+        if (mounted) {
+          setError(err.message || 'Error al conectar');
+          setIsJoining(false);
+        }
       }
     };
 
     initCall();
 
     return () => {
-      initializedRef.current = false;
+      mounted = false;
       if (callRef.current) {
-        callRef.current.leave();
-        callRef.current.destroy();
+        const call = callRef.current;
         callRef.current = null;
+        destroyPromise = (async () => {
+          try {
+            call.leave();
+            await call.destroy();
+          } catch (_) { /* ignore */ }
+          if (activeCall === call) activeCall = null;
+        })();
       }
     };
   }, [roomUrl, token, isOwner]);
