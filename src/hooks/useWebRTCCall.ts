@@ -31,7 +31,7 @@ const ICE_SERVERS: RTCIceServer[] = [
   },
 ];
 
-const CONNECTION_TIMEOUT_MS = 15000;
+const CONNECTION_TIMEOUT_MS = 30000;
 
 export function useWebRTCCall(consultationId: string | null, userId: string | null) {
   const [callState, setCallState] = useState<CallState>('idle');
@@ -45,36 +45,52 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const originalVideoTrackRef = useRef<MediaStreamTrack | null>(null);
-  const storedOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
   const isCallerRef = useRef(false);
   const remoteTracksRef = useRef<MediaStream>(new MediaStream());
-  const isNegotiatingRef = useRef(false);
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const endCallRef = useRef<() => void>(() => {});
+  const readyRetryTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const hasCreatedOfferRef = useRef(false);
+  const localStreamRef = useRef<MediaStream | null>(null);
 
+  // handleSignalRef pattern: channel listener always calls latest handler
+  const handleSignalRef = useRef<(signal: SignalPayload) => void>(() => {});
+
+  // Keep localStreamRef in sync
   useEffect(() => {
-    return () => { cleanup(); };
+    localStreamRef.current = localStream;
+  }, [localStream]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { cleanupEverything(); };
   }, []);
 
-  const cleanup = useCallback(() => {
-    console.log('[WebRTC] cleanup');
+  const cleanupEverything = useCallback(() => {
+    console.log('[WebRTC] Full cleanup');
+    // Clear connection timeout
     if (connectionTimeoutRef.current) {
       clearTimeout(connectionTimeoutRef.current);
       connectionTimeoutRef.current = null;
     }
+    // Clear ready-retry timers
+    readyRetryTimersRef.current.forEach(t => clearTimeout(t));
+    readyRetryTimersRef.current = [];
+    // Close peer connection
     pcRef.current?.close();
     pcRef.current = null;
-    localStream?.getTracks().forEach(t => t.stop());
+    // Stop local tracks
+    localStreamRef.current?.getTracks().forEach(t => t.stop());
+    // Remove signaling channel
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
     pendingCandidatesRef.current = [];
-    storedOfferRef.current = null;
-    isNegotiatingRef.current = false;
+    hasCreatedOfferRef.current = false;
     remoteTracksRef.current = new MediaStream();
-  }, [localStream]);
+  }, []);
 
+  // ── Get user media ──
   const getMedia = useCallback(async (): Promise<MediaStream> => {
     console.log('[WebRTC] Requesting getUserMedia...');
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -83,9 +99,11 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     });
     console.log('[WebRTC] getUserMedia OK — tracks:', stream.getTracks().map(t => `${t.kind}:${t.readyState}`));
     setLocalStream(stream);
+    localStreamRef.current = stream;
     return stream;
   }, []);
 
+  // ── Send signal via broadcast channel ──
   const sendSignal = useCallback((payload: SignalPayload) => {
     if (channelRef.current) {
       channelRef.current.send({
@@ -96,24 +114,9 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     }
   }, []);
 
-  const sendOffer = useCallback(() => {
-    if (storedOfferRef.current && userId) {
-      console.log('[WebRTC] Sending offer');
-      sendSignal({
-        type: 'offer',
-        sdp: storedOfferRef.current.sdp,
-        senderId: userId,
-      });
-    }
-  }, [userId, sendSignal]);
-
-  /**
-   * Create peer connection WITHOUT onnegotiationneeded.
-   * The initial offer is created explicitly in startCall().
-   * onnegotiationneeded is attached AFTER the connection is established
-   * (for screen-share renegotiation).
-   */
+  // ── Create peer connection (NO onnegotiationneeded initially) ──
   const createPeerConnection = useCallback((stream: MediaStream) => {
+    console.log('[WebRTC] Creating RTCPeerConnection');
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
     stream.getTracks().forEach(track => {
@@ -130,12 +133,13 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       if (!existing.find(t => t.id === track.id)) {
         remoteTracksRef.current.addTrack(track);
       }
-      // Create a new MediaStream so React detects the change
+      // New MediaStream so React detects the state change
       setRemoteStream(new MediaStream(remoteTracksRef.current.getTracks()));
     };
 
     pc.onicecandidate = (event) => {
       if (event.candidate && userId) {
+        console.log('[WebRTC] Sending ICE candidate');
         sendSignal({
           type: 'ice-candidate',
           candidate: event.candidate.toJSON(),
@@ -145,43 +149,21 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     };
 
     pc.oniceconnectionstatechange = () => {
-      console.log('[WebRTC] ICE connection state:', pc.iceConnectionState);
+      console.log('[WebRTC] ICE state:', pc.iceConnectionState);
       if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
         setCallState('connected');
-        // Clear connection timeout
         if (connectionTimeoutRef.current) {
           clearTimeout(connectionTimeoutRef.current);
           connectionTimeoutRef.current = null;
         }
-        // NOW attach onnegotiationneeded for future renegotiations (screen share)
-        pc.onnegotiationneeded = async () => {
-          if (!isCallerRef.current) return;
-          if (isNegotiatingRef.current) return;
-          isNegotiatingRef.current = true;
-          try {
-            console.log('[WebRTC] Renegotiation needed — creating offer');
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            storedOfferRef.current = offer;
-            sendOffer();
-          } catch (err) {
-            console.error('[WebRTC] renegotiation error:', err);
-          } finally {
-            isNegotiatingRef.current = false;
-          }
-        };
+        // Clear retry timers
+        readyRetryTimersRef.current.forEach(t => clearTimeout(t));
+        readyRetryTimersRef.current = [];
       } else if (pc.iceConnectionState === 'failed') {
-        console.log('[WebRTC] ICE failed — attempting restart');
+        console.error('[WebRTC] ICE failed — restarting');
         pc.restartIce();
-        pc.createOffer({ iceRestart: true }).then(async (o) => {
-          await pc.setLocalDescription(o);
-          storedOfferRef.current = o;
-          sendOffer();
-        }).catch(() => {
-          setCallState('error');
-        });
       } else if (pc.iceConnectionState === 'disconnected') {
-        console.log('[WebRTC] ICE disconnected — waiting for recovery...');
+        console.log('[WebRTC] ICE disconnected — waiting for recovery');
       }
     };
 
@@ -195,55 +177,79 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       }
     };
 
-    // NOTE: onnegotiationneeded is NOT set here. It's set after ICE connects.
+    // NOTE: onnegotiationneeded is NOT set here.
+    // The initial offer is created explicitly. Renegotiation (screen share) uses replaceTrack.
 
     pcRef.current = pc;
     return pc;
-  }, [userId, sendSignal, sendOffer]);
+  }, [userId, sendSignal]);
 
+  // ── Handle incoming signals ──
   const handleSignal = useCallback(async (signal: SignalPayload) => {
     const pc = pcRef.current;
-    if (!pc) return;
+    if (!pc || !userId) return;
 
     try {
       if (signal.type === 'end-call') {
-        console.log('[WebRTC] Received end-call signal');
-        endCallRef.current();
+        console.log('[WebRTC] Received end-call');
+        // Use a timeout to avoid calling endCall during render
+        setTimeout(() => {
+          cleanupEverything();
+          setLocalStream(null);
+          setRemoteStream(null);
+          setCallState('ended');
+          setIsMuted(false);
+          setIsCameraOff(false);
+          setIsScreenSharing(false);
+        }, 0);
         return;
       }
 
       if (signal.type === 'ready') {
-        console.log('[WebRTC] Received ready signal');
-        if (isCallerRef.current) {
-          sendOffer();
+        console.log('[WebRTC] Received ready from', signal.senderId);
+
+        if (isCallerRef.current && !hasCreatedOfferRef.current) {
+          // CALLER: The other side is listening → NOW create the offer
+          hasCreatedOfferRef.current = true;
+          console.log('[WebRTC] Creating offer (other party is listening)');
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          sendSignal({ type: 'offer', sdp: offer.sdp, senderId: userId });
+        } else if (!isCallerRef.current) {
+          // NON-CALLER received caller's ready → echo our own ready back
+          sendSignal({ type: 'ready', senderId: userId });
         }
-      } else if (signal.type === 'offer') {
+        return;
+      }
+
+      if (signal.type === 'offer') {
         console.log('[WebRTC] Received offer');
         await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
+        // Flush pending ICE candidates
         for (const c of pendingCandidatesRef.current) {
           await pc.addIceCandidate(new RTCIceCandidate(c));
         }
         pendingCandidatesRef.current = [];
-
+        // Create and send answer
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         console.log('[WebRTC] Sending answer');
+        sendSignal({ type: 'answer', sdp: answer.sdp, senderId: userId });
+        return;
+      }
 
-        if (userId) {
-          sendSignal({
-            type: 'answer',
-            sdp: answer.sdp,
-            senderId: userId,
-          });
-        }
-      } else if (signal.type === 'answer') {
+      if (signal.type === 'answer') {
         console.log('[WebRTC] Received answer');
         await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
+        // Flush pending ICE candidates
         for (const c of pendingCandidatesRef.current) {
           await pc.addIceCandidate(new RTCIceCandidate(c));
         }
         pendingCandidatesRef.current = [];
-      } else if (signal.type === 'ice-candidate' && signal.candidate) {
+        return;
+      }
+
+      if (signal.type === 'ice-candidate' && signal.candidate) {
         if (pc.remoteDescription) {
           await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
         } else {
@@ -253,9 +259,15 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     } catch (err) {
       console.error('[WebRTC] Signal handling error:', err);
     }
-  }, [userId, sendOffer, sendSignal]);
+  }, [userId, sendSignal, cleanupEverything]);
 
-  const setupSignaling = useCallback((onSignal: (payload: SignalPayload) => void): Promise<ReturnType<typeof supabase.channel>> => {
+  // Keep handleSignalRef in sync
+  useEffect(() => {
+    handleSignalRef.current = handleSignal;
+  }, [handleSignal]);
+
+  // ── Set up signaling channel ──
+  const setupSignaling = useCallback((): Promise<void> => {
     return new Promise((resolve, reject) => {
       if (!consultationId) { reject(new Error('No consultationId')); return; }
 
@@ -263,23 +275,39 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
         .channel(`call-signal-${consultationId}`)
         .on('broadcast', { event: 'signal' }, ({ payload }) => {
           const signal = payload as SignalPayload;
-          if (signal.senderId === userId) return;
-          onSignal(signal);
+          if (signal.senderId === userId) return; // ignore own signals
+          // Use ref to always call the latest handler
+          handleSignalRef.current(signal);
         })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             console.log('[WebRTC] Signaling channel SUBSCRIBED');
             channelRef.current = channel;
-            resolve(channel);
+            resolve();
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             reject(new Error(`Channel failed: ${status}`));
           }
         });
 
-      setTimeout(() => reject(new Error('Channel subscription timed out')), 8000);
+      setTimeout(() => reject(new Error('Channel subscription timed out')), 10000);
     });
   }, [consultationId, userId]);
 
+  // ── Send "ready" signal with retries at 0s, 2s, 4s ──
+  const sendReadyWithRetry = useCallback(() => {
+    if (!userId) return;
+    const send = () => {
+      console.log('[WebRTC] Sending ready signal');
+      sendSignal({ type: 'ready', senderId: userId });
+    };
+
+    send(); // immediate
+    const t1 = setTimeout(send, 2000);
+    const t2 = setTimeout(send, 4000);
+    readyRetryTimersRef.current.push(t1, t2);
+  }, [userId, sendSignal]);
+
+  // ── Connection timeout ──
   const startConnectionTimeout = useCallback(() => {
     connectionTimeoutRef.current = setTimeout(() => {
       const state = pcRef.current?.iceConnectionState;
@@ -290,89 +318,100 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     }, CONNECTION_TIMEOUT_MS);
   }, []);
 
-  /** Doctor initiates the call (creates offer) */
+  // ══════════════════════════════════════════
+  //  Doctor initiates the call
+  //  - Subscribe to channel
+  //  - Send "ready" (do NOT create offer yet)
+  //  - Wait for patient's "ready" → then create offer
+  // ══════════════════════════════════════════
   const startCall = useCallback(async () => {
     if (!consultationId || !userId) return;
     setCallState('connecting');
     isCallerRef.current = true;
+    hasCreatedOfferRef.current = false;
 
     try {
       const stream = await getMedia();
-      const pc = createPeerConnection(stream);
+      createPeerConnection(stream);
+      await setupSignaling();
 
-      await setupSignaling(handleSignal);
-
-      // Explicit offer — no race with onnegotiationneeded (it's not set yet)
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      storedOfferRef.current = offer;
-      sendOffer();
-
+      // Send "ready" — do NOT create offer yet
+      // The offer is created in handleSignal when we receive the patient's "ready"
+      sendReadyWithRetry();
       startConnectionTimeout();
     } catch (err) {
       console.error('[WebRTC] startCall error:', err);
       setCallState('error');
     }
-  }, [consultationId, userId, getMedia, createPeerConnection, setupSignaling, handleSignal, sendOffer, startConnectionTimeout]);
+  }, [consultationId, userId, getMedia, createPeerConnection, setupSignaling, sendReadyWithRetry, startConnectionTimeout]);
 
-  /** Patient joins the call (waits for offer, sends answer) */
+  // ══════════════════════════════════════════
+  //  Patient joins the call
+  //  - Subscribe to channel
+  //  - Send "ready" signal (doctor will create offer when it receives this)
+  // ══════════════════════════════════════════
   const joinCall = useCallback(async () => {
     if (!consultationId || !userId) return;
     setCallState('connecting');
     isCallerRef.current = false;
+    hasCreatedOfferRef.current = false;
 
     try {
       const stream = await getMedia();
       createPeerConnection(stream);
+      await setupSignaling();
 
-      await setupSignaling(handleSignal);
-
-      console.log('[WebRTC] Sending ready signal');
-      sendSignal({
-        type: 'ready',
-        senderId: userId,
-      });
-
+      // Send "ready" — the doctor is waiting for this to create the offer
+      sendReadyWithRetry();
       startConnectionTimeout();
     } catch (err) {
       console.error('[WebRTC] joinCall error:', err);
       setCallState('error');
     }
-  }, [consultationId, userId, getMedia, createPeerConnection, setupSignaling, handleSignal, sendSignal, startConnectionTimeout]);
+  }, [consultationId, userId, getMedia, createPeerConnection, setupSignaling, sendReadyWithRetry, startConnectionTimeout]);
 
+  // ── End call ──
   const endCall = useCallback(() => {
-    // Broadcast end-call signal to the other party
     if (channelRef.current && userId) {
       sendSignal({ type: 'end-call', senderId: userId });
     }
-    cleanup();
+    cleanupEverything();
     setLocalStream(null);
     setRemoteStream(null);
     setCallState('ended');
     setIsMuted(false);
     setIsCameraOff(false);
     setIsScreenSharing(false);
-  }, [cleanup, userId, sendSignal]);
+  }, [cleanupEverything, userId, sendSignal]);
 
-  // Keep endCallRef in sync so handleSignal can call it without circular deps
-  useEffect(() => {
-    endCallRef.current = endCall;
-  }, [endCall]);
+  // ── Reset to idle (for retry) ──
+  const resetCall = useCallback(() => {
+    cleanupEverything();
+    setLocalStream(null);
+    setRemoteStream(null);
+    setCallState('idle');
+    setIsMuted(false);
+    setIsCameraOff(false);
+    setIsScreenSharing(false);
+  }, [cleanupEverything]);
 
+  // ── Toggle mute ──
   const toggleMute = useCallback(() => {
-    if (!localStream) return;
-    localStream.getAudioTracks().forEach(t => { t.enabled = isMuted; });
+    if (!localStreamRef.current) return;
+    localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = isMuted; });
     setIsMuted(!isMuted);
-  }, [localStream, isMuted]);
+  }, [isMuted]);
 
+  // ── Toggle camera ──
   const toggleCamera = useCallback(() => {
-    if (!localStream) return;
-    localStream.getVideoTracks().forEach(t => { t.enabled = isCameraOff; });
+    if (!localStreamRef.current) return;
+    localStreamRef.current.getVideoTracks().forEach(t => { t.enabled = isCameraOff; });
     setIsCameraOff(!isCameraOff);
-  }, [localStream, isCameraOff]);
+  }, [isCameraOff]);
 
+  // ── Toggle screen share (uses replaceTrack — no renegotiation needed) ──
   const toggleScreenShare = useCallback(async () => {
-    if (!pcRef.current || !localStream) return;
+    if (!pcRef.current || !localStreamRef.current) return;
 
     try {
       if (!isScreenSharing) {
@@ -400,7 +439,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     } catch (err) {
       console.error('[WebRTC] Screen share error:', err);
     }
-  }, [localStream, isScreenSharing]);
+  }, [isScreenSharing]);
 
   return {
     callState,
@@ -412,6 +451,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     startCall,
     joinCall,
     endCall,
+    resetCall,
     toggleMute,
     toggleCamera,
     toggleScreenShare,
