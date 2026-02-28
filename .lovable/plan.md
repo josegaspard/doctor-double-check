@@ -1,33 +1,75 @@
 
+# Plan: Fix Onboarding Redirect on Refresh + Fix Recording Deletion
 
-# Plan: Fix LivePlayer Redirecting Back to /lives
+## Problem 1: Onboarding Page Appears on F5
 
-## Problem
-When clicking a live card, the user lands on `/live/:id` but is immediately redirected back to `/lives`. This happens because:
+### Root Cause
+In `src/hooks/auth/useAuthState.ts` (lines 78-85), the redirect to `/onboarding` fires on both `SIGNED_IN` and `INITIAL_SESSION` events when the user is on `/` or `/login`. The issue is that `INITIAL_SESSION` fires on **every page load**, including refreshes.
 
-1. React 18 StrictMode mounts the component, then unmounts it, then remounts it
-2. During the unmount cleanup, `callRef.current.leave()` is called
-3. This triggers the `left-meeting` Daily event
-4. `handleLeftMeeting` calls `onLeave?.()` which is `() => navigate('/lives')`
-5. The user gets sent back to `/lives` before the second mount can establish the connection
+Here is the likely sequence:
+1. User presses F5 on any page
+2. The `validateAuthSession()` call inside the `onAuthStateChange` handler sometimes fails during page load (token not yet refreshed), which calls `signOut()` and redirects to `/lives`
+3. Or, the user happens to be on `/` when refreshing
+4. `INITIAL_SESSION` fires, the profile loads, and if `onboardingCompleted` evaluates to falsy for any reason, it redirects to `/onboarding`
 
-## Fix
+### Fix
+The onboarding redirect should ONLY happen on `SIGNED_IN` events (fresh logins), NOT on `INITIAL_SESSION` (page refreshes). A user who already completed onboarding should never be redirected there on a page refresh.
 
-**File: `src/components/live/DailyVideoPlayer.tsx`**
+**File: `src/hooks/auth/useAuthState.ts`**
+- Change line 78 from:
+  ```typescript
+  const shouldHandleRedirectEvent = event === 'SIGNED_IN' || event === 'INITIAL_SESSION';
+  ```
+  to:
+  ```typescript
+  const shouldHandleRedirectEvent = event === 'SIGNED_IN';
+  ```
+- For `INITIAL_SESSION`, only redirect away from `/` and `/login` to the user's dashboard (skip the onboarding check entirely, since completed users should never see it again on refresh)
+- The Onboarding page itself already has its own guard (lines 342-351) that checks `onboarding_completed` and redirects to `/lives` if already complete
 
-Add a `cleaningUpRef` that is set to `true` during cleanup. The `handleLeftMeeting` callback checks this ref and skips calling `onLeave` if cleanup is in progress.
+---
 
-### Changes:
-1. Add `const cleaningUpRef = useRef(false);` alongside other refs (around line 37)
-2. In `handleLeftMeeting` (line 113-117): check `if (cleaningUpRef.current) return;` before calling `onLeave`
-3. In the cleanup function (line 97-104): set `cleaningUpRef.current = true` before calling `leave()`
-4. In `initCall` (after creating the call object): reset `cleaningUpRef.current = false`
+## Problem 2: Deleting Recordings Breaks
 
-This is a single-file, 4-line fix that prevents the spurious navigation during React's StrictMode remount cycle while preserving intentional leave behavior (e.g., clicking the hang-up button via `leaveCall()`).
+### Root Cause
+The `purchases` table has a foreign key (`purchases_recording_id_fkey`) referencing `recordings.id`. When a doctor tries to delete a recording that has been purchased, the database rejects the DELETE because of the FK constraint (no CASCADE).
 
-## Files
+### Fix
 
-| File | Change |
-|------|--------|
-| `src/components/live/DailyVideoPlayer.tsx` | Add `cleaningUpRef` guard to prevent `onLeave` firing during cleanup |
+**Database Migration:**
+- Alter the FK constraint on `purchases.recording_id` to add `ON DELETE CASCADE`, so deleting a recording automatically removes its purchase records
+- This is safe because purchases are financial history tied to the recording -- if the recording is gone, the purchase record is no longer meaningful
 
+Alternatively, if purchase history must be preserved:
+- Change to `ON DELETE SET NULL` and make `recording_id` nullable
+- This preserves the purchase record but detaches it from the deleted recording
+
+I will use `ON DELETE SET NULL` to preserve purchase history (safer for financial data).
+
+**Database Migration SQL:**
+```sql
+ALTER TABLE purchases
+  DROP CONSTRAINT purchases_recording_id_fkey;
+
+ALTER TABLE purchases
+  ALTER COLUMN recording_id DROP NOT NULL;
+
+ALTER TABLE purchases
+  ADD CONSTRAINT purchases_recording_id_fkey
+  FOREIGN KEY (recording_id) REFERENCES recordings(id) ON DELETE SET NULL;
+```
+
+**File: `src/pages/DoctorRecordings.tsx`**
+- Also delete the recording's video file from the `recordings` storage bucket before deleting the DB row (cleanup)
+- Add better error handling with specific messages for the user
+
+---
+
+## Summary
+
+| Change | File/Location |
+|--------|--------------|
+| Restrict onboarding redirect to `SIGNED_IN` only | `src/hooks/auth/useAuthState.ts` |
+| Add `INITIAL_SESSION` dashboard redirect (without onboarding check) | `src/hooks/auth/useAuthState.ts` |
+| Fix FK constraint for recording deletion | Database migration (purchases table) |
+| Improve delete handler with storage cleanup | `src/pages/DoctorRecordings.tsx` |
