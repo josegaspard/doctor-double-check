@@ -342,6 +342,23 @@ export default function DoctorRecordings() {
     setIsDeleting(true);
     
     try {
+      // 1. Delete video file from storage if it exists
+      if (deletingRecording.videoUrl) {
+        try {
+          // Extract the file path from the URL (after /recordings/)
+          const url = new URL(deletingRecording.videoUrl);
+          const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/recordings\/(.+)/);
+          if (pathMatch?.[1]) {
+            const filePath = decodeURIComponent(pathMatch[1]);
+            await supabase.storage.from('recordings').remove([filePath]);
+          }
+        } catch (storageErr) {
+          console.warn('Could not delete video file from storage:', storageErr);
+          // Continue with DB deletion even if storage cleanup fails
+        }
+      }
+
+      // 2. Delete the database record
       const { error } = await supabase
         .from('recordings')
         .delete()
@@ -360,6 +377,7 @@ export default function DoctorRecordings() {
       // Also refresh global context for other pages
       await refreshRecordings();
     } catch (error: any) {
+      console.error('Error deleting recording:', error);
       toast.error(error.message || 'Error al eliminar la grabación');
     } finally {
       setIsDeleting(false);

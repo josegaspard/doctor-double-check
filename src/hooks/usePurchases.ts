@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 export interface Purchase {
   id: string;
-  recordingId: string;
+  recordingId: string | null;
   contentId?: string;
   amount: number;
   createdAt: Date;
