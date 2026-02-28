@@ -1,66 +1,125 @@
 
 
-# Plan: Fix Video Calls (No Audio/Video) + Fix Live Black Screen on Mobile
+# Plan: Fix Video Calls -- Bidirectional Video + Audio
 
-## Issue 1: Video Calls -- Doctor and Patient Can't See/Hear Each Other
+## Root Causes Found
 
-### Root Cause
-The remote `<video>` element in `VideoCall.tsx` (line 225-230) does NOT have the `muted` attribute. On iOS Safari and mobile browsers, **unmuted autoplay is blocked silently** -- the browser simply refuses to play the video, resulting in a black screen with no audio. This affects BOTH directions because both participants are viewing on mobile.
+### Bug 1: Race Condition in Offer Creation (CRITICAL)
+In `startCall()`, `createPeerConnection()` calls `addTrack()` which triggers `onnegotiationneeded` asynchronously. This handler creates an offer and calls `setLocalDescription()`. Meanwhile, `startCall()` ALSO creates an offer and calls `setLocalDescription()`. These two async operations race each other, causing `InvalidStateError` (can't set local description while another is pending). Result: the connection silently fails.
 
-The local video works because it has `muted` (line 247), so iOS allows it to autoplay.
+### Bug 2: Remote Audio Never Plays
+The remote `<video>` element starts `muted` for autoplay policy, then the code tries to programmatically unmute. But iOS Safari silently pauses the video when unmuted. The user sees a black screen. Even when the "Tap to unmute" button works, it only unmutes the video element -- but by then the WebRTC connection may have already failed due to Bug 1.
 
-### Fix: `src/pages/VideoCall.tsx`
-1. Add `muted` attribute to the remote `<video>` element initially
-2. Add a `showUnmutePrompt` state
-3. In the `useEffect` that syncs `remoteStream`, after calling `.play()`, attempt to set `muted = false`. If playback pauses (detected via `pause` event), show a "Tap to enable audio" overlay
-4. Add a "Tap to enable audio/video" button overlay that, on user gesture, unmutes the video and calls `.play()` -- this satisfies the browser's user interaction requirement
-5. Add `webkit-playsinline` attribute for older iOS devices
-
-### Fix: `src/hooks/useWebRTCCall.ts`
-1. Replace the non-functional Metered.ca TURN credentials (`free`/`free` don't actually work -- Metered requires an API key) with the OpenRelay Project's public TURN servers that are genuinely free and functional:
-   - `turn:openrelay.metered.ca:80` with `openrelayproject`/`openrelayproject`
-   - `turn:openrelay.metered.ca:443`
-   - `turn:openrelay.metered.ca:443?transport=tcp`
-2. Add ICE restart logic: if `iceConnectionState` becomes `'failed'`, attempt an ICE restart automatically once before giving up
+### Bug 3: No Reliable TURN Server
+The OpenRelay TURN servers (`openrelay.metered.ca`) with `openrelayproject/openrelayproject` credentials may be offline or rate-limited. Without TURN, calls fail when either peer is behind a symmetric NAT (common on mobile data).
 
 ---
 
-## Issue 2: Live Stream Black Screen on Mobile/iPad (Persists)
+## Solution
 
-### Root Cause
-In `DailyVideoPlayer.tsx` (lines 237-249), after calling `videoEl.play()`, the code sets `videoEl.muted = false`. However, on iOS Safari:
-- Setting `muted = false` does NOT throw an error -- it silently causes the video to **pause**
-- The `try/catch` block never catches anything because property assignment doesn't throw
-- The video stops, resulting in a black screen
+### A. Fix Race Condition (`src/hooks/useWebRTCCall.ts`)
 
-### Fix: `src/components/live/DailyVideoPlayer.tsx`
-1. After setting `videoEl.muted = false`, check if the video actually paused. If it did, re-mute it and show the unmute prompt:
-   ```typescript
-   videoEl.play().then(() => {
-     if (!participant.local) {
-       videoEl.muted = false;
-       // iOS Safari pauses the video when unmuted programmatically
-       setTimeout(() => {
-         if (videoEl.paused) {
-           videoEl.muted = true;
-           videoEl.play().catch(() => {});
-           setShowUnmutePrompt(true);
-         }
-       }, 100);
-     }
-   }).catch(() => {
-     if (!participant.local) setShowUnmutePrompt(true);
-   });
-   ```
-2. Apply the same pattern to the audio-only fallback element
+Remove `onnegotiationneeded` from the initial peer connection setup. Only the explicit offer in `startCall()` should create the initial offer. Add `onnegotiationneeded` only AFTER the initial connection is established (for screen share renegotiation):
+
+```typescript
+// In createPeerConnection: do NOT set onnegotiationneeded
+// In startCall: after creating offer manually, THEN set onnegotiationneeded for future renegotiations
+```
+
+Also add a `negotiating` guard ref to prevent glare:
+```typescript
+const isNegotiatingRef = useRef(false);
+```
+
+### B. Separate Audio Element for Remote Stream (`src/pages/VideoCall.tsx`)
+
+Instead of relying on the muted/unmuted video element for audio, create a separate hidden `<audio>` element specifically for the remote audio tracks. This element can be unmuted immediately after the user's "Start" / "Join" tap (which counts as a user gesture):
+
+```typescript
+// Create a hidden <audio> element on user gesture (startCall/joinCall click)
+const audioElRef = useRef<HTMLAudioElement | null>(null);
+
+// On user gesture (handleStart), pre-create and "unlock" the audio element
+const unlockAudio = useCallback(() => {
+  const audio = new Audio();
+  audio.volume = 1;
+  audioElRef.current = audio;
+}, []);
+
+// When remoteStream arrives, set it as srcObject of the audio element
+useEffect(() => {
+  if (audioElRef.current && remoteStream) {
+    audioElRef.current.srcObject = remoteStream;
+    audioElRef.current.play().catch(() => {});
+  }
+}, [remoteStream]);
+```
+
+The video element stays permanently muted (so autoplay always works for the visual). Audio goes through the separate `<audio>` element which was "unlocked" by the user's tap.
+
+### C. Add More TURN Servers + Validate Connectivity (`src/hooks/useWebRTCCall.ts`)
+
+Add multiple free TURN providers as fallback. Also add connection timeout -- if ICE doesn't connect within 15 seconds, show an error instead of hanging forever:
+
+```typescript
+const ICE_SERVERS: RTCIceServer[] = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  {
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+];
+```
+
+Add a 15-second connection timeout:
+```typescript
+// In startCall/joinCall, after setting up signaling:
+const connectionTimeout = setTimeout(() => {
+  if (pcRef.current?.iceConnectionState !== 'connected' && 
+      pcRef.current?.iceConnectionState !== 'completed') {
+    console.error('[WebRTC] Connection timed out');
+    setCallState('error');
+  }
+}, 15000);
+```
+
+### D. Send "end-call" Signal (`src/hooks/useWebRTCCall.ts`)
+
+When one party ends the call, broadcast an `end-call` signal so the other party's UI also transitions to the "ended" state:
+
+```typescript
+// In endCall:
+channelRef.current?.send({
+  type: 'broadcast',
+  event: 'signal',
+  payload: { type: 'end-call', senderId: userId },
+});
+
+// In handleSignal, handle 'end-call':
+if (signal.type === 'end-call') {
+  endCall();
+}
+```
 
 ---
 
-## Summary
+## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/pages/VideoCall.tsx` | Muted autoplay for remote video + "Tap to enable audio" overlay |
-| `src/hooks/useWebRTCCall.ts` | Replace broken TURN credentials with working OpenRelay servers + ICE restart |
-| `src/components/live/DailyVideoPlayer.tsx` | Fix unmute detection (check for paused state after unmuting) |
+| `src/hooks/useWebRTCCall.ts` | Fix race condition (remove early onnegotiationneeded), add connection timeout, add end-call signal, update SignalPayload type |
+| `src/pages/VideoCall.tsx` | Add separate hidden audio element for remote audio, unlock on user gesture, keep video permanently muted |
 
