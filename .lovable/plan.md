@@ -1,88 +1,84 @@
 
-# Plan: Fix Critical Bugs and UX/UI Improvements
 
-## 1. Fix "nav.doctors" Translation Key Missing
+# Plan: Fix DailyVideoPlayer Duplicate Instance Error
 
-The `nav.doctors` key doesn't exist in either `es.ts` or `en.ts`, causing "Nav.doctors" to display in the bottom navigation bar.
+## Problem
+The console shows `"Duplicate DailyIframe instances are not allowed"` when a patient tries to watch a live stream. This happens because React 18 StrictMode (used in development) runs effects twice: mount -> unmount -> mount. The first `Daily.createCallObject()` hasn't fully destroyed by the time the second one tries to create, causing the error and preventing the video from loading.
 
-**Files:** `src/lib/i18n/es.ts`, `src/lib/i18n/en.ts`
-- Add `doctors: 'Doctores'` to `nav` section in `es.ts`
-- Add `doctors: 'Doctors'` to `nav` section in `en.ts`
+## Root Cause
+In `src/components/live/DailyVideoPlayer.tsx` (line 56), `Daily.createCallObject()` is called inside a `useEffect`. When React re-runs the effect, the cleanup (line 80-86) calls `leave()` and `destroy()` asynchronously, but the new effect fires before destruction completes, triggering the duplicate instance error.
 
-## 2. Fix Notifications Page Infinite Loading
+## Fix
 
-The `useNotifications` hook initializes `isLoading = true` but only sets it to `false` inside `fetchNotifications()`, which requires `supabaseUser?.id`. If auth hasn't resolved yet or user is a visitor, the page stays loading forever.
+**File: `src/components/live/DailyVideoPlayer.tsx`**
 
-**File:** `src/hooks/useNotifications.ts`
-- Add early return in `useEffect`: if `!supabaseUser?.id`, set `isLoading(false)` immediately
-- This ensures visitors and unauthenticated users see the empty state instead of infinite spinner
+1. Before creating a new call object, check for and destroy any existing instance using `Daily.getCallInstance()`:
+   - If an existing instance exists, destroy it first and wait for it to complete
+   - Add a guard ref (`isInitializing`) to prevent concurrent initialization attempts
 
-## 3. Fix Logout Not Working
+2. Wrap `Daily.createCallObject()` in a try-catch that specifically handles the "Duplicate" error by:
+   - Getting the existing instance via `Daily.getCallInstance()`
+   - Destroying it
+   - Retrying the creation after a short delay
 
-The `logout` function calls `window.location.replace('/lives')` before `supabase.auth.signOut()` completes. The page redirect triggers `onAuthStateChange` which sees the still-active session and re-authenticates. 
+3. Add a mounted/cancelled flag to the effect to prevent state updates after unmount.
 
-**File:** `src/hooks/auth/useAuthActions.ts`
-- Change logout to `await supabase.auth.signOut()` FIRST, then redirect
-- Remove the "fire and forget" pattern -- sign out must complete before navigation
+### Specific Code Changes:
 
-## 4. Video Call Hang-Up Button Size
+```typescript
+useEffect(() => {
+  if (!roomUrl || !token) return;
+  let cancelled = false;
 
-The end-call button is currently `w-13 h-13 sm:w-16 sm:h-16` while other buttons are `w-11 h-11 sm:w-14 sm:h-14`. This makes it visually inconsistent.
+  const initCall = async () => {
+    try {
+      // Destroy any lingering instance first
+      try {
+        const existing = Daily.getCallInstance();
+        if (existing) {
+          await existing.destroy();
+        }
+      } catch { /* no existing instance */ }
 
-**File:** `src/components/videocall/VideoCallControls.tsx`
-- Change end-call button from `w-13 h-13 sm:w-16 sm:h-16` to `w-11 h-11 sm:w-14 sm:h-14` to match all other control buttons
+      if (cancelled) return;
 
-## 5. Chat Mobile UX/UI Improvements
+      const call = Daily.createCallObject({
+        videoSource: isOwner,
+        audioSource: isOwner,
+      });
+      
+      if (cancelled) {
+        call.destroy();
+        return;
+      }
+      
+      callRef.current = call;
+      // ... rest of setup
+    } catch (err) {
+      if (cancelled) return;
+      console.error('Error joining Daily room:', err);
+      setError(err.message || 'Error connecting');
+      setIsJoining(false);
+    }
+  };
 
-The chat page has layout issues on mobile -- the grid doesn't adapt well and elements can overflow.
+  initCall();
 
-**File:** `src/pages/Chat.tsx`
-- Improve the height calculation for the chat container on mobile
-- Ensure the sessions list and messages panel don't overflow horizontally
+  return () => {
+    cancelled = true;
+    if (callRef.current) {
+      callRef.current.leave().catch(() => {});
+      callRef.current.destroy().catch(() => {});
+      callRef.current = null;
+    }
+  };
+}, [roomUrl, token, isOwner]);
+```
 
-**File:** `src/components/chat/ChatMessagesPanel.tsx`
-- Add `overflow-hidden` to prevent horizontal overflow on mobile
-- Ensure input area respects safe-area insets properly
+## Files to Edit
 
-## 6. Improve Mobile Menu Sizes (Profile Dropdown & Language Switcher)
+| File | Change |
+|------|--------|
+| `src/components/live/DailyVideoPlayer.tsx` | Add `Daily.getCallInstance()` cleanup before creating new instance; add cancellation guard for StrictMode |
 
-The dropdown menus for profile and language are too small for older adult users.
-
-**File:** `src/components/layout/MainLayout.tsx`
-- Increase `DropdownMenuContent` width from `w-56` to `w-64`
-- Increase dropdown menu item padding and font sizes for touch friendliness
-- Increase the profile avatar button touch target
-
-**File:** `src/components/settings/LanguageSwitcher.tsx`
-- Increase dropdown item sizes and touch targets (min 44px height per item)
-
-## 7. Notifications Page Hardcoded Spanish Strings
-
-Several strings in `Notifications.tsx` are hardcoded in Spanish.
-
-**File:** `src/pages/Notifications.tsx`
-- Replace "Cancelar" / "Seleccionar" / "Leidas" / "Seleccionar todas" / "Eliminar" with `t()` calls
-- Add corresponding keys to both i18n files
-
-## 8. Admin Panel UX - Back Navigation
-
-Ensure all admin sub-pages have clear back arrows to return to the admin dashboard. Most already have them (like `AdminUsers.tsx`), but verify consistency.
-
-**File:** `src/pages/AdminDashboard.tsx`
-- Verify module cards are clearly clickable with visual affordance
-- Add descriptive headers
-
-## Technical Summary
-
-| File | Changes |
-|------|---------|
-| `src/lib/i18n/es.ts` | Add `nav.doctors` + notification page keys |
-| `src/lib/i18n/en.ts` | Add `nav.doctors` + notification page keys |
-| `src/hooks/useNotifications.ts` | Fix infinite loading for visitors/unauthenticated users |
-| `src/hooks/auth/useAuthActions.ts` | Fix logout: await signOut before redirect |
-| `src/components/videocall/VideoCallControls.tsx` | Normalize hang-up button size |
-| `src/pages/Chat.tsx` | Mobile layout improvements |
-| `src/components/chat/ChatMessagesPanel.tsx` | Prevent horizontal overflow on mobile |
-| `src/components/layout/MainLayout.tsx` | Increase dropdown menu sizes for accessibility |
-| `src/components/settings/LanguageSwitcher.tsx` | Increase touch targets |
-| `src/pages/Notifications.tsx` | Replace hardcoded Spanish with i18n keys |
+This is a single-file fix that will resolve the video player not loading for patients (and all users).
