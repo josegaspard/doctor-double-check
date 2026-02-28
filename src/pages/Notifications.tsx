@@ -148,14 +148,14 @@ export default function Notifications() {
                 className="gap-1.5"
               >
                 {isSelecting ? <X className="w-4 h-4" /> : <CheckSquare className="w-4 h-4" />}
-                {isSelecting ? 'Cancelar' : 'Seleccionar'}
+                {isSelecting ? t('notificationsPage.cancel') : t('notificationsPage.select')}
               </Button>
             )}
             {!isSelecting && unreadCount > 0 && (
               <Button variant="outline" size="sm" onClick={markAllAsRead}>
                 <Check className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">{t('notificationsPage.markAllRead')}</span>
-                <span className="sm:hidden">Leídas</span>
+                <span className="sm:hidden">{t('notificationsPage.read')}</span>
               </Button>
             )}
           </div>
@@ -171,8 +171,8 @@ export default function Notifications() {
             />
             <span className="text-sm text-muted-foreground">
               {selectedIds.size === 0
-                ? 'Seleccionar todas'
-                : `${selectedIds.size} de ${notifications.length} seleccionada(s)`}
+                ? t('notificationsPage.selectAll')
+                : `${selectedIds.size} / ${notifications.length}`}
             </span>
           </div>
         )}
@@ -274,7 +274,7 @@ export default function Notifications() {
               onClick={() => setShowDeleteConfirm(true)}
             >
               <Trash2 className="w-4 h-4" />
-              Eliminar ({selectedIds.size})
+              {t('notificationsPage.deleteBtn')} ({selectedIds.size})
             </Button>
           </div>
         )}
@@ -284,19 +284,19 @@ export default function Notifications() {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar {selectedIds.size} notificación(es)?</AlertDialogTitle>
+            <AlertDialogTitle>{t('notificationsPage.deleteConfirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Las notificaciones seleccionadas se eliminarán permanentemente. Esta acción no se puede deshacer.
+              {t('notificationsPage.deleteConfirmDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('notificationsPage.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Eliminando...' : 'Eliminar'}
+              {isDeleting ? t('notificationsPage.deleting') : t('notificationsPage.deleteBtn')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

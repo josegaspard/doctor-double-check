@@ -102,6 +102,11 @@ export function useNotifications() {
   }, [supabaseUser?.id]);
 
   useEffect(() => {
+    if (!supabaseUser?.id) {
+      setIsLoading(false);
+      return;
+    }
+
     if (supabaseUser?.id) {
       // Fetch both in parallel
       Promise.all([fetchNotifications(), fetchPreferences()]);

@@ -308,7 +308,7 @@ export default function Chat() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-6 max-w-6xl flex flex-col h-[calc(100dvh-theme(spacing.14)-72px)] sm:h-[calc(100vh-theme(spacing.14)-theme(spacing.24))]">
+      <div className="container mx-auto px-1 sm:px-4 py-2 sm:py-6 max-w-6xl flex flex-col h-[calc(100dvh-56px-72px)] sm:h-[calc(100vh-56px-96px)] overflow-hidden">
         <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0 px-2 sm:px-0">
           <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground flex items-center gap-2">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
@@ -326,7 +326,7 @@ export default function Chat() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-[340px,1fr] gap-3 sm:gap-4 flex-1 min-h-0 overflow-hidden">
+        <div className="grid md:grid-cols-[340px,1fr] gap-2 sm:gap-4 flex-1 min-h-0 overflow-hidden w-full max-w-full">
           <ChatSessionsList
             activeSessions={activeSessions}
             closedSessions={closedSessions}
