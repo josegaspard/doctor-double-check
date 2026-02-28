@@ -36,7 +36,53 @@ function renderVideoTracks(container: HTMLDivElement, co: DailyCall) {
   const remotes = Object.values(participants).filter(p => !p.local);
   const local = participants.local;
 
-  // ── Remote video (full-screen) ──
+  // ── Detect screen share from any remote participant ──
+  let screenTrack: MediaStreamTrack | null = null;
+  let screenAudioTrack: MediaStreamTrack | null = null;
+  for (const r of remotes) {
+    const st = r.tracks?.screenVideo?.persistentTrack;
+    if (st) {
+      screenTrack = st;
+      screenAudioTrack = r.tracks?.screenAudio?.persistentTrack || null;
+      break;
+    }
+  }
+
+  // ── Screen share video (full-screen when active) ──
+  let screenVideo = container.querySelector<HTMLVideoElement>('[data-role="screen"]');
+  let screenBadge = container.querySelector<HTMLDivElement>('[data-role="screen-badge"]');
+
+  if (screenTrack) {
+    if (!screenVideo) {
+      screenVideo = document.createElement('video');
+      screenVideo.setAttribute('data-role', 'screen');
+      screenVideo.autoplay = true;
+      screenVideo.playsInline = true;
+      screenVideo.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;';
+      container.prepend(screenVideo);
+    }
+    const tracks: MediaStreamTrack[] = [screenTrack];
+    if (screenAudioTrack) tracks.push(screenAudioTrack);
+    const curIds = (screenVideo.srcObject as MediaStream)?.getTracks().map(t => t.id).join(',') || '';
+    const newIds = tracks.map(t => t.id).join(',');
+    if (curIds !== newIds) {
+      screenVideo.srcObject = new MediaStream(tracks);
+      screenVideo.play().catch(() => {});
+    }
+    // Badge
+    if (!screenBadge) {
+      screenBadge = document.createElement('div');
+      screenBadge.setAttribute('data-role', 'screen-badge');
+      screenBadge.style.cssText = 'position:absolute;top:12px;left:12px;z-index:20;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.7);color:white;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;';
+      screenBadge.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span> Pantalla compartida';
+      container.appendChild(screenBadge);
+    }
+  } else {
+    screenVideo?.remove();
+    screenBadge?.remove();
+  }
+
+  // ── Remote camera video ──
   let remoteVideo = container.querySelector<HTMLVideoElement>('[data-role="remote"]');
   let waitingEl = container.querySelector<HTMLDivElement>('[data-role="waiting"]');
 
@@ -45,33 +91,35 @@ function renderVideoTracks(container: HTMLDivElement, co: DailyCall) {
     const videoTrack = remote.tracks?.video?.persistentTrack;
     const audioTrack = remote.tracks?.audio?.persistentTrack;
 
-    // Remove waiting indicator
     waitingEl?.remove();
 
     if (videoTrack || audioTrack) {
+      const isScreenActive = !!screenTrack;
       if (!remoteVideo) {
         remoteVideo = document.createElement('video');
         remoteVideo.setAttribute('data-role', 'remote');
         remoteVideo.autoplay = true;
         remoteVideo.playsInline = true;
-        remoteVideo.style.cssText = 'width:100%;height:100%;object-fit:cover;';
         container.prepend(remoteVideo);
       }
-      // Build stream with available tracks
+      // Switch between full-screen and PiP depending on screen share
+      if (isScreenActive) {
+        remoteVideo.style.cssText = 'position:absolute;bottom:80px;left:16px;width:120px;height:90px;border-radius:8px;object-fit:cover;z-index:10;border:2px solid hsl(var(--primary));box-shadow:0 4px 12px rgba(0,0,0,0.5);';
+      } else {
+        remoteVideo.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      }
+
       const tracks: MediaStreamTrack[] = [];
       if (videoTrack) tracks.push(videoTrack);
       if (audioTrack) tracks.push(audioTrack);
 
-      // Only update srcObject if tracks changed
       const currentTrackIds = (remoteVideo.srcObject as MediaStream)?.getTracks().map(t => t.id).join(',') || '';
       const newTrackIds = tracks.map(t => t.id).join(',');
       if (currentTrackIds !== newTrackIds) {
-        console.log('[VideoCall] Updating remote stream tracks:', newTrackIds);
         remoteVideo.srcObject = new MediaStream(tracks);
         remoteVideo.play().catch(() => {});
       }
     } else {
-      // Participant joined but no tracks yet
       remoteVideo?.remove();
       if (!waitingEl) {
         waitingEl = document.createElement('div');
@@ -82,7 +130,6 @@ function renderVideoTracks(container: HTMLDivElement, co: DailyCall) {
       }
     }
   } else {
-    // No remote participants yet
     remoteVideo?.remove();
     if (!waitingEl) {
       waitingEl = document.createElement('div');
@@ -108,8 +155,14 @@ function renderVideoTracks(container: HTMLDivElement, co: DailyCall) {
       localVideo.autoplay = true;
       localVideo.playsInline = true;
       localVideo.muted = true;
-      localVideo.style.cssText = 'position:absolute;bottom:80px;right:16px;width:120px;height:90px;border-radius:8px;object-fit:cover;z-index:10;border:2px solid hsl(var(--primary));box-shadow:0 4px 12px rgba(0,0,0,0.5);';
       container.appendChild(localVideo);
+    }
+    // Position local PiP: if screen share is active, put it next to remote PiP
+    const isScreenActive = !!screenTrack;
+    if (isScreenActive) {
+      localVideo.style.cssText = 'position:absolute;bottom:80px;right:16px;width:100px;height:75px;border-radius:8px;object-fit:cover;z-index:10;border:2px solid hsl(var(--primary));box-shadow:0 4px 12px rgba(0,0,0,0.5);';
+    } else {
+      localVideo.style.cssText = 'position:absolute;bottom:80px;right:16px;width:120px;height:90px;border-radius:8px;object-fit:cover;z-index:10;border:2px solid hsl(var(--primary));box-shadow:0 4px 12px rgba(0,0,0,0.5);';
     }
     const currentId = (localVideo.srcObject as MediaStream)?.getVideoTracks()[0]?.id;
     if (currentId !== localTrack.id) {
@@ -374,6 +427,7 @@ export default function VideoCall() {
             onToggleChat={() => setShowChat(!showChat)}
             onEndCall={handleEndCall}
             showChat={showChat}
+            isDoctor={isDoctor}
           />
         )}
       </div>
@@ -448,6 +502,7 @@ export default function VideoCall() {
                   onToggleChat={() => setShowChat(!showChat)}
                   onEndCall={handleEndCall}
                   showChat={showChat}
+                  isDoctor={isDoctor}
                 />
               </div>
             )}

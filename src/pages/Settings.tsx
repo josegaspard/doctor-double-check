@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from 'next-themes';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Globe, Bell, Shield, CheckCircle, Mail, CreditCard, Loader2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Globe, Bell, Shield, CheckCircle, Mail, CreditCard, Loader2, ExternalLink, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -21,6 +22,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const { preferences, updatePreferences } = useNotifications();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
 
@@ -102,6 +104,34 @@ export default function Settings() {
                 >
                   🇺🇸 {t('settings.english')}
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Appearance */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                {language === 'es' ? 'Apariencia' : 'Appearance'}
+              </CardTitle>
+              <CardDescription>
+                {language === 'es' ? 'Modo claro u oscuro' : 'Light or dark mode'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="dark-mode" className="flex flex-col gap-1 flex-1 min-w-0">
+                  <span>{language === 'es' ? 'Modo oscuro' : 'Dark mode'}</span>
+                  <span className="text-xs text-muted-foreground font-normal">
+                    {language === 'es' ? 'Cambia la apariencia de la aplicación' : 'Change the app appearance'}
+                  </span>
+                </Label>
+                <Switch
+                  id="dark-mode"
+                  checked={theme === 'dark'}
+                  onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                />
               </div>
             </CardContent>
           </Card>

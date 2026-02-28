@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Bell, Check, Trash2, Loader2, CheckSquare, X } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isToday, isYesterday, isThisWeek } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 
 function stripLeadingEmoji(text: string): string {
@@ -68,6 +68,7 @@ export default function Notifications() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification, deleteNotifications } = useNotifications();
+  const dateLocale = language === 'es' ? es : enUS;
 
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -195,73 +196,94 @@ export default function Notifications() {
           </Card>
         ) : (
           <div className="space-y-2 pb-20">
-            {notifications.map((notification) => (
-              <Card
-                key={notification.id}
-                className={`cursor-pointer hover:shadow-md transition-all active:scale-[0.98] ${
-                  isSelecting && selectedIds.has(notification.id) ? 'ring-2 ring-primary/30 bg-primary/5' :
-                  !notification.isRead ? 'border-primary/30 bg-primary/5' : ''
-                }`}
-                onClick={() => handleClick(notification)}
-              >
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-start gap-3">
-                    {isSelecting && (
-                      <div className="pt-0.5 flex-shrink-0">
-                        <Checkbox
-                          checked={selectedIds.has(notification.id)}
-                          onCheckedChange={() => toggleSelect(notification.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="h-5 w-5"
-                        />
+            {(() => {
+              let lastGroup = '';
+              return notifications.map((notification) => {
+                const date = notification.createdAt;
+                let group = '';
+                if (isToday(date)) group = language === 'es' ? 'Hoy' : 'Today';
+                else if (isYesterday(date)) group = language === 'es' ? 'Ayer' : 'Yesterday';
+                else if (isThisWeek(date)) group = language === 'es' ? 'Esta semana' : 'This week';
+                else group = language === 'es' ? 'Anteriores' : 'Older';
+
+                const showHeader = group !== lastGroup;
+                lastGroup = group;
+
+                return (
+                  <React.Fragment key={notification.id}>
+                    {showHeader && (
+                      <div className="pt-3 pb-1 first:pt-0">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group}</p>
                       </div>
                     )}
-                    <span className="text-xl mt-0.5">{getNotificationIcon(notification.type)}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm">{stripLeadingEmoji(notification.title)}</p>
-                        {!notification.isRead && (
-                          <Badge variant="default" className="text-xs px-1.5 py-0">
-                            {t('notificationsPage.new')}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(notification.createdAt, {
-                          addSuffix: true,
-                          locale: language === 'es' ? es : enUS,
-                        })}
-                      </p>
-                    </div>
-                    {!isSelecting && (
-                      <div className="flex gap-1 flex-shrink-0">
-                        {!notification.isRead && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-10 w-10"
-                            onClick={(e) => { e.stopPropagation(); markAsRead(notification.id); }}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-10 w-10 text-destructive"
-                          onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <Card
+                      className={`cursor-pointer hover:shadow-md transition-all active:scale-[0.98] ${
+                        isSelecting && selectedIds.has(notification.id) ? 'ring-2 ring-primary/30 bg-primary/5' :
+                        !notification.isRead ? 'border-primary/30 bg-primary/5' : ''
+                      }`}
+                      onClick={() => handleClick(notification)}
+                    >
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex items-start gap-3">
+                          {isSelecting && (
+                            <div className="pt-0.5 flex-shrink-0">
+                              <Checkbox
+                                checked={selectedIds.has(notification.id)}
+                                onCheckedChange={() => toggleSelect(notification.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="h-5 w-5"
+                              />
+                            </div>
+                          )}
+                          <span className="text-xl mt-0.5">{getNotificationIcon(notification.type)}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm">{stripLeadingEmoji(notification.title)}</p>
+                              {!notification.isRead && (
+                                <Badge variant="default" className="text-xs px-1.5 py-0">
+                                  {t('notificationsPage.new')}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatDistanceToNow(notification.createdAt, {
+                                addSuffix: true,
+                                locale: dateLocale,
+                              })}
+                            </p>
+                          </div>
+                          {!isSelecting && (
+                            <div className="flex gap-1 flex-shrink-0">
+                              {!notification.isRead && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-10 w-10"
+                                  onClick={(e) => { e.stopPropagation(); markAsRead(notification.id); }}
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-10 w-10 text-destructive"
+                                onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </React.Fragment>
+                );
+              });
+            })()}
           </div>
         )}
 

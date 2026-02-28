@@ -465,7 +465,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   {isActive && (
                     <motion.div
                       layoutId="bottom-nav-indicator"
-                      className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full"
+                      className="absolute top-0 w-10 h-[3px] bg-primary rounded-full"
                       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                     />
                   )}
