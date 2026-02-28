@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import DailyIframe, { DailyCall, DailyEventObjectParticipant } from '@daily-co/daily-js';
+import DailyIframe, { DailyCall } from '@daily-co/daily-js';
 
 type CallState = 'idle' | 'connecting' | 'connected' | 'ended' | 'error';
 
@@ -9,6 +9,8 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  // State (not ref) so components re-render when call object is set
+  const [callObject, setCallObject] = useState<DailyCall | null>(null);
 
   const callObjectRef = useRef<DailyCall | null>(null);
   const isCleanedUpRef = useRef(false);
@@ -30,7 +32,26 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
         console.warn('[Daily] cleanup error:', e);
       }
       callObjectRef.current = null;
+      setCallObject(null);
     }
+  }, []);
+
+  // Poll for room to be ready (patient side)
+  const waitForRoom = useCallback(async (consultationId: string, maxAttempts = 10): Promise<{ roomName: string; roomUrl: string }> => {
+    for (let i = 0; i < maxAttempts; i++) {
+      console.log(`[Daily] Polling for room... attempt ${i + 1}/${maxAttempts}`);
+      const { data } = await supabase
+        .from('consultations')
+        .select('video_room_name, video_room_url')
+        .eq('id', consultationId)
+        .single();
+
+      if (data?.video_room_name && data?.video_room_url) {
+        return { roomName: data.video_room_name, roomUrl: data.video_room_url };
+      }
+      await new Promise(r => setTimeout(r, 1500));
+    }
+    throw new Error('La sala de videollamada no está lista. El doctor debe iniciar la llamada primero.');
   }, []);
 
   const initDailyCall = useCallback(async (isDoctor: boolean) => {
@@ -41,12 +62,10 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     setCallState('connecting');
 
     try {
-      // Step 1: Create room (doctor) or get existing room info
       let roomUrl: string;
       let token: string;
 
       if (isDoctor) {
-        // Doctor creates the room
         console.log('[Daily] Creating Daily room...');
         const { data: roomData, error: roomError } = await supabase.functions.invoke('create-daily-room', {
           body: { liveId: consultationId, title: `Consulta ${consultationId.slice(0, 8)}`, mode: 'consultation' },
@@ -65,68 +84,41 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
 
         console.log('[Daily] Room created:', roomData.room.name);
       } else {
-        // Patient: get room info from consultation
-        console.log('[Daily] Patient joining, fetching consultation...');
-        const { data: consultation } = await supabase
-          .from('consultations')
-          .select('video_room_name, video_room_url')
-          .eq('id', consultationId)
-          .single();
+        // Patient: poll until room is ready
+        const { roomName, roomUrl: url } = await waitForRoom(consultationId);
+        roomUrl = url;
 
-        if (!consultation?.video_room_name) {
-          // Room not created yet — wait and retry
-          console.log('[Daily] Room not ready, waiting...');
-          await new Promise(r => setTimeout(r, 2000));
-          const { data: retry } = await supabase
-            .from('consultations')
-            .select('video_room_name, video_room_url')
-            .eq('id', consultationId)
-            .single();
-          if (!retry?.video_room_name) {
-            throw new Error('La sala de videollamada aún no está lista. El doctor debe iniciar la llamada primero.');
-          }
-          roomUrl = retry.video_room_url!;
-
-          // Get token
-          const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-daily-token', {
-            body: { roomName: retry.video_room_name, isOwner: false, enableMedia: true },
-          });
-          if (tokenError || !tokenData?.success) throw new Error('Failed to get token');
-          token = tokenData.token;
-        } else {
-          roomUrl = consultation.video_room_url!;
-          const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-daily-token', {
-            body: { roomName: consultation.video_room_name, isOwner: false, enableMedia: true },
-          });
-          if (tokenError || !tokenData?.success) throw new Error('Failed to get token');
-          token = tokenData.token;
-        }
+        const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-daily-token', {
+          body: { roomName, isOwner: false, enableMedia: true },
+        });
+        if (tokenError || !tokenData?.success) throw new Error('Failed to get token');
+        token = tokenData.token;
       }
 
-      // Step 2: Create Daily call object and join
+      // Create Daily call object and join
       console.log('[Daily] Creating call object and joining...');
-      const callObject = DailyIframe.createCallObject({
+      const co = DailyIframe.createCallObject({
         audioSource: true,
         videoSource: true,
       });
 
-      callObjectRef.current = callObject;
+      callObjectRef.current = co;
+      setCallObject(co);
 
       // Listen to events
-      callObject.on('joined-meeting', () => {
+      co.on('joined-meeting', () => {
         console.log('[Daily] ✅ Joined meeting!');
         if (!isCleanedUpRef.current) {
           setCallState('connected');
         }
       });
 
-      callObject.on('participant-joined', (event?: DailyEventObjectParticipant) => {
-        console.log('[Daily] 👤 Participant joined:', event?.participant?.user_name);
+      co.on('participant-joined', () => {
+        console.log('[Daily] 👤 Participant joined');
       });
 
-      callObject.on('participant-left', (event: any) => {
-        console.log('[Daily] 👤 Participant left:', event?.participant?.user_name);
-        // If the other person left, end the call
+      co.on('participant-left', (event: any) => {
+        console.log('[Daily] 👤 Participant left');
         if (event?.participant && !event.participant.local) {
           console.log('[Daily] Remote participant left — ending call');
           if (!isCleanedUpRef.current) {
@@ -136,19 +128,15 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
         }
       });
 
-      callObject.on('error', (event) => {
+      co.on('error', (event) => {
         console.error('[Daily] ❌ Error:', event);
         if (!isCleanedUpRef.current) {
           setCallState('error');
         }
       });
 
-      callObject.on('left-meeting', () => {
-        console.log('[Daily] Left meeting');
-      });
-
       // Join the room
-      await callObject.join({ url: roomUrl, token });
+      await co.join({ url: roomUrl, token });
       console.log('[Daily] ✅ Join successful');
     } catch (err: any) {
       console.error('[Daily] ❌ Error:', err);
@@ -156,7 +144,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
         setCallState('error');
       }
     }
-  }, [consultationId, userId, doCleanup]);
+  }, [consultationId, userId, doCleanup, waitForRoom]);
 
   const startCall = useCallback(async () => {
     await initDailyCall(true);
@@ -170,7 +158,6 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     console.log('[Daily] 📞 Ending call');
     setCallState('ended');
 
-    // Clean up room on the server
     if (consultationId) {
       const { data: consultation } = await supabase
         .from('consultations')
@@ -231,13 +218,10 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     }
   }, [isScreenSharing]);
 
-  // Expose the call object for the iframe approach
-  const callObject = callObjectRef.current;
-
   return {
     callState,
-    localStream: null as MediaStream | null,  // Not used with Daily
-    remoteStream: null as MediaStream | null,  // Not used with Daily
+    localStream: null as MediaStream | null,
+    remoteStream: null as MediaStream | null,
     isMuted,
     isCameraOff,
     isScreenSharing,
