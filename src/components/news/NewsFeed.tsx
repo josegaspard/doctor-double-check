@@ -43,12 +43,16 @@ export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(
 
   if (isLoading || news.length === 0) return null;
 
-  const topCards = news.slice(0, 3);
+  const hero = news[0];
+  const secondary = news.slice(1, 3);
   const listItems = news.slice(3);
+
+  const formatDate = (item: NewsItem) =>
+    format(new Date(item.published_at || item.created_at), 'd MMM', { locale });
 
   return (
     <section ref={ref} className="mt-8">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-5">
         <h2 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
           <Newspaper className="w-5 h-5 text-primary" />
           {t('medicalNews.title')}
@@ -60,39 +64,75 @@ export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(
         </Link>
       </div>
 
-      {/* Top 3 as cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {topCards.map((item) => (
-          <Link key={item.id} to={`/news/${item.slug || item.id}`}>
-            <Card className="overflow-hidden hover:shadow-lg transition-all group h-full">
-              {item.image_url && (
-                <div className="aspect-video overflow-hidden">
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
+      {/* Magazine Layout: Hero + Secondary Stack */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        {/* Hero Article */}
+        <Link to={`/news/${hero.slug || hero.id}`} className="lg:col-span-3 group">
+          <Card className="overflow-hidden hover:shadow-xl transition-all h-full border-0 shadow-md">
+            {hero.image_url && (
+              <div className="aspect-[16/9] lg:aspect-[16/10] overflow-hidden">
+                <img
+                  src={hero.image_url}
+                  alt={hero.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+              </div>
+            )}
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="secondary" className="text-[10px]">{hero.category}</Badge>
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {formatDate(hero)}
+                </span>
+              </div>
+              <h3 className="font-heading font-bold text-foreground text-lg sm:text-xl leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                {hero.title}
+              </h3>
+              {hero.summary && (
+                <p className="text-sm text-muted-foreground line-clamp-2 mt-2">{hero.summary}</p>
               )}
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <Badge variant="secondary" className="text-[10px]">{item.category}</Badge>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {format(new Date(item.published_at || item.created_at), 'd MMM', { locale })}
-                  </span>
+            </CardContent>
+          </Card>
+        </Link>
+
+        {/* Secondary Stack */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          {secondary.map((item) => (
+            <Link key={item.id} to={`/news/${item.slug || item.id}`} className="group flex-1">
+              <Card className="overflow-hidden hover:shadow-lg transition-all h-full border-0 shadow-sm">
+                <div className="flex sm:flex-col h-full">
+                  {item.image_url && (
+                    <div className="w-28 sm:w-full aspect-square sm:aspect-video overflow-hidden shrink-0">
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  <CardContent className="p-3 sm:p-4 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Badge variant="secondary" className="text-[10px]">{item.category}</Badge>
+                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" />
+                        {formatDate(item)}
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-foreground text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                      {item.title}
+                    </h3>
+                    {item.summary && (
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-1 hidden sm:block">{item.summary}</p>
+                    )}
+                  </CardContent>
                 </div>
-                <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors text-sm">
-                  {item.title}
-                </h3>
-                {item.summary && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{item.summary}</p>
-                )}
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Remaining as compact list */}
@@ -120,7 +160,7 @@ export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(
                   <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{item.category}</Badge>
                   <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                     <Clock className="w-2.5 h-2.5" />
-                    {format(new Date(item.published_at || item.created_at), 'd MMM', { locale })}
+                    {formatDate(item)}
                   </span>
                 </div>
               </div>

@@ -270,67 +270,73 @@ export function EmailHistoryCard() {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Mail className="w-5 h-5 text-primary" />
-            Historial de Emails
+      <CardHeader className="space-y-3">
+        {/* Row 1: Title + count badges */}
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2 min-w-0">
+            <Mail className="w-5 h-5 text-primary shrink-0" />
+            <span className="truncate">Historial de Emails</span>
           </CardTitle>
-          <div className="flex items-center gap-2">
-            {selectedIds.size > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={deleteSelected}
-                disabled={isDeleting}
-                className="gap-1"
-              >
-                <Trash2 className="w-4 h-4" />
-                {isDeleting ? '...' : `Eliminar (${selectedIds.size})`}
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={selectAll}
-              className="gap-1 text-xs"
-            >
-              {selectedIds.size === filteredEmails.length ? 'Deseleccionar' : 'Seleccionar todo'}
-            </Button>
-            {filteredEmails.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportToCSV}
-                className="gap-1"
-                title="Exportar a CSV"
-              >
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">CSV</span>
-              </Button>
-            )}
-            <Button
-              variant={showFilters ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="gap-1"
-            >
-              <Filter className="w-4 h-4" />
-              {hasActiveFilters && (
-                <span className="w-2 h-2 rounded-full bg-primary" />
-              )}
-            </Button>
-            <Badge variant="secondary" className="gap-1">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Badge variant="secondary" className="gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2">
               <CheckCircle className="w-3 h-3 text-success" />
               {sentCount}
             </Badge>
             {failedCount > 0 && (
-              <Badge variant="destructive" className="gap-1">
+              <Badge variant="destructive" className="gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2">
                 <XCircle className="w-3 h-3" />
                 {failedCount}
               </Badge>
             )}
           </div>
+        </div>
+
+        {/* Row 2: Actions */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {selectedIds.size > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={deleteSelected}
+              disabled={isDeleting}
+              className="gap-1 h-8 text-xs"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {isDeleting ? '...' : `Eliminar (${selectedIds.size})`}
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={selectAll}
+            className="gap-1 text-xs h-8"
+          >
+            <CheckCircle className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{selectedIds.size === filteredEmails.length ? 'Deseleccionar' : 'Seleccionar todo'}</span>
+          </Button>
+          {filteredEmails.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToCSV}
+              className="gap-1 h-8 text-xs"
+              title="Exportar a CSV"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">CSV</span>
+            </Button>
+          )}
+          <Button
+            variant={showFilters ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="gap-1 h-8 text-xs"
+          >
+            <Filter className="w-3.5 h-3.5" />
+            {hasActiveFilters && (
+              <span className="w-2 h-2 rounded-full bg-primary" />
+            )}
+          </Button>
         </div>
 
         {/* Filters */}

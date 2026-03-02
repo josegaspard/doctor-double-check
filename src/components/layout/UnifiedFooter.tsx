@@ -66,14 +66,17 @@ export function UnifiedFooter({ variant }: Props) {
 
   if (variant === 'app') {
     return (
-      <footer className="bg-[#0b1d45] text-slate-300 pt-8 pb-6 mt-auto hidden sm:block">
+      <footer className="bg-[#0b1d45] text-slate-300 pt-8 sm:pt-10 pb-24 sm:pb-6 mt-auto">
         <div className="container mx-auto px-4">
-          {/* Main grid: Logo+Social | Platform | Resources | Legal */}
+          {/* Main grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-6">
             {/* Brand column */}
             <div className="col-span-2 md:col-span-1">
               <img src={logoWhite} alt="Medical Masters" className="h-7 opacity-90 mb-3" />
-              <SocialIcons socialLinks={socialLinks} className="mt-3" />
+              <p className="text-xs text-slate-400 mb-3 max-w-xs leading-relaxed">
+                {t('landingFooter.brandDescription')}
+              </p>
+              <SocialIcons socialLinks={socialLinks} />
             </div>
 
             <FooterLinkColumn title={t('landingFooter.platform')} links={footerLinks.platform} />
