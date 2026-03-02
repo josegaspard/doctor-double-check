@@ -11,8 +11,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Crown, User, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 
 interface Subscriber {
   id: string;
@@ -30,6 +31,8 @@ interface SubscribersModalProps {
 }
 
 export function SubscribersModal({ open, onOpenChange, doctorId }: SubscribersModalProps) {
+  const { language, t } = useLanguage();
+  const locale = language === 'es' ? es : enUS;
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -82,11 +85,11 @@ export function SubscribersModal({ open, onOpenChange, doctorId }: SubscribersMo
   const getTierBadge = (tier: string) => {
     switch (tier) {
       case 'premium':
-        return <Badge className="bg-warning/10 text-warning border-warning/30 gap-1"><Crown className="w-3 h-3" />Premium</Badge>;
+        return <Badge className="bg-warning/10 text-warning border-warning/30 gap-1"><Crown className="w-3 h-3" />{t('subscribers.premium')}</Badge>;
       case 'basic':
-        return <Badge variant="secondary" className="gap-1"><Crown className="w-3 h-3" />Básica</Badge>;
+        return <Badge variant="secondary" className="gap-1"><Crown className="w-3 h-3" />{t('subscribers.basic')}</Badge>;
       default:
-        return <Badge variant="outline">Gratis</Badge>;
+        return <Badge variant="outline">{t('subscribers.free')}</Badge>;
     }
   };
 
@@ -96,11 +99,11 @@ export function SubscribersModal({ open, onOpenChange, doctorId }: SubscribersMo
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Suscriptores ({subscribers.length})
+            {t('subscribers.title')} ({subscribers.length})
           </DialogTitle>
           {paidCount > 0 && (
             <p className="text-sm text-muted-foreground">
-              {paidCount} de pago · {subscribers.length - paidCount} gratuitos
+              {paidCount} {t('subscribers.paid')} · {subscribers.length - paidCount} {t('subscribers.freeLabel')}
             </p>
           )}
         </DialogHeader>
@@ -129,7 +132,7 @@ export function SubscribersModal({ open, onOpenChange, doctorId }: SubscribersMo
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{sub.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Desde {format(sub.createdAt, 'd MMM yyyy', { locale: es })}
+                      {t('subscribers.since')} {format(sub.createdAt, 'd MMM yyyy', { locale })}
                     </p>
                   </div>
                   {getTierBadge(sub.tier)}
@@ -139,7 +142,7 @@ export function SubscribersModal({ open, onOpenChange, doctorId }: SubscribersMo
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">Aún no tienes suscriptores</p>
+              <p className="text-sm">{t('subscribers.noSubscribers')}</p>
             </div>
           )}
         </ScrollArea>

@@ -305,7 +305,7 @@ export default function ContentGallery() {
                     <div className="absolute top-2 right-2">
                       <Badge variant={content.audience_type === 'subscribers' ? 'default' : 'outline'} className={content.audience_type === 'subscribers' ? 'bg-warning text-warning-foreground gap-1' : 'bg-background/80'}>
                         {content.audience_type === 'subscribers' ? <Crown className="w-3 h-3" /> : getAudienceIcon(content.audience_type)}
-                        <span className="ml-1">{content.audience_type === 'subscribers' ? 'Suscriptores' : getAudienceLabel(content.audience_type, t)}</span>
+                        <span className="ml-1">{content.audience_type === 'subscribers' ? t('subscribers.subscribersOnly') : getAudienceLabel(content.audience_type, t)}</span>
                       </Badge>
                     </div>
                   )}
@@ -314,7 +314,7 @@ export default function ContentGallery() {
                     <div className="absolute inset-0 bg-background/60 flex items-center justify-center backdrop-blur-sm">
                       <div className="text-center">
                         <Lock className="w-8 h-8 text-warning mx-auto mb-1" />
-                        <p className="text-xs font-medium text-foreground">Solo suscriptores</p>
+                        <p className="text-xs font-medium text-foreground">{t('subscribers.subscribersOnly')}</p>
                       </div>
                     </div>
                   )}

@@ -44,7 +44,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 
 interface DoctorContent {
   id: string;
@@ -71,14 +71,14 @@ const getAudienceIcon = (audience: string) => {
   }
 };
 
-const getAudienceLabel = (audience: string) => {
+const getAudienceLabel = (audience: string, t: (key: string) => string) => {
   switch (audience) {
     case 'professionals':
-      return 'Profesionales';
+      return t('content.professionals');
     case 'patients':
-      return 'Pacientes';
+      return t('content.patients');
     default:
-      return 'Todos';
+      return t('content.all');
   }
 };
 
@@ -98,7 +98,8 @@ const getTypeIcon = (type: string) => {
 export default function DoctorContentLibrary() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const locale = language === 'es' ? es : enUS;
   const [contents, setContents] = useState<DoctorContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -122,11 +123,11 @@ export default function DoctorContentLibrary() {
       setContents(data || []);
     } catch (error) {
       console.error('Error fetching content:', error);
-      toast.error('Error al cargar contenido');
+      toast.error(t('doctorLibrary.errorLoading'));
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, t]);
 
   useEffect(() => {
     fetchContents();
@@ -139,9 +140,9 @@ export default function DoctorContentLibrary() {
         <div className="container mx-auto px-4 py-12">
           <Card className="max-w-lg mx-auto text-center p-8">
             <Lock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="font-heading text-xl font-bold mb-2">Acceso restringido</h2>
-            <p className="text-muted-foreground mb-4">Solo los médicos pueden ver su biblioteca de contenido.</p>
-            <Button onClick={() => navigate('/')}>Volver al inicio</Button>
+            <h2 className="font-heading text-xl font-bold mb-2">{t('doctorLibrary.restrictedAccess')}</h2>
+            <p className="text-muted-foreground mb-4">{t('doctorLibrary.onlyDoctors')}</p>
+            <Button onClick={() => navigate('/')}>{t('doctorLibrary.goHome')}</Button>
           </Card>
         </div>
       </MainLayout>
@@ -157,7 +158,6 @@ export default function DoctorContentLibrary() {
   const extractStoragePath = (url: string): string => {
     if (!url) return '';
     const decoded = decodeURIComponent(url.trim());
-    // Match bucket/path pattern from various URL formats
     const patterns = [
       /\/storage\/v1\/object\/(?:public|sign)\/([^?]+)/,
       /\/object\/(?:public|sign)\/([^?]+)/,
@@ -166,7 +166,6 @@ export default function DoctorContentLibrary() {
       const match = decoded.match(pattern);
       if (match) {
         const fullPath = match[1];
-        // Remove bucket prefix to get just the file path
         const slashIndex = fullPath.indexOf('/');
         return slashIndex >= 0 ? fullPath.substring(slashIndex + 1) : fullPath;
       }
@@ -179,26 +178,9 @@ export default function DoctorContentLibrary() {
 
     setIsDeleting(true);
     try {
-      // Find the content to get file URLs before deleting
       const contentToDelete = contents.find(c => c.id === deleteId);
 
-      // 1. Delete the actual file from doctor-content bucket
-      if (contentToDelete?.file_url) {
-        const filePath = extractStoragePath(contentToDelete.file_url);
-        if (filePath) {
-          await supabase.storage.from('doctor-content').remove([filePath]);
-        }
-      }
-
-      // 2. Delete thumbnail from thumbnails bucket
-      if (contentToDelete?.thumbnail_url) {
-        const thumbPath = extractStoragePath(contentToDelete.thumbnail_url);
-        if (thumbPath) {
-          await supabase.storage.from('thumbnails').remove([thumbPath]);
-        }
-      }
-
-      // 3. Delete the DB record (purchases.content_id will be SET NULL automatically)
+      // 1. Delete DB record FIRST (if this fails, don't touch storage)
       const { error } = await supabase
         .from('doctor_content')
         .delete()
@@ -206,11 +188,25 @@ export default function DoctorContentLibrary() {
 
       if (error) throw error;
 
+      // 2. Delete storage files (best-effort after DB success)
+      if (contentToDelete?.file_url) {
+        const filePath = extractStoragePath(contentToDelete.file_url);
+        if (filePath) {
+          await supabase.storage.from('doctor-content').remove([filePath]);
+        }
+      }
+      if (contentToDelete?.thumbnail_url) {
+        const thumbPath = extractStoragePath(contentToDelete.thumbnail_url);
+        if (thumbPath) {
+          await supabase.storage.from('thumbnails').remove([thumbPath]);
+        }
+      }
+
       setContents(prev => prev.filter(c => c.id !== deleteId));
-      toast.success('Contenido eliminado por completo de la plataforma');
-    } catch (error) {
+      toast.success(t('doctorLibrary.deleted'));
+    } catch (error: any) {
       console.error('Error deleting content:', error);
-      toast.error('Error al eliminar contenido');
+      toast.error(`${t('doctorLibrary.errorDeleting')}: ${error.message || ''}`);
     } finally {
       setIsDeleting(false);
       setDeleteId(null);
@@ -229,17 +225,17 @@ export default function DoctorContentLibrary() {
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
               <FileText className="w-6 h-6 text-primary" />
-              Mi Biblioteca de Contenido
+              {t('doctorLibrary.title')}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {contents.length} expedientes subidos
+              {contents.length} {t('doctorLibrary.filesUploaded')}
             </p>
           </div>
           
           <Link to="/doctor/upload">
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
-              Subir Contenido
+              {t('doctorLibrary.uploadContent')}
             </Button>
           </Link>
         </div>
@@ -258,13 +254,13 @@ export default function DoctorContentLibrary() {
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-full sm:w-48">
               <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Tipo de archivo" />
+              <SelectValue placeholder={t('doctorLibrary.fileType')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos los tipos</SelectItem>
-              <SelectItem value="video">Videos</SelectItem>
-              <SelectItem value="pdf">PDFs</SelectItem>
-              <SelectItem value="image">Imágenes</SelectItem>
+              <SelectItem value="all">{t('doctorLibrary.allTypes')}</SelectItem>
+              <SelectItem value="video">{t('doctorLibrary.videos')}</SelectItem>
+              <SelectItem value="pdf">{t('doctorLibrary.pdfs')}</SelectItem>
+              <SelectItem value="image">{t('doctorLibrary.images')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -304,12 +300,12 @@ export default function DoctorContentLibrary() {
                   <div className="absolute top-2 right-2">
                     {content.is_public ? (
                       <Badge variant="outline" className="bg-success/10 text-success border-success/30">
-                        Público
+                        {t('doctorLibrary.public')}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="bg-muted">
                         <Lock className="w-3 h-3 mr-1" />
-                        Privado
+                        {t('doctorLibrary.private')}
                       </Badge>
                     )}
                   </div>
@@ -328,13 +324,13 @@ export default function DoctorContentLibrary() {
                   
                   <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
                     <Clock className="w-3 h-3" />
-                    {format(new Date(content.created_at), "d MMM yyyy", { locale: es })}
+                    {format(new Date(content.created_at), "d MMM yyyy", { locale })}
                     
                     <span className="mx-1">•</span>
                     
                     <span className="flex items-center gap-1">
                       {getAudienceIcon(content.audience_type)}
-                      {getAudienceLabel(content.audience_type)}
+                      {getAudienceLabel(content.audience_type, t)}
                     </span>
                   </div>
                   
@@ -345,7 +341,7 @@ export default function DoctorContentLibrary() {
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="text-success">
-                        Gratis
+                        {t('doctorLibrary.free')}
                       </Badge>
                     )}
                     
@@ -375,17 +371,17 @@ export default function DoctorContentLibrary() {
           <Card className="p-12 text-center">
             <FileText className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              No hay contenido
+              {t('doctorLibrary.noContent')}
             </h3>
             <p className="text-muted-foreground mb-4">
               {searchQuery || typeFilter !== 'all' 
-                ? 'No se encontró contenido con esos filtros'
-                : 'Aún no has subido ningún contenido'}
+                ? t('doctorLibrary.noContentFilters')
+                : t('doctorLibrary.noContentYet')}
             </p>
             <Link to="/doctor/upload">
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
-                Subir mi primer contenido
+                {t('doctorLibrary.uploadFirst')}
               </Button>
             </Link>
           </Card>
@@ -396,13 +392,13 @@ export default function DoctorContentLibrary() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar contenido?</AlertDialogTitle>
+            <AlertDialogTitle>{t('doctorLibrary.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. El contenido será eliminado permanentemente.
+              {t('doctorLibrary.deleteDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
@@ -411,10 +407,10 @@ export default function DoctorContentLibrary() {
               {isDeleting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Eliminando...
+                  {t('doctorLibrary.deleting')}
                 </>
               ) : (
-                'Eliminar'
+                t('common.delete')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

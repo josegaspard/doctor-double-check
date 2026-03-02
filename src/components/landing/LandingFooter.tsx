@@ -1,7 +1,9 @@
 import { ScrollToTopLink } from './ScrollToTopLink';
+import { useLanguage } from '@/contexts/LanguageContext';
 import logoWhite from '@/assets/logo-medical-masters-white.png';
 
 export function LandingFooter() {
+  const { t } = useLanguage();
   return (
     <footer className="bg-[#0b1d45] pt-12 sm:pt-20 pb-8 sm:pb-10 text-slate-300 border-t border-white/5 font-light text-sm">
       <div className="container mx-auto px-4 sm:px-6">
@@ -10,7 +12,7 @@ export function LandingFooter() {
           <div className="col-span-2">
             <img src={logoWhite} alt="Medical Logo" className="h-8 mb-4 sm:mb-6 opacity-90" />
             <p className="mb-4 sm:mb-6 max-w-sm text-slate-400 text-xs sm:text-sm">
-              Revolucionando la atención médica a través de la tecnología. Comprometidos con la ética, la seguridad y la excelencia clínica.
+              {t('landingFooter.brandDescription')}
             </p>
             <div className="flex space-x-3 sm:space-x-4">
               <a href="#" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/20 transition-colors">
@@ -27,43 +29,43 @@ export function LandingFooter() {
 
           {/* Links - Plataforma */}
           <div>
-            <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">Plataforma</h4>
+            <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">{t('landingFooter.platform')}</h4>
             <ul className="space-y-2 sm:space-y-4 text-xs sm:text-sm">
-              <li><ScrollToTopLink to="/for-doctors" className="hover:text-[#aed3d9] transition-colors">Para Médicos</ScrollToTopLink></li>
-              <li><ScrollToTopLink to="/for-patients" className="hover:text-[#aed3d9] transition-colors">Para Pacientes</ScrollToTopLink></li>
-              <li><ScrollToTopLink to="/enterprise" className="hover:text-[#aed3d9] transition-colors">Enterprise</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/for-doctors" className="hover:text-[#aed3d9] transition-colors">{t('landingFooter.forDoctors')}</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/for-patients" className="hover:text-[#aed3d9] transition-colors">{t('landingFooter.forPatients')}</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/enterprise" className="hover:text-[#aed3d9] transition-colors">{t('landingFooter.enterprise')}</ScrollToTopLink></li>
             </ul>
           </div>
 
           {/* Links - Recursos */}
           <div>
-            <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">Recursos</h4>
+            <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">{t('landingFooter.resources')}</h4>
             <ul className="space-y-2 sm:space-y-4 text-xs sm:text-sm">
-              <li><ScrollToTopLink to="/success-stories" className="hover:text-[#aed3d9] transition-colors">Casos de Éxito</ScrollToTopLink></li>
-              <li><ScrollToTopLink to="/help" className="hover:text-[#aed3d9] transition-colors">Ayuda</ScrollToTopLink></li>
-              <li><ScrollToTopLink to="/contact" className="hover:text-[#aed3d9] transition-colors">Contacto</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/success-stories" className="hover:text-[#aed3d9] transition-colors">{t('landingFooter.successStories')}</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/help" className="hover:text-[#aed3d9] transition-colors">{t('landingFooter.help')}</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/contact" className="hover:text-[#aed3d9] transition-colors">{t('landingFooter.contact')}</ScrollToTopLink></li>
             </ul>
           </div>
 
           {/* Links - Legal */}
           <div>
-            <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">Legal</h4>
+            <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">{t('landingFooter.legal')}</h4>
             <ul className="space-y-2 sm:space-y-4 text-xs sm:text-sm">
-              <li><ScrollToTopLink to="/privacy" className="hover:text-[#aed3d9] transition-colors">Privacidad</ScrollToTopLink></li>
-              <li><ScrollToTopLink to="/terms" className="hover:text-[#aed3d9] transition-colors">Términos</ScrollToTopLink></li>
-              <li><ScrollToTopLink to="/security" className="hover:text-[#aed3d9] transition-colors">Seguridad</ScrollToTopLink></li>
-              <li><ScrollToTopLink to="/compliance" className="hover:text-[#aed3d9] transition-colors">Compliance</ScrollToTopLink></li>
-              <li><ScrollToTopLink to="/report-issue" className="hover:text-[#aed3d9] transition-colors text-orange-300/80 hover:text-orange-200">Reportar falla o abuso</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/privacy" className="hover:text-[#aed3d9] transition-colors">{t('landingFooter.privacy')}</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/terms" className="hover:text-[#aed3d9] transition-colors">{t('landingFooter.terms')}</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/security" className="hover:text-[#aed3d9] transition-colors">{t('landingFooter.security')}</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/compliance" className="hover:text-[#aed3d9] transition-colors">{t('landingFooter.compliance')}</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/report-issue" className="hover:text-[#aed3d9] transition-colors text-orange-300/80 hover:text-orange-200">{t('landingFooter.reportIssue')}</ScrollToTopLink></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-white/10 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs sm:text-sm text-center sm:text-left">&copy; 2026 Medical Platform Inc. All rights reserved.</p>
+          <p className="text-xs sm:text-sm text-center sm:text-left">{t('landingFooter.copyright')}</p>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-green-500 font-bold text-xs">All Systems Operational</span>
+              <span className="text-green-500 font-bold text-xs">{t('landingFooter.allSystems')}</span>
             </div>
           </div>
         </div>
