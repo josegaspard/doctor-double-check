@@ -1,82 +1,101 @@
 
 
-# Plan: Bulk Delete Recordings, Mobile Live Fullscreen, and Fix Report System
+# Plan: Proximity Filter, Blog UX, Admin Reports Link, Password Reset, Google Branding, Mobile Live Fixes
 
-## 1. Bulk Delete Recordings
+## 1. Auto-filter doctors by proximity using real distance calculation
 
-Add multi-select mode to the "Mis Grabaciones" page so doctors can select multiple recordings and delete them all at once. Complete cleanup includes storage files, database records, and associated `doctor_content` entries.
+**Current issue**: When the user taps the map icon and grants location, doctors are only sorted by "has location vs doesn't" -- no actual distance calculation happens. Doctors in the same city appear in the same order as those far away.
 
-### Changes to `src/pages/DoctorRecordings.tsx`:
-- Add state for `selectionMode`, `selectedIds` (Set of recording IDs)
-- Add a "Seleccionar" toggle button in the card header next to "Grabaciones"
-- When selection mode is active:
-  - Show checkboxes on each recording card/row
-  - Show a floating action bar at the bottom with count + "Eliminar seleccionados" button
-  - Disable normal navigation/dropdown on tap (clicking selects instead)
-  - Add "Seleccionar todos" / "Deseleccionar todos" options
-- On bulk delete confirmation (AlertDialog):
-  - Delete storage files for all selected recordings
-  - Delete associated `doctor_content` entries that reference the video URLs
-  - Delete all selected recording rows from DB
-  - Update local state immediately
-- Follow the existing bulk-delete pattern used in chat sessions (banner + floating bar + AlertDialog confirmation)
+**Fix in `src/pages/Doctors.tsx`**:
+- Add a `haversineDistance(lat1, lng1, lat2, lng2)` utility function that calculates real km distance between two coordinates
+- Create a simple geocoding map for known Mexican cities (e.g., "Ciudad de Mexico" -> lat/lng, "Guadalajara, Jalisco" -> lat/lng, etc.) to estimate doctor coordinates from their `location` text field
+- When `nearbyMode` is active and `userLocation` is set, sort doctors by distance (nearest first)
+- Add a "~X km" badge next to each doctor's location when in nearby mode
+- Doctors without a recognizable location go to the bottom of the list
 
-## 2. Mobile Live Stream Fullscreen Fix
+## 2. Improve blog article text styling + working share buttons
 
-The screenshot shows the video only takes up the top portion of the screen with a large black gap below. The `DailyVideoPlayer` video element needs to fill the entire screen.
+**Current issue**: The blog content uses `prose prose-sm sm:prose` which can look cramped. Share buttons exist for Facebook and X but WhatsApp is missing.
 
-### Changes to `src/components/live/DailyVideoPlayer.tsx`:
-- Ensure the video element uses `object-cover` and `w-full h-full` to fill its container completely on mobile
-- The container in `LiveStreamView` already uses `fixed inset-0` and `flex-1`, so the player itself needs to expand properly
+**Fix in `src/pages/NewsArticle.tsx`**:
+- Upgrade prose classes to `prose prose-base sm:prose-lg` for better readability with more generous spacing
+- Add custom prose overrides: `prose-headings:font-heading prose-headings:text-foreground prose-p:text-foreground/85 prose-p:leading-relaxed prose-li:text-foreground/85`
+- Add WhatsApp share button: `https://wa.me/?text={encodedTitle}%20{encodedUrl}`
+- Ensure Facebook opens: `https://www.facebook.com/sharer/sharer.php?u={url}` (already works)
+- Ensure X/Twitter opens: `https://twitter.com/intent/tweet?url={url}&text={title}` (already works)
 
-### Changes to `src/components/live/LiveStreamView.tsx`:
-- The mobile layout already has `fixed inset-0 z-50 bg-black flex flex-col` with `height: 100dvh`
-- Ensure the video container `flex-1 relative` has `overflow-hidden` and the video inside fills it
-- The DailyVideoPlayer's internal video element should use `object-cover` on mobile to fill the viewport without black bars
+## 3. Add Reports module to Admin Dashboard
 
-### Changes to `src/pages/DoctorGoLive.tsx`:
-- The mobile detection currently uses `window.innerWidth < 768` which doesn't update on orientation change. Use `useIsMobile()` hook instead for consistency.
+**Current issue**: The route `/admin/reports` exists and `AdminReports.tsx` works, but it is NOT listed in the `adminModules` array in `AdminDashboard.tsx`, so there's no card to click on from the admin panel.
 
-## 3. Fix Report Submission Error + Enhance Admin Reports Panel
+**Fix in `src/pages/AdminDashboard.tsx`**:
+- Add a `reports` entry to the `adminModules` array with icon `Flag`, href `/admin/reports`, color `text-destructive`
+- Add localized labels: ES "Reportes y Reclamos" / "Gestiona reportes de usuarios y abuso", EN "Reports & Claims" / "Manage user reports and abuse"
+- Import the `Flag` icon from lucide-react
 
-### Root cause of error
-The `reports` table has a CHECK constraint: `content_type IN ('live', 'recording', 'doctor', 'chat_message')`. The `ReportIssue.tsx` page tries to insert `content_type: 'platform_report'`, which violates this constraint and causes the insert to fail.
+**Where to find it**: After this change, the "Reportes y Reclamos" card will appear in the Admin Dashboard grid. Click it to go to `/admin/reports` where you can filter by status (Pendientes, Revisados, Resueltos, Descartados), review each report, add internal notes, and respond to the user via notification.
 
-### Database migration
-- ALTER the CHECK constraint on `reports.content_type` to add `'platform_report'` as an allowed value
-- Add columns to `reports` table:
-  - `attachment_urls text[]` -- for uploaded images/videos
-  - `subject text` -- for the report subject line
-  - `contact_email text` -- for contact email
+## 4. Resident test user
 
-### Changes to `src/pages/ReportIssue.tsx`:
-- Store subject and contact_email in their own columns instead of concatenating into description
-- Add file upload capability (images/videos) using the existing `doctor-content` or a new `report-attachments` storage bucket
-- Upload attachments before submitting the report
-- Save attachment URLs in the `attachment_urls` column
+I cannot create database records directly, but I will provide you with a clear path:
+- Go to the app's registration page (`/login`), switch to "Crear cuenta" tab
+- Select role "Residente", fill in name, email, password, institution, specialty
+- After email confirmation, go to Admin Dashboard -> "Validacion de Residentes" and approve the resident
+- Alternatively, I can add a seed function or you can use the existing `seed-demo-users` edge function if it includes residents
 
-### Changes to `src/pages/AdminReports.tsx`:
-- Add `'platform_report'` to `CONTENT_TYPE_LABELS` mapping
-- Display the new fields (subject, contact_email, attachments) in the review dialog
-- Show attachment previews (images/videos) in the report detail view
-- Add admin response functionality:
-  - Add a "Responder al usuario" textarea
-  - On save, create a notification to the reporter with the admin's response
-- Improve mobile layout with responsive card design
+## 5. Password reset flow verification
 
-### Storage migration
-- Create a `report-attachments` bucket (private)
-- Add RLS policies: authenticated users can upload to their own folder, admins can read all
+**Finding**: The flow is complete and should work:
+- `handleForgotPassword` in Login.tsx calls `resetPasswordForEmail` with `redirectTo: origin/reset-password`
+- `/reset-password` page exists, checks for session, and calls `updateUser({ password })`
+- No missing pieces detected. The flow is: enter email -> receive email -> click link -> redirected to `/reset-password` -> enter new password -> success
 
-## Summary of changes
+No code changes needed here.
 
-| File / Resource | Change |
-|---|---|
-| Database migration | Add `platform_report` to content_type CHECK, add `attachment_urls`, `subject`, `contact_email` columns, create `report-attachments` bucket |
-| `src/pages/DoctorRecordings.tsx` | Add multi-select mode with bulk delete functionality |
-| `src/components/live/DailyVideoPlayer.tsx` | Ensure video fills container on mobile with `object-cover` |
-| `src/components/live/LiveStreamView.tsx` | Fix video container to fill entire mobile viewport |
-| `src/pages/DoctorGoLive.tsx` | Use `useIsMobile()` hook instead of `window.innerWidth` |
-| `src/pages/ReportIssue.tsx` | Fix content_type, add file upload, use new DB columns |
-| `src/pages/AdminReports.tsx` | Show new fields, attachment previews, admin response with notification |
+## 6. Google OAuth branding (Lovable logo)
+
+**Finding**: The Google consent screen showing the Lovable logo is controlled by the managed Google OAuth credentials provided by Lovable Cloud. To show YOUR logo instead:
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) and create a project
+2. Configure the OAuth Consent Screen:
+   - Set your app name ("Medical Masters")
+   - Upload YOUR logo
+   - Add authorized domains: `lovable.app` and your custom domain if any
+   - Add scopes: `userinfo.email`, `userinfo.profile`, `openid`
+3. Create OAuth 2.0 credentials (Web application type):
+   - Add Authorized redirect URL from your Lovable Cloud Auth settings
+4. In Lovable: Go to **Settings -> Connectors -> Lovable Cloud -> Authentication Settings -> Google** and enter your own Client ID and Client Secret
+
+This is a configuration change, not a code change. The code already uses `lovable.auth.signInWithOAuth('google', ...)` which will automatically use your custom credentials once configured.
+
+## 7. Mobile live streaming fullscreen + screen share on iPad + end live error
+
+### 7a. Screen share: show on iPad/tablet, hide on phone
+
+**Fix in `src/components/live/DailyVideoPlayer.tsx`**:
+- The screen share button currently always shows for owners
+- Add a check: detect if device is a phone (not tablet) using `navigator.maxTouchPoints` + screen width
+- On phones (width < 768 and not iPad), hide the screen share button
+- On iPads/tablets (width >= 768 or iPad user agent), keep the button visible
+
+### 7b. Mobile live fullscreen already handled
+
+The `LiveStreamView.tsx` mobile layout already uses `fixed inset-0 z-50 bg-black` with `height: 100dvh` and `DoctorGoLive.tsx` renders without MainLayout on mobile. The `DailyVideoPlayer` video element uses `object-cover` on mobile (from previous fix). This should already work correctly.
+
+### 7c. "Error de conexion" when ending live from mobile
+
+This was already addressed in the previous iteration with `isLeavingRef`. The `endRoom` call is wrapped in try-catch. However, there may be a remaining issue: the `LiveStreamView` mobile controls have a separate "Finalizar" button that calls `onEndClick` which sets `showEndDialog(true)`. The user confirms in the dialog, then `handleEndLive` runs. During this flow, Daily fires error events.
+
+**Additional fix in `src/components/live/DailyVideoPlayer.tsx`**:
+- Expose a method to set `isLeavingRef.current = true` before the parent calls endRoom
+- Or: in `handleError`, also suppress errors when the `call` is in `leaving` state (`callRef.current?.meetingState() === 'leaving'`)
+
+## Summary of code changes
+
+| File | Change |
+|------|--------|
+| `src/pages/Doctors.tsx` | Add haversine distance calculation, city coordinate map, sort by real distance, show km badges |
+| `src/pages/NewsArticle.tsx` | Improve prose typography, add WhatsApp share button |
+| `src/pages/AdminDashboard.tsx` | Add "Reportes y Reclamos" module card with Flag icon |
+| `src/components/live/DailyVideoPlayer.tsx` | Hide screen share on phones, show on tablets; suppress errors during leaving state |
 
