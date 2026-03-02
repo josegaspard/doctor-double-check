@@ -47,12 +47,13 @@ export function useLocalRecording() {
       }
 
       // Determinar el mejor formato soportado
+      // MP4 first for maximum mobile compatibility (iOS only supports MP4)
       const mimeTypes = [
+        'video/mp4',
         'video/webm;codecs=h264,opus',
         'video/webm;codecs=vp9,opus',
         'video/webm;codecs=vp8,opus',
         'video/webm',
-        'video/mp4',
       ];
 
       let selectedMimeType = '';
