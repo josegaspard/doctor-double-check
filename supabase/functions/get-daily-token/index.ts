@@ -28,44 +28,49 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    // Authenticate user
+    // Authenticate user (optional - visitors can watch lives)
+    let userId: string | undefined;
+    let userName = 'Visitante';
+
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: userData } = await supabaseClient.auth.getUser(token);
+      if (userData?.user) {
+        userId = userData.user.id;
+        logStep("User authenticated", { userId });
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("User not authenticated");
+        // Get user profile with robust fallback
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("name")
+          .eq("id", userId)
+          .single();
 
-    const userId = userData.user.id;
-    logStep("User authenticated", { userId });
-
-    // Get user profile with robust fallback
-    const { data: profile } = await supabaseClient
-      .from("profiles")
-      .select("name")
-      .eq("id", userId)
-      .single();
-
-    const userName = profile?.name
-      || userData.user.user_metadata?.name
-      || (userData.user.email ? userData.user.email.split('@')[0] : 'Usuario');
+        userName = profile?.name
+          || userData.user.user_metadata?.name
+          || (userData.user.email ? userData.user.email.split('@')[0] : 'Usuario');
+      } else {
+        logStep("No valid user session, proceeding as visitor");
+      }
+    } else {
+      logStep("No auth header, proceeding as visitor");
+    }
 
     // Parse request body
     const { roomName, isOwner = false, enableMedia = false } = await req.json();
     if (!roomName) throw new Error("roomName is required");
 
-    logStep("Creating token", { roomName, isOwner, enableMedia, userName: profile?.name });
+    logStep("Creating token", { roomName, isOwner, enableMedia, userName, isVisitor: !userId });
 
     // Configure token properties
     const tokenProperties: Record<string, any> = {
       room_name: roomName,
       is_owner: isOwner,
-      user_id: userId,
+      ...(userId && { user_id: userId }),
       user_name: userName,
       // Token expires in 24 hours
       exp: Math.floor(Date.now() / 1000) + 86400,
-      // For 1:1 calls (enableMedia=true) start with video/audio on
-      // For live viewers, start with video/audio off
       start_video_off: !enableMedia,
       start_audio_off: !enableMedia,
     };
