@@ -785,6 +785,15 @@ export const en = {
     review: 'review',
     reviews: 'reviews',
     anonymousPatient: 'Patient',
+    howItWorks: 'How it works',
+    step1Title: 'Follow',
+    step1Desc: 'Get free alerts when they go live',
+    step2Title: 'Subscribe',
+    step2Desc: 'Access exclusive chat, content and recordings',
+    step3Title: 'Consult',
+    step3Desc: 'Start a consultation via chat or video call',
+    readMore: 'Read more',
+    readLess: 'Read less',
   },
   // Medical History
   medicalHistory: {
