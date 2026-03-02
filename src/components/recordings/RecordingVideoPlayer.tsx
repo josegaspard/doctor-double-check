@@ -90,17 +90,13 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   }
 
   return (
-    <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
+    <div className="relative aspect-[9/16] sm:aspect-video max-h-[80vh] mx-auto bg-black rounded-xl overflow-hidden">
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80">
           <Loader2 className="w-12 h-12 text-primary animate-spin" />
         </div>
       )}
 
-      {/*
-        Nota: usamos el reproductor nativo para archivos webm/mp4.
-        Si en el futuro guardamos HLS aquí, podemos extenderlo.
-      */}
       <video
         className="w-full h-full object-contain"
         src={signedUrl || undefined}

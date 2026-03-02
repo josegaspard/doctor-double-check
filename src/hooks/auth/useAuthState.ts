@@ -25,17 +25,32 @@ export function useAuthState() {
     };
 
     const validateAuthSession = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) {
-        try {
-          await supabase.auth.signOut();
-        } catch {
-          // ignore
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (error || !data.user) {
+          // Only sign out if there's genuinely no valid session
+          // Check if we have a local session first to avoid false positives from network errors
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (!sessionData.session) {
+            try {
+              await supabase.auth.signOut();
+            } catch {
+              // ignore
+            }
+            forceSignedOutState();
+            return false;
+          }
+          // We have a local session but getUser failed - likely a transient network error
+          // Don't sign out, just return true to keep the session alive
+          console.warn('[Auth] getUser failed but session exists, keeping session');
+          return true;
         }
-        forceSignedOutState();
-        return false;
+        return true;
+      } catch (e) {
+        // Network error - don't sign out
+        console.warn('[Auth] validateAuthSession network error, keeping session:', e);
+        return true;
       }
-      return true;
     };
 
     // Set up auth state listener FIRST

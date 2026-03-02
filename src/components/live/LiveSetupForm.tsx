@@ -48,7 +48,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const [specialty, setSpecialty] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [recordingPrice, setRecordingPrice] = useState(0);
+  const [recordingPrice, setRecordingPrice] = useState<number | ''>('');
   const [enableRecording, setEnableRecording] = useState(true);
   const [showRtmpsInfo, setShowRtmpsInfo] = useState(false);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
@@ -86,7 +86,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   };
 
   const handleSubmit = () => {
-    onStartLive({ title, description, specialty, tags, recordingPrice, enableRecording, thumbnailFile });
+    onStartLive({ title, description, specialty, tags, recordingPrice: Number(recordingPrice) || 0, enableRecording, thumbnailFile });
   };
 
   return (
@@ -241,7 +241,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                   step={10}
                   placeholder="0 = gratuita"
                   value={recordingPrice}
-                  onChange={(e) => setRecordingPrice(Number(e.target.value))}
+                  onChange={(e) => setRecordingPrice(e.target.value === '' ? '' : Number(e.target.value))}
                 />
                 <p className="text-xs text-muted-foreground">Deja en 0 para ofrecer la grabación gratis</p>
               </div>
