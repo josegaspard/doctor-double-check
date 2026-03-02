@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { DailyVideoPlayer } from './DailyVideoPlayer';
+import { DailyVideoPlayer, DailyVideoPlayerHandle } from './DailyVideoPlayer';
 import { LiveChat } from './LiveChat';
 import { AnimatedViewerCount } from './AnimatedViewerCount';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -15,7 +14,6 @@ import {
   MicOff,
   VideoIcon,
   VideoOff,
-  SwitchCamera,
 } from 'lucide-react';
 
 interface LiveStreamViewProps {
@@ -50,8 +48,12 @@ export function LiveStreamView({
 }: LiveStreamViewProps) {
   const isMobile = useIsMobile();
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(true);
+  const playerRef = useRef<DailyVideoPlayerHandle>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Force re-render to read ref state after toggles
+  const [, forceUpdate] = useState(0);
 
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
@@ -63,24 +65,47 @@ export function LiveStreamView({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Auto-hide top bar after 3 seconds on mobile
+  const resetHideTimer = useCallback(() => {
+    setShowOverlay(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setShowOverlay(false), 3000);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    resetHideTimer();
+    return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
+  }, [isMobile, resetHideTimer]);
+
+  const handleTapVideo = useCallback(() => {
+    if (isMobile) resetHideTimer();
+  }, [isMobile, resetHideTimer]);
+
   if (isMobile) {
+    const isMuted = playerRef.current?.isMuted ?? false;
+    const isVideoOff = playerRef.current?.isVideoOff ?? false;
+
     return (
-      <div className="fixed inset-0 z-50 bg-black flex flex-col" style={{ height: '100dvh' }}>
-        {/* Header overlay with safe area */}
+      <div
+        className="fixed inset-0 z-50 bg-black flex flex-col"
+        style={{ height: '100dvh' }}
+        onClick={handleTapVideo}
+      >
+        {/* Compact top overlay — auto-hides */}
         <div
-          className="absolute top-0 left-0 right-0 z-30 p-3 bg-gradient-to-b from-black/80 via-black/40 to-transparent"
-          style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
+          className={`absolute top-0 left-0 right-0 z-30 px-3 py-2 bg-gradient-to-b from-black/70 to-transparent transition-opacity duration-300 ${
+            showOverlay ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+          style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              {/* LIVE badge */}
-              <span className="flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+              <span className="flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-white" />
                 EN VIVO
               </span>
-              <div className="min-w-0">
-                <p className="text-white text-sm font-semibold truncate">{liveData.title}</p>
-              </div>
+              <p className="text-white text-xs font-medium truncate">{liveData.title}</p>
             </div>
             <div className="flex items-center gap-2 text-[10px] text-white/80 shrink-0">
               <span className="flex items-center gap-0.5">
@@ -96,51 +121,67 @@ export function LiveStreamView({
           </div>
         </div>
 
-        {/* Video fills the screen */}
+        {/* Video fills the screen — no internal controls */}
         <div className="flex-1 relative overflow-hidden">
           <DailyVideoPlayer
+            ref={playerRef}
             roomUrl={roomUrl}
             token={ownerToken}
             isOwner={true}
+            hideControls={true}
             onLeave={onEndClick}
             onParticipantCountChange={() => {}}
           />
         </div>
 
-        {/* Bottom controls - larger touch targets */}
+        {/* Single bottom control bar */}
         <div
-          className="absolute bottom-0 left-0 right-0 z-30 flex items-center justify-center gap-2 p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent"
+          className="absolute bottom-0 left-0 right-0 z-30 flex items-center justify-center gap-3 px-4 py-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent"
           style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
         >
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setIsMuted(!isMuted)}
-            className={`h-11 w-11 rounded-full border-white/20 text-white ${isMuted ? 'bg-destructive/60 hover:bg-destructive/80' : 'bg-white/10 hover:bg-white/20'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              playerRef.current?.toggleMute();
+              forceUpdate(n => n + 1);
+            }}
+            className={`h-12 w-12 rounded-full border-white/20 text-white ${isMuted ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
           >
             {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </Button>
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setIsVideoOff(!isVideoOff)}
-            className={`h-11 w-11 rounded-full border-white/20 text-white ${isVideoOff ? 'bg-destructive/60 hover:bg-destructive/80' : 'bg-white/10 hover:bg-white/20'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              playerRef.current?.toggleVideo();
+              forceUpdate(n => n + 1);
+            }}
+            className={`h-12 w-12 rounded-full border-white/20 text-white ${isVideoOff ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
           >
             {isVideoOff ? <VideoOff className="w-5 h-5" /> : <VideoIcon className="w-5 h-5" />}
           </Button>
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setMobileChatOpen(true)}
-            className="h-11 w-11 rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20"
+            onClick={(e) => {
+              e.stopPropagation();
+              setMobileChatOpen(true);
+            }}
+            className="h-12 w-12 rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20"
           >
             <MessageSquare className="w-5 h-5" />
           </Button>
           <Button
             variant="destructive"
             size="lg"
-            onClick={onEndClick}
-            className="h-11 gap-1.5 rounded-full px-5"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEndClick();
+            }}
+            className="h-12 gap-1.5 rounded-full px-6"
           >
             <StopCircle className="w-5 h-5" />
             Finalizar
@@ -149,7 +190,10 @@ export function LiveStreamView({
 
         {/* Mobile chat overlay */}
         {mobileChatOpen && (
-          <div className="absolute inset-x-0 bottom-0 z-40 h-[60dvh] bg-background rounded-t-2xl shadow-2xl flex flex-col animate-slide-in-bottom">
+          <div
+            className="absolute inset-x-0 bottom-0 z-40 h-[60dvh] bg-background rounded-t-2xl shadow-2xl flex flex-col animate-slide-in-bottom"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between px-4 py-2 border-b">
               <span className="font-semibold text-sm">Chat en vivo</span>
               <Button variant="ghost" size="icon" onClick={() => setMobileChatOpen(false)} className="h-8 w-8">
