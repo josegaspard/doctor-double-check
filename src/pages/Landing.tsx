@@ -72,9 +72,9 @@ export default function Landing() {
 
       {/* Background Blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#aed3d9]/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" />
-        <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-[#839ed5]/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-[#00768b]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '4s' }} />
+        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#aed3d9]/30 rounded-full mix-blend-multiply filter blur-xl sm:blur-3xl opacity-70 animate-pulse will-change-transform" />
+        <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-[#839ed5]/30 rounded-full mix-blend-multiply filter blur-xl sm:blur-3xl opacity-70 animate-pulse will-change-transform" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-[#00768b]/20 rounded-full mix-blend-multiply filter blur-xl sm:blur-3xl opacity-70 animate-pulse will-change-transform" style={{ animationDelay: '4s' }} />
       </div>
 
       {/* Navigation */}

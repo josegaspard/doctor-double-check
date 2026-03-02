@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -161,8 +161,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   // Enable realtime notifications
   useNotificationsRealtime();
 
-  // Get unread chat count
-  const chatUnread = (() => {
+  // Get unread chat count — memoized
+  const chatUnread = useMemo(() => {
     try {
       const { getSessionsByUser } = useChat();
       const sessions = getSessionsByUser();
@@ -173,17 +173,19 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     } catch {
       return 0;
     }
-  })();
+  }, []);
 
-  const filteredNavItems = navItems.filter(item => 
-    role && item.roles.includes(role)
+  const filteredNavItems = useMemo(() => 
+    navItems.filter(item => role && item.roles.includes(role)),
+    [role]
   );
 
-  const bottomTabs = getBottomTabs(role, t);
-  const bottomTabHrefs = bottomTabs.map(tab => tab.href);
+  const bottomTabs = useMemo(() => getBottomTabs(role, t), [role, t]);
   
-  // Items for the "More" sheet: all nav items NOT in bottom tabs
-  const moreNavItems = filteredNavItems.filter(item => !bottomTabHrefs.includes(item.href));
+  const moreNavItems = useMemo(() => {
+    const bottomTabHrefs = bottomTabs.map(tab => tab.href);
+    return filteredNavItems.filter(item => !bottomTabHrefs.includes(item.href));
+  }, [filteredNavItems, bottomTabs]);
 
   const handleLogout = () => {
     logout();
@@ -309,12 +311,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
               {/* Logo on mobile - small */}
               <Link to="/lives" className="flex sm:hidden items-center">
-                <img src={logoMedicalMasters} alt="Medical Masters" className="h-7 w-auto" />
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-7 w-auto" loading="lazy" decoding="async" />
               </Link>
 
               {/* Logo - hidden on md, visible on lg+ */}
               <Link to="/lives" className="hidden lg:flex items-center">
-                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 xl:h-10 w-auto" />
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 xl:h-10 w-auto" loading="lazy" decoding="async" />
               </Link>
             </div>
 
