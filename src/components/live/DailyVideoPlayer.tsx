@@ -152,7 +152,8 @@ export function DailyVideoPlayer({
 
   const handleError = useCallback((event: DailyEventObject) => {
     // Suppress ALL errors when we're intentionally leaving or cleaning up
-    if (isLeavingRef.current || cleaningUpRef.current) {
+    const meetingState = callRef.current?.meetingState?.();
+    if (isLeavingRef.current || cleaningUpRef.current || meetingState === 'leaving-meeting' as any || meetingState === 'left-meeting' as any) {
       console.log('Daily error suppressed (leaving/cleanup):', (event as any).errorMsg);
       return;
     }
@@ -469,14 +470,21 @@ export function DailyVideoPlayer({
                 {isVideoOff ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
               </Button>
 
-              <Button
-                size="icon"
-                variant={isScreenSharing ? "default" : "secondary"}
-                onClick={toggleScreenShare}
-                className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
-              >
-                {isScreenSharing ? <MonitorOff className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
-              </Button>
+              {/* Hide screen share on phones; show on tablets/iPads/desktop */}
+              {(() => {
+                const isPhone = typeof window !== 'undefined' && window.innerWidth < 768 && !/iPad|Macintosh/.test(navigator.userAgent);
+                if (isPhone) return null;
+                return (
+                  <Button
+                    size="icon"
+                    variant={isScreenSharing ? "default" : "secondary"}
+                    onClick={toggleScreenShare}
+                    className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
+                  >
+                    {isScreenSharing ? <MonitorOff className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+                  </Button>
+                );
+              })()}
             </>
           )}
           

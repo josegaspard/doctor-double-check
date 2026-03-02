@@ -36,6 +36,61 @@ import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import { useDebounce } from '@/hooks/use-debounce';
 
+// Haversine distance in km
+function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Known Mexican city coordinates for geocoding doctor locations
+const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
+  'ciudad de mexico': { lat: 19.4326, lng: -99.1332 },
+  'cdmx': { lat: 19.4326, lng: -99.1332 },
+  'mexico city': { lat: 19.4326, lng: -99.1332 },
+  'df': { lat: 19.4326, lng: -99.1332 },
+  'guadalajara': { lat: 20.6597, lng: -103.3496 },
+  'monterrey': { lat: 25.6866, lng: -100.3161 },
+  'puebla': { lat: 19.0414, lng: -98.2063 },
+  'tijuana': { lat: 32.5149, lng: -117.0382 },
+  'leon': { lat: 21.1221, lng: -101.6847 },
+  'zapopan': { lat: 20.7214, lng: -103.3891 },
+  'merida': { lat: 20.9674, lng: -89.5926 },
+  'cancun': { lat: 21.1619, lng: -86.8515 },
+  'queretaro': { lat: 20.5888, lng: -100.3899 },
+  'chihuahua': { lat: 28.6353, lng: -106.0889 },
+  'morelia': { lat: 19.7060, lng: -101.1950 },
+  'aguascalientes': { lat: 21.8853, lng: -102.2916 },
+  'toluca': { lat: 19.2826, lng: -99.6557 },
+  'hermosillo': { lat: 29.0729, lng: -110.9559 },
+  'saltillo': { lat: 25.4232, lng: -100.9924 },
+  'veracruz': { lat: 19.1738, lng: -96.1342 },
+  'villahermosa': { lat: 17.9869, lng: -92.9303 },
+  'tuxtla gutierrez': { lat: 16.7528, lng: -93.1152 },
+  'oaxaca': { lat: 17.0732, lng: -96.7266 },
+  'culiacan': { lat: 24.7994, lng: -107.3940 },
+  'acapulco': { lat: 16.8531, lng: -99.8237 },
+  'san luis potosi': { lat: 22.1565, lng: -100.9855 },
+  'cuernavaca': { lat: 18.9242, lng: -99.2216 },
+  'pachuca': { lat: 20.1011, lng: -98.7591 },
+  'playa del carmen': { lat: 20.6296, lng: -87.0739 },
+  'mazatlan': { lat: 23.2494, lng: -106.4111 },
+  'jalisco': { lat: 20.6597, lng: -103.3496 },
+  'nuevo leon': { lat: 25.6866, lng: -100.3161 },
+  'estado de mexico': { lat: 19.4326, lng: -99.1332 },
+};
+
+function geocodeLocation(location: string): { lat: number; lng: number } | null {
+  const lower = location.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  for (const [city, coords] of Object.entries(CITY_COORDS)) {
+    const normalizedCity = city.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (lower.includes(normalizedCity)) return coords;
+  }
+  return null;
+}
+
 interface DoctorRow {
   id: string;
   user_id: string;
@@ -141,12 +196,17 @@ export default function Doctors() {
 
       let rows = (data || []) as DoctorRow[];
       
-      // When nearby mode is on, prioritize doctors with location set
+      // When nearby mode is on, sort by real haversine distance
       if (nearbyMode && userLocation) {
         rows = rows.sort((a, b) => {
-          const aHasLoc = a.location ? 1 : 0;
-          const bHasLoc = b.location ? 1 : 0;
-          return bHasLoc - aHasLoc; // doctors with location first
+          const aCoords = a.location ? geocodeLocation(a.location) : null;
+          const bCoords = b.location ? geocodeLocation(b.location) : null;
+          if (!aCoords && !bCoords) return 0;
+          if (!aCoords) return 1;
+          if (!bCoords) return -1;
+          const aDist = haversineDistance(userLocation.lat, userLocation.lng, aCoords.lat, aCoords.lng);
+          const bDist = haversineDistance(userLocation.lat, userLocation.lng, bCoords.lat, bCoords.lng);
+          return aDist - bDist;
         });
       }
       
@@ -377,8 +437,25 @@ export default function Doctors() {
                             <span className="flex items-center gap-1 truncate">
                               <MapPin className="w-3.5 h-3.5" />
                               {doctor.location}
+                              {nearbyMode && userLocation && (() => {
+                                const coords = geocodeLocation(doctor.location!);
+                                if (!coords) return null;
+                                const dist = haversineDistance(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
+                                return <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0">~{Math.round(dist)} km</Badge>;
+                              })()}
                             </span>
                           )}
+                          {doctor.location && isMobile && nearbyMode && userLocation && (() => {
+                            const coords = geocodeLocation(doctor.location!);
+                            if (!coords) return null;
+                            const dist = haversineDistance(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
+                            return (
+                              <span className="flex items-center gap-1 text-xs">
+                                <MapPin className="w-3 h-3" />
+                                ~{Math.round(dist)} km
+                              </span>
+                            );
+                          })()}
                         </div>
                         {(() => {
                           const now = new Date();
