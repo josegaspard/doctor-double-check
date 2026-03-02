@@ -100,7 +100,29 @@ export function ChatMessagesPanel({
         .select('video_room_name')
         .eq('id', consultationId)
         .single();
-      setActiveVideoRoom(!!data?.video_room_name);
+
+      if (data?.video_room_name) {
+        // Verify the Daily room actually exists (not stale from a previous call)
+        try {
+          const { data: tokenData } = await supabase.functions.invoke('get-daily-token', {
+            body: { roomName: data.video_room_name, isOwner: false },
+          });
+          if (tokenData?.success) {
+            setActiveVideoRoom(true);
+          } else {
+            // Room is dead/stale — clear the field
+            await supabase.from('consultations').update({
+              video_room_name: null,
+              video_room_url: null,
+            }).eq('id', consultationId);
+            setActiveVideoRoom(false);
+          }
+        } catch {
+          setActiveVideoRoom(false);
+        }
+      } else {
+        setActiveVideoRoom(false);
+      }
     };
 
     checkVideoRoom();
@@ -117,7 +139,12 @@ export function ChatMessagesPanel({
           filter: `id=eq.${consultationId}`,
         },
         (payload: any) => {
-          setActiveVideoRoom(!!payload.new?.video_room_name);
+          if (payload.new?.video_room_name) {
+            // New room set — it's fresh, show banner immediately
+            setActiveVideoRoom(true);
+          } else {
+            setActiveVideoRoom(false);
+          }
         }
       )
       .subscribe();

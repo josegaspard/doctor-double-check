@@ -355,6 +355,15 @@ export default function VideoCall() {
     }]);
   };
 
+  // Auto-join: when patient accepts incoming call, connect automatically
+  const autoJoinTriggered = useRef(false);
+  useEffect(() => {
+    if (autoJoin && callState === 'idle' && consultationId && !autoJoinTriggered.current) {
+      autoJoinTriggered.current = true;
+      handleStart();
+    }
+  }, [autoJoin, callState, consultationId, handleStart]);
+
   if (!consultationId) {
     return (
       <MainLayout>
@@ -383,26 +392,6 @@ export default function VideoCall() {
       )}
     </div>
   );
-
-  if (autoJoin && callState === 'idle') {
-    return (
-      <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center" style={{ height: '100dvh' }}>
-        <div className="text-center">
-          <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mb-6 mx-auto">
-            <Video className="w-12 h-12 text-primary" />
-          </div>
-          <h2 className="text-xl font-bold text-white mb-2">Videollamada</h2>
-          {otherParticipantName && (
-            <p className="text-white/70 mb-6">con {otherParticipantName}</p>
-          )}
-          <Button size="lg" onClick={handleStart} className="gap-2 px-8 h-12 text-base">
-            <Video className="w-5 h-5" />
-            Toca para unirte
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   if (isMobile && isInCall) {
     return (

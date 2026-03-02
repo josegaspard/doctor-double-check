@@ -117,12 +117,19 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
         console.log('[Daily] 👤 Participant joined');
       });
 
-      co.on('participant-left', (event: any) => {
+      co.on('participant-left', async (event: any) => {
         console.log('[Daily] 👤 Participant left');
         if (event?.participant && !event.participant.local) {
           console.log('[Daily] Remote participant left — ending call');
           if (!isCleanedUpRef.current) {
             setCallState('ended');
+            // Clear video room fields so CallWaitingBanner disappears
+            if (consultationId) {
+              await supabase.from('consultations').update({
+                video_room_name: null,
+                video_room_url: null,
+              }).eq('id', consultationId);
+            }
             doCleanup();
           }
         }
