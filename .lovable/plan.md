@@ -1,91 +1,88 @@
 
 
-# Plan: Twilio SMS for OTP + Fix Double-X in More Menu + Mobile UX Optimization
+# Plan: Complete i18n Translation + Fix Content Deletion
 
-## 1. Twilio SMS Integration for OTP
+## Problem 1: Deleted videos still showing
 
-### Step-by-step setup you need to do in Twilio:
-1. Go to [twilio.com/console](https://www.twilio.com/console)
-2. Copy your **Account SID** and **Auth Token** from the dashboard
-3. Go to **Phone Numbers** > **Buy a Number** (or use the trial number they give you)
-4. Copy the **phone number** (format: +1XXXXXXXXXX)
-
-### What I will implement:
-- Store 3 secrets: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
-- Update the `send-otp-email` edge function to also send SMS via Twilio API
-- This requires the patient to have a phone number stored in their profile
-
-### Database change:
-- Add a `phone` column to `profiles` table (if not already present) so patients can optionally save their phone number
-- The OTP will be sent via: in-app notification + email + SMS (if phone available)
-
-## 2. OTP Timer Persistence (Background Countdown)
-
-Currently, when the doctor closes the OTP dialog, the process is lost. The fix:
-
-- Create an **OTP context/state** at the page level (not inside the dialog) that tracks:
-  - `otpRequestedAt` timestamp
-  - `patientId` / `patientName`
-  - Time remaining (computed from `otpRequestedAt`)
-- When the doctor closes the OTP dialog, show a **floating mini-banner** (sticky at top or bottom) with:
-  - "OTP pendiente: 1:23 restante" + button to reopen the dialog
-  - The countdown keeps running regardless of dialog state
-- When the doctor clicks the banner, it reopens the OTP dialog with the remaining time shown
-- If the timer expires, the banner disappears and shows a toast "Codigo expirado"
-
-### Implementation:
-- Add `otpTimerState` with `useState` in `DoctorVault.tsx`
-- A floating `div` (fixed/sticky) that shows when OTP is active but dialog is closed
-- `useEffect` with `setInterval` for the countdown
-- The dialog and the banner share the same timer state
-
-## 3. Fix Double-X in More Menu
-
-The issue: The `SheetContent` component in `sheet.tsx` (line 67) **always renders a close X button** via `SheetPrimitive.Close`. But in `MainLayout.tsx` (line 517-522), we manually added another X button. Result: two X buttons.
+The previous FK constraint (`NO ACTION`) on `purchases.content_id` was silently preventing the DB record from being deleted when content had purchases. The migration to `ON DELETE SET NULL` was just applied, so **future deletions will work**. However, the videos you already tried to delete still have their DB records (the storage files may have been removed but the rows remain).
 
 ### Fix:
-- Remove the default close button from `SheetContent` when `side="bottom"` by passing a prop to suppress it, OR
-- Remove the manual X button from MainLayout and rely on the built-in one, OR
-- Best approach: Hide the default SheetContent close button for the "More" sheet by adding a custom `hideClose` prop to SheetContent
+- In `DoctorContentLibrary.tsx`, reorder the delete logic: delete DB record FIRST, then storage files. If the DB delete fails, don't proceed with storage deletion. This prevents orphaned situations.
+- Add error logging so if deletion fails, the toast shows the actual reason.
+- The content you already "deleted" -- you'll need to try deleting them again from the library (they should now work with the new FK constraint).
 
-I will add a `hideClose` prop to `SheetContent` and use it in the "More" sheet, keeping only our custom styled X button.
+## Problem 2: Hardcoded Spanish strings (30+ files)
 
-## 4. Global Mobile UX/UI Optimization
+There are hundreds of hardcoded Spanish strings scattered across the codebase. The plan is to:
 
-Comprehensive pass across all mobile-facing files:
+### A. Add missing translation keys to `en.ts` and `es.ts`
 
-### MainLayout.tsx:
-- Ensure `overflow-x-hidden` on root to prevent horizontal scroll
-- Bottom nav: proper safe-area padding, touch targets min 44px
-- More sheet: remove double X, ensure full rounded corners, proper scroll
+New sections/keys needed:
 
-### MobileBackHeader.tsx:
-- Add `/doctor/dashboard` to ROOT_ROUTES (it's a main tab destination for doctors)
-- Ensure it doesn't overlap with page content
+**`content` section (additions):**
+- `subscribers` ("Subscribers" / "Suscriptores")
+- `subscribersOnly` ("Subscribers only" / "Solo suscriptores")
+- `public` / `private`
+- `free` / `myLibrary` / `filesUploaded`
+- `restrictedAccess` / `onlyDoctorsCanView`
+- `deleteContent` / `deleteContentConfirm` / `contentDeleted`
 
-### General patterns across pages:
-- All containers use `px-4` with `max-w-full` to prevent lateral overflow
-- Cards and dialogs constrained to viewport width
-- Touch targets minimum 44px on all interactive elements
-- Text truncation on long content to prevent overflow
+**`report` section (new):**
+- `title` ("Report issue or abuse" / "Reportar falla o abuso")
+- `subtitle`, `typeLabel`, `bugOption`, `abuseOption`, `otherOption`
+- `subjectLabel`, `descriptionLabel`, `emailLabel`, `attachments`
+- `submitButton`, `submitting`, `success`, `error`, `back`
 
-## Summary of Changes
+**`news` section (additions to `medicalNews`):**
+- `viewAll` ("View all" / "Ver todas")
+
+**`footer` section (additions):**
+- `reportIssue` ("Report issue or abuse" / "Reportar falla o abuso")
+
+**`landing` footer section (new `landingFooter`):**
+- `resources`, `successStories`, `help`, `contact`
+- `legal`, `privacy`, `terms`, `security`, `compliance`, `reportIssue`
+
+**`doctorLibrary` section (new):**
+- `title`, `filesUploaded`, `uploadContent`, `allTypes`, `videos`, `pdfs`, `images`
+- `public`, `private`, `deleteTitle`, `deleteDescription`, `deleting`, `deleted`
+
+**`doctorContent` section (additions):**
+- Various labels for audience types, upload form fields, etc.
+
+### B. Update all component files to use `t()` or `useLanguage()`
+
+Files requiring updates (hardcoded Spanish to `t()` calls):
+
+1. **`src/components/news/NewsFeed.tsx`** - "Noticias Medicas", "Ver todas", date locale
+2. **`src/components/layout/MainLayout.tsx`** - "Reportar falla o abuso" in footer
+3. **`src/components/landing/LandingFooter.tsx`** - All footer links (Recursos, Ayuda, Contacto, Legal labels, "Reportar falla o abuso")
+4. **`src/pages/ContentGallery.tsx`** - "Suscriptores", "Solo suscriptores" (lines 308, 317)
+5. **`src/pages/DoctorContentLibrary.tsx`** - All hardcoded strings (Acceso restringido, Mi Biblioteca, expedientes subidos, Publico, Privado, Gratis, Todos, Profesionales, Pacientes, delete dialog, etc.)
+6. **`src/pages/ReportIssue.tsx`** - All form labels (Reportar falla, Tipo de reporte, Asunto, Descripcion, etc.)
+7. **`src/components/doctor/ConsultationFeeEditor.tsx`** - "Gratis", "Orientaciones gratis"
+8. **`src/components/doctor/SubscribersModal.tsx`** - "Suscriptores", "Basica", "Gratis"
+9. **`src/pages/DoctorAvailability.tsx`** - "Notificar suscriptores", "suscriptores"
+10. **`src/components/doctor/DoctorQuickActions.tsx`** - Quick action labels
+
+### C. Approach for inline ternaries (`language === 'es' ? ... : ...`)
+
+There are ~2247 occurrences of `language === 'es' ?` ternaries across 38 files. These are technically "translated" but not using the `t()` system. For this pass, I will:
+- Leave existing working ternaries as-is (they work correctly)
+- Focus on files with **completely untranslated hardcoded Spanish** (no ternary at all)
+
+## Summary of file changes
 
 | File | Change |
 |------|--------|
-| `supabase/functions/send-otp-email/index.ts` | Add Twilio SMS sending alongside email and notification |
-| `src/pages/DoctorVault.tsx` | Add persistent OTP timer state, floating mini-banner, background countdown |
-| `src/components/ui/sheet.tsx` | Add `hideClose` prop to suppress default X |
-| `src/components/layout/MainLayout.tsx` | Use `hideClose` on More sheet, mobile UX fixes |
-| `src/components/layout/MobileBackHeader.tsx` | Add doctor dashboard to root routes |
-| Database migration | Add `phone` column to profiles (if missing) |
-| Secrets | Add `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` |
-
-## Sequence
-1. First: Ask user for Twilio credentials via `add_secret`
-2. Database migration for `phone` column
-3. Fix double-X (sheet.tsx + MainLayout.tsx)
-4. Implement OTP timer persistence + floating banner in DoctorVault
-5. Update edge function for SMS
-6. Mobile UX optimization pass
+| `src/lib/i18n/en.ts` | Add ~40 new translation keys (report, doctorLibrary, content extras, footer extras, landing footer) |
+| `src/lib/i18n/es.ts` | Add matching ~40 new translation keys in Spanish |
+| `src/components/news/NewsFeed.tsx` | Use `t()` for title, "View all", and dynamic date locale |
+| `src/components/layout/MainLayout.tsx` | Use `t()` for "Reportar falla o abuso" in footer |
+| `src/components/landing/LandingFooter.tsx` | Use `t()` for all footer labels |
+| `src/pages/ContentGallery.tsx` | Use `t()` for "Suscriptores", "Solo suscriptores" |
+| `src/pages/DoctorContentLibrary.tsx` | Use `t()` for all strings, fix delete order |
+| `src/pages/ReportIssue.tsx` | Use `t()` for all form labels and messages |
+| `src/components/doctor/ConsultationFeeEditor.tsx` | Use `t()` for "Gratis" labels |
+| `src/components/doctor/SubscribersModal.tsx` | Use `t()` for dialog labels |
 
