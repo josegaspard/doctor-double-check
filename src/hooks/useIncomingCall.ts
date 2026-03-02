@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -12,10 +12,25 @@ interface IncomingCallData {
 export function useIncomingCall() {
   const { supabaseUser, role } = useAuth();
   const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
+  // Track dismissed consultation IDs so they don't reappear
+  const dismissedRef = useRef<Set<string>>(new Set());
 
   const dismissCall = useCallback(() => {
+    if (incomingCall?.consultationId) {
+      dismissedRef.current.add(incomingCall.consultationId);
+
+      // Mark the video_call notification as read so it doesn't show in the bell
+      if (supabaseUser?.id) {
+        supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .eq('user_id', supabaseUser.id)
+          .eq('type', 'video_call' as any)
+          .then(() => {});
+      }
+    }
     setIncomingCall(null);
-  }, []);
+  }, [incomingCall?.consultationId, supabaseUser?.id]);
 
   useEffect(() => {
     if (!supabaseUser?.id || role !== 'patient') return;
@@ -25,7 +40,9 @@ export function useIncomingCall() {
       .channel(`incoming-call-${supabaseUser.id}`)
       .on('broadcast', { event: 'incoming_call' }, (payload) => {
         const data = payload.payload as IncomingCallData;
-        setIncomingCall(data);
+        if (!dismissedRef.current.has(data.consultationId)) {
+          setIncomingCall(data);
+        }
       })
       .subscribe();
 
@@ -43,12 +60,15 @@ export function useIncomingCall() {
         (payload: any) => {
           const notification = payload.new;
           if (notification.type === 'video_call') {
-            setIncomingCall({
-              consultationId: notification.data?.consultationId,
-              doctorName: notification.data?.doctorName || 'Doctor',
-              doctorSpecialty: notification.data?.doctorSpecialty,
-              doctorAvatar: notification.data?.doctorAvatar,
-            });
+            const consultationId = notification.data?.consultationId;
+            if (consultationId && !dismissedRef.current.has(consultationId)) {
+              setIncomingCall({
+                consultationId,
+                doctorName: notification.data?.doctorName || 'Doctor',
+                doctorSpecialty: notification.data?.doctorSpecialty,
+                doctorAvatar: notification.data?.doctorAvatar,
+              });
+            }
           }
         }
       )
