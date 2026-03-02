@@ -275,12 +275,16 @@ export default function Doctors() {
         </Button>
         {/* Follow/Unfollow heart button */}
         <Button
-          variant={isFollowing ? "secondary" : "outline"}
+          variant="outline"
           size="icon"
-          className="h-10 w-10 flex-shrink-0 active:scale-95 transition-transform"
+          className={`h-10 w-10 flex-shrink-0 active:scale-95 transition-all ${
+            isFollowing 
+              ? 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20' 
+              : 'hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20'
+          }`}
           onClick={(e) => { e.stopPropagation(); handleFollow(doctor.user_id); }}
         >
-          <Heart className={`w-4 h-4 ${isFollowing ? 'fill-current text-destructive' : ''}`} />
+          <Heart className={`w-4 h-4 ${isFollowing ? 'fill-current' : ''}`} />
         </Button>
         {/* Pro badge if subscribed */}
         {isPaid && (
@@ -424,6 +428,7 @@ export default function Doctors() {
                             {doctor.specialty}
                           </Badge>
                         </div>
+                        {/* Stats row: rating + followers only */}
                         <div className="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Star className="w-3.5 h-3.5 text-warning fill-warning" />
@@ -433,39 +438,30 @@ export default function Doctors() {
                             <Users className="w-3.5 h-3.5" />
                             {doctor.followers_count}
                           </span>
-                          {doctor.location && !isMobile && (
-                            <span className="flex items-center gap-1 truncate">
-                              <MapPin className="w-3.5 h-3.5" />
-                              {doctor.location}
-                              {nearbyMode && userLocation && (() => {
-                                const coords = geocodeLocation(doctor.location!);
-                                if (!coords) return null;
-                                const dist = haversineDistance(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
-                                return <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0">~{Math.round(dist)} km</Badge>;
-                              })()}
-                            </span>
-                          )}
-                          {doctor.location && isMobile && nearbyMode && userLocation && (() => {
-                            const coords = geocodeLocation(doctor.location!);
-                            if (!coords) return null;
-                            const dist = haversineDistance(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
-                            return (
-                              <span className="flex items-center gap-1 text-xs">
-                                <MapPin className="w-3 h-3" />
-                                ~{Math.round(dist)} km
-                              </span>
-                            );
-                          })()}
                         </div>
+                        {/* Location row (separate, always visible) */}
+                        {doctor.location && (
+                          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{doctor.location}</span>
+                            {nearbyMode && userLocation && (() => {
+                              const coords = geocodeLocation(doctor.location!);
+                              if (!coords) return null;
+                              const dist = haversineDistance(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
+                              return <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0 flex-shrink-0">~{Math.round(dist)} km</Badge>;
+                            })()}
+                          </div>
+                        )}
+                        {/* Availability row */}
                         {(() => {
                           const now = new Date();
-                          const currentDay = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][now.getDay()];
+                          const currentDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
                           const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                           const isAvailable = doctor.office_days?.includes(currentDay) &&
                             doctor.office_hours_start && doctor.office_hours_end &&
                             currentTime >= doctor.office_hours_start && currentTime <= doctor.office_hours_end;
                            return (
-                            <div className={`flex items-center gap-1.5 mt-1 text-xs ${isAvailable ? 'text-success' : 'text-muted-foreground'}`}>
+                            <div className={`flex items-center gap-1.5 mt-1.5 text-xs font-medium ${isAvailable ? 'text-success' : 'text-muted-foreground'}`}>
                               <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-success animate-pulse' : 'bg-muted-foreground/40'}`} />
                               {isAvailable ? t('doctors.availableNow') : t('doctors.notAvailable')}
                             </div>

@@ -612,6 +612,8 @@ export const es = {
     statusApproved: 'Aprobado',
     statusPending: 'Pendiente',
     statusRejected: 'Rechazado',
+    useMyLocation: 'Usar mi ubicación',
+    detectingLocation: 'Detectando...',
   },
   // Context error messages
   contextErrors: {
@@ -902,6 +904,10 @@ export const es = {
     validationInstitutionMin: 'La institución debe tener al menos 3 caracteres',
     validationInstitutionMax: 'La institución no puede exceder 150 caracteres',
     validationYear: 'El año debe estar entre 1 y 7',
+    location: 'Ubicación',
+    locationPlaceholder: 'Ej: Ciudad de México',
+    useMyLocation: 'Usar mi ubicación',
+    detectingLocation: 'Detectando...',
   },
   // Admin Dashboard
   adminDashboard: {

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle } from 'lucide-react';
+import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle, MapPin, Navigation } from 'lucide-react';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import { toast } from 'sonner';
 import { AppRole as UserRole } from '@/types/database';
@@ -20,6 +20,49 @@ import { CedulaVerificationStatus, useCedulaStatus } from '@/components/onboardi
 import { CedulaAutoVerify } from '@/components/onboarding/CedulaAutoVerify';
 import { ClinicalHistoryForm, ClinicalHistoryData } from '@/components/onboarding/ClinicalHistoryForm';
 import { DocumentSignature } from '@/components/onboarding/DocumentSignature';
+
+// Known Mexican city coordinates for geocoding
+const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
+  'ciudad de mexico': { lat: 19.4326, lng: -99.1332 },
+  'cdmx': { lat: 19.4326, lng: -99.1332 },
+  'guadalajara': { lat: 20.6597, lng: -103.3496 },
+  'monterrey': { lat: 25.6866, lng: -100.3161 },
+  'puebla': { lat: 19.0414, lng: -98.2063 },
+  'tijuana': { lat: 32.5149, lng: -117.0382 },
+  'merida': { lat: 20.9674, lng: -89.5926 },
+  'cancun': { lat: 21.1619, lng: -86.8515 },
+  'queretaro': { lat: 20.5888, lng: -100.3899 },
+  'chihuahua': { lat: 28.6353, lng: -106.0889 },
+  'morelia': { lat: 19.7060, lng: -101.1950 },
+  'aguascalientes': { lat: 21.8853, lng: -102.2916 },
+  'toluca': { lat: 19.2826, lng: -99.6557 },
+  'hermosillo': { lat: 29.0729, lng: -110.9559 },
+  'veracruz': { lat: 19.1738, lng: -96.1342 },
+  'oaxaca': { lat: 17.0732, lng: -96.7266 },
+  'culiacan': { lat: 24.7994, lng: -107.3940 },
+  'san luis potosi': { lat: 22.1565, lng: -100.9855 },
+  'cuernavaca': { lat: 18.9242, lng: -99.2216 },
+  'pachuca': { lat: 20.1011, lng: -98.7591 },
+  'mazatlan': { lat: 23.2494, lng: -106.4111 },
+};
+
+function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function reverseGeocode(lat: number, lng: number): string {
+  let nearest = 'Ciudad de Mexico';
+  let minDist = Infinity;
+  for (const [city, coords] of Object.entries(CITY_COORDS)) {
+    const dist = haversineDistance(lat, lng, coords.lat, coords.lng);
+    if (dist < minDist) { minDist = dist; nearest = city; }
+  }
+  return nearest.replace(/\b\w/g, c => c.toUpperCase());
+}
 
 // Predefined medical specialties
 const MEDICAL_SPECIALTIES = [
@@ -186,7 +229,8 @@ export default function Onboarding() {
   const [isSavingProgress, setIsSavingProgress] = useState(false);
   const [cedulaVerified, setCedulaVerified] = useState(false);
   const [cedulaVerificationId, setCedulaVerificationId] = useState<string | null>(null);
-  
+  const [doctorLocation, setDoctorLocation] = useState('');
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   // Clinical History State
   const [clinicalHistory, setClinicalHistory] = useState<ClinicalHistoryData>({
     bloodType: '',
@@ -452,6 +496,7 @@ export default function Onboarding() {
           specialty: specialty || 'General',
           license: license || '',
           status: 'pending',
+          location: doctorLocation.trim() || null,
         };
 
         // Link cedula verification if available
@@ -1128,6 +1173,60 @@ export default function Onboarding() {
                               language={language}
                             />
                           )}
+                        </motion.div>
+                      )}
+
+                      {/* Location field for doctors */}
+                      {selectedRole === 'doctor' && (
+                        <motion.div className="space-y-2" variants={itemVariants}>
+                          <Label htmlFor="doctor-location" className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {t('onboarding.location')}
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="doctor-location"
+                              placeholder={t('onboarding.locationPlaceholder')}
+                              value={doctorLocation}
+                              onChange={(e) => setDoctorLocation(e.target.value)}
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="flex-shrink-0 gap-1.5 h-10"
+                              disabled={isDetectingLocation}
+                              onClick={() => {
+                                if (!('geolocation' in navigator)) {
+                                  toast.error('Tu navegador no soporta geolocalización');
+                                  return;
+                                }
+                                setIsDetectingLocation(true);
+                                navigator.geolocation.getCurrentPosition(
+                                  (pos) => {
+                                    const city = reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+                                    setDoctorLocation(city);
+                                    setIsDetectingLocation(false);
+                                    toast.success(`Ubicación detectada: ${city}`);
+                                  },
+                                  () => {
+                                    setIsDetectingLocation(false);
+                                    toast.error('No se pudo obtener tu ubicación');
+                                  }
+                                );
+                              }}
+                            >
+                              {isDetectingLocation ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Navigation className="w-3.5 h-3.5" />
+                              )}
+                              <span className="hidden sm:inline">
+                                {isDetectingLocation ? t('onboarding.detectingLocation') : t('onboarding.useMyLocation')}
+                              </span>
+                            </Button>
+                          </div>
                         </motion.div>
                       )}
 
