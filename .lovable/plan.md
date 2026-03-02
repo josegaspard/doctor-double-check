@@ -1,71 +1,112 @@
 
 
-# Fix: Signature / Sello Digital Upload - RLS Policy Error
+# Plan: Mobile Navigation "More" Menu + Back/Close Buttons + OTP SMS Options
 
-## Problem
-When a doctor tries to upload a signature image, they get "new row violates row-level security policy". This happens because the `documents` storage bucket only has INSERT policies for paths starting with `chat/`, but the signature upload uses the path `signatures/{userId}/signature.{ext}`.
+## 1. Replace last bottom tab with "More" menu (all roles)
 
-## Solution
+Currently the bottom nav shows only 5 fixed tabs per role, losing access to many features. The fix: replace the last tab with a "More" (Mas) button that opens a bottom Sheet/Drawer containing ALL remaining menu items for each role.
 
-### 1. Database Migration - Add Storage Policies for Signatures
+### Bottom tab layout per role (4 fixed + 1 "More"):
 
-Create a new migration that adds 4 RLS policies on `storage.objects` for the `signatures/` folder in the `documents` bucket:
+**Doctor:**
+- En Vivo | Chat | Doctores | Dashboard | **Mas**
 
-- **INSERT**: Approved doctors can upload to `signatures/{their_user_id}/`
-- **SELECT**: Doctors can view their own signatures
-- **UPDATE**: Approved doctors can update (upsert) their own signatures
-- **DELETE**: Approved doctors can delete their own signatures
+**Patient:**
+- En Vivo | Chat | Doctores | Notificaciones | **Mas**
 
-Each policy checks:
-- `bucket_id = 'documents'`
-- `(storage.foldername(name))[1] = 'signatures'`
-- `(storage.foldername(name))[2] = auth.uid()::text`
-- For write operations: `public.is_approved_doctor(auth.uid())`
+**Resident:**
+- En Vivo | Doctores | Notificaciones | Perfil | **Mas**
 
-### 2. No Code Changes Needed
+**Admin:**
+- En Vivo | Doctores | Notificaciones | Admin | **Mas**
 
-The `SignatureUpload.tsx` component code is correct -- it uploads to the right path (`signatures/{userId}/signature.{ext}`), creates a signed URL, and updates `doctor_profiles.signature_url`. The only issue is the missing storage policies.
+### "More" Sheet contents (role-filtered):
+A full-screen bottom Sheet styled like social media apps (Instagram/TikTok "more" menu) containing:
+- All nav items not in the bottom bar (Recordings, Content, News, Vault, Prescriptions, Upload, Availability, etc.)
+- Profile, Wallet, Settings, Logout
+- Close button (X) at top-right corner
+- User info card at top (name, email, role badge)
 
-## Technical Details
+### Changes to `src/components/layout/MainLayout.tsx`:
+- Modify `getBottomTabs()` to return only 4 items (remove last item)
+- Add a 5th "More" button with `MoreHorizontal` icon that opens a Sheet
+- Sheet contains all `filteredNavItems` not in bottom tabs, plus Profile/Wallet/Settings/Logout
+- Sheet has prominent X close button at top-right
 
-```sql
-CREATE POLICY "Doctors can upload signatures"
-ON storage.objects FOR INSERT
-WITH CHECK (
-  bucket_id = 'documents'
-  AND (storage.foldername(name))[1] = 'signatures'
-  AND (storage.foldername(name))[2] = auth.uid()::text
-  AND public.is_approved_doctor(auth.uid())
-);
+## 2. Add back arrow / close button to all internal pages
 
-CREATE POLICY "Doctors can view own signatures"
-ON storage.objects FOR SELECT
-USING (
-  bucket_id = 'documents'
-  AND (storage.foldername(name))[1] = 'signatures'
-  AND (storage.foldername(name))[2] = auth.uid()::text
-);
+Add a reusable back navigation header to the MainLayout or as a pattern across pages. On mobile, every internal page should show:
+- A left-aligned back arrow (ChevronLeft or ArrowLeft) that calls `navigate(-1)`
+- Pages that are modals/overlays show an X instead
 
-CREATE POLICY "Doctors can update own signatures"
-ON storage.objects FOR UPDATE
-USING (
-  bucket_id = 'documents'
-  AND (storage.foldername(name))[1] = 'signatures'
-  AND (storage.foldername(name))[2] = auth.uid()::text
-  AND public.is_approved_doctor(auth.uid())
-);
+### Implementation:
+- Create a `MobileBackHeader` component that renders only on mobile (`sm:hidden`)
+- It shows: Back arrow + page title
+- Add it to MainLayout as an optional element based on route depth (not on root tabs like /lives, /chat, /doctors)
+- Use `useLocation` to determine if current page is a "detail" page (contains /:id, or is a sub-route like /doctor/dashboard)
 
-CREATE POLICY "Doctors can delete own signatures"
-ON storage.objects FOR DELETE
-USING (
-  bucket_id = 'documents'
-  AND (storage.foldername(name))[1] = 'signatures'
-  AND (storage.foldername(name))[2] = auth.uid()::text
-  AND public.is_approved_doctor(auth.uid())
-);
-```
+### Changes:
+- New component: `src/components/layout/MobileBackHeader.tsx`
+- Update `MainLayout.tsx` to include it above `{children}` on non-root routes
+
+## 3. OTP / SMS Delivery Options
+
+The current OTP system works via email (Resend) + in-app notification. For SMS delivery, here are the options:
+
+### Option A: Twilio (most popular, has free trial)
+- Free trial gives $15 USD credit (~500 SMS)
+- Requires: Account SID, Auth Token, and a Twilio phone number
+- Cost after trial: ~$0.0079/SMS to Mexico
+
+### Option B: Keep current system (email + in-app notification)
+- Already working with Resend
+- No additional cost
+- Patient sees OTP in their notification bell and email
+
+### Recommendation:
+Since the OTP is already delivered via email AND in-app notification (which the patient can see immediately in their app), SMS may not be necessary. However, if you want SMS, Twilio is the best option. I will ask which approach you prefer.
+
+## Summary of code changes
 
 | File | Change |
 |------|--------|
-| `supabase/migrations/new_migration.sql` | Add 4 storage RLS policies for signatures folder |
+| `src/components/layout/MainLayout.tsx` | Replace 5th bottom tab with "More" Sheet containing all menu items; add close X button |
+| `src/components/layout/MobileBackHeader.tsx` | New component: back arrow for internal pages on mobile |
+| `src/components/layout/MainLayout.tsx` | Integrate MobileBackHeader above children |
+
+## Technical details
+
+### MobileBackHeader component:
+```text
++------------------------------------------+
+| <-- Back          Page Title          (X) |
++------------------------------------------+
+```
+- Uses `useNavigate(-1)` for back
+- Only renders on mobile (hidden sm:)
+- Detects "root" routes (/lives, /chat, /doctors, /notifications, /profile, /admin) to hide itself
+
+### "More" Sheet:
+```text
++------------------------------------------+
+|  Medical Masters               [X Close] |
+|  ----------------------------------------|
+|  [Avatar] Dr. Juan Perez                 |
+|  doctor@email.com        Badge: Doctor   |
+|  ----------------------------------------|
+|  Grabaciones                             |
+|  Contenido                               |
+|  Noticias                                |
+|  Recetas                                 |
+|  Vault                                   |
+|  Disponibilidad                          |
+|  Subir contenido                         |
+|  ----------------------------------------|
+|  Mi Perfil                               |
+|  Wallet ($150)                           |
+|  Configuracion                           |
+|  ----------------------------------------|
+|  [Cerrar sesion]                         |
++------------------------------------------+
+```
 
