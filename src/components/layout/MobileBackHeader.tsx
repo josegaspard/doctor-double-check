@@ -20,37 +20,37 @@ const ROOT_ROUTES = [
   '/',
 ];
 
-// Map paths to readable page titles
-const PAGE_TITLES: Record<string, string> = {
-  '/recordings': 'Grabaciones',
-  '/content': 'Contenido',
-  '/news': 'Noticias',
-  '/prescriptions': 'Recetas',
-  '/vault': 'Vault',
-  '/wallet': 'Wallet',
-  '/settings': 'Configuración',
-  '/doctor/dashboard': 'Dashboard',
-  '/doctor/vault': 'Vault',
-  '/doctor/upload': 'Subir Contenido',
-  '/doctor/availability': 'Disponibilidad',
-  '/doctor/earnings': 'Ganancias',
-  '/doctor/recordings': 'Grabaciones',
-  '/doctor/content': 'Contenido',
-  '/doctor/invoices': 'Facturas',
-  '/doctor/bank-account': 'Cuenta Bancaria',
-  '/doctor/go-live': 'Ir en Vivo',
-  '/doctor/profile': 'Mi Perfil',
-  '/medical-history': 'Historial Médico',
-  '/double-check': 'Double Check',
-  '/clinical-sessions': 'Sesiones Clínicas',
-  '/help': 'Ayuda',
-  '/contact': 'Contacto',
-  '/terms': 'Términos',
-  '/privacy': 'Privacidad',
-  '/security': 'Seguridad',
-  '/report-issue': 'Reportar',
-  '/identity-verification': 'Verificación',
-  '/verification-pending': 'Verificación Pendiente',
+// Map paths to i18n keys under backHeader.*
+const PAGE_TITLE_KEYS: Record<string, string> = {
+  '/recordings': 'backHeader.recordings',
+  '/content': 'backHeader.content',
+  '/news': 'backHeader.news',
+  '/prescriptions': 'backHeader.prescriptions',
+  '/vault': 'backHeader.vault',
+  '/wallet': 'backHeader.wallet',
+  '/settings': 'backHeader.settings',
+  '/doctor/dashboard': 'backHeader.dashboard',
+  '/doctor/vault': 'backHeader.doctorVault',
+  '/doctor/upload': 'backHeader.upload',
+  '/doctor/availability': 'backHeader.availability',
+  '/doctor/earnings': 'backHeader.earnings',
+  '/doctor/recordings': 'backHeader.doctorRecordings',
+  '/doctor/content': 'backHeader.doctorContent',
+  '/doctor/invoices': 'backHeader.invoices',
+  '/doctor/bank-account': 'backHeader.bankAccount',
+  '/doctor/go-live': 'backHeader.goLive',
+  '/doctor/profile': 'backHeader.doctorProfile',
+  '/medical-history': 'backHeader.medicalHistory',
+  '/double-check': 'backHeader.doubleCheck',
+  '/clinical-sessions': 'backHeader.clinicalSessions',
+  '/help': 'backHeader.help',
+  '/contact': 'backHeader.contact',
+  '/terms': 'backHeader.terms',
+  '/privacy': 'backHeader.privacy',
+  '/security': 'backHeader.security',
+  '/report-issue': 'backHeader.reportIssue',
+  '/verify-identity': 'backHeader.verification',
+  '/verification-pending': 'backHeader.verificationPending',
 };
 
 export function MobileBackHeader() {
@@ -62,19 +62,21 @@ export function MobileBackHeader() {
   // Don't show on root routes
   if (ROOT_ROUTES.includes(path)) return null;
 
-  // Determine page title
-  let title = PAGE_TITLES[path] || '';
+  // Determine page title via i18n
+  let titleKey = PAGE_TITLE_KEYS[path];
   
   // For dynamic routes like /news/:id, /doctors/:id, etc.
-  if (!title) {
-    if (path.startsWith('/news/')) title = 'Artículo';
-    else if (path.startsWith('/doctors/')) title = 'Doctor';
-    else if (path.startsWith('/live/')) title = 'En Vivo';
-    else if (path.startsWith('/recording/')) title = 'Grabación';
-    else if (path.startsWith('/prescription/')) title = 'Receta';
-    else if (path.startsWith('/admin')) title = 'Admin';
-    else title = 'Atrás';
+  if (!titleKey) {
+    if (path.startsWith('/news/')) titleKey = 'backHeader.article';
+    else if (path.startsWith('/doctors/') || path.startsWith('/doctor/')) titleKey = 'backHeader.doctor';
+    else if (path.startsWith('/live/')) titleKey = 'backHeader.live';
+    else if (path.startsWith('/recording/')) titleKey = 'backHeader.recording';
+    else if (path.startsWith('/prescription')) titleKey = 'backHeader.prescription';
+    else if (path.startsWith('/admin')) titleKey = 'backHeader.admin';
+    else titleKey = 'backHeader.back';
   }
+
+  const title = t(titleKey);
 
   return (
     <div className="sticky top-[57px] z-40 flex items-center h-11 px-2 border-b border-border bg-card/95 backdrop-blur sm:hidden">

@@ -351,7 +351,7 @@ export default function DoctorAvailabilityPage() {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3 sm:gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/lives')} className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/lives')} className="hidden sm:flex h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
               <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
             <div className="min-w-0">

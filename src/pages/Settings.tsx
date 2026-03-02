@@ -67,7 +67,7 @@ export default function Settings() {
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-2xl">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hidden sm:flex">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
