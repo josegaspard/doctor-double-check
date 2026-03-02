@@ -1,66 +1,78 @@
 
-# Plan: Add "Load More" Pagination to Patient Reviews
 
-## Approach
+# Plan: Fix Call Banner, Track Subscription Revenue, and Real-Time Lives
 
-A **"Load More" button** is the best UX pattern here rather than numbered pagination. It keeps the user in context (no page jumps), works naturally on mobile with thumb scrolling, and is the standard pattern used by review sections on platforms like Google Maps, Airbnb, and App Store.
+## 1. Fix CallWaitingBanner persistence
 
-## Changes
+**Problem**: When the doctor ends a video call, the `video_room_name` field on the `consultations` table is never cleared. The `ChatMessagesPanel` checks `!!data?.video_room_name` to decide whether to show the banner, so it stays visible permanently after any call.
 
-### File: `src/components/doctor/DoctorReviews.tsx`
+**Solution**: In `useWebRTCCall.ts`, after the doctor ends the call (in `endCall`), clear the `video_room_name` and `video_room_url` fields on the consultation row by setting them to `null`. This will trigger the realtime subscription in `ChatMessagesPanel` which already listens for `UPDATE` on consultations, causing the banner to disappear immediately.
 
-1. **Fetch total count** -- Add a separate count query to know the total number of reviews for this doctor (used to show "X of Y reviews" and hide the button when all are loaded).
+**File**: `src/hooks/useWebRTCCall.ts`
+- In the `endCall` callback, after invoking `end-daily-room`, add:
+  ```typescript
+  await supabase.from('consultations').update({
+    video_room_name: null,
+    video_room_url: null,
+  }).eq('id', consultationId);
+  ```
 
-2. **Increase initial limit from 20 to fetch-all approach with batched display** -- Keep fetching all reviews upfront (they're small records), but only *display* 10 at a time via a `visibleCount` state. This avoids extra network calls on each "load more" click.
+---
 
-3. **Add `visibleCount` state** -- Starts at `10`. Each click adds 10 more. The "Load More" button hides when `visibleCount >= reviews.length`.
+## 2. Track Pro subscription payments as platform revenue
 
-4. **Render only `reviews.slice(0, visibleCount)`** instead of all reviews.
+**Problem**: Pro (basic/premium) subscription payments are credited to the doctor's `pending_earnings` via `creditDoctorEarningsAtomic`, but after platform commission is applied, the admin dashboard should also reflect subscription revenue in its breakdown. Currently, `handleCreatorSubscription` already calls `creditDoctorEarningsAtomic` which credits the full `tierPrice` to the doctor.
 
-5. **Add "Load More" button** at the bottom of the reviews list:
-   - Styled as a subtle outline button, full-width on mobile, centered on desktop
-   - Shows remaining count: e.g., "Show more reviews (15 remaining)"
-   - Smooth appearance with no layout shift
+**Analysis**: Looking at `stripe-webhook/index.ts` line 313, the subscription handler already credits doctor earnings atomically and creates a `wallet_transactions` entry with `source: "subscription"`. The admin payout system already reads from `doctor_profiles.pending_earnings` and `wallet_transactions`.
 
-6. **Show review count summary** -- Below the average rating, display "Showing X of Y reviews" when not all are visible.
+**What's missing**: The admin analytics/payout breakdown needs to recognize `subscription` as a revenue source. Let me check the admin analytics page.
 
-7. **Remove the `.limit(20)` cap** from the query (or raise to 100) so doctors with many reviews can see them all progressively.
+**File**: `supabase/functions/stripe-webhook/index.ts`
+- The `handleCreatorSubscription` function (line 253-314) already credits doctor earnings correctly with `source: "subscription"`.
+- The `handleInvoicePaymentSucceeded` renewal handler (line 670-738) also credits with `source: "subscription_renewal"`.
+- Both already create `wallet_transactions` with the proper metadata.
 
-## Technical Details
+No changes needed in the webhook -- the earnings are already tracked. However, I need to verify the admin dashboard displays subscription revenue correctly.
 
-```tsx
-// New state
-const [visibleCount, setVisibleCount] = useState(10);
+**Files to check/update**: `src/pages/AdminAnalytics.tsx`, `src/pages/AdminPayouts.tsx` -- ensure they include subscription-type transactions in their revenue breakdowns.
 
-// Slice for display
-const visibleReviews = reviews.slice(0, visibleCount);
-const hasMore = visibleCount < reviews.length;
+---
 
-// Load more handler
-const handleLoadMore = () => setVisibleCount(prev => prev + 10);
+## 3. Real-time lives appearing on /lives without refresh
 
-// Button at bottom of CardContent
-{hasMore && (
-  <Button
-    variant="outline"
-    className="w-full mt-2"
-    onClick={handleLoadMore}
-  >
-    {t('doctorProfile.showMoreReviews')} ({reviews.length - visibleCount})
-  </Button>
-)}
-```
+**Problem**: The user wants new lives from ANY doctor (not just followed ones) to appear in real-time on the `/lives` grid.
 
-### File: `src/lib/i18n/es.ts` and `src/lib/i18n/en.ts`
+**Analysis**: Looking at `LivesContext.tsx`, the realtime subscription on lines 358-457 already handles this. It listens for `INSERT`/`UPDATE`/`DELETE` on the `lives` table and updates state directly, including fetching doctor profile data for new lives. The `LivesGrid.tsx` component already uses `AnimatePresence` for smooth entry/exit animations.
 
-Add keys:
-- `doctorProfile.showMoreReviews` -- "Show more reviews" / "Ver mas resenas"
-- `doctorProfile.showingReviews` -- "Showing {count} of {total}" / "Mostrando {count} de {total}"
+**Verification**: The `lives` table is already in `supabase_realtime` publication (the realtime channel subscribes to `postgres_changes` on `lives`). The INSERT handler (lines 401-428) creates the live entry immediately and asynchronously hydrates the doctor profile.
 
-## Files Modified
+**This should already work.** If it's not working, it could be because:
+1. The `lives` table wasn't added to the realtime publication
+2. RLS policies block the realtime subscription for anonymous/patient users
 
-| File | Change |
-|------|--------|
-| `src/components/doctor/DoctorReviews.tsx` | Add visibleCount state, slice display, "Load More" button, raise query limit |
-| `src/lib/i18n/en.ts` | Add 2 i18n keys |
-| `src/lib/i18n/es.ts` | Add 2 i18n keys |
+**Action**: Run a database migration to ensure `lives` is in the realtime publication (it may already be, but this is idempotent). Also verify RLS allows SELECT for all users on the `lives` table.
+
+---
+
+## Summary of Changes
+
+| # | Task | Files |
+|---|------|-------|
+| 1 | Clear `video_room_name` on call end | `src/hooks/useWebRTCCall.ts` |
+| 2 | Verify subscription revenue tracking in admin views | `src/pages/AdminAnalytics.tsx`, `src/pages/AdminPayouts.tsx` |
+| 3 | Ensure lives table is in realtime publication | Database migration (if needed) |
+
+### Technical Details
+
+**Task 1 - Call Banner Fix**:
+- Add `video_room_name: null, video_room_url: null` update to `endCall` in `useWebRTCCall.ts`
+- The existing realtime listener in `ChatMessagesPanel` will automatically hide the banner when `video_room_name` becomes null
+
+**Task 2 - Subscription Revenue**:
+- Review `AdminAnalytics.tsx` and `AdminPayouts.tsx` to ensure they query `wallet_transactions` where `metadata->source = 'subscription'` in revenue breakdowns
+- Add subscription category if missing from the breakdown charts/tables
+
+**Task 3 - Real-Time Lives**:
+- Verify `lives` table is in `supabase_realtime` publication via migration
+- The existing `LivesContext` realtime handler already processes INSERT events and hydrates doctor profiles -- this should work once the publication is confirmed
+
