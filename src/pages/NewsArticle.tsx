@@ -291,7 +291,7 @@ export default function NewsArticle() {
       <MainLayout>
         <div className="container mx-auto px-4 py-12 text-center">
           <h2 className="text-xl font-semibold mb-4">Artículo no encontrado</h2>
-          <Link to="/news"><Button variant="outline"><ArrowLeft className="w-4 h-4 mr-2" /> Volver a noticias</Button></Link>
+          <Link to="/news"><Button variant="outline" className="hidden sm:inline-flex"><ArrowLeft className="w-4 h-4 mr-2" /> Volver a noticias</Button></Link>
         </div>
       </MainLayout>
     );
@@ -301,7 +301,7 @@ export default function NewsArticle() {
     <MainLayout>
       <article className="container mx-auto px-4 py-6 max-w-3xl">
         <div className="flex items-center justify-between mb-4">
-          <Link to="/news" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <Link to="/news" className="hidden sm:inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-4 h-4" /> Volver a noticias
           </Link>
           {canEdit && (

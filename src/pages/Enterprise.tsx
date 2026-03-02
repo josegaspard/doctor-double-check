@@ -59,7 +59,7 @@ export default function Enterprise() {
             </Link>
             <Link 
               to="/" 
-              className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-[#163a83] transition-colors"
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Volver al inicio</span>
