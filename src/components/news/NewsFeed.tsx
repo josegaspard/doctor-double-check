@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,6 +22,7 @@ interface NewsItem {
 
 export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(_props, ref) {
   const { language, t } = useLanguage();
+  const navigate = useNavigate();
   const locale = language === 'es' ? es : enUS;
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +34,7 @@ export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(
         .select('id, title, summary, image_url, category, published_at, created_at, slug')
         .eq('is_published', true)
         .order('published_at', { ascending: false })
-        .limit(6);
+        .limit(15);
       if (data) setNews(data);
       setIsLoading(false);
     };
@@ -41,6 +42,9 @@ export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(
   }, []);
 
   if (isLoading || news.length === 0) return null;
+
+  const topCards = news.slice(0, 3);
+  const listItems = news.slice(3);
 
   return (
     <section ref={ref} className="mt-8">
@@ -56,8 +60,9 @@ export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(
         </Link>
       </div>
 
+      {/* Top 3 as cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {news.map((item) => (
+        {topCards.map((item) => (
           <Link key={item.id} to={`/news/${item.slug || item.id}`}>
             <Card className="overflow-hidden hover:shadow-lg transition-all group h-full">
               {item.image_url && (
@@ -88,6 +93,54 @@ export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(
             </Card>
           </Link>
         ))}
+      </div>
+
+      {/* Remaining as compact list */}
+      {listItems.length > 0 && (
+        <div className="mt-4 divide-y divide-border rounded-lg border bg-card">
+          {listItems.map((item) => (
+            <Link
+              key={item.id}
+              to={`/news/${item.slug || item.id}`}
+              className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group"
+            >
+              {item.image_url && (
+                <img
+                  src={item.image_url}
+                  alt=""
+                  className="w-12 h-12 rounded-md object-cover shrink-0 hidden sm:block"
+                  loading="lazy"
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                  {item.title}
+                </h4>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{item.category}</Badge>
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-2.5 h-2.5" />
+                    {format(new Date(item.published_at || item.created_at), 'd MMM', { locale })}
+                  </span>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Read more button */}
+      <div className="mt-5 flex justify-center">
+        <Button
+          onClick={() => navigate('/news')}
+          variant="outline"
+          className="gap-2 px-6"
+        >
+          <Newspaper className="w-4 h-4" />
+          {language === 'es' ? 'Leer más noticias' : 'Read more news'}
+          <ArrowRight className="w-4 h-4" />
+        </Button>
       </div>
     </section>
   );

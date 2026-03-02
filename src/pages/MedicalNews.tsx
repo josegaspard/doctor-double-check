@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,15 +7,28 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Newspaper, Search, Clock, MessageCircle, Loader2, Filter, PenSquare } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Pagination, PaginationContent, PaginationItem, PaginationLink,
+  PaginationNext, PaginationPrevious, PaginationEllipsis
+} from '@/components/ui/pagination';
+import {
+  Newspaper, Search, Clock, MessageCircle, PenSquare, Eye,
+  TrendingUp, Flame, ArrowRight, ChevronLeft, ChevronRight
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { es as esLocale, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CATEGORIES = [
   'Todas', 'Cardiología', 'Neurología', 'Oncología', 'Pediatría',
   'Investigación', 'Tecnología Médica', 'Salud Pública', 'Farmacología', 'Cirugía', 'General'
 ];
+
+type SortBy = 'recent' | 'most_read' | 'most_commented';
+
+const PAGE_SIZE = 15;
 
 interface NewsItem {
   id: string;
@@ -26,6 +39,7 @@ interface NewsItem {
   published_at: string | null;
   created_at: string;
   slug: string | null;
+  view_count: number;
   comment_count?: number;
 }
 
@@ -33,11 +47,18 @@ export default function MedicalNews() {
   const { role, supabaseUser } = useAuth();
   const navigate = useNavigate();
   const { t, language } = useLanguage();
+  const isMobile = useIsMobile();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const [sortBy, setSortBy] = useState<SortBy>('recent');
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [canPublish, setCanPublish] = useState(false);
+
+  const dateLocale = language === 'es' ? esLocale : enUS;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   useEffect(() => {
     if (role === 'admin') {
@@ -55,13 +76,33 @@ export default function MedicalNews() {
   }, [role, supabaseUser?.id]);
 
   useEffect(() => {
+    setPage(0);
+  }, [search, selectedCategory, sortBy]);
+
+  useEffect(() => {
     const fetchNews = async () => {
-      const { data } = await supabase
+      setIsLoading(true);
+
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const sortColumn = sortBy === 'most_read' ? 'view_count' : 'published_at';
+
+      let query = supabase
         .from('medical_news')
-        .select('id, title, summary, image_url, category, published_at, created_at, slug')
-        .eq('is_published', true)
-        .order('published_at', { ascending: false })
-        .limit(100);
+        .select('id, title, summary, image_url, category, published_at, created_at, slug, view_count', { count: 'exact' })
+        .eq('is_published', true);
+
+      if (selectedCategory !== 'Todas') {
+        query = query.eq('category', selectedCategory);
+      }
+      if (search.trim()) {
+        query = query.or(`title.ilike.%${search.trim()}%,summary.ilike.%${search.trim()}%`);
+      }
+
+      query = query.order(sortColumn, { ascending: false }).range(from, to);
+
+      const { data, count } = await query;
 
       if (data) {
         const ids = data.map(d => d.id);
@@ -73,44 +114,191 @@ export default function MedicalNews() {
         const countMap = new Map<string, number>();
         commentCounts?.forEach(c => countMap.set(c.news_id, (countMap.get(c.news_id) || 0) + 1));
 
-        setNews(data.map(d => ({ ...d, comment_count: countMap.get(d.id) || 0 })));
+        let items = data.map(d => ({ ...d, comment_count: countMap.get(d.id) || 0 }));
+
+        if (sortBy === 'most_commented') {
+          items.sort((a, b) => (b.comment_count || 0) - (a.comment_count || 0));
+        }
+
+        setNews(items);
+        setTotalCount(count || 0);
       }
       setIsLoading(false);
     };
     fetchNews();
-  }, []);
+  }, [page, search, selectedCategory, sortBy]);
 
-  const filtered = news.filter(n => {
-    const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) ||
-      n.summary?.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = selectedCategory === 'Todas' || n.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const sortOptions: { key: SortBy; label: string; icon: React.ReactNode }[] = [
+    { key: 'recent', label: language === 'es' ? 'Recientes' : 'Recent', icon: <Clock className="w-3.5 h-3.5" /> },
+    { key: 'most_read', label: language === 'es' ? 'Más leídos' : 'Most Read', icon: <TrendingUp className="w-3.5 h-3.5" /> },
+    { key: 'most_commented', label: language === 'es' ? 'Más comentados' : 'Most Commented', icon: <Flame className="w-3.5 h-3.5" /> },
+  ];
 
-  const dateLocale = language === 'es' ? esLocale : enUS;
+  const heroItem = page === 0 && news.length > 0 && !isMobile ? news[0] : null;
+  const gridItems = heroItem ? news.slice(1) : news;
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const pageNumbers: (number | 'ellipsis')[] = [];
+    if (totalPages <= 5) {
+      for (let i = 0; i < totalPages; i++) pageNumbers.push(i);
+    } else {
+      pageNumbers.push(0);
+      if (page > 2) pageNumbers.push('ellipsis');
+      for (let i = Math.max(1, page - 1); i <= Math.min(totalPages - 2, page + 1); i++) {
+        pageNumbers.push(i);
+      }
+      if (page < totalPages - 3) pageNumbers.push('ellipsis');
+      pageNumbers.push(totalPages - 1);
+    }
+
+    return (
+      <div className="mt-8 flex flex-col items-center gap-3">
+        {isMobile ? (
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={page === 0}
+              onClick={() => setPage(p => p - 1)}
+              className="h-10 w-10"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="text-sm font-medium text-muted-foreground">
+              {page + 1} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage(p => p + 1)}
+              className="h-10 w-10"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => page > 0 && setPage(p => p - 1)}
+                  className={page === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+              {pageNumbers.map((p, i) =>
+                p === 'ellipsis' ? (
+                  <PaginationItem key={`e-${i}`}><PaginationEllipsis /></PaginationItem>
+                ) : (
+                  <PaginationItem key={p}>
+                    <PaginationLink
+                      isActive={page === p}
+                      onClick={() => setPage(p)}
+                      className="cursor-pointer"
+                    >
+                      {p + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => page < totalPages - 1 && setPage(p => p + 1)}
+                  className={page >= totalPages - 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </div>
+    );
+  };
+
+  const SkeletonCard = () => (
+    <Card className="overflow-hidden">
+      <Skeleton className="aspect-video w-full" />
+      <CardContent className="p-4 space-y-3">
+        <div className="flex justify-between">
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <Skeleton className="h-5 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-24" />
+      </CardContent>
+    </Card>
+  );
+
+  const NewsCard = ({ item, isHero = false }: { item: NewsItem; isHero?: boolean }) => (
+    <Link to={`/news/${item.slug || item.id}`} className={isHero ? 'col-span-full' : ''}>
+      <Card className={`overflow-hidden hover:shadow-lg transition-all group h-full ${isHero ? 'md:flex md:flex-row' : ''}`}>
+        {item.image_url && (
+          <div className={`overflow-hidden ${isHero ? 'md:w-1/2 aspect-video md:aspect-auto' : 'aspect-video'}`}>
+            <img
+              src={item.image_url}
+              alt={item.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+            />
+          </div>
+        )}
+        <CardContent className={`p-4 flex flex-col justify-center ${isHero ? 'md:w-1/2 md:p-6' : ''}`}>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <Badge variant="secondary" className="text-[10px]">{item.category}</Badge>
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {format(new Date(item.published_at || item.created_at), 'd MMM yyyy', { locale: dateLocale })}
+            </span>
+          </div>
+          <h3 className={`font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors ${isHero ? 'text-xl md:text-2xl' : ''}`}>
+            {item.title}
+          </h3>
+          {item.summary && (
+            <p className={`text-muted-foreground mb-3 ${isHero ? 'text-sm line-clamp-3' : 'text-sm line-clamp-2'}`}>
+              {item.summary}
+            </p>
+          )}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-auto">
+            <span className="flex items-center gap-1">
+              <Eye className="w-3 h-3" />
+              {item.view_count || 0} {language === 'es' ? 'lecturas' : 'views'}
+            </span>
+            <span className="flex items-center gap-1">
+              <MessageCircle className="w-3 h-3" />
+              {item.comment_count || 0} {t('medicalNews.comments')}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-5xl">
-        <div className="flex items-center justify-between mb-6">
+      <div className="container mx-auto px-3 sm:px-4 py-6 max-w-5xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-              <Newspaper className="w-6 h-6 text-primary" />
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+              <Newspaper className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               {t('medicalNews.title')}
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
               {t('medicalNews.subtitle')}
             </p>
           </div>
           {canPublish && (
-            <Button onClick={() => navigate('/doctor/news')} className="gap-2">
+            <Button onClick={() => navigate('/doctor/news')} size={isMobile ? 'icon' : 'default'} className="gap-2 shrink-0">
               <PenSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">{t('medicalNews.writeArticle')}</span>
+              {!isMobile && <span>{t('medicalNews.writeArticle')}</span>}
             </Button>
           )}
         </div>
 
-        <div className="relative mb-4">
+        {/* Search */}
+        <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder={t('medicalNews.searchPlaceholder')}
@@ -120,62 +308,52 @@ export default function MedicalNews() {
           />
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-6">
+        {/* Sort filters */}
+        <div className="flex gap-2 mb-3 overflow-x-auto scrollbar-hide pb-1">
+          {sortOptions.map(opt => (
+            <Button
+              key={opt.key}
+              variant={sortBy === opt.key ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortBy(opt.key)}
+              className="text-xs gap-1.5 shrink-0"
+            >
+              {opt.icon}
+              {opt.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Category filters */}
+        <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide pb-1">
           {CATEGORIES.map(cat => (
             <Button
               key={cat}
-              variant={selectedCategory === cat ? 'default' : 'outline'}
+              variant={selectedCategory === cat ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setSelectedCategory(cat)}
-              className="text-xs"
+              className={`text-xs shrink-0 ${selectedCategory === cat ? 'font-semibold' : ''}`}
             >
               {cat}
             </Button>
           ))}
         </div>
 
+        {/* Content */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((item) => (
-              <Link key={item.id} to={`/news/${item.slug || item.id}`}>
-                <Card className="overflow-hidden hover:shadow-lg transition-all group h-full">
-                  {item.image_url && (
-                    <div className="aspect-video overflow-hidden">
-                      <img
-                        src={item.image_url}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <Badge variant="secondary" className="text-[10px]">{item.category}</Badge>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {format(new Date(item.published_at || item.created_at), 'd MMM yyyy', { locale: dateLocale })}
-                      </span>
-                    </div>
-                    <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
-                      {item.title}
-                    </h3>
-                    {item.summary && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{item.summary}</p>
-                    )}
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MessageCircle className="w-3 h-3" />
-                      {item.comment_count || 0} {t('medicalNews.comments')}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
+        ) : news.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {heroItem && <NewsCard item={heroItem} isHero />}
+              {gridItems.map((item) => (
+                <NewsCard key={item.id} item={item} />
+              ))}
+            </div>
+            {renderPagination()}
+          </>
         ) : (
           <Card className="p-12 text-center">
             <Newspaper className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />

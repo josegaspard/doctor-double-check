@@ -1246,6 +1246,7 @@ export type Database = {
           summary: string | null
           title: string
           updated_at: string
+          view_count: number
         }
         Insert: {
           author_bio?: string | null
@@ -1265,6 +1266,7 @@ export type Database = {
           summary?: string | null
           title: string
           updated_at?: string
+          view_count?: number
         }
         Update: {
           author_bio?: string | null
@@ -1284,6 +1286,7 @@ export type Database = {
           summary?: string | null
           title?: string
           updated_at?: string
+          view_count?: number
         }
         Relationships: []
       }
@@ -2567,6 +2570,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_news_view: { Args: { news_id: string }; Returns: undefined }
       increment_storage_used: {
         Args: { p_bytes: number; p_user_id: string }
         Returns: undefined
