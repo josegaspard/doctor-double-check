@@ -111,11 +111,13 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
         );
       case 'video':
         return (
-          <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
+          <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black max-w-full">
             <video 
               src={signedUrl}
               controls
-              className="w-full h-full"
+              playsInline
+              controlsList="nodownload"
+              className="w-full h-full object-contain"
               poster={content.thumbnail_url || undefined}
             >
               Tu navegador no soporta videos HTML5.
@@ -143,7 +145,7 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
