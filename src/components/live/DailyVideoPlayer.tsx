@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import Daily, { DailyCall, DailyEventObject, DailyParticipant } from '@daily-co/daily-js';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,21 +18,31 @@ import {
   Volume2,
 } from 'lucide-react';
 
+export interface DailyVideoPlayerHandle {
+  toggleMute: () => void;
+  toggleVideo: () => void;
+  leaveCall: () => void;
+  isMuted: boolean;
+  isVideoOff: boolean;
+}
+
 interface DailyVideoPlayerProps {
   roomUrl: string;
   token: string;
   isOwner?: boolean;
+  hideControls?: boolean;
   onLeave?: () => void;
   onParticipantCountChange?: (count: number) => void;
 }
 
-export function DailyVideoPlayer({
+export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPlayerProps>(function DailyVideoPlayer({
   roomUrl,
   token,
   isOwner = false,
+  hideControls = false,
   onLeave,
   onParticipantCountChange,
-}: DailyVideoPlayerProps) {
+}, ref) {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const screenShareRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
@@ -58,7 +68,6 @@ export function DailyVideoPlayer({
 
     const initCall = async () => {
       try {
-        // Destroy any lingering instance first (handles React 18 StrictMode double-mount)
         try {
           const existing = Daily.getCallInstance();
           if (existing) {
@@ -136,7 +145,6 @@ export function DailyVideoPlayer({
     setParticipantCount(count);
     onParticipantCountChange?.(count);
 
-    // Detect screen shares
     let foundScreenShare = false;
     Object.values(participants).forEach(p => {
       if (p.screen && p.screenVideoTrack) {
@@ -151,7 +159,6 @@ export function DailyVideoPlayer({
   }, [onParticipantCountChange]);
 
   const handleError = useCallback((event: DailyEventObject) => {
-    // Suppress ALL errors when we're intentionally leaving or cleaning up
     const meetingState = callRef.current?.meetingState?.();
     if (isLeavingRef.current || cleaningUpRef.current || meetingState === 'leaving-meeting' as any || meetingState === 'left-meeting' as any) {
       console.log('Daily error suppressed (leaving/cleanup):', (event as any).errorMsg);
@@ -160,7 +167,6 @@ export function DailyVideoPlayer({
 
     const errorMsg = ((event as any).errorMsg || '').toLowerCase();
     
-    // Non-critical errors that indicate the room/session ended naturally
     const nonCriticalPatterns = [
       'meeting has ended', 'exp', 'nbf',
       'connection error', 'disconnected', 'transport closed',
@@ -196,12 +202,10 @@ export function DailyVideoPlayer({
     if (!videoContainerRef.current) return;
     videoContainerRef.current.innerHTML = '';
 
-    // Also clear screen share container
     if (screenShareRef.current) {
       screenShareRef.current.innerHTML = '';
     }
 
-    // Detect screen share directly from participants (avoid stale closure)
     let hasAnyScreenShare = false;
     Object.values(participants).forEach(p => {
       if (p.screen && p.screenVideoTrack) {
@@ -210,7 +214,6 @@ export function DailyVideoPlayer({
     });
     
     Object.values(participants).forEach((participant) => {
-      // Handle screen share track
       if (participant.screen && participant.screenVideoTrack && screenShareRef.current) {
         const screenEl = document.createElement('video');
         screenEl.autoplay = true;
@@ -227,7 +230,6 @@ export function DailyVideoPlayer({
         videoEl.autoplay = true;
         videoEl.playsInline = true;
         videoEl.setAttribute('webkit-playsinline', 'true');
-        // Start ALL videos muted so autoplay works on iOS/mobile
         videoEl.muted = true;
 
         const isMobileDevice = window.innerWidth < 768;
@@ -247,11 +249,9 @@ export function DailyVideoPlayer({
         videoEl.srcObject = stream;
         videoContainerRef.current?.appendChild(videoEl);
 
-        // Attempt to play, then try unmuting for remote participants
         videoEl.play().then(() => {
           if (!participant.local) {
             videoEl.muted = false;
-            // iOS Safari silently pauses the video when unmuted programmatically
             setTimeout(() => {
               if (videoEl.paused) {
                 videoEl.muted = true;
@@ -266,7 +266,6 @@ export function DailyVideoPlayer({
           }
         });
       } else if (!participant.local && participant.audioTrack && !participant.video) {
-        // Audio-only fallback
         const audioEl = document.createElement('audio');
         audioEl.autoplay = true;
         audioEl.muted = true;
@@ -288,19 +287,19 @@ export function DailyVideoPlayer({
     });
   };
 
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     if (!callRef.current) return;
     const newMuted = !isMuted;
     callRef.current.setLocalAudio(!newMuted);
     setIsMuted(newMuted);
-  };
+  }, [isMuted]);
 
-  const toggleVideo = () => {
+  const toggleVideo = useCallback(() => {
     if (!callRef.current) return;
     const newVideoOff = !isVideoOff;
     callRef.current.setLocalVideo(!newVideoOff);
     setIsVideoOff(newVideoOff);
-  };
+  }, [isVideoOff]);
 
   const toggleScreenShare = async () => {
     if (!callRef.current) return;
@@ -318,11 +317,20 @@ export function DailyVideoPlayer({
     }
   };
 
-  const leaveCall = () => {
+  const leaveCall = useCallback(() => {
     isLeavingRef.current = true;
     if (callRef.current) callRef.current.leave();
     onLeave?.();
-  };
+  }, [onLeave]);
+
+  // Expose controls to parent via ref
+  useImperativeHandle(ref, () => ({
+    toggleMute,
+    toggleVideo,
+    leaveCall,
+    get isMuted() { return isMuted; },
+    get isVideoOff() { return isVideoOff; },
+  }), [toggleMute, toggleVideo, leaveCall, isMuted, isVideoOff]);
 
   const handleUnmute = useCallback(() => {
     const containers = [videoContainerRef.current, screenShareRef.current];
@@ -346,7 +354,6 @@ export function DailyVideoPlayer({
     setIsFullscreen(!isFullscreen);
   };
 
-  // Listen for fullscreen changes
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onFsChange);
@@ -388,7 +395,7 @@ export function DailyVideoPlayer({
         isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'aspect-video'
       }`}
     >
-      {/* Screen share layer — always rendered so ref is available when tracks arrive */}
+      {/* Screen share layer */}
       <div
         ref={screenShareRef}
         className={`absolute inset-0 flex items-center justify-center bg-black z-0 ${showingScreenShare ? '' : 'hidden'}`}
@@ -404,33 +411,7 @@ export function DailyVideoPlayer({
         )}
       </div>
       
-      {/* Live Indicator */}
-      <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20">
-        <Badge variant="live" className="gap-1">
-          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-          EN VIVO
-        </Badge>
-      </div>
-      
-      {/* Participant Count */}
-      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
-        <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
-          <Users className="w-3 h-3" />
-          {participantCount} viendo
-        </Badge>
-      </div>
-
-      {/* Screen share indicator */}
-      {showingScreenShare && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
-          <Badge variant="secondary" className="gap-1 bg-blue-600/80 text-white border-0">
-            <Monitor className="w-3 h-3" />
-            Pantalla compartida
-          </Badge>
-        </div>
-      )}
-      
-      {/* Tap to unmute overlay */}
+      {/* Tap to unmute overlay — always show regardless of hideControls */}
       {showUnmutePrompt && (
         <button
           onClick={handleUnmute}
@@ -443,72 +424,102 @@ export function DailyVideoPlayer({
         </button>
       )}
 
-      {/* Controls */}
-      <div className={`absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/80 to-transparent z-20 transition-opacity ${
-        isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-      }`}
-        style={{ paddingBottom: isFullscreen ? 'max(0.75rem, env(safe-area-inset-bottom))' : undefined }}
-      >
-        <div className="flex items-center justify-center gap-2 sm:gap-3">
-          {isOwner && (
-            <>
-              <Button
-                size="icon"
-                variant={isMuted ? "destructive" : "secondary"}
-                onClick={toggleMute}
-                className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
-              >
-                {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              </Button>
+      {/* Overlays and controls — hidden when parent provides its own */}
+      {!hideControls && (
+        <>
+          {/* Live Indicator */}
+          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20">
+            <Badge variant="live" className="gap-1">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              EN VIVO
+            </Badge>
+          </div>
+          
+          {/* Participant Count */}
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
+            <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
+              <Users className="w-3 h-3" />
+              {participantCount} viendo
+            </Badge>
+          </div>
+
+          {/* Screen share indicator */}
+          {showingScreenShare && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
+              <Badge variant="secondary" className="gap-1 bg-blue-600/80 text-white border-0">
+                <Monitor className="w-3 h-3" />
+                Pantalla compartida
+              </Badge>
+            </div>
+          )}
+
+          {/* Controls */}
+          <div className={`absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/80 to-transparent z-20 transition-opacity ${
+            isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          }`}
+            style={{ paddingBottom: isFullscreen ? 'max(0.75rem, env(safe-area-inset-bottom))' : undefined }}
+          >
+            <div className="flex items-center justify-center gap-2 sm:gap-3">
+              {isOwner && (
+                <>
+                  <Button
+                    size="icon"
+                    variant={isMuted ? "destructive" : "secondary"}
+                    onClick={toggleMute}
+                    className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
+                  >
+                    {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </Button>
+                  
+                  <Button
+                    size="icon"
+                    variant={isVideoOff ? "destructive" : "secondary"}
+                    onClick={toggleVideo}
+                    className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
+                  >
+                    {isVideoOff ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                  </Button>
+
+                  {(() => {
+                    const isPhone = typeof window !== 'undefined' && window.innerWidth < 768 && !/iPad|Macintosh/.test(navigator.userAgent);
+                    if (isPhone) return null;
+                    return (
+                      <Button
+                        size="icon"
+                        variant={isScreenSharing ? "default" : "secondary"}
+                        onClick={toggleScreenShare}
+                        className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
+                      >
+                        {isScreenSharing ? <MonitorOff className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+                      </Button>
+                    );
+                  })()}
+                </>
+              )}
               
               <Button
                 size="icon"
-                variant={isVideoOff ? "destructive" : "secondary"}
-                onClick={toggleVideo}
+                variant="secondary"
+                onClick={toggleFullscreen}
                 className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
               >
-                {isVideoOff ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
               </Button>
-
-              {/* Hide screen share on phones; show on tablets/iPads/desktop */}
-              {(() => {
-                const isPhone = typeof window !== 'undefined' && window.innerWidth < 768 && !/iPad|Macintosh/.test(navigator.userAgent);
-                if (isPhone) return null;
-                return (
-                  <Button
-                    size="icon"
-                    variant={isScreenSharing ? "default" : "secondary"}
-                    onClick={toggleScreenShare}
-                    className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
-                  >
-                    {isScreenSharing ? <MonitorOff className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
-                  </Button>
-                );
-              })()}
-            </>
-          )}
-          
-          <Button
-            size="icon"
-            variant="secondary"
-            onClick={toggleFullscreen}
-            className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
-          >
-            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-          </Button>
-          
-          {isOwner && (
-            <Button
-              size="icon"
-              variant="destructive"
-              onClick={leaveCall}
-              className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
-            >
-              <PhoneOff className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-      </div>
+              
+              {isOwner && (
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  onClick={leaveCall}
+                  className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
+                >
+                  <PhoneOff className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
-}
+});
