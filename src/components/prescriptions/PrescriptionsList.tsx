@@ -310,21 +310,17 @@ export function PrescriptionsList() {
         </Card>
       ))}
 
-      {/* Sticky mobile bottom bar */}
+      {/* Floating bulk delete bar */}
       {isManaging && selectedIds.size > 0 && (
-        <div className="fixed bottom-16 sm:bottom-4 left-0 right-0 z-50 px-3 pb-safe">
-          <div className="max-w-3xl mx-auto bg-destructive text-destructive-foreground rounded-lg p-3 flex items-center justify-between shadow-lg">
-            <span className="text-sm font-medium">
-              {selectedIds.size} {t('manage.selected')}
-            </span>
+        <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm">
+          <div className="bg-card/95 backdrop-blur-lg border border-border rounded-xl shadow-2xl p-3">
             <Button
-              size="sm"
-              variant="secondary"
+              variant="destructive"
+              className="w-full gap-2 h-11 text-sm font-medium"
               onClick={() => setShowDeleteDialog(true)}
-              className="gap-1.5"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              {t('manage.deleteSelected')}
+              <Trash2 className="w-4 h-4" />
+              {t('manage.deleteSelected')} ({selectedIds.size})
             </Button>
           </div>
         </div>

@@ -53,6 +53,7 @@ import {
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
+import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
@@ -440,7 +441,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       <MobileBackHeader />
 
       {/* Main Content - add bottom padding on mobile for tab bar */}
-      <main className="flex-1 pb-[72px] sm:pb-0">
+      <main className="flex-1 pb-[72px] sm:pb-0 overflow-x-hidden min-h-[calc(100vh-56px-72px)] sm:min-h-0">
         <motion.div
           key={location.pathname}
           initial={{ opacity: 0 }}
@@ -651,70 +652,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         </SheetContent>
       </Sheet>
 
-      {/* Footer - hidden on mobile (bottom nav takes its place) */}
-      <footer className="bg-dark text-dark-foreground py-8 mt-auto hidden sm:block">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-3">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
-                <span className="text-sm text-light">{t('footer.platform')}</span>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                {socialLinks.facebook && (
-                  <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                    <Facebook className="w-5 h-5" />
-                  </a>
-                )}
-                {socialLinks.instagram && (
-                  <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                    <Instagram className="w-5 h-5" />
-                  </a>
-                )}
-                {socialLinks.twitter && (
-                  <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                    <Twitter className="w-5 h-5" />
-                  </a>
-                )}
-                {socialLinks.linkedin && (
-                  <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                    <Linkedin className="w-5 h-5" />
-                  </a>
-                )}
-                {socialLinks.youtube && (
-                  <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
-                    <Youtube className="w-5 h-5" />
-                  </a>
-                )}
-              </div>
-            </div>
-            
-            <div className="border-t border-light/20" />
-            
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <nav className="flex items-center gap-6">
-                <Link to="/terms" className="text-sm text-light/70 hover:text-light transition-colors">
-                  {t('footer.termsOfService')}
-                </Link>
-                <Link to="/privacy" className="text-sm text-light/70 hover:text-light transition-colors">
-                  {t('footer.privacyPolicy')}
-                </Link>
-                <Link to="/contact" className="text-sm text-light/70 hover:text-light transition-colors">
-                  {t('footer.contact')}
-                </Link>
-                <Link to="/report-issue" className="text-sm text-warning/80 hover:text-warning transition-colors">
-                  {t('report.title')}
-                </Link>
-              </nav>
-              
-              <p className="text-sm text-light/70">
-                {t('footer.copyright')}
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* Unified Footer - hidden on mobile (bottom nav takes its place) */}
+      <UnifiedFooter variant="app" />
     </div>
   );
 });
