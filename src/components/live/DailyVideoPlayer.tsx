@@ -37,6 +37,7 @@ export function DailyVideoPlayer({
   const screenShareRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
   const cleaningUpRef = useRef(false);
+  const isLeavingRef = useRef(false);
   
   const [isJoining, setIsJoining] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
@@ -150,14 +151,23 @@ export function DailyVideoPlayer({
   }, [onParticipantCountChange]);
 
   const handleError = useCallback((event: DailyEventObject) => {
-    const errorMsg = (event as any).errorMsg || '';
+    // Suppress ALL errors when we're intentionally leaving or cleaning up
+    if (isLeavingRef.current || cleaningUpRef.current) {
+      console.log('Daily error suppressed (leaving/cleanup):', (event as any).errorMsg);
+      return;
+    }
+
+    const errorMsg = ((event as any).errorMsg || '').toLowerCase();
     
-    // When the doctor ends the live, the room is destroyed and viewers get
-    // a "meeting has ended" or "exp" error — this is NOT a real error.
+    // Non-critical errors that indicate the room/session ended naturally
+    const nonCriticalPatterns = [
+      'meeting has ended', 'exp', 'nbf',
+      'connection error', 'disconnected', 'transport closed',
+      'websocket', 'network connection', 'ice',
+    ];
+    
     if (
-      errorMsg.includes('meeting has ended') ||
-      errorMsg.includes('exp') ||
-      errorMsg.includes('nbf') ||
+      nonCriticalPatterns.some(p => errorMsg.includes(p)) ||
       (event as any).error?.type === 'meeting-session-state-error'
     ) {
       console.log('Daily room ended by host');
@@ -305,6 +315,7 @@ export function DailyVideoPlayer({
   };
 
   const leaveCall = () => {
+    isLeavingRef.current = true;
     if (callRef.current) callRef.current.leave();
     onLeave?.();
   };
