@@ -161,19 +161,18 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   // Enable realtime notifications
   useNotificationsRealtime();
 
-  // Get unread chat count — memoized
-  const chatUnread = useMemo(() => {
-    try {
-      const { getSessionsByUser } = useChat();
-      const sessions = getSessionsByUser();
-      return sessions.reduce((sum, s) => {
-        if (s.status !== 'active') return sum;
-        return sum + (s.unreadCount || 0);
-      }, 0);
-    } catch {
-      return 0;
-    }
-  }, []);
+  // Get unread chat count safely (useChat may throw if ChatProvider not mounted)
+  let chatUnread = 0;
+  try {
+    const { getSessionsByUser } = useChat();
+    const sessions = getSessionsByUser();
+    chatUnread = sessions.reduce((sum, s) => {
+      if (s.status !== 'active') return sum;
+      return sum + (s.unreadCount || 0);
+    }, 0);
+  } catch {
+    // ChatProvider not available (unauthenticated user)
+  }
 
   const filteredNavItems = useMemo(() => 
     navItems.filter(item => role && item.roles.includes(role)),
