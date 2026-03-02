@@ -1,60 +1,118 @@
 
 
-# Plan: Fix Double Back Arrows + Dark Mode Color Balance
+# Plan: Doctor Profile Mobile UX/UI Overhaul
 
-## Problem 1: Double Back Arrows on Mobile
+## Current Issues (from screenshot)
+- Profile card uses a horizontal flex layout (`flex-row`) that wastes space on mobile -- avatar is small and left-aligned, text crammed to the right
+- Bio text is untruncated, pushing stats and action buttons below the fold
+- Badges and rating are crowded in a single row
+- Stats grid and CTA buttons are barely visible (require scrolling)
+- "How it works" section is hardcoded in Spanish
+- Overall layout feels like a desktop page shrunk, not a mobile-native design
 
-The `MobileBackHeader` component (inside `MainLayout`) already provides a consistent back arrow on ALL non-root mobile pages. However, many pages still render their OWN `ArrowLeft` back buttons visible on mobile, creating two arrows stacked on top of each other (as shown in the screenshot).
+## Redesigned Mobile Layout
 
-The previous fix applied `hidden sm:flex` to ~13 pages but missed several others.
+On mobile (below `sm`), restructure to a centered, app-like profile:
 
-### Strategy
-**Keep `MobileBackHeader` as the ONLY back navigation on mobile.** Hide per-page back buttons on mobile screens using `hidden sm:flex` or `hidden sm:inline-flex`. These per-page buttons remain visible on desktop (sm+) where `MobileBackHeader` is hidden.
+```text
++----------------------------------+
+|        [Avatar - 80px]           |
+|        Dr. Jeringa               |
+|        Cardiologia               |
+|   [Nuevo] [Verificado] [7 seg]  |
+|          * 4.5                   |
++----------------------------------+
+|  Bio (max 3 lines, expandable)  |
++----------------------------------+
+|   16          $3500       CDMX   |
+| Consultas  Orientacion  Ubicacion|
++----------------------------------+
+| [Suscribirse]  [Consultar] [heart]|
+| [Ver Lives]    [Bloquear]        |
++----------------------------------+
+```
 
-### Pages that still need `hidden sm:flex` on their back button:
+On desktop (`sm+`), keep the current horizontal layout with minor polish.
 
-| Page | Line | Current class |
-|------|------|---------------|
-| `DoctorProfile.tsx` | ~312 | `"mb-4"` (no hide) |
-| `DoctorBankAccount.tsx` | ~222 | `"mb-4 gap-2"` (no hide) |
-| `DoctorUpload.tsx` | ~263 | `"mb-4"` (no hide) |
-| `DoctorInvoices.tsx` | ~266 | `"mb-4 gap-2"` (no hide) |
-| `DoctorEarnings.tsx` | ~249 | `"mb-4 gap-2"` (no hide) |
-| `NewsArticle.tsx` | ~294, ~304 | No hide on mobile |
-| `AdminNews.tsx` | ~276, ~313 | `"mb-4 gap-2"` (no hide) |
+## Specific Changes
 
-**Pages NOT using MainLayout** (Help, Contact, Enterprise, Security, ForDoctors, ForPatients, SuccessStories) don't have `MobileBackHeader`, so their back buttons stay as-is.
+### File: `src/pages/DoctorProfile.tsx`
 
-## Problem 2: Dark Mode - Already Working But Needs Polish
+1. **Mobile-first hero section**: On mobile, center the avatar above the name/specialty. Use `flex-col items-center text-center` below `sm`, and `flex-row` on `sm+`
+2. **Larger mobile avatar**: Increase from `w-24 h-24` to `w-20 h-20` on mobile (centered) -- already decent but center it
+3. **Bio truncation**: Add `line-clamp-3` on mobile with a "Read more" toggle to expand
+4. **Stats grid**: Make it always `grid-cols-3` with equal sizing, move location into the grid if present
+5. **CTA buttons**: Stack vertically on mobile with full width, each `h-12` for better touch targets
+6. **"How it works" section**: Translate all hardcoded Spanish strings using i18n keys
+7. **Rating pill**: Move below the name on mobile for better visual hierarchy
+8. **Live banner**: Tighten padding on mobile
 
-The `ThemeProvider` is already wired in `App.tsx` and the dark mode toggle in Settings uses `useTheme()`. The `.dark` CSS variables are defined in `index.css`. So dark mode IS functional.
+### File: `src/lib/i18n/es.ts` and `src/lib/i18n/en.ts`
 
-However, the screenshot shows the user is IN dark mode and seeing "Volver" text -- meaning the double arrow issue is the primary UX problem, not dark mode itself.
+Add keys for the "How it works" section:
+- `doctorProfile.howItWorks` 
+- `doctorProfile.step1Title`, `doctorProfile.step1Desc`
+- `doctorProfile.step2Title`, `doctorProfile.step2Desc`  
+- `doctorProfile.step3Title`, `doctorProfile.step3Desc`
+- `doctorProfile.readMore`, `doctorProfile.readLess`
 
-### Dark Mode Color Improvements
+## Technical Details
 
-Some standalone/landing pages use hardcoded colors (e.g., `text-gray-600`, `hover:text-[#163a83]`) that don't adapt to dark mode. These will be replaced with semantic Tailwind classes:
+### Layout restructure (mobile-first):
+```tsx
+{/* Hero section */}
+<div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-4 sm:gap-6">
+  {/* Avatar */}
+  <div className="relative flex-shrink-0">
+    <img className="w-20 h-20 sm:w-24 sm:h-24 rounded-full ..." />
+  </div>
+  
+  {/* Info */}
+  <div className="flex-1 w-full">
+    <h1>...</h1>
+    <p>specialty</p>
+    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+      badges...
+    </div>
+    {/* Rating */}
+    <div className="flex items-center justify-center sm:justify-start gap-1 mt-2">
+      star + rating
+    </div>
+  </div>
+</div>
+```
 
-| File | Hardcoded Color | Replace With |
-|------|----------------|--------------|
-| `Enterprise.tsx` | `text-gray-600 hover:text-[#163a83]` | `text-muted-foreground hover:text-primary` |
-| `Help.tsx` | `text-gray-600 hover:text-[#163a83]` | `text-muted-foreground hover:text-primary` |
-| `Security.tsx` | `text-gray-600 hover:text-[#163a83]` | `text-muted-foreground hover:text-primary` |
+### Bio with expand/collapse:
+```tsx
+const [bioExpanded, setBioExpanded] = useState(false);
 
-Also translate remaining hardcoded "Volver" strings in these pages.
+{doctor.bio && (
+  <div>
+    <p className={!bioExpanded ? 'line-clamp-3 sm:line-clamp-none' : ''}>
+      {doctor.bio}
+    </p>
+    <button className="sm:hidden text-primary text-sm mt-1"
+      onClick={() => setBioExpanded(!bioExpanded)}>
+      {bioExpanded ? t('doctorProfile.readLess') : t('doctorProfile.readMore')}
+    </button>
+  </div>
+)}
+```
 
-## Summary of Changes
+### CTA buttons full-width on mobile:
+```tsx
+<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
+  <SubscribeButton ... className="w-full sm:w-auto" />
+  <Button className="w-full sm:w-auto h-12 sm:h-11">Consultar</Button>
+  <Button className="w-full sm:w-auto h-12 sm:h-11">Ver Lives</Button>
+</div>
+```
+
+## Summary of Files
 
 | File | Change |
 |------|--------|
-| `src/pages/DoctorProfile.tsx` | Add `hidden sm:inline-flex` to back button |
-| `src/pages/DoctorBankAccount.tsx` | Add `hidden sm:inline-flex` to back button |
-| `src/pages/DoctorUpload.tsx` | Add `hidden sm:inline-flex` to back button |
-| `src/pages/DoctorInvoices.tsx` | Add `hidden sm:inline-flex` to back button |
-| `src/pages/DoctorEarnings.tsx` | Add `hidden sm:inline-flex` to back button |
-| `src/pages/NewsArticle.tsx` | Add `hidden sm:inline-flex` to back links, translate "Volver a noticias" |
-| `src/pages/AdminNews.tsx` | Add `hidden sm:inline-flex` to back buttons, translate "Volver" |
-| `src/pages/Enterprise.tsx` | Fix hardcoded colors for dark mode, translate "Volver al inicio" |
-| `src/pages/Help.tsx` | Fix hardcoded colors for dark mode |
-| `src/pages/Security.tsx` | Fix hardcoded colors for dark mode, translate "Volver al inicio" |
+| `src/pages/DoctorProfile.tsx` | Restructure to centered mobile-first layout, bio truncation, full-width CTAs, translate hardcoded strings |
+| `src/lib/i18n/en.ts` | Add `howItWorks`, `step1-3`, `readMore/readLess` keys |
+| `src/lib/i18n/es.ts` | Add matching Spanish keys |
 
