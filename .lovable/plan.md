@@ -1,80 +1,132 @@
 
 
-# Fix: Duplicate Controls on Mobile Live Streaming
+# Plan: Optimizacion UX/UI Movil + Vault + Footer Unificado
 
-## Problem
+## 1. Barra flotante de eliminacion masiva - Optimizacion movil
 
-When a doctor streams live from a mobile device, two overlapping UIs appear:
+**Problema**: La barra de eliminacion masiva en movil se ve mal cuando hay muchos items seleccionados (Notificaciones, Chat, Recetas, Grabaciones).
 
-1. **DailyVideoPlayer internal controls** -- "EN VIVO" badge, participant count, mute, video, fullscreen, and leave buttons rendered inside the video component itself.
-2. **LiveStreamView mobile overlay** -- A second "EN VIVO" badge, time/viewers/likes metrics, and another set of mute, video, chat, and "Finalizar" buttons.
+**Solucion**: Estandarizar la barra flotante de eliminacion masiva en todos los modulos para que:
+- Use `fixed bottom-20` (sobre la barra de navegacion inferior) con bordes redondeados
+- Fondo con efecto glassmorphism (`bg-card/95 backdrop-blur-lg`)
+- Ancho limitado y centrado (`max-w-sm mx-auto`)
+- Sombra elevada para que se distinga del contenido
+- Padding seguro con `safe-area-inset-bottom`
 
-This creates visual clutter, duplicate data, and a confusing experience.
-
-## Solution
-
-Pass a prop `hideControls` to `DailyVideoPlayer` so that when it's rendered inside the mobile `LiveStreamView`, all internal overlays (badges, controls) are hidden. The parent (`LiveStreamView`) becomes the single source of truth for mobile UI.
-
-Additionally, connect the mobile mute/video buttons in `LiveStreamView` to the actual Daily call object so they actually work (currently they only toggle local state without affecting the call).
-
-## Changes
-
-### File 1: `src/components/live/DailyVideoPlayer.tsx`
-
-- Add a new prop: `hideControls?: boolean` (default `false`).
-- Wrap the "EN VIVO" badge (lines 407-413), participant count badge (lines 416-421), screen share indicator (lines 424-431), and bottom controls bar (lines 446-511) in a condition: only render when `hideControls` is **not** true.
-- Export the `toggleMute`, `toggleVideo`, and `leaveCall` functions via a `useImperativeHandle` + `forwardRef` pattern so the parent can call them.
-- Also expose `isMuted` and `isVideoOff` state so the parent can read the actual state.
-
-### File 2: `src/components/live/LiveStreamView.tsx`
-
-- Pass `hideControls={true}` to `DailyVideoPlayer` in the **mobile** layout only (desktop remains unchanged).
-- Use a `ref` on the `DailyVideoPlayer` to call its `toggleMute()` and `toggleVideo()` methods from the mobile bottom controls.
-- Remove the local `isMuted` / `isVideoOff` state (they were disconnected from the actual call) and instead read from the ref.
-- The mobile layout becomes the single, clean control surface:
-  - Top overlay: "EN VIVO" badge + title + time + viewers + likes (compact, single row)
-  - Full-screen video (no internal overlays)
-  - Bottom bar: Mic, Camera, Chat, "Finalizar" buttons with proper touch targets
-
-### UX/UI Improvements for Mobile Streaming
-
-- **Single control bar at the bottom** with 44px+ touch targets, frosted glass background.
-- **Compact top bar** with title truncation and minimal metrics (time, viewers, likes) in a single row.
-- **No duplicate badges or metrics** anywhere on screen.
-- **Auto-hide top bar** after 3 seconds of inactivity (tap to show again), keeping the video unobstructed.
-- **Video fills entire screen** edge-to-edge with `object-cover` and safe-area insets.
+**Archivos a modificar**:
+- `src/pages/Notifications.tsx` - Ya tiene un patron similar, refinar estilos
+- `src/components/chat/ChatSessionsList.tsx` - La barra esta dentro de un Card, moverla a `fixed`
+- `src/components/prescriptions/PrescriptionsList.tsx` - Si tiene bulk delete, aplicar mismo patron
 
 ---
 
-### Technical Details
+## 2. Vault Medico - Mejora completa UX/UI
 
-**DailyVideoPlayer changes (forwardRef + imperative handle):**
+**Problema**: La interfaz del Vault no es lo suficientemente intuitiva y la descripcion no es obligatoria al subir archivos.
+
+**Cambios en `src/pages/Vault.tsx`**:
+
+### Descripcion obligatoria
+- Agregar validacion: el boton "Seleccionar Archivo" se deshabilita si la descripcion esta vacia
+- Mostrar un hint visual debajo del campo: "Describe brevemente tu estudio (obligatorio)"
+- Marcar el campo con un asterisco rojo
+
+### Mejoras UX/UI generales
+- **Zona de upload mejorada**: Cambiar el boton plano por una zona de drop con icono grande, texto claro y borde punteado para que sea mas intuitivo
+- **Instrucciones claras**: Texto explicativo paso a paso: "1. Selecciona la categoria, 2. Describe tu estudio, 3. Selecciona el archivo"
+- **Cards de archivos mejoradas**: Mostrar fecha siempre (incluso en movil), mejorar los botones de accion con iconos mas grandes y etiquetas claras
+- **Empty state mejorado**: Agregar una ilustracion mas clara y un boton CTA directo para subir el primer archivo
+- **Vista previa en movil**: Asegurar que los botones "Permisos" y "Eliminar" tengan touch targets de 44px+
+
+---
+
+## 3. Layout interno movil - Consistencia general
+
+**Problema**: Algunas paginas internas se "descuadran" en movil.
+
+**Cambios en `src/components/layout/MainLayout.tsx`**:
+- Asegurar que `main` tenga `overflow-x-hidden` para prevenir scroll horizontal
+- Agregar `min-h-[calc(100vh-56px-72px)]` al main content en movil para evitar que el contenido "flote"
+
+**Revision global**:
+- Verificar que todas las paginas usen `container mx-auto px-3 sm:px-4` de forma consistente
+- Asegurar que los headers de pagina no desborden en pantallas pequenas (truncate en titulos)
+
+---
+
+## 4. Footer unificado inteligente
+
+**Problema**: El footer del landing (`LandingFooter`) tiene redes sociales y links utiles, y el footer del app (`MainLayout`) tiene links legales y redes sociales, pero son independientes. Se quiere un footer unificado configurable desde el admin.
+
+**Solucion**: Crear un componente `UnifiedFooter` que:
+- Se use tanto en `LandingFooter` como en el footer de `MainLayout`
+- Lea la configuracion desde `site_settings` (redes sociales ya existe, agregar links del footer)
+- En la **landing**: Muestre el footer completo con columnas (Plataforma, Recursos, Legal, Redes)
+- En la **app**: Muestre una version compacta con links legales + redes sociales + copyright
+- Todo editable desde el panel de admin
+
+### Nueva entrada en `site_settings`
+
+Crear una nueva entrada `footer_links` en `site_settings` via migracion SQL:
 
 ```text
-interface DailyVideoPlayerHandle {
-  toggleMute: () => void;
-  toggleVideo: () => void;
-  leaveCall: () => void;
-  isMuted: boolean;
-  isVideoOff: boolean;
+id: footer_links
+value: {
+  platform: [
+    { label: "Para Doctores", href: "/for-doctors" },
+    { label: "Para Pacientes", href: "/for-patients" },
+    { label: "Empresas", href: "/enterprise" }
+  ],
+  resources: [
+    { label: "Casos de Exito", href: "/success-stories" },
+    { label: "Ayuda", href: "/help" },
+    { label: "Contacto", href: "/contact" }
+  ],
+  legal: [
+    { label: "Privacidad", href: "/privacy" },
+    { label: "Terminos", href: "/terms" },
+    { label: "Seguridad", href: "/security" },
+    { label: "Cumplimiento", href: "/compliance" },
+    { label: "Reportar", href: "/report-issue" }
+  ],
+  copyright: "2024 Medical Masters. Todos los derechos reservados.",
+  show_status_badge: true
 }
 ```
 
-The component becomes a `forwardRef` component. A `useImperativeHandle` exposes the control methods. When `hideControls=true`, lines 407-511 (all overlay UI) are skipped.
+### Nuevos archivos
+- `src/components/layout/UnifiedFooter.tsx` - Componente reutilizable con props `variant="landing" | "app"`
+- `src/hooks/useFooterLinks.ts` - Hook para cargar links del footer desde site_settings
 
-**LiveStreamView mobile changes:**
+### Archivos a modificar
+- `src/components/landing/LandingFooter.tsx` - Reemplazar contenido hardcodeado por `UnifiedFooter variant="landing"`
+- `src/components/layout/MainLayout.tsx` - Reemplazar footer actual por `UnifiedFooter variant="app"`
+- `src/pages/AdminSiteSettings.tsx` - Agregar nueva tab "Footer" para editar los links del footer
 
-```text
-const playerRef = useRef<DailyVideoPlayerHandle>(null);
+### Panel Admin - Editor de Footer
+Agregar una nueva pestana en AdminSiteSettings:
+- Secciones editables: Plataforma, Recursos, Legal (agregar/quitar/reordenar links)
+- Cada link tiene: label (texto), href (ruta)
+- Toggle para mostrar/ocultar badge de "Todos los sistemas operativos"
+- Campo editable para el texto de copyright
+- Vista previa en vivo del footer
 
-// Bottom controls call playerRef.current?.toggleMute(), etc.
-// Read playerRef.current?.isMuted for button state
-// Use a 3-second auto-hide timer for the top info bar
-```
+---
 
-**Files modified:**
-- `src/components/live/DailyVideoPlayer.tsx`
-- `src/components/live/LiveStreamView.tsx`
+## Resumen de archivos
 
-No other files are touched. Desktop streaming experience remains exactly the same.
+**Nuevos archivos (2)**:
+- `src/components/layout/UnifiedFooter.tsx`
+- `src/hooks/useFooterLinks.ts`
+
+**Archivos modificados (6)**:
+- `src/pages/Vault.tsx` - Descripcion obligatoria + mejoras UX/UI completas
+- `src/pages/Notifications.tsx` - Barra flotante de delete mejorada
+- `src/components/chat/ChatSessionsList.tsx` - Barra flotante de delete consistente
+- `src/components/layout/MainLayout.tsx` - Overflow fix + footer unificado
+- `src/components/landing/LandingFooter.tsx` - Usar UnifiedFooter
+- `src/pages/AdminSiteSettings.tsx` - Tab de edicion de footer
+
+**Migracion SQL (1)**:
+- Insertar `footer_links` en `site_settings`
 
