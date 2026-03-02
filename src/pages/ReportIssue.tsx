@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, ShieldAlert, Send, CheckCircle } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Send, CheckCircle, Paperclip, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -35,6 +35,39 @@ export default function ReportIssue() {
   const [contactEmail, setContactEmail] = useState(user?.email || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const valid = files.filter(f => f.size <= 10 * 1024 * 1024); // 10MB max per file
+    if (valid.length < files.length) {
+      toast.error('Algunos archivos exceden 10MB y fueron ignorados');
+    }
+    setAttachments(prev => [...prev, ...valid].slice(0, 5));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadAttachments = async (): Promise<string[]> => {
+    if (!user?.id || attachments.length === 0) return [];
+    const urls: string[] = [];
+    for (const file of attachments) {
+      const ext = file.name.split('.').pop() || 'bin';
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage
+        .from('report-attachments')
+        .upload(path, file);
+      if (!error) {
+        const { data } = supabase.storage.from('report-attachments').getPublicUrl(path);
+        urls.push(data.publicUrl);
+      }
+    }
+    return urls;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,13 +80,19 @@ export default function ReportIssue() {
 
     setIsSubmitting(true);
     try {
+      // Upload attachments first
+      const attachmentUrls = await uploadAttachments();
+
       const { error } = await supabase.from('reports').insert({
         reporter_id: user?.id || '00000000-0000-0000-0000-000000000000',
         content_type: 'platform_report',
-        content_id: 'platform',
+        content_id: null,
         reason: result.data.type,
-        description: `[${result.data.type.toUpperCase()}] ${result.data.subject}\n\n${result.data.description}\n\nContacto: ${result.data.contactEmail || 'No proporcionado'}`,
-      });
+        subject: result.data.subject,
+        description: result.data.description,
+        contact_email: result.data.contactEmail || null,
+        attachment_urls: attachmentUrls.length > 0 ? attachmentUrls : null,
+      } as any);
 
       if (error) throw error;
       setSubmitted(true);
@@ -156,12 +195,48 @@ export default function ReportIssue() {
                 />
               </div>
 
+              {/* Attachments */}
+              <div className="space-y-2">
+                <Label>Adjuntos (opcional)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map((file, i) => (
+                    <div key={i} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
+                      <span className="truncate max-w-[120px]">{file.name}</span>
+                      <button type="button" onClick={() => removeAttachment(i)} className="text-muted-foreground hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {attachments.length < 5 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    Adjuntar imagen o video
+                  </Button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <p className="text-[11px] text-muted-foreground">Máx. 5 archivos, 10MB c/u</p>
+              </div>
+
               <Button
                 type="submit"
                 className="w-full gap-2"
                 disabled={isSubmitting || !type || !subject || !description}
               >
-                <Send className="w-4 h-4" />
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 {isSubmitting ? 'Enviando...' : 'Enviar reporte'}
               </Button>
             </form>

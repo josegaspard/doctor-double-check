@@ -97,7 +97,7 @@ export function LiveStreamView({
         </div>
 
         {/* Video fills the screen */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative overflow-hidden">
           <DailyVideoPlayer
             roomUrl={roomUrl}
             token={ownerToken}

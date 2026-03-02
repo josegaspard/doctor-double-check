@@ -229,11 +229,14 @@ export function DailyVideoPlayer({
         // Start ALL videos muted so autoplay works on iOS/mobile
         videoEl.muted = true;
 
+        const isMobileDevice = window.innerWidth < 768;
         videoEl.className = participant.local && hasAnyScreenShare
           ? 'absolute bottom-2 right-2 w-24 h-18 sm:w-32 sm:h-24 rounded-lg object-cover z-10 border-2 border-primary shadow-lg'
           : hasAnyScreenShare && !participant.local
             ? 'absolute bottom-2 left-2 w-24 h-18 sm:w-32 sm:h-24 rounded-lg object-cover z-10 border-2 border-muted shadow-lg'
-            : 'w-full h-full object-cover';
+            : isMobileDevice
+              ? 'w-full h-full object-cover absolute inset-0'
+              : 'w-full h-full object-cover';
         
         const tracks: MediaStreamTrack[] = [participant.videoTrack];
         if (!participant.local && participant.audioTrack) {
