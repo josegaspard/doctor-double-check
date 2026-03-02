@@ -170,6 +170,12 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
           body: { roomName: consultation.video_room_name },
         }).catch(e => console.warn('[Daily] end-room error:', e));
       }
+
+      // Clear video room fields so the CallWaitingBanner disappears for the patient
+      await supabase.from('consultations').update({
+        video_room_name: null,
+        video_room_url: null,
+      }).eq('id', consultationId);
     }
 
     await doCleanup();
