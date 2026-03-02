@@ -241,9 +241,13 @@ export default function DoctorGoLive() {
           .eq('id', liveData.id);
       }
 
-      // End Daily room
+      // End Daily room (non-blocking — room auto-expires anyway)
       if (dailyRoomName) {
-        await endRoom(dailyRoomName);
+        try {
+          await endRoom(dailyRoomName);
+        } catch (roomErr) {
+          console.warn('endRoom failed (non-critical):', roomErr);
+        }
       }
 
       // Update live status in DB

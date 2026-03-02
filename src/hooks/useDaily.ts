@@ -47,8 +47,7 @@ export function useDaily() {
       setViewerToken(data.token);
       return data.token;
     } catch (error: any) {
-      console.error('Error getting viewer token:', error);
-      toast.error('Error al unirse a la transmisión');
+      console.warn('Error getting viewer token (will retry):', error);
       return null;
     } finally {
       setIsLoading(false);

@@ -188,11 +188,15 @@ export default function LivePlayer() {
     prevStatusRef.current = live.status;
   }, [live?.status, isOwner, liveEnded]);
 
-  // Resolve Daily room for viewers
+  // Resolve Daily room for viewers (with retry logic)
+  const retryCountRef = useRef(0);
+  const [manualRetry, setManualRetry] = useState(0);
+
   useEffect(() => {
     if (!live || !isLiveActive || isOwner) return;
 
     let cancelled = false;
+    retryCountRef.current = 0;
 
     const resolveViewer = async () => {
       setIsJoiningStream(true);
@@ -211,17 +215,27 @@ export default function LivePlayer() {
       if (!roomName) {
         setPlaybackError(t('livePlayer.streamInitializing'));
         setIsJoiningStream(false);
-        if (!cancelled) {
+        if (!cancelled && retryCountRef.current < 8) {
+          retryCountRef.current++;
           setTimeout(() => { if (!cancelled) resolveViewer(); }, 4000);
         }
         return;
       }
 
-      const token = await getViewerToken(roomName);
-      if (cancelled) return;
+      // Retry getViewerToken up to 3 times with 3s delays
+      let token: string | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        token = await getViewerToken(roomName);
+        if (cancelled) return;
+        if (token) break;
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 3000));
+          if (cancelled) return;
+        }
+      }
 
       if (!token) {
-        setPlaybackError(t('livePlayer.streamAccessError'));
+        setPlaybackError('No se pudo conectar. Intenta de nuevo.');
         setIsJoiningStream(false);
         return;
       }
@@ -234,7 +248,7 @@ export default function LivePlayer() {
     resolveViewer();
 
     return () => { cancelled = true; };
-  }, [live?.id, isLiveActive, isOwner, live?.dailyRoomName]);
+  }, [live?.id, isLiveActive, isOwner, live?.dailyRoomName, manualRetry]);
 
   useEffect(() => {
     refreshLives();
@@ -423,18 +437,23 @@ export default function LivePlayer() {
                 ) : playbackError ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-info/30">
                     <div className="text-center px-4">
-                      <Loader2 className="w-10 h-10 mx-auto mb-3 text-white animate-spin" />
-                      <p className="text-white font-medium">{t('livePlayer.connecting')}...</p>
-                      <p className="text-white/60 text-xs mt-1">{playbackError}</p>
+                      <Radio className="w-10 h-10 mx-auto mb-3 text-white animate-pulse" />
+                      <p className="text-white font-medium">{playbackError}</p>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="mt-3"
+                        onClick={() => setManualRetry(prev => prev + 1)}
+                      >
+                        Reintentar
+                      </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-info/30">
                     <div className="text-center">
-                      <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
-                        <Radio className="w-10 h-10 text-white animate-pulse" />
-                      </div>
-                      <p className="text-white/80 text-sm">{t('livePlayer.liveTransmission')}</p>
+                      <Loader2 className="w-12 h-12 mx-auto mb-4 text-white animate-spin" />
+                      <p className="text-white/80 text-sm">{t('livePlayer.connecting')}...</p>
                     </div>
                   </div>
                 )}
