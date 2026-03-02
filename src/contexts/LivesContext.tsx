@@ -93,7 +93,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   
   // Track last fetch time to prevent rapid re-fetches
   const lastFetchTime = useRef<number>(0);
-  const MIN_FETCH_INTERVAL = 5000; // Minimum 5 seconds between fetches
+  const MIN_FETCH_INTERVAL = 3000; // Minimum 3 seconds between fetches
   
   // Cache for doctor profiles to reduce redundant queries
   const profileCache = useRef<Map<string, { name: string; avatar_url?: string }>>(new Map());
@@ -454,7 +454,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     // Polling fallback: catch any missed realtime events
     const pollInterval = setInterval(() => {
       fetchLives(false);
-    }, 15000);
+    }, 8000);
 
     return () => {
       clearInterval(pollInterval);
