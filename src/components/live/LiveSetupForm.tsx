@@ -90,14 +90,14 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-          <Radio className="w-6 h-6 text-destructive" />
+    <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-2xl pb-24 sm:pb-8">
+      <div className="flex items-center gap-3 mb-4 sm:mb-6">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+          <Radio className="w-5 h-5 sm:w-6 sm:h-6 text-destructive" />
         </div>
         <div>
-          <h1 className="font-heading text-2xl font-bold">Iniciar Transmisión</h1>
-          <p className="text-muted-foreground">Configura tu live antes de comenzar</p>
+          <h1 className="font-heading text-xl sm:text-2xl font-bold">Iniciar Transmisión</h1>
+          <p className="text-sm text-muted-foreground">Configura tu live antes de comenzar</p>
         </div>
       </div>
 
@@ -279,31 +279,55 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             </Card>
           )}
 
-          {/* Submit */}
-          <Button
-            className="w-full gap-2"
-            size="lg"
-            onClick={handleSubmit}
-            disabled={isCreating || !title.trim() || !specialty}
-          >
-            {isCreating ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Preparando transmisión...
-              </>
-            ) : (
-              <>
-                <Video className="w-5 h-5" />
-                Iniciar Transmisión en Vivo
-              </>
-            )}
-          </Button>
+          {/* Submit - hidden on mobile (sticky version below) */}
+          <div className="hidden sm:block">
+            <Button
+              className="w-full gap-2"
+              size="lg"
+              onClick={handleSubmit}
+              disabled={isCreating || !title.trim() || !specialty}
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Preparando transmisión...
+                </>
+              ) : (
+                <>
+                  <Video className="w-5 h-5" />
+                  Iniciar Transmisión en Vivo
+                </>
+              )}
+            </Button>
+          </div>
 
           <p className="text-xs text-center text-muted-foreground">
             Al iniciar, se notificará automáticamente a tus suscriptores
           </p>
         </CardContent>
       </Card>
+
+      {/* Sticky mobile submit button */}
+      <div className="fixed bottom-0 inset-x-0 z-40 p-3 bg-background/95 backdrop-blur border-t border-border sm:hidden" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+        <Button
+          className="w-full gap-2"
+          size="lg"
+          onClick={handleSubmit}
+          disabled={isCreating || !title.trim() || !specialty}
+        >
+          {isCreating ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Preparando...
+            </>
+          ) : (
+            <>
+              <Video className="w-5 h-5" />
+              Iniciar Transmisión
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
