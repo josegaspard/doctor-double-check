@@ -1,62 +1,60 @@
 
-# Plan: Dark Mode + Fix Double Back Arrow on Mobile
 
-## Problem 1: Dark Mode Switch Does Nothing
+# Plan: Fix Double Back Arrows + Dark Mode Color Balance
 
-The Settings page uses `useTheme()` from `next-themes`, but the app (`App.tsx`) is missing the `ThemeProvider` wrapper. Without it, `setTheme()` has no effect.
+## Problem 1: Double Back Arrows on Mobile
 
-### Fix:
-- Wrap the app in `ThemeProvider` from `next-themes` in `App.tsx`
-- Configure it with `attribute="class"` (since Tailwind uses `.dark` class), `defaultTheme="light"`, and `storageKey="theme"`
-- The dark mode CSS variables are already fully defined in `index.css` (the `.dark` class section), so once the provider is added, the entire platform will switch themes correctly
+The `MobileBackHeader` component (inside `MainLayout`) already provides a consistent back arrow on ALL non-root mobile pages. However, many pages still render their OWN `ArrowLeft` back buttons visible on mobile, creating two arrows stacked on top of each other (as shown in the screenshot).
 
-## Problem 2: Double Back Arrow on Mobile
+The previous fix applied `hidden sm:flex` to ~13 pages but missed several others.
 
-`MobileBackHeader` (rendered inside `MainLayout`) shows a sticky back arrow on ALL non-root mobile pages. But ~44 individual pages (Settings, Prescriptions, Terms, Privacy, DoctorVault, LivePlayer, RecordingPlayer, etc.) also render their own `ArrowLeft` back button in their page header. This creates two overlapping back arrows on mobile.
+### Strategy
+**Keep `MobileBackHeader` as the ONLY back navigation on mobile.** Hide per-page back buttons on mobile screens using `hidden sm:flex` or `hidden sm:inline-flex`. These per-page buttons remain visible on desktop (sm+) where `MobileBackHeader` is hidden.
 
-### Fix Strategy:
-Hide the per-page back buttons on mobile (`sm:hidden` → visible only on desktop) since `MobileBackHeader` already handles mobile navigation. This is cleaner than removing `MobileBackHeader` because:
-- `MobileBackHeader` provides a consistent, sticky navigation experience
-- Per-page buttons often navigate to specific routes (e.g., "Back to Panel") which is better UX on desktop
+### Pages that still need `hidden sm:flex` on their back button:
 
-### Pages to update (add `hidden sm:flex` to back button):
-1. `Settings.tsx` - line 70 (ArrowLeft navigate(-1))
-2. `Prescriptions.tsx` - line 103 (ArrowLeft navigate(-1))
-3. `Terms.tsx` - line 114 (ArrowLeft navigate(-1))
-4. `Privacy.tsx` - line 147 (ArrowLeft navigate(-1))
-5. `RecordingPlayer.tsx` - line 219 (ArrowLeft → recordings)
-6. `LivePlayer.tsx` - line 391 (ArrowLeft → lives)
-7. `DoctorVault.tsx` - line 192 (ArrowLeft → dashboard)
-8. `DoctorRecordings.tsx` - line 457 (ArrowLeft → dashboard)
-9. `IdentityVerification.tsx` - line 308 (ArrowLeft → profile)
-10. `AdminUsers.tsx` - line 143 (ArrowLeft → admin)
-11. `AdminResidents.tsx` - line 157 (ArrowLeft → admin)
-12. `AdminVerifications.tsx` - line 249 (ArrowLeft → admin)
-13. `AdminInvoiceReview.tsx` - line 309 (ArrowLeft → admin)
-14. `AdminPayoutSettings.tsx` - line 174 (ArrowLeft → admin)
-15. `DoctorAvailability.tsx` - back button
-16. `DoctorContentLibrary.tsx` - back button
-17. `ReportIssue.tsx` - back button
-18. `ContentGallery.tsx` - back button
+| Page | Line | Current class |
+|------|------|---------------|
+| `DoctorProfile.tsx` | ~312 | `"mb-4"` (no hide) |
+| `DoctorBankAccount.tsx` | ~222 | `"mb-4 gap-2"` (no hide) |
+| `DoctorUpload.tsx` | ~263 | `"mb-4"` (no hide) |
+| `DoctorInvoices.tsx` | ~266 | `"mb-4 gap-2"` (no hide) |
+| `DoctorEarnings.tsx` | ~249 | `"mb-4 gap-2"` (no hide) |
+| `NewsArticle.tsx` | ~294, ~304 | No hide on mobile |
+| `AdminNews.tsx` | ~276, ~313 | `"mb-4 gap-2"` (no hide) |
 
-Also update `MobileBackHeader.tsx`:
-- Make titles translatable using `t()` instead of hardcoded Spanish
-- Add i18n page title mappings for both languages
+**Pages NOT using MainLayout** (Help, Contact, Enterprise, Security, ForDoctors, ForPatients, SuccessStories) don't have `MobileBackHeader`, so their back buttons stay as-is.
 
-## Problem 3: MobileBackHeader titles are hardcoded in Spanish
+## Problem 2: Dark Mode - Already Working But Needs Polish
 
-The `PAGE_TITLES` map and dynamic route fallbacks are all in Spanish. Need to replace with `t()` calls.
+The `ThemeProvider` is already wired in `App.tsx` and the dark mode toggle in Settings uses `useTheme()`. The `.dark` CSS variables are defined in `index.css`. So dark mode IS functional.
 
-### Fix:
-- Replace the static `PAGE_TITLES` object with translation keys
-- Use `t()` for each title so it respects the language setting
+However, the screenshot shows the user is IN dark mode and seeing "Volver" text -- meaning the double arrow issue is the primary UX problem, not dark mode itself.
+
+### Dark Mode Color Improvements
+
+Some standalone/landing pages use hardcoded colors (e.g., `text-gray-600`, `hover:text-[#163a83]`) that don't adapt to dark mode. These will be replaced with semantic Tailwind classes:
+
+| File | Hardcoded Color | Replace With |
+|------|----------------|--------------|
+| `Enterprise.tsx` | `text-gray-600 hover:text-[#163a83]` | `text-muted-foreground hover:text-primary` |
+| `Help.tsx` | `text-gray-600 hover:text-[#163a83]` | `text-muted-foreground hover:text-primary` |
+| `Security.tsx` | `text-gray-600 hover:text-[#163a83]` | `text-muted-foreground hover:text-primary` |
+
+Also translate remaining hardcoded "Volver" strings in these pages.
 
 ## Summary of Changes
 
 | File | Change |
 |------|--------|
-| `src/App.tsx` | Add `ThemeProvider` from `next-themes` wrapping the entire app |
-| `src/components/layout/MobileBackHeader.tsx` | Use `t()` for all page titles |
-| `src/lib/i18n/en.ts` | Add `backHeader` section with page titles |
-| `src/lib/i18n/es.ts` | Add matching Spanish page titles |
-| ~18 page files | Hide per-page back button on mobile (`hidden sm:flex`) |
+| `src/pages/DoctorProfile.tsx` | Add `hidden sm:inline-flex` to back button |
+| `src/pages/DoctorBankAccount.tsx` | Add `hidden sm:inline-flex` to back button |
+| `src/pages/DoctorUpload.tsx` | Add `hidden sm:inline-flex` to back button |
+| `src/pages/DoctorInvoices.tsx` | Add `hidden sm:inline-flex` to back button |
+| `src/pages/DoctorEarnings.tsx` | Add `hidden sm:inline-flex` to back button |
+| `src/pages/NewsArticle.tsx` | Add `hidden sm:inline-flex` to back links, translate "Volver a noticias" |
+| `src/pages/AdminNews.tsx` | Add `hidden sm:inline-flex` to back buttons, translate "Volver" |
+| `src/pages/Enterprise.tsx` | Fix hardcoded colors for dark mode, translate "Volver al inicio" |
+| `src/pages/Help.tsx` | Fix hardcoded colors for dark mode |
+| `src/pages/Security.tsx` | Fix hardcoded colors for dark mode, translate "Volver al inicio" |
+
