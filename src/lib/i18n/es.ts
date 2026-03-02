@@ -785,6 +785,15 @@ export const es = {
     review: 'reseña',
     reviews: 'reseñas',
     anonymousPatient: 'Paciente',
+    howItWorks: '¿Cómo funciona?',
+    step1Title: 'Seguir',
+    step1Desc: 'Recibe alertas gratis cuando transmita en vivo',
+    step2Title: 'Suscribirse',
+    step2Desc: 'Accede a chat, contenido y grabaciones exclusivas',
+    step3Title: 'Consultar',
+    step3Desc: 'Inicia una consulta por chat o videollamada',
+    readMore: 'Leer más',
+    readLess: 'Leer menos',
   },
   // Medical History
   medicalHistory: {
