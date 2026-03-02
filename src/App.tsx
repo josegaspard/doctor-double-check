@@ -24,7 +24,9 @@ function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
       <VaultProvider>
         <ChatProvider>
           <PostConsultationRatingProvider>
-            {children}
+            <IncomingCallProvider>
+              {children}
+            </IncomingCallProvider>
           </PostConsultationRatingProvider>
         </ChatProvider>
       </VaultProvider>
@@ -129,87 +131,85 @@ const App = () => (
       <AuthProvider>
         <LanguageProvider>
           <LivesProvider>
-            <AuthenticatedProviders>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <IncomingCallProvider>
-                    <Suspense fallback={<PageLoader />}>
-                      <Routes>
-                        <Route path="/" element={<Landing />} />
-                        <Route path="/app" element={<RoleSelector />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/lives" element={<LivesGrid />} />
-                        <Route path="/live/:id" element={<LivePlayer />} />
-                        <Route path="/recordings" element={<RecordingsGrid />} />
-                        <Route path="/recording/:id" element={<RecordingPlayer />} />
-                        <Route path="/wallet" element={<Wallet />} />
-                        <Route path="/vault" element={<Vault />} />
-                        <Route path="/chat" element={<Chat />} />
-                        <Route path="/doctor/:id" element={<DoctorProfile />} />
-                        <Route path="/profile" element={<UserProfile />} />
-                        <Route path="/verify-identity" element={<IdentityVerification />} />
-                        <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
-                        <Route path="/doctor/upload" element={<DoctorUpload />} />
-                        <Route path="/doctor/vault" element={<DoctorVault />} />
-                        <Route path="/doctor/availability" element={<DoctorAvailability />} />
-                        <Route path="/doctor/recordings" element={<DoctorRecordings />} />
-                        <Route path="/doctor/content" element={<DoctorContentLibrary />} />
-                        <Route path="/doctor/go-live" element={<DoctorGoLive />} />
-                        <Route path="/resident-groups" element={<ResidentGroups />} />
-                        <Route path="/medical-history" element={<MedicalHistory />} />
-                        <Route path="/clinical-sessions" element={<ClinicalSessions />} />
-                        <Route path="/double-check" element={<DoubleCheck />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/admin" element={<AdminDashboard />} />
-                        <Route path="/admin/verifications" element={<AdminVerifications />} />
-                        <Route path="/admin/doctors" element={<AdminDoctors />} />
-                        <Route path="/admin/residents" element={<AdminResidents />} />
-                        <Route path="/admin/users" element={<AdminUsers />} />
-                        <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                        <Route path="/admin/reports" element={<AdminReports />} />
-                        <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
-                        <Route path="/admin/refunds" element={<AdminRefunds />} />
-                        <Route path="/admin/payout-settings" element={<AdminPayoutSettings />} />
-                        <Route path="/admin/payouts" element={<AdminPayouts />} />
-                        <Route path="/admin/invoices" element={<AdminInvoiceReview />} />
-                        <Route path="/admin/credentials" element={<AdminCredentials />} />
-                        <Route path="/admin/news" element={<AdminNews />} />
-                        <Route path="/doctor/news" element={<AdminNews />} />
-                        <Route path="/verification-pending" element={<VerificationPending />} />
-                        <Route path="/doctors" element={<Doctors />} />
-                        <Route path="/reset-password" element={<ResetPassword />} />
-                        <Route path="/onboarding" element={<Onboarding />} />
-                        <Route path="/doctor/bank-account" element={<DoctorBankAccount />} />
-                        <Route path="/doctor/invoices" element={<DoctorInvoices />} />
-                        <Route path="/doctor/earnings" element={<DoctorEarnings />} />
-                        <Route path="/terms" element={<Terms />} />
-                        <Route path="/privacy" element={<Privacy />} />
-                        <Route path="/contact" element={<Contact />} />
-                        <Route path="/success-stories" element={<SuccessStories />} />
-                        <Route path="/help" element={<Help />} />
-                        <Route path="/security" element={<Security />} />
-                        <Route path="/compliance" element={<Compliance />} />
-                        <Route path="/for-doctors" element={<ForDoctors />} />
-                        <Route path="/for-patients" element={<ForPatients />} />
-                        <Route path="/enterprise" element={<Enterprise />} />
-                        <Route path="/content" element={<ContentGallery />} />
-                        <Route path="/notifications" element={<Notifications />} />
-                        <Route path="/news" element={<MedicalNews />} />
-                        <Route path="/news/:slug" element={<NewsArticle />} />
-                        <Route path="/video-call" element={<VideoCall />} />
-                        <Route path="/prescriptions" element={<Prescriptions />} />
-                        <Route path="/prescriptions/new" element={<CreatePrescription />} />
-                        <Route path="/prescriptions/:id" element={<PrescriptionDetail />} />
-                        <Route path="/report-issue" element={<ReportIssue />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </Suspense>
-                  </IncomingCallProvider>
-                </BrowserRouter>
-              </TooltipProvider>
-            </AuthenticatedProviders>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AuthenticatedProviders>
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      <Route path="/" element={<Landing />} />
+                      <Route path="/app" element={<RoleSelector />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/lives" element={<LivesGrid />} />
+                      <Route path="/live/:id" element={<LivePlayer />} />
+                      <Route path="/recordings" element={<RecordingsGrid />} />
+                      <Route path="/recording/:id" element={<RecordingPlayer />} />
+                      <Route path="/wallet" element={<Wallet />} />
+                      <Route path="/vault" element={<Vault />} />
+                      <Route path="/chat" element={<Chat />} />
+                      <Route path="/doctor/:id" element={<DoctorProfile />} />
+                      <Route path="/profile" element={<UserProfile />} />
+                      <Route path="/verify-identity" element={<IdentityVerification />} />
+                      <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+                      <Route path="/doctor/upload" element={<DoctorUpload />} />
+                      <Route path="/doctor/vault" element={<DoctorVault />} />
+                      <Route path="/doctor/availability" element={<DoctorAvailability />} />
+                      <Route path="/doctor/recordings" element={<DoctorRecordings />} />
+                      <Route path="/doctor/content" element={<DoctorContentLibrary />} />
+                      <Route path="/doctor/go-live" element={<DoctorGoLive />} />
+                      <Route path="/resident-groups" element={<ResidentGroups />} />
+                      <Route path="/medical-history" element={<MedicalHistory />} />
+                      <Route path="/clinical-sessions" element={<ClinicalSessions />} />
+                      <Route path="/double-check" element={<DoubleCheck />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/admin" element={<AdminDashboard />} />
+                      <Route path="/admin/verifications" element={<AdminVerifications />} />
+                      <Route path="/admin/doctors" element={<AdminDoctors />} />
+                      <Route path="/admin/residents" element={<AdminResidents />} />
+                      <Route path="/admin/users" element={<AdminUsers />} />
+                      <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                      <Route path="/admin/reports" element={<AdminReports />} />
+                      <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
+                      <Route path="/admin/refunds" element={<AdminRefunds />} />
+                      <Route path="/admin/payout-settings" element={<AdminPayoutSettings />} />
+                      <Route path="/admin/payouts" element={<AdminPayouts />} />
+                      <Route path="/admin/invoices" element={<AdminInvoiceReview />} />
+                      <Route path="/admin/credentials" element={<AdminCredentials />} />
+                      <Route path="/admin/news" element={<AdminNews />} />
+                      <Route path="/doctor/news" element={<AdminNews />} />
+                      <Route path="/verification-pending" element={<VerificationPending />} />
+                      <Route path="/doctors" element={<Doctors />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/onboarding" element={<Onboarding />} />
+                      <Route path="/doctor/bank-account" element={<DoctorBankAccount />} />
+                      <Route path="/doctor/invoices" element={<DoctorInvoices />} />
+                      <Route path="/doctor/earnings" element={<DoctorEarnings />} />
+                      <Route path="/terms" element={<Terms />} />
+                      <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/success-stories" element={<SuccessStories />} />
+                      <Route path="/help" element={<Help />} />
+                      <Route path="/security" element={<Security />} />
+                      <Route path="/compliance" element={<Compliance />} />
+                      <Route path="/for-doctors" element={<ForDoctors />} />
+                      <Route path="/for-patients" element={<ForPatients />} />
+                      <Route path="/enterprise" element={<Enterprise />} />
+                      <Route path="/content" element={<ContentGallery />} />
+                      <Route path="/notifications" element={<Notifications />} />
+                      <Route path="/news" element={<MedicalNews />} />
+                      <Route path="/news/:slug" element={<NewsArticle />} />
+                      <Route path="/video-call" element={<VideoCall />} />
+                      <Route path="/prescriptions" element={<Prescriptions />} />
+                      <Route path="/prescriptions/new" element={<CreatePrescription />} />
+                      <Route path="/prescriptions/:id" element={<PrescriptionDetail />} />
+                      <Route path="/report-issue" element={<ReportIssue />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </AuthenticatedProviders>
+              </BrowserRouter>
+            </TooltipProvider>
           </LivesProvider>
         </LanguageProvider>
       </AuthProvider>
