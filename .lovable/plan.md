@@ -1,96 +1,78 @@
 
 
-# Plan: Performance Optimization + Prescription Deletion for All Roles
+# Plan: Faster Lives Loading + Fix Visitor Token Auth Error
 
-## 1. Allow all roles to delete prescriptions (not just doctors)
+## Problem 1: Lives appear with a few seconds delay
+The initial `fetchLives(true)` runs inside the `LivesProvider` `useEffect`, which depends on auth context initialization. Even though realtime is working, the first data load waits for auth to settle.
 
-**Problem**: In `PrescriptionsList.tsx` line 201, `canManage` is hardcoded to `role === 'doctor'`. Patients cannot delete their own prescriptions even though RLS already allows doctors to delete (but not patients).
+**Fix**: Reduce the polling interval from 15s to 8s, AND more importantly, trigger an immediate `fetchLives` as soon as the realtime channel successfully subscribes (subscription callback). Also reduce `MIN_FETCH_INTERVAL` from 5s to 3s so the polling fallback kicks in faster.
 
-**Changes needed**:
+## Problem 2: "User not authenticated" error on get-daily-token (500)
+The `get-daily-token` edge function requires a valid user auth token (line 37: `getUser(token)`). But lives are publicly accessible to visitors (unauthenticated users). When a visitor tries to watch a live, `supabase.functions.invoke` sends the anon key as the Authorization header, which fails `getUser()`.
 
-### Database Migration
-Add an RLS policy so patients can delete their own prescriptions:
-```sql
-CREATE POLICY "Patients can delete own prescriptions"
-ON public.prescriptions FOR DELETE
-USING (auth.uid() = patient_id);
-```
-
-### Code Change: `src/components/prescriptions/PrescriptionsList.tsx`
-- Change `const canManage = role === 'doctor';` to `const canManage = role === 'doctor' || role === 'patient' || role === 'resident';` (line 201)
-- For patients, the delete query already uses `.in('id', ids)` which will work because RLS will scope it to their own prescriptions
+**Fix**: Update the edge function to handle unauthenticated viewers gracefully. If no valid user token is provided, generate a viewer token with a generic "Visitante" name and no user_id. This aligns with the existing architecture where lives are public.
 
 ---
 
-## 2. Performance Optimizations
+## Changes
 
-### 2a. Lazy-load Google Fonts (index.css)
-**Problem**: Line 16 of `index.css` uses `@import url(...)` for Google Fonts which blocks CSS rendering.
+### File 1: `supabase/functions/get-daily-token/index.ts`
+- After extracting the auth header, attempt `getUser()` but treat failure as "visitor mode" instead of throwing an error
+- If user is authenticated: use their name and ID for the token
+- If not authenticated (visitor): generate a token with `user_name: "Visitante"` and no `user_id`
+- This preserves security for authenticated features while allowing public live viewing
 
-**Fix**: Move font loading to `index.html` using `<link rel="preconnect">` and `<link rel="stylesheet">` with `display=swap` already included. Remove the `@import` from CSS.
-
-### 2b. Defer heavy global contexts for unauthenticated users
-**Problem**: `WalletProvider`, `LivesProvider`, `VaultProvider`, `ChatProvider`, `PostConsultationRatingProvider`, and `IncomingCallProvider` all mount at the root in `App.tsx`, even for unauthenticated visitors on the Landing page. Each context runs `useEffect` with database queries on mount.
-
-**Fix**: Create a wrapper component `AuthenticatedProviders` that only renders `WalletProvider`, `VaultProvider`, `ChatProvider`, `PostConsultationRatingProvider`, and `IncomingCallProvider` when the user is authenticated. `LivesProvider` stays global since `/lives` is public.
-
-### 2c. Optimize Landing page background blobs
-**Problem**: Three large `animate-pulse` divs with `blur-3xl` filters are always rendered (lines 74-78 of `Landing.tsx`), consuming GPU resources on mobile devices.
-
-**Fix**: Add `will-change: transform` and reduce blur on mobile via responsive classes. Use `motion.div` with `reducedMotion` or simpler CSS animation.
-
-### 2d. Image lazy loading
-**Problem**: Avatar images and thumbnails across the app don't consistently use `loading="lazy"`. LivesGrid line 46 already has it, but MainLayout logos and other components don't.
-
-**Fix**: Add `loading="lazy"` and `decoding="async"` attributes to non-critical images throughout the app (doctor avatars, content thumbnails, etc.)
-
-### 2e. Memoize MainLayout navigation
-**Problem**: `MainLayout` recalculates `filteredNavItems`, `bottomTabs`, and `moreNavItems` on every render. The `useChat()` call inside an IIFE on lines 165-176 also runs every render.
-
-**Fix**: Wrap these computations in `useMemo`. Move the chat unread count into a proper `useMemo` instead of an IIFE.
+### File 2: `src/contexts/LivesContext.tsx`
+- Reduce `MIN_FETCH_INTERVAL` from 5000ms to 3000ms
+- Reduce polling interval from 15000ms to 8000ms
+- These small tweaks ensure lives appear faster on initial load and catch missed events sooner
 
 ---
 
-## Summary of Changes
+## Technical Details
 
-| # | Task | Files |
-|---|------|-------|
-| 1 | Prescription deletion for all roles | DB migration + `PrescriptionsList.tsx` |
-| 2a | Move Google Fonts to HTML preconnect | `index.html` + `src/index.css` |
-| 2b | Defer contexts for unauthenticated users | `src/App.tsx` |
-| 2c | Optimize Landing page blobs for mobile | `src/pages/Landing.tsx` |
-| 2d | Add lazy loading to images | Multiple components |
-| 2e | Memoize MainLayout computations | `src/components/layout/MainLayout.tsx` |
-
-### Technical Details
-
-**Prescription RLS**: Adding `FOR DELETE USING (auth.uid() = patient_id)` allows patients to delete only their own prescriptions. Residents who somehow have prescriptions (edge case) would need a similar policy if relevant.
-
-**Font Preconnect** (index.html):
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" />
-```
-
-**Deferred Providers** (App.tsx):
+### Edge function visitor handling (get-daily-token):
 ```typescript
-function AuthenticatedProviders({ children }) {
-  const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <>{children}</>;
-  return (
-    <WalletProvider>
-      <VaultProvider>
-        <ChatProvider>
-          <PostConsultationRatingProvider>
-            <IncomingCallProvider>
-              {children}
-            </IncomingCallProvider>
-          </PostConsultationRatingProvider>
-        </ChatProvider>
-      </VaultProvider>
-    </WalletProvider>
-  );
+// Instead of throwing on auth failure:
+let userId: string | undefined;
+let userName = 'Visitante';
+
+const authHeader = req.headers.get("Authorization");
+if (authHeader) {
+  const token = authHeader.replace("Bearer ", "");
+  const { data: userData } = await supabaseClient.auth.getUser(token);
+  if (userData?.user) {
+    userId = userData.user.id;
+    // fetch profile name...
+    userName = profile?.name || userData.user.email?.split('@')[0] || 'Usuario';
+  }
 }
+
+// Generate token with or without userId
+const tokenProperties = {
+  room_name: roomName,
+  is_owner: isOwner,
+  ...(userId && { user_id: userId }),
+  user_name: userName,
+  exp: Math.floor(Date.now() / 1000) + 86400,
+  start_video_off: !enableMedia,
+  start_audio_off: !enableMedia,
+};
 ```
+
+### LivesContext timing:
+```typescript
+const MIN_FETCH_INTERVAL = 3000; // was 5000
+// ...
+const pollInterval = setInterval(() => {
+  fetchLives(false);
+}, 8000); // was 15000
+```
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `supabase/functions/get-daily-token/index.ts` | Allow unauthenticated viewers (visitors) |
+| `src/contexts/LivesContext.tsx` | Faster polling (8s) and reduced throttle (3s) |
 
