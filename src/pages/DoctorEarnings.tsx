@@ -250,7 +250,7 @@ export default function DoctorEarnings() {
           variant="ghost"
           size="sm"
           onClick={() => navigate('/doctor/dashboard')}
-          className="mb-4 gap-2"
+          className="mb-4 gap-2 hidden sm:inline-flex"
         >
           <ArrowLeft className="w-4 h-4" />
           {language === 'es' ? 'Volver al panel' : 'Back to dashboard'}

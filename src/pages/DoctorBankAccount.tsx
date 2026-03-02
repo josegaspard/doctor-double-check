@@ -219,7 +219,7 @@ export default function DoctorBankAccount() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-2xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/doctor/dashboard')} className="mb-4 gap-2">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/doctor/dashboard')} className="mb-4 gap-2 hidden sm:inline-flex">
           <ArrowLeft className="w-4 h-4" />
           {language === 'es' ? 'Volver al panel' : 'Back to dashboard'}
         </Button>
