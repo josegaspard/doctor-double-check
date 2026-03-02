@@ -411,7 +411,8 @@ export default function DoctorGoLive() {
     );
 
     // On mobile, render without MainLayout for true fullscreen
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    const isMobileCheck = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+    if (isMobileCheck) {
       return liveContent;
     }
 

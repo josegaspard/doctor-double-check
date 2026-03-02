@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -79,6 +80,8 @@ import {
   Filter,
   X,
   CalendarIcon,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 
 interface RecordingStats {
@@ -115,6 +118,12 @@ export default function DoctorRecordings() {
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
 
+  // Bulk Selection
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState<string>('all');
@@ -123,7 +132,6 @@ export default function DoctorRecordings() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Avoid applying an accidental default price filter when maxPrice > 1000
   const priceRangeInitializedRef = useRef(false);
   const [isPriceRangeReady, setIsPriceRangeReady] = useState(false);
 
@@ -168,23 +176,19 @@ export default function DoctorRecordings() {
     }
   }, [user?.id, user?.name]);
 
-  // Initial load + refresh
   useEffect(() => {
     fetchMyRecordings();
   }, [fetchMyRecordings]);
 
   const allRecordings = recordings;
   
-  // Get unique specialties from recordings
   const specialties = [...new Set(allRecordings.map(r => r.specialty))];
   
-  // Get max price for slider
   const numericPrices = allRecordings
     .map(r => Number(r.price))
     .filter((p) => Number.isFinite(p));
   const maxPrice = numericPrices.length > 0 ? Math.max(...numericPrices) : 1000;
 
-  // Initialize price range to the real max price once we have data
   useEffect(() => {
     if (priceRangeInitializedRef.current) return;
     if (allRecordings.length === 0) return;
@@ -193,41 +197,23 @@ export default function DoctorRecordings() {
     setIsPriceRangeReady(true);
   }, [allRecordings.length, maxPrice]);
 
-  // Apply filters
   const myRecordings = allRecordings.filter(recording => {
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesTitle = recording.title.toLowerCase().includes(query);
       const matchesTags = recording.tags.some((tag: string) => tag.toLowerCase().includes(query));
       if (!matchesTitle && !matchesTags) return false;
     }
-    
-    // Specialty filter
-    if (specialtyFilter !== 'all' && recording.specialty !== specialtyFilter) {
-      return false;
-    }
-    
-    // Date range filter
-    if (dateFrom && recording.createdAt < dateFrom) {
-      return false;
-    }
+    if (specialtyFilter !== 'all' && recording.specialty !== specialtyFilter) return false;
+    if (dateFrom && recording.createdAt < dateFrom) return false;
     if (dateTo) {
       const endOfDay = new Date(dateTo);
       endOfDay.setHours(23, 59, 59, 999);
-      if (recording.createdAt > endOfDay) {
-        return false;
-      }
+      if (recording.createdAt > endOfDay) return false;
     }
-    
-    // Price range filter
-    // IMPORTANT: don't apply the default [0,1000] range until we know the real max
     if (isPriceRangeReady) {
-      if (recording.price < priceRange[0] || recording.price > priceRange[1]) {
-        return false;
-      }
+      if (recording.price < priceRange[0] || recording.price > priceRange[1]) return false;
     }
-    
     return true;
   });
 
@@ -246,37 +232,29 @@ export default function DoctorRecordings() {
     setPriceRange([0, maxPrice]);
   };
 
-  // Redirect if not doctor
   useEffect(() => {
     if (role !== 'doctor') {
       navigate('/lives');
     }
   }, [role, navigate]);
 
-  // Fetch recording stats
   useEffect(() => {
     const fetchStats = async () => {
       if (!user?.id || myRecordings.length === 0) {
         setIsLoadingStats(false);
         return;
       }
-
       try {
         const recordingIds = myRecordings.map(r => r.id);
-        
         const { data: purchases } = await supabase
           .from('purchases')
           .select('recording_id, amount')
           .in('recording_id', recordingIds);
 
         const statsMap = new Map<string, RecordingStats>();
-        
-        // Initialize all recordings with 0 stats
         recordingIds.forEach(id => {
           statsMap.set(id, { recordingId: id, purchaseCount: 0, totalRevenue: 0 });
         });
-
-        // Aggregate purchase data
         purchases?.forEach(purchase => {
           const existing = statsMap.get(purchase.recording_id);
           if (existing) {
@@ -284,7 +262,6 @@ export default function DoctorRecordings() {
             existing.totalRevenue += Number(purchase.amount);
           }
         });
-
         setRecordingStats(statsMap);
       } catch (error) {
         console.error('Error fetching recording stats:', error);
@@ -292,7 +269,6 @@ export default function DoctorRecordings() {
         setIsLoadingStats(false);
       }
     };
-
     fetchStats();
   }, [user?.id, myRecordings.length]);
 
@@ -304,24 +280,19 @@ export default function DoctorRecordings() {
 
   const handleSavePrice = async () => {
     if (!editingRecording) return;
-    
     const newPrice = parseFloat(editPrice);
     if (isNaN(newPrice) || newPrice < 0) {
       toast.error('El precio debe ser un número válido mayor o igual a 0');
       return;
     }
-
     setIsSaving(true);
-    
     try {
       const { error } = await supabase
         .from('recordings')
         .update({ price: newPrice })
         .eq('id', editingRecording.id)
         .eq('doctor_id', user?.id);
-
       if (error) throw error;
-
       toast.success('Precio actualizado correctamente');
       setEditDialogOpen(false);
       setEditingRecording(null);
@@ -338,51 +309,100 @@ export default function DoctorRecordings() {
     setDeleteDialogOpen(true);
   };
 
+  const deleteRecordingFully = async (recording: Recording) => {
+    // 1. Delete video file from storage
+    if (recording.videoUrl) {
+      try {
+        const url = new URL(recording.videoUrl);
+        const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/recordings\/(.+)/);
+        if (pathMatch?.[1]) {
+          const filePath = decodeURIComponent(pathMatch[1]);
+          await supabase.storage.from('recordings').remove([filePath]);
+        }
+      } catch (storageErr) {
+        console.warn('Could not delete video file from storage:', storageErr);
+      }
+    }
+
+    // 2. Delete associated doctor_content entries
+    if (recording.videoUrl) {
+      await supabase
+        .from('doctor_content')
+        .delete()
+        .eq('creator_id', user?.id)
+        .eq('file_url', recording.videoUrl);
+    }
+
+    // 3. Delete the recording from DB
+    const { error } = await supabase
+      .from('recordings')
+      .delete()
+      .eq('id', recording.id)
+      .eq('doctor_id', user?.id);
+
+    if (error) throw error;
+  };
+
   const handleConfirmDelete = async () => {
     if (!deletingRecording) return;
-
     setIsDeleting(true);
-    
     try {
-      // 1. Delete video file from storage if it exists
-      if (deletingRecording.videoUrl) {
-        try {
-          // Extract the file path from the URL (after /recordings/)
-          const url = new URL(deletingRecording.videoUrl);
-          const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/recordings\/(.+)/);
-          if (pathMatch?.[1]) {
-            const filePath = decodeURIComponent(pathMatch[1]);
-            await supabase.storage.from('recordings').remove([filePath]);
-          }
-        } catch (storageErr) {
-          console.warn('Could not delete video file from storage:', storageErr);
-          // Continue with DB deletion even if storage cleanup fails
-        }
-      }
-
-      // 2. Delete the database record
-      const { error } = await supabase
-        .from('recordings')
-        .delete()
-        .eq('id', deletingRecording.id)
-        .eq('doctor_id', user?.id);
-
-      if (error) throw error;
-
-      // Update local state immediately for instant UI feedback
+      await deleteRecordingFully(deletingRecording);
       setRecordings(prev => prev.filter(r => r.id !== deletingRecording.id));
-      
       toast.success('Grabación eliminada correctamente');
       setDeleteDialogOpen(false);
       setDeletingRecording(null);
-      
-      // Also refresh global context for other pages
       await refreshRecordings();
     } catch (error: any) {
       console.error('Error deleting recording:', error);
       toast.error(error.message || 'Error al eliminar la grabación');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  // Bulk selection handlers
+  const toggleSelectionMode = () => {
+    if (selectionMode) {
+      setSelectedIds(new Set());
+    }
+    setSelectionMode(!selectionMode);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedIds(new Set(myRecordings.map(r => r.id)));
+  };
+
+  const deselectAll = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const toDelete = recordings.filter(r => selectedIds.has(r.id));
+      await Promise.all(toDelete.map(r => deleteRecordingFully(r)));
+      setRecordings(prev => prev.filter(r => !selectedIds.has(r.id)));
+      toast.success(`${toDelete.length} grabación(es) eliminada(s) por completo`);
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+      setBulkDeleteDialogOpen(false);
+      await refreshRecordings();
+    } catch (error: any) {
+      console.error('Error bulk deleting:', error);
+      toast.error('Error al eliminar algunas grabaciones');
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -402,16 +422,13 @@ export default function DoctorRecordings() {
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('es-MX', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
+      day: 'numeric', month: 'short', year: 'numeric',
     }).format(date);
   };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
+      style: 'currency', currency: 'MXN',
     }).format(amount);
   };
 
@@ -419,7 +436,6 @@ export default function DoctorRecordings() {
     return recordingStats.get(recordingId) || { purchaseCount: 0, totalRevenue: 0 };
   };
 
-  // Calculate totals (from filtered results)
   const totalRecordings = myRecordings.length;
   const totalPurchases = myRecordings.reduce((sum, r) => {
     const stats = recordingStats.get(r.id);
@@ -441,7 +457,7 @@ export default function DoctorRecordings() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/doctor/dashboard')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div>
+          <div className="flex-1">
             <h1 className="font-heading text-2xl font-bold text-foreground">
               Mis Grabaciones
             </h1>
@@ -450,6 +466,25 @@ export default function DoctorRecordings() {
             </p>
           </div>
         </div>
+
+        {/* Selection mode banner */}
+        {selectionMode && (
+          <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-foreground">
+              {selectedIds.size > 0
+                ? `${selectedIds.size} grabación(es) seleccionada(s)`
+                : 'Toca las grabaciones que deseas eliminar'}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={selectedIds.size === myRecordings.length ? deselectAll : selectAll}>
+                {selectedIds.size === myRecordings.length ? 'Deseleccionar' : 'Todas'}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={toggleSelectionMode}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Stats Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -514,7 +549,6 @@ export default function DoctorRecordings() {
         <Card className="mb-6">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4">
-              {/* Search */}
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -524,8 +558,6 @@ export default function DoctorRecordings() {
                   className="pl-9"
                 />
               </div>
-              
-              {/* Specialty Filter */}
               <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
                 <SelectTrigger className="w-full md:w-48">
                   <SelectValue placeholder="Especialidad" />
@@ -537,8 +569,6 @@ export default function DoctorRecordings() {
                   ))}
                 </SelectContent>
               </Select>
-              
-              {/* Toggle Advanced Filters */}
               <Button 
                 variant={showFilters ? "secondary" : "outline"} 
                 onClick={() => setShowFilters(!showFilters)}
@@ -547,13 +577,9 @@ export default function DoctorRecordings() {
                 <Filter className="w-4 h-4" />
                 Filtros
                 {hasActiveFilters && (
-                  <Badge variant="default" className="ml-1 h-5 w-5 p-0 justify-center">
-                    !
-                  </Badge>
+                  <Badge variant="default" className="ml-1 h-5 w-5 p-0 justify-center">!</Badge>
                 )}
               </Button>
-              
-              {/* Clear Filters */}
               {hasActiveFilters && (
                 <Button variant="ghost" size="icon" onClick={clearFilters}>
                   <X className="w-4 h-4" />
@@ -561,10 +587,8 @@ export default function DoctorRecordings() {
               )}
             </div>
             
-            {/* Advanced Filters */}
             {showFilters && (
               <div className="mt-4 pt-4 border-t grid md:grid-cols-3 gap-4">
-                {/* Date From */}
                 <div className="space-y-2">
                   <Label>Desde</Label>
                   <Popover>
@@ -575,17 +599,10 @@ export default function DoctorRecordings() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateFrom}
-                        onSelect={setDateFrom}
-                        initialFocus
-                      />
+                      <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus />
                     </PopoverContent>
                   </Popover>
                 </div>
-                
-                {/* Date To */}
                 <div className="space-y-2">
                   <Label>Hasta</Label>
                   <Popover>
@@ -596,17 +613,10 @@ export default function DoctorRecordings() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateTo}
-                        onSelect={setDateTo}
-                        initialFocus
-                      />
+                      <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus />
                     </PopoverContent>
                   </Popover>
                 </div>
-                
-                {/* Price Range */}
                 <div className="space-y-2">
                   <Label>Rango de precio: {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}</Label>
                   <Slider
@@ -630,11 +640,24 @@ export default function DoctorRecordings() {
                 <Video className="w-5 h-5" />
                 Grabaciones
               </span>
-              {hasActiveFilters && (
-                <Badge variant="secondary">
-                  {myRecordings.length} de {allRecordings.length} grabaciones
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {hasActiveFilters && (
+                  <Badge variant="secondary">
+                    {myRecordings.length} de {allRecordings.length}
+                  </Badge>
+                )}
+                {myRecordings.length > 0 && (
+                  <Button
+                    variant={selectionMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={toggleSelectionMode}
+                    className="gap-1.5"
+                  >
+                    {selectionMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                    {selectionMode ? 'Cancelar' : 'Seleccionar'}
+                  </Button>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -654,46 +677,63 @@ export default function DoctorRecordings() {
               <div className="space-y-3">
                 {myRecordings.map((recording) => {
                   const stats = getStats(recording.id);
+                  const isSelected = selectedIds.has(recording.id);
                   return (
                     <div
                       key={recording.id}
-                      className="p-3 border border-border rounded-lg bg-card"
+                      className={`p-3 border rounded-lg transition-colors ${
+                        selectionMode
+                          ? isSelected
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border bg-card'
+                          : 'border-border bg-card'
+                      }`}
+                      onClick={selectionMode ? () => toggleSelect(recording.id) : undefined}
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-foreground line-clamp-1">{recording.title}</p>
-                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                            <Badge variant="secondary" className="text-[10px] h-5">{recording.specialty}</Badge>
-                            {recording.tags.slice(0, 2).map(tag => (
-                              <Badge key={tag} variant="outline" className="text-[10px] h-5">
-                                #{tag}
-                              </Badge>
-                            ))}
+                        <div className="flex items-start gap-2 flex-1 min-w-0">
+                          {selectionMode && (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelect(recording.id)}
+                              className="mt-0.5"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-foreground line-clamp-1">{recording.title}</p>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                              <Badge variant="secondary" className="text-[10px] h-5">{recording.specialty}</Badge>
+                              {recording.tags.slice(0, 2).map(tag => (
+                                <Badge key={tag} variant="outline" className="text-[10px] h-5">#{tag}</Badge>
+                              ))}
+                            </div>
                           </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/recording/${recording.id}`)}>
-                              <Eye className="w-4 h-4 mr-2" />Ver grabación
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleViewStats(recording)}>
-                              <BarChart3 className="w-4 h-4 mr-2" />Estadísticas
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
-                              <Pencil className="w-4 h-4 mr-2" />Editar precio
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
-                              <Trash2 className="w-4 h-4 mr-2" />Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {!selectionMode && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => navigate(`/recording/${recording.id}`)}>
+                                <Eye className="w-4 h-4 mr-2" />Ver grabación
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewStats(recording)}>
+                                <BarChart3 className="w-4 h-4 mr-2" />Estadísticas
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
+                                <Pencil className="w-4 h-4 mr-2" />Editar precio
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
+                                <Trash2 className="w-4 h-4 mr-2" />Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
@@ -725,6 +765,7 @@ export default function DoctorRecordings() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {selectionMode && <TableHead className="w-10"></TableHead>}
                       <TableHead>Grabación</TableHead>
                       <TableHead>Especialidad</TableHead>
                       <TableHead>Duración</TableHead>
@@ -732,14 +773,27 @@ export default function DoctorRecordings() {
                       <TableHead>Compras</TableHead>
                       <TableHead>Ingresos</TableHead>
                       <TableHead>Fecha</TableHead>
-                      <TableHead className="w-12"></TableHead>
+                      {!selectionMode && <TableHead className="w-12"></TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {myRecordings.map((recording) => {
                       const stats = getStats(recording.id);
+                      const isSelected = selectedIds.has(recording.id);
                       return (
-                        <TableRow key={recording.id}>
+                        <TableRow
+                          key={recording.id}
+                          className={`${selectionMode ? 'cursor-pointer' : ''} ${isSelected ? 'bg-primary/5' : ''}`}
+                          onClick={selectionMode ? () => toggleSelect(recording.id) : undefined}
+                        >
+                          {selectionMode && (
+                            <TableCell>
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => toggleSelect(recording.id)}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <div className="w-12 h-8 rounded bg-muted flex items-center justify-center">
@@ -749,26 +803,22 @@ export default function DoctorRecordings() {
                                 <p className="font-medium line-clamp-1">{recording.title}</p>
                                 <div className="flex gap-1 mt-1">
                                   {recording.tags.slice(0, 2).map(tag => (
-                                    <Badge key={tag} variant="outline" className="text-xs">
-                                      {tag}
-                                    </Badge>
+                                    <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
                                   ))}
                                 </div>
                               </div>
                             </div>
                           </TableCell>
+                          <TableCell><Badge variant="secondary">{recording.specialty}</Badge></TableCell>
                           <TableCell>
-                            <Badge variant="secondary">{recording.specialty}</Badge>
+                            {recording.videoUrl?.startsWith('pending:') ? (
+                              <Badge variant="pending">Procesando…</Badge>
+                            ) : !recording.videoUrl ? (
+                              <Badge variant="outline">Sin video</Badge>
+                            ) : (
+                              formatDuration(recording.duration)
+                            )}
                           </TableCell>
-                           <TableCell>
-                             {recording.videoUrl?.startsWith('pending:') ? (
-                               <Badge variant="pending">Procesando…</Badge>
-                             ) : !recording.videoUrl ? (
-                               <Badge variant="outline">Sin video</Badge>
-                             ) : (
-                               formatDuration(recording.duration)
-                             )}
-                           </TableCell>
                           <TableCell>
                             {recording.price === 0 ? (
                               <Badge variant="success">Gratis</Badge>
@@ -798,38 +848,33 @@ export default function DoctorRecordings() {
                           <TableCell className="text-muted-foreground text-sm">
                             {formatDate(recording.createdAt)}
                           </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => navigate(`/recording/${recording.id}`)}>
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  Ver grabación
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleViewStats(recording)}>
-                                  <BarChart3 className="w-4 h-4 mr-2" />
-                                  Ver estadísticas
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
-                                  <Pencil className="w-4 h-4 mr-2" />
-                                  Editar precio
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  className="text-destructive"
-                                  onClick={() => handleDeleteClick(recording)}
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Eliminar
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
+                          {!selectionMode && (
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => navigate(`/recording/${recording.id}`)}>
+                                    <Eye className="w-4 h-4 mr-2" />Ver grabación
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleViewStats(recording)}>
+                                    <BarChart3 className="w-4 h-4 mr-2" />Ver estadísticas
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
+                                    <Pencil className="w-4 h-4 mr-2" />Editar precio
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
+                                    <Trash2 className="w-4 h-4 mr-2" />Eliminar
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          )}
                         </TableRow>
                       );
                     })}
@@ -839,6 +884,22 @@ export default function DoctorRecordings() {
             )}
           </CardContent>
         </Card>
+
+        {/* Floating bulk delete bar */}
+        {selectionMode && selectedIds.size > 0 && (
+          <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-destructive text-destructive-foreground px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-slide-in-bottom">
+            <span className="text-sm font-medium">{selectedIds.size} seleccionada(s)</span>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="rounded-full gap-1.5"
+              onClick={() => setBulkDeleteDialogOpen(true)}
+            >
+              <Trash2 className="w-4 h-4" />
+              Eliminar
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Edit Price Dialog */}
@@ -846,9 +907,7 @@ export default function DoctorRecordings() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar Precio</DialogTitle>
-            <DialogDescription>
-              {editingRecording?.title}
-            </DialogDescription>
+            <DialogDescription>{editingRecording?.title}</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Label htmlFor="price">Precio (MXN)</Label>
@@ -874,14 +933,7 @@ export default function DoctorRecordings() {
               Cancelar
             </Button>
             <Button onClick={handleSavePrice} disabled={isSaving}>
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Guardando...
-                </>
-              ) : (
-                'Guardar'
-              )}
+              {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Guardando...</>) : 'Guardar'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -893,7 +945,7 @@ export default function DoctorRecordings() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar grabación?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. La grabación "{deletingRecording?.title}" será eliminada permanentemente.
+              Esta acción no se puede deshacer. La grabación "{deletingRecording?.title}" será eliminada permanentemente junto con sus archivos y contenido asociado.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -903,14 +955,29 @@ export default function DoctorRecordings() {
               disabled={isDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Eliminando...
-                </>
-              ) : (
-                'Eliminar'
-              )}
+              {isDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Eliminando...</>) : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar {selectedIds.size} grabación(es)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción es irreversible. Se eliminarán permanentemente las grabaciones seleccionadas, sus archivos de video y todo el contenido asociado de la plataforma.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isBulkDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Eliminando...</>) : `Eliminar ${selectedIds.size}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -924,9 +991,7 @@ export default function DoctorRecordings() {
               <BarChart3 className="w-5 h-5" />
               Estadísticas
             </DialogTitle>
-            <DialogDescription>
-              {selectedRecording?.title}
-            </DialogDescription>
+            <DialogDescription>{selectedRecording?.title}</DialogDescription>
           </DialogHeader>
           {selectedRecording && (
             <div className="py-4 space-y-4">
@@ -934,29 +999,22 @@ export default function DoctorRecordings() {
                 <Card>
                   <CardContent className="p-4 text-center">
                     <Users className="w-8 h-8 mx-auto text-primary mb-2" />
-                    <p className="text-2xl font-bold">
-                      {getStats(selectedRecording.id).purchaseCount}
-                    </p>
+                    <p className="text-2xl font-bold">{getStats(selectedRecording.id).purchaseCount}</p>
                     <p className="text-xs text-muted-foreground">Compras totales</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
                     <TrendingUp className="w-8 h-8 mx-auto text-success mb-2" />
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(getStats(selectedRecording.id).totalRevenue)}
-                    </p>
+                    <p className="text-2xl font-bold">{formatCurrency(getStats(selectedRecording.id).totalRevenue)}</p>
                     <p className="text-xs text-muted-foreground">Ingresos totales</p>
                   </CardContent>
                 </Card>
               </div>
-              
               <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Precio actual:</span>
-                  <span className="font-medium">
-                    {selectedRecording.price === 0 ? 'Gratis' : formatCurrency(selectedRecording.price)}
-                  </span>
+                  <span className="font-medium">{selectedRecording.price === 0 ? 'Gratis' : formatCurrency(selectedRecording.price)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Duración:</span>
@@ -971,7 +1029,6 @@ export default function DoctorRecordings() {
                   <span className="font-medium">{formatDate(selectedRecording.createdAt)}</span>
                 </div>
               </div>
-
               <Button 
                 className="w-full" 
                 variant="outline"

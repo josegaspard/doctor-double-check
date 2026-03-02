@@ -1860,7 +1860,9 @@ export type Database = {
       reports: {
         Row: {
           admin_notes: string | null
-          content_id: string
+          attachment_urls: string[] | null
+          contact_email: string | null
+          content_id: string | null
           content_type: string
           created_at: string
           description: string | null
@@ -1870,10 +1872,13 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
+          subject: string | null
         }
         Insert: {
           admin_notes?: string | null
-          content_id: string
+          attachment_urls?: string[] | null
+          contact_email?: string | null
+          content_id?: string | null
           content_type: string
           created_at?: string
           description?: string | null
@@ -1883,10 +1888,13 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          subject?: string | null
         }
         Update: {
           admin_notes?: string | null
-          content_id?: string
+          attachment_urls?: string[] | null
+          contact_email?: string | null
+          content_id?: string | null
           content_type?: string
           created_at?: string
           description?: string | null
@@ -1896,6 +1904,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          subject?: string | null
         }
         Relationships: []
       }
