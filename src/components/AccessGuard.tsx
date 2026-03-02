@@ -5,7 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { AppRole as UserRole } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, Lock, LogIn, UserPlus } from 'lucide-react';
+import { Shield, Lock, LogIn, UserPlus, Loader2 } from 'lucide-react';
 
 interface AccessGuardProps {
   children: React.ReactNode;
@@ -22,9 +22,17 @@ export default function AccessGuard({
   fallbackMessage,
   fallbackType = 'login',
 }: AccessGuardProps) {
-  const { user, role, isAuthenticated } = useAuth();
+  const { user, role, isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   // Check role access
   const hasRoleAccess = role && allowedRoles.includes(role);

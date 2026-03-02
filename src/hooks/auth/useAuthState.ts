@@ -1,17 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { ExtendedUser } from './types';
 import { fetchUserProfile } from './fetchUserProfile';
 
+function getCachedUser(): ExtendedUser | null {
+  try {
+    const cached = localStorage.getItem('mm_cached_user');
+    if (cached) return JSON.parse(cached);
+  } catch {}
+  return null;
+}
+
 export function useAuthState() {
-  const [user, setUser] = useState<ExtendedUser | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(getCachedUser);
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!getCachedUser());
+
+  const setUserAndCache = useCallback((u: ExtendedUser | null) => {
+    setUser(u);
+    if (u) {
+      localStorage.setItem('mm_cached_user', JSON.stringify(u));
+    } else {
+      localStorage.removeItem('mm_cached_user');
+    }
+  }, []);
 
   useEffect(() => {
     const forceSignedOutState = () => {
       setSupabaseUser(null);
+      localStorage.removeItem('mm_cached_user');
 
       // Check for visitor session
       const visitorData = sessionStorage.getItem('drDoubleCheck_visitor');
@@ -99,7 +117,7 @@ export function useAuthState() {
           return;
         }
 
-        setUser(profile);
+        setUserAndCache(profile);
         setIsLoading(false);
 
         // Redirect signed users away from login/root regardless of provider metadata.
@@ -157,14 +175,14 @@ export function useAuthState() {
     if (supabaseUser) {
       const profile = await fetchUserProfile(supabaseUser.id);
       if (profile) {
-        setUser(profile);
+        setUserAndCache(profile);
       }
     }
   };
 
   const updateUser = (updates: Partial<ExtendedUser>) => {
     if (user) {
-      setUser({ ...user, ...updates });
+      setUserAndCache({ ...user, ...updates });
     }
   };
 
