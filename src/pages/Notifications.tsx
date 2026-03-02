@@ -289,15 +289,17 @@ export default function Notifications() {
 
         {/* Floating bulk delete bar */}
         {isSelecting && selectedIds.size > 0 && (
-          <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-lg">
-            <Button
-              variant="destructive"
-              className="w-full gap-2 shadow-lg"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              <Trash2 className="w-4 h-4" />
-              {t('notificationsPage.deleteBtn')} ({selectedIds.size})
-            </Button>
+          <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm">
+            <div className="bg-card/95 backdrop-blur-lg border border-border rounded-xl shadow-2xl p-3">
+              <Button
+                variant="destructive"
+                className="w-full gap-2 h-11 text-sm font-medium"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <Trash2 className="w-4 h-4" />
+                {t('notificationsPage.deleteBtn')} ({selectedIds.size})
+              </Button>
+            </div>
           </div>
         )}
       </div>

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { RichTextLegalEditor } from '@/components/admin/RichTextLegalEditor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -30,6 +31,8 @@ import {
   Mail,
   HardDrive,
   Plus,
+  Trash2,
+  Link2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -56,6 +59,19 @@ interface ContactInfo {
 interface StoragePricing {
   price_per_gb: number;
   plans: { gb: number; label: string; badge?: string }[];
+}
+
+interface FooterLink {
+  label: string;
+  href: string;
+}
+
+interface FooterLinksData {
+  platform: FooterLink[];
+  resources: FooterLink[];
+  legal: FooterLink[];
+  copyright: string;
+  show_status_badge: boolean;
 }
 
 export default function AdminSiteSettings() {
@@ -88,6 +104,27 @@ export default function AdminSiteSettings() {
       { gb: 5, label: '+5 GB', badge: 'Popular' },
       { gb: 10, label: '+10 GB', badge: 'Mejor valor' },
     ],
+  });
+  const [footerLinks, setFooterLinks] = useState<FooterLinksData>({
+    platform: [
+      { label: 'Para Doctores', href: '/for-doctors' },
+      { label: 'Para Pacientes', href: '/for-patients' },
+      { label: 'Empresas', href: '/enterprise' },
+    ],
+    resources: [
+      { label: 'Casos de Éxito', href: '/success-stories' },
+      { label: 'Ayuda', href: '/help' },
+      { label: 'Contacto', href: '/contact' },
+    ],
+    legal: [
+      { label: 'Privacidad', href: '/privacy' },
+      { label: 'Términos', href: '/terms' },
+      { label: 'Seguridad', href: '/security' },
+      { label: 'Cumplimiento', href: '/compliance' },
+      { label: 'Reportar', href: '/report-issue' },
+    ],
+    copyright: '2025 Medical Masters. Todos los derechos reservados.',
+    show_status_badge: true,
   });
 
   useEffect(() => {
@@ -157,6 +194,17 @@ export default function AdminSiteSettings() {
 
         if (storageData?.value) {
           setStoragePricing(storageData.value as unknown as StoragePricing);
+        }
+
+        // Fetch footer links
+        const { data: footerData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'footer_links')
+          .single();
+
+        if (footerData?.value) {
+          setFooterLinks({ ...footerLinks, ...(footerData.value as unknown as FooterLinksData) });
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -280,6 +328,47 @@ export default function AdminSiteSettings() {
     }
   };
 
+  const handleSaveFooterLinks = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          id: 'footer_links',
+          value: footerLinks as unknown as Json,
+          updated_by: supabaseUser?.id,
+        });
+
+      if (error) throw error;
+      toast.success('Footer actualizado');
+    } catch (error) {
+      console.error('Error saving footer links:', error);
+      toast.error('Error al guardar');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateFooterSection = (section: 'platform' | 'resources' | 'legal', index: number, field: 'label' | 'href', value: string) => {
+    const updated = [...footerLinks[section]];
+    updated[index] = { ...updated[index], [field]: value };
+    setFooterLinks({ ...footerLinks, [section]: updated });
+  };
+
+  const addFooterLink = (section: 'platform' | 'resources' | 'legal') => {
+    setFooterLinks({
+      ...footerLinks,
+      [section]: [...footerLinks[section], { label: '', href: '/' }],
+    });
+  };
+
+  const removeFooterLink = (section: 'platform' | 'resources' | 'legal', index: number) => {
+    setFooterLinks({
+      ...footerLinks,
+      [section]: footerLinks[section].filter((_, i) => i !== index),
+    });
+  };
+
   if (role !== 'admin') return null;
 
   return (
@@ -307,7 +396,7 @@ export default function AdminSiteSettings() {
           </div>
         ) : (
           <Tabs defaultValue="social" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="social" className="gap-2 text-xs">
                 <Globe className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('admin.socialLinks')}</span>
@@ -327,6 +416,10 @@ export default function AdminSiteSettings() {
               <TabsTrigger value="storage" className="gap-2 text-xs">
                 <HardDrive className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('admin.storage')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="footer" className="gap-2 text-xs">
+                <Link2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Footer</span>
               </TabsTrigger>
             </TabsList>
 
@@ -694,6 +787,104 @@ export default function AdminSiteSettings() {
                       <Save className="w-4 h-4 mr-2" />
                     )}
                     Guardar Precios
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Footer Tab */}
+            <TabsContent value="footer">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Link2 className="w-5 h-5" />
+                    Footer del Sitio
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Configura los links y contenido que aparecen en el footer de la landing y la aplicación
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Copyright */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Texto de Copyright</Label>
+                    <Input
+                      value={footerLinks.copyright}
+                      onChange={(e) => setFooterLinks({ ...footerLinks, copyright: e.target.value })}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* Status badge toggle */}
+                  <div className="flex items-center justify-between py-2">
+                    <div>
+                      <Label className="text-xs font-semibold">Badge "Sistemas operativos"</Label>
+                      <p className="text-[11px] text-muted-foreground">Muestra el indicador verde de estado</p>
+                    </div>
+                    <Switch
+                      checked={footerLinks.show_status_badge}
+                      onCheckedChange={(v) => setFooterLinks({ ...footerLinks, show_status_badge: v })}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  {/* Link sections */}
+                  {(['platform', 'resources', 'legal'] as const).map((section) => (
+                    <div key={section} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold capitalize">
+                          {section === 'platform' ? 'Plataforma' : section === 'resources' ? 'Recursos' : 'Legal'}
+                        </Label>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => addFooterLink(section)}
+                          className="h-7 gap-1 text-xs"
+                        >
+                          <Plus className="w-3 h-3" /> Agregar
+                        </Button>
+                      </div>
+                      {footerLinks[section].map((link, idx) => (
+                        <div key={idx} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Texto</Label>
+                            <Input
+                              value={link.label}
+                              onChange={(e) => updateFooterSection(section, idx, 'label', e.target.value)}
+                              className="text-sm h-9"
+                              placeholder="Mi link"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Ruta</Label>
+                            <Input
+                              value={link.href}
+                              onChange={(e) => updateFooterSection(section, idx, 'href', e.target.value)}
+                              className="text-sm h-9"
+                              placeholder="/ruta"
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 text-destructive hover:text-destructive"
+                            onClick={() => removeFooterLink(section, idx)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+
+                  <Button onClick={handleSaveFooterLinks} disabled={isSaving} className="w-full">
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Guardar Footer
                   </Button>
                 </CardContent>
               </Card>

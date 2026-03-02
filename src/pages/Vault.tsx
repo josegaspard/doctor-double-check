@@ -472,26 +472,88 @@ export default function Vault() {
               Subir Archivo
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Input placeholder="Descripción" value={description} onChange={e => setDescription(e.target.value)} className="h-10" />
+          <CardContent className="space-y-4 px-3 sm:px-6">
+            {/* Step-by-step instructions */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
+                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">1</span>
+                <span className="text-[11px] text-muted-foreground leading-tight">Categoría</span>
+              </div>
+              <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
+                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">2</span>
+                <span className="text-[11px] text-muted-foreground leading-tight">Descripción</span>
+              </div>
+              <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
+                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">3</span>
+                <span className="text-[11px] text-muted-foreground leading-tight">Archivo</span>
+              </div>
             </div>
+
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+
+            <div>
+              <div className="relative">
+                <Input
+                  placeholder="Describe brevemente tu estudio *"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  className={`h-10 ${!description.trim() ? 'border-destructive/40 focus-visible:ring-destructive/30' : ''}`}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3 text-destructive" />
+                Obligatorio — describe el contenido del archivo
+              </p>
+            </div>
+
             <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleUpload} />
-            <Button 
-              onClick={() => isStorageFull ? setShowUpgradeDialog(true) : fileInputRef.current?.click()} 
-              disabled={isLoading} 
-              variant={isStorageFull ? 'outline' : 'default'}
-              className="w-full"
+
+            {/* Drop zone style upload button */}
+            <button
+              onClick={() => {
+                if (!description.trim()) {
+                  toast.error('Por favor, añade una descripción antes de seleccionar el archivo');
+                  return;
+                }
+                if (isStorageFull) {
+                  setShowUpgradeDialog(true);
+                  return;
+                }
+                fileInputRef.current?.click();
+              }}
+              disabled={isLoading}
+              className={`w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-2 transition-all ${
+                !description.trim()
+                  ? 'border-muted-foreground/20 opacity-50 cursor-not-allowed'
+                  : isStorageFull
+                    ? 'border-destructive/30 hover:border-destructive/50 cursor-pointer'
+                    : 'border-primary/30 hover:border-primary/60 hover:bg-primary/5 cursor-pointer'
+              }`}
             >
-              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : isStorageFull ? <Lock className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-              {isStorageFull ? 'Almacenamiento lleno — Ampliar' : 'Seleccionar Archivo'}
-            </Button>
+              {isLoading ? (
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              ) : isStorageFull ? (
+                <>
+                  <Lock className="w-8 h-8 text-destructive/60" />
+                  <span className="text-sm font-medium text-destructive">Almacenamiento lleno</span>
+                  <span className="text-xs text-muted-foreground">Amplía tu espacio para subir más archivos</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-8 h-8 text-primary/60" />
+                  <span className="text-sm font-medium text-foreground">
+                    {description.trim() ? 'Toca para seleccionar archivo' : 'Primero añade una descripción'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">PDF, JPG, PNG — Máx. {formatStorageSize(storageLimit - storageUsed)} disponible</span>
+                </>
+              )}
+            </button>
+
             {uploadProgress !== null && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
@@ -510,47 +572,49 @@ export default function Vault() {
           </CardHeader>
           <CardContent>
             {files.length > 0 ? (
-              <div className="space-y-2 sm:space-y-3">
+              <div className="space-y-3">
                 {files.map(file => (
-                  <div key={file.id} className="flex flex-col sm:flex-row sm:items-start gap-3 p-3 sm:p-4 bg-muted/50 rounded-lg">
+                  <div key={file.id} className="flex flex-col sm:flex-row sm:items-start gap-3 p-3 sm:p-4 bg-muted/50 rounded-xl border border-border/50">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
+                      <div className="w-11 h-11 rounded-xl bg-background flex items-center justify-center flex-shrink-0 border border-border/50">
                         {getIcon(file.type)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{file.name}</p>
-                        <div className="flex items-center flex-wrap gap-1 sm:gap-2 mt-1 text-xs text-muted-foreground">
-                          <span>{file.category}</span>
-                          <span>•</span>
+                        {file.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{file.description}</p>
+                        )}
+                        <div className="flex items-center flex-wrap gap-1.5 mt-1.5 text-xs text-muted-foreground">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">{file.category}</Badge>
                           <span>{formatSize(file.size)}</span>
-                          <span className="hidden sm:inline">•</span>
-                          <span className="hidden sm:flex items-center gap-1">
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             {new Date(file.uploadedAt).toLocaleDateString('es-MX')}
                           </span>
                         </div>
                         
-                        <div className="flex items-center flex-wrap gap-1 sm:gap-2 mt-2 sm:mt-3">
+                        <div className="flex items-center flex-wrap gap-1.5 mt-2">
                           {file.permissions.length > 0 ? (
                             file.permissions.map(perm => (
-                              <Badge key={perm.doctorId} variant="secondary" className="text-xs gap-1">
+                              <Badge key={perm.doctorId} variant="secondary" className="text-[10px] gap-1">
                                 <Stethoscope className="w-3 h-3" />
                                 <span className="truncate max-w-[80px]">{perm.doctorName || 'Doctor'}</span>
                               </Badge>
                             ))
                           ) : (
-                            <Badge variant="secondary" className="text-xs gap-1">
+                            <Badge variant="secondary" className="text-[10px] gap-1">
                               <Lock className="w-3 h-3" />
-                              Sin accesos
+                              Solo tú
                             </Badge>
                           )}
                         </div>
                       </div>
                     </div>
                     
-                    <div className="flex sm:flex-col gap-2 sm:gap-1 mt-2 sm:mt-0">
-                      <Button variant="outline" size="sm" onClick={() => openPermissions(file)} className="gap-1 flex-1 sm:flex-none h-8 text-xs">
-                        <Share2 className="w-3 h-3" />
+                    <div className="flex sm:flex-col gap-2 sm:gap-1.5 mt-1 sm:mt-0">
+                      <Button variant="outline" size="sm" onClick={() => openPermissions(file)} className="gap-1.5 flex-1 sm:flex-none h-10 sm:h-8 text-xs min-w-[100px]">
+                        <Share2 className="w-3.5 h-3.5" />
                         Permisos
                       </Button>
                       <Button variant="ghost" size="sm" onClick={async () => {
@@ -561,8 +625,8 @@ export default function Vault() {
                         } else {
                           toast.error(result.error || 'Error al eliminar');
                         }
-                      }} className="text-destructive hover:text-destructive flex-1 sm:flex-none h-8 text-xs">
-                        <Trash2 className="w-3 h-3 mr-1" />
+                      }} className="text-destructive hover:text-destructive flex-1 sm:flex-none h-10 sm:h-8 text-xs min-w-[100px]">
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
                         Eliminar
                       </Button>
                     </div>
@@ -570,12 +634,22 @@ export default function Vault() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <Lock className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+              <div className="text-center py-12 px-4">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Folder className="w-8 h-8 text-primary/60" />
+                </div>
                 <h3 className="font-semibold text-foreground mb-2">Tu vault está vacío</h3>
-                <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                  Sube tus estudios médicos para tenerlos siempre disponibles.
+                <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-4">
+                  Guarda tus estudios, laboratorios e imágenes médicas de forma segura y compártelos con tus doctores.
                 </p>
+                <Button
+                  variant="outline"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  Subir mi primer archivo
+                </Button>
               </div>
             )}
           </CardContent>

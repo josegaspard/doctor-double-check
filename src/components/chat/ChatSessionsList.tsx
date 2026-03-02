@@ -227,20 +227,7 @@ export function ChatSessionsList({
         </ScrollArea>
       </CardContent>
 
-      {/* Floating bulk delete bar */}
-      {isSelecting && selectedIds.size > 0 && (
-        <div className="p-2.5 border-t border-destructive/20 bg-destructive/5 backdrop-blur-sm">
-          <Button
-            variant="destructive"
-            size="sm"
-            className="w-full gap-2 h-10 text-sm font-medium"
-            onClick={() => setShowBulkDeleteConfirm(true)}
-          >
-            <Trash2 className="w-4 h-4" />
-            {t('common.delete')} ({selectedIds.size})
-          </Button>
-        </div>
-      )}
+      {/* Floating bulk delete bar - rendered via portal below */}
     </Card>
 
     {/* Single delete confirmation */}
@@ -260,6 +247,22 @@ export function ChatSessionsList({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    {/* Floating bulk delete bar */}
+    {isSelecting && selectedIds.size > 0 && (
+      <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm">
+        <div className="bg-card/95 backdrop-blur-lg border border-border rounded-xl shadow-2xl p-3">
+          <Button
+            variant="destructive"
+            className="w-full gap-2 h-11 text-sm font-medium"
+            onClick={() => setShowBulkDeleteConfirm(true)}
+          >
+            <Trash2 className="w-4 h-4" />
+            {t('common.delete')} ({selectedIds.size})
+          </Button>
+        </div>
+      </div>
+    )}
 
     {/* Bulk delete confirmation */}
     <AlertDialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
