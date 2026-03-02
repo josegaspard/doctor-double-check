@@ -509,7 +509,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
       {/* More Sheet (full-screen drawer from bottom) */}
       <Sheet open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl p-0 overflow-hidden">
+        <SheetContent side="bottom" hideClose className="h-[85vh] rounded-t-2xl p-0 overflow-hidden">
           <div className="flex flex-col h-full overflow-y-auto">
             {/* Header with close */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
