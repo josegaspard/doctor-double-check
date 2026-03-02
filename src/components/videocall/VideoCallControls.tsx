@@ -13,6 +13,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface VideoCallControlsProps {
   isMuted: boolean;
@@ -41,6 +42,7 @@ export function VideoCallControls({
   showChat,
   isDoctor = false,
 }: VideoCallControlsProps) {
+  const isMobile = useIsMobile();
   return (
     <motion.div
       initial={{ y: 20, opacity: 0 }}
@@ -91,8 +93,8 @@ export function VideoCallControls({
           {isCameraOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
         </Button>
 
-        {/* Screen Share — only for doctors */}
-        {isDoctor && (
+        {/* Screen Share — only for doctors on desktop */}
+        {isDoctor && !isMobile && (
           <Button
             variant="ghost"
             size="lg"

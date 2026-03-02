@@ -308,7 +308,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
       </Card>
 
       {/* Sticky mobile submit button */}
-      <div className="fixed bottom-0 inset-x-0 z-40 p-3 bg-background/95 backdrop-blur border-t border-border sm:hidden" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+      <div className="fixed bottom-16 inset-x-0 z-50 p-3 bg-background/95 backdrop-blur border-t border-border sm:hidden" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
         <Button
           className="w-full gap-2"
           size="lg"
