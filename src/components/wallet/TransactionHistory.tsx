@@ -147,18 +147,18 @@ export function TransactionHistory() {
           <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
             <div className="p-2 sm:p-3 bg-success/10 rounded-lg text-center">
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success mx-auto mb-0.5 sm:mb-1" />
-              <p className="text-xs sm:text-lg font-bold text-success whitespace-nowrap">+${stats.deposits.toLocaleString()}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">{t('transactions.topups')}</p>
+              <p className="text-[11px] sm:text-lg font-bold text-success">+${stats.deposits.toLocaleString()}</p>
+              <p className="text-[9px] sm:text-xs text-muted-foreground">{t('transactions.topups')}</p>
             </div>
             <div className="p-2 sm:p-3 bg-muted rounded-lg text-center">
               <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground mx-auto mb-0.5 sm:mb-1" />
-              <p className="text-xs sm:text-lg font-bold whitespace-nowrap">-${stats.purchases.toLocaleString()}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">{t('transactions.purchases')}</p>
+              <p className="text-[11px] sm:text-lg font-bold">-${stats.purchases.toLocaleString()}</p>
+              <p className="text-[9px] sm:text-xs text-muted-foreground">{t('transactions.purchases')}</p>
             </div>
             <div className="p-2 sm:p-3 bg-amber-500/10 rounded-lg text-center">
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 mx-auto mb-0.5 sm:mb-1" />
-              <p className="text-xs sm:text-lg font-bold text-amber-600 whitespace-nowrap">+${stats.earnings.toLocaleString()}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">{t('transactions.earnings')}</p>
+              <p className="text-[11px] sm:text-lg font-bold text-amber-600">+${stats.earnings.toLocaleString()}</p>
+              <p className="text-[9px] sm:text-xs text-muted-foreground">{t('transactions.earnings')}</p>
             </div>
           </div>
 
@@ -172,31 +172,28 @@ export function TransactionHistory() {
                 {filteredTransactions.map(tx => (
                   <div 
                     key={tx.id} 
-                    className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                     onClick={() => setSelectedTx(tx)}
                   >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 ${
                       tx.amount > 0 ? 'bg-success/20' : 'bg-muted'
                     }`}>
                       {getTypeIcon(tx.type, tx.amount)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm truncate">{tx.description}</p>
-                        {getTypeBadge(tx.type)}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Calendar className="w-3 h-3 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground">
-                          {format(tx.createdAt, 'dd MMM yyyy, HH:mm', { locale: es })}
-                        </p>
+                      <p className="font-medium text-xs sm:text-sm truncate">{tx.description}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">
+                          {format(tx.createdAt, 'dd MMM, HH:mm', { locale: es })}
+                        </span>
+                        <span className="hidden sm:inline">{getTypeBadge(tx.type)}</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span className={`font-semibold ${tx.amount > 0 ? 'text-success' : 'text-foreground'}`}>
+                    <div className="text-right shrink-0">
+                      <span className={`font-semibold text-sm sm:text-base ${tx.amount > 0 ? 'text-success' : 'text-foreground'}`}>
                         {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString()}
                       </span>
-                      <div className="mt-1">
+                      <div className="mt-0.5">
                         {getStatusBadge(tx.status)}
                       </div>
                     </div>

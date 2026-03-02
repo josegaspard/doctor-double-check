@@ -352,32 +352,37 @@ export default function DoctorUpload() {
             <CardContent>
               <div className="space-y-3">
                 {uploadedContent.map(content => (
-                  <div key={content.id} className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${manageMode && selectedIds.has(content.id) ? 'bg-primary/5 ring-1 ring-primary/20' : 'bg-muted/50'}`}>
-                    {manageMode && (
-                      <Checkbox
-                        checked={selectedIds.has(content.id)}
-                        onCheckedChange={() => toggleSelect(content.id)}
-                      />
-                    )}
-                    <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center shrink-0">
-                      {getFileIcon(content.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{content.title}</p>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <Badge variant="outline" className="text-xs">{content.category}</Badge>
-                        {content.audienceType === 'professionals' && <Badge variant="warning" className="text-xs gap-1"><Users className="w-3 h-3" />Solo profesionales</Badge>}
-                        {content.audienceType === 'patients' && <Badge variant="info" className="text-xs">Pacientes</Badge>}
-                        <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />{content.uploadedAt.toLocaleDateString('es-MX')}</span>
+                  <div key={content.id} className={`p-3 rounded-lg transition-colors ${manageMode && selectedIds.has(content.id) ? 'bg-primary/5 ring-1 ring-primary/20' : 'bg-muted/50'}`}>
+                    {/* Mobile: stacked layout / Desktop: row layout */}
+                    <div className="flex items-start sm:items-center gap-3">
+                      {manageMode && (
+                        <Checkbox
+                          checked={selectedIds.has(content.id)}
+                          onCheckedChange={() => toggleSelect(content.id)}
+                          className="mt-1 sm:mt-0"
+                        />
+                      )}
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-background flex items-center justify-center shrink-0">
+                        {getFileIcon(content.type)}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {content.isPublic ? <Badge variant="success" className="text-xs">Público</Badge> : <Badge variant="secondary" className="text-xs">Privado</Badge>}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{content.title}</p>
+                        {/* Badges row - wraps on mobile */}
+                        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                          <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5">{content.category}</Badge>
+                          {content.audienceType === 'professionals' && <Badge variant="warning" className="text-[10px] sm:text-xs gap-1 px-1.5"><Users className="w-3 h-3" /><span className="hidden sm:inline">Solo </span>Prof.</Badge>}
+                          {content.audienceType === 'patients' && <Badge variant="info" className="text-[10px] sm:text-xs px-1.5">Pacientes</Badge>}
+                          {content.isPublic ? <Badge variant="success" className="text-[10px] sm:text-xs px-1.5">Público</Badge> : <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5">Privado</Badge>}
+                        </div>
+                        {/* Date on its own line on mobile */}
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1"><Clock className="w-3 h-3" />{content.uploadedAt.toLocaleDateString('es-MX')}</span>
+                      </div>
+                      {/* Delete button - always visible */}
                       {!manageMode && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
+                          className="h-9 w-9 sm:h-8 sm:w-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10 shrink-0"
                           onClick={() => { setDeleteTarget(content.id); setDeleteDialogOpen(true); }}
                         >
                           <Trash2 className="w-4 h-4" />

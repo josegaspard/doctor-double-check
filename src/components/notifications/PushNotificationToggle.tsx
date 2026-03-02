@@ -37,17 +37,17 @@ export function PushNotificationToggle() {
 
   if (permission === 'denied') {
     return (
-      <div className="flex items-center justify-between">
-        <Label className="flex flex-col gap-1">
+      <div className="flex items-center justify-between gap-3">
+        <Label className="flex flex-col gap-1 min-w-0">
           <span className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
             {language === 'es' ? 'Notificaciones Push' : 'Push Notifications'}
           </span>
           <span className="text-xs text-muted-foreground font-normal">
-            {language === 'es' ? 'Bloqueadas por el navegador. Habilita desde configuración.' : 'Blocked by browser. Enable in settings.'}
+            {language === 'es' ? 'Bloqueadas. Habilita en ajustes del navegador.' : 'Blocked. Enable in browser settings.'}
           </span>
         </Label>
-        <Badge variant="destructive">{language === 'es' ? 'Bloqueado' : 'Blocked'}</Badge>
+        <Badge variant="destructive" className="shrink-0 text-[10px] px-2">{language === 'es' ? 'Bloqueado' : 'Blocked'}</Badge>
       </div>
     );
   }
