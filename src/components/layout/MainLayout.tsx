@@ -47,7 +47,10 @@ import {
   Search,
   Bell,
   Radio,
+  MoreHorizontal,
+  X,
 } from 'lucide-react';
+import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
@@ -76,7 +79,7 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];
 
-// Bottom tab items per role
+// Bottom tab items per role — only 4 fixed tabs, 5th is "More"
 function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   const common = [
     { label: t('nav.lives'), href: '/lives', icon: Radio },
@@ -87,7 +90,6 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
       ...common,
       { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
       { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
-      { label: t('nav.notifications'), href: '/notifications', icon: Bell },
       { label: t('nav.dashboard'), href: '/doctor/dashboard', icon: LayoutDashboard },
     ];
   }
@@ -98,16 +100,24 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
       { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
       { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
       { label: t('nav.notifications'), href: '/notifications', icon: Bell },
-      { label: t('nav.profile'), href: '/profile', icon: User },
     ];
   }
 
-  // visitor / resident / admin
+  if (role === 'admin') {
+    return [
+      ...common,
+      { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
+      { label: t('nav.notifications'), href: '/notifications', icon: Bell },
+      { label: t('nav.admin'), href: '/admin', icon: Settings },
+    ];
+  }
+
+  // visitor / resident
   return [
     ...common,
     { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
     { label: t('nav.notifications'), href: '/notifications', icon: Bell },
-    { label: role === 'admin' ? t('nav.admin') : t('nav.profile'), href: role === 'admin' ? '/admin' : '/profile', icon: role === 'admin' ? Settings : User },
+    { label: t('nav.profile'), href: '/profile', icon: User },
   ];
 }
 
@@ -146,6 +156,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const { t } = useLanguage();
   const { socialLinks } = useSocialLinks();
   const { unreadCount: notifUnread } = useNotifications();
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   
   // Enable realtime notifications
   useNotificationsRealtime();
@@ -168,6 +179,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     role && item.roles.includes(role)
   );
 
+  const bottomTabs = getBottomTabs(role, t);
+  const bottomTabHrefs = bottomTabs.map(tab => tab.href);
+  
+  // Items for the "More" sheet: all nav items NOT in bottom tabs
+  const moreNavItems = filteredNavItems.filter(item => !bottomTabHrefs.includes(item.href));
+
   const handleLogout = () => {
     logout();
   };
@@ -187,7 +204,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     }
   };
 
-  const bottomTabs = getBottomTabs(role, t);
+  // bottomTabs already computed above
 
   // Hide bottom nav on certain pages (video call, live player full experience)
   const hideBottomNav = location.pathname.startsWith('/video-call');
@@ -418,6 +435,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         </div>
       </header>
 
+      {/* Mobile Back Header */}
+      <MobileBackHeader />
+
       {/* Main Content - add bottom padding on mobile for tab bar */}
       <main className="flex-1 pb-[72px] sm:pb-0">
         <motion.div
@@ -436,7 +456,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
           <div className="flex items-center justify-around h-16 px-1">
             {bottomTabs.map((tab) => {
               const isActive = location.pathname === tab.href || (tab.href !== '/lives' && location.pathname.startsWith(tab.href));
-              const Icon = tab.icon;
+              const TabIcon = tab.icon;
               
               // Badge count
               let badgeCount = 0;
@@ -452,7 +472,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   }`}
                 >
                   <div className="relative">
-                    <Icon className={`w-5 h-5 ${isActive ? 'text-primary' : ''}`} />
+                    <TabIcon className={`w-5 h-5 ${isActive ? 'text-primary' : ''}`} />
                     {badgeCount > 0 && (
                       <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                         {badgeCount > 99 ? '99+' : badgeCount}
@@ -472,9 +492,163 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 </Link>
               );
             })}
+
+            {/* "More" button */}
+            <button
+              onClick={() => setMoreSheetOpen(true)}
+              className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors active:scale-95 ${
+                moreSheetOpen ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              <MoreHorizontal className="w-5 h-5" />
+              <span className="text-[10px] font-medium leading-tight">Más</span>
+            </button>
           </div>
         </nav>
       )}
+
+      {/* More Sheet (full-screen drawer from bottom) */}
+      <Sheet open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl p-0 overflow-hidden">
+          <div className="flex flex-col h-full overflow-y-auto">
+            {/* Header with close */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
+              <img src={logoMedicalMasters} alt="Medical Masters" className="h-7 w-auto" />
+              <button
+                onClick={() => setMoreSheetOpen(false)}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
+              >
+                <X className="w-5 h-5 text-foreground" />
+              </button>
+            </div>
+
+            {/* User info card */}
+            {isAuthenticated && user && role !== 'visitor' && (
+              <div className="mx-5 mb-4 p-4 bg-muted/50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    {role === 'doctor' ? (
+                      <Stethoscope className="w-5 h-5 text-primary" />
+                    ) : (
+                      <User className="w-5 h-5 text-primary" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                  {getRoleBadge()}
+                </div>
+              </div>
+            )}
+
+            {role === 'visitor' && (
+              <div className="mx-5 mb-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                <p className="text-sm text-muted-foreground mb-3">Inicia sesión para acceder a todas las funciones</p>
+                <Button size="sm" onClick={() => { setMoreSheetOpen(false); navigate('/login'); }} className="w-full gap-2">
+                  <LogIn className="w-4 h-4" />
+                  {t('nav.login')}
+                </Button>
+              </div>
+            )}
+
+            {/* Navigation items */}
+            <div className="px-5 flex-1">
+              {moreNavItems.length > 0 && (
+                <div className="space-y-1 mb-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">Navegación</p>
+                  {moreNavItems.map((item) => {
+                    const isActive = location.pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={() => setMoreSheetOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                          isActive
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <item.icon className="w-5 h-5" />
+                        <span className="text-sm font-medium">{t(item.labelKey)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              {isAuthenticated && role !== 'visitor' && (
+                <>
+                  <div className="border-t border-border my-3" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">Cuenta</p>
+                    <Link
+                      to="/profile"
+                      onClick={() => setMoreSheetOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                        location.pathname === '/profile' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <User className="w-5 h-5" />
+                      <span className="text-sm font-medium">{t('nav.profile')}</span>
+                    </Link>
+                    {(role === 'patient' || role === 'resident' || role === 'doctor') && (
+                      <Link
+                        to="/wallet"
+                        onClick={() => setMoreSheetOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                          location.pathname === '/wallet' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <Wallet className="w-5 h-5" />
+                        <span className="text-sm font-medium">{t('nav.wallet')}</span>
+                        <span className="ml-auto text-xs font-semibold text-muted-foreground">${balance.toLocaleString()}</span>
+                      </Link>
+                    )}
+                    <Link
+                      to="/notifications"
+                      onClick={() => setMoreSheetOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                        location.pathname === '/notifications' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <Bell className="w-5 h-5" />
+                      <span className="text-sm font-medium">{t('nav.notifications')}</span>
+                      {notifUnread > 0 && (
+                        <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs font-bold flex items-center justify-center">
+                          {notifUnread > 99 ? '99+' : notifUnread}
+                        </span>
+                      )}
+                    </Link>
+                    <Link
+                      to="/settings"
+                      onClick={() => setMoreSheetOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                        location.pathname === '/settings' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <Settings className="w-5 h-5" />
+                      <span className="text-sm font-medium">{t('nav.settings')}</span>
+                    </Link>
+                  </div>
+                  <div className="border-t border-border my-3" />
+                  <button
+                    onClick={() => { setMoreSheetOpen(false); handleLogout(); }}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-destructive hover:bg-destructive/10 w-full transition-colors"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span className="text-sm font-medium">{t('nav.logout')}</span>
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Bottom spacer */}
+            <div className="h-6" />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Footer - hidden on mobile (bottom nav takes its place) */}
       <footer className="bg-dark text-dark-foreground py-8 mt-auto hidden sm:block">
