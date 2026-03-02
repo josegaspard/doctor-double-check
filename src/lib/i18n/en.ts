@@ -787,6 +787,8 @@ export const en = {
     review: 'review',
     reviews: 'reviews',
     anonymousPatient: 'Patient',
+    showMoreReviews: 'Show more reviews',
+    showingReviews: 'Showing {count} of {total}',
     howItWorks: 'How it works',
     step1Title: 'Follow',
     step1Desc: 'Get free alerts when they go live',

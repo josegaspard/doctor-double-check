@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RatingStars } from '@/components/ratings/RatingStars';
-import { Star, MessageSquare, Loader2 } from 'lucide-react';
+import { Star, MessageSquare, Loader2, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
@@ -27,6 +28,7 @@ export default function DoctorReviews({ doctorId, onRatingCalculated }: DoctorRe
   const [reviews, setReviews] = useState<Review[]>([]);
   const [computedAverage, setComputedAverage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(10);
   const dateLocale = language === 'es' ? es : enUS;
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function DoctorReviews({ doctorId, onRatingCalculated }: DoctorRe
           .select('id, rating, comment, created_at, patient_id')
           .eq('doctor_id', doctorId)
           .order('created_at', { ascending: false })
-          .limit(20);
+          .limit(100);
 
         if (error || !data || data.length === 0) {
           setIsLoading(false);
@@ -105,7 +107,12 @@ export default function DoctorReviews({ doctorId, onRatingCalculated }: DoctorRe
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {reviews.map(review => (
+        {visibleCount < reviews.length && (
+          <p className="text-xs text-muted-foreground">
+            {t('doctorProfile.showingReviews').replace('{count}', String(Math.min(visibleCount, reviews.length))).replace('{total}', String(reviews.length))}
+          </p>
+        )}
+        {reviews.slice(0, visibleCount).map(review => (
           <div key={review.id} className="border rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -130,6 +137,16 @@ export default function DoctorReviews({ doctorId, onRatingCalculated }: DoctorRe
             )}
           </div>
         ))}
+        {visibleCount < reviews.length && (
+          <Button
+            variant="outline"
+            className="w-full mt-2"
+            onClick={() => setVisibleCount(prev => prev + 10)}
+          >
+            <ChevronDown className="w-4 h-4 mr-1" />
+            {t('doctorProfile.showMoreReviews')} ({reviews.length - visibleCount})
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
