@@ -198,7 +198,7 @@ export function PrescriptionsList() {
     );
   }
 
-  const canManage = role === 'doctor';
+  const canManage = role === 'doctor' || role === 'patient' || role === 'resident';
 
   return (
     <div className="space-y-3">
