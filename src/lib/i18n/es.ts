@@ -787,6 +787,8 @@ export const es = {
     review: 'reseña',
     reviews: 'reseñas',
     anonymousPatient: 'Paciente',
+    showMoreReviews: 'Ver más reseñas',
+    showingReviews: 'Mostrando {count} de {total}',
     howItWorks: '¿Cómo funciona?',
     step1Title: 'Seguir',
     step1Desc: 'Recibe alertas gratis cuando transmita en vivo',
