@@ -468,18 +468,38 @@ export default function NewsArticle() {
         )}
 
         {/* Share Buttons */}
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
-          <span className="text-sm text-muted-foreground mr-1"><Share2 className="w-4 h-4 inline mr-1" />Compartir:</span>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank', 'noopener,noreferrer')}>
+        <div className="flex items-center gap-2.5 mb-6 flex-wrap">
+          <span className="text-sm text-muted-foreground mr-1 flex items-center gap-1.5"><Share2 className="w-4 h-4" />Compartir:</span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors duration-200"
+            onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400,noopener,noreferrer')}
+          >
             <Facebook className="w-3.5 h-3.5" /> Facebook
           </Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`, '_blank', 'noopener,noreferrer')}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 hover:bg-black hover:text-white hover:border-black transition-colors duration-200"
+            onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`, '_blank', 'width=600,height=400,noopener,noreferrer')}
+          >
             <Twitter className="w-3.5 h-3.5" /> X
           </Button>
-          <Button variant="outline" size="sm" className="gap-1.5 text-green-600 border-green-200 hover:bg-green-50" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareTitle + ' ' + shareUrl)}`, '_blank', 'noopener,noreferrer')}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-green-600 border-green-300 hover:bg-green-500 hover:text-white hover:border-green-500 transition-colors duration-200"
+            onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareTitle + ' ' + shareUrl)}`, '_blank', 'noopener,noreferrer')}
+          >
             <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
           </Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { navigator.clipboard.writeText(shareUrl); toast.success('Enlace copiado'); }}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors duration-200"
+            onClick={() => { navigator.clipboard.writeText(shareUrl); toast.success('¡Enlace copiado al portapapeles!'); }}
+          >
             <LinkIcon className="w-3.5 h-3.5" /> Copiar
           </Button>
         </div>
@@ -488,7 +508,7 @@ export default function NewsArticle() {
 
         {/* Content */}
         <div
-          className="prose prose-base sm:prose-lg max-w-none dark:prose-invert prose-img:rounded-lg prose-a:text-primary prose-headings:font-heading prose-headings:text-foreground prose-p:text-foreground/85 prose-p:leading-relaxed prose-li:text-foreground/85 prose-blockquote:border-primary/30 prose-blockquote:text-muted-foreground"
+          className="news-article-content"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
         />
 
