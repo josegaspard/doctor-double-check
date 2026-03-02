@@ -1,0 +1,2 @@
+ALTER TABLE public.purchases DROP CONSTRAINT purchases_content_id_fkey;
+ALTER TABLE public.purchases ADD CONSTRAINT purchases_content_id_fkey FOREIGN KEY (content_id) REFERENCES public.doctor_content(id) ON DELETE SET NULL;
