@@ -451,10 +451,16 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       )
       .subscribe();
 
+    // Polling fallback: catch any missed realtime events
+    const pollInterval = setInterval(() => {
+      fetchLives(false);
+    }, 15000);
+
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
-  }, [throttledFetchLives, fetchLikedLives, fetchRecordings]);
+  }, [throttledFetchLives, fetchLikedLives, fetchRecordings, fetchLives]);
 
   const getLive = useCallback((id: string): Live | undefined => {
     return lives.find(l => l.id === id);
