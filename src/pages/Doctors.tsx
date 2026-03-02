@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -147,8 +147,47 @@ export default function Doctors() {
   const [currentPage, setCurrentPage] = useState(1);
   const [nearbyMode, setNearbyMode] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [, setTick] = useState(0); // Forces re-render for time-based availability
 
+  const fetchDoctorsStableRef = useRef<() => void>(() => {});
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Re-evaluate availability every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Realtime subscription: refetch when doctors update office hours
+  useEffect(() => {
+    const channel = supabase
+      .channel('doctor-availability-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'doctor_profiles',
+        },
+        (payload) => {
+          const changed = payload.new as any;
+          // Only refetch if availability-related fields changed
+          const old = payload.old as any;
+          if (
+            changed.office_hours_start !== old.office_hours_start ||
+            changed.office_hours_end !== old.office_hours_end ||
+            JSON.stringify(changed.office_days) !== JSON.stringify(old.office_days)
+          ) {
+            fetchDoctorsStableRef.current();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleNearbyToggle = () => {
     if (!nearbyMode && !userLocation) {
@@ -219,6 +258,11 @@ export default function Doctors() {
       setIsLoading(false);
     }
   };
+
+  // Keep ref updated so realtime callback always calls latest fetchDoctors
+  useEffect(() => {
+    fetchDoctorsStableRef.current = fetchDoctors;
+  });
 
   const fetchFollowedDoctors = async () => {
     if (!user?.id) return;
