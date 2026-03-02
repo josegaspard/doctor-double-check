@@ -193,7 +193,7 @@ export default function LivePlayer() {
   const [manualRetry, setManualRetry] = useState(0);
 
   useEffect(() => {
-    if (!live || !isLiveActive || isOwner) return;
+    if (!live || !isLiveActive) return;
 
     let cancelled = false;
     retryCountRef.current = 0;
@@ -225,7 +225,7 @@ export default function LivePlayer() {
       // Retry getViewerToken up to 3 times with 3s delays
       let token: string | null = null;
       for (let attempt = 0; attempt < 3; attempt++) {
-        token = await getViewerToken(roomName);
+        token = await getViewerToken(roomName, isOwner);
         if (cancelled) return;
         if (token) break;
         if (attempt < 2) {

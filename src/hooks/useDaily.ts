@@ -34,11 +34,11 @@ export function useDaily() {
     }
   }, []);
 
-  const getViewerToken = useCallback(async (roomName: string): Promise<string | null> => {
+  const getViewerToken = useCallback(async (roomName: string, isOwner?: boolean): Promise<string | null> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-daily-token', {
-        body: { roomName, isOwner: false },
+        body: { roomName, isOwner: isOwner || false },
       });
 
       if (error) throw error;
