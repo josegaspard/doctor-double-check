@@ -1056,6 +1056,21 @@ export const en = {
     noSubscribers: 'You don\'t have subscribers yet',
     subscribersOnly: 'Subscribers only',
   },
+  // Bulk management
+  manage: {
+    manage: 'Manage',
+    done: 'Done',
+    selectAll: 'Select all',
+    deselectAll: 'Deselect all',
+    deleteSelected: 'Delete selected',
+    selected: 'selected',
+    selectHint: 'Select items to delete',
+    confirmDeleteTitle: 'Delete selected items?',
+    confirmDeleteDescription: 'This action cannot be undone. The selected items will be permanently deleted.',
+    deleting: 'Deleting...',
+    deleted: 'Items deleted successfully',
+    noneSelected: 'No items selected',
+  },
   // Landing Footer
   landingFooter: {
     platform: 'Platform',

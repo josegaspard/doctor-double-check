@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Popover,
   PopoverContent,
@@ -36,6 +47,9 @@ import {
   CheckCircle,
   XCircle,
   Send,
+  Trash2,
+  Settings2,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -44,25 +58,32 @@ import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-const availabilityTypes: { value: AvailabilityType; label: string; icon: React.ElementType }[] = [
-  { value: 'live', label: 'Live', icon: Video },
-  { value: 'consultation', label: 'Consulta', icon: MessageSquare },
-  { value: 'office_hours', label: 'Horario de oficina', icon: Clock },
-];
-
 function AvailabilityCard({
   availability,
   onConfirm,
   onCancel,
   onNotify,
   language,
+  t,
+  isManaging,
+  isSelected,
+  onToggleSelect,
 }: {
   availability: DoctorAvailability;
   onConfirm: () => void;
   onCancel: () => void;
   onNotify: () => void;
   language: 'es' | 'en';
+  t: (key: string) => string;
+  isManaging?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }) {
+  const availabilityTypes = [
+    { value: 'live', icon: Video },
+    { value: 'consultation', icon: MessageSquare },
+    { value: 'office_hours', icon: Clock },
+  ];
   const typeConfig = availabilityTypes.find(t => t.value === availability.type);
   const Icon = typeConfig?.icon || Clock;
   const isPast = availability.scheduledAt < new Date();
@@ -70,13 +91,13 @@ function AvailabilityCard({
   const getStatusBadge = () => {
     switch (availability.status) {
       case 'confirmed':
-        return <Badge variant="verified">Confirmado</Badge>;
+        return <Badge variant="verified">{t('availability.confirmed')}</Badge>;
       case 'cancelled':
-        return <Badge variant="destructive">Cancelado</Badge>;
+        return <Badge variant="destructive">{t('availability.cancelled')}</Badge>;
       case 'completed':
-        return <Badge variant="secondary">Completado</Badge>;
+        return <Badge variant="secondary">{t('availability.completed')}</Badge>;
       default:
-        return <Badge variant="warning">Programado</Badge>;
+        return <Badge variant="warning">{t('availability.scheduled')}</Badge>;
     }
   };
 
@@ -84,10 +105,18 @@ function AvailabilityCard({
     <Card className={cn(
       'transition-all',
       isPast && 'opacity-60',
-      availability.status === 'cancelled' && 'border-destructive/50'
-    )}>
+      availability.status === 'cancelled' && 'border-destructive/50',
+      isManaging && isSelected && 'ring-2 ring-primary',
+    )}
+      onClick={isManaging ? onToggleSelect : undefined}
+    >
       <CardContent className="p-3 sm:p-4">
         <div className="flex items-start gap-3 sm:gap-4">
+          {isManaging && (
+            <div className="pt-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+              <Checkbox checked={isSelected} onCheckedChange={() => onToggleSelect?.()} />
+            </div>
+          )}
           <div className={cn(
             'p-2 sm:p-3 rounded-lg flex-shrink-0',
             availability.type === 'live' ? 'bg-red-500/10 text-red-500' :
@@ -101,12 +130,12 @@ function AvailabilityCard({
               <div className="min-w-0">
                 <h3 className="font-semibold truncate text-sm sm:text-base">{availability.title}</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  {format(availability.scheduledAt, "EEEE d 'de' MMMM, HH:mm", {
+                  {format(availability.scheduledAt, language === 'es' ? "EEEE d 'de' MMMM, HH:mm" : "EEEE MMMM d, HH:mm", {
                     locale: language === 'es' ? es : enUS,
                   })}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Duración: {availability.durationMinutes} min
+                  {language === 'es' ? 'Duración' : 'Duration'}: {availability.durationMinutes} min
                 </p>
               </div>
               <div className="flex-shrink-0">
@@ -120,30 +149,30 @@ function AvailabilityCard({
               </p>
             )}
 
-            {availability.status === 'scheduled' && !isPast && (
+            {!isManaging && availability.status === 'scheduled' && !isPast && (
               <div className="flex flex-wrap gap-2 mt-3">
                 <Button size="sm" variant="default" onClick={onConfirm} className="h-8 text-xs sm:text-sm">
                   <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                  Confirmar
+                  {t('common.confirm')}
                 </Button>
                 <Button size="sm" variant="outline" onClick={onCancel} className="h-8 text-xs sm:text-sm">
                   <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
                 {!availability.notificationsSent && (
                   <Button size="sm" variant="secondary" onClick={onNotify} className="h-8 text-xs sm:text-sm">
                     <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                    Notificar
+                    {language === 'es' ? 'Notificar' : 'Notify'}
                   </Button>
                 )}
               </div>
             )}
 
-            {availability.status === 'confirmed' && !isPast && !availability.notificationsSent && (
+            {!isManaging && availability.status === 'confirmed' && !isPast && !availability.notificationsSent && (
               <div className="mt-3">
                 <Button size="sm" variant="secondary" onClick={onNotify} className="h-8 text-xs sm:text-sm">
                   <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                  Notificar suscriptores
+                  {t('availability.notifySubscribers')}
                 </Button>
               </div>
             )}
@@ -151,14 +180,14 @@ function AvailabilityCard({
             {availability.notificationsSent && (
               <div className="flex items-center gap-1 mt-2 text-xs text-green-600">
                 <Send className="h-3 w-3" />
-                Notificaciones enviadas
+                {language === 'es' ? 'Notificaciones enviadas' : 'Notifications sent'}
               </div>
             )}
 
             {availability.reminderSent && (
               <div className="flex items-center gap-1 mt-1 text-xs text-blue-600">
                 <Bell className="h-3 w-3" />
-                Recordatorio automático enviado
+                {language === 'es' ? 'Recordatorio automático enviado' : 'Auto reminder sent'}
               </div>
             )}
           </div>
@@ -180,6 +209,7 @@ export default function DoctorAvailabilityPage() {
     confirmAvailability,
     cancelAvailability,
     notifySubscribers,
+    deleteAvailabilities,
   } = useDoctorAvailability();
   const { subscriberCount } = useSubscriptions();
 
@@ -193,30 +223,38 @@ export default function DoctorAvailabilityPage() {
     duration: 60,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isManaging, setIsManaging] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
 
-  // Wait for auth to resolve to avoid flicker/redirect loops that feel like “se rompió”
   if (isAuthLoading) {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-center gap-3 text-muted-foreground">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-            <span>Cargando...</span>
+            <span>{t('common.loading')}</span>
           </div>
         </div>
       </MainLayout>
     );
   }
 
-  // Redirect non-doctors
   if (role !== 'doctor') {
     navigate('/lives');
     return null;
   }
 
+  const availabilityTypeOptions = [
+    { value: 'live', label: 'Live' },
+    { value: 'consultation', label: language === 'es' ? 'Consulta' : 'Consultation' },
+    { value: 'office_hours', label: language === 'es' ? 'Horario de oficina' : 'Office hours' },
+  ];
+
   const handleCreate = async () => {
     if (!formData.title.trim()) {
-      toast({ title: 'Error', description: 'El título es requerido', variant: 'destructive' });
+      toast({ title: t('common.error'), description: language === 'es' ? 'El título es requerido' : 'Title is required', variant: 'destructive' });
       return;
     }
 
@@ -237,44 +275,67 @@ export default function DoctorAvailabilityPage() {
     setIsSubmitting(false);
 
     if (result.success) {
-      toast({ title: 'Éxito', description: 'Disponibilidad programada correctamente' });
+      toast({ title: t('common.success'), description: language === 'es' ? 'Disponibilidad programada correctamente' : 'Availability scheduled successfully' });
       setIsDialogOpen(false);
-      setFormData({
-        title: '',
-        description: '',
-        type: 'live',
-        date: new Date(),
-        time: '10:00',
-        duration: 60,
-      });
+      setFormData({ title: '', description: '', type: 'live', date: new Date(), time: '10:00', duration: 60 });
     } else {
-      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+      toast({ title: t('common.error'), description: result.error, variant: 'destructive' });
     }
   };
 
   const handleConfirm = async (id: string) => {
     const result = await confirmAvailability(id);
-    if (result.success) {
-      toast({ description: 'Disponibilidad confirmada' });
-    }
+    if (result.success) toast({ description: language === 'es' ? 'Disponibilidad confirmada' : 'Availability confirmed' });
   };
 
   const handleCancel = async (id: string) => {
     const result = await cancelAvailability(id);
-    if (result.success) {
-      toast({ description: 'Disponibilidad cancelada' });
-    }
+    if (result.success) toast({ description: language === 'es' ? 'Disponibilidad cancelada' : 'Availability cancelled' });
   };
 
   const handleNotify = async (id: string) => {
     const result = await notifySubscribers(id);
     if (result.success) {
       toast({
-        title: 'Notificaciones enviadas',
-        description: `Se notificó a ${result.notified} suscriptores`,
+        title: language === 'es' ? 'Notificaciones enviadas' : 'Notifications sent',
+        description: language === 'es' ? `Se notificó a ${result.notified} suscriptores` : `${result.notified} subscribers notified`,
       });
     } else {
-      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+      toast({ title: t('common.error'), description: result.error, variant: 'destructive' });
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (items: DoctorAvailability[]) => {
+    const allIds = items.map(a => a.id);
+    const allSelected = allIds.every(id => selectedIds.has(id));
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allSelected) allIds.forEach(id => next.delete(id));
+      else allIds.forEach(id => next.add(id));
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsDeletingBulk(true);
+    const result = await deleteAvailabilities(Array.from(selectedIds));
+    setIsDeletingBulk(false);
+    setShowDeleteDialog(false);
+    if (result.success) {
+      setSelectedIds(new Set());
+      setIsManaging(false);
+      toast({ description: t('manage.deleted') });
+    } else {
+      toast({ title: t('common.error'), description: result.error, variant: 'destructive' });
     }
   };
 
@@ -297,128 +358,159 @@ export default function DoctorAvailabilityPage() {
               <h1 className="text-xl sm:text-2xl font-bold truncate">{t('availability.title')}</h1>
               <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                <span className="truncate">{subscriberCount} suscriptores</span>
+                <span className="truncate">{subscriberCount} {language === 'es' ? 'suscriptores' : 'subscribers'}</span>
               </p>
             </div>
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">
-                <Plus className="h-4 w-4 mr-2" />
-                Programar
+          <div className="flex items-center gap-2">
+            {myAvailabilities.length > 0 && (
+              <Button
+                variant={isManaging ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => { setIsManaging(!isManaging); setSelectedIds(new Set()); }}
+                className="gap-1.5"
+              >
+                <Settings2 className="w-4 h-4" />
+                {isManaging ? t('manage.done') : t('manage.manage')}
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto">
-              <DialogHeader>
-                <DialogTitle>Programar disponibilidad</DialogTitle>
-                <DialogDescription>
-                  Crea un horario de live, consulta u horario de oficina
-                </DialogDescription>
-              </DialogHeader>
+            )}
 
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="type">Tipo</Label>
-                  {/* Native select to avoid Radix focus issues inside Dialog */}
-                  <select
-                    id="type"
-                    value={formData.type}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value as AvailabilityType }))}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {availabilityTypes.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('availability.schedule')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto">
+                <DialogHeader>
+                  <DialogTitle>{language === 'es' ? 'Programar disponibilidad' : 'Schedule availability'}</DialogTitle>
+                  <DialogDescription>
+                    {language === 'es' ? 'Crea un horario de live, consulta u horario de oficina' : 'Create a live, consultation, or office hours schedule'}
+                  </DialogDescription>
+                </DialogHeader>
 
-                <div className="space-y-2">
-                  <Label htmlFor="title">Título</Label>
-                  <Input
-                    id="title"
-                    placeholder="Ej: Live sobre cardiología preventiva"
-                    value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descripción (opcional)</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Describe brevemente el contenido..."
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label>Fecha</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start text-left font-normal">
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {format(formData.date, 'PPP', { locale: language === 'es' ? es : enUS })}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={formData.date}
-                          onSelect={(date) => date && setFormData(prev => ({ ...prev, date }))}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Label htmlFor="type">{language === 'es' ? 'Tipo' : 'Type'}</Label>
+                    <select
+                      id="type"
+                      value={formData.type}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value as AvailabilityType }))}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      {availabilityTypeOptions.map((type) => (
+                        <option key={type.value} value={type.value}>{type.label}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="time">Hora</Label>
+                    <Label htmlFor="title">{language === 'es' ? 'Título' : 'Title'}</Label>
                     <Input
-                      id="time"
-                      type="time"
-                      value={formData.time}
-                      onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                      id="title"
+                      placeholder={language === 'es' ? 'Ej: Live sobre cardiología preventiva' : 'E.g.: Preventive cardiology live'}
+                      value={formData.title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">{language === 'es' ? 'Descripción (opcional)' : 'Description (optional)'}</Label>
+                    <Textarea
+                      id="description"
+                      placeholder={language === 'es' ? 'Describe brevemente el contenido...' : 'Briefly describe the content...'}
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{language === 'es' ? 'Fecha' : 'Date'}</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {format(formData.date, 'PPP', { locale: language === 'es' ? es : enUS })}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.date}
+                            onSelect={(date) => date && setFormData(prev => ({ ...prev, date }))}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="time">{language === 'es' ? 'Hora' : 'Time'}</Label>
+                      <Input
+                        id="time"
+                        type="time"
+                        value={formData.time}
+                        onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="duration">{language === 'es' ? 'Duración (minutos)' : 'Duration (minutes)'}</Label>
+                    <select
+                      id="duration"
+                      value={String(formData.duration)}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, duration: parseInt(e.target.value, 10) }))}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="15">15 min</option>
+                      <option value="30">30 min</option>
+                      <option value="45">45 min</option>
+                      <option value="60">{language === 'es' ? '1 hora' : '1 hour'}</option>
+                      <option value="90">{language === 'es' ? '1.5 horas' : '1.5 hours'}</option>
+                      <option value="120">{language === 'es' ? '2 horas' : '2 hours'}</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duración (minutos)</Label>
-                  {/* Native select to avoid Radix focus issues inside Dialog */}
-                  <select
-                    id="duration"
-                    value={String(formData.duration)}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, duration: parseInt(e.target.value, 10) }))}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="15">15 min</option>
-                    <option value="30">30 min</option>
-                    <option value="45">45 min</option>
-                    <option value="60">1 hora</option>
-                    <option value="90">1.5 horas</option>
-                    <option value="120">2 horas</option>
-                  </select>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleCreate} disabled={isSubmitting}>
-                  {isSubmitting ? 'Creando...' : 'Crear'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button onClick={handleCreate} disabled={isSubmitting}>
+                    {isSubmitting ? (language === 'es' ? 'Creando...' : 'Creating...') : (language === 'es' ? 'Crear' : 'Create')}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
+
+        {isManaging && (
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <p className="text-xs text-muted-foreground">{t('manage.selectHint')}</p>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => toggleSelectAll(myAvailabilities)}>
+                {myAvailabilities.every(a => selectedIds.has(a.id)) ? t('manage.deselectAll') : t('manage.selectAll')}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={selectedIds.size === 0}
+                onClick={() => setShowDeleteDialog(true)}
+                className="gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {t('manage.deleteSelected')} ({selectedIds.size})
+              </Button>
+            </div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="space-y-4">
@@ -436,12 +528,12 @@ export default function DoctorAvailabilityPage() {
             <div>
               <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                 <CalendarIcon className="h-5 w-5 text-primary" />
-                Próximos ({upcomingAvailabilities.length})
+                {language === 'es' ? 'Próximos' : 'Upcoming'} ({upcomingAvailabilities.length})
               </h2>
               {upcomingAvailabilities.length === 0 ? (
                 <Card>
                   <CardContent className="p-6 text-center text-muted-foreground">
-                    No tienes disponibilidades programadas
+                    {language === 'es' ? 'No tienes disponibilidades programadas' : 'No scheduled availabilities'}
                   </CardContent>
                 </Card>
               ) : (
@@ -454,6 +546,10 @@ export default function DoctorAvailabilityPage() {
                       onCancel={() => handleCancel(availability.id)}
                       onNotify={() => handleNotify(availability.id)}
                       language={language}
+                      t={t}
+                      isManaging={isManaging}
+                      isSelected={selectedIds.has(availability.id)}
+                      onToggleSelect={() => toggleSelect(availability.id)}
                     />
                   ))}
                 </div>
@@ -464,10 +560,10 @@ export default function DoctorAvailabilityPage() {
             {pastAvailabilities.length > 0 && (
               <div>
                 <h2 className="text-lg font-semibold mb-3 text-muted-foreground">
-                  Historial ({pastAvailabilities.length})
+                  {language === 'es' ? 'Historial' : 'History'} ({pastAvailabilities.length})
                 </h2>
                 <div className="space-y-3">
-                  {pastAvailabilities.slice(0, 5).map(availability => (
+                  {pastAvailabilities.map(availability => (
                     <AvailabilityCard
                       key={availability.id}
                       availability={availability}
@@ -475,6 +571,10 @@ export default function DoctorAvailabilityPage() {
                       onCancel={() => {}}
                       onNotify={() => {}}
                       language={language}
+                      t={t}
+                      isManaging={isManaging}
+                      isSelected={selectedIds.has(availability.id)}
+                      onToggleSelect={() => toggleSelect(availability.id)}
                     />
                   ))}
                 </div>
@@ -482,6 +582,50 @@ export default function DoctorAvailabilityPage() {
             )}
           </div>
         )}
+
+        {/* Sticky mobile bottom bar */}
+        {isManaging && selectedIds.size > 0 && (
+          <div className="fixed bottom-16 sm:bottom-4 left-0 right-0 z-50 px-3 pb-safe">
+            <div className="max-w-4xl mx-auto bg-destructive text-destructive-foreground rounded-lg p-3 flex items-center justify-between shadow-lg">
+              <span className="text-sm font-medium">
+                {selectedIds.size} {t('manage.selected')}
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setShowDeleteDialog(true)}
+                className="gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {t('manage.deleteSelected')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Delete confirmation */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('manage.confirmDeleteTitle')}</AlertDialogTitle>
+              <AlertDialogDescription>{t('manage.confirmDeleteDescription')}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeletingBulk}>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleBulkDelete}
+                disabled={isDeletingBulk}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeletingBulk ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('manage.deleting')}</>
+                ) : (
+                  <><Trash2 className="w-4 h-4 mr-2" />{t('common.delete')} ({selectedIds.size})</>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
   );

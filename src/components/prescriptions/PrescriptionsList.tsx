@@ -6,8 +6,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { exportPrescriptionToPDF } from '@/lib/generatePrescriptionPDF';
-import { FileText, Download, Loader2, Pill, ChevronRight, Plus, Image } from 'lucide-react';
+import { FileText, Download, Loader2, Pill, ChevronRight, Image, Trash2, Settings2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Prescription {
   id: string;
@@ -30,9 +42,13 @@ interface Prescription {
 export function PrescriptionsList() {
   const navigate = useNavigate();
   const { supabaseUser, role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isManaging, setIsManaging] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -91,6 +107,80 @@ export function PrescriptionsList() {
     });
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === prescriptions.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(prescriptions.map(r => r.id)));
+    }
+  };
+
+  const extractStoragePath = (url: string): string => {
+    if (!url) return '';
+    const decoded = decodeURIComponent(url.trim());
+    const patterns = [
+      /\/storage\/v1\/object\/(?:public|sign)\/([^?]+)/,
+      /\/object\/(?:public|sign)\/([^?]+)/,
+    ];
+    for (const pattern of patterns) {
+      const match = decoded.match(pattern);
+      if (match) {
+        const fullPath = match[1];
+        const slashIndex = fullPath.indexOf('/');
+        return slashIndex >= 0 ? fullPath.substring(slashIndex + 1) : fullPath;
+      }
+    }
+    return decoded;
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsDeleting(true);
+
+    try {
+      const ids = Array.from(selectedIds);
+      const toDelete = prescriptions.filter(r => selectedIds.has(r.id));
+
+      // Delete DB records first
+      const { error } = await supabase
+        .from('prescriptions')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+
+      // Best-effort storage cleanup
+      for (const rx of toDelete) {
+        if (rx.fileUrl) {
+          const path = extractStoragePath(rx.fileUrl);
+          if (path) {
+            await supabase.storage.from('prescriptions').remove([path]).catch(() => {});
+          }
+        }
+      }
+
+      setPrescriptions(prev => prev.filter(r => !selectedIds.has(r.id)));
+      setSelectedIds(new Set());
+      setIsManaging(false);
+      toast.success(t('manage.deleted'));
+    } catch (error: any) {
+      console.error('Error deleting prescriptions:', error);
+      toast.error(error.message || t('common.error'));
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
@@ -108,17 +198,67 @@ export function PrescriptionsList() {
     );
   }
 
+  const canManage = role === 'doctor';
+
   return (
     <div className="space-y-3">
+      {/* Manage bar */}
+      {canManage && (
+        <div className="flex items-center justify-between gap-2">
+          <Button
+            variant={isManaging ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => {
+              setIsManaging(!isManaging);
+              setSelectedIds(new Set());
+            }}
+            className="gap-1.5"
+          >
+            <Settings2 className="w-4 h-4" />
+            {isManaging ? t('manage.done') : t('manage.manage')}
+          </Button>
+
+          {isManaging && (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={toggleSelectAll}>
+                {selectedIds.size === prescriptions.length ? t('manage.deselectAll') : t('manage.selectAll')}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={selectedIds.size === 0}
+                onClick={() => setShowDeleteDialog(true)}
+                className="gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {t('manage.deleteSelected')} ({selectedIds.size})
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isManaging && (
+        <p className="text-xs text-muted-foreground px-1">{t('manage.selectHint')}</p>
+      )}
+
       {prescriptions.map(rx => (
         <Card 
           key={rx.id} 
-          className="hover:shadow-md transition-shadow cursor-pointer group"
-          onClick={() => navigate(`/prescriptions/${rx.id}`)}
+          className={`hover:shadow-md transition-shadow cursor-pointer group ${isManaging && selectedIds.has(rx.id) ? 'ring-2 ring-primary' : ''}`}
+          onClick={() => isManaging ? toggleSelect(rx.id) : navigate(`/prescriptions/${rx.id}`)}
         >
           <CardContent className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0 flex-1">
+                {isManaging && (
+                  <div className="pt-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedIds.has(rx.id)}
+                      onCheckedChange={() => toggleSelect(rx.id)}
+                    />
+                  </div>
+                )}
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                   {rx.fileUrl ? <Image className="w-5 h-5 text-info" /> : <FileText className="w-5 h-5 text-primary" />}
                 </div>
@@ -138,7 +278,7 @@ export function PrescriptionsList() {
                     {rx.fileUrl && (
                       <Badge variant="secondary" className="text-xs gap-1">
                         <Image className="w-3 h-3" />
-                        Archivo
+                        {language === 'es' ? 'Archivo' : 'File'}
                       </Badge>
                     )}
                     <span className="text-xs text-muted-foreground">
@@ -149,24 +289,78 @@ export function PrescriptionsList() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                {rx.medications.length > 0 && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="gap-1" 
-                    onClick={(e) => { e.stopPropagation(); handleDownload(rx); }}
-                  >
-                    <Download className="w-3 h-3" />
-                    PDF
-                  </Button>
-                )}
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
+              {!isManaging && (
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {rx.medications.length > 0 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-1" 
+                      onClick={(e) => { e.stopPropagation(); handleDownload(rx); }}
+                    >
+                      <Download className="w-3 h-3" />
+                      PDF
+                    </Button>
+                  )}
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       ))}
+
+      {/* Sticky mobile bottom bar */}
+      {isManaging && selectedIds.size > 0 && (
+        <div className="fixed bottom-16 sm:bottom-4 left-0 right-0 z-50 px-3 pb-safe">
+          <div className="max-w-3xl mx-auto bg-destructive text-destructive-foreground rounded-lg p-3 flex items-center justify-between shadow-lg">
+            <span className="text-sm font-medium">
+              {selectedIds.size} {t('manage.selected')}
+            </span>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setShowDeleteDialog(true)}
+              className="gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {t('manage.deleteSelected')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('manage.confirmDeleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('manage.confirmDeleteDescription')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {t('manage.deleting')}
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {t('common.delete')} ({selectedIds.size})
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

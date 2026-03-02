@@ -228,6 +228,21 @@ export function useDoctorAvailability() {
     return availabilities.filter(a => a.doctorId === doctorId);
   };
 
+  const deleteAvailabilities = async (ids: string[]) => {
+    if (!supabaseUser?.id || ids.length === 0) return { success: false, error: 'Invalid' };
+
+    const { error } = await supabase
+      .from('doctor_availability')
+      .delete()
+      .in('id', ids)
+      .eq('doctor_id', supabaseUser.id);
+
+    if (error) return { success: false, error: error.message };
+
+    await fetchAvailabilities();
+    return { success: true };
+  };
+
   return {
     availabilities,
     myAvailabilities,
@@ -237,6 +252,7 @@ export function useDoctorAvailability() {
     confirmAvailability,
     cancelAvailability,
     notifySubscribers,
+    deleteAvailabilities,
     getAvailabilitiesByDoctor,
     refresh: fetchAvailabilities,
   };
