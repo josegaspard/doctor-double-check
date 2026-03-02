@@ -1056,6 +1056,21 @@ export const es = {
     noSubscribers: 'Aún no tienes suscriptores',
     subscribersOnly: 'Solo suscriptores',
   },
+  // Bulk management
+  manage: {
+    manage: 'Gestionar',
+    done: 'Listo',
+    selectAll: 'Seleccionar todo',
+    deselectAll: 'Deseleccionar todo',
+    deleteSelected: 'Eliminar seleccionados',
+    selected: 'seleccionado(s)',
+    selectHint: 'Selecciona los elementos que deseas eliminar',
+    confirmDeleteTitle: '¿Eliminar elementos seleccionados?',
+    confirmDeleteDescription: 'Esta acción no se puede deshacer. Los elementos seleccionados serán eliminados permanentemente.',
+    deleting: 'Eliminando...',
+    deleted: 'Elementos eliminados correctamente',
+    noneSelected: 'No hay elementos seleccionados',
+  },
   // Landing Footer
   landingFooter: {
     platform: 'Plataforma',
