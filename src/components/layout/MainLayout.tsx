@@ -528,6 +528,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 <Link to="/contact" className="text-sm text-light/70 hover:text-light transition-colors">
                   {t('footer.contact')}
                 </Link>
+                <Link to="/report-issue" className="text-sm text-warning/80 hover:text-warning transition-colors">
+                  Reportar falla o abuso
+                </Link>
               </nav>
               
               <p className="text-sm text-light/70">

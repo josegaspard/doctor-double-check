@@ -84,6 +84,7 @@ const AdminNews = React.lazy(() => import("./pages/AdminNews"));
 const Prescriptions = React.lazy(() => import("./pages/Prescriptions"));
 const CreatePrescription = React.lazy(() => import("./pages/CreatePrescription"));
 const PrescriptionDetail = React.lazy(() => import("./pages/PrescriptionDetail"));
+const ReportIssue = React.lazy(() => import("./pages/ReportIssue"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -185,6 +186,7 @@ const App = () => (
                             <Route path="/prescriptions" element={<Prescriptions />} />
                             <Route path="/prescriptions/new" element={<CreatePrescription />} />
                             <Route path="/prescriptions/:id" element={<PrescriptionDetail />} />
+                            <Route path="/report-issue" element={<ReportIssue />} />
                             <Route path="*" element={<NotFound />} />
                           </Routes>
                         </Suspense>

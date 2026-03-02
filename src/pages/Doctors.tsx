@@ -90,8 +90,30 @@ export default function Doctors() {
   const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
   const [followedDoctors, setFollowedDoctors] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
+  const [nearbyMode, setNearbyMode] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  const handleNearbyToggle = () => {
+    if (!nearbyMode && !userLocation) {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            setNearbyMode(true);
+          },
+          () => {
+            toast.error('No se pudo obtener tu ubicación. Habilita los permisos de ubicación.');
+          }
+        );
+      } else {
+        toast.error('Tu navegador no soporta geolocalización');
+      }
+    } else {
+      setNearbyMode(!nearbyMode);
+    }
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -117,7 +139,17 @@ export default function Doctors() {
 
       if (error) throw error;
 
-      const rows = (data || []) as DoctorRow[];
+      let rows = (data || []) as DoctorRow[];
+      
+      // When nearby mode is on, prioritize doctors with location set
+      if (nearbyMode && userLocation) {
+        rows = rows.sort((a, b) => {
+          const aHasLoc = a.location ? 1 : 0;
+          const bHasLoc = b.location ? 1 : 0;
+          return bHasLoc - aHasLoc; // doctors with location first
+        });
+      }
+      
       setDoctors(rows);
       setTotalCount(rows.length > 0 ? Number(rows[0].total_count) : 0);
     } catch (error) {
@@ -236,23 +268,42 @@ export default function Doctors() {
               className="pl-10"
             />
           </div>
-          <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty}>
-            <SelectTrigger className="w-full sm:w-48">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Especialidad" />
-            </SelectTrigger>
-            <SelectContent>
-              {SPECIALTIES.map(spec => (
-                <SelectItem key={spec} value={spec}>{spec}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty}>
+              <SelectTrigger className="w-full sm:w-48">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Especialidad" />
+              </SelectTrigger>
+              <SelectContent>
+                {SPECIALTIES.map(spec => (
+                  <SelectItem key={spec} value={spec}>{spec}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant={nearbyMode ? "default" : "outline"}
+              size="icon"
+              className="flex-shrink-0 h-10 w-10"
+              title="Cerca de mí"
+              onClick={handleNearbyToggle}
+            >
+              <MapPin className={`w-4 h-4 ${nearbyMode ? 'text-primary-foreground' : ''}`} />
+            </Button>
+          </div>
         </div>
 
-        <p className="text-sm text-muted-foreground mb-3 sm:mb-4">
-          {totalCount} {t('doctors.found')}
-          {totalPages > 1 && ` — ${t('doctors.page')} ${currentPage} ${t('doctors.of')} ${totalPages}`}
-        </p>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 sm:mb-4">
+          <span>
+            {totalCount} {t('doctors.found')}
+            {totalPages > 1 && ` — ${t('doctors.page')} ${currentPage} ${t('doctors.of')} ${totalPages}`}
+          </span>
+          {nearbyMode && (
+            <Badge variant="secondary" className="gap-1 text-xs">
+              <MapPin className="w-3 h-3" />
+              Cerca de mí
+            </Badge>
+          )}
+        </div>
 
         {/* Doctors Grid */}
         {isLoading ? (
