@@ -314,6 +314,7 @@ export function CloudflareRecordingPlayer({
       <video
         ref={videoRef}
         className="w-full h-full object-contain"
+        playsInline
         onTimeUpdate={handleTimeUpdate}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
@@ -341,7 +342,7 @@ export function CloudflareRecordingPlayer({
       )}
 
       {/* Controls */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         {/* Progress bar */}
         <div className="mb-3">
           <Slider

@@ -105,6 +105,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
         className="w-full h-full object-contain"
         src={signedUrl || undefined}
         controls
+        playsInline
         controlsList="nodownload"
         onLoadedMetadata={(e) => {
           const d = (e.currentTarget as HTMLVideoElement).duration;
@@ -112,6 +113,15 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
         }}
         onTimeUpdate={(e) => {
           if (onTimeUpdate) onTimeUpdate(Math.floor((e.currentTarget as HTMLVideoElement).currentTime));
+        }}
+        onError={() => {
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+          const isWebm = storagePath?.endsWith('.webm');
+          if (isIOS && isWebm) {
+            setError('Este formato de grabación (.webm) no es compatible con tu dispositivo. Intenta desde Chrome en escritorio.');
+          } else {
+            setError('No se pudo reproducir el video');
+          }
         }}
       />
     </div>
