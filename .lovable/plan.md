@@ -1,88 +1,65 @@
 
+# Plan: Bulk Delete for Prescriptions, Availability & Content Library UX
 
-# Plan: Complete i18n Translation + Fix Content Deletion
+## 1. Prescriptions - Bulk Delete
 
-## Problem 1: Deleted videos still showing
+**File: `src/components/prescriptions/PrescriptionsList.tsx`**
 
-The previous FK constraint (`NO ACTION`) on `purchases.content_id` was silently preventing the DB record from being deleted when content had purchases. The migration to `ON DELETE SET NULL` was just applied, so **future deletions will work**. However, the videos you already tried to delete still have their DB records (the storage files may have been removed but the rows remain).
+Add a selection mode (same pattern used for chat/notifications bulk delete):
+- A "Manage" button in the header toggles selection mode
+- Each card gets a checkbox on the left
+- A sticky action bar appears at top/bottom with "Select All" and "Delete Selected" buttons
+- Doctors can delete their own prescriptions (RLS already allows `DELETE` for `doctor_id = auth.uid()`)
+- Patients can NOT delete (RLS doesn't allow patient DELETE) -- so the manage button only appears for doctors
+- If the prescription has a `file_url`, also delete the file from storage
+- After deletion, update local state to remove deleted items
 
-### Fix:
-- In `DoctorContentLibrary.tsx`, reorder the delete logic: delete DB record FIRST, then storage files. If the DB delete fails, don't proceed with storage deletion. This prevents orphaned situations.
-- Add error logging so if deletion fails, the toast shows the actual reason.
-- The content you already "deleted" -- you'll need to try deleting them again from the library (they should now work with the new FK constraint).
+**File: `src/pages/Prescriptions.tsx`**
+- Minor: pass a refresh callback or let PrescriptionsList manage its own state (already does)
 
-## Problem 2: Hardcoded Spanish strings (30+ files)
+## 2. Availability - Bulk Delete
 
-There are hundreds of hardcoded Spanish strings scattered across the codebase. The plan is to:
+**File: `src/hooks/useDoctorAvailability.ts`**
+- Add a `deleteAvailability(id: string)` and `deleteAvailabilities(ids: string[])` function that calls `supabase.from('doctor_availability').delete().in('id', ids).eq('doctor_id', user.id)`
+- RLS already has `Doctors can manage own availability` with ALL command, so DELETE is allowed
 
-### A. Add missing translation keys to `en.ts` and `es.ts`
+**File: `src/pages/DoctorAvailability.tsx`**
+- Add selection mode toggle for the History section (past availabilities)
+- Each history card gets a checkbox
+- Sticky action bar with "Select All" / "Delete Selected"
+- Also allow deleting individual upcoming availabilities via a trash icon
+- Translate all hardcoded Spanish strings ("Historial", "Programado", "Confirmado", "Cancelado", "Completado", "Confirmar", "Cancelar", "Notificar", "Notificaciones enviadas", "Recordatorio automatico enviado", "Proximos", "No tienes disponibilidades programadas", "Duracion", "Programar", dialog labels, etc.)
 
-New sections/keys needed:
+## 3. Content Library - Better Management UX
 
-**`content` section (additions):**
-- `subscribers` ("Subscribers" / "Suscriptores")
-- `subscribersOnly` ("Subscribers only" / "Solo suscriptores")
-- `public` / `private`
-- `free` / `myLibrary` / `filesUploaded`
-- `restrictedAccess` / `onlyDoctorsCanView`
-- `deleteContent` / `deleteContentConfirm` / `contentDeleted`
+**File: `src/pages/DoctorContentLibrary.tsx`**
 
-**`report` section (new):**
-- `title` ("Report issue or abuse" / "Reportar falla o abuso")
-- `subtitle`, `typeLabel`, `bugOption`, `abuseOption`, `otherOption`
-- `subjectLabel`, `descriptionLabel`, `emailLabel`, `attachments`
-- `submitButton`, `submitting`, `success`, `error`, `back`
+Currently it's a grid of cards. Improvements:
+- Add a "Manage" toggle button that switches to selection mode
+- In selection mode: each card gets a checkbox overlay, "Select All" and "Delete Selected (N)" appear in a sticky bar
+- Bulk delete: loop through selected IDs, delete DB records, then storage files
+- The grid layout stays but with selection overlay
+- This replaces the per-card trash icon when in manage mode
+- Mobile: the sticky bar should be at the bottom with safe-area padding
 
-**`news` section (additions to `medicalNews`):**
-- `viewAll` ("View all" / "Ver todas")
+## 4. Shared UX Pattern
 
-**`footer` section (additions):**
-- `reportIssue` ("Report issue or abuse" / "Reportar falla o abuso")
+All three sections follow the same UX pattern (already used in chat/notifications):
+- Toggle button: "Manage" / "Done"
+- Instructional banner: "Select items to delete"
+- Checkboxes on each item
+- Sticky action bar: "Select All (N)" | "Delete Selected (N)" in destructive red
+- Confirmation dialog before bulk delete
+- Toast on success
 
-**`landing` footer section (new `landingFooter`):**
-- `resources`, `successStories`, `help`, `contact`
-- `legal`, `privacy`, `terms`, `security`, `compliance`, `reportIssue`
-
-**`doctorLibrary` section (new):**
-- `title`, `filesUploaded`, `uploadContent`, `allTypes`, `videos`, `pdfs`, `images`
-- `public`, `private`, `deleteTitle`, `deleteDescription`, `deleting`, `deleted`
-
-**`doctorContent` section (additions):**
-- Various labels for audience types, upload form fields, etc.
-
-### B. Update all component files to use `t()` or `useLanguage()`
-
-Files requiring updates (hardcoded Spanish to `t()` calls):
-
-1. **`src/components/news/NewsFeed.tsx`** - "Noticias Medicas", "Ver todas", date locale
-2. **`src/components/layout/MainLayout.tsx`** - "Reportar falla o abuso" in footer
-3. **`src/components/landing/LandingFooter.tsx`** - All footer links (Recursos, Ayuda, Contacto, Legal labels, "Reportar falla o abuso")
-4. **`src/pages/ContentGallery.tsx`** - "Suscriptores", "Solo suscriptores" (lines 308, 317)
-5. **`src/pages/DoctorContentLibrary.tsx`** - All hardcoded strings (Acceso restringido, Mi Biblioteca, expedientes subidos, Publico, Privado, Gratis, Todos, Profesionales, Pacientes, delete dialog, etc.)
-6. **`src/pages/ReportIssue.tsx`** - All form labels (Reportar falla, Tipo de reporte, Asunto, Descripcion, etc.)
-7. **`src/components/doctor/ConsultationFeeEditor.tsx`** - "Gratis", "Orientaciones gratis"
-8. **`src/components/doctor/SubscribersModal.tsx`** - "Suscriptores", "Basica", "Gratis"
-9. **`src/pages/DoctorAvailability.tsx`** - "Notificar suscriptores", "suscriptores"
-10. **`src/components/doctor/DoctorQuickActions.tsx`** - Quick action labels
-
-### C. Approach for inline ternaries (`language === 'es' ? ... : ...`)
-
-There are ~2247 occurrences of `language === 'es' ?` ternaries across 38 files. These are technically "translated" but not using the `t()` system. For this pass, I will:
-- Leave existing working ternaries as-is (they work correctly)
-- Focus on files with **completely untranslated hardcoded Spanish** (no ternary at all)
-
-## Summary of file changes
+## Summary of Changes
 
 | File | Change |
 |------|--------|
-| `src/lib/i18n/en.ts` | Add ~40 new translation keys (report, doctorLibrary, content extras, footer extras, landing footer) |
-| `src/lib/i18n/es.ts` | Add matching ~40 new translation keys in Spanish |
-| `src/components/news/NewsFeed.tsx` | Use `t()` for title, "View all", and dynamic date locale |
-| `src/components/layout/MainLayout.tsx` | Use `t()` for "Reportar falla o abuso" in footer |
-| `src/components/landing/LandingFooter.tsx` | Use `t()` for all footer labels |
-| `src/pages/ContentGallery.tsx` | Use `t()` for "Suscriptores", "Solo suscriptores" |
-| `src/pages/DoctorContentLibrary.tsx` | Use `t()` for all strings, fix delete order |
-| `src/pages/ReportIssue.tsx` | Use `t()` for all form labels and messages |
-| `src/components/doctor/ConsultationFeeEditor.tsx` | Use `t()` for "Gratis" labels |
-| `src/components/doctor/SubscribersModal.tsx` | Use `t()` for dialog labels |
-
+| `src/components/prescriptions/PrescriptionsList.tsx` | Add selection mode, checkboxes, bulk delete logic with storage cleanup |
+| `src/pages/Prescriptions.tsx` | Add "Manage" toggle button in header (doctors only) |
+| `src/hooks/useDoctorAvailability.ts` | Add `deleteAvailabilities(ids)` function |
+| `src/pages/DoctorAvailability.tsx` | Add selection mode for history, bulk delete, translate all Spanish strings |
+| `src/pages/DoctorContentLibrary.tsx` | Add selection mode overlay, bulk delete, sticky bottom bar for mobile |
+| `src/lib/i18n/en.ts` | Add keys for prescriptions, availability, and content management actions |
+| `src/lib/i18n/es.ts` | Add matching Spanish keys |
