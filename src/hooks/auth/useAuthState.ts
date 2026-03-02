@@ -60,8 +60,17 @@ export function useAuthState() {
       console.log('[Auth] Event:', event, 'Provider:', session?.user?.app_metadata?.provider);
       setSupabaseUser(session?.user ?? null);
 
+      // TOKEN_REFRESHED: just update supabaseUser, no need to re-validate
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('[Auth] Token refreshed, keeping session');
+        return;
+      }
+
       if (!session?.user) {
-        forceSignedOutState();
+        // Only sign out on explicit SIGNED_OUT events
+        if (event === 'SIGNED_OUT') {
+          forceSignedOutState();
+        }
         return;
       }
 
@@ -71,7 +80,14 @@ export function useAuthState() {
         const stillValid = await validateAuthSession();
         if (!stillValid) return;
 
-        const profile = await fetchUserProfile(session.user.id);
+        let profile;
+        try {
+          profile = await fetchUserProfile(session.user.id);
+        } catch (e) {
+          console.warn('[Auth] fetchUserProfile network error, keeping session:', e);
+          setIsLoading(false);
+          return;
+        }
         if (!profile) {
           // Profile missing (or access denied). Treat as signed out.
           try {
