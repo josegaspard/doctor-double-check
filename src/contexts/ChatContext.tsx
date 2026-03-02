@@ -90,7 +90,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         .from('chat_sessions')
         .select('*')
         .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
-        .order('last_message_at', { ascending: false, nullsFirst: false });
+        .order('last_message_at', { ascending: false, nullsFirst: true });
 
       if (error) throw error;
 

@@ -374,10 +374,10 @@ export default function DoctorGoLive() {
     );
   }
 
-  // Live streaming view
+  // Live streaming view (skip MainLayout on mobile for true fullscreen)
   if (isLive && liveData) {
-    return (
-      <MainLayout>
+    const liveContent = (
+      <>
         <LiveStreamView
           liveData={liveData}
           elapsedTime={elapsedTime}
@@ -403,8 +403,15 @@ export default function DoctorGoLive() {
           onConfirmNavigation={async () => { setShowNavigationWarning(false); await handleEndLive(); }}
           onCancelNavigation={() => setShowNavigationWarning(false)}
         />
-      </MainLayout>
+      </>
     );
+
+    // On mobile, render without MainLayout for true fullscreen
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return liveContent;
+    }
+
+    return <MainLayout>{liveContent}</MainLayout>;
   }
 
   // Setup form

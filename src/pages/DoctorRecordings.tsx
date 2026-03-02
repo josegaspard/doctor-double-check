@@ -60,6 +60,7 @@ import { Slider } from '@/components/ui/slider';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Video,
   ArrowLeft,
@@ -91,6 +92,7 @@ export default function DoctorRecordings() {
   const { user, role } = useAuth();
   const { t } = useLanguage();
   const { refreshRecordings } = useLives();
+  const isMobile = useIsMobile();
 
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [isLoadingRecordings, setIsLoadingRecordings] = useState(true);
@@ -458,7 +460,7 @@ export default function DoctorRecordings() {
                   <Video className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{totalRecordings}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-foreground">{totalRecordings}</p>
                   <p className="text-xs text-muted-foreground">Grabaciones</p>
                 </div>
               </div>
@@ -472,7 +474,7 @@ export default function DoctorRecordings() {
                   <Users className="w-5 h-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{totalPurchases}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-foreground">{totalPurchases}</p>
                   <p className="text-xs text-muted-foreground">Compras</p>
                 </div>
               </div>
@@ -486,7 +488,7 @@ export default function DoctorRecordings() {
                   <DollarSign className="w-5 h-5 text-premium" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{formatCurrency(totalRevenue)}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-foreground">{formatCurrency(totalRevenue)}</p>
                   <p className="text-xs text-muted-foreground">Ingresos</p>
                 </div>
               </div>
@@ -500,7 +502,7 @@ export default function DoctorRecordings() {
                   <Clock className="w-5 h-5 text-info" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{formatDuration(totalDuration)}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-foreground">{formatDuration(totalDuration)}</p>
                   <p className="text-xs text-muted-foreground">Duración Total</p>
                 </div>
               </div>
@@ -647,7 +649,78 @@ export default function DoctorRecordings() {
                   Ir al Dashboard
                 </Button>
               </div>
+            ) : isMobile ? (
+              /* Mobile: Card layout */
+              <div className="space-y-3">
+                {myRecordings.map((recording) => {
+                  const stats = getStats(recording.id);
+                  return (
+                    <div
+                      key={recording.id}
+                      className="p-3 border border-border rounded-lg bg-card"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-foreground line-clamp-1">{recording.title}</p>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            <Badge variant="secondary" className="text-[10px] h-5">{recording.specialty}</Badge>
+                            {recording.tags.slice(0, 2).map(tag => (
+                              <Badge key={tag} variant="outline" className="text-[10px] h-5">
+                                #{tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => navigate(`/recording/${recording.id}`)}>
+                              <Eye className="w-4 h-4 mr-2" />Ver grabación
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewStats(recording)}>
+                              <BarChart3 className="w-4 h-4 mr-2" />Estadísticas
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
+                              <Pencil className="w-4 h-4 mr-2" />Editar precio
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
+                              <Trash2 className="w-4 h-4 mr-2" />Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {recording.videoUrl?.startsWith('pending:') ? 'Procesando…' : !recording.videoUrl ? 'Sin video' : formatDuration(recording.duration)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="w-3 h-3" />
+                          {recording.price === 0 ? 'Gratis' : formatCurrency(recording.price)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {isLoadingStats ? '…' : stats.purchaseCount}
+                        </span>
+                        {!isLoadingStats && stats.totalRevenue > 0 && (
+                          <span className="text-success font-medium ml-auto">
+                            {formatCurrency(stats.totalRevenue)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1.5">{formatDate(recording.createdAt)}</p>
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
+              /* Desktop: Table layout */
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>

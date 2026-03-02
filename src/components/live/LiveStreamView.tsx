@@ -11,6 +11,11 @@ import {
   MessageSquare,
   StopCircle,
   X,
+  Mic,
+  MicOff,
+  VideoIcon,
+  VideoOff,
+  SwitchCamera,
 } from 'lucide-react';
 
 interface LiveStreamViewProps {
@@ -45,6 +50,8 @@ export function LiveStreamView({
 }: LiveStreamViewProps) {
   const isMobile = useIsMobile();
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
 
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
@@ -59,12 +66,21 @@ export function LiveStreamView({
   if (isMobile) {
     return (
       <div className="fixed inset-0 z-50 bg-black flex flex-col" style={{ height: '100dvh' }}>
-        {/* Compact header overlay */}
-        <div className="absolute top-0 left-0 right-0 z-30 p-2 bg-gradient-to-b from-black/70 to-transparent">
+        {/* Header overlay with safe area */}
+        <div
+          className="absolute top-0 left-0 right-0 z-30 p-3 bg-gradient-to-b from-black/80 via-black/40 to-transparent"
+          style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
+        >
           <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0 mr-2">
-              <p className="text-white text-sm font-semibold truncate">{liveData.title}</p>
-              <p className="text-white/60 text-[10px]">{liveData.specialty}</p>
+            <div className="flex items-center gap-2 min-w-0">
+              {/* LIVE badge */}
+              <span className="flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                EN VIVO
+              </span>
+              <div className="min-w-0">
+                <p className="text-white text-sm font-semibold truncate">{liveData.title}</p>
+              </div>
             </div>
             <div className="flex items-center gap-2 text-[10px] text-white/80 shrink-0">
               <span className="flex items-center gap-0.5">
@@ -91,27 +107,42 @@ export function LiveStreamView({
           />
         </div>
 
-        {/* Bottom controls */}
+        {/* Bottom controls - larger touch targets */}
         <div
-          className="absolute bottom-0 left-0 right-0 z-30 flex items-center justify-center gap-3 p-3 bg-gradient-to-t from-black/80 to-transparent"
-          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+          className="absolute bottom-0 left-0 right-0 z-30 flex items-center justify-center gap-2 p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent"
+          style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
         >
           <Button
             variant="outline"
-            size="sm"
-            onClick={() => setMobileChatOpen(true)}
-            className="gap-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+            size="icon"
+            onClick={() => setIsMuted(!isMuted)}
+            className={`h-11 w-11 rounded-full border-white/20 text-white ${isMuted ? 'bg-destructive/60 hover:bg-destructive/80' : 'bg-white/10 hover:bg-white/20'}`}
           >
-            <MessageSquare className="w-4 h-4" />
-            Chat
+            {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsVideoOff(!isVideoOff)}
+            className={`h-11 w-11 rounded-full border-white/20 text-white ${isVideoOff ? 'bg-destructive/60 hover:bg-destructive/80' : 'bg-white/10 hover:bg-white/20'}`}
+          >
+            {isVideoOff ? <VideoOff className="w-5 h-5" /> : <VideoIcon className="w-5 h-5" />}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setMobileChatOpen(true)}
+            className="h-11 w-11 rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20"
+          >
+            <MessageSquare className="w-5 h-5" />
           </Button>
           <Button
             variant="destructive"
-            size="sm"
+            size="lg"
             onClick={onEndClick}
-            className="gap-1"
+            className="h-11 gap-1.5 rounded-full px-5"
           >
-            <StopCircle className="w-4 h-4" />
+            <StopCircle className="w-5 h-5" />
             Finalizar
           </Button>
         </div>

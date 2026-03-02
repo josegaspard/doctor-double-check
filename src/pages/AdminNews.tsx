@@ -315,16 +315,16 @@ export default function AdminNews() {
           {role === 'admin' ? 'Volver al panel' : 'Volver a noticias'}
         </Button>
 
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-              <Newspaper className="w-6 h-6 text-primary" />
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+              <Newspaper className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               Gestión de Noticias
             </h1>
-            <p className="text-muted-foreground mt-1">{news.length} noticias</p>
+            <p className="text-sm text-muted-foreground mt-1">{news.length} noticias</p>
           </div>
           {mainTab === 'articles' && (
-            <Button onClick={() => setIsCreating(true)} className="gap-2">
+            <Button onClick={() => setIsCreating(true)} className="gap-2 w-full sm:w-auto">
               <Plus className="w-4 h-4" /> Nueva noticia
             </Button>
           )}
@@ -356,14 +356,14 @@ export default function AdminNews() {
               <div className="space-y-3">
                 {news.map((item) => (
                   <Card key={item.id} className="overflow-hidden">
-                    <div className="flex items-center gap-4 p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4">
                       {item.image_url && (
-                        <div className="w-20 h-14 rounded-md overflow-hidden flex-shrink-0">
+                        <div className="w-full sm:w-20 h-32 sm:h-14 rounded-md overflow-hidden flex-shrink-0">
                           <img src={item.image_url} alt="" className="w-full h-full object-cover" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground truncate">{item.title}</h3>
+                        <h3 className="font-semibold text-sm sm:text-base text-foreground line-clamp-2 sm:truncate">{item.title}</h3>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <Badge variant={item.is_published ? 'default' : 'secondary'} className="text-[10px]">
                             {item.is_published ? 'Publicada' : 'Borrador'}
@@ -383,14 +383,14 @@ export default function AdminNews() {
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => togglePublish(item)} title={item.is_published ? 'Despublicar' : 'Publicar'}>
+                      <div className="flex items-center gap-1 border-t sm:border-t-0 pt-2 sm:pt-0">
+                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => togglePublish(item)} title={item.is_published ? 'Despublicar' : 'Publicar'}>
                           {item.is_published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setEditingItem(item)}>
+                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setEditingItem(item)}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteItem(item.id)}>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => deleteItem(item.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>

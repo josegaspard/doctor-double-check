@@ -306,11 +306,13 @@ export default function Doctors() {
                             <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
                           )}
                         </div>
-                        <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
-                        <Badge variant="secondary" className="mb-1.5 sm:mb-2">
-                          <Stethoscope className="w-3 h-3 mr-1" />
-                          {doctor.specialty}
-                        </Badge>
+                        <div className="flex flex-wrap items-center gap-1.5 mb-1.5 sm:mb-2">
+                          <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
+                          <Badge variant="secondary">
+                            <Stethoscope className="w-3 h-3 mr-1" />
+                            {doctor.specialty}
+                          </Badge>
+                        </div>
                         <div className="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Star className="w-3.5 h-3.5 text-warning fill-warning" />
