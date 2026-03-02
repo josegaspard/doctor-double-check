@@ -1,88 +1,49 @@
 
-# Plan: Optimizacion Completa Mobile UX/UI + Correcciones
+# Plan: Fix Live Transmit Button, Recording Playback on Mobile, and Screen Share
 
-## 1. Grabaciones del Doctor - Rediseno Mobile
+## 1. Fix "Iniciar Transmision" button hidden on mobile
 
-**Problema**: La tabla de grabaciones usa columnas verticales ilegibles en movil (texto apilado verticalmente como se ve en las capturas).
+**Root cause**: The LiveSetupForm sticky submit button uses `z-40`, but MainLayout's bottom navigation bar uses `z-50`. The bottom nav covers the transmit button entirely on mobile.
 
-**Solucion**: Reemplazar la tabla con tarjetas (cards) en movil usando `useIsMobile()`. Cada tarjeta mostrara:
-- Titulo + tags en una linea
-- Especialidad como badge horizontal (no vertical)
-- Duracion, precio y compras en una fila compacta
-- Menu de acciones (3 dots) en la esquina superior derecha
+**Fix in `src/components/live/LiveSetupForm.tsx`**:
+- Change the sticky button's `z-index` from `z-40` to `z-50` 
+- Add extra bottom padding to account for the bottom nav height (~72px) so the button sits ABOVE the nav bar
+- Alternatively, add `pb-20` to the form container to ensure scrollable content isn't hidden behind the sticky button + bottom nav
 
-**Archivo**: `src/pages/DoctorRecordings.tsx`
-- Detectar `isMobile` con el hook existente
-- Renderizar cards en movil, tabla solo en desktop
-- Stats summary cards: reducir texto grande `text-2xl` a `text-lg` en movil
+## 2. Fix recordings not viewable on mobile (iOS/iPad)
 
-## 2. Listado de Doctores - Espaciado entre badges
+**Root cause**: Local recordings are saved as `.webm` files (from `useLocalRecording` using MediaRecorder). iOS Safari does NOT fully support WebM video playback. When a `storage:` URL points to a `.webm` file, the native `<video>` element fails silently on iOS.
 
-**Problema**: Los badges "Nuevo" y "Cardiologia" estan muy pegados visualmente.
+**Fixes in `src/components/recordings/RecordingVideoPlayer.tsx`**:
+- Add `playsInline` attribute to the native video element (required for iOS inline playback)
+- Add an `onError` handler that detects WebM on iOS and shows a helpful message ("This recording format is not supported on this device. Please try Chrome or a desktop browser.")
+- Add a user-friendly error state instead of a blank screen
 
-**Solucion**: Agregar `gap-1.5` entre los badges y envolverlos en un contenedor flex con wrap.
+**Fixes in `src/components/recordings/CloudflareRecordingPlayer.tsx`**:
+- The controls use `group-hover:opacity-100` which does NOT work on touch devices -- controls are invisible on mobile
+- Fix: Make controls always visible on mobile (remove opacity-0 on touch devices) or add a tap-to-toggle behavior
+- Add `playsInline` attribute to the video element
 
-**Archivo**: `src/pages/Doctors.tsx`
-- Lineas ~309-313: Envolver `DoctorBadge` y el badge de especialidad en un `div` con `flex flex-wrap gap-1.5 mb-1.5`
+## 3. Remove screen share button on mobile
 
-## 3. Gestion de Noticias - Optimizar cards en movil
+Screen sharing (`getDisplayMedia`) is not supported on iOS Safari and most mobile browsers. Showing the button causes confusion.
 
-**Problema**: La card de noticias muestra imagen + titulo + botones en una fila que se aprieta en movil.
+**Fix in `src/components/videocall/VideoCallControls.tsx`**:
+- Import `useIsMobile` hook
+- Conditionally render the screen share button: only show it when `isDoctor && !isMobile`
 
-**Solucion**: En movil, apilar la card verticalmente: imagen arriba, contenido abajo, botones de accion como iconos en fila.
+**Fix in `src/components/live/LiveStreamView.tsx`**:
+- Confirm there's no screen share button in the mobile live view (already correct -- no screen share button exists in mobile layout)
 
-**Archivo**: `src/pages/AdminNews.tsx`
-- Lineas ~358-398: Cambiar el layout de `flex items-center` a apilado en movil (`flex flex-col sm:flex-row`)
-- Header de "Gestion de Noticias": hacer responsive el titulo y boton "Nueva noticia"
+## 4. Video call screen share PiP (already implemented)
 
-## 4. Rating del Doctor - Fix navegacion
+The `renderVideoTracks` function in `VideoCall.tsx` already handles `screenVideo` tracks from remote participants: screen share becomes the main view (`object-fit: contain`) and the remote camera moves to a PiP. No changes needed.
 
-**Problema**: Al hacer clic en "Rating" en el dashboard del doctor, navega a `/doctor/profile#reviews` que no existe correctamente.
+## Summary of file changes
 
-**Solucion**: Cambiar la navegacion a `/doctor/{userId}` con un hash `#reviews` que apunte al perfil publico del doctor donde estan las resenas.
-
-**Archivo**: `src/components/doctor/DoctorStatsGrid.tsx`
-- Linea 48: Cambiar `navigate('/doctor/profile#reviews')` a `navigate(`/doctor/${user?.id}#reviews`)`
-
-## 5. Orden de Chats - Mas reciente primero
-
-**Problema**: Al pagar una nueva orientacion, la sesion nueva no aparece primera en la lista.
-
-**Solucion**: El `fetchSessions` ya ordena por `last_message_at DESC`, pero las sesiones nuevas sin mensajes tienen `last_message_at = null` que van al final con `nullsFirst: false`. Cambiar a ordenar por `created_at DESC` como fallback.
-
-**Archivo**: `src/contexts/ChatContext.tsx`
-- Linea 93: Cambiar la query de ordenamiento para usar `created_at` como criterio secundario, o cambiar `nullsFirst` a `true` para que sesiones nuevas aparezcan primero
-
-## 6. Doctor Live Mobile - Optimizacion completa
-
-**Problema**: Cuando el doctor inicia live desde celular, la interfaz no esta completamente optimizada.
-
-**Solucion**:
-- **LiveStreamView mobile**: Ya tiene layout fullscreen, pero necesita:
-  - Indicador LIVE pulsante visible (badge rojo)
-  - Boton de voltear camara (front/back) para movil
-  - Controles mas grandes y tactiles (min 44x44px)
-  - Agregar boton de mute de audio y video en los controles inferiores
-  - Safe area insets en el header overlay tambien
-
-- **LiveSetupForm**: Optimizar formulario para movil:
-  - Select de especialidad nativo en movil
-  - Campos mas compactos
-  - Boton "Iniciar" sticky en la parte inferior
-
-**Archivos**:
-- `src/components/live/LiveStreamView.tsx` - Mejorar controles moviles: agregar mute audio/video, flip camera, badge LIVE, controles mas grandes
-- `src/components/live/LiveSetupForm.tsx` - Optimizar layout del formulario para movil
-- `src/pages/DoctorGoLive.tsx` - Asegurar que MainLayout se oculte en modo live movil
-
-## Resumen tecnico de cambios
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/pages/DoctorRecordings.tsx` | Cards en movil en vez de tabla |
-| `src/pages/Doctors.tsx` | Espaciado entre badges |
-| `src/pages/AdminNews.tsx` | Cards de noticias responsivas |
-| `src/components/doctor/DoctorStatsGrid.tsx` | Fix navegacion Rating |
-| `src/contexts/ChatContext.tsx` | Ordenar sesiones nuevas primero |
-| `src/components/live/LiveStreamView.tsx` | Controles moviles completos para doctor |
-| `src/components/live/LiveSetupForm.tsx` | Formulario optimizado movil |
+| File | Change |
+|------|--------|
+| `src/components/live/LiveSetupForm.tsx` | Fix z-index on sticky button, add bottom padding |
+| `src/components/recordings/RecordingVideoPlayer.tsx` | Add playsInline, onError handler for WebM on iOS |
+| `src/components/recordings/CloudflareRecordingPlayer.tsx` | Fix controls visibility on mobile touch devices, add playsInline |
+| `src/components/videocall/VideoCallControls.tsx` | Hide screen share button on mobile devices |
