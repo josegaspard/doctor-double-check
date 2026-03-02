@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,16 +20,18 @@ import { ArrowLeft, ShieldAlert, Send, CheckCircle, Paperclip, X, Loader2 } from
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-const reportSchema = z.object({
-  type: z.enum(['bug', 'abuse', 'other']),
-  subject: z.string().trim().min(5, 'Mínimo 5 caracteres').max(150, 'Máximo 150 caracteres'),
-  description: z.string().trim().min(20, 'Describe el problema con al menos 20 caracteres').max(2000, 'Máximo 2000 caracteres'),
-  contactEmail: z.string().trim().email('Email inválido').max(255).or(z.literal('')),
-});
-
 export default function ReportIssue() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
+
+  const reportSchema = z.object({
+    type: z.enum(['bug', 'abuse', 'other']),
+    subject: z.string().trim().min(5, t('report.validationMin5')).max(150, t('report.validationMax150')),
+    description: z.string().trim().min(20, t('report.validationMin20')).max(2000, t('report.validationMax2000')),
+    contactEmail: z.string().trim().email(t('report.validationEmail')).max(255).or(z.literal('')),
+  });
+
   const [type, setType] = useState<string>('');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
@@ -40,9 +43,9 @@ export default function ReportIssue() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const valid = files.filter(f => f.size <= 10 * 1024 * 1024); // 10MB max per file
+    const valid = files.filter(f => f.size <= 10 * 1024 * 1024);
     if (valid.length < files.length) {
-      toast.error('Algunos archivos exceden 10MB y fueron ignorados');
+      toast.error(t('report.filesTooLarge'));
     }
     setAttachments(prev => [...prev, ...valid].slice(0, 5));
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -58,9 +61,7 @@ export default function ReportIssue() {
     for (const file of attachments) {
       const ext = file.name.split('.').pop() || 'bin';
       const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage
-        .from('report-attachments')
-        .upload(path, file);
+      const { error } = await supabase.storage.from('report-attachments').upload(path, file);
       if (!error) {
         const { data } = supabase.storage.from('report-attachments').getPublicUrl(path);
         urls.push(data.publicUrl);
@@ -71,7 +72,6 @@ export default function ReportIssue() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const result = reportSchema.safeParse({ type, subject, description, contactEmail });
     if (!result.success) {
       toast.error(result.error.issues[0].message);
@@ -80,9 +80,7 @@ export default function ReportIssue() {
 
     setIsSubmitting(true);
     try {
-      // Upload attachments first
       const attachmentUrls = await uploadAttachments();
-
       const { error } = await supabase.from('reports').insert({
         reporter_id: user?.id || '00000000-0000-0000-0000-000000000000',
         content_type: 'platform_report',
@@ -98,7 +96,7 @@ export default function ReportIssue() {
       setSubmitted(true);
     } catch (err) {
       console.error('Error submitting report:', err);
-      toast.error('Error al enviar el reporte. Intenta de nuevo.');
+      toast.error(t('report.error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -113,11 +111,9 @@ export default function ReportIssue() {
               <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-emerald-500" />
               </div>
-              <h2 className="text-xl font-bold mb-2">Reporte enviado</h2>
-              <p className="text-muted-foreground text-sm mb-6">
-                Gracias por reportar. Nuestro equipo revisará tu reporte a la brevedad posible.
-              </p>
-              <Button onClick={() => navigate(-1)}>Volver</Button>
+              <h2 className="text-xl font-bold mb-2">{t('report.successTitle')}</h2>
+              <p className="text-muted-foreground text-sm mb-6">{t('report.successMessage')}</p>
+              <Button onClick={() => navigate(-1)}>{t('report.back')}</Button>
             </CardContent>
           </Card>
         </div>
@@ -130,7 +126,7 @@ export default function ReportIssue() {
       <div className="container mx-auto px-4 py-4 sm:py-8 max-w-lg">
         <Button variant="ghost" size="sm" className="mb-4 gap-1.5" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4" />
-          Volver
+          {t('report.back')}
         </Button>
 
         <Card>
@@ -140,31 +136,31 @@ export default function ReportIssue() {
                 <ShieldAlert className="w-5 h-5 text-destructive" />
               </div>
               <div>
-                <CardTitle className="text-lg">Reportar falla o abuso</CardTitle>
-                <CardDescription className="text-xs">Tu reporte será revisado por nuestro equipo</CardDescription>
+                <CardTitle className="text-lg">{t('report.title')}</CardTitle>
+                <CardDescription className="text-xs">{t('report.subtitle')}</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label>Tipo de reporte *</Label>
+                <Label>{t('report.typeLabel')}</Label>
                 <Select value={type} onValueChange={setType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el tipo" />
+                    <SelectValue placeholder={t('report.typePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="bug">🐛 Falla técnica / Bug</SelectItem>
-                    <SelectItem value="abuse">⚠️ Abuso / Conducta inapropiada</SelectItem>
-                    <SelectItem value="other">📝 Otro</SelectItem>
+                    <SelectItem value="bug">{t('report.bugOption')}</SelectItem>
+                    <SelectItem value="abuse">{t('report.abuseOption')}</SelectItem>
+                    <SelectItem value="other">{t('report.otherOption')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Asunto *</Label>
+                <Label>{t('report.subjectLabel')}</Label>
                 <Input
-                  placeholder="Describe brevemente el problema"
+                  placeholder={t('report.subjectPlaceholder')}
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   maxLength={150}
@@ -172,9 +168,9 @@ export default function ReportIssue() {
               </div>
 
               <div className="space-y-2">
-                <Label>Descripción detallada *</Label>
+                <Label>{t('report.descriptionLabel')}</Label>
                 <Textarea
-                  placeholder="Explica el problema con el mayor detalle posible. Incluye pasos para reproducir si es una falla técnica."
+                  placeholder={t('report.descriptionPlaceholder')}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
@@ -185,7 +181,7 @@ export default function ReportIssue() {
               </div>
 
               <div className="space-y-2">
-                <Label>Email de contacto</Label>
+                <Label>{t('report.emailLabel')}</Label>
                 <Input
                   type="email"
                   placeholder="tu@email.com"
@@ -197,7 +193,7 @@ export default function ReportIssue() {
 
               {/* Attachments */}
               <div className="space-y-2">
-                <Label>Adjuntos (opcional)</Label>
+                <Label>{t('report.attachments')}</Label>
                 <div className="flex flex-wrap gap-2">
                   {attachments.map((file, i) => (
                     <div key={i} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
@@ -217,7 +213,7 @@ export default function ReportIssue() {
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Paperclip className="w-4 h-4" />
-                    Adjuntar imagen o video
+                    {t('report.attachFile')}
                   </Button>
                 )}
                 <input
@@ -228,7 +224,7 @@ export default function ReportIssue() {
                   onChange={handleFileSelect}
                   className="hidden"
                 />
-                <p className="text-[11px] text-muted-foreground">Máx. 5 archivos, 10MB c/u</p>
+                <p className="text-[11px] text-muted-foreground">{t('report.maxFiles')}</p>
               </div>
 
               <Button
@@ -237,7 +233,7 @@ export default function ReportIssue() {
                 disabled={isSubmitting || !type || !subject || !description}
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {isSubmitting ? 'Enviando...' : 'Enviar reporte'}
+                {isSubmitting ? t('report.submitting') : t('report.submitButton')}
               </Button>
             </form>
           </CardContent>

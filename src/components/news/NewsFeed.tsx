@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Newspaper, Clock, MessageCircle, ArrowRight } from 'lucide-react';
+import { Newspaper, Clock, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 
 interface NewsItem {
   id: string;
@@ -20,6 +21,8 @@ interface NewsItem {
 }
 
 export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(_props, ref) {
+  const { language, t } = useLanguage();
+  const locale = language === 'es' ? es : enUS;
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,11 +47,11 @@ export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
           <Newspaper className="w-5 h-5 text-primary" />
-          Noticias Médicas
+          {t('medicalNews.title')}
         </h2>
         <Link to="/news">
           <Button variant="ghost" size="sm" className="gap-1 text-primary">
-            Ver todas <ArrowRight className="w-4 h-4" />
+            {t('medicalNews.viewAll')} <ArrowRight className="w-4 h-4" />
           </Button>
         </Link>
       </div>
@@ -72,7 +75,7 @@ export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(
                   <Badge variant="secondary" className="text-[10px]">{item.category}</Badge>
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {format(new Date(item.published_at || item.created_at), 'd MMM', { locale: es })}
+                    {format(new Date(item.published_at || item.created_at), 'd MMM', { locale })}
                   </span>
                 </div>
                 <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors text-sm">
