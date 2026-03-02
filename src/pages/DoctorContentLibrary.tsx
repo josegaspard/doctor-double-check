@@ -154,11 +154,51 @@ export default function DoctorContentLibrary() {
     return matchesSearch && matchesType;
   });
 
+  const extractStoragePath = (url: string): string => {
+    if (!url) return '';
+    const decoded = decodeURIComponent(url.trim());
+    // Match bucket/path pattern from various URL formats
+    const patterns = [
+      /\/storage\/v1\/object\/(?:public|sign)\/([^?]+)/,
+      /\/object\/(?:public|sign)\/([^?]+)/,
+    ];
+    for (const pattern of patterns) {
+      const match = decoded.match(pattern);
+      if (match) {
+        const fullPath = match[1];
+        // Remove bucket prefix to get just the file path
+        const slashIndex = fullPath.indexOf('/');
+        return slashIndex >= 0 ? fullPath.substring(slashIndex + 1) : fullPath;
+      }
+    }
+    return decoded;
+  };
+
   const handleDelete = async () => {
     if (!deleteId) return;
 
     setIsDeleting(true);
     try {
+      // Find the content to get file URLs before deleting
+      const contentToDelete = contents.find(c => c.id === deleteId);
+
+      // 1. Delete the actual file from doctor-content bucket
+      if (contentToDelete?.file_url) {
+        const filePath = extractStoragePath(contentToDelete.file_url);
+        if (filePath) {
+          await supabase.storage.from('doctor-content').remove([filePath]);
+        }
+      }
+
+      // 2. Delete thumbnail from thumbnails bucket
+      if (contentToDelete?.thumbnail_url) {
+        const thumbPath = extractStoragePath(contentToDelete.thumbnail_url);
+        if (thumbPath) {
+          await supabase.storage.from('thumbnails').remove([thumbPath]);
+        }
+      }
+
+      // 3. Delete the DB record (purchases.content_id will be SET NULL automatically)
       const { error } = await supabase
         .from('doctor_content')
         .delete()
@@ -167,7 +207,7 @@ export default function DoctorContentLibrary() {
       if (error) throw error;
 
       setContents(prev => prev.filter(c => c.id !== deleteId));
-      toast.success('Contenido eliminado');
+      toast.success('Contenido eliminado por completo de la plataforma');
     } catch (error) {
       console.error('Error deleting content:', error);
       toast.error('Error al eliminar contenido');
