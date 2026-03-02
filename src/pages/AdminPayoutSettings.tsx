@@ -171,7 +171,7 @@ export default function AdminPayoutSettings() {
             variant="ghost"
             size="sm"
             onClick={() => navigate('/admin')}
-            className="mb-4 -ml-2 text-muted-foreground hover:text-foreground"
+            className="hidden sm:inline-flex mb-4 -ml-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             {language === 'es' ? 'Volver al panel' : 'Back to panel'}

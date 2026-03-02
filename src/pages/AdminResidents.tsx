@@ -154,7 +154,7 @@ export default function AdminResidents() {
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="hidden sm:flex">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>

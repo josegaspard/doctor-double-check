@@ -111,7 +111,7 @@ Para cualquier consulta sobre estos términos, puede contactarnos a través de l
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center gap-3 sm:gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="flex-shrink-0">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hidden sm:flex flex-shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2">
