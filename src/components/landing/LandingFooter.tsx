@@ -53,6 +53,7 @@ export function LandingFooter() {
               <li><ScrollToTopLink to="/terms" className="hover:text-[#aed3d9] transition-colors">Términos</ScrollToTopLink></li>
               <li><ScrollToTopLink to="/security" className="hover:text-[#aed3d9] transition-colors">Seguridad</ScrollToTopLink></li>
               <li><ScrollToTopLink to="/compliance" className="hover:text-[#aed3d9] transition-colors">Compliance</ScrollToTopLink></li>
+              <li><ScrollToTopLink to="/report-issue" className="hover:text-[#aed3d9] transition-colors text-orange-300/80 hover:text-orange-200">Reportar falla o abuso</ScrollToTopLink></li>
             </ul>
           </div>
         </div>
