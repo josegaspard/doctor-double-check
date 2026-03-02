@@ -37,6 +37,28 @@ function SocialIcons({ socialLinks, className = '' }: { socialLinks: any; classN
   );
 }
 
+function FooterLinkColumn({ title, links }: { title: string; links: { label: string; href: string }[] }) {
+  return (
+    <div>
+      <h4 className="text-white font-bold mb-3 sm:mb-4 text-xs uppercase tracking-wider">{title}</h4>
+      <ul className="space-y-2 sm:space-y-3">
+        {links.map((link, i) => (
+          <li key={i}>
+            <Link
+              to={link.href}
+              className={`text-xs sm:text-sm hover:text-white/90 transition-colors ${
+                link.href === '/report-issue' ? 'text-orange-300/80 hover:text-orange-200' : 'text-slate-400'
+              }`}
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function UnifiedFooter({ variant }: Props) {
   const { footerLinks } = useFooterLinks();
   const { socialLinks } = useSocialLinks();
@@ -44,41 +66,27 @@ export function UnifiedFooter({ variant }: Props) {
 
   if (variant === 'app') {
     return (
-      <footer className="bg-[#0b1d45] text-slate-300 py-6 mt-auto hidden sm:block">
+      <footer className="bg-[#0b1d45] text-slate-300 pt-8 pb-6 mt-auto hidden sm:block">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <img src={logoWhite} alt="Medical Masters" className="h-7 opacity-90" />
-              </div>
-              <SocialIcons socialLinks={socialLinks} />
+          {/* Main grid: Logo+Social | Platform | Resources | Legal */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-6">
+            {/* Brand column */}
+            <div className="col-span-2 md:col-span-1">
+              <img src={logoWhite} alt="Medical Masters" className="h-7 opacity-90 mb-3" />
+              <SocialIcons socialLinks={socialLinks} className="mt-3" />
             </div>
 
-            <div className="border-t border-white/10" />
+            <FooterLinkColumn title={t('landingFooter.platform')} links={footerLinks.platform} />
+            <FooterLinkColumn title={t('landingFooter.resources')} links={footerLinks.resources} />
+            <FooterLinkColumn title={t('landingFooter.legal')} links={footerLinks.legal} />
+          </div>
 
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <nav className="flex items-center gap-4 flex-wrap justify-center">
-                {footerLinks.legal.map((link, i) => (
-                  <Link
-                    key={i}
-                    to={link.href}
-                    className={`text-xs hover:text-white/90 transition-colors ${
-                      link.href === '/report-issue' ? 'text-orange-300/80 hover:text-orange-200' : 'text-slate-400'
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-              <p className="text-xs text-slate-500">{footerLinks.copyright}</p>
-            </div>
-
+          <div className="border-t border-white/10 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-slate-500">{footerLinks.copyright}</p>
             {footerLinks.show_status_badge && (
-              <div className="flex justify-center md:justify-end">
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-green-500 font-bold text-xs">{t('landingFooter.allSystems')}</span>
-                </div>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-green-500 font-bold text-xs">{t('landingFooter.allSystems')}</span>
               </div>
             )}
           </div>
@@ -102,51 +110,9 @@ export function UnifiedFooter({ variant }: Props) {
           </div>
 
           {/* Platform */}
-          <div>
-            <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">{t('landingFooter.platform')}</h4>
-            <ul className="space-y-2 sm:space-y-4 text-xs sm:text-sm">
-              {footerLinks.platform.map((link, i) => (
-                <li key={i}>
-                  <Link to={link.href} className="hover:text-[#aed3d9] transition-colors">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Resources */}
-          <div>
-            <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">{t('landingFooter.resources')}</h4>
-            <ul className="space-y-2 sm:space-y-4 text-xs sm:text-sm">
-              {footerLinks.resources.map((link, i) => (
-                <li key={i}>
-                  <Link to={link.href} className="hover:text-[#aed3d9] transition-colors">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h4 className="text-white font-bold mb-3 sm:mb-6 text-sm">{t('landingFooter.legal')}</h4>
-            <ul className="space-y-2 sm:space-y-4 text-xs sm:text-sm">
-              {footerLinks.legal.map((link, i) => (
-                <li key={i}>
-                  <Link
-                    to={link.href}
-                    className={`hover:text-[#aed3d9] transition-colors ${
-                      link.href === '/report-issue' ? 'text-orange-300/80 hover:text-orange-200' : ''
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FooterLinkColumn title={t('landingFooter.platform')} links={footerLinks.platform} />
+          <FooterLinkColumn title={t('landingFooter.resources')} links={footerLinks.resources} />
+          <FooterLinkColumn title={t('landingFooter.legal')} links={footerLinks.legal} />
         </div>
 
         <div className="border-t border-white/10 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
