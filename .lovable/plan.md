@@ -1,123 +1,99 @@
 
 
-# Plan: Paginacion de Noticias + Filtros Avanzados + UX/UI Optimizado
+# Plan: Footer Unificado + Categorias UX + Sincronizacion de Contenidos
 
-## Resumen
+## 1. Footer Unificado Completo (Landing + App)
 
-Implementar paginacion de 15 en 15 en la pagina de Noticias Medicas, aumentar el feed de la landing a 15 items con boton "Leer mas noticias", agregar filtros avanzados (mas leidos, mas comentados, recientes), y optimizar completamente el UX/UI en PC, tablet y movil.
+**Problema**: El footer del app solo muestra links legales + redes sociales, pero el usuario quiere que TAMBIEN incluya los items de Plataforma y Recursos (como el footer de la landing), todo administrable.
 
----
+**Cambios en `UnifiedFooter.tsx`**:
+- Variante `app`: Agregar las 3 columnas (Plataforma, Recursos, Legal) en un grid compacto debajo del logo + redes sociales, en lugar de solo mostrar links legales en una linea
+- En desktop: Grid de 4 columnas (Logo+Redes | Plataforma | Recursos | Legal)
+- En tablet: Grid de 2x2
+- Mantener logo, redes sociales, copyright y badge de status
+- Todo se sigue leyendo desde `site_settings` (footer_links + social_links), por lo que ya es administrable
 
-## 1. Migracion SQL: Agregar columna `view_count`
-
-Agregar una columna `view_count` a `medical_news` para poder ordenar por "mas leidos". Se incrementara cada vez que un usuario abra un articulo.
-
-```text
-ALTER TABLE medical_news ADD COLUMN view_count integer NOT NULL DEFAULT 0;
-```
-
----
-
-## 2. Pagina de Noticias Medicas (`src/pages/MedicalNews.tsx`)
-
-### Paginacion de 15 en 15
-- Agregar estados: `page` (numero de pagina actual), `totalCount` (total de noticias)
-- Cambiar la query para usar `.range(from, to)` con `from = page * 15` y `to = (page + 1) * 15 - 1`
-- Agregar componente de paginacion al final usando los componentes `Pagination` existentes
-- Mostrar indicador de "Pagina X de Y" compacto en movil
-
-### Filtros avanzados (sorting)
-- Agregar un nuevo estado `sortBy` con opciones:
-  - `recent` (por defecto) -- ordenar por `published_at DESC`
-  - `most_read` -- ordenar por `view_count DESC`
-  - `most_commented` -- ordenar por conteo de comentarios (calculado client-side tras fetch, o con un sort local)
-- UI: Fila de chips/botones debajo de la barra de busqueda, antes de las categorias
-- En movil: Scroll horizontal para los filtros de ordenamiento
-
-### Mejoras UX/UI completas
-- **Primer articulo destacado (hero)**: En desktop/tablet, el primer articulo de la primera pagina se muestra en formato hero (full-width, imagen grande, titulo grande), el resto en grid de 3 columnas
-- **Grid responsivo**: 1 columna en movil, 2 en tablet, 3 en desktop
-- **Cards mejoradas**: Agregar badge de view_count ("X lecturas"), comentarios mas visibles, animaciones suaves
-- **Filtros con scroll horizontal en movil**: Las categorias y filtros de sort usan `overflow-x-auto` con `scrollbar-hide`
-- **Skeleton loading**: Mostrar skeleton cards durante la carga en lugar del spinner centrado
-- **Paginacion compacta en movil**: Solo flechas prev/next con numero de pagina actual, en desktop se muestran numeros de pagina
+No se necesitan cambios en el admin ni en la base de datos -- la configuracion ya existe y es editable.
 
 ---
 
-## 3. Feed de Noticias en Landing (`src/components/news/NewsFeed.tsx`)
+## 2. Categorias UX/UI - Scroll Horizontal Optimizado
 
-- Aumentar el `limit` de 6 a 15
-- Agregar boton "Leer mas noticias" al final que navega a `/news`
-- Layout: Mostrar las primeras 3 como cards grandes (visible), las siguientes como lista compacta (titulo + fecha + categoria)
-- Boton con estilo destacado: icono de periodico + texto + flecha
+**Problema**: Las categorias se cortan visualmente en PC/tablet. En movil se puede arrastrar pero en PC no es claro.
 
----
-
-## 4. Incrementar view_count al abrir articulo (`src/pages/NewsArticle.tsx`)
-
-- Al cargar un articulo, ejecutar un `supabase.rpc` o un `UPDATE` para incrementar `view_count`
-- Usar un approach simple: `UPDATE medical_news SET view_count = view_count + 1 WHERE id = article.id`
-- Esto requiere que la RLS permita a cualquier autenticado hacer update solo de `view_count`, o usar una funcion RPC con `SECURITY DEFINER`
-
-### Funcion SQL RPC (en la migracion)
-
-```text
-CREATE OR REPLACE FUNCTION increment_news_view(news_id uuid)
-RETURNS void
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  UPDATE medical_news SET view_count = view_count + 1 WHERE id = news_id AND is_published = true;
-$$;
-```
+**Cambios en `MedicalNews.tsx`**:
+- Agregar flechas de navegacion (chevron izquierda/derecha) en PC y tablet para indicar que hay mas categorias
+- Las flechas aparecen solo cuando hay overflow (contenido oculto a izquierda o derecha)
+- En movil: mantener el scroll tactil con `overflow-x-auto`
+- Aplicar el mismo patron a los filtros de sort (Recientes, Mas leidos, Mas comentados)
+- Agregar `scroll-smooth` para animacion suave al hacer clic en las flechas
 
 ---
 
-## 5. Mostrar lecturas en el articulo y listado
+## 3. Sincronizacion de Contenido Eliminado
 
-- En `NewsArticle.tsx`: Mostrar "X lecturas" junto a la fecha
-- En `MedicalNews.tsx`: Mostrar "X lecturas" en las cards junto a los comentarios
+**Problema**: El usuario dice que borro contenidos pero siguen apareciendo en "Biblioteca de Contenido" (ContentGallery). Los registros aun existen en la base de datos (`doctor_content` tiene 33+ filas). Esto indica que la eliminacion no se completo correctamente o se hizo solo desde el almacenamiento pero no de la BD.
+
+### 3a. Agregar eliminacion en DoctorUpload ("Subir Contenido")
+
+**Cambios en `DoctorUpload.tsx`**:
+- En la seccion "Mi Contenido", agregar un boton de eliminar individual (icono Trash) en cada item
+- Agregar modo de gestion masiva: boton "Gestionar" que activa checkboxes, seleccionar todo, y eliminar seleccionados
+- Barra flotante de eliminacion masiva (mismo patron glassmorphism del plan anterior)
+- Dialogo de confirmacion antes de eliminar
+- Al eliminar: borrar registro de `doctor_content` + archivos del bucket `doctor-content` y `thumbnails`
+- Refrescar la lista local tras eliminar
+
+### 3b. ContentGallery ya sincroniza automaticamente
+
+**`ContentGallery.tsx`** ya consulta `doctor_content` con `is_public = true` en cada carga. Si los registros se eliminan correctamente de la BD, dejaran de aparecer automaticamente. No necesita cambios de codigo.
+
+El problema real es que los contenidos NO fueron eliminados de la base de datos. La solucion es darle al doctor herramientas para eliminarlos desde la UI (DoctorUpload y DoctorContentLibrary ya tienen delete).
+
+### 3c. DoctorContentLibrary ya tiene eliminacion
+
+**`DoctorContentLibrary.tsx`** ya tiene eliminacion individual y masiva. No necesita cambios.
 
 ---
 
 ## Resumen de archivos
 
-**Migracion SQL (1)**:
-- Agregar columna `view_count` a `medical_news`
-- Crear funcion RPC `increment_news_view`
+**Archivos a modificar (3)**:
+- `src/components/layout/UnifiedFooter.tsx` -- Footer app con todas las columnas (Plataforma, Recursos, Legal), no solo links legales
+- `src/pages/MedicalNews.tsx` -- Flechas de navegacion para categorias en PC/tablet
+- `src/pages/DoctorUpload.tsx` -- Agregar eliminacion individual y masiva en "Mi Contenido"
 
-**Archivos modificados (3)**:
-- `src/pages/MedicalNews.tsx` -- Paginacion 15 en 15, filtros avanzados (recientes, mas leidos, mas comentados), hero card, skeleton loading, paginacion responsive
-- `src/components/news/NewsFeed.tsx` -- Aumentar a 15 items, boton "Leer mas noticias", layout mixto cards+lista
-- `src/pages/NewsArticle.tsx` -- Llamar `increment_news_view` al cargar, mostrar conteo de lecturas
-
-**Sin archivos nuevos** -- se reutilizan componentes existentes (Pagination, Skeleton, Badge, etc.)
+**Sin archivos nuevos ni migraciones SQL** -- se reutiliza la infraestructura existente.
 
 ---
 
-## Detalles tecnicos de paginacion
+## Detalles tecnicos
 
+### Footer App - Layout unificado
 ```text
-// Estado
-const [page, setPage] = useState(0);
-const [totalCount, setTotalCount] = useState(0);
-const PAGE_SIZE = 15;
+Desktop (md+):
+[Logo + Redes] | [Plataforma] | [Recursos] | [Legal]
+---separator---
+[Copyright]                              [Status Badge]
 
-// Query con rango
-const from = page * PAGE_SIZE;
-const to = from + PAGE_SIZE - 1;
-
-const { data, count } = await supabase
-  .from('medical_news')
-  .select('...', { count: 'exact' })
-  .eq('is_published', true)
-  .order(sortColumn, { ascending: false })
-  .range(from, to);
-
-// Total de paginas
-const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+Tablet (sm):
+[Logo + Redes]
+[Plataforma | Recursos]
+[Legal]
+---separator---
+[Copyright] [Status Badge]
 ```
 
-Los filtros de categoria y busqueda se aplican como condiciones adicionales en la query (server-side), no client-side, para que la paginacion sea correcta.
+### Categorias con flechas
+```text
+[<] [Todas] [Cardiologia] [Neurologia] ... [Cirugia] [>]
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     overflow-x-auto, scroll-smooth, scrollbar-hide
+```
+Las flechas se ocultan automaticamente cuando no hay mas contenido en esa direccion usando `useRef` + `scrollLeft` detection.
+
+### Eliminacion en DoctorUpload
+- Reutilizar la misma logica de `deleteContent()` de `DoctorContentLibrary.tsx` (extraer path del storage, borrar de BD, luego borrar archivos)
+- Agregar `AlertDialog` de confirmacion
+- Modo gestion: checkboxes + seleccionar todo + barra flotante
 
