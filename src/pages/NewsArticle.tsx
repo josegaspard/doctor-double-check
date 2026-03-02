@@ -16,7 +16,7 @@ import {
   ArrowLeft, Clock, Share2, MessageCircle, Send, Loader2,
   Trash2, Stethoscope, User, GraduationCap, Facebook, Twitter, Link as LinkIcon,
   Globe, Instagram, Linkedin, Pencil, Reply, ChevronDown, ChevronUp,
-  Star, MapPin, Users, Edit, LogIn
+  Star, MapPin, Users, Edit, LogIn, Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -60,6 +60,8 @@ export default function NewsArticle() {
         .maybeSingle();
       setArticle(data);
       if (data) {
+        // Increment view count
+        supabase.rpc('increment_news_view', { news_id: data.id }).then(() => {});
         fetchComments(data.id);
         // Fetch author profile
         const { data: authorP } = await supabase
@@ -325,6 +327,12 @@ export default function NewsArticle() {
             <Clock className="w-3 h-3" />
             {format(new Date(article.published_at || article.created_at), "d 'de' MMMM, yyyy", { locale: es })}
           </span>
+          {article.view_count > 0 && (
+            <span className="text-sm text-muted-foreground flex items-center gap-1">
+              <Eye className="w-3 h-3" />
+              {article.view_count} lecturas
+            </span>
+          )}
         </div>
 
         {/* Title */}
