@@ -242,6 +242,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                   placeholder="0 = gratuita"
                   value={recordingPrice}
                   onChange={(e) => setRecordingPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                  onFocus={(e) => { if (e.target.value === '0') setRecordingPrice(''); }}
                 />
                 <p className="text-xs text-muted-foreground">Deja en 0 para ofrecer la grabación gratis</p>
               </div>

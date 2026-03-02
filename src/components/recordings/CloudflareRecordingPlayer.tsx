@@ -309,7 +309,7 @@ export function CloudflareRecordingPlayer({
   return (
     <div 
       ref={containerRef}
-      className="relative aspect-[9/16] sm:aspect-video max-h-[80vh] mx-auto bg-black rounded-xl overflow-hidden group"
+      className="relative aspect-video max-h-[80vh] mx-auto bg-black rounded-xl overflow-hidden group"
     >
       <video
         ref={videoRef}
