@@ -1,132 +1,123 @@
 
 
-# Plan: Optimizacion UX/UI Movil + Vault + Footer Unificado
+# Plan: Paginacion de Noticias + Filtros Avanzados + UX/UI Optimizado
 
-## 1. Barra flotante de eliminacion masiva - Optimizacion movil
+## Resumen
 
-**Problema**: La barra de eliminacion masiva en movil se ve mal cuando hay muchos items seleccionados (Notificaciones, Chat, Recetas, Grabaciones).
-
-**Solucion**: Estandarizar la barra flotante de eliminacion masiva en todos los modulos para que:
-- Use `fixed bottom-20` (sobre la barra de navegacion inferior) con bordes redondeados
-- Fondo con efecto glassmorphism (`bg-card/95 backdrop-blur-lg`)
-- Ancho limitado y centrado (`max-w-sm mx-auto`)
-- Sombra elevada para que se distinga del contenido
-- Padding seguro con `safe-area-inset-bottom`
-
-**Archivos a modificar**:
-- `src/pages/Notifications.tsx` - Ya tiene un patron similar, refinar estilos
-- `src/components/chat/ChatSessionsList.tsx` - La barra esta dentro de un Card, moverla a `fixed`
-- `src/components/prescriptions/PrescriptionsList.tsx` - Si tiene bulk delete, aplicar mismo patron
+Implementar paginacion de 15 en 15 en la pagina de Noticias Medicas, aumentar el feed de la landing a 15 items con boton "Leer mas noticias", agregar filtros avanzados (mas leidos, mas comentados, recientes), y optimizar completamente el UX/UI en PC, tablet y movil.
 
 ---
 
-## 2. Vault Medico - Mejora completa UX/UI
+## 1. Migracion SQL: Agregar columna `view_count`
 
-**Problema**: La interfaz del Vault no es lo suficientemente intuitiva y la descripcion no es obligatoria al subir archivos.
-
-**Cambios en `src/pages/Vault.tsx`**:
-
-### Descripcion obligatoria
-- Agregar validacion: el boton "Seleccionar Archivo" se deshabilita si la descripcion esta vacia
-- Mostrar un hint visual debajo del campo: "Describe brevemente tu estudio (obligatorio)"
-- Marcar el campo con un asterisco rojo
-
-### Mejoras UX/UI generales
-- **Zona de upload mejorada**: Cambiar el boton plano por una zona de drop con icono grande, texto claro y borde punteado para que sea mas intuitivo
-- **Instrucciones claras**: Texto explicativo paso a paso: "1. Selecciona la categoria, 2. Describe tu estudio, 3. Selecciona el archivo"
-- **Cards de archivos mejoradas**: Mostrar fecha siempre (incluso en movil), mejorar los botones de accion con iconos mas grandes y etiquetas claras
-- **Empty state mejorado**: Agregar una ilustracion mas clara y un boton CTA directo para subir el primer archivo
-- **Vista previa en movil**: Asegurar que los botones "Permisos" y "Eliminar" tengan touch targets de 44px+
-
----
-
-## 3. Layout interno movil - Consistencia general
-
-**Problema**: Algunas paginas internas se "descuadran" en movil.
-
-**Cambios en `src/components/layout/MainLayout.tsx`**:
-- Asegurar que `main` tenga `overflow-x-hidden` para prevenir scroll horizontal
-- Agregar `min-h-[calc(100vh-56px-72px)]` al main content en movil para evitar que el contenido "flote"
-
-**Revision global**:
-- Verificar que todas las paginas usen `container mx-auto px-3 sm:px-4` de forma consistente
-- Asegurar que los headers de pagina no desborden en pantallas pequenas (truncate en titulos)
-
----
-
-## 4. Footer unificado inteligente
-
-**Problema**: El footer del landing (`LandingFooter`) tiene redes sociales y links utiles, y el footer del app (`MainLayout`) tiene links legales y redes sociales, pero son independientes. Se quiere un footer unificado configurable desde el admin.
-
-**Solucion**: Crear un componente `UnifiedFooter` que:
-- Se use tanto en `LandingFooter` como en el footer de `MainLayout`
-- Lea la configuracion desde `site_settings` (redes sociales ya existe, agregar links del footer)
-- En la **landing**: Muestre el footer completo con columnas (Plataforma, Recursos, Legal, Redes)
-- En la **app**: Muestre una version compacta con links legales + redes sociales + copyright
-- Todo editable desde el panel de admin
-
-### Nueva entrada en `site_settings`
-
-Crear una nueva entrada `footer_links` en `site_settings` via migracion SQL:
+Agregar una columna `view_count` a `medical_news` para poder ordenar por "mas leidos". Se incrementara cada vez que un usuario abra un articulo.
 
 ```text
-id: footer_links
-value: {
-  platform: [
-    { label: "Para Doctores", href: "/for-doctors" },
-    { label: "Para Pacientes", href: "/for-patients" },
-    { label: "Empresas", href: "/enterprise" }
-  ],
-  resources: [
-    { label: "Casos de Exito", href: "/success-stories" },
-    { label: "Ayuda", href: "/help" },
-    { label: "Contacto", href: "/contact" }
-  ],
-  legal: [
-    { label: "Privacidad", href: "/privacy" },
-    { label: "Terminos", href: "/terms" },
-    { label: "Seguridad", href: "/security" },
-    { label: "Cumplimiento", href: "/compliance" },
-    { label: "Reportar", href: "/report-issue" }
-  ],
-  copyright: "2024 Medical Masters. Todos los derechos reservados.",
-  show_status_badge: true
-}
+ALTER TABLE medical_news ADD COLUMN view_count integer NOT NULL DEFAULT 0;
 ```
 
-### Nuevos archivos
-- `src/components/layout/UnifiedFooter.tsx` - Componente reutilizable con props `variant="landing" | "app"`
-- `src/hooks/useFooterLinks.ts` - Hook para cargar links del footer desde site_settings
+---
 
-### Archivos a modificar
-- `src/components/landing/LandingFooter.tsx` - Reemplazar contenido hardcodeado por `UnifiedFooter variant="landing"`
-- `src/components/layout/MainLayout.tsx` - Reemplazar footer actual por `UnifiedFooter variant="app"`
-- `src/pages/AdminSiteSettings.tsx` - Agregar nueva tab "Footer" para editar los links del footer
+## 2. Pagina de Noticias Medicas (`src/pages/MedicalNews.tsx`)
 
-### Panel Admin - Editor de Footer
-Agregar una nueva pestana en AdminSiteSettings:
-- Secciones editables: Plataforma, Recursos, Legal (agregar/quitar/reordenar links)
-- Cada link tiene: label (texto), href (ruta)
-- Toggle para mostrar/ocultar badge de "Todos los sistemas operativos"
-- Campo editable para el texto de copyright
-- Vista previa en vivo del footer
+### Paginacion de 15 en 15
+- Agregar estados: `page` (numero de pagina actual), `totalCount` (total de noticias)
+- Cambiar la query para usar `.range(from, to)` con `from = page * 15` y `to = (page + 1) * 15 - 1`
+- Agregar componente de paginacion al final usando los componentes `Pagination` existentes
+- Mostrar indicador de "Pagina X de Y" compacto en movil
+
+### Filtros avanzados (sorting)
+- Agregar un nuevo estado `sortBy` con opciones:
+  - `recent` (por defecto) -- ordenar por `published_at DESC`
+  - `most_read` -- ordenar por `view_count DESC`
+  - `most_commented` -- ordenar por conteo de comentarios (calculado client-side tras fetch, o con un sort local)
+- UI: Fila de chips/botones debajo de la barra de busqueda, antes de las categorias
+- En movil: Scroll horizontal para los filtros de ordenamiento
+
+### Mejoras UX/UI completas
+- **Primer articulo destacado (hero)**: En desktop/tablet, el primer articulo de la primera pagina se muestra en formato hero (full-width, imagen grande, titulo grande), el resto en grid de 3 columnas
+- **Grid responsivo**: 1 columna en movil, 2 en tablet, 3 en desktop
+- **Cards mejoradas**: Agregar badge de view_count ("X lecturas"), comentarios mas visibles, animaciones suaves
+- **Filtros con scroll horizontal en movil**: Las categorias y filtros de sort usan `overflow-x-auto` con `scrollbar-hide`
+- **Skeleton loading**: Mostrar skeleton cards durante la carga en lugar del spinner centrado
+- **Paginacion compacta en movil**: Solo flechas prev/next con numero de pagina actual, en desktop se muestran numeros de pagina
+
+---
+
+## 3. Feed de Noticias en Landing (`src/components/news/NewsFeed.tsx`)
+
+- Aumentar el `limit` de 6 a 15
+- Agregar boton "Leer mas noticias" al final que navega a `/news`
+- Layout: Mostrar las primeras 3 como cards grandes (visible), las siguientes como lista compacta (titulo + fecha + categoria)
+- Boton con estilo destacado: icono de periodico + texto + flecha
+
+---
+
+## 4. Incrementar view_count al abrir articulo (`src/pages/NewsArticle.tsx`)
+
+- Al cargar un articulo, ejecutar un `supabase.rpc` o un `UPDATE` para incrementar `view_count`
+- Usar un approach simple: `UPDATE medical_news SET view_count = view_count + 1 WHERE id = article.id`
+- Esto requiere que la RLS permita a cualquier autenticado hacer update solo de `view_count`, o usar una funcion RPC con `SECURITY DEFINER`
+
+### Funcion SQL RPC (en la migracion)
+
+```text
+CREATE OR REPLACE FUNCTION increment_news_view(news_id uuid)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  UPDATE medical_news SET view_count = view_count + 1 WHERE id = news_id AND is_published = true;
+$$;
+```
+
+---
+
+## 5. Mostrar lecturas en el articulo y listado
+
+- En `NewsArticle.tsx`: Mostrar "X lecturas" junto a la fecha
+- En `MedicalNews.tsx`: Mostrar "X lecturas" en las cards junto a los comentarios
 
 ---
 
 ## Resumen de archivos
 
-**Nuevos archivos (2)**:
-- `src/components/layout/UnifiedFooter.tsx`
-- `src/hooks/useFooterLinks.ts`
-
-**Archivos modificados (6)**:
-- `src/pages/Vault.tsx` - Descripcion obligatoria + mejoras UX/UI completas
-- `src/pages/Notifications.tsx` - Barra flotante de delete mejorada
-- `src/components/chat/ChatSessionsList.tsx` - Barra flotante de delete consistente
-- `src/components/layout/MainLayout.tsx` - Overflow fix + footer unificado
-- `src/components/landing/LandingFooter.tsx` - Usar UnifiedFooter
-- `src/pages/AdminSiteSettings.tsx` - Tab de edicion de footer
-
 **Migracion SQL (1)**:
-- Insertar `footer_links` en `site_settings`
+- Agregar columna `view_count` a `medical_news`
+- Crear funcion RPC `increment_news_view`
+
+**Archivos modificados (3)**:
+- `src/pages/MedicalNews.tsx` -- Paginacion 15 en 15, filtros avanzados (recientes, mas leidos, mas comentados), hero card, skeleton loading, paginacion responsive
+- `src/components/news/NewsFeed.tsx` -- Aumentar a 15 items, boton "Leer mas noticias", layout mixto cards+lista
+- `src/pages/NewsArticle.tsx` -- Llamar `increment_news_view` al cargar, mostrar conteo de lecturas
+
+**Sin archivos nuevos** -- se reutilizan componentes existentes (Pagination, Skeleton, Badge, etc.)
+
+---
+
+## Detalles tecnicos de paginacion
+
+```text
+// Estado
+const [page, setPage] = useState(0);
+const [totalCount, setTotalCount] = useState(0);
+const PAGE_SIZE = 15;
+
+// Query con rango
+const from = page * PAGE_SIZE;
+const to = from + PAGE_SIZE - 1;
+
+const { data, count } = await supabase
+  .from('medical_news')
+  .select('...', { count: 'exact' })
+  .eq('is_published', true)
+  .order(sortColumn, { ascending: false })
+  .range(from, to);
+
+// Total de paginas
+const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+```
+
+Los filtros de categoria y busqueda se aplican como condiciones adicionales en la query (server-side), no client-side, para que la paginacion sea correcta.
 
