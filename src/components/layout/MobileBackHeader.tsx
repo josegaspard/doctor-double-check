@@ -16,6 +16,7 @@ const ROOT_ROUTES = [
   '/register',
   '/onboarding',
   '/role-selector',
+  '/doctor/dashboard',
   '/',
 ];
 
