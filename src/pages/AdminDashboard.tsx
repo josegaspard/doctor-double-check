@@ -21,6 +21,7 @@ import {
   FileText,
   Newspaper,
   ShieldCheck,
+  Flag,
 } from 'lucide-react';
 
 interface AdminModule {
@@ -45,6 +46,7 @@ const adminModules: AdminModule[] = [
   { id: 'refunds', titleKey: 'admin.refunds', descriptionKey: 'admin.refunds', icon: RefreshCcw, href: '/admin/refunds', color: 'text-destructive' },
   { id: 'news', titleKey: 'admin.news', descriptionKey: 'admin.news', icon: Newspaper, href: '/admin/news', color: 'text-primary' },
   { id: 'credentials', titleKey: 'admin.credentials', descriptionKey: 'admin.credentials', icon: ShieldCheck, href: '/admin/credentials', color: 'text-accent' },
+  { id: 'reports', titleKey: 'admin.reports', descriptionKey: 'admin.reports', icon: Flag, href: '/admin/reports', color: 'text-destructive' },
 ];
 
 // Localized module titles/descriptions
@@ -61,6 +63,7 @@ const moduleLabels: Record<string, { es: { title: string; desc: string }; en: { 
   refunds: { es: { title: 'Gestión de Reembolsos', desc: 'Procesa reembolsos y disputas' }, en: { title: 'Refund Management', desc: 'Process refunds and disputes' } },
   news: { es: { title: 'Noticias y Blog Médico', desc: 'Crea y publica artículos médicos' }, en: { title: 'Medical News & Blog', desc: 'Create and publish medical articles' } },
   credentials: { es: { title: 'Credenciales de Doctores', desc: 'Revisa educación y certificaciones' }, en: { title: 'Doctor Credentials', desc: 'Review education and certifications' } },
+  reports: { es: { title: 'Reportes y Reclamos', desc: 'Gestiona reportes de usuarios y abuso' }, en: { title: 'Reports & Claims', desc: 'Manage user reports and abuse' } },
 };
 
 interface Stats {
