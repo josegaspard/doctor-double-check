@@ -604,6 +604,52 @@ export default function UserProfile() {
                           placeholder={t('profile.locationPlaceholder')}
                           className="flex-1"
                         />
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="flex-shrink-0 gap-1"
+                          disabled={isSavingLocation}
+                          onClick={() => {
+                            if (!('geolocation' in navigator)) {
+                              toast.error('Tu navegador no soporta geolocalización');
+                              return;
+                            }
+                            navigator.geolocation.getCurrentPosition(
+                              (pos) => {
+                                // Simple reverse geocode using known cities
+                                const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
+                                  'ciudad de mexico': { lat: 19.4326, lng: -99.1332 },
+                                  'guadalajara': { lat: 20.6597, lng: -103.3496 },
+                                  'monterrey': { lat: 25.6866, lng: -100.3161 },
+                                  'puebla': { lat: 19.0414, lng: -98.2063 },
+                                  'tijuana': { lat: 32.5149, lng: -117.0382 },
+                                  'merida': { lat: 20.9674, lng: -89.5926 },
+                                  'cancun': { lat: 21.1619, lng: -86.8515 },
+                                  'queretaro': { lat: 20.5888, lng: -100.3899 },
+                                  'oaxaca': { lat: 17.0732, lng: -96.7266 },
+                                  'veracruz': { lat: 19.1738, lng: -96.1342 },
+                                  'toluca': { lat: 19.2826, lng: -99.6557 },
+                                };
+                                const R = 6371;
+                                let nearest = 'Ciudad De Mexico';
+                                let minDist = Infinity;
+                                for (const [city, coords] of Object.entries(CITY_COORDS)) {
+                                  const dLat = (coords.lat - pos.coords.latitude) * Math.PI / 180;
+                                  const dLng = (coords.lng - pos.coords.longitude) * Math.PI / 180;
+                                  const a = Math.sin(dLat / 2) ** 2 + Math.cos(pos.coords.latitude * Math.PI / 180) * Math.cos(coords.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+                                  const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                                  if (dist < minDist) { minDist = dist; nearest = city.replace(/\b\w/g, c => c.toUpperCase()); }
+                                }
+                                setEditedLocation(nearest);
+                                toast.success(`Ubicación detectada: ${nearest}`);
+                              },
+                              () => toast.error('No se pudo obtener tu ubicación')
+                            );
+                          }}
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline text-xs">{t('profile.useMyLocation')}</span>
+                        </Button>
                         <Button size="sm" onClick={handleSaveLocation} disabled={isSavingLocation}>
                           {isSavingLocation ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                         </Button>
