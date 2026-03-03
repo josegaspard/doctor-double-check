@@ -84,7 +84,7 @@ export function ChatMessagesPanel({
   const { t } = useLanguage();
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages.length]);
 
   // Check if there's an active video room for this consultation
