@@ -96,19 +96,31 @@ export default function AdminDoctors() {
     try {
       const { data: doctorProfiles, error } = await supabase
         .from('doctor_profiles')
-        .select('*')
+        .select('*, cedula_verifications:cedula_verification_id(nombre, paterno, materno, titulo, institucion, anio_registro, is_verified, is_claimed, verified_at)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       const doctorsWithProfiles = await Promise.all(
-        (doctorProfiles || []).map(async (doc) => {
+        (doctorProfiles || []).map(async (doc: any) => {
           const { data: profile } = await supabase
             .from('profiles')
             .select('name, email, avatar_url')
             .eq('id', doc.user_id)
             .single();
-          return { ...doc, profile } as DoctorRequest;
+
+          // Count document signatures
+          const { count } = await supabase
+            .from('document_signatures')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', doc.user_id);
+
+          return {
+            ...doc,
+            profile,
+            cedula_verification: doc.cedula_verifications || null,
+            document_signatures_count: count || 0,
+          } as DoctorRequest;
         })
       );
 
