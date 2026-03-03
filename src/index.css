@@ -203,17 +203,7 @@
     padding-right: env(safe-area-inset-right);
   }
 
-  /* Minimum touch target for all interactive elements */
-  button, a, [role="button"], input[type="checkbox"], input[type="radio"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
-
-  /* Allow smaller buttons when explicitly sized */
-  button.h-7, button.h-8, button.h-9, [class*="size-icon"] {
-    min-height: unset;
-    min-width: unset;
-  }
+  /* Touch-friendly tap targets — applied via component sizing, not globally */
 
   /* Minimum touch target for all interactive elements */
   button, a, [role="button"], input, select, textarea {
