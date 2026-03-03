@@ -123,7 +123,7 @@ export function useAuthState() {
         // Redirect signed users away from login/root regardless of provider metadata.
         // Some linked accounts can report provider=email even when login happened with Google.
         const currentPath = window.location.pathname;
-        const shouldRedirect = currentPath === '/' || currentPath === '/login';
+        const shouldRedirect = currentPath === '/' || currentPath === '/login' || currentPath === '/email-confirmed';
 
         if (shouldRedirect) {
           if (event === 'SIGNED_IN') {

@@ -65,7 +65,7 @@ export function useAuthActions(
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: 'https://cirugiaesteticauribe.com/email-confirmed',
           data: {
             name: data.name,
             role: data.role,

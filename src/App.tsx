@@ -205,6 +205,7 @@ const App = () => (
                       <Route path="/prescriptions/new" element={<CreatePrescription />} />
                       <Route path="/prescriptions/:id" element={<PrescriptionDetail />} />
                       <Route path="/report-issue" element={<ReportIssue />} />
+                      <Route path="/email-confirmed" element={<EmailConfirmed />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>
