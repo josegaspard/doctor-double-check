@@ -573,7 +573,7 @@ export default function AdminDoctors() {
               <AlertDialogCancel>{t('admin.cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleAction}
-                className={actionDialog.action === 'approve' ? 'bg-green-600 hover:bg-green-700' : ''}
+                className={actionDialog.action === 'approve' ? 'bg-success hover:bg-success/90 text-success-foreground' : ''}
               >
                 {actionDialog.action === 'approve' ? t('admin.approve') : t('admin.reject')}
               </AlertDialogAction>
