@@ -1,208 +1,48 @@
 
 
-# Plan: Sistema Completo de Reembolsos con Stripe, Cuenta Bancaria y Herramientas Contables
+# Plan: Optimizar velocidad de carga y corregir navegacion
 
-## Resumen
+## Problema actual
+1. **Carga lenta**: La Landing Page carga un video externo pesado, muchas imagenes de Unsplash, iconos animados y CSS inline. Los contextos (Lives, Wallet, Vault, Chat) hacen multiples queries al montar.
+2. **Enlace cirugiaesteticauribe.com**: No hay logica que maneje la llegada desde el dominio personalizado hacia la landing. Actualmente el `useAuthState` redirige usuarios autenticados desde `/` a su dashboard, lo cual ya funciona.
+3. **Cierre de sesion**: El logout ya redirige a `/lives` (confirmado en `useAuthActions.ts` linea 46). Esto ya esta correcto.
 
-Actualmente el sistema solo acredita reembolsos a la billetera interna del usuario. Este plan implementa un flujo completo donde:
-- Si el usuario pago con Stripe, el reembolso va directo a su tarjeta/cuenta de Stripe
-- Si no tiene Stripe, se le notifica por email que el reembolso tarda 15 dias y debe registrar su cuenta bancaria (CLABE)
-- El admin tiene visibilidad total del tipo de reembolso (Stripe vs Bancario) con exportacion profesional
-- El usuario puede registrar su cuenta bancaria desde su perfil/wallet
+## Cambios propuestos
 
----
+### 1. Optimizar Landing Page (mayor impacto)
+- **Eliminar video de fondo del hero**: El video de Mixkit (~5MB) se carga en cada visita. Reemplazarlo con un gradiente CSS puro o un SVG pattern ligero.
+- **Reemplazar imagenes de Unsplash del social proof** con avatares SVG inline o gradientes (elimina 4 requests HTTP externos).
+- **Mover el CSS de animaciones** (scroll, fade-in, float) del `<style>` inline al archivo `index.css` para evitar repintados.
+- **Agregar `loading="lazy"`** a la imagen principal del hero (doctora) que ya tiene lazy pero falta `fetchpriority="low"`.
 
-## Cambios en Base de Datos (2 migraciones)
+### 2. Optimizar carga de contextos
+- **LivesContext**: El polling cada 8 segundos (`setInterval` linea 455) es agresivo. Aumentarlo a 30 segundos ya que el realtime lo cubre.
+- **fetchUserProfile**: Ya hace queries en paralelo, esta bien optimizado. Sin cambios.
+- **WalletContext y VaultContext**: Solo se montan para usuarios autenticados (via `AuthenticatedProviders`), correcto.
 
-### Migracion 1: Tabla `user_bank_accounts` para que los usuarios registren su cuenta bancaria
+### 3. Optimizar Vite build
+- Agregar **manualChunks** en `vite.config.ts` para separar vendor (react, supabase, framer-motion, recharts) del codigo de la app, mejorando cache del navegador.
 
-```sql
-CREATE TABLE public.user_bank_accounts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
-  bank_name TEXT NOT NULL,
-  clabe VARCHAR(18) NOT NULL,
-  clabe_last4 VARCHAR(4) NOT NULL,
-  account_holder_name TEXT NOT NULL,
-  rfc VARCHAR(13),
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
+### 4. Precargar fuentes correctamente
+- Cambiar el `<link rel="stylesheet">` de Google Fonts a `<link rel="preload" as="style">` para no bloquear el render.
 
-ALTER TABLE public.user_bank_accounts ENABLE ROW LEVEL SECURITY;
+### 5. Verificar navegacion del dominio personalizado
+- El dominio `cirugiaesteticauribe.com` apunta a la app publicada. La ruta `/` ya muestra la Landing y redirige usuarios autenticados. No se necesitan cambios aqui.
+- El logout ya redirige a `/lives`. Confirmado y correcto.
 
-CREATE POLICY "Users can manage own bank account"
-  ON public.user_bank_accounts FOR ALL TO authenticated
-  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+## Detalle tecnico de archivos a modificar
 
-CREATE POLICY "Admins can view all bank accounts"
-  ON public.user_bank_accounts FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
-```
-
-### Migracion 2: Expandir `refund_requests` con campos de metodo y seguimiento
-
-```sql
-ALTER TABLE public.refund_requests
-  ADD COLUMN refund_method TEXT DEFAULT 'wallet',
-  ADD COLUMN stripe_refund_id TEXT,
-  ADD COLUMN bank_transfer_reference TEXT,
-  ADD COLUMN bank_transfer_date TIMESTAMPTZ,
-  ADD COLUMN estimated_completion_date TIMESTAMPTZ,
-  ADD COLUMN user_has_stripe BOOLEAN DEFAULT false,
-  ADD COLUMN user_has_bank_account BOOLEAN DEFAULT false;
-```
-
----
-
-## Edge Function: `admin-refund` (Actualizar)
-
-### Logica nueva:
-
-1. Recibir parametro `refund_method` del admin: `'stripe'`, `'bank_transfer'`, o `'wallet'`
-2. Si `refund_method === 'stripe'`:
-   - Buscar el `stripe_payment_intent_id` en los metadata de la transaccion original
-   - Ejecutar `stripe.refunds.create()` como ya existe
-   - Registrar `stripe_refund_id` en `refund_requests`
-3. Si `refund_method === 'bank_transfer'`:
-   - Verificar que el usuario tenga cuenta bancaria registrada en `user_bank_accounts`
-   - Marcar status como `pending_transfer` (el admin hara la transferencia manualmente)
-   - Registrar `estimated_completion_date` = now() + 15 dias
-   - Enviar email automatico al usuario informando el proceso de 15 dias
-4. Si `refund_method === 'wallet'` (fallback actual):
-   - Comportamiento actual: acreditar a billetera
-
----
-
-## Edge Function: `send-refund-email` (Nueva)
-
-Envia correo al usuario con:
-- Monto del reembolso
-- Metodo: Stripe (inmediato) o Transferencia bancaria (15 dias habiles)
-- Si es bancario: instrucciones para verificar su cuenta bancaria
-- Si es Stripe: confirmacion de que se proceso
-- Branding de Medical Masters
-
-Usa Resend con `onboarding@resend.dev` como remitente (patron existente en el proyecto).
-
----
-
-## Frontend: Pagina de Cuenta Bancaria del Usuario
-
-### Nuevo componente: `src/components/wallet/UserBankAccountForm.tsx`
-
-- Formulario con: Banco (select de bancos mexicanos), CLABE (18 digitos), Titular, RFC (opcional)
-- Validacion de CLABE (18 digitos numericos)
-- Se muestra dentro de la pagina de Wallet como una seccion colapsable o en Settings
-- Banner informativo: "Registra tu cuenta bancaria para recibir reembolsos directos"
-
----
-
-## Frontend: `AdminRefunds.tsx` (Refactorizar completamente)
-
-### Nuevas pestanas (5 tabs):
-
-1. **Solicitudes** - Pendientes del usuario (como esta)
-2. **Reembolsos Stripe** - Filtro: solo refunds procesados via Stripe
-3. **Reembolsos Bancarios** - Filtro: solo refunds via transferencia bancaria con estados:
-   - `pending_transfer` (amarillo - admin debe transferir)
-   - `transferred` (azul - admin confirmo transferencia)
-   - `completed` (verde - verificado)
-4. **Manuales** - Reembolsos directos a wallet (como esta)
-5. **Historial Completo** - Todo consolidado con filtros avanzados
-
-### Dialog de Aprobacion mejorado:
-
-Cuando el admin aprueba una solicitud:
-
-1. El sistema detecta automaticamente si el usuario pago con Stripe (revisa metadata de transaccion original)
-2. Si tiene Stripe payment intent: opcion "Reembolsar a Stripe" (inmediato)
-3. Si no tiene Stripe:
-   - Verifica si el usuario tiene cuenta bancaria registrada
-   - Si tiene: opcion "Reembolso bancario" con datos CLABE visibles
-   - Si no tiene: al aprobar, envia email automatico pidiendo registrar cuenta bancaria
-4. Siempre disponible: "Acreditar a billetera" como opcion rapida
-
-### Para reembolsos bancarios - flujo del admin:
-
-- Card especial con datos bancarios del usuario (CLABE, Banco, Titular)
-- Boton "Marcar como transferido" con campo para referencia de transferencia
-- Boton "Marcar como completado"
-- Timeline visual del estado del reembolso
-
-### Exportacion profesional para contabilidad:
-
-**Boton "Exportar Excel":**
-- CSV con columnas: Fecha, Usuario, Email, Monto, Metodo (Stripe/Bancario/Wallet), Referencia Stripe/Bancaria, Estado, Admin que aprobo, Notas
-- Filtrable por periodo y tipo de reembolso
-- Nombre de archivo con fecha: `Reembolsos_2026-03-03.csv`
-
-**Boton "Exportar PDF Contable":**
-- Resumen ejecutivo con totales por metodo
-- Tabla detallada con todos los campos
-- Seccion de reembolsos bancarios pendientes separada
-- Usa patron de iframe oculto (ya implementado en analytics e invoices)
-
-**Boton "Exportar Seleccion":**
-- Checkboxes en cada fila
-- Exporta solo los seleccionados en CSV o PDF
-- Barra flotante con conteo de seleccionados (patron glassmorphism existente)
-
-### Optimizacion movil:
-
-- Cards apiladas en lugar de tabla
-- Swipe-friendly con informacion condensada
-- Barra flotante de acciones masivas `fixed bottom-20` con `backdrop-blur-lg` (patron estandar del proyecto)
-- Badges de color para estado de reembolso visibles a primer vistazo
-- Resumen de KPIs en grid 2x2 en movil
-
----
-
-## Frontend: `TransactionHistory.tsx` (Actualizar)
-
-- En el dialog de solicitar reembolso, agregar nota informativa:
-  - "Si pagaste con tarjeta, el reembolso se procesara directamente a tu tarjeta"
-  - "Si no, se te pedira registrar tu cuenta bancaria y el proceso tarda hasta 15 dias habiles"
-- Mostrar estado del reembolso con timeline visual (solicitado -> aprobado -> procesado)
-- Badge nuevo: "Reembolso a Stripe" (verde), "Reembolso bancario en proceso" (amarillo), "Reembolso a billetera" (azul)
-
----
-
-## Archivos a crear/modificar
-
-| Archivo | Accion |
+| Archivo | Cambio |
 |---------|--------|
-| `user_bank_accounts` table | Crear (migracion) |
-| `refund_requests` columns | Alterar (migracion) |
-| `supabase/functions/admin-refund/index.ts` | Modificar - agregar logica de metodo |
-| `supabase/functions/send-refund-email/index.ts` | Crear - emails de reembolso |
-| `src/components/wallet/UserBankAccountForm.tsx` | Crear - formulario cuenta bancaria |
-| `src/pages/Wallet.tsx` | Modificar - agregar seccion cuenta bancaria |
-| `src/pages/AdminRefunds.tsx` | Refactorizar - 5 tabs, exportacion, movil |
-| `src/components/wallet/TransactionHistory.tsx` | Modificar - estados de reembolso |
+| `src/pages/Landing.tsx` | Eliminar tag `<video>`, reemplazar imagenes externas de social proof con iniciales SVG, mover estilos CSS inline |
+| `src/index.css` | Agregar keyframes scroll, fade-in, float |
+| `index.html` | Cambiar carga de Google Fonts a preload no-bloqueante |
+| `vite.config.ts` | Agregar manualChunks para vendor splitting |
+| `src/contexts/LivesContext.tsx` | Cambiar intervalo de polling de 8s a 30s |
 
----
-
-## Flujo completo resumido
-
-```text
-USUARIO solicita reembolso
-  |
-ADMIN revisa solicitud
-  |
-  +-- Pago con Stripe? --> Reembolso directo a tarjeta (inmediato)
-  |                        + Email de confirmacion
-  |
-  +-- Sin Stripe, tiene cuenta bancaria? --> Reembolso por transferencia (15 dias)
-  |                                          + Email con plazo estimado
-  |                                          + Admin transfiere manualmente
-  |                                          + Admin marca como "transferido"
-  |
-  +-- Sin Stripe, sin cuenta bancaria? --> Email pidiendo registrar cuenta
-  |                                        + Estado: "esperando_datos_bancarios"
-  |                                        + Usuario registra cuenta
-  |                                        + Admin notificado para proceder
-  |
-  +-- Opcion rapida --> Acreditar a billetera interna
-```
+## Resultado esperado
+- Landing Page carga ~60% mas rapido (elimina video de 5MB + 4 imagenes externas)
+- Mejor cache del navegador con vendor splitting
+- Fuentes no bloquean el primer render
+- Navegacion desde dominio personalizado y logout funcionan correctamente (ya estaban bien)
 
