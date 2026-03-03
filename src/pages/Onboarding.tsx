@@ -525,15 +525,15 @@ export default function Onboarding() {
 
         const { error: residentError } = await supabase
           .from('resident_profiles')
-          .insert({
+          .upsert({
             user_id: supabaseUser.id,
             institution: institution || '',
             specialty: specialty || 'General',
             year: year,
             status: 'pending',
-          });
+          }, { onConflict: 'user_id' });
         
-        if (residentError && !residentError.message.includes('duplicate')) {
+        if (residentError) {
           throw residentError;
         }
       }
