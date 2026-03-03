@@ -1,56 +1,67 @@
 
-# Plan: Video autoplay en Landing, corregir "Exp. Medico", y verificaciones
+# Plan: Ganancias clickable, estilos Saldo/Wallet, y navegacion visitante
 
-## 1. Agregar video autoplay al hero de Landing
+## 1. Hacer la card "Ganancias" clickable en el dashboard del doctor
 
-**Archivo**: `src/pages/Landing.tsx` (lineas 126-130)
+**Archivo**: `src/components/doctor/EarningsCard.tsx`
 
-Dentro del `<div className="absolute inset-0 z-0">` del hero, agregar un tag `<video>` con autoplay, muted, loop y playsInline antes de los gradientes overlay:
+- Envolver toda la Card en un elemento clickable que navegue a `/doctor/earnings`
+- Agregar `cursor-pointer` y efecto `hover:shadow-md` a la Card
+- Agregar un indicador visual (flecha o chevron) en el header para indicar que es clickable
 
-```html
-<video
-  autoPlay
-  muted
-  loop
-  playsInline
-  className="absolute inset-0 w-full h-full object-cover"
-  src="https://gestomarketing.com.mx/wp-content/uploads/2026/03/Video_de_Landing_Page_Hiperrealista-1-1.mp4"
-/>
-```
+## 2. Agregar fondo suave a "Saldo" (doctor) y "Wallet" (paciente) en el menu movil "Mas"
 
-Los gradientes overlay existentes (`opacity-90`) se mantienen encima del video para que el texto siga siendo legible.
+**Archivo**: `src/components/layout/MainLayout.tsx` (lineas 618-643)
 
-## 2. Corregir "Exp. Medico" - Eliminar auto-insercion de lives en doctor_content
+- Agregar `bg-success/10 border border-success/20` al item de "Saldo" del doctor para que destaque visualmente como boton clickable
+- Agregar `bg-primary/10 border border-primary/20` al item de "Wallet" del paciente
+- Esto hara que ambos items se diferencien del resto de la navegacion y sea obvio que son interactivos
 
-**Archivo**: `src/pages/DoctorGoLive.tsx` (lineas 279-309)
+## 3. Navegacion para visitantes (no logueados)
 
-**Problema encontrado**: Cuando un doctor termina un live con grabacion, el codigo en lineas 292-303 automaticamente inserta la grabacion en la tabla `doctor_content`. Esto hace que los lives aparezcan en la galeria de "Exp. Medico" (`/content`), lo cual el usuario no quiere.
+**Archivo**: `src/components/layout/MainLayout.tsx`
 
-**Solucion**: Eliminar el bloque completo de `saveAsContent` (lineas 280-309) que inserta las grabaciones de lives en `doctor_content`. Las grabaciones seguiran disponibles en la seccion de Grabaciones (`/recordings`) que es donde pertenecen.
+### Bottom tabs (lineas 117-124):
+- Cambiar el bloque `visitor/resident` para que visitantes solo vean: **Lives** y **Noticias** (2 tabs + "Mas")
+- Quitar "Doctores" y "Notificaciones" de los bottom tabs para visitantes
 
-## 3. Verificar PDF de Analytics manualmente (testing con browser)
+### navItems (linea 69-82):
+- Ya esta correcto: visitor solo tiene `lives` y `news`
 
-Despues de implementar los cambios, navegar a `/admin/analytics` en el browser, hacer clic en el boton de PDF/imprimir, y verificar que:
-- El dialogo de impresion se dispara correctamente
-- Los datos de KPIs y graficas estan presentes
+### Header (linea 392):
+- Solo mostrar NotificationBell si `isAuthenticated` (ya esta asi)
+- Ocultar boton de busqueda/doctores para visitantes no autenticados
 
-## 4. Probar flujo de reembolsos end-to-end (testing con browser)
+### More sheet para visitante (lineas 567-575):
+- El visitor ya ve login prompt + solo items de navegacion filtrados por rol (lives, news)
+- Verificar que "Notificaciones" no aparezca para visitors en el More sheet (linea 644-658): esta dentro de `isAuthenticated && role !== 'visitor'`, ya esta correcto
 
-Navegar a `/admin/refunds` y verificar:
-- La pagina carga correctamente con las pestanas (Solicitudes, Historial)
-- Los filtros funcionan
-- El formulario de reembolso manual abre y muestra las opciones (Wallet, Stripe, Transferencia bancaria)
-- La Edge Function `admin-refund` esta desplegada y responde
+### Separar visitor de resident en getBottomTabs:
+- Resident mantiene tabs completos (Lives, Doctores, Notificaciones, Perfil)
+- Visitor solo: Lives, Noticias (sin Doctores ni Notificaciones)
 
 ## Archivos a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/Landing.tsx` | Agregar `<video>` autoplay muted loop en el hero |
-| `src/pages/DoctorGoLive.tsx` | Eliminar bloque de auto-insercion en doctor_content (lineas 279-309) |
+| `src/components/doctor/EarningsCard.tsx` | Card clickable con hover, navega a `/doctor/earnings` |
+| `src/components/layout/MainLayout.tsx` | Fondo suave en Saldo/Wallet, bottom tabs visitante simplificados |
 
-## Verificaciones con browser
+## Detalle tecnico
 
-1. Navegar a `/` y confirmar que el video se reproduce automaticamente en el hero
-2. Navegar a `/admin/analytics` y probar el boton de PDF
-3. Navegar a `/admin/refunds` y probar el flujo completo de reembolsos
+### getBottomTabs - nuevo bloque visitor:
+```text
+visitor:
+  - Lives (Radio icon)
+  - Noticias (Calendar icon)
+  (+ boton "Mas" con login prompt)
+
+resident (sin cambios):
+  - Lives
+  - Doctores
+  - Notificaciones
+  - Perfil
+```
+
+### EarningsCard clickable:
+La Card completa sera un div con `onClick={() => navigate('/doctor/earnings')}` y estilos de hover para indicar interactividad. Se agrega una flecha `ChevronRight` en el header.
