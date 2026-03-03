@@ -36,8 +36,8 @@ export default function EmailConfirmed() {
 
         {status === "success" && (
           <>
-            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto animate-in zoom-in-50 duration-500">
-              <CheckCircle2 className="w-12 h-12 text-green-600" />
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto animate-in zoom-in-50 duration-500">
+              <CheckCircle2 className="w-12 h-12 text-primary" />
             </div>
             <h1 className="text-2xl font-bold text-foreground">¡Correo confirmado!</h1>
             <p className="text-muted-foreground">
