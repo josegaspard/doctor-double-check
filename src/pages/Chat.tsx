@@ -54,6 +54,19 @@ export default function Chat() {
   };
 
   // Handle consultation success from payment redirect
+  // Handle ?session= param (wallet payment redirect)
+  useEffect(() => {
+    const sessionParam = searchParams.get('session');
+    if (sessionParam && user?.id) {
+      setSearchParams({});
+      refreshSessions().then(() => {
+        setSelectedSession(sessionParam);
+        setActiveTab('active');
+      });
+    }
+  }, [searchParams, user?.id]);
+
+  // Handle Stripe redirect: ?consultation=success&doctor=X
   useEffect(() => {
     const consultationStatus = searchParams.get('consultation');
     const doctorId = searchParams.get('doctor');
@@ -62,13 +75,20 @@ export default function Chat() {
       setIsCreatingSession(true);
       const initSession = async () => {
         try {
+          // Query DB directly instead of relying on stale allSessions
+          const { data: sessionData } = await supabase
+            .from('chat_sessions')
+            .select('id')
+            .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${doctorId}),and(participant1_id.eq.${doctorId},participant2_id.eq.${user.id})`)
+            .eq('status', 'active')
+            .eq('is_double_check', false)
+            .maybeSingle();
+
           await refreshSessions();
-          const existingSession = allSessions.find(s =>
-            (s.participant1Id === doctorId || s.participant2Id === doctorId) && s.status === 'active'
-          );
-          if (existingSession) {
-            setSelectedSession(existingSession.id);
-            toast.success(t('chat.sessionClosed'));
+
+          if (sessionData) {
+            setSelectedSession(sessionData.id);
+            toast.success(t('doctorProfile.paymentSuccess'));
           } else {
             const result = await createSession(doctorId, 'doctor', false);
             if (result.success && result.session) {
