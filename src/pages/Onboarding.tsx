@@ -932,7 +932,7 @@ export default function Onboarding() {
                 <Card className="overflow-hidden">
                   <CardHeader className="text-center">
                     <motion.div 
-                      className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center"
+                      className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-full bg-primary/10 flex items-center justify-center"
                       initial={{ scale: 0, rotate: -180 }}
                       animate={{ scale: 1, rotate: 0 }}
                       transition={{ 
