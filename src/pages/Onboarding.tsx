@@ -837,20 +837,20 @@ export default function Onboarding() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8 flex items-start sm:items-center justify-center">
         <div className="w-full max-w-lg">
           {/* Progress Indicator */}
           <motion.div 
-            className="mb-8"
+            className="mb-4 sm:mb-8"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           >
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center justify-center gap-2 sm:gap-3">
               {Array.from({ length: totalSteps }, (_, i) => i + 1).map((stepNumber) => (
                 <div key={stepNumber} className="flex items-center">
                   <motion.div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold ${
                       step === stepNumber
                         ? 'bg-primary text-primary-foreground ring-4 ring-primary/20'
                         : step > stepNumber
@@ -888,7 +888,7 @@ export default function Onboarding() {
                   </motion.div>
                   {stepNumber < totalSteps && (
                     <motion.div
-                      className="w-16 h-1 mx-2 rounded-full bg-muted overflow-hidden"
+                      className="w-8 sm:w-16 h-1 mx-1 sm:mx-2 rounded-full bg-muted overflow-hidden"
                     >
                       <motion.div
                         className="h-full bg-primary"
@@ -932,7 +932,7 @@ export default function Onboarding() {
                 <Card className="overflow-hidden">
                   <CardHeader className="text-center">
                     <motion.div 
-                      className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center"
+                      className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-full bg-primary/10 flex items-center justify-center"
                       initial={{ scale: 0, rotate: -180 }}
                       animate={{ scale: 1, rotate: 0 }}
                       transition={{ 
@@ -951,17 +951,17 @@ export default function Onboarding() {
                           ease: "easeInOut"
                         }}
                       >
-                        <Sparkles className="w-8 h-8 text-primary" />
+                        <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
                       </motion.div>
                     </motion.div>
-                    <CardTitle className="text-2xl">{t('onboarding.welcomeSubtitle')}</CardTitle>
-                    <CardDescription className="text-base">
+                    <CardTitle className="text-xl sm:text-2xl">{t('onboarding.welcomeSubtitle')}</CardTitle>
+                    <CardDescription className="text-sm sm:text-base">
                       {t('onboarding.personalizeExperience')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <motion.div 
-                      className="space-y-6"
+                      className="space-y-4 sm:space-y-6"
                       variants={containerVariants}
                       initial="initial"
                       animate="animate"
@@ -1007,7 +1007,7 @@ export default function Onboarding() {
                               >
                                 <RadioGroupItem value={role.value} id={role.value} className="sr-only" />
                                 <motion.div 
-                                  className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${
                                     selectedRole === role.value ? 'bg-primary text-primary-foreground' : 'bg-muted'
                                   }`}
                                   animate={{ 
@@ -1016,7 +1016,7 @@ export default function Onboarding() {
                                   }}
                                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
                                 >
-                                  <role.icon className="w-6 h-6" />
+                                  <role.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </motion.div>
                                 <div className="flex-1">
                                   <p className="font-medium">{role.label}</p>

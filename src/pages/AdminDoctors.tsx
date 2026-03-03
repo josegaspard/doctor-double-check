@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2, Star, Shield, MapPin, GraduationCap, Building, Calendar, FileText, ShieldCheck } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2, Star, Shield, MapPin, GraduationCap, Building, Calendar, FileText, ShieldCheck, ExternalLink, AlertTriangle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
@@ -186,6 +186,36 @@ export default function AdminDoctors() {
 
   const [togglingNewsId, setTogglingNewsId] = useState<string | null>(null);
   const [updatingBadgeId, setUpdatingBadgeId] = useState<string | null>(null);
+  const [verifyingCedulaId, setVerifyingCedulaId] = useState<string | null>(null);
+  const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
+
+  const handleVerifyCedula = async (doctor: DoctorRequest) => {
+    if (!doctor.license && !doctor.cedula_profesional) {
+      toast({ title: 'Sin cédula', description: 'Este doctor no tiene número de cédula registrado', variant: 'destructive' });
+      return;
+    }
+    setVerifyingCedulaId(doctor.id);
+    try {
+      const cedulaNumber = doctor.cedula_profesional || doctor.license;
+      const { data, error } = await supabase.functions.invoke('verify-cedula-sep', {
+        body: { cedula: cedulaNumber, userId: doctor.user_id },
+      });
+      if (error) throw error;
+      setVerificationResults(prev => ({ ...prev, [doctor.id]: data }));
+      if (data?.verified) {
+        toast({ title: '✅ Cédula verificada', description: `${data.nombre} - ${data.titulo}` });
+        fetchDoctors(); // Refresh to show updated verification status
+      } else {
+        toast({ title: '⚠️ No verificada', description: data?.message || 'No se encontraron resultados en la SEP', variant: 'destructive' });
+      }
+    } catch (error: any) {
+      console.error('Error verifying cedula:', error);
+      toast({ title: 'Error', description: 'No se pudo verificar la cédula. Intente manualmente.', variant: 'destructive' });
+      setVerificationResults(prev => ({ ...prev, [doctor.id]: { error: true } }));
+    } finally {
+      setVerifyingCedulaId(null);
+    }
+  };
 
   const toggleNewsPermission = async (doctor: DoctorRequest) => {
     setTogglingNewsId(doctor.id);
@@ -257,11 +287,11 @@ export default function AdminDoctors() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" /> {t('admin.pending')}</Badge>;
+        return <Badge variant="warning"><Clock className="w-3 h-3 mr-1" /> {t('admin.pending')}</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" /> {t('admin.approved')}</Badge>;
+        return <Badge variant="success"><CheckCircle className="w-3 h-3 mr-1" /> {t('admin.approved')}</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" /> {t('admin.rejected')}</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" /> {t('admin.rejected')}</Badge>;
       default:
         return null;
     }
@@ -273,14 +303,14 @@ export default function AdminDoctors() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="flex items-center gap-4 mb-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Stethoscope className="h-6 w-6 text-primary" />
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+              <Stethoscope className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               {t('admin.doctorManagement')}
             </h1>
             <p className="text-muted-foreground">
@@ -408,6 +438,48 @@ export default function AdminDoctors() {
                             {t('admin.cedula')}: {doctor.cedula_profesional}
                           </p>
                         )}
+
+                        {/* Admin SEP Verification Button */}
+                        {!doctor.cedula_verification?.is_verified && (doctor.license || doctor.cedula_profesional) && (
+                          <div className="mt-2 space-y-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1.5 text-xs h-8"
+                              onClick={() => handleVerifyCedula(doctor)}
+                              disabled={verifyingCedulaId === doctor.id}
+                            >
+                              {verifyingCedulaId === doctor.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <ShieldCheck className="w-3 h-3" />
+                              )}
+                              Verificar Cédula SEP
+                            </Button>
+                            <a
+                              href="https://cedulaprofesional.sep.gob.mx"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-[10px] text-primary hover:underline"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Verificar manualmente en SEP
+                            </a>
+                            {verificationResults[doctor.id] && !verificationResults[doctor.id].verified && !verificationResults[doctor.id].error && (
+                              <div className="p-2 rounded-md bg-warning/10 border border-warning/20">
+                                <div className="flex items-center gap-1 text-xs text-warning">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  {verificationResults[doctor.id].message || 'No se encontró en la base de datos de la SEP'}
+                                </div>
+                              </div>
+                            )}
+                            {verificationResults[doctor.id]?.error && (
+                              <div className="p-2 rounded-md bg-destructive/10 border border-destructive/20">
+                                <p className="text-xs text-destructive">Servicio SEP no disponible. Verifique manualmente.</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         {doctor.bio && (
                           <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{doctor.bio}</p>
                         )}
@@ -461,7 +533,7 @@ export default function AdminDoctors() {
                         <Button
                           size="sm"
                           variant="default"
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-success hover:bg-success/90 text-success-foreground"
                           onClick={() => setActionDialog({ open: true, doctor, action: 'approve' })}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
@@ -501,7 +573,7 @@ export default function AdminDoctors() {
               <AlertDialogCancel>{t('admin.cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleAction}
-                className={actionDialog.action === 'approve' ? 'bg-green-600 hover:bg-green-700' : ''}
+                className={actionDialog.action === 'approve' ? 'bg-success hover:bg-success/90 text-success-foreground' : ''}
               >
                 {actionDialog.action === 'approve' ? t('admin.approve') : t('admin.reject')}
               </AlertDialogAction>

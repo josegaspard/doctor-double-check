@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     // Create notification for doctor
     const notificationTitle = isDoubleCheck 
-      ? '🔍 Nueva consulta Double Check'
+      ? '🔍 Nueva Segunda Opinión'
       : '💬 Nueva consulta iniciada';
     
     const notificationMessage = isDoubleCheck

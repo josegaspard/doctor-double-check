@@ -79,7 +79,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         .single();
 
       if (doctorError || doctorProfile?.status !== 'approved') {
-        throw new Error('El doctor no está disponible para Double Check');
+        throw new Error('El doctor no está disponible para Segunda Opinión');
       }
 
       // 1. Process wallet purchase
@@ -87,7 +87,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         'process_wallet_purchase',
         {
           p_amount: doctor.consultationFee,
-          p_description: `Double Check con ${doctor.name}`,
+          p_description: `Segunda Opinión con ${doctor.name}`,
           p_metadata: { type: 'double_check', doctor_id: doctor.userId },
         }
       );
@@ -108,7 +108,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           patient_id: user.id,
           doctor_id: doctor.userId,
           status: 'active',
-          notes: 'Double Check - Segunda opinión médica',
+          notes: 'Segunda Opinión médica',
         })
         .select()
         .single();
@@ -154,7 +154,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
             user_id: doctor.userId,
             type: 'earning',
             amount: amountCharged,
-            description: `Ganancia por Double Check`,
+            description: `Ganancia por Segunda Opinión`,
             status: 'paid',
             metadata: { source: 'double_check', patient_id: user.id, consultation_id: consultation.id },
           });
@@ -166,7 +166,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         .insert({
           user_id: doctor.userId,
           type: 'chat_message',
-          title: '🔄 Nueva solicitud de Double Check',
+          title: '🔄 Nueva solicitud de Segunda Opinión',
           message: `${user.name || 'Un paciente'} ha solicitado una segunda opinión`,
           data: { 
             patient_id: user.id, 
@@ -180,13 +180,13 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       // 8. Refresh wallet
       await refreshWallet();
 
-      toast.success('Double Check iniciado correctamente');
+      toast.success('Segunda Opinión iniciada correctamente');
       onClose();
       navigate('/chat', { state: { sessionId: chatResult.session?.id } });
 
     } catch (error: any) {
-      console.error('Double Check error:', error);
-      toast.error(error.message || 'Error al iniciar Double Check');
+      console.error('Segunda Opinión error:', error);
+      toast.error(error.message || 'Error al iniciar Segunda Opinión');
       setStep('confirm');
     } finally {
       setIsProcessing(false);
@@ -231,7 +231,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
               <CheckCheck className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <DialogTitle>Double Check</DialogTitle>
+              <DialogTitle>Segunda Opinión</DialogTitle>
               <DialogDescription>
                 Segunda opinión con {doctor.name}
               </DialogDescription>
@@ -315,7 +315,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           <>
             <div className="py-4 space-y-4">
               <div className="p-4 bg-muted/50 rounded-lg">
-                <h4 className="font-medium mb-3">Resumen de tu Double Check</h4>
+                <h4 className="font-medium mb-3">Resumen de tu Segunda Opinión</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Especialista</span>
@@ -437,7 +437,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         {step === 'processing' && (
           <div className="py-12 text-center">
             <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary mb-4" />
-            <p className="font-medium">Procesando tu Double Check...</p>
+            <p className="font-medium">Procesando tu Segunda Opinión...</p>
             <p className="text-sm text-muted-foreground mt-1">
               No cierres esta ventana
             </p>

@@ -101,8 +101,8 @@ export default function DoubleCheck() {
 
       toast.success(
         !isAvailableForDoubleCheck 
-          ? 'Ahora estás disponible para Double Check' 
-          : 'Ya no estás disponible para Double Check'
+          ? 'Ahora estás disponible para Segunda Opinión' 
+          : 'Ya no estás disponible para Segunda Opinión'
       );
       await refreshUser();
       await fetchDoubleCheckDoctors();
@@ -133,7 +133,7 @@ export default function DoubleCheck() {
           </div>
           <div className="min-w-0">
             <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2 flex-wrap">
-              Double Check
+              Segunda Opinión
               <Badge variant="verified" className="gap-1">
                 <CheckCheck className="w-3 h-3" />
                 Verificado
@@ -156,7 +156,7 @@ export default function DoubleCheck() {
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">
-                      Disponibilidad Double Check
+                      Disponibilidad Segunda Opinión
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {isAvailableForDoubleCheck 
@@ -178,9 +178,9 @@ export default function DoubleCheck() {
         {/* Info Card */}
         <Card className="mb-6 bg-info/5 border-info/20">
           <CardContent className="p-4">
-            <h3 className="font-semibold text-foreground mb-2">¿Qué es Double Check?</h3>
+            <h3 className="font-semibold text-foreground mb-2">¿Qué es Segunda Opinión?</h3>
             <p className="text-sm text-muted-foreground">
-              Double Check te permite obtener una segunda opinión médica de especialistas 
+              Segunda Opinión te permite obtener una segunda opinión médica de especialistas 
               verificados. Comparte tus estudios desde tu Vault de forma segura y recibe 
               una evaluación profesional adicional para tomar decisiones informadas sobre 
               tu salud.

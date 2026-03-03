@@ -32,7 +32,7 @@ export function useAuthState() {
       localStorage.removeItem('mm_cached_user');
 
       // Check for visitor session
-      const visitorData = sessionStorage.getItem('drDoubleCheck_visitor');
+      const visitorData = sessionStorage.getItem('medicalMasters_visitor');
       if (visitorData) {
         setUser(JSON.parse(visitorData));
       } else {

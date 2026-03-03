@@ -38,7 +38,7 @@ export function useAuthActions(
     // Clear state immediately for faster perceived logout
     setUser(null);
     setSupabaseUser(null);
-    sessionStorage.removeItem('drDoubleCheck_visitor');
+    sessionStorage.removeItem('medicalMasters_visitor');
     
     // Sign out from Supabase FIRST, then redirect
     await supabase.auth.signOut();
@@ -55,7 +55,7 @@ export function useAuthActions(
       createdAt: new Date(),
     };
     setUser(visitorUser);
-    sessionStorage.setItem('drDoubleCheck_visitor', JSON.stringify(visitorUser));
+    sessionStorage.setItem('medicalMasters_visitor', JSON.stringify(visitorUser));
   };
 
   const register = async (data: RegisterData): Promise<{ success: boolean; error?: string }> => {
