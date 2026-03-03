@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface Transaction {
   id: string;
@@ -91,7 +91,6 @@ export default function DoctorEarnings() {
 
     setIsLoading(true);
     try {
-      // Fetch all earning transactions
       const { data: txData } = await supabase
         .from('wallet_transactions')
         .select('*')
@@ -99,7 +98,6 @@ export default function DoctorEarnings() {
         .eq('type', 'earning')
         .order('created_at', { ascending: false });
 
-      // Fetch payout history
       const { data: payoutData } = await supabase
         .from('doctor_payouts')
         .select('*')
@@ -108,7 +106,6 @@ export default function DoctorEarnings() {
 
       if (payoutData) setPayouts(payoutData);
 
-      // Fetch commission rate
       const { data: settingsData } = await supabase
         .from('payout_settings_public')
         .select('commission_percentage')
@@ -137,22 +134,18 @@ export default function DoctorEarnings() {
           }
         });
 
-        const totalEarnings = txData.reduce((sum, tx) => sum + tx.amount, 0);
-
         const { data: profile } = await supabase
           .from('doctor_profiles')
           .select('pending_earnings, total_earnings')
           .eq('user_id', user.id)
           .single();
 
-          // total_earnings = already paid out, pending_earnings = waiting
-          // Total ever earned = total_earnings + pending_earnings
-          const totalPaid = profile?.total_earnings || 0;
-          const pending = profile?.pending_earnings || 0;
-          setSummary({
-            totalEarnings: totalPaid + pending,
-            pendingEarnings: pending,
-            paidEarnings: totalPaid,
+        const totalPaid = profile?.total_earnings || 0;
+        const pending = profile?.pending_earnings || 0;
+        setSummary({
+          totalEarnings: totalPaid + pending,
+          pendingEarnings: pending,
+          paidEarnings: totalPaid,
           thisMonthEarnings: thisMonth,
           consultationEarnings: consultation,
           recordingEarnings: recording,
@@ -182,11 +175,11 @@ export default function DoctorEarnings() {
 
   const getSourceIcon = (source: string) => {
     switch (source) {
-      case 'consultation': return <MessageSquare className="w-4 h-4 text-info" />;
-      case 'recording': return <Video className="w-4 h-4 text-primary" />;
+      case 'consultation': return <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-info" />;
+      case 'recording': return <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />;
       case 'subscription': 
-      case 'subscription_renewal': return <Users className="w-4 h-4 text-warning" />;
-      default: return <DollarSign className="w-4 h-4 text-success" />;
+      case 'subscription_renewal': return <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-warning" />;
+      default: return <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success" />;
     }
   };
 
@@ -200,7 +193,6 @@ export default function DoctorEarnings() {
     }
   };
 
-  // FIX #9: CSV export
   const handleExportCSV = () => {
     if (transactions.length === 0) {
       toast.info(language === 'es' ? 'No hay datos para exportar' : 'No data to export');
@@ -227,44 +219,45 @@ export default function DoctorEarnings() {
 
   const getPayoutStatusBadge = (status: string) => {
     switch (status) {
-      case 'paid': return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />{language === 'es' ? 'Pagado' : 'Paid'}</Badge>;
-      case 'processing': return <Badge variant="warning" className="gap-1"><Clock className="w-3 h-3" />{language === 'es' ? 'En proceso' : 'Processing'}</Badge>;
-      case 'failed': return <Badge className="gap-1 bg-destructive text-destructive-foreground">{language === 'es' ? 'Fallido' : 'Failed'}</Badge>;
-      default: return <Badge variant="outline" className="gap-1"><Clock className="w-3 h-3" />{language === 'es' ? 'Pendiente' : 'Pending'}</Badge>;
+      case 'paid': return <Badge variant="verified" className="gap-0.5 text-[10px] sm:text-xs"><CheckCircle className="w-3 h-3" />{language === 'es' ? 'Pagado' : 'Paid'}</Badge>;
+      case 'processing': return <Badge variant="warning" className="gap-0.5 text-[10px] sm:text-xs"><Clock className="w-3 h-3" />{language === 'es' ? 'En proceso' : 'Processing'}</Badge>;
+      case 'failed': return <Badge className="gap-0.5 text-[10px] sm:text-xs bg-destructive text-destructive-foreground">{language === 'es' ? 'Fallido' : 'Failed'}</Badge>;
+      default: return <Badge variant="outline" className="gap-0.5 text-[10px] sm:text-xs"><Clock className="w-3 h-3" />{language === 'es' ? 'Pendiente' : 'Pending'}</Badge>;
     }
   };
 
   const getPayoutMethodBadge = (transferId: string | null) => {
     if (transferId?.startsWith('manual_')) {
-      return <Badge variant="secondary" className="text-xs">{language === 'es' ? 'Banco' : 'Bank'}</Badge>;
+      return <Badge variant="secondary" className="text-[10px]">{language === 'es' ? 'Banco' : 'Bank'}</Badge>;
     }
-    return <Badge variant="outline" className="text-xs">Stripe</Badge>;
+    return <Badge variant="outline" className="text-[10px]">Stripe</Badge>;
   };
 
   if (role !== 'doctor') return null;
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/doctor/dashboard')}
-          className="mb-4 gap-2 hidden sm:inline-flex"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {language === 'es' ? 'Volver al panel' : 'Back to dashboard'}
-        </Button>
-
-        <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            {language === 'es' ? 'Mis Ganancias' : 'My Earnings'}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {language === 'es' 
-              ? 'Resumen detallado de tus ingresos en la plataforma' 
-              : 'Detailed summary of your platform earnings'}
-          </p>
+      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 max-w-6xl">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4 sm:mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/doctor/dashboard')}
+            className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <div className="min-w-0">
+            <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground truncate">
+              {language === 'es' ? 'Mis Ganancias' : 'My Earnings'}
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
+              {language === 'es' 
+                ? 'Resumen detallado de tus ingresos en la plataforma' 
+                : 'Detailed summary of your platform earnings'}
+            </p>
+          </div>
         </div>
 
         {isLoading ? (
@@ -273,98 +266,56 @@ export default function DoctorEarnings() {
           </div>
         ) : (
           <>
-            {/* Summary Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-              <Card>
-                <CardContent className="p-3 sm:pt-6 sm:px-6">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="p-1.5 sm:p-2 rounded-lg bg-success/10">
-                      <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                        {language === 'es' ? 'Total Ganado' : 'Total Earned'}
-                      </p>
-                      <p className="text-lg sm:text-2xl font-bold">${summary.totalEarnings.toLocaleString()}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-3 sm:pt-6 sm:px-6">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="p-1.5 sm:p-2 rounded-lg bg-warning/10">
-                      <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                        {language === 'es' ? 'Pendiente' : 'Pending'}
-                      </p>
-                      <p className="text-lg sm:text-2xl font-bold">${summary.pendingEarnings.toLocaleString()}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-3 sm:pt-6 sm:px-6">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="p-1.5 sm:p-2 rounded-lg bg-info/10">
-                      <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-info" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                        {language === 'es' ? 'Este Mes' : 'This Month'}
-                      </p>
-                      <p className="text-lg sm:text-2xl font-bold">${summary.thisMonthEarnings.toLocaleString()}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-3 sm:pt-6 sm:px-6">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="p-1.5 sm:p-2 rounded-lg bg-success/10">
-                      <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                        {language === 'es' ? 'Pagado' : 'Paid'}
-                      </p>
-                      <p className="text-lg sm:text-2xl font-bold">${summary.paidEarnings.toLocaleString()}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Summary Cards - 2x2 on mobile, 4 cols on desktop */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
+              {[
+                { label: language === 'es' ? 'Total' : 'Total', value: summary.totalEarnings, icon: DollarSign, colorClass: 'text-success', bgClass: 'bg-success/10' },
+                { label: language === 'es' ? 'Pendiente' : 'Pending', value: summary.pendingEarnings, icon: Clock, colorClass: 'text-warning', bgClass: 'bg-warning/10' },
+                { label: language === 'es' ? 'Este Mes' : 'This Month', value: summary.thisMonthEarnings, icon: TrendingUp, colorClass: 'text-info', bgClass: 'bg-info/10' },
+                { label: language === 'es' ? 'Pagado' : 'Paid', value: summary.paidEarnings, icon: CheckCircle, colorClass: 'text-success', bgClass: 'bg-success/10' },
+              ].map((card) => {
+                const Icon = card.icon;
+                return (
+                  <Card key={card.label}>
+                    <CardContent className="p-2.5 sm:p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className={`p-1 sm:p-1.5 rounded-md ${card.bgClass}`}>
+                          <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${card.colorClass}`} />
+                        </div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{card.label}</p>
+                      </div>
+                      <p className="text-lg sm:text-2xl font-bold text-foreground pl-0.5">${card.value.toLocaleString()}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
 
-            {/* Charts & Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {/* Chart + Breakdown */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
               {/* Monthly Chart */}
               <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="text-lg">
+                <CardHeader className="pb-2 sm:pb-3">
+                  <CardTitle className="text-base sm:text-lg">
                     {language === 'es' ? 'Ingresos Mensuales' : 'Monthly Earnings'}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pr-1 sm:pr-6">
                   {monthlyData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={200} className="sm:!h-[250px]">
+                    <ResponsiveContainer width="100%" height={160} className="sm:!h-[220px]">
                       <BarChart data={monthlyData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis dataKey="month" className="text-xs" />
-                        <YAxis className="text-xs" />
+                        <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                        <YAxis tick={{ fontSize: 10 }} width={40} />
                         <Tooltip 
-                          formatter={(value: number) => [`$${value.toLocaleString()}`, 'Ingresos']}
-                          contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                          formatter={(value: number) => [`$${value.toLocaleString()}`, language === 'es' ? 'Ingresos' : 'Earnings']}
+                          contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 12 }}
                         />
                         <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                    <div className="flex items-center justify-center h-[160px] sm:h-[220px] text-muted-foreground text-sm">
                       {language === 'es' ? 'Sin datos aún' : 'No data yet'}
                     </div>
                   )}
@@ -373,160 +324,143 @@ export default function DoctorEarnings() {
 
               {/* Breakdown by Type */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">
+                <CardHeader className="pb-2 sm:pb-3">
+                  <CardTitle className="text-base sm:text-lg">
                     {language === 'es' ? 'Por Tipo' : 'By Type'}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-info/10 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-info" />
-                      <span className="text-sm">{language === 'es' ? 'Orientaciones' : 'Consultations'}</span>
-                    </div>
-                    <span className="font-semibold">${summary.consultationEarnings.toLocaleString()}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Video className="w-4 h-4 text-primary" />
-                      <span className="text-sm">{language === 'es' ? 'Grabaciones' : 'Recordings'}</span>
-                    </div>
-                    <span className="font-semibold">${summary.recordingEarnings.toLocaleString()}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-warning/10 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-warning" />
-                      <span className="text-sm">{language === 'es' ? 'Suscripciones' : 'Subscriptions'}</span>
-                    </div>
-                    <span className="font-semibold">${summary.subscriptionEarnings.toLocaleString()}</span>
-                  </div>
+                <CardContent className="space-y-2 sm:space-y-3">
+                  {[
+                    { icon: MessageSquare, label: language === 'es' ? 'Orientaciones' : 'Consultations', value: summary.consultationEarnings, colorClass: 'text-info', bgClass: 'bg-info/10' },
+                    { icon: Video, label: language === 'es' ? 'Grabaciones' : 'Recordings', value: summary.recordingEarnings, colorClass: 'text-primary', bgClass: 'bg-primary/10' },
+                    { icon: Users, label: language === 'es' ? 'Suscripciones' : 'Subscriptions', value: summary.subscriptionEarnings, colorClass: 'text-warning', bgClass: 'bg-warning/10' },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.label} className={`flex items-center justify-between p-2.5 sm:p-3 ${item.bgClass} rounded-lg`}>
+                        <div className="flex items-center gap-2">
+                          <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${item.colorClass}`} />
+                          <span className="text-xs sm:text-sm">{item.label}</span>
+                        </div>
+                        <span className="font-semibold text-sm">${item.value.toLocaleString()}</span>
+                      </div>
+                    );
+                  })}
 
-                  {/* Commission info */}
                   <hr className="border-border" />
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center justify-between p-2.5 sm:p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        {language === 'es' ? 'Comisión plataforma' : 'Platform commission'}
+                      <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs sm:text-sm text-muted-foreground">
+                        {language === 'es' ? 'Comisión' : 'Commission'}
                       </span>
                     </div>
-                    <span className="font-semibold text-muted-foreground">{commissionRate}%</span>
+                    <span className="font-semibold text-sm text-muted-foreground">{commissionRate}%</span>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Transaction History */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Wallet className="w-5 h-5" />
-                    {language === 'es' ? 'Historial de Transacciones' : 'Transaction History'}
-                  </CardTitle>
-                  <CardDescription>
-                    {language === 'es' 
-                      ? 'Todas tus ganancias detalladas' 
-                      : 'All your detailed earnings'}
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2">
-                  <Download className="w-4 h-4" />
+            {/* Transactions & Payouts in Tabs on mobile */}
+            <Tabs defaultValue="transactions" className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <TabsList className="grid grid-cols-2 w-full sm:w-auto">
+                  <TabsTrigger value="transactions" className="text-xs sm:text-sm gap-1">
+                    <Wallet className="w-3.5 h-3.5" />
+                    {language === 'es' ? 'Transacciones' : 'Transactions'}
+                  </TabsTrigger>
+                  <TabsTrigger value="payouts" className="text-xs sm:text-sm gap-1">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    {language === 'es' ? 'Pagos' : 'Payouts'}
+                  </TabsTrigger>
+                </TabsList>
+                <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-1.5 h-8 text-xs flex-shrink-0">
+                  <Download className="w-3.5 h-3.5" />
                   CSV
                 </Button>
-              </CardHeader>
-              <CardContent>
-                {transactions.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    {language === 'es' ? 'No hay transacciones aún' : 'No transactions yet'}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {transactions.map((tx) => (
-                      <div 
-                        key={tx.id} 
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          {getSourceIcon(tx.metadata?.source)}
-                          <div>
-                            <p className="font-medium text-sm">{tx.description}</p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Calendar className="w-3 h-3" />
-                              {format(new Date(tx.created_at), 'dd MMM yyyy, HH:mm', { locale })}
-                              <Badge variant="outline" className="text-xs">
-                                {getSourceLabel((tx.metadata as Record<string, any>)?.source)}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <span className="font-bold text-success">
-                          +${tx.amount.toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Payout History */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5" />
-                  {language === 'es' ? 'Historial de Pagos' : 'Payout History'}
-                </CardTitle>
-                <CardDescription>
-                  {language === 'es' 
-                    ? 'Registro de todos los pagos que has recibido' 
-                    : 'Record of all payouts you have received'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {payouts.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    {language === 'es' ? 'No hay pagos registrados aún' : 'No payouts recorded yet'}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {payouts.map((payout) => (
-                      <div 
-                        key={payout.id} 
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-success/10">
-                            <DollarSign className="w-4 h-4 text-success" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-sm">
-                                {language === 'es' ? 'Pago recibido' : 'Payout received'}
-                              </p>
-                              {getPayoutMethodBadge(payout.stripe_transfer_id)}
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                              <Calendar className="w-3 h-3" />
-                              {format(new Date(payout.created_at), 'dd MMM yyyy, HH:mm', { locale })}
-                              {getPayoutStatusBadge(payout.status)}
-                            </div>
-                            {payout.error_message && (
-                              <p className="text-xs text-destructive mt-1">{payout.error_message}</p>
-                            )}
-                          </div>
-                        </div>
-                        <span className="font-bold text-success">
-                          ${payout.amount.toLocaleString()}
-                        </span>
+              <TabsContent value="transactions">
+                <Card>
+                  <CardContent className="p-0">
+                    {transactions.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground text-sm">
+                        {language === 'es' ? 'No hay transacciones aún' : 'No transactions yet'}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {transactions.map((tx) => (
+                          <div 
+                            key={tx.id} 
+                            className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              {getSourceIcon(tx.metadata?.source)}
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-xs sm:text-sm truncate">{tx.description}</p>
+                                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                                  <span>{format(new Date(tx.created_at), 'dd MMM, HH:mm', { locale })}</span>
+                                  <span>·</span>
+                                  <span>{getSourceLabel((tx.metadata as Record<string, any>)?.source)}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <span className="font-bold text-sm text-success flex-shrink-0 ml-2">
+                              +${tx.amount.toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="payouts">
+                <Card>
+                  <CardContent className="p-0">
+                    {payouts.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground text-sm">
+                        {language === 'es' ? 'No hay pagos registrados aún' : 'No payouts recorded yet'}
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {payouts.map((payout) => (
+                          <div 
+                            key={payout.id} 
+                            className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <div className="p-1.5 rounded-md bg-success/10 flex-shrink-0">
+                                <DollarSign className="w-3.5 h-3.5 text-success" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-xs sm:text-sm font-medium">
+                                    {language === 'es' ? 'Pago' : 'Payout'}
+                                  </span>
+                                  {getPayoutMethodBadge(payout.stripe_transfer_id)}
+                                  {getPayoutStatusBadge(payout.status)}
+                                </div>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                                  {format(new Date(payout.created_at), 'dd MMM yyyy', { locale })}
+                                </p>
+                                {payout.error_message && (
+                                  <p className="text-[10px] text-destructive mt-0.5 truncate">{payout.error_message}</p>
+                                )}
+                              </div>
+                            </div>
+                            <span className="font-bold text-sm text-success flex-shrink-0 ml-2">
+                              ${payout.amount.toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </>
         )}
       </div>
