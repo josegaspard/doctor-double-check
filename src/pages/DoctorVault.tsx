@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { VaultFilePreviewModal } from '@/components/vault/VaultFilePreviewModal';
 import { OtpFloatingBanner } from '@/components/vault/OtpFloatingBanner';
-import { OtpVerificationDialog } from '@/components/vault/OtpVerificationDialog';
+import { OtpVerificationDialog, OtpDeliveryMethod } from '@/components/vault/OtpVerificationDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +18,7 @@ import {
 import { VaultFile } from '@/contexts/VaultContext';
 import { toast } from 'sonner';
 
-const OTP_DURATION_SECONDS = 120; // 2 minutes
+const OTP_DURATION_SECONDS = 120;
 
 export default function DoctorVault() {
   const navigate = useNavigate();
@@ -28,27 +28,27 @@ export default function DoctorVault() {
   const [selectedFile, setSelectedFile] = useState<VaultFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // OTP persistent state
+  // OTP state
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
   const [otpPatient, setOtpPatient] = useState<{ id: string; name: string } | null>(null);
   const [otpCode, setOtpCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const [verifiedPatients, setVerifiedPatients] = useState<Set<string>>(new Set());
+  const [deliveryMethod, setDeliveryMethod] = useState<OtpDeliveryMethod>('email');
+  const [smsAvailable, setSmsAvailable] = useState(false);
 
-  // Timer state - persists across dialog open/close
+  // Timer state
   const [otpRequestedAt, setOtpRequestedAt] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Countdown timer effect
   useEffect(() => {
     if (otpRequestedAt === null) {
       setSecondsLeft(null);
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
-
     const tick = () => {
       const elapsed = Math.floor((Date.now() - otpRequestedAt) / 1000);
       const remaining = Math.max(0, OTP_DURATION_SECONDS - elapsed);
@@ -61,7 +61,6 @@ export default function DoctorVault() {
         if (timerRef.current) clearInterval(timerRef.current);
       }
     };
-
     tick();
     timerRef.current = setInterval(tick, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
@@ -101,13 +100,19 @@ export default function DoctorVault() {
     setIsRequesting(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-otp-email', {
-        body: { patientId: otpPatient.id },
+        body: { patientId: otpPatient.id, deliveryMethod },
       });
       if (error) throw new Error(error.message || 'Error al solicitar código');
       if (data && !data.success) throw new Error(data.error || 'Error del servidor');
 
+      // Update SMS availability from server response
+      if (data?.smsAvailable !== undefined) {
+        setSmsAvailable(data.smsAvailable);
+      }
+
       setOtpRequestedAt(Date.now());
-      toast.success('Código OTP enviado al paciente. Expira en 2 minutos.');
+      const methodText = deliveryMethod === 'email' ? 'email' : deliveryMethod === 'sms' ? 'SMS' : 'email y SMS';
+      toast.success(`Código OTP enviado por ${methodText}. Expira en 2 minutos.`);
     } catch (error: any) {
       console.error('Error requesting OTP:', error);
       toast.error(error.message || 'Error al solicitar código');
@@ -183,7 +188,6 @@ export default function DoctorVault() {
     filesByPatient[file.patientId].files.push(file);
   });
 
-  // Show floating banner when timer is active but dialog is closed
   const showBanner = otpRequestedAt !== null && !otpDialogOpen && otpPatient !== null && secondsLeft !== null && secondsLeft > 0;
 
   return (
@@ -210,7 +214,7 @@ export default function DoctorVault() {
               <div>
                 <h3 className="font-semibold text-foreground text-sm">Acceso Controlado por el Paciente + OTP</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Para ver el expediente, necesitas un código de verificación (OTP) que el paciente recibirá por notificación y correo electrónico. 
+                  Para ver el expediente, necesitas un código de verificación (OTP) que el paciente recibirá por notificación, correo electrónico o SMS.
                   El código expira en 2 minutos y solo puede usarse una vez.
                 </p>
               </div>
@@ -316,7 +320,6 @@ export default function DoctorVault() {
         )}
       </div>
 
-      {/* OTP Verification Dialog */}
       <OtpVerificationDialog
         open={otpDialogOpen}
         onOpenChange={setOtpDialogOpen}
@@ -328,9 +331,11 @@ export default function DoctorVault() {
         isRequesting={isRequesting}
         isVerifying={isVerifying}
         secondsLeft={secondsLeft}
+        deliveryMethod={deliveryMethod}
+        onDeliveryMethodChange={setDeliveryMethod}
+        smsAvailable={smsAvailable}
       />
 
-      {/* Floating OTP Banner - visible when dialog is closed but timer is running */}
       <OtpFloatingBanner
         isVisible={showBanner}
         patientName={otpPatient?.name || ''}
@@ -338,7 +343,6 @@ export default function DoctorVault() {
         onReopen={handleReopenBanner}
       />
 
-      {/* File Preview Modal */}
       <VaultFilePreviewModal
         isOpen={isPreviewOpen}
         onClose={() => {
