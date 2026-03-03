@@ -846,7 +846,7 @@ export default function Onboarding() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           >
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center justify-center gap-2 sm:gap-3">
               {Array.from({ length: totalSteps }, (_, i) => i + 1).map((stepNumber) => (
                 <div key={stepNumber} className="flex items-center">
                   <motion.div
