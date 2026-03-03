@@ -1,30 +1,26 @@
 
-
-# Plan: Email de confirmación con onboarding para doctores
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
 ## Problema
-Actualmente el correo de confirmación de registro es genérico para todos los roles. El usuario quiere que cuando un doctor se registre, el correo de confirmación incluya información de onboarding (qué esperar, pasos siguientes, proceso de verificación).
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Enfoque
+## Solucion
 
-El auth-email-hook recibe datos del usuario al registrarse. Podemos consultar la tabla `user_roles` desde el edge function (usando service role) para detectar si es doctor, y renderizar contenido adicional de onboarding en el template.
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-## Cambios
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-### 1. `supabase/functions/_shared/email-templates/signup.tsx`
-Agregar una prop opcional `userRole` al template. Cuando sea `doctor`, mostrar sección adicional con:
-- Mensaje de que su solicitud está siendo revisada
-- Pasos del proceso: verificación de cédula, aprobación del equipo (24-48h)
-- Qué podrán hacer una vez aprobados (transmisiones en vivo, consultas, contenido, prescripciones)
-- Recordatorio de que igual deben verificar su correo primero
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-### 2. `supabase/functions/auth-email-hook/index.ts`
-- Cuando el `emailType` sea `signup`, consultar `user_roles` usando el Supabase client con service role key para obtener el rol del usuario recién registrado
-- Pasar el `userRole` como prop al template de signup
-- Actualizar `SAMPLE_DATA` para incluir la prop en preview
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+
+## Archivos a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `supabase/functions/_shared/email-templates/signup.tsx` | Agregar sección condicional de onboarding para doctores |
-| `supabase/functions/auth-email-hook/index.ts` | Consultar rol del usuario y pasarlo al template |
-
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
