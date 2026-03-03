@@ -1312,21 +1312,33 @@ export default function Onboarding() {
                       )}
 
                       {/* Document Signature for everyone in Step 2 */}
-                      {(selectedRole === 'doctor' || selectedRole === 'resident') && (
-                        <motion.div variants={itemVariants} className="mt-6">
-                          <DocumentSignature
-                            signerName={signerName}
-                            onSignerNameChange={setSignerName}
-                            termsAccepted={termsAccepted}
-                            onTermsChange={setTermsAccepted}
-                            privacyAccepted={privacyAccepted}
-                            onPrivacyChange={setPrivacyAccepted}
-                            doctorContractAccepted={doctorContractAccepted}
-                            onDoctorContractChange={setDoctorContractAccepted}
-                            showDoctorContract={selectedRole === 'doctor'}
-                          />
-                        </motion.div>
-                      )}
+                      <motion.div variants={itemVariants} className="mt-6">
+                        <DocumentSignature
+                          signerName={signerName}
+                          onSignerNameChange={setSignerName}
+                          termsAccepted={termsAccepted}
+                          onTermsChange={setTermsAccepted}
+                          privacyAccepted={privacyAccepted}
+                          onPrivacyChange={setPrivacyAccepted}
+                          doctorContractAccepted={doctorContractAccepted}
+                          onDoctorContractChange={setDoctorContractAccepted}
+                          showDoctorContract={selectedRole === 'doctor'}
+                        />
+                        <AnimatePresence>
+                          {(validationErrors.signerName || validationErrors.termsAccepted || validationErrors.privacyAccepted || validationErrors.doctorContract) && (
+                            <motion.p 
+                              className="text-sm text-destructive flex items-center gap-1 mt-2"
+                              initial={{ opacity: 0, y: -10, height: 0 }}
+                              animate={{ opacity: 1, y: 0, height: "auto" }}
+                              exit={{ opacity: 0, y: -10, height: 0 }}
+                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            >
+                              <AlertCircle className="w-3 h-3" />
+                              {validationErrors.signerName || validationErrors.termsAccepted || validationErrors.privacyAccepted || validationErrors.doctorContract}
+                            </motion.p>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
 
                       <motion.div 
                         className="flex gap-3 pt-4"

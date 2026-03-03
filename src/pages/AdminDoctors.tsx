@@ -39,14 +39,29 @@ interface DoctorRequest {
   cedula_profesional: string | null;
   numero_consejo: string | null;
   bio: string | null;
+  location: string | null;
   status: 'pending' | 'approved' | 'rejected';
   badge_override: string | null;
   created_at: string;
+  cedula_verification_id: string | null;
+  consultation_fee: number;
   profile?: {
     name: string;
     email: string;
     avatar_url: string | null;
   };
+  cedula_verification?: {
+    nombre: string | null;
+    paterno: string | null;
+    materno: string | null;
+    titulo: string | null;
+    institucion: string | null;
+    anio_registro: number | null;
+    is_verified: boolean | null;
+    is_claimed: boolean | null;
+    verified_at: string | null;
+  } | null;
+  document_signatures_count?: number;
 }
 
 export default function AdminDoctors() {
