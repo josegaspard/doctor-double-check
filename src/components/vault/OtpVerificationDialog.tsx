@@ -9,7 +9,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { KeyRound, Loader2, ShieldCheck, Timer } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { KeyRound, Loader2, ShieldCheck, Timer, Mail, Smartphone } from 'lucide-react';
+
+export type OtpDeliveryMethod = 'email' | 'sms' | 'both';
 
 interface OtpVerificationDialogProps {
   open: boolean;
@@ -22,6 +26,9 @@ interface OtpVerificationDialogProps {
   isRequesting: boolean;
   isVerifying: boolean;
   secondsLeft: number | null;
+  deliveryMethod: OtpDeliveryMethod;
+  onDeliveryMethodChange: (method: OtpDeliveryMethod) => void;
+  smsAvailable: boolean;
 }
 
 export function OtpVerificationDialog({
@@ -35,11 +42,20 @@ export function OtpVerificationDialog({
   isRequesting,
   isVerifying,
   secondsLeft,
+  deliveryMethod,
+  onDeliveryMethodChange,
+  smsAvailable,
 }: OtpVerificationDialogProps) {
   const hasActiveTimer = secondsLeft !== null && secondsLeft > 0;
   const minutes = hasActiveTimer ? Math.floor(secondsLeft! / 60) : 0;
   const secs = hasActiveTimer ? secondsLeft! % 60 : 0;
   const timeStr = `${minutes}:${secs.toString().padStart(2, '0')}`;
+
+  const deliveryText = deliveryMethod === 'email'
+    ? 'notificación in-app y correo electrónico'
+    : deliveryMethod === 'sms'
+      ? 'notificación in-app y SMS'
+      : 'notificación in-app, correo y SMS';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -55,6 +71,63 @@ export function OtpVerificationDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {/* Delivery method selector */}
+          {!hasActiveTimer && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground">Método de entrega del código:</Label>
+              <RadioGroup
+                value={deliveryMethod}
+                onValueChange={(v) => onDeliveryMethodChange(v as OtpDeliveryMethod)}
+                className="grid gap-2"
+              >
+                <Label
+                  htmlFor="method-email"
+                  className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
+                >
+                  <RadioGroupItem value="email" id="method-email" />
+                  <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">Email + Notificación</p>
+                    <p className="text-[11px] text-muted-foreground">Siempre disponible</p>
+                  </div>
+                </Label>
+                <Label
+                  htmlFor="method-sms"
+                  className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
+                    smsAvailable
+                      ? 'cursor-pointer hover:bg-muted/50 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5'
+                      : 'opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  <RadioGroupItem value="sms" id="method-sms" disabled={!smsAvailable} />
+                  <Smartphone className="w-4 h-4 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">SMS + Notificación</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {smsAvailable ? 'Envío por mensaje de texto' : 'Requiere configurar proveedor SMS'}
+                    </p>
+                  </div>
+                </Label>
+                {smsAvailable && (
+                  <Label
+                    htmlFor="method-both"
+                    className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5"
+                  >
+                    <RadioGroupItem value="both" id="method-both" />
+                    <div className="flex gap-1 flex-shrink-0">
+                      <Mail className="w-4 h-4 text-primary" />
+                      <Smartphone className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">Email + SMS + Notificación</p>
+                      <p className="text-[11px] text-muted-foreground">Máxima cobertura</p>
+                    </div>
+                  </Label>
+                )}
+              </RadioGroup>
+            </div>
+          )}
+
           {hasActiveTimer && (
             <div className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg ${
               secondsLeft! <= 30 ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning-foreground'
@@ -75,7 +148,7 @@ export function OtpVerificationDialog({
               inputMode="numeric"
             />
             <p className="text-xs text-muted-foreground text-center">
-              El paciente recibirá el código por notificación y correo electrónico.
+              El paciente recibirá el código por {deliveryText}.
             </p>
           </div>
 
