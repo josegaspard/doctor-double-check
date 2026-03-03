@@ -207,10 +207,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     // ChatProvider not available (unauthenticated user)
   }
 
-  const filteredNavItems = useMemo(() => 
-    navItems.filter(item => role && item.roles.includes(role)),
-    [role]
-  );
+  const filteredNavItems = useMemo(() => {
+    const effectiveRole = role || 'visitor';
+    return navItems.filter(item => item.roles.includes(effectiveRole));
+  }, [role]);
 
   const bottomTabs = useMemo(() => getBottomTabs(role, t), [role, t]);
   
