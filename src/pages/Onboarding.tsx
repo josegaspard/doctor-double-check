@@ -888,7 +888,7 @@ export default function Onboarding() {
                   </motion.div>
                   {stepNumber < totalSteps && (
                     <motion.div
-                      className="w-16 h-1 mx-2 rounded-full bg-muted overflow-hidden"
+                      className="w-8 sm:w-16 h-1 mx-1 sm:mx-2 rounded-full bg-muted overflow-hidden"
                     >
                       <motion.div
                         className="h-full bg-primary"
