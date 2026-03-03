@@ -1,20 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Fix: All Lives Should Always Save to Recordings
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Problem
-When a doctor sets `enableRecording = false` in the setup form, the local recording is never started (`localRecording.startRecording` is skipped), and at end time the upload is skipped entirely. This means those lives never appear in "Grabaciones".
+## Solucion
 
-## Solution
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-**File: `src/pages/DoctorGoLive.tsx`** — 2 changes:
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-1. **Always start recording** (line ~148): Remove the `if (config.enableRecording)` guard around `localRecording.startRecording(stream)` — always call it regardless of the toggle.
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-2. **Always upload recording** (line ~195-210): Change the condition from `enableRecording && localBlob && localBlob.size > 0` to just `localBlob && localBlob.size > 0`. The `enableRecording` flag will only control whether a `price` is set (price=0 when disabled, user's chosen price when enabled).
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-The `enableRecording` toggle in the setup form remains — it now controls whether the recording is **premium (paid)** vs **free**, not whether it's recorded at all.
+## Archivos a modificar
 
-## Files to modify
-- `src/pages/DoctorGoLive.tsx` — Remove recording guards so all lives are always recorded and uploaded to the recordings table
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |

@@ -177,10 +177,8 @@ export default function DoctorGoLive() {
       setDailyRoomUrl(room.url);
       setDailyOwnerToken(room.ownerToken || '');
 
-      // Start local recording from second 0
-      if (config.enableRecording) {
-        localRecording.startRecording(stream);
-      }
+      // Always start local recording from second 0 (all lives become recordings)
+      localRecording.startRecording(stream);
 
       setLiveData({
         id: live.id, title: live.title, description: live.description || '',
@@ -256,15 +254,15 @@ export default function DoctorGoLive() {
         status: 'ended', ended_at: new Date().toISOString(),
       }).eq('id', liveData.id);
 
-      // Upload local recording
+      // Upload local recording (all lives are saved as recordings)
       let recordingCreated = false;
-      const localBlob = enableRecording ? localRecording.getRecordingBlob() : null;
-      if (enableRecording && localBlob && localBlob.size > 0) {
+      const localBlob = localRecording.getRecordingBlob();
+      if (localBlob && localBlob.size > 0) {
         setEndingStage('uploading');
         const uploadResult = await localRecording.uploadRecording({
           liveId: liveData.id, doctorId: user.id, title: liveData.title,
           description: liveData.description, specialty: liveData.specialty,
-          tags, price: recordingPrice,
+          tags, price: enableRecording ? recordingPrice : 0,
         });
         if (uploadResult.success) {
           recordingCreated = true;
