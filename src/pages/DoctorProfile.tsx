@@ -79,6 +79,8 @@ export default function DoctorProfile() {
     checkActiveSession();
   }, [user?.id, id, role]);
 
+  const [isPending, setIsPending] = useState(false);
+
   useEffect(() => {
     const fetchDoctor = async () => {
       if (!id) return;
@@ -90,8 +92,6 @@ export default function DoctorProfile() {
 
       if (error) {
         console.error('Error fetching doctor profile:', error);
-        setIsLoading(false);
-        return;
       }
 
       const doctorProfile = Array.isArray(doctorData) ? doctorData[0] : doctorData;
@@ -123,6 +123,29 @@ export default function DoctorProfile() {
             id: liveData.id,
             title: liveData.title,
             viewerCount: liveData.viewer_count,
+          });
+        }
+      } else if (user?.id === id) {
+        // Current user is viewing their own pending profile
+        const [{ data: profileData }, { data: dpData }] = await Promise.all([
+          supabase.from('profiles').select('name, avatar_url').eq('id', id).single(),
+          supabase.from('doctor_profiles').select('*').eq('user_id', id).single(),
+        ]);
+
+        if (dpData && profileData) {
+          setIsPending(dpData.status === 'pending');
+          setDoctor({
+            id: id,
+            visibleId: dpData.id,
+            name: profileData.name || 'Doctor',
+            specialty: dpData.specialty,
+            bio: dpData.bio || undefined,
+            rating: Number(dpData.rating),
+            totalConsultations: dpData.total_consultations,
+            consultationFee: Number(dpData.consultation_fee),
+            location: dpData.location || undefined,
+            followersCount: dpData.followers_count,
+            avatarUrl: profileData.avatar_url || undefined,
           });
         }
       }
