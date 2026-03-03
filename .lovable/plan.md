@@ -1,49 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Verificacion del flujo de registro doctor + correo de confirmacion
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Resultado del analisis
+## Solucion
 
-El flujo esta correctamente implementado. Aqui el recorrido completo:
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-### Flujo funcional (correcto)
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-```text
-1. Doctor llena formulario en Login.tsx (nombre, email, password, role=doctor, specialty)
-       ↓
-2. supabase.auth.signUp() con metadata { name, role: 'doctor', specialty, license }
-       ↓
-3. Trigger handle_new_user() → INSERT en profiles, user_roles (role=doctor), wallets, doctor_profiles
-       ↓
-4. auth-email-hook recibe webhook → getUserRole(user_id) consulta user_roles → obtiene 'doctor'
-       ↓
-5. Renderiza SignupEmail con userRole='doctor' → incluye:
-   - Preview: "Confirma tu correo y comienza tu proceso de verificación"
-   - Titulo: "¡Bienvenido, Doctor!"
-   - Boton: "Verificar correo electrónico"
-   - Seccion onboarding: 4 pasos (confirmar correo → cedula SEP → revision equipo → listo)
-   - Features: lives, consultas, contenido, recetas, pagos, noticias
-       ↓
-6. Subject personalizado: "Confirma tu correo y comienza tu verificación - Medical Masters"
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-### Sin problemas funcionales encontrados
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-- La secuencia trigger → email hook es correcta (trigger se ejecuta sincrónicamente en INSERT, el email hook es asincrónico posterior)
-- El role lookup usa `maybeSingle()` con manejo de errores adecuado
-- Los templates para doctor, resident y patient estan completos
-- URLs apuntan a `https://cirugiaesteticauribe.com`
-- Branding consistente "Medical Masters"
-
-### Un ajuste menor recomendado
-
-El background del `<Body>` en el email usa `#f0f5f7` en lugar de `#ffffff`. Segun las mejores practicas de email, el fondo exterior debe ser blanco para evitar problemas de rendering en modo oscuro de Gmail, Outlook, etc. (los clientes invierten backgrounds claros → si ya es gris, puede quedar raro).
-
-## Cambio propuesto
+## Archivos a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `supabase/functions/_shared/email-templates/signup.tsx` | Cambiar `main.backgroundColor` de `#f0f5f7` a `#ffffff` |
-
-Solo es 1 linea. Los demas templates tambien tienen el mismo patron pero el usuario solo pidio verificar el de signup.
-
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
