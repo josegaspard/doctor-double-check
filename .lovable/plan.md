@@ -1,28 +1,56 @@
 
-# Plan: Cambiar "Mi Wallet" a "Saldo" para doctores en menu movil
+# Plan: Video autoplay en Landing, corregir "Exp. Medico", y verificaciones
 
-## Problema
-En el menu "Mas" de la navegacion movil, los doctores ven "Mi Wallet" con el saldo de su billetera de consumo (`wallets.balance`). Lo correcto es mostrar **"Saldo"** con el monto de ganancias pendientes (`doctor_profiles.pending_earnings`) y que al hacer clic los lleve a `/doctor/earnings` en vez de `/wallet`.
+## 1. Agregar video autoplay al hero de Landing
 
-## Cambios
+**Archivo**: `src/pages/Landing.tsx` (lineas 126-130)
 
-### 1. `src/components/layout/MainLayout.tsx` (lineas 598-609)
-- Cuando `role === 'doctor'`:
-  - Cambiar el texto de "Mi Wallet" a "Saldo"
-  - Cambiar la ruta de `/wallet` a `/doctor/earnings`
-  - Mostrar el monto de `pending_earnings` del doctor en vez del `balance` del wallet
-  - Usar icono `DollarSign` o `TrendingUp` en vez de `Wallet` para diferenciar visualmente
-- Para `patient` y `resident` mantener el comportamiento actual ("Mi Wallet", `/wallet`, saldo del wallet)
+Dentro del `<div className="absolute inset-0 z-0">` del hero, agregar un tag `<video>` con autoplay, muted, loop y playsInline antes de los gradientes overlay:
 
-### 2. Obtener `pending_earnings` del doctor
-- En el componente `MainLayout`, agregar un query ligero a `doctor_profiles` para obtener `pending_earnings` cuando el rol es `doctor`
-- Usar `useState` + `useEffect` con el `user.id` como dependencia
-- Formatear el monto como moneda MXN (`$X,XXX`)
+```html
+<video
+  autoPlay
+  muted
+  loop
+  playsInline
+  className="absolute inset-0 w-full h-full object-cover"
+  src="https://gestomarketing.com.mx/wp-content/uploads/2026/03/Video_de_Landing_Page_Hiperrealista-1-1.mp4"
+/>
+```
 
-### 3. Traducciones (`src/lib/i18n/es.ts` y `en.ts`)
-- Agregar clave `nav.earnings` con valor "Saldo" (es) / "Balance" (en) para doctores
+Los gradientes overlay existentes (`opacity-90`) se mantienen encima del video para que el texto siga siendo legible.
 
-## Resultado
-- Doctores ven "Saldo $X,XXX" en el menu movil que refleja sus ganancias pendientes
-- Al hacer clic van directo a la pagina de Ganancias (`/doctor/earnings`)
-- Pacientes y residentes siguen viendo "Mi Wallet" con su saldo de consumo
+## 2. Corregir "Exp. Medico" - Eliminar auto-insercion de lives en doctor_content
+
+**Archivo**: `src/pages/DoctorGoLive.tsx` (lineas 279-309)
+
+**Problema encontrado**: Cuando un doctor termina un live con grabacion, el codigo en lineas 292-303 automaticamente inserta la grabacion en la tabla `doctor_content`. Esto hace que los lives aparezcan en la galeria de "Exp. Medico" (`/content`), lo cual el usuario no quiere.
+
+**Solucion**: Eliminar el bloque completo de `saveAsContent` (lineas 280-309) que inserta las grabaciones de lives en `doctor_content`. Las grabaciones seguiran disponibles en la seccion de Grabaciones (`/recordings`) que es donde pertenecen.
+
+## 3. Verificar PDF de Analytics manualmente (testing con browser)
+
+Despues de implementar los cambios, navegar a `/admin/analytics` en el browser, hacer clic en el boton de PDF/imprimir, y verificar que:
+- El dialogo de impresion se dispara correctamente
+- Los datos de KPIs y graficas estan presentes
+
+## 4. Probar flujo de reembolsos end-to-end (testing con browser)
+
+Navegar a `/admin/refunds` y verificar:
+- La pagina carga correctamente con las pestanas (Solicitudes, Historial)
+- Los filtros funcionan
+- El formulario de reembolso manual abre y muestra las opciones (Wallet, Stripe, Transferencia bancaria)
+- La Edge Function `admin-refund` esta desplegada y responde
+
+## Archivos a modificar
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Landing.tsx` | Agregar `<video>` autoplay muted loop en el hero |
+| `src/pages/DoctorGoLive.tsx` | Eliminar bloque de auto-insercion en doctor_content (lineas 279-309) |
+
+## Verificaciones con browser
+
+1. Navegar a `/` y confirmar que el video se reproduce automaticamente en el hero
+2. Navegar a `/admin/analytics` y probar el boton de PDF
+3. Navegar a `/admin/refunds` y probar el flujo completo de reembolsos
