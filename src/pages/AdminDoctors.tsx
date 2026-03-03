@@ -533,7 +533,7 @@ export default function AdminDoctors() {
                         <Button
                           size="sm"
                           variant="default"
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-success hover:bg-success/90 text-success-foreground"
                           onClick={() => setActionDialog({ open: true, doctor, action: 'approve' })}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
