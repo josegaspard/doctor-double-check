@@ -315,7 +315,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           <>
             <div className="py-4 space-y-4">
               <div className="p-4 bg-muted/50 rounded-lg">
-                <h4 className="font-medium mb-3">Resumen de tu Double Check</h4>
+                <h4 className="font-medium mb-3">Resumen de tu Segunda Opinión</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Especialista</span>
