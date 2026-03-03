@@ -107,6 +107,10 @@ interface ValidationErrors {
   license?: string;
   institution?: string;
   year?: string;
+  signerName?: string;
+  termsAccepted?: string;
+  privacyAccepted?: string;
+  doctorContract?: string;
 }
 const triggerConfetti = () => {
   const duration = 3000;
