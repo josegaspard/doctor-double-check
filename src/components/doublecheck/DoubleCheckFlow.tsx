@@ -87,7 +87,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         'process_wallet_purchase',
         {
           p_amount: doctor.consultationFee,
-          p_description: `Double Check con ${doctor.name}`,
+          p_description: `Segunda Opinión con ${doctor.name}`,
           p_metadata: { type: 'double_check', doctor_id: doctor.userId },
         }
       );
