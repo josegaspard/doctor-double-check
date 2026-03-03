@@ -180,7 +180,7 @@ export default function DoubleCheck() {
           <CardContent className="p-4">
             <h3 className="font-semibold text-foreground mb-2">¿Qué es Segunda Opinión?</h3>
             <p className="text-sm text-muted-foreground">
-              Double Check te permite obtener una segunda opinión médica de especialistas 
+              Segunda Opinión te permite obtener una segunda opinión médica de especialistas 
               verificados. Comparte tus estudios desde tu Vault de forma segura y recibe 
               una evaluación profesional adicional para tomar decisiones informadas sobre 
               tu salud.
