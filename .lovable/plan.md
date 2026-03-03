@@ -1,67 +1,47 @@
 
-# Plan: Ganancias clickable, estilos Saldo/Wallet, y navegacion visitante
+# Plan: Arreglar menu "Mas" vacio para visitantes en movil
 
-## 1. Hacer la card "Ganancias" clickable en el dashboard del doctor
+## Problema
+Cuando un visitante (no logueado) toca el boton "Mas" (3 bolitas) en movil, el sheet se abre pero aparece vacio -- solo se ve el logo y el boton de login. Esto pasa porque:
+1. `moreNavItems` filtra los items que ya estan en los bottom tabs, y para visitor Lives y Noticias ya estan ahi, asi que queda vacio
+2. La seccion "Cuenta" esta oculta para visitors
 
-**Archivo**: `src/components/doctor/EarningsCard.tsx`
+## Solucion
 
-- Envolver toda la Card en un elemento clickable que navegue a `/doctor/earnings`
-- Agregar `cursor-pointer` y efecto `hover:shadow-md` a la Card
-- Agregar un indicador visual (flecha o chevron) en el header para indicar que es clickable
+### Archivo: `src/components/layout/MainLayout.tsx`
 
-## 2. Agregar fondo suave a "Saldo" (doctor) y "Wallet" (paciente) en el menu movil "Mas"
+Agregar contenido visible al More sheet cuando el usuario es visitante:
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (lineas 618-643)
+1. **Agregar links utiles para visitantes** debajo del boton de login:
+   - "Para Doctores" -> `/for-doctors`
+   - "Para Pacientes" -> `/for-patients`
+   - "Casos de Exito" -> `/success-stories`
+   - "Contacto" -> `/contact`
+   - "Ayuda" -> `/help`
 
-- Agregar `bg-success/10 border border-success/20` al item de "Saldo" del doctor para que destaque visualmente como boton clickable
-- Agregar `bg-primary/10 border border-primary/20` al item de "Wallet" del paciente
-- Esto hara que ambos items se diferencien del resto de la navegacion y sea obvio que son interactivos
+2. **Estructura del bloque visitor en el More sheet** (lineas 575-583):
+   - Mantener el login prompt existente
+   - Agregar una seccion "Explorar" con los links de arriba
+   - Agregar seccion "Legal" con links a Terminos, Privacidad
+   - Esto llena el sheet con opciones relevantes para visitantes
 
-## 3. Navegacion para visitantes (no logueados)
+3. **Agregar el bloque justo despues del login prompt** (despues de linea 583), condicionado a `role === 'visitor' || (!isAuthenticated && !role)`:
 
-**Archivo**: `src/components/layout/MainLayout.tsx`
+```text
+Explorar:
+  - Para Doctores (Stethoscope icon)
+  - Para Pacientes (User icon)
+  - Casos de Exito (Star icon)
+  - Contacto (Mail icon)
+  - Ayuda (HelpCircle icon)
 
-### Bottom tabs (lineas 117-124):
-- Cambiar el bloque `visitor/resident` para que visitantes solo vean: **Lives** y **Noticias** (2 tabs + "Mas")
-- Quitar "Doctores" y "Notificaciones" de los bottom tabs para visitantes
+Legal:
+  - Terminos (FileText icon)
+  - Privacidad (Shield icon)
+```
 
-### navItems (linea 69-82):
-- Ya esta correcto: visitor solo tiene `lives` y `news`
-
-### Header (linea 392):
-- Solo mostrar NotificationBell si `isAuthenticated` (ya esta asi)
-- Ocultar boton de busqueda/doctores para visitantes no autenticados
-
-### More sheet para visitante (lineas 567-575):
-- El visitor ya ve login prompt + solo items de navegacion filtrados por rol (lives, news)
-- Verificar que "Notificaciones" no aparezca para visitors en el More sheet (linea 644-658): esta dentro de `isAuthenticated && role !== 'visitor'`, ya esta correcto
-
-### Separar visitor de resident en getBottomTabs:
-- Resident mantiene tabs completos (Lives, Doctores, Notificaciones, Perfil)
-- Visitor solo: Lives, Noticias (sin Doctores ni Notificaciones)
-
-## Archivos a modificar
+## Archivo a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/components/doctor/EarningsCard.tsx` | Card clickable con hover, navega a `/doctor/earnings` |
-| `src/components/layout/MainLayout.tsx` | Fondo suave en Saldo/Wallet, bottom tabs visitante simplificados |
-
-## Detalle tecnico
-
-### getBottomTabs - nuevo bloque visitor:
-```text
-visitor:
-  - Lives (Radio icon)
-  - Noticias (Calendar icon)
-  (+ boton "Mas" con login prompt)
-
-resident (sin cambios):
-  - Lives
-  - Doctores
-  - Notificaciones
-  - Perfil
-```
-
-### EarningsCard clickable:
-La Card completa sera un div con `onClick={() => navigate('/doctor/earnings')}` y estilos de hover para indicar interactividad. Se agrega una flecha `ChevronRight` en el header.
+| `src/components/layout/MainLayout.tsx` | Agregar links de exploracion y legales al More sheet para visitantes |
