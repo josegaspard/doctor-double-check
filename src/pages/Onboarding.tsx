@@ -954,7 +954,7 @@ export default function Onboarding() {
                         <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
                       </motion.div>
                     </motion.div>
-                    <CardTitle className="text-2xl">{t('onboarding.welcomeSubtitle')}</CardTitle>
+                    <CardTitle className="text-xl sm:text-2xl">{t('onboarding.welcomeSubtitle')}</CardTitle>
                     <CardDescription className="text-base">
                       {t('onboarding.personalizeExperience')}
                     </CardDescription>
