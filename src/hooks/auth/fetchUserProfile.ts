@@ -23,7 +23,7 @@ export async function fetchUserProfile(userId: string): Promise<ExtendedUser | n
       role,
       avatarUrl: profile.avatar_url || undefined,
       createdAt: new Date(profile.created_at),
-      onboardingCompleted: profile.onboarding_completed ?? true,
+      onboardingCompleted: profile.onboarding_completed ?? false,
     };
 
     // Fetch role-specific data (only one branch needed)
