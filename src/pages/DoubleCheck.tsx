@@ -156,7 +156,7 @@ export default function DoubleCheck() {
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">
-                      Disponibilidad Double Check
+                      Disponibilidad Segunda Opinión
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {isAvailableForDoubleCheck 
