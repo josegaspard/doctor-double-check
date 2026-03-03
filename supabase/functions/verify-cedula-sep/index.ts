@@ -5,19 +5,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface RapidAPIResponse {
-  success: boolean;
-  data?: {
-    cedula: string;
-    nombre: string;
-    paterno: string;
-    materno: string;
-    titulo: string;
-    institucion: string;
-    anioRegistro: number;
-    tipo: string;
-  };
-  message?: string;
+interface SolrDoc {
+  nombre: string;
+  paterno: string;
+  materno: string;
+  numCedula: string;
+  titulo: string;
+  institucion: string;
+  anioRegistro: number;
+  tipo: string;
 }
 
 Deno.serve(async (req) => {
@@ -26,7 +22,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // AUTHENTICATE USER FIRST - Fix for security vulnerability
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("No authorization header");
@@ -40,12 +35,11 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    
+
     if (userError || !userData.user) {
       throw new Error("Usuario no autenticado");
     }
 
-    // USE AUTHENTICATED USER ID - DO NOT ACCEPT FROM CLIENT
     const userId = userData.user.id;
     const { cedula } = await req.json();
 
@@ -53,55 +47,80 @@ Deno.serve(async (req) => {
       throw new Error("Cédula es requerida");
     }
 
-    // Validate cedula format (7-8 digits)
     const cedulaRegex = /^\d{7,8}$/;
     if (!cedulaRegex.test(cedula)) {
       throw new Error("Formato de cédula inválido. Debe contener 7-8 dígitos");
     }
 
-    const rapidApiKey = Deno.env.get("RAPIDAPI_KEY");
-    if (!rapidApiKey) {
-      throw new Error("RAPIDAPI_KEY no configurada");
-    }
+    // Query the free SEP Solr endpoint
+    const solrUrl = `https://search.sep.gob.mx/solr/cedulasCore/select?fl=*,score&q=${encodeURIComponent(cedula)}&start=0&rows=10&wt=json`;
 
-    // Query RapidAPI endpoint
-    const apiUrl = `https://cedulas-profesionales-sep.p.rapidapi.com/api/v1/sep/cedula?cedula=${encodeURIComponent(cedula)}`;
-    
-    console.log("Querying RapidAPI:", apiUrl);
-    
-    const apiResponse = await fetch(apiUrl, {
-      method: "GET",
-      headers: {
-        "x-rapidapi-host": "cedulas-profesionales-sep.p.rapidapi.com",
-        "x-rapidapi-key": rapidApiKey,
-      },
-    });
+    console.log("Querying SEP Solr:", solrUrl);
 
-    const apiText = await apiResponse.text();
-    console.log("RapidAPI status:", apiResponse.status, "body:", apiText);
-
-    let apiData: RapidAPIResponse;
+    let apiResponse: Response;
     try {
-      apiData = JSON.parse(apiText);
-    } catch {
-      console.error("Failed to parse RapidAPI response");
-      throw new Error("Error al consultar el servicio de verificación");
-    }
-
-    if (!apiResponse.ok || !apiData.success || !apiData.data) {
+      apiResponse = await fetch(solrUrl, {
+        method: "GET",
+        headers: { "Accept": "application/json" },
+      });
+    } catch (fetchError) {
+      console.error("SEP endpoint unreachable:", fetchError);
       return new Response(
         JSON.stringify({
           success: false,
           verified: false,
-          error: apiData.message || "Cédula no encontrada en el registro de la SEP",
+          error: "El servicio de la SEP no está disponible. Puedes verificar manualmente en cedulaprofesional.sep.gob.mx o esperar a que un administrador apruebe tu cédula.",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const matchedData = apiData.data;
+    const apiText = await apiResponse.text();
+    console.log("SEP Solr status:", apiResponse.status, "body length:", apiText.length);
 
-    // Initialize Supabase admin client for database operations
+    let solrData: { response?: { numFound?: number; docs?: SolrDoc[] } };
+    try {
+      solrData = JSON.parse(apiText);
+    } catch {
+      console.error("Failed to parse SEP Solr response");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          verified: false,
+          error: "Error al consultar el servicio de la SEP. Puedes verificar manualmente en cedulaprofesional.sep.gob.mx o esperar aprobación del administrador.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!apiResponse.ok || !solrData.response?.docs?.length) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          verified: false,
+          error: "Cédula no encontrada en el registro de la SEP. Verifica el número o espera aprobación del administrador.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Find exact match by numCedula
+    const matchedDoc = solrData.response.docs.find(
+      (doc) => doc.numCedula === cedula
+    );
+
+    if (!matchedDoc) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          verified: false,
+          error: "No se encontró una cédula con ese número exacto en el registro de la SEP.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Initialize Supabase admin client
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -131,18 +150,17 @@ Deno.serve(async (req) => {
     const verificationData = {
       user_id: userId,
       cedula_number: cedula,
-      nombre: matchedData.nombre,
-      paterno: matchedData.paterno,
-      materno: matchedData.materno,
-      titulo: matchedData.titulo,
-      institucion: matchedData.institucion,
-      anio_registro: matchedData.anioRegistro,
+      nombre: matchedDoc.nombre,
+      paterno: matchedDoc.paterno,
+      materno: matchedDoc.materno,
+      titulo: matchedDoc.titulo,
+      institucion: matchedDoc.institucion,
+      anio_registro: matchedDoc.anioRegistro,
       is_verified: true,
       verified_at: new Date().toISOString(),
-      raw_response: matchedData,
+      raw_response: matchedDoc as any,
     };
 
-    // Check if user already has a verification for this cedula
     const { data: existingVerification } = await supabaseAdmin
       .from("cedula_verifications")
       .select("id")
@@ -153,7 +171,6 @@ Deno.serve(async (req) => {
     let verificationId: string;
 
     if (existingVerification) {
-      // Update existing
       const { data, error } = await supabaseAdmin
         .from("cedula_verifications")
         .update(verificationData)
@@ -164,7 +181,6 @@ Deno.serve(async (req) => {
       if (error) throw error;
       verificationId = data.id;
     } else {
-      // Insert new
       const { data, error } = await supabaseAdmin
         .from("cedula_verifications")
         .insert(verificationData)
@@ -181,12 +197,12 @@ Deno.serve(async (req) => {
         verified: true,
         verificationId,
         data: {
-          nombre: matchedData.nombre,
-          paterno: matchedData.paterno,
-          materno: matchedData.materno,
-          titulo: matchedData.titulo,
-          institucion: matchedData.institucion,
-          anioRegistro: matchedData.anioRegistro,
+          nombre: matchedDoc.nombre,
+          paterno: matchedDoc.paterno,
+          materno: matchedDoc.materno,
+          titulo: matchedDoc.titulo,
+          institucion: matchedDoc.institucion,
+          anioRegistro: matchedDoc.anioRegistro,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

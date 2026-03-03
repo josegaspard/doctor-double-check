@@ -303,12 +303,12 @@ export default function Onboarding() {
       }
     }
 
-    // Step 2 validation for doctor/resident (Signatures)
-    if ((selectedRole === 'doctor' || selectedRole === 'resident') && step === 2) {
-      if (!signerName.trim()) errors.license = 'Firma requerida';
-      if (!termsAccepted) errors.specialty = 'Acepta términos';
-      if (!privacyAccepted) errors.specialty = 'Acepta privacidad';
-      if (selectedRole === 'doctor' && !doctorContractAccepted) errors.specialty = 'Acepta contrato';
+    // Step 2 validation for signatures (all roles)
+    if (step === 2) {
+      if (!signerName.trim()) errors.signerName = 'Firma requerida';
+      if (!termsAccepted) errors.termsAccepted = 'Acepta los términos de servicio';
+      if (!privacyAccepted) errors.privacyAccepted = 'Acepta la política de privacidad';
+      if (selectedRole === 'doctor' && !doctorContractAccepted) errors.doctorContract = 'Acepta el contrato de prestación de servicios';
     }
 
     return errors;
