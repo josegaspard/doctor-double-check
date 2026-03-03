@@ -1,30 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Diagnosis: Chat Scroll Jumps the Whole Page
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## What's Happening
+## Solucion
 
-When you send a message, `ChatMessagesPanel` (line 79-81) calls:
-```js
-messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-`scrollIntoView` without `block: 'nearest'` scrolls **all ancestor containers** (including the page itself) to make the element visible. So the entire page jumps down, not just the chat scroll area.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-The same pattern exists in `LiveChat.tsx` (line 92) and `VideoCallChat.tsx` (line 27).
+## Archivos a modificar
 
-## Fix
-
-**Only modify `src/components/chat/ChatMessagesPanel.tsx`** — add `block: 'nearest'` to constrain scrolling to the chat container only:
-
-```js
-messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-```
-
-This single parameter change prevents the outer page from scrolling while keeping the auto-scroll-to-bottom behavior inside the chat.
-
-**No changes to LiveChat or VideoCallChat** as requested — those files stay untouched.
-
-## Files to modify
-- `src/components/chat/ChatMessagesPanel.tsx` — line 81, add `block: 'nearest'`
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
