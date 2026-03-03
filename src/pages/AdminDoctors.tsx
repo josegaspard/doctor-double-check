@@ -186,6 +186,36 @@ export default function AdminDoctors() {
 
   const [togglingNewsId, setTogglingNewsId] = useState<string | null>(null);
   const [updatingBadgeId, setUpdatingBadgeId] = useState<string | null>(null);
+  const [verifyingCedulaId, setVerifyingCedulaId] = useState<string | null>(null);
+  const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
+
+  const handleVerifyCedula = async (doctor: DoctorRequest) => {
+    if (!doctor.license && !doctor.cedula_profesional) {
+      toast({ title: 'Sin cédula', description: 'Este doctor no tiene número de cédula registrado', variant: 'destructive' });
+      return;
+    }
+    setVerifyingCedulaId(doctor.id);
+    try {
+      const cedulaNumber = doctor.cedula_profesional || doctor.license;
+      const { data, error } = await supabase.functions.invoke('verify-cedula-sep', {
+        body: { cedula: cedulaNumber, userId: doctor.user_id },
+      });
+      if (error) throw error;
+      setVerificationResults(prev => ({ ...prev, [doctor.id]: data }));
+      if (data?.verified) {
+        toast({ title: '✅ Cédula verificada', description: `${data.nombre} - ${data.titulo}` });
+        fetchDoctors(); // Refresh to show updated verification status
+      } else {
+        toast({ title: '⚠️ No verificada', description: data?.message || 'No se encontraron resultados en la SEP', variant: 'destructive' });
+      }
+    } catch (error: any) {
+      console.error('Error verifying cedula:', error);
+      toast({ title: 'Error', description: 'No se pudo verificar la cédula. Intente manualmente.', variant: 'destructive' });
+      setVerificationResults(prev => ({ ...prev, [doctor.id]: { error: true } }));
+    } finally {
+      setVerifyingCedulaId(null);
+    }
+  };
 
   const toggleNewsPermission = async (doctor: DoctorRequest) => {
     setTogglingNewsId(doctor.id);
