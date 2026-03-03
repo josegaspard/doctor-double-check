@@ -850,7 +850,7 @@ export default function Onboarding() {
               {Array.from({ length: totalSteps }, (_, i) => i + 1).map((stepNumber) => (
                 <div key={stepNumber} className="flex items-center">
                   <motion.div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold ${
                       step === stepNumber
                         ? 'bg-primary text-primary-foreground ring-4 ring-primary/20'
                         : step > stepNumber
