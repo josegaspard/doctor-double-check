@@ -1,26 +1,14 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
+# Plan: Corregir remitente en funciones de email restantes
 
 ## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+Dos funciones de email aún usan el remitente antiguo `Dr Double Check <onboarding@resend.dev>` en lugar de `Medical Masters <no-reply@cirugiaesteticauribe.com>`. Las demás 9 funciones ya están correctas.
 
-## Solucion
+## Cambios
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+| Archivo | Línea | Antes | Después |
+|---------|-------|-------|---------|
+| `supabase/functions/send-payout-email/index.ts` | 69 | `"Dr Double Check <onboarding@resend.dev>"` | `"Medical Masters <no-reply@cirugiaesteticauribe.com>"` |
+| `supabase/functions/send-purchase-email/index.ts` | 33 | `"Dr Double Check <onboarding@resend.dev>"` | `"Medical Masters <no-reply@cirugiaesteticauribe.com>"` |
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
-
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
-
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
-
-## Archivos a modificar
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+Solo son dos líneas de cambio. El resto de las funciones ya están correctas.
