@@ -872,7 +872,7 @@ export const en = {
     step: 'Step',
     of: 'of',
     saving: 'Saving...',
-    welcomeSubtitle: 'Welcome to Dr Double Check!',
+    welcomeSubtitle: 'Welcome to Medical Masters!',
     personalizeExperience: 'To personalize your experience, tell us more about yourself',
     selectRole: 'What is your role?',
     patient: 'Patient',

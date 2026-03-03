@@ -872,7 +872,7 @@ export const es = {
     step: 'Paso',
     of: 'de',
     saving: 'Guardando...',
-    welcomeSubtitle: '¡Bienvenido a Dr Double Check!',
+    welcomeSubtitle: '¡Bienvenido a Medical Masters!',
     personalizeExperience: 'Para personalizar tu experiencia, cuéntanos más sobre ti',
     selectRole: '¿Cuál es tu rol?',
     patient: 'Paciente',

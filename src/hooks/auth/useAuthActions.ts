@@ -55,7 +55,7 @@ export function useAuthActions(
       createdAt: new Date(),
     };
     setUser(visitorUser);
-    sessionStorage.setItem('drDoubleCheck_visitor', JSON.stringify(visitorUser));
+    sessionStorage.setItem('medicalMasters_visitor', JSON.stringify(visitorUser));
   };
 
   const register = async (data: RegisterData): Promise<{ success: boolean; error?: string }> => {
