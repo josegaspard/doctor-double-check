@@ -132,7 +132,7 @@ export default function DoctorGoLive() {
       let thumbnailUrl: string | null = null;
       if (config.thumbnailFile) {
         const ext = config.thumbnailFile.name.split('.').pop() || 'jpg';
-        const path = `${user.id}/live-${Date.now()}.${ext}`;
+        const path = `live-thumbnails/${user.id}/${Date.now()}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from('thumbnails')
           .upload(path, config.thumbnailFile, { upsert: true });
