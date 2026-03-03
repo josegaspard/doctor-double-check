@@ -484,9 +484,9 @@ export default function Onboarding() {
         // Create wallet for doctor (for pending_earnings tracking)
         const { error: walletError } = await supabase
           .from('wallets')
-          .insert({ user_id: supabaseUser.id, balance: 0 });
+          .upsert({ user_id: supabaseUser.id, balance: 0 }, { onConflict: 'user_id' });
         
-        if (walletError && !walletError.message.includes('duplicate')) {
+        if (walletError) {
           console.error('Wallet creation error:', walletError);
         }
 
@@ -506,9 +506,9 @@ export default function Onboarding() {
 
         const { error: doctorError } = await supabase
           .from('doctor_profiles')
-          .insert(doctorProfileData);
+          .upsert(doctorProfileData, { onConflict: 'user_id' });
         
-        if (doctorError && !doctorError.message.includes('duplicate')) {
+        if (doctorError) {
           throw doctorError;
         }
       }
@@ -517,23 +517,23 @@ export default function Onboarding() {
         // Create wallet for resident
         const { error: walletError } = await supabase
           .from('wallets')
-          .insert({ user_id: supabaseUser.id, balance: 0 });
+          .upsert({ user_id: supabaseUser.id, balance: 0 }, { onConflict: 'user_id' });
         
-        if (walletError && !walletError.message.includes('duplicate')) {
+        if (walletError) {
           console.error('Wallet creation error:', walletError);
         }
 
         const { error: residentError } = await supabase
           .from('resident_profiles')
-          .insert({
+          .upsert({
             user_id: supabaseUser.id,
             institution: institution || '',
             specialty: specialty || 'General',
             year: year,
             status: 'pending',
-          });
+          }, { onConflict: 'user_id' });
         
-        if (residentError && !residentError.message.includes('duplicate')) {
+        if (residentError) {
           throw residentError;
         }
       }
@@ -542,9 +542,9 @@ export default function Onboarding() {
         // Create wallet for patient
         const { error: walletError } = await supabase
           .from('wallets')
-          .insert({ user_id: supabaseUser.id, balance: 0 });
+          .upsert({ user_id: supabaseUser.id, balance: 0 }, { onConflict: 'user_id' });
         
-        if (walletError && !walletError.message.includes('duplicate')) {
+        if (walletError) {
           console.error('Wallet creation error:', walletError);
         }
 
