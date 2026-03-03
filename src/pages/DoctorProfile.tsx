@@ -266,7 +266,7 @@ export default function DoctorProfile() {
       if (result.success) {
         setShowPaymentModal(false);
         toast.success(t('doctorProfile.paymentSuccess'));
-        navigate('/chat');
+        navigate(`/chat?session=${result.session_id}`);
       } else {
         toast.error(result.error || t('doctorProfile.paymentError'));
       }
