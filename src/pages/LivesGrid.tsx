@@ -44,7 +44,7 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
               src={live.thumbnailUrl}
               alt={live.title}
               loading="lazy"
-              className="w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
           ) : null}
