@@ -131,7 +131,7 @@ export function ChatSessionsList({
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="history" className="gap-1.5 data-[state=active]:shadow-sm">
+            <TabsTrigger value="history" className="gap-1.5">
               <History className="w-4 h-4" />
               <span>{t('chat.history')}</span>
               {closedSessions.length > 0 && (
