@@ -38,7 +38,7 @@ export function useAuthActions(
     // Clear state immediately for faster perceived logout
     setUser(null);
     setSupabaseUser(null);
-    sessionStorage.removeItem('drDoubleCheck_visitor');
+    sessionStorage.removeItem('medicalMasters_visitor');
     
     // Sign out from Supabase FIRST, then redirect
     await supabase.auth.signOut();
