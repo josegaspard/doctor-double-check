@@ -1,30 +1,79 @@
 
-# Fix Console Warnings: PageLoader Ref + LivesProvider Timeout
+# Fix White Screen Issue
 
-## Issue 1: PageLoader ref warning
-React's `Suspense` passes a ref to its `fallback` component. Since `PageLoader` is a plain function component, React warns that it cannot accept refs.
+## Root Cause
+The app has **NO ErrorBoundary**. When any component throws during render (e.g., a null property access, a failed hook, or a provider crash), React's entire tree dies silently -- resulting in a completely white screen with no console output.
 
-**Fix**: Convert `PageLoader` to use `React.forwardRef` in `src/App.tsx`:
+This is compounded by the `AuthenticatedProviders` pattern: when a user is logged in, 5 heavy providers (LivesProvider, WalletProvider, VaultProvider, ChatProvider, IncomingCallProvider) all mount at once. If ANY of them throws during render, the app crashes with no recovery.
+
+## Plan (3 files)
+
+### 1. Add ErrorBoundary component (`src/components/ErrorBoundary.tsx`) -- NEW FILE
+Create a React class component ErrorBoundary that:
+- Catches render errors and displays a friendly error screen instead of white screen
+- Shows a "Reload" button to recover
+- Logs the error to console for debugging
+- In development, shows the error message for easier debugging
+
+### 2. Wrap App with ErrorBoundary (`src/App.tsx`)
+- Import and wrap the entire app tree with `<ErrorBoundary>`
+- Also wrap `AuthenticatedProviders` children with a second ErrorBoundary so provider crashes don't kill the whole app
+
+### 3. Add safety to `AuthenticatedProviders` (`src/App.tsx`)
+- Wrap each provider group in the authenticated providers with error handling
+- Ensure that if LivesProvider or any other provider crashes, the page still renders (just without that provider's data)
+
+## Technical Details
+
+**ErrorBoundary component:**
 ```typescript
-const PageLoader = React.forwardRef<HTMLDivElement>((_, ref) => (
-  <div ref={ref} className="min-h-screen flex items-center justify-center">
-    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-  </div>
-));
-PageLoader.displayName = 'PageLoader';
+class ErrorBoundary extends React.Component {
+  state = { hasError: false, error: null };
+  
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return <FallbackUI onRetry={() => window.location.reload()} />;
+    }
+    return this.props.children;
+  }
+}
 ```
 
-## Issue 2: LivesProvider safety timeout
-Now that `LivesProvider` is inside `AuthenticatedProviders`, it only mounts for authenticated users. The 10-second safety timeout fires unnecessarily because `isLoading` starts as `true` and the async fetch sometimes takes a moment. 
+**App.tsx changes:**
+```tsx
+const App = () => (
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider ...>
+        <AuthProvider>
+          <LanguageProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <ErrorBoundary>
+                  <AuthenticatedProviders>
+                    <Suspense fallback={<PageLoader />}>
+                      <Routes>...</Routes>
+                    </Suspense>
+                  </AuthenticatedProviders>
+                </ErrorBoundary>
+              </BrowserRouter>
+            </TooltipProvider>
+          </LanguageProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
+);
+```
 
-**Fix** in `src/contexts/LivesContext.tsx`:
-- Reduce safety timeout from 10s to 5s
-- Ensure `setIsLoading(false)` is called in a `finally` block so it never gets stuck
-
-## Issue 3: React dedupe in Vite
-Add `resolve.dedupe` for `react`, `react-dom`, and `react/jsx-runtime` to `vite.config.ts` to prevent duplicate React instances that can cause spurious context/ref warnings.
-
-## Files to modify (3)
-1. `src/App.tsx` -- Convert `PageLoader` to `forwardRef`
-2. `src/contexts/LivesContext.tsx` -- Fix safety timeout and ensure `finally` cleanup
-3. `vite.config.ts` -- Add `resolve.dedupe`
+This ensures that even if a crash occurs, the user sees an error message with a reload button instead of a blank white screen. The inner ErrorBoundary specifically catches provider/route crashes without taking down the entire app shell.
