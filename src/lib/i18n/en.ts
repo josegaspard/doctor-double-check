@@ -19,6 +19,7 @@ export const en = {
     settings: 'Settings',
     profile: 'My Profile',
     wallet: 'My Wallet',
+    earnings: 'Balance',
     logout: 'Log Out',
     login: 'Log In',
     doctors: 'Doctors',
