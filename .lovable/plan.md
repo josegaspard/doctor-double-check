@@ -1,27 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Fix: Live Preview Not Showing Video in Grid Cards
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Root Cause
+## Solucion
 
-The console shows: **"You are attempting to use multiple call instances simultaneously"**. Daily.co by default only allows ONE `createCallObject` at a time. The component is missing the `allowMultipleCallInstances: true` flag, so only the first card connects and the rest silently fail.
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-## Solution
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-**File: `src/components/live/LivePreviewPlayer.tsx`** -- one critical fix:
-
-Add `allowMultipleCallInstances: true` to the `createCallObject` call on line 87:
-
-```js
-const call = DailyIframe.createCallObject({
-  subscribeToTracksAutomatically: true,
-  allowMultipleCallInstances: true,
-  dailyConfig: {} as any,
-});
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-This single missing flag is preventing all preview players from connecting. With it enabled, up to 4 cards (per the existing MAX_PREVIEWS limit) will each create their own Daily instance and receive the doctor's video track.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-## Files to modify
-- `src/components/live/LivePreviewPlayer.tsx` -- add `allowMultipleCallInstances: true` to `createCallObject`
+## Archivos a modificar
 
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
