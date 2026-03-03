@@ -133,7 +133,7 @@ export default function DoubleCheck() {
           </div>
           <div className="min-w-0">
             <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2 flex-wrap">
-              Double Check
+              Segunda Opinión
               <Badge variant="verified" className="gap-1">
                 <CheckCheck className="w-3 h-3" />
                 Verificado
