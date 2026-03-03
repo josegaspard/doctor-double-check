@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
             currency: "mxn",
             product_data: {
               name: recording.title,
-              description: `Grabación de ${recording.specialty} - Dr Double Check`,
+              description: `Grabación de ${recording.specialty} - Medical Masters`,
             },
             unit_amount: Math.round(finalPrice * 100),
           },
