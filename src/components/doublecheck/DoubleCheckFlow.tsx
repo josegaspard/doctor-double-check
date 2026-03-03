@@ -166,7 +166,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         .insert({
           user_id: doctor.userId,
           type: 'chat_message',
-          title: '🔄 Nueva solicitud de Double Check',
+          title: '🔄 Nueva solicitud de Segunda Opinión',
           message: `${user.name || 'Un paciente'} ha solicitado una segunda opinión`,
           data: { 
             patient_id: user.id, 
