@@ -1,118 +1,144 @@
 
-# Plan: Optimizacion UX/UI Movil - Panel Doctor, Footer, Noticias, Wallet
+# Plan: Refund Flow + Analytics PDF + Invoice Accounting + Admin UX Overhaul
 
-## 1. Email History Card - Optimizacion movil (`EmailHistoryCard.tsx`)
+## 1. User Refund Request Flow (New Feature)
 
-**Problema**: En movil el header se desborda -- "Historial de Emails", "Seleccionar todo", icono de descarga, icono de filtro y badges de conteo se amontonan en una sola linea.
+Currently refunds are admin-initiated only. Users have no way to request one.
 
-**Solucion**:
-- Reestructurar el header en 2 filas en movil: titulo arriba, acciones abajo
-- Usar `flex-wrap` y reorganizar los botones de accion en una fila compacta
-- Reducir el texto "Seleccionar todo" a solo un icono en movil (CheckSquare)
-- Las badges de conteo (sent/failed) se colocan junto al titulo
-- Botones de accion (CSV, filtros, seleccionar) en una fila separada debajo del titulo en movil
+**New DB table** `refund_requests`:
+- `id`, `user_id`, `transaction_id`, `amount`, `reason` (text), `status` (pending/approved/rejected/processed), `admin_notes`, `created_at`, `reviewed_at`, `reviewed_by`
+- RLS: users can INSERT their own, SELECT their own; admins can SELECT/UPDATE all
 
-## 2. Mi Contenido - Cards optimizadas movil (`DoctorUpload.tsx`)
+**Changes in `TransactionHistory.tsx`**:
+- Add a "Solicitar reembolso" button on each purchase/topup transaction (in the detail dialog)
+- Opens a small form: reason text + confirm
+- Inserts into `refund_requests`
+- Shows badge "Reembolso solicitado" on transactions that have a pending request
 
-**Problema**: Las cards de contenido muestran badges (categoria, audiencia, fecha, publico/privado) que se amontonan y desbordan en movil. El texto se corta y los badges se superponen.
-
-**Solucion**:
-- Cambiar el layout de cada card a vertical en movil (stack) en lugar de horizontal
-- Icono + titulo en la primera fila
-- Badges (categoria, audiencia) en segunda fila con `flex-wrap` y `gap-1.5`
-- Fecha + estado publico/privado en tercera fila
-- En desktop mantener el layout horizontal actual
-- Asegurar touch targets de 44px para el boton de eliminar
-
-## 3. Push Notification Toggle - Badge "Bloqueado" (`PushNotificationToggle.tsx`)
-
-**Problema**: El badge "Bloqueado" se ve mal en movil, con texto cortado.
-
-**Solucion**:
-- Cambiar el badge de `variant="destructive"` a un estilo mas compacto con `text-xs` asegurado
-- Usar `shrink-0` en el badge para que no se comprima
-- Reducir el texto de descripcion para que no empuje el badge fuera de pantalla
-
-## 4. Footer App Completo (`UnifiedFooter.tsx`)
-
-**Problema**: El footer del app no muestra la descripcion de marca ni las redes sociales de forma visible. Ademas esta oculto en movil (`hidden sm:block`).
-
-**Solucion**:
-- Mostrar el footer tambien en movil pero con padding inferior para no chocar con la barra de navegacion (pb-20)
-- Agregar la descripcion de marca (`brandDescription`) debajo del logo en la variante app
-- Asegurar que las redes sociales, copyright y status badge estan presentes
-- En movil: layout de 1 columna con secciones colapsadas (logo+redes arriba, links en 2 columnas, copyright abajo)
-- Mantener todo administrable desde `site_settings`
-
-## 5. News Feed Grid - Mejor layout (`NewsFeed.tsx`)
-
-**Problema**: El grid de noticias en el home no convence visualmente.
-
-**Solucion**:
-- Cambiar a un layout "magazine" para las primeras 3 noticias: la primera noticia ocupa 2 columnas (hero) y las 2 siguientes en columna derecha (stack)
-- En movil: mantener 1 columna pero la primera noticia con imagen mas grande
-- Mejorar las cards con gradiente sutil, sombras hover mas pronunciadas
-- Compact list items con mejor espaciado y separadores visuales
-
-## 6. Wallet/Transaction History - Optimizacion movil (`TransactionHistory.tsx`)
-
-**Problema**: Las transacciones en movil se ven amontonadas, badges ("Compra") se corta, texto largo se desborda.
-
-**Solucion**:
-- Reorganizar cada transaccion en movil: icono + descripcion en primera linea, fecha + monto + badge en segunda linea
-- Reducir el tamano del icono circular a `w-8 h-8` en movil
-- Badges de tipo mas compactos con `text-[10px]` en movil
-- Ocultar el badge de tipo en la lista (solo mostrar en el dialogo de detalle) para ahorrar espacio en movil
-- Monto alineado a la derecha con tamano reducido en movil
-
-## Resumen de archivos a modificar (6)
-
-1. `src/components/doctor/EmailHistoryCard.tsx` -- Header responsive 2 filas en movil
-2. `src/pages/DoctorUpload.tsx` -- Cards de contenido con layout vertical en movil
-3. `src/components/notifications/PushNotificationToggle.tsx` -- Badge compacto
-4. `src/components/layout/UnifiedFooter.tsx` -- Footer completo con descripcion, visible en movil
-5. `src/components/news/NewsFeed.tsx` -- Layout magazine para noticias
-6. `src/components/wallet/TransactionHistory.tsx` -- Transacciones responsive
-
-**Sin migraciones SQL ni archivos nuevos.**
+**Changes in `AdminRefunds.tsx`**:
+- Add a new tab "Solicitudes" showing pending refund requests from users
+- Each request shows: user info, original transaction, reason, amount
+- Admin can approve (which triggers the existing `admin-refund` edge function) or reject with notes
+- User gets notification on approval/rejection
 
 ---
 
-## Detalles tecnicos
+## 2. Analytics with Real Data + PDF Export (`AdminAnalytics.tsx`)
 
-### News Feed Magazine Layout
-```text
-Desktop (lg):
-[  Hero (col-span-2)  ] [ Card 2 ]
-[                      ] [ Card 3 ]
+**Problem**: The period selector (Week/Month/Year) doesn't actually filter data. Charts show only last 6 months hardcoded.
 
-Tablet (sm):
-[ Card 1 ] [ Card 2 ]
-[ Card 3 ]
+**Fixes**:
+- Make period selector actually filter the date range for all queries
+- Add more granular breakdown: consultations revenue, content purchases, subscription revenue as separate chart series
+- Add a table view below charts with month-by-month rows showing all metrics
 
-Movil:
-[ Card 1 (hero grande) ]
-[ Card 2 ]
-[ Card 3 ]
+**PDF Export**:
+- Add "Descargar PDF" button
+- Use browser `window.print()` with a print-optimized hidden div containing all analytics data in table format
+- Include: date range, all KPIs, revenue by month table, users by role, top doctors, revenue breakdown by type
+- Apply `@media print` styles for clean output
+
+---
+
+## 3. Invoice Review for Accounting (`AdminInvoiceReview.tsx`)
+
+**New features for accountants**:
+- Period filter: date range picker (from/to) for filtering invoices by `period_start`/`period_end`
+- Quick filters: "Este mes", "Mes anterior", "Esta semana", "Trimestre"
+- Summary card showing: total invoiced amount, approved count, pending count for selected period
+- **Excel export**: Generate CSV/Excel with columns: Invoice #, Doctor, RFC, Period, Amount, Status, Date, File URL
+- **PDF export**: Print-optimized summary report with header, period, totals, and line items
+- Group by doctor option for accountant view
+
+---
+
+## 4. Payout Settings UX (`AdminPayoutSettings.tsx`)
+
+**Improvements**:
+- Add info banner: "Los pagos automaticos solo aplican para doctores con cuenta Stripe Connect verificada. Los doctores sin Stripe deben pagarse manualmente."
+- Better card layout with visual grouping
+- Add preview of what the current settings mean (e.g., "Proximo pago automatico: Lunes 10 de Marzo")
+- Mobile-optimized form fields
+
+---
+
+## 5. Admin Dashboard Modules UX (`AdminDashboard.tsx`)
+
+**Improvements**:
+- Better visual hierarchy: group modules into categories (Financiero, Usuarios, Contenido, Configuracion)
+- Add colored left border to each card matching its icon color
+- Add pending counts as badges on relevant modules (pending invoices, pending refund requests, pending verifications)
+- Responsive: 1 column on mobile, 2 on tablet, 3 on desktop for modules
+
+---
+
+## 6. Admin Payouts Mobile UX (`AdminPayouts.tsx`)
+
+**Mobile optimization**:
+- Doctor cards: stack layout on mobile (avatar+name on top, badges below, amounts + buttons on separate row)
+- Summary cards: 2x2 grid on mobile instead of 4-column
+- Breakdown detail: full-width on mobile with scrollable transaction list
+- Action buttons (Search, Select all, Pay, Delete) in a sticky bottom bar on mobile
+
+---
+
+## 7. Content Gallery Fix (`ContentGallery.tsx`)
+
+**Problem**: ContentGallery queries `doctor_content` table which is for uploaded educational content. It already filters by `is_public = true` and does NOT include recordings (those are in the `recordings` table). The issue is likely that the data hasn't been properly cleaned.
+
+**No code change needed** -- ContentGallery already only shows `doctor_content` items. If deleted content still appears, the user needs to delete from `doctor_content` table (which was addressed in the previous plan with DoctorUpload deletion tools).
+
+---
+
+## Files Summary
+
+**New migration** (1):
+- Create `refund_requests` table with RLS policies
+
+**Files to modify** (6):
+1. `src/components/wallet/TransactionHistory.tsx` -- Add "Request refund" button in detail dialog
+2. `src/pages/AdminRefunds.tsx` -- Add "Solicitudes" tab for user refund requests
+3. `src/pages/AdminAnalytics.tsx` -- Real data filtering by period + PDF export
+4. `src/pages/AdminInvoiceReview.tsx` -- Accounting features: period filter, Excel/PDF export
+5. `src/pages/AdminPayoutSettings.tsx` -- UX improvements + Stripe-only auto-payout banner
+6. `src/pages/AdminDashboard.tsx` -- Module categories, badges, better grid
+7. `src/pages/AdminPayouts.tsx` -- Mobile-optimized layout
+
+---
+
+## Technical Details
+
+### refund_requests table
+```sql
+CREATE TABLE public.refund_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  transaction_id UUID NOT NULL,
+  amount NUMERIC NOT NULL,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','processed')),
+  admin_notes TEXT,
+  reviewed_by UUID,
+  reviewed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE public.refund_requests ENABLE ROW LEVEL SECURITY;
+-- Users can create and view their own requests
+CREATE POLICY "Users can insert own requests" ON public.refund_requests FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view own requests" ON public.refund_requests FOR SELECT TO authenticated USING (auth.uid() = user_id OR public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can update requests" ON public.refund_requests FOR UPDATE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
 ```
 
-### Footer App Movil
-```text
-[ Logo ]
-[ Brand description text ]
-[ Redes sociales iconos ]
----
-[ Plataforma | Recursos ]
-[ Legal ]
----
-[ Copyright ]
-[ Status badge ]
-```
+### Excel Export (Invoice Review)
+Uses a simple CSV generation function that creates a downloadable file with proper encoding for Spanish characters. Columns include all invoice fields plus the download URL for each PDF.
 
-Se usa `pb-20` en movil para no chocar con la barra de navegacion inferior.
+### PDF Export (Analytics)
+Creates a hidden printable div with `@media print` CSS. Contains all tables and KPIs formatted for A4 paper. Triggered via `window.print()` with the print div set as the only visible content.
 
-### EmailHistoryCard Header Movil
+### Admin Dashboard Module Categories
 ```text
-[ Mail icon ] Historial de Emails  [sent badge] [failed badge]
-[ Select ] [ CSV ] [ Filter ]   (segunda fila)
+FINANCIERO: Analytics, Pagos a Doctores, Facturas, Config. Pagos, Reembolsos
+USUARIOS: Usuarios, Doctores, Residentes, Verificaciones, Credenciales
+CONTENIDO: Noticias, Config. Sitio
+SOPORTE: Reportes
 ```
