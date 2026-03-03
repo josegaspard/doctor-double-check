@@ -1,144 +1,116 @@
 
-# Plan: Refund Flow + Analytics PDF + Invoice Accounting + Admin UX Overhaul
+# Plan: Optimizacion de Rendimiento y Velocidad de Carga
 
-## 1. User Refund Request Flow (New Feature)
+## Problemas Identificados
 
-Currently refunds are admin-initiated only. Users have no way to request one.
+### 1. Doble carga de perfil en login
+Cuando un usuario inicia sesion, `useAuthActions.login()` llama a `fetchUserProfile()`, y luego `onAuthStateChange` dispara el evento `SIGNED_IN` que ejecuta `validateAuthSession()` (otra llamada de red) + `fetchUserProfile()` de nuevo. Resultado: **2 cargas de perfil + 1 validacion innecesaria** en cada login.
 
-**New DB table** `refund_requests`:
-- `id`, `user_id`, `transaction_id`, `amount`, `reason` (text), `status` (pending/approved/rejected/processed), `admin_notes`, `created_at`, `reviewed_at`, `reviewed_by`
-- RLS: users can INSERT their own, SELECT their own; admins can SELECT/UPDATE all
+### 2. Carga secuencial de perfil de doctor
+En `fetchUserProfile`, las 4 consultas iniciales (profiles, user_roles, wallets, entitlements) se ejecutan en paralelo, pero despues la consulta de `doctor_profiles` o `resident_profiles` se ejecuta **secuencialmente**. Esto agrega 200-400ms extra.
 
-**Changes in `TransactionHistory.tsx`**:
-- Add a "Solicitar reembolso" button on each purchase/topup transaction (in the detail dialog)
-- Opens a small form: reason text + confirm
-- Inserts into `refund_requests`
-- Shows badge "Reembolso solicitado" on transactions that have a pending request
+### 3. Canales de realtime duplicados para notificaciones
+- `useNotifications` crea canal `notifications-list-{userId}`
+- `useNotificationsRealtime` crea canal `notifications-{userId}`
+- Ambos escuchan los mismos eventos INSERT en la misma tabla, duplicando el procesamiento.
 
-**Changes in `AdminRefunds.tsx`**:
-- Add a new tab "Solicitudes" showing pending refund requests from users
-- Each request shows: user info, original transaction, reason, amount
-- Admin can approve (which triggers the existing `admin-refund` edge function) or reject with notes
-- User gets notification on approval/rejection
+### 4. LivesContext fuera de AuthenticatedProviders
+`LivesProvider` esta montado en `App.tsx` fuera de `AuthenticatedProviders`, lo que significa que hace fetch de lives/recordings incluso para usuarios no autenticados en la landing page.
 
----
+### 5. validateAuthSession innecesario en INITIAL_SESSION
+En cada carga de pagina, `onAuthStateChange` con `INITIAL_SESSION` ejecuta `validateAuthSession()` que llama a `supabase.auth.getUser()` -- una llamada de red redundante ya que Supabase ya valido la sesion.
 
-## 2. Analytics with Real Data + PDF Export (`AdminAnalytics.tsx`)
-
-**Problem**: The period selector (Week/Month/Year) doesn't actually filter data. Charts show only last 6 months hardcoded.
-
-**Fixes**:
-- Make period selector actually filter the date range for all queries
-- Add more granular breakdown: consultations revenue, content purchases, subscription revenue as separate chart series
-- Add a table view below charts with month-by-month rows showing all metrics
-
-**PDF Export**:
-- Add "Descargar PDF" button
-- Use browser `window.print()` with a print-optimized hidden div containing all analytics data in table format
-- Include: date range, all KPIs, revenue by month table, users by role, top doctors, revenue breakdown by type
-- Apply `@media print` styles for clean output
+### 6. setTimeout(0) innecesario en onAuthStateChange
+El `setTimeout` en el listener agrega un tick extra al event loop, retrasando la carga del perfil.
 
 ---
 
-## 3. Invoice Review for Accounting (`AdminInvoiceReview.tsx`)
+## Solucion
 
-**New features for accountants**:
-- Period filter: date range picker (from/to) for filtering invoices by `period_start`/`period_end`
-- Quick filters: "Este mes", "Mes anterior", "Esta semana", "Trimestre"
-- Summary card showing: total invoiced amount, approved count, pending count for selected period
-- **Excel export**: Generate CSV/Excel with columns: Invoice #, Doctor, RFC, Period, Amount, Status, Date, File URL
-- **PDF export**: Print-optimized summary report with header, period, totals, and line items
-- Group by doctor option for accountant view
+### Archivo 1: `src/hooks/auth/fetchUserProfile.ts`
+- Incluir `doctor_profiles` y `resident_profiles` en el `Promise.all` inicial
+- Pasar de 4 queries paralelas + 1 secuencial a **6 queries paralelas**
+- Esto elimina 200-400ms del tiempo de carga del perfil
 
----
+### Archivo 2: `src/hooks/auth/useAuthState.ts`
+- Eliminar la llamada a `validateAuthSession()` dentro de `onAuthStateChange` para eventos `INITIAL_SESSION` y `SIGNED_IN` (la sesion ya fue validada por Supabase al disparar el evento)
+- Eliminar el `setTimeout(0)` wrapper -- ejecutar directamente para reducir latencia
+- En `INITIAL_SESSION`, si ya tenemos un cached user, solo actualizar el `supabaseUser` y refrescar el perfil en background sin bloquear
+- Mantener `validateAuthSession` solo para el evento `focus` (re-validacion al volver a la pestana)
 
-## 4. Payout Settings UX (`AdminPayoutSettings.tsx`)
+### Archivo 3: `src/hooks/auth/useAuthActions.ts`
+- En `login()`, NO llamar a `fetchUserProfile` -- dejar que `onAuthStateChange` lo haga (evitar la doble carga)
+- Solo hacer `signInWithPassword` y dejar que el listener maneje el resto
+- Esto elimina 1 llamada completa de fetchUserProfile (~400-600ms)
 
-**Improvements**:
-- Add info banner: "Los pagos automaticos solo aplican para doctores con cuenta Stripe Connect verificada. Los doctores sin Stripe deben pagarse manualmente."
-- Better card layout with visual grouping
-- Add preview of what the current settings mean (e.g., "Proximo pago automatico: Lunes 10 de Marzo")
-- Mobile-optimized form fields
+### Archivo 4: `src/hooks/useNotifications.ts`
+- Eliminar el canal de realtime duplicado de este hook
+- Dejar que `useNotificationsRealtime` sea el unico que escuche eventos INSERT
+- Este hook solo se encarga de fetch inicial y operaciones CRUD
 
----
+### Archivo 5: `src/App.tsx`
+- Mover `LivesProvider` dentro de `AuthenticatedProviders` para que no cargue datos innecesariamente en la landing
+- Las paginas publicas que necesiten lives (como LivesGrid para visitantes) usaran un fetch local
 
-## 5. Admin Dashboard Modules UX (`AdminDashboard.tsx`)
-
-**Improvements**:
-- Better visual hierarchy: group modules into categories (Financiero, Usuarios, Contenido, Configuracion)
-- Add colored left border to each card matching its icon color
-- Add pending counts as badges on relevant modules (pending invoices, pending refund requests, pending verifications)
-- Responsive: 1 column on mobile, 2 on tablet, 3 on desktop for modules
-
----
-
-## 6. Admin Payouts Mobile UX (`AdminPayouts.tsx`)
-
-**Mobile optimization**:
-- Doctor cards: stack layout on mobile (avatar+name on top, badges below, amounts + buttons on separate row)
-- Summary cards: 2x2 grid on mobile instead of 4-column
-- Breakdown detail: full-width on mobile with scrollable transaction list
-- Action buttons (Search, Select all, Pay, Delete) in a sticky bottom bar on mobile
+### Archivo 6: `src/contexts/LivesContext.tsx`
+- Agregar safe defaults cuando se usa fuera del provider (patron similar a WalletContext/ChatContext)
+- Para que las paginas publicas no se rompan al no tener el provider
 
 ---
 
-## 7. Content Gallery Fix (`ContentGallery.tsx`)
+## Impacto Esperado
 
-**Problem**: ContentGallery queries `doctor_content` table which is for uploaded educational content. It already filters by `is_public = true` and does NOT include recordings (those are in the `recordings` table). The issue is likely that the data hasn't been properly cleaned.
+| Mejora | Ahorro estimado |
+|--------|----------------|
+| Eliminar doble fetchUserProfile en login | ~400-600ms |
+| Paralelizar doctor_profiles query | ~200-400ms |
+| Eliminar validateAuthSession en INITIAL_SESSION | ~200-300ms |
+| Eliminar setTimeout(0) | ~16ms (1 frame) |
+| Eliminar canal realtime duplicado | Menos uso de memoria/red |
+| LivesProvider lazy | Menos queries en landing |
 
-**No code change needed** -- ContentGallery already only shows `doctor_content` items. If deleted content still appears, the user needs to delete from `doctor_content` table (which was addressed in the previous plan with DoctorUpload deletion tools).
-
----
-
-## Files Summary
-
-**New migration** (1):
-- Create `refund_requests` table with RLS policies
-
-**Files to modify** (6):
-1. `src/components/wallet/TransactionHistory.tsx` -- Add "Request refund" button in detail dialog
-2. `src/pages/AdminRefunds.tsx` -- Add "Solicitudes" tab for user refund requests
-3. `src/pages/AdminAnalytics.tsx` -- Real data filtering by period + PDF export
-4. `src/pages/AdminInvoiceReview.tsx` -- Accounting features: period filter, Excel/PDF export
-5. `src/pages/AdminPayoutSettings.tsx` -- UX improvements + Stripe-only auto-payout banner
-6. `src/pages/AdminDashboard.tsx` -- Module categories, badges, better grid
-7. `src/pages/AdminPayouts.tsx` -- Mobile-optimized layout
+**Total estimado: 800ms-1.3s mas rapido en login y carga inicial**
 
 ---
 
-## Technical Details
+## Detalles Tecnicos
 
-### refund_requests table
-```sql
-CREATE TABLE public.refund_requests (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  transaction_id UUID NOT NULL,
-  amount NUMERIC NOT NULL,
-  reason TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','processed')),
-  admin_notes TEXT,
-  reviewed_by UUID,
-  reviewed_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE public.refund_requests ENABLE ROW LEVEL SECURITY;
--- Users can create and view their own requests
-CREATE POLICY "Users can insert own requests" ON public.refund_requests FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can view own requests" ON public.refund_requests FOR SELECT TO authenticated USING (auth.uid() = user_id OR public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Admins can update requests" ON public.refund_requests FOR UPDATE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+### fetchUserProfile optimizado
+```typescript
+// ANTES: 4 paralelas + 1 secuencial
+const [profile, role, wallet, entitlements] = await Promise.all([...]);
+// luego: const doctorProfile = await supabase.from('doctor_profiles')...
+
+// DESPUES: 6 paralelas
+const [profile, role, wallet, entitlements, doctorProfile, residentProfile] = await Promise.all([
+  supabase.from('profiles')...,
+  supabase.from('user_roles')...,
+  supabase.from('wallets')...,
+  supabase.from('entitlements')...,
+  supabase.from('doctor_profiles').select('*').eq('user_id', userId).maybeSingle(),
+  supabase.from('resident_profiles').select('*').eq('user_id', userId).maybeSingle(),
+]);
 ```
 
-### Excel Export (Invoice Review)
-Uses a simple CSV generation function that creates a downloadable file with proper encoding for Spanish characters. Columns include all invoice fields plus the download URL for each PDF.
+### Login simplificado
+```typescript
+// ANTES:
+const { data } = await supabase.auth.signInWithPassword({...});
+const profile = await fetchUserProfile(data.user.id); // REDUNDANTE
+setUser(profile);
 
-### PDF Export (Analytics)
-Creates a hidden printable div with `@media print` CSS. Contains all tables and KPIs formatted for A4 paper. Triggered via `window.print()` with the print div set as the only visible content.
-
-### Admin Dashboard Module Categories
-```text
-FINANCIERO: Analytics, Pagos a Doctores, Facturas, Config. Pagos, Reembolsos
-USUARIOS: Usuarios, Doctores, Residentes, Verificaciones, Credenciales
-CONTENIDO: Noticias, Config. Sitio
-SOPORTE: Reportes
+// DESPUES:
+const { error } = await supabase.auth.signInWithPassword({...});
+if (error) return { success: false, error: error.message };
+// onAuthStateChange se encarga del resto
+return { success: true };
 ```
+
+### Archivos a modificar (6)
+
+1. `src/hooks/auth/fetchUserProfile.ts` -- Paralelizar todas las queries
+2. `src/hooks/auth/useAuthState.ts` -- Eliminar validacion redundante
+3. `src/hooks/auth/useAuthActions.ts` -- Simplificar login
+4. `src/hooks/useNotifications.ts` -- Eliminar canal duplicado
+5. `src/App.tsx` -- Mover LivesProvider
+6. `src/contexts/LivesContext.tsx` -- Agregar safe defaults
