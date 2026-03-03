@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
           Authorization: `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: "Medical Masters <onboarding@resend.dev>",
+          from: "Medical Masters <no-reply@cirugiaesteticauribe.com>",
           to: [patientEmail],
           subject: `🔐 Código de acceso a tu expediente médico: ${otpCode}`,
           html,
