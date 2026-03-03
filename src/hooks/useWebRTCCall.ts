@@ -14,6 +14,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
 
   const callObjectRef = useRef<DailyCall | null>(null);
   const isCleanedUpRef = useRef(false);
+  const isInitializingRef = useRef(false);
 
   // Cleanup on unmount
   useEffect(() => {
