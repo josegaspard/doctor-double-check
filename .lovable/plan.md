@@ -1,26 +1,36 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Fix: Email Confirmation Link Redirects to Wrong URL
 
-## Solucion
+## Problem
+When a user registers, `emailRedirectTo` is set to `window.location.origin`, which resolves to the Lovable preview URL (`cb26d7e6-...lovableproject.com`). The confirmation link in the email sends users to that preview URL + `/lives` instead of `cirugiaesteticauribe.com` with a proper confirmation page.
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+## Solution
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+### 1. Create `/email-confirmed` page
+New file: `src/pages/EmailConfirmed.tsx`
+- Detects the auth session from the URL hash (Supabase appends `#access_token=...&type=signup`)
+- Shows a branded "Correo confirmado" success screen with checkmark animation
+- After 3 seconds, auto-redirects to `/onboarding` (or `/lives` if onboarding already done)
+- If no valid session found, shows "link expired" message with a button to go to `/login`
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+### 2. Fix `emailRedirectTo` in registration
+**File: `src/hooks/auth/useAuthActions.ts`**
+- Change `emailRedirectTo` from `window.location.origin` to `https://cirugiaesteticauribe.com/email-confirmed`
+- This ensures the confirmation link always points to the production custom domain, not the preview URL
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+### 3. Add route
+**File: `src/App.tsx`**
+- Add `<Route path="/email-confirmed" element={<EmailConfirmed />} />`
 
-## Archivos a modificar
+### 4. Handle auth state on `/email-confirmed`
+**File: `src/hooks/auth/useAuthState.ts`**
+- Add `/email-confirmed` to the list of paths that trigger redirect logic (alongside `/` and `/login`)
+- When `SIGNED_IN` event fires on this path, redirect to `/onboarding` if not completed
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+### Files to create/modify
+- **Create**: `src/pages/EmailConfirmed.tsx`
+- **Modify**: `src/hooks/auth/useAuthActions.ts` (line 68)
+- **Modify**: `src/App.tsx` (add route)
+- **Modify**: `src/hooks/auth/useAuthState.ts` (add `/email-confirmed` to redirect paths)
+
