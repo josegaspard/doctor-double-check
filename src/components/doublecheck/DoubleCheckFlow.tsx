@@ -231,7 +231,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
               <CheckCheck className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <DialogTitle>Double Check</DialogTitle>
+              <DialogTitle>Segunda Opinión</DialogTitle>
               <DialogDescription>
                 Segunda opinión con {doctor.name}
               </DialogDescription>
