@@ -86,6 +86,7 @@ export default function LivePreviewPlayer({ dailyRoomName, thumbnailUrl }: LiveP
 
         const call = DailyIframe.createCallObject({
           subscribeToTracksAutomatically: true,
+          allowMultipleCallInstances: true,
           dailyConfig: {} as any,
         });
 
