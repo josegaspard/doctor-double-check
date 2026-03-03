@@ -219,7 +219,7 @@ export const es = {
     active: 'Activas',
     history: 'Historial',
     typing: 'escribiendo...',
-    doubleCheck: 'Double Check',
+    doubleCheck: 'Segunda Opinión',
     patient: 'Paciente',
     doctor: 'Doctor',
     closeSessionTitle: '¿Cerrar esta orientación?',
