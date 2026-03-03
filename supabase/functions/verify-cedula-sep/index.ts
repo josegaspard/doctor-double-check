@@ -77,15 +77,18 @@ Deno.serve(async (req) => {
       },
     });
 
-    if (!apiResponse.ok) {
-      console.error("RapidAPI error:", apiResponse.status, await apiResponse.text());
+    const apiText = await apiResponse.text();
+    console.log("RapidAPI status:", apiResponse.status, "body:", apiText);
+
+    let apiData: RapidAPIResponse;
+    try {
+      apiData = JSON.parse(apiText);
+    } catch {
+      console.error("Failed to parse RapidAPI response");
       throw new Error("Error al consultar el servicio de verificación");
     }
 
-    const apiData: RapidAPIResponse = await apiResponse.json();
-    console.log("RapidAPI Response:", JSON.stringify(apiData, null, 2));
-
-    if (!apiData.success || !apiData.data) {
+    if (!apiResponse.ok || !apiData.success || !apiData.data) {
       return new Response(
         JSON.stringify({
           success: false,
