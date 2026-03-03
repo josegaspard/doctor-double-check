@@ -114,7 +114,15 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
     ];
   }
 
-  // visitor / resident
+  // visitor (not logged in)
+  if (role === 'visitor' || !role) {
+    return [
+      ...common,
+      { label: t('nav.news'), href: '/news', icon: Calendar },
+    ];
+  }
+
+  // resident
   return [
     ...common,
     { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
@@ -619,11 +627,11 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       <Link
                         to="/doctor/earnings"
                         onClick={() => setMoreSheetOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
-                          location.pathname === '/doctor/earnings' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors border ${
+                          location.pathname === '/doctor/earnings' ? 'bg-success/15 border-success/30 text-success' : 'bg-success/10 border-success/20 text-foreground hover:bg-success/15'
                         }`}
                       >
-                        <DollarSign className="w-5 h-5" />
+                        <DollarSign className="w-5 h-5 text-success" />
                         <span className="text-sm font-medium">{t('nav.earnings')}</span>
                         <span className="ml-auto text-xs font-semibold text-muted-foreground">${pendingEarnings.toLocaleString()}</span>
                       </Link>
@@ -632,11 +640,11 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       <Link
                         to="/wallet"
                         onClick={() => setMoreSheetOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
-                          location.pathname === '/wallet' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors border ${
+                          location.pathname === '/wallet' ? 'bg-primary/15 border-primary/30 text-primary' : 'bg-primary/10 border-primary/20 text-foreground hover:bg-primary/15'
                         }`}
                       >
-                        <Wallet className="w-5 h-5" />
+                        <Wallet className="w-5 h-5 text-primary" />
                         <span className="text-sm font-medium">{t('nav.wallet')}</span>
                         <span className="ml-auto text-xs font-semibold text-muted-foreground">${balance.toLocaleString()}</span>
                       </Link>

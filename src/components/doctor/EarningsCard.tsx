@@ -14,7 +14,8 @@ import {
   CreditCard, 
   ArrowRight,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  ChevronRight
 } from 'lucide-react';
 
 interface EarningsData {
@@ -115,11 +116,15 @@ export function EarningsCard() {
   }
 
   return (
-    <Card>
+    <Card 
+      className="cursor-pointer hover:shadow-md transition-shadow"
+      onClick={() => navigate('/doctor/earnings')}
+    >
       <CardHeader className="pb-2">
         <CardTitle className="text-lg flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-green-500" />
-          {language === 'es' ? 'Ganancias' : 'Earnings'}
+          <DollarSign className="w-5 h-5 text-success" />
+          <span className="flex-1">{language === 'es' ? 'Ganancias' : 'Earnings'}</span>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
