@@ -303,14 +303,14 @@ export default function AdminDoctors() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="flex items-center gap-4 mb-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Stethoscope className="h-6 w-6 text-primary" />
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+              <Stethoscope className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               {t('admin.doctorManagement')}
             </h1>
             <p className="text-muted-foreground">
