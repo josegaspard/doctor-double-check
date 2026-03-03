@@ -48,7 +48,6 @@ export function EarningsCard() {
   const fetchEarningsData = async () => {
     setIsLoading(true);
     try {
-      // Fetch doctor profile earnings
       const { data: profile } = await supabase
         .from('doctor_profiles')
         .select('pending_earnings, total_earnings, payouts_enabled')
@@ -63,7 +62,6 @@ export function EarningsCard() {
         });
       }
 
-      // Fetch recent payouts
       const { data: payouts } = await supabase
         .from('doctor_payouts')
         .select('id, amount, status, created_at')
@@ -91,25 +89,25 @@ export function EarningsCard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <Badge variant="verified" className="text-xs"><CheckCircle className="w-3 h-3 mr-1" />{language === 'es' ? 'Pagado' : 'Paid'}</Badge>;
+        return <Badge variant="verified" className="text-[10px] sm:text-xs"><CheckCircle className="w-3 h-3 mr-1" />{language === 'es' ? 'Pagado' : 'Paid'}</Badge>;
       case 'processing':
-        return <Badge variant="warning" className="text-xs"><Clock className="w-3 h-3 mr-1" />{language === 'es' ? 'Procesando' : 'Processing'}</Badge>;
+        return <Badge variant="warning" className="text-[10px] sm:text-xs"><Clock className="w-3 h-3 mr-1" />{language === 'es' ? 'Procesando' : 'Processing'}</Badge>;
       case 'failed':
-        return <Badge variant="destructive" className="text-xs"><AlertCircle className="w-3 h-3 mr-1" />{language === 'es' ? 'Fallido' : 'Failed'}</Badge>;
+        return <Badge variant="destructive" className="text-[10px] sm:text-xs"><AlertCircle className="w-3 h-3 mr-1" />{language === 'es' ? 'Fallido' : 'Failed'}</Badge>;
       default:
-        return <Badge variant="outline" className="text-xs">{status}</Badge>;
+        return <Badge variant="outline" className="text-[10px] sm:text-xs">{status}</Badge>;
     }
   };
 
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-2">
           <Skeleton className="h-5 w-32" />
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-10 w-full" />
+        <CardContent className="space-y-3">
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-9 w-full" />
         </CardContent>
       </Card>
     );
@@ -120,35 +118,35 @@ export function EarningsCard() {
       className="cursor-pointer hover:shadow-md transition-shadow"
       onClick={() => navigate('/doctor/earnings')}
     >
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-success" />
+      <CardHeader className="pb-1.5 sm:pb-2">
+        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+          <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
           <span className="flex-1">{language === 'es' ? 'Ganancias' : 'Earnings'}</span>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4">
         {/* Earnings Summary */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="p-3 bg-success/10 rounded-lg border border-success/20">
-            <div className="flex items-center gap-2 mb-1">
-              <Clock className="w-4 h-4 text-success" />
-              <span className="text-xs text-muted-foreground">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <div className="p-2.5 sm:p-3 bg-success/10 rounded-lg border border-success/20">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Clock className="w-3.5 h-3.5 text-success" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground">
                 {language === 'es' ? 'Pendiente' : 'Pending'}
               </span>
             </div>
-            <p className="text-xl font-bold text-success">
+            <p className="text-lg sm:text-xl font-bold text-success">
               {formatCurrency(earnings?.pending_earnings || 0)}
             </p>
           </div>
-          <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">
+          <div className="p-2.5 sm:p-3 bg-primary/10 rounded-lg border border-primary/20">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <TrendingUp className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground">
                 {language === 'es' ? 'Total' : 'Total'}
               </span>
             </div>
-            <p className="text-xl font-bold text-primary">
+            <p className="text-lg sm:text-xl font-bold text-primary">
               {formatCurrency(earnings?.total_earnings || 0)}
             </p>
           </div>
@@ -156,10 +154,10 @@ export function EarningsCard() {
 
         {/* Payouts Status */}
         {!earnings?.payouts_enabled && (
-          <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
+          <div className="p-2.5 bg-warning/10 border border-warning/20 rounded-lg">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-warning" />
-              <p className="text-sm text-foreground">
+              <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
+              <p className="text-xs sm:text-sm text-foreground">
                 {language === 'es' 
                   ? 'Configura tu cuenta bancaria para recibir pagos'
                   : 'Set up your bank account to receive payments'}
@@ -171,15 +169,15 @@ export function EarningsCard() {
         {/* Recent Payouts */}
         {recentPayouts.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium mb-2 text-muted-foreground">
+            <h4 className="text-xs font-medium mb-1.5 text-muted-foreground">
               {language === 'es' ? 'Pagos recientes' : 'Recent payouts'}
             </h4>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {recentPayouts.map((payout) => (
                 <div key={payout.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{formatCurrency(payout.amount)}</span>
+                    <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-xs sm:text-sm font-medium">{formatCurrency(payout.amount)}</span>
                   </div>
                   {getStatusBadge(payout.status)}
                 </div>
@@ -189,24 +187,24 @@ export function EarningsCard() {
         )}
 
         {/* Actions */}
-        <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
           <Button 
             variant="outline" 
             size="sm" 
-            className="w-full justify-start"
-            onClick={() => navigate('/doctor/bank-account')}
+            className="flex-1 h-8 text-xs justify-center"
+            onClick={(e) => { e.stopPropagation(); navigate('/doctor/bank-account'); }}
           >
-            <CreditCard className="w-4 h-4 mr-2" />
-            {language === 'es' ? 'Cuenta bancaria' : 'Bank account'}
+            <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+            {language === 'es' ? 'Banco' : 'Bank'}
           </Button>
           <Button 
             variant="outline" 
             size="sm" 
-            className="w-full justify-between"
-            onClick={() => navigate('/doctor/invoices')}
+            className="flex-1 h-8 text-xs justify-center"
+            onClick={(e) => { e.stopPropagation(); navigate('/doctor/invoices'); }}
           >
-            <span>{language === 'es' ? 'Facturas y pagos' : 'Invoices & payments'}</span>
-            <ArrowRight className="w-4 h-4" />
+            {language === 'es' ? 'Facturas' : 'Invoices'}
+            <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
           </Button>
         </div>
       </CardContent>
