@@ -79,7 +79,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         .single();
 
       if (doctorError || doctorProfile?.status !== 'approved') {
-        throw new Error('El doctor no está disponible para Double Check');
+        throw new Error('El doctor no está disponible para Segunda Opinión');
       }
 
       // 1. Process wallet purchase
