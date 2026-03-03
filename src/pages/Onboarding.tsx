@@ -599,12 +599,16 @@ export default function Onboarding() {
       }
 
       // Mark onboarding as completed and save avatar
-      const updateData: { onboarding_completed: boolean; avatar_url?: string } = { 
+      const updateData: { onboarding_completed: boolean; avatar_url?: string; username?: string } = { 
         onboarding_completed: true 
       };
       
       if (avatarUrl) {
         updateData.avatar_url = avatarUrl;
+      }
+
+      if (username.trim()) {
+        updateData.username = username.trim();
       }
 
       const { error: profileError } = await supabase
