@@ -1007,7 +1007,7 @@ export default function Onboarding() {
                               >
                                 <RadioGroupItem value={role.value} id={role.value} className="sr-only" />
                                 <motion.div 
-                                  className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${
                                     selectedRole === role.value ? 'bg-primary text-primary-foreground' : 'bg-muted'
                                   }`}
                                   animate={{ 
