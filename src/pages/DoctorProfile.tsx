@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard } from 'lucide-react';
+import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard, Clock, Shield } from 'lucide-react';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import { BlockUserButton } from '@/components/blocks/BlockUserButton';
@@ -79,6 +79,8 @@ export default function DoctorProfile() {
     checkActiveSession();
   }, [user?.id, id, role]);
 
+  const [isPending, setIsPending] = useState(false);
+
   useEffect(() => {
     const fetchDoctor = async () => {
       if (!id) return;
@@ -90,8 +92,6 @@ export default function DoctorProfile() {
 
       if (error) {
         console.error('Error fetching doctor profile:', error);
-        setIsLoading(false);
-        return;
       }
 
       const doctorProfile = Array.isArray(doctorData) ? doctorData[0] : doctorData;
@@ -123,6 +123,29 @@ export default function DoctorProfile() {
             id: liveData.id,
             title: liveData.title,
             viewerCount: liveData.viewer_count,
+          });
+        }
+      } else if (user?.id === id) {
+        // Current user is viewing their own pending profile
+        const [{ data: profileData }, { data: dpData }] = await Promise.all([
+          supabase.from('profiles').select('name, avatar_url').eq('id', id).single(),
+          supabase.from('doctor_profiles').select('*').eq('user_id', id).single(),
+        ]);
+
+        if (dpData && profileData) {
+          setIsPending(dpData.status === 'pending');
+          setDoctor({
+            id: id,
+            visibleId: dpData.id,
+            name: profileData.name || 'Doctor',
+            specialty: dpData.specialty,
+            bio: dpData.bio || undefined,
+            rating: Number(dpData.rating),
+            totalConsultations: dpData.total_consultations,
+            consultationFee: Number(dpData.consultation_fee),
+            location: dpData.location || undefined,
+            followersCount: dpData.followers_count,
+            avatarUrl: profileData.avatar_url || undefined,
           });
         }
       }
@@ -307,6 +330,8 @@ export default function DoctorProfile() {
     );
   }
 
+  const showPendingBanner = isPending && user?.id === id;
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-3xl">
@@ -314,6 +339,33 @@ export default function DoctorProfile() {
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('doctorProfile.back')}
         </Button>
+
+        {/* Pending Verification Banner */}
+        {showPendingBanner && (
+          <Card className="mb-4 border-warning/50 bg-warning/5">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-warning" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Verificación pendiente</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Tu perfil está siendo revisado por nuestro equipo. Mientras tanto, puedes completar tu información.
+                    Te notificaremos por email cuando tu cuenta sea aprobada.
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant="outline" className="text-xs gap-1">
+                      <Shield className="w-3 h-3" />
+                      En revisión
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground">Tiempo estimado: 24-48 horas</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Live Indicator Banner */}
         {activeLive && (

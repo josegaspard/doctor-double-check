@@ -235,6 +235,7 @@ export default function Onboarding() {
   const [cedulaVerificationId, setCedulaVerificationId] = useState<string | null>(null);
   const [doctorLocation, setDoctorLocation] = useState('');
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [username, setUsername] = useState('');
   // Clinical History State
   const [clinicalHistory, setClinicalHistory] = useState<ClinicalHistoryData>({
     bloodType: '',
@@ -598,12 +599,16 @@ export default function Onboarding() {
       }
 
       // Mark onboarding as completed and save avatar
-      const updateData: { onboarding_completed: boolean; avatar_url?: string } = { 
+      const updateData: { onboarding_completed: boolean; avatar_url?: string; username?: string } = { 
         onboarding_completed: true 
       };
       
       if (avatarUrl) {
         updateData.avatar_url = avatarUrl;
+      }
+
+      if (username.trim()) {
+        updateData.username = username.trim();
       }
 
       const { error: profileError } = await supabase
@@ -978,6 +983,24 @@ export default function Onboarding() {
                         </motion.div>
                       )}
 
+                      {/* Username Field */}
+                      <motion.div className="space-y-2" variants={itemVariants}>
+                        <Label htmlFor="username" className="text-sm font-medium">
+                          Nombre de usuario
+                        </Label>
+                        <Input
+                          id="username"
+                          placeholder="ej: dr.martinez"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
+                          maxLength={30}
+                          className="lowercase"
+                        />
+                        <p className="text-[11px] text-muted-foreground">
+                          Este será tu identificador único en la plataforma. Solo letras, números, puntos, guiones.
+                        </p>
+                      </motion.div>
+
                       <motion.div className="space-y-3" variants={itemVariants}>
                         <Label className="text-base font-medium">{t('onboarding.selectRole')}</Label>
                         <RadioGroup 
@@ -1182,15 +1205,25 @@ export default function Onboarding() {
                             cedula={license.trim()}
                           />
 
-                          {/* Auto Verification Component */}
+                          {/* SEP Verification UX Text */}
                           {supabaseUser && cedulaStatus === 'valid_pending' && !cedulaVerified && (
-                            <CedulaAutoVerify
-                              cedula={license.trim()}
-                              userId={supabaseUser.id}
-                              onVerified={handleCedulaVerified}
-                              onClaimed={handleCedulaClaimed}
-                              language={language}
-                            />
+                            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+                              <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                                <Shield className="w-4 h-4 text-primary" />
+                                ¿Quieres acelerar tu proceso?
+                              </p>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                Si no quieres esperar la verificación manual, puedes utilizar nuestro verificador automático de cédula profesional
+                                a través de la SEP. Este proceso es opcional, pero te permite avanzar más rápido con tu cuenta.
+                              </p>
+                              <CedulaAutoVerify
+                                cedula={license.trim()}
+                                userId={supabaseUser.id}
+                                onVerified={handleCedulaVerified}
+                                onClaimed={handleCedulaClaimed}
+                                language={language}
+                              />
+                            </div>
                           )}
                         </motion.div>
                       )}
