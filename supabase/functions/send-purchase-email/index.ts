@@ -30,7 +30,7 @@ const handler = async (req: Request): Promise<Response> => {
     }).format(amount);
 
     const emailResponse = await resend.emails.send({
-      from: "Dr Double Check <onboarding@resend.dev>",
+      from: "Medical Masters <no-reply@cirugiaesteticauribe.com>",
       to: [email],
       subject: `Compra exitosa - ${productName} | Medical Masters`,
       html: `
