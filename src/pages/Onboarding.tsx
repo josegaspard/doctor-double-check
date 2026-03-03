@@ -107,6 +107,10 @@ interface ValidationErrors {
   license?: string;
   institution?: string;
   year?: string;
+  signerName?: string;
+  termsAccepted?: string;
+  privacyAccepted?: string;
+  doctorContract?: string;
 }
 const triggerConfetti = () => {
   const duration = 3000;
@@ -299,12 +303,12 @@ export default function Onboarding() {
       }
     }
 
-    // Step 2 validation for doctor/resident (Signatures)
-    if ((selectedRole === 'doctor' || selectedRole === 'resident') && step === 2) {
-      if (!signerName.trim()) errors.license = 'Firma requerida';
-      if (!termsAccepted) errors.specialty = 'Acepta términos';
-      if (!privacyAccepted) errors.specialty = 'Acepta privacidad';
-      if (selectedRole === 'doctor' && !doctorContractAccepted) errors.specialty = 'Acepta contrato';
+    // Step 2 validation for signatures (all roles)
+    if (step === 2) {
+      if (!signerName.trim()) errors.signerName = 'Firma requerida';
+      if (!termsAccepted) errors.termsAccepted = 'Acepta los términos de servicio';
+      if (!privacyAccepted) errors.privacyAccepted = 'Acepta la política de privacidad';
+      if (selectedRole === 'doctor' && !doctorContractAccepted) errors.doctorContract = 'Acepta el contrato de prestación de servicios';
     }
 
     return errors;
@@ -457,8 +461,8 @@ export default function Onboarding() {
     // Mark that user has attempted to submit
     setHasAttemptedSubmit(true);
     
-    // Validate form for doctors and residents
-    if (selectedRole !== 'patient') {
+    // Validate form for all roles
+    {
       const errors = validateForm;
       setValidationErrors(errors);
       
@@ -1308,21 +1312,33 @@ export default function Onboarding() {
                       )}
 
                       {/* Document Signature for everyone in Step 2 */}
-                      {(selectedRole === 'doctor' || selectedRole === 'resident') && (
-                        <motion.div variants={itemVariants} className="mt-6">
-                          <DocumentSignature
-                            signerName={signerName}
-                            onSignerNameChange={setSignerName}
-                            termsAccepted={termsAccepted}
-                            onTermsChange={setTermsAccepted}
-                            privacyAccepted={privacyAccepted}
-                            onPrivacyChange={setPrivacyAccepted}
-                            doctorContractAccepted={doctorContractAccepted}
-                            onDoctorContractChange={setDoctorContractAccepted}
-                            showDoctorContract={selectedRole === 'doctor'}
-                          />
-                        </motion.div>
-                      )}
+                      <motion.div variants={itemVariants} className="mt-6">
+                        <DocumentSignature
+                          signerName={signerName}
+                          onSignerNameChange={setSignerName}
+                          termsAccepted={termsAccepted}
+                          onTermsChange={setTermsAccepted}
+                          privacyAccepted={privacyAccepted}
+                          onPrivacyChange={setPrivacyAccepted}
+                          doctorContractAccepted={doctorContractAccepted}
+                          onDoctorContractChange={setDoctorContractAccepted}
+                          showDoctorContract={selectedRole === 'doctor'}
+                        />
+                        <AnimatePresence>
+                          {(validationErrors.signerName || validationErrors.termsAccepted || validationErrors.privacyAccepted || validationErrors.doctorContract) && (
+                            <motion.p 
+                              className="text-sm text-destructive flex items-center gap-1 mt-2"
+                              initial={{ opacity: 0, y: -10, height: 0 }}
+                              animate={{ opacity: 1, y: 0, height: "auto" }}
+                              exit={{ opacity: 0, y: -10, height: 0 }}
+                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            >
+                              <AlertCircle className="w-3 h-3" />
+                              {validationErrors.signerName || validationErrors.termsAccepted || validationErrors.privacyAccepted || validationErrors.doctorContract}
+                            </motion.p>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
 
                       <motion.div 
                         className="flex gap-3 pt-4"

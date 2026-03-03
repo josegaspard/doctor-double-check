@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2, Star, Shield } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2, Star, Shield, MapPin, GraduationCap, Building, Calendar, FileText, ShieldCheck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
@@ -39,14 +39,29 @@ interface DoctorRequest {
   cedula_profesional: string | null;
   numero_consejo: string | null;
   bio: string | null;
+  location: string | null;
   status: 'pending' | 'approved' | 'rejected';
   badge_override: string | null;
   created_at: string;
+  cedula_verification_id: string | null;
+  consultation_fee: number;
   profile?: {
     name: string;
     email: string;
     avatar_url: string | null;
   };
+  cedula_verification?: {
+    nombre: string | null;
+    paterno: string | null;
+    materno: string | null;
+    titulo: string | null;
+    institucion: string | null;
+    anio_registro: number | null;
+    is_verified: boolean | null;
+    is_claimed: boolean | null;
+    verified_at: string | null;
+  } | null;
+  document_signatures_count?: number;
 }
 
 export default function AdminDoctors() {
@@ -81,19 +96,31 @@ export default function AdminDoctors() {
     try {
       const { data: doctorProfiles, error } = await supabase
         .from('doctor_profiles')
-        .select('*')
+        .select('*, cedula_verifications:cedula_verification_id(nombre, paterno, materno, titulo, institucion, anio_registro, is_verified, is_claimed, verified_at)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       const doctorsWithProfiles = await Promise.all(
-        (doctorProfiles || []).map(async (doc) => {
+        (doctorProfiles || []).map(async (doc: any) => {
           const { data: profile } = await supabase
             .from('profiles')
             .select('name, email, avatar_url')
             .eq('id', doc.user_id)
             .single();
-          return { ...doc, profile } as DoctorRequest;
+
+          // Count document signatures
+          const { count } = await supabase
+            .from('document_signatures')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', doc.user_id);
+
+          return {
+            ...doc,
+            profile,
+            cedula_verification: doc.cedula_verifications || null,
+            document_signatures_count: count || 0,
+          } as DoctorRequest;
         })
       );
 
@@ -325,7 +352,57 @@ export default function AdminDoctors() {
                           <span className="text-xs text-muted-foreground">
                             {t('admin.license')}: {doctor.license || t('admin.notSpecified')}
                           </span>
+                          {doctor.location && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <MapPin className="w-3 h-3" /> {doctor.location}
+                            </span>
+                          )}
                         </div>
+
+                        {/* SEP Verification Details */}
+                        {doctor.cedula_verification && doctor.cedula_verification.is_verified && (
+                          <div className="mt-2 p-2 rounded-md bg-success/10 border border-success/20">
+                            <div className="flex items-center gap-1 mb-1">
+                              <ShieldCheck className="w-3.5 h-3.5 text-success" />
+                              <span className="text-xs font-semibold text-success">Verificado por SEP</span>
+                              {doctor.cedula_verification.verified_at && (
+                                <span className="text-[10px] text-muted-foreground ml-auto">
+                                  {new Date(doctor.cedula_verification.verified_at).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <User className="w-3 h-3" />
+                                {doctor.cedula_verification.nombre} {doctor.cedula_verification.paterno} {doctor.cedula_verification.materno}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <GraduationCap className="w-3 h-3" />
+                                {doctor.cedula_verification.titulo}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Building className="w-3 h-3" />
+                                {doctor.cedula_verification.institucion}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                Año: {doctor.cedula_verification.anio_registro}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Document Signatures Status */}
+                        <div className="flex items-center gap-1 mt-1">
+                          <FileText className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            Firmas: {doctor.document_signatures_count || 0} documento(s)
+                          </span>
+                          {(doctor.document_signatures_count || 0) >= 2 && (
+                            <Badge variant="success" className="text-[10px] ml-1 px-1.5 py-0">✓</Badge>
+                          )}
+                        </div>
+
                         {doctor.cedula_profesional && (
                           <p className="text-xs text-muted-foreground">
                             {t('admin.cedula')}: {doctor.cedula_profesional}
