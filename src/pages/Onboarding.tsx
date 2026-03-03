@@ -506,9 +506,9 @@ export default function Onboarding() {
 
         const { error: doctorError } = await supabase
           .from('doctor_profiles')
-          .insert(doctorProfileData);
+          .upsert(doctorProfileData, { onConflict: 'user_id' });
         
-        if (doctorError && !doctorError.message.includes('duplicate')) {
+        if (doctorError) {
           throw doctorError;
         }
       }
