@@ -1016,7 +1016,7 @@ export default function Onboarding() {
                                   }}
                                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
                                 >
-                                  <role.icon className="w-6 h-6" />
+                                  <role.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </motion.div>
                                 <div className="flex-1">
                                   <p className="font-medium">{role.label}</p>
