@@ -1,21 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Fix: Tab/Toggle Button Styling Across the App
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Problem
-The `TabsList` background (`bg-muted`, which is `hsl(187, 35%, 95%)`) is nearly white, and the active `TabsTrigger` uses `bg-background` (pure white). This creates almost no visual contrast between active/inactive states, making the tabs look broken.
+## Solucion
 
-## Solution
-Update `src/components/ui/tabs.tsx` to improve the visual distinction:
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-**TabsList**: Change from `bg-muted` to a slightly darker background with a visible border, giving the container more definition.
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-**TabsTrigger**: 
-- Active state: Use `bg-primary text-primary-foreground` (the deep blue brand color) instead of plain white, making the active tab clearly stand out
-- Inactive state: Keep transparent with `text-muted-foreground` for clear distinction
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-This single file change fixes tabs globally across Login, Register, Profile, Chat, Content Gallery, Doctor Analytics, Doctor Earnings, and all other pages using the shared `Tabs` component.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-## Files to modify
-- `src/components/ui/tabs.tsx` -- Update TabsList and TabsTrigger class names
+## Archivos a modificar
 
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
