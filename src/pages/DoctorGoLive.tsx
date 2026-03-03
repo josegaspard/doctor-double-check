@@ -262,7 +262,7 @@ export default function DoctorGoLive() {
         const uploadResult = await localRecording.uploadRecording({
           liveId: liveData.id, doctorId: user.id, title: liveData.title,
           description: liveData.description, specialty: liveData.specialty,
-          tags, price: recordingPrice,
+          tags, price: enableRecording ? recordingPrice : 0,
         });
         if (uploadResult.success) {
           recordingCreated = true;
