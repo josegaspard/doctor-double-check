@@ -951,7 +951,7 @@ export default function Onboarding() {
                           ease: "easeInOut"
                         }}
                       >
-                        <Sparkles className="w-8 h-8 text-primary" />
+                        <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
                       </motion.div>
                     </motion.div>
                     <CardTitle className="text-2xl">{t('onboarding.welcomeSubtitle')}</CardTitle>
