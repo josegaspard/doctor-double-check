@@ -1,26 +1,21 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
+# Ya implementado: Correo automático de aprobación
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+El flujo que describes **ya existe y funciona correctamente** en la plataforma. No se necesitan cambios.
 
-## Solucion
+## Flujo actual
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+1. **Admin aprueba doctor** en `AdminDoctors.tsx` → actualiza `doctor_profiles.status` a `'approved'`
+2. **Se invoca `send-approval-email`** con el email, nombre y rol `'doctor'`
+3. **El correo incluye**:
+   - Header verde con "Cuenta Aprobada"
+   - Saludo personalizado con el nombre del doctor
+   - Lista de funciones desbloqueadas (lives, consultas, recetas, contenido, pagos, analíticas)
+   - Botón CTA "Ir a mi panel de doctor" → `https://cirugiaesteticauribe.com/doctor`
+4. **Notificación in-app** simultánea con título "Tu cuenta ha sido aprobada"
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+Lo mismo aplica para **residentes** en `AdminResidents.tsx` con su contenido específico (50% descuento, sesiones clínicas, etc.).
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+## No se requieren cambios
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
-
-## Archivos a modificar
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+Todo el sistema está conectado: edge function desplegada, invocación desde el admin, notificación in-app, y contenido diferenciado por rol.
