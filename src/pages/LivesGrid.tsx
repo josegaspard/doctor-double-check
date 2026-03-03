@@ -39,21 +39,11 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
     <div ref={ref}>
     <Link to={`/live/${live.id}`}>
       <Card className="card-live group cursor-pointer overflow-hidden hover:shadow-lg transition-all relative ring-2 ring-live animate-pulse-ring">
-        <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-info/20">
-          {live.thumbnailUrl ? (
-            <img
-              src={live.thumbnailUrl}
-              alt={live.title}
-              loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-          ) : null}
-          {!live.thumbnailUrl && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Video className="w-10 h-10 sm:w-12 sm:h-12 text-primary/40" />
-            </div>
-          )}
+        <div className="relative">
+          <LivePreviewPlayer
+            dailyRoomName={live.dailyRoomName || live.daily_room_name}
+            thumbnailUrl={live.thumbnailUrl}
+          />
           
           <div className="absolute top-2 left-2 flex items-center gap-1.5">
             <Badge variant="live" className="gap-1">
