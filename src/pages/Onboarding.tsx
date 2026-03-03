@@ -955,7 +955,7 @@ export default function Onboarding() {
                       </motion.div>
                     </motion.div>
                     <CardTitle className="text-xl sm:text-2xl">{t('onboarding.welcomeSubtitle')}</CardTitle>
-                    <CardDescription className="text-base">
+                    <CardDescription className="text-sm sm:text-base">
                       {t('onboarding.personalizeExperience')}
                     </CardDescription>
                   </CardHeader>
