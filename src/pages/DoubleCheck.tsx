@@ -101,8 +101,8 @@ export default function DoubleCheck() {
 
       toast.success(
         !isAvailableForDoubleCheck 
-          ? 'Ahora estás disponible para Double Check' 
-          : 'Ya no estás disponible para Double Check'
+          ? 'Ahora estás disponible para Segunda Opinión' 
+          : 'Ya no estás disponible para Segunda Opinión'
       );
       await refreshUser();
       await fetchDoubleCheckDoctors();
