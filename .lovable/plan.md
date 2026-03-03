@@ -1,33 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Enriquecer sección de onboarding para residentes en el correo de confirmación
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Estado actual
-La sección de residente ya existe pero es más básica que la del doctor (3 pasos vs 4, y solo 4 beneficios genéricos).
+## Solucion
 
-## Cambios en `supabase/functions/_shared/email-templates/signup.tsx`
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-Expandir la sección de residente (líneas 117-147) para incluir:
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-### Pasos de onboarding (de 3 a 4)
-1. ✅ Confirma tu correo
-2. 🏥 Completa tu perfil institucional (institución, especialidad, año de residencia)
-3. 👨‍⚕️ Revisión por el equipo (24-48h)
-4. 🎉 ¡Acceso con beneficios exclusivos!
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-### Beneficios ampliados (de 4 a 7)
-- 🏷️ **50% de descuento** en orientaciones médicas, contenido premium y grabaciones
-- 📡 Acceso a transmisiones en vivo de especialistas
-- 📚 Biblioteca de contenido educativo
-- 👥 Grupos de estudio y networking con otros residentes
-- 💬 Chat de colaboración profesional con doctores
-- 🎓 Acceso a Meets Médicos y sesiones clínicas
-- 💰 Recarga saldo en tu wallet para acceder a contenido con descuento
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-### Destacado de descuento
-Agregar un box visual destacado (similar a `stepBox` pero con fondo de acento) que resalte el **50% de descuento automático** en todas las transacciones.
+## Archivos a modificar
 
-## Archivo a modificar
-- `supabase/functions/_shared/email-templates/signup.tsx` — expandir sección residente
-- Redesplegar `auth-email-hook`
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
