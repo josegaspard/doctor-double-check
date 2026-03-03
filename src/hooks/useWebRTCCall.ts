@@ -14,6 +14,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
 
   const callObjectRef = useRef<DailyCall | null>(null);
   const isCleanedUpRef = useRef(false);
+  const isInitializingRef = useRef(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -57,11 +58,32 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
   const initDailyCall = useCallback(async (isDoctor: boolean) => {
     if (!consultationId || !userId) return;
 
+    // Guard against concurrent calls
+    if (isInitializingRef.current) {
+      console.warn('[Daily] ⚠️ Already initializing, skipping duplicate call');
+      return;
+    }
+    isInitializingRef.current = true;
+
     console.log('[Daily] 🚀 Starting call, isDoctor:', isDoctor);
     isCleanedUpRef.current = false;
     setCallState('connecting');
 
     try {
+      // Destroy any existing call object before creating a new one
+      const existingCo = callObjectRef.current;
+      if (existingCo) {
+        console.log('[Daily] 🧹 Destroying previous call object before re-init');
+        try {
+          await existingCo.leave();
+          existingCo.destroy();
+        } catch (e) {
+          console.warn('[Daily] cleanup previous error:', e);
+        }
+        callObjectRef.current = null;
+        setCallObject(null);
+      }
+
       let roomUrl: string;
       let token: string;
 
@@ -150,6 +172,8 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       if (!isCleanedUpRef.current) {
         setCallState('error');
       }
+    } finally {
+      isInitializingRef.current = false;
     }
   }, [consultationId, userId, doCleanup, waitForRoom]);
 
