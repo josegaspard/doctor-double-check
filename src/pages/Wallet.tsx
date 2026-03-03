@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Wallet as WalletIcon, Plus, CreditCard, Loader2, ExternalLink, TrendingUp } from 'lucide-react';
 import { TransactionHistory } from '@/components/wallet/TransactionHistory';
+import { UserBankAccountForm } from '@/components/wallet/UserBankAccountForm';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const TOPUP_AMOUNTS = [100, 250, 500, 1000];
@@ -221,6 +222,11 @@ export default function Wallet() {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Bank Account Section */}
+        <div className="mt-4 sm:mt-6">
+          <UserBankAccountForm />
         </div>
 
         {/* Detailed Transaction History */}

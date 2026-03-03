@@ -1864,37 +1864,58 @@ export type Database = {
         Row: {
           admin_notes: string | null
           amount: number
+          bank_transfer_date: string | null
+          bank_transfer_reference: string | null
           created_at: string | null
+          estimated_completion_date: string | null
           id: string
           reason: string
+          refund_method: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
+          stripe_refund_id: string | null
           transaction_id: string
+          user_has_bank_account: boolean | null
+          user_has_stripe: boolean | null
           user_id: string
         }
         Insert: {
           admin_notes?: string | null
           amount: number
+          bank_transfer_date?: string | null
+          bank_transfer_reference?: string | null
           created_at?: string | null
+          estimated_completion_date?: string | null
           id?: string
           reason: string
+          refund_method?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          stripe_refund_id?: string | null
           transaction_id: string
+          user_has_bank_account?: boolean | null
+          user_has_stripe?: boolean | null
           user_id: string
         }
         Update: {
           admin_notes?: string | null
           amount?: number
+          bank_transfer_date?: string | null
+          bank_transfer_reference?: string | null
           created_at?: string | null
+          estimated_completion_date?: string | null
           id?: string
           reason?: string
+          refund_method?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          stripe_refund_id?: string | null
           transaction_id?: string
+          user_has_bank_account?: boolean | null
+          user_has_stripe?: boolean | null
           user_id?: string
         }
         Relationships: []
@@ -2152,6 +2173,42 @@ export type Database = {
           price_paid?: number
           subscriber_id?: string
           tier?: Database["public"]["Enums"]["subscription_tier"]
+        }
+        Relationships: []
+      }
+      user_bank_accounts: {
+        Row: {
+          account_holder_name: string
+          bank_name: string
+          clabe: string
+          clabe_last4: string
+          created_at: string | null
+          id: string
+          rfc: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_holder_name: string
+          bank_name: string
+          clabe: string
+          clabe_last4: string
+          created_at?: string | null
+          id?: string
+          rfc?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_holder_name?: string
+          bank_name?: string
+          clabe?: string
+          clabe_last4?: string
+          created_at?: string | null
+          id?: string
+          rfc?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

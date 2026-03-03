@@ -33,7 +33,6 @@ Deno.serve(async (req) => {
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError || !userData.user) throw new Error("User not authenticated");
 
-    // Check if user is admin
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
@@ -51,7 +50,9 @@ Deno.serve(async (req) => {
       user_id, 
       amount, 
       reason,
-      stripe_payment_intent_id 
+      stripe_payment_intent_id,
+      refund_method = 'wallet',
+      refund_request_id,
     } = await req.json();
 
     if (!user_id || !amount) {
@@ -62,14 +63,21 @@ Deno.serve(async (req) => {
 
     let stripeRefundId = null;
 
-    // If we have a Stripe payment intent, process refund through Stripe
-    if (stripe_payment_intent_id) {
+    // Get user profile for email
+    const { data: userProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("email, name")
+      .eq("id", user_id)
+      .single();
+
+    // ========== STRIPE REFUND ==========
+    if (refund_method === 'stripe' && stripe_payment_intent_id) {
       logStep("Processing Stripe refund", { paymentIntentId: stripe_payment_intent_id, amount });
       
       try {
         const refund = await stripe.refunds.create({
           payment_intent: stripe_payment_intent_id,
-          amount: Math.round(amount * 100), // Convert to cents
+          amount: Math.round(amount * 100),
           reason: "requested_by_customer",
         });
         
@@ -77,121 +85,230 @@ Deno.serve(async (req) => {
         logStep("Stripe refund created", { refundId: refund.id });
       } catch (stripeError: any) {
         logStep("Stripe refund failed", { error: stripeError.message });
-        // Continue with wallet refund even if Stripe fails
+        throw new Error(`Stripe refund failed: ${stripeError.message}`);
       }
-    }
 
-    // Check if this was an earning from a consultation - reverse doctor pending earnings
-    const { data: originalTx } = await supabaseAdmin
-      .from("wallet_transactions")
-      .select("metadata")
-      .eq("id", transaction_id)
-      .single();
-
-    if (originalTx?.metadata?.type === 'consultation' && originalTx?.metadata?.doctor_id) {
-      const doctorId = originalTx.metadata.doctor_id;
-      
-      // Reduce doctor pending earnings
-      const { data: doctorProfile } = await supabaseAdmin
-        .from("doctor_profiles")
-        .select("pending_earnings")
-        .eq("user_id", doctorId)
-        .single();
-
-      if (doctorProfile) {
-        const newPendingEarnings = Math.max(0, (doctorProfile.pending_earnings || 0) - amount);
-        await supabaseAdmin
-          .from("doctor_profiles")
-          .update({ pending_earnings: newPendingEarnings })
-          .eq("user_id", doctorId);
-
-        logStep("Reversed doctor earnings", { doctorId, amount, newPendingEarnings });
-        
-        // Notify doctor about the refund
-        await supabaseAdmin
-          .from("notifications")
-          .insert({
-            user_id: doctorId,
-            type: "system",
-            title: "Reembolso procesado",
-            message: `Se ha revertido una ganancia de $${amount.toFixed(2)} por un reembolso.`,
-            data: { amount, reason },
-          });
+      // Update refund request if provided
+      if (refund_request_id) {
+        await supabaseAdmin.from("refund_requests").update({
+          status: "processed",
+          refund_method: "stripe",
+          stripe_refund_id: stripeRefundId,
+          reviewed_by: userData.user.id,
+          reviewed_at: new Date().toISOString(),
+        }).eq("id", refund_request_id);
       }
-    }
 
-    // Credit user's wallet atomically
-    const { error: rpcError } = await supabaseAdmin.rpc("credit_wallet_balance", {
-      p_user_id: user_id,
-      p_amount: amount,
-    });
-
-    if (rpcError) {
-      // Fallback to direct update if RPC doesn't exist
-      logStep("RPC fallback for wallet credit", { error: rpcError.message });
-      const { data: wallet } = await supabaseAdmin
-        .from("wallets")
-        .select("balance")
-        .eq("user_id", user_id)
-        .single();
-
-      if (wallet) {
-        const newBalance = Number(wallet.balance) + amount;
-        await supabaseAdmin
-          .from("wallets")
-          .update({ balance: newBalance, updated_at: new Date().toISOString() })
-          .eq("user_id", user_id);
-      }
-    }
-
-    logStep("Wallet credited", { userId: user_id, amount });
-
-    // Create refund transaction record
-    await supabaseAdmin
-      .from("wallet_transactions")
-      .insert({
-        user_id: user_id,
+      // Create refund transaction record
+      await supabaseAdmin.from("wallet_transactions").insert({
+        user_id,
         type: "refund",
-        amount: amount,
-        description: reason || "Reembolso procesado por administrador",
+        amount,
+        description: reason || "Reembolso a Stripe",
         status: "paid",
         metadata: { 
           admin_id: userData.user.id,
           original_transaction_id: transaction_id,
           stripe_refund_id: stripeRefundId,
+          refund_method: "stripe",
         },
       });
 
-    // Update original transaction if provided
-    if (transaction_id) {
-      await supabaseAdmin
-        .from("wallet_transactions")
-        .update({ 
-          status: "refunded",
-          metadata: { refund_transaction_id: transaction_id }
-        })
-        .eq("id", transaction_id);
-    }
+      // Send confirmation email
+      try {
+        await supabaseAdmin.functions.invoke("send-refund-email", {
+          body: { user_email: userProfile?.email, user_name: userProfile?.name, amount, refund_method: "stripe" },
+        });
+      } catch (e) { logStep("Email send failed (non-blocking)", { error: (e as any).message }); }
 
-    // Notify user
-    await supabaseAdmin
-      .from("notifications")
-      .insert({
-        user_id: user_id,
+      // Notify user
+      await supabaseAdmin.from("notifications").insert({
+        user_id,
         type: "system",
-        title: "Reembolso procesado",
-        message: `Se ha acreditado $${amount.toFixed(2)} a tu billetera.${reason ? ` Motivo: ${reason}` : ''}`,
-        data: { amount, reason },
+        title: "Reembolso a Stripe procesado",
+        message: `Se han reembolsado $${amount.toFixed(2)} a tu tarjeta/cuenta de Stripe.`,
+        data: { amount, reason, refund_method: "stripe" },
       });
 
-    logStep("Refund completed successfully", { userId: user_id, amount });
+      logStep("Stripe refund completed", { userId: user_id, amount });
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Reembolso a Stripe procesado", stripe_refund_id: stripeRefundId, refund_method: "stripe" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ========== BANK TRANSFER REFUND ==========
+    if (refund_method === 'bank_transfer') {
+      // Check if user has bank account
+      const { data: bankAccount } = await supabaseAdmin
+        .from("user_bank_accounts")
+        .select("*")
+        .eq("user_id", user_id)
+        .single();
+
+      const estimatedDate = new Date();
+      estimatedDate.setDate(estimatedDate.getDate() + 15);
+
+      if (!bankAccount) {
+        // No bank account - set status to awaiting_bank_details
+        if (refund_request_id) {
+          await supabaseAdmin.from("refund_requests").update({
+            status: "awaiting_bank_details",
+            refund_method: "bank_transfer",
+            estimated_completion_date: estimatedDate.toISOString(),
+            user_has_bank_account: false,
+            reviewed_by: userData.user.id,
+            reviewed_at: new Date().toISOString(),
+          }).eq("id", refund_request_id);
+        }
+
+        // Send email asking user to register bank account
+        try {
+          await supabaseAdmin.functions.invoke("send-refund-email", {
+            body: { user_email: userProfile?.email, user_name: userProfile?.name, amount, refund_method: "awaiting_bank_details" },
+          });
+        } catch (e) { logStep("Email send failed (non-blocking)", { error: (e as any).message }); }
+
+        await supabaseAdmin.from("notifications").insert({
+          user_id,
+          type: "system",
+          title: "Registra tu cuenta bancaria",
+          message: `Tu reembolso de $${amount.toFixed(2)} fue aprobado. Registra tu cuenta bancaria para recibirlo.`,
+          data: { amount, reason, refund_method: "awaiting_bank_details" },
+        });
+
+        return new Response(
+          JSON.stringify({ success: true, message: "Esperando datos bancarios del usuario", refund_method: "awaiting_bank_details" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Has bank account - mark as pending_transfer
+      if (refund_request_id) {
+        await supabaseAdmin.from("refund_requests").update({
+          status: "pending_transfer",
+          refund_method: "bank_transfer",
+          estimated_completion_date: estimatedDate.toISOString(),
+          user_has_bank_account: true,
+          reviewed_by: userData.user.id,
+          reviewed_at: new Date().toISOString(),
+        }).eq("id", refund_request_id);
+      }
+
+      // Send email with bank transfer info
+      try {
+        await supabaseAdmin.functions.invoke("send-refund-email", {
+          body: { 
+            user_email: userProfile?.email, user_name: userProfile?.name, amount, 
+            refund_method: "bank_transfer", estimated_date: estimatedDate.toLocaleDateString('es-MX') 
+          },
+        });
+      } catch (e) { logStep("Email send failed (non-blocking)", { error: (e as any).message }); }
+
+      await supabaseAdmin.from("notifications").insert({
+        user_id,
+        type: "system",
+        title: "Reembolso bancario en proceso",
+        message: `Tu reembolso de $${amount.toFixed(2)} será transferido a tu cuenta bancaria en un plazo de 15 días hábiles.`,
+        data: { amount, reason, refund_method: "bank_transfer", estimated_date: estimatedDate.toISOString() },
+      });
+
+      logStep("Bank transfer refund initiated", { userId: user_id, amount });
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Reembolso bancario en proceso", refund_method: "bank_transfer" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ========== WALLET REFUND (default) ==========
+    // Reverse doctor earnings if applicable
+    if (transaction_id) {
+      const { data: originalTx } = await supabaseAdmin
+        .from("wallet_transactions")
+        .select("metadata")
+        .eq("id", transaction_id)
+        .single();
+
+      if (originalTx?.metadata?.type === 'consultation' && originalTx?.metadata?.doctor_id) {
+        const doctorId = originalTx.metadata.doctor_id;
+        const { data: doctorProfile } = await supabaseAdmin
+          .from("doctor_profiles")
+          .select("pending_earnings")
+          .eq("user_id", doctorId)
+          .single();
+
+        if (doctorProfile) {
+          const newPendingEarnings = Math.max(0, (doctorProfile.pending_earnings || 0) - amount);
+          await supabaseAdmin.from("doctor_profiles").update({ pending_earnings: newPendingEarnings }).eq("user_id", doctorId);
+          logStep("Reversed doctor earnings", { doctorId, amount, newPendingEarnings });
+          
+          await supabaseAdmin.from("notifications").insert({
+            user_id: doctorId, type: "system",
+            title: "Reembolso procesado",
+            message: `Se ha revertido una ganancia de $${amount.toFixed(2)} por un reembolso.`,
+            data: { amount, reason },
+          });
+        }
+      }
+    }
+
+    // Credit user's wallet
+    const { error: rpcError } = await supabaseAdmin.rpc("credit_wallet_balance", { p_user_id: user_id, p_amount: amount });
+
+    if (rpcError) {
+      logStep("RPC fallback", { error: rpcError.message });
+      const { data: wallet } = await supabaseAdmin.from("wallets").select("balance").eq("user_id", user_id).single();
+      if (wallet) {
+        await supabaseAdmin.from("wallets").update({ balance: Number(wallet.balance) + amount, updated_at: new Date().toISOString() }).eq("user_id", user_id);
+      }
+    }
+
+    // Create refund transaction
+    await supabaseAdmin.from("wallet_transactions").insert({
+      user_id, type: "refund", amount,
+      description: reason || "Reembolso procesado por administrador",
+      status: "paid",
+      metadata: { admin_id: userData.user.id, original_transaction_id: transaction_id, refund_method: "wallet" },
+    });
+
+    // Update refund request if provided
+    if (refund_request_id) {
+      await supabaseAdmin.from("refund_requests").update({
+        status: "processed",
+        refund_method: "wallet",
+        reviewed_by: userData.user.id,
+        reviewed_at: new Date().toISOString(),
+      }).eq("id", refund_request_id);
+    }
+
+    // Update original transaction
+    if (transaction_id) {
+      await supabaseAdmin.from("wallet_transactions").update({ 
+        status: "refunded", metadata: { refund_transaction_id: transaction_id }
+      }).eq("id", transaction_id);
+    }
+
+    // Send email
+    try {
+      await supabaseAdmin.functions.invoke("send-refund-email", {
+        body: { user_email: userProfile?.email, user_name: userProfile?.name, amount, refund_method: "wallet" },
+      });
+    } catch (e) { logStep("Email send failed (non-blocking)", { error: (e as any).message }); }
+
+    // Notify user
+    await supabaseAdmin.from("notifications").insert({
+      user_id, type: "system",
+      title: "Reembolso procesado",
+      message: `Se ha acreditado $${amount.toFixed(2)} a tu billetera.${reason ? ` Motivo: ${reason}` : ''}`,
+      data: { amount, reason, refund_method: "wallet" },
+    });
+
+    logStep("Wallet refund completed", { userId: user_id, amount });
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Reembolso procesado exitosamente",
-        stripe_refund_id: stripeRefundId,
-      }),
+      JSON.stringify({ success: true, message: "Reembolso a billetera procesado", refund_method: "wallet" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {

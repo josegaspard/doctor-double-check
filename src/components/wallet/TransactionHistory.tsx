@@ -369,9 +369,11 @@ export function TransactionHistory() {
               </div>
               <div className="flex items-start gap-2 p-3 bg-info/10 border border-info/20 rounded-lg">
                 <AlertCircle className="w-4 h-4 text-info shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground">
-                  Tu solicitud será revisada por el equipo administrativo. Recibirás una notificación cuando sea procesada.
-                </p>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>Si pagaste con tarjeta, el reembolso se procesará directamente a tu tarjeta.</p>
+                  <p>Si no, se te pedirá registrar tu cuenta bancaria y el proceso tarda hasta 15 días hábiles.</p>
+                  <p>Tu solicitud será revisada por el equipo administrativo.</p>
+                </div>
               </div>
             </div>
           )}
