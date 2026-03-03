@@ -31,6 +31,7 @@ import {
   Folder,
   User,
   Wallet,
+  DollarSign,
   Settings,
   LogOut,
   LogIn,
@@ -158,6 +159,25 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const { socialLinks } = useSocialLinks();
   const { unreadCount: notifUnread } = useNotifications();
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+  const [pendingEarnings, setPendingEarnings] = useState<number>(0);
+
+  // Fetch pending_earnings for doctors
+  useEffect(() => {
+    if (role === 'doctor' && user?.id) {
+      import('@/integrations/supabase/client').then(({ supabase }) => {
+        supabase
+          .from('doctor_profiles')
+          .select('pending_earnings')
+          .eq('user_id', user.id)
+          .single()
+          .then(({ data }) => {
+            if (data?.pending_earnings != null) {
+              setPendingEarnings(Number(data.pending_earnings));
+            }
+          });
+      });
+    }
+  }, [role, user?.id]);
   
   // Enable realtime notifications
   useNotificationsRealtime();
@@ -595,7 +615,20 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       <User className="w-5 h-5" />
                       <span className="text-sm font-medium">{t('nav.profile')}</span>
                     </Link>
-                    {(role === 'patient' || role === 'resident' || role === 'doctor') && (
+                    {role === 'doctor' && (
+                      <Link
+                        to="/doctor/earnings"
+                        onClick={() => setMoreSheetOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                          location.pathname === '/doctor/earnings' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <DollarSign className="w-5 h-5" />
+                        <span className="text-sm font-medium">{t('nav.earnings')}</span>
+                        <span className="ml-auto text-xs font-semibold text-muted-foreground">${pendingEarnings.toLocaleString()}</span>
+                      </Link>
+                    )}
+                    {(role === 'patient' || role === 'resident') && (
                       <Link
                         to="/wallet"
                         onClick={() => setMoreSheetOpen(false)}
