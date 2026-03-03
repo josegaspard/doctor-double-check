@@ -837,7 +837,7 @@ export default function Onboarding() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8 flex items-start sm:items-center justify-center">
         <div className="w-full max-w-lg">
           {/* Progress Indicator */}
           <motion.div 
