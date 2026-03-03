@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useWallet } from '@/contexts/WalletContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
@@ -18,6 +21,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { 
   ArrowUpRight, 
@@ -26,32 +30,53 @@ import {
   Filter,
   Loader2,
   Receipt,
-  Calendar,
   TrendingUp,
   TrendingDown,
-  FileText
+  FileText,
+  RefreshCcw,
+  AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 type FilterType = 'all' | 'topup' | 'purchase' | 'earning' | 'refund';
 
 export function TransactionHistory() {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const { transactions, isLoading } = useWallet();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [selectedTx, setSelectedTx] = useState<typeof transactions[0] | null>(null);
 
+  // Refund request state
+  const [refundDialog, setRefundDialog] = useState(false);
+  const [refundReason, setRefundReason] = useState('');
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
+  const [pendingRefundTxIds, setPendingRefundTxIds] = useState<Set<string>>(new Set());
+
+  // Load existing refund requests for current user
+  useEffect(() => {
+    const loadRefundRequests = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from('refund_requests' as any)
+        .select('transaction_id, status')
+        .eq('user_id', user.id)
+        .in('status', ['pending', 'approved']);
+      if (data) {
+        setPendingRefundTxIds(new Set((data as any[]).map((r: any) => r.transaction_id)));
+      }
+    };
+    loadRefundRequests();
+  }, [user?.id]);
+
   const filteredTransactions = useMemo(() => {
     let filtered = [...transactions];
-
-    // Filter by type
     if (filterType !== 'all') {
       filtered = filtered.filter(tx => tx.type === filterType);
     }
-
-    // Filter by search term
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(tx => 
@@ -59,7 +84,6 @@ export function TransactionHistory() {
         tx.id.toLowerCase().includes(term)
       );
     }
-
     return filtered;
   }, [transactions, filterType, searchTerm]);
 
@@ -105,6 +129,34 @@ export function TransactionHistory() {
     }
   };
 
+  const canRequestRefund = (tx: typeof transactions[0]) => {
+    return (tx.type === 'purchase' || tx.type === 'topup') && 
+           tx.status === 'paid' && 
+           !pendingRefundTxIds.has(tx.id);
+  };
+
+  const handleRequestRefund = async () => {
+    if (!selectedTx || !user?.id || !refundReason.trim()) return;
+    setIsSubmittingRefund(true);
+    try {
+      const { error } = await supabase.from('refund_requests' as any).insert({
+        user_id: user.id,
+        transaction_id: selectedTx.id,
+        amount: Math.abs(selectedTx.amount),
+        reason: refundReason.trim(),
+      } as any);
+      if (error) throw error;
+      setPendingRefundTxIds(prev => new Set([...prev, selectedTx.id]));
+      toast.success('Solicitud de reembolso enviada');
+      setRefundDialog(false);
+      setRefundReason('');
+    } catch (error: any) {
+      toast.error(error.message || 'Error al enviar solicitud');
+    } finally {
+      setIsSubmittingRefund(false);
+    }
+  };
+
   return (
     <>
       <Card>
@@ -131,7 +183,7 @@ export function TransactionHistory() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                <SelectItem value="all">{t('common.all')}</SelectItem>
+                  <SelectItem value="all">{t('common.all')}</SelectItem>
                   <SelectItem value="topup">{t('transactions.topups')}</SelectItem>
                   <SelectItem value="purchase">{t('transactions.purchases')}</SelectItem>
                   <SelectItem value="earning">{t('transactions.earnings')}</SelectItem>
@@ -187,6 +239,9 @@ export function TransactionHistory() {
                           {format(tx.createdAt, 'dd MMM, HH:mm', { locale: es })}
                         </span>
                         <span className="hidden sm:inline">{getTypeBadge(tx.type)}</span>
+                        {pendingRefundTxIds.has(tx.id) && (
+                          <Badge variant="warning" className="text-[10px] px-1.5 py-0">Reembolso solicitado</Badge>
+                        )}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
@@ -216,7 +271,7 @@ export function TransactionHistory() {
       </Card>
 
       {/* Transaction Detail Dialog */}
-      <Dialog open={!!selectedTx} onOpenChange={() => setSelectedTx(null)}>
+      <Dialog open={!!selectedTx && !refundDialog} onOpenChange={() => setSelectedTx(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -239,10 +294,13 @@ export function TransactionHistory() {
                 <div className="flex items-center justify-center gap-2 mt-2">
                   {getTypeBadge(selectedTx.type)}
                   {getStatusBadge(selectedTx.status)}
+                  {pendingRefundTxIds.has(selectedTx.id) && (
+                    <Badge variant="warning">Reembolso solicitado</Badge>
+                  )}
                 </div>
               </div>
 
-                <div className="space-y-3 bg-muted/50 rounded-lg p-4">
+              <div className="space-y-3 bg-muted/50 rounded-lg p-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('transactions.description')}</span>
                   <span className="font-medium text-right max-w-[60%]">{selectedTx.description}</span>
@@ -268,8 +326,66 @@ export function TransactionHistory() {
                   </>
                 )}
               </div>
+
+              {/* Refund Request Button */}
+              {canRequestRefund(selectedTx) && (
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 border-destructive/30 text-destructive hover:bg-destructive/10"
+                  onClick={() => setRefundDialog(true)}
+                >
+                  <RefreshCcw className="w-4 h-4" />
+                  Solicitar reembolso
+                </Button>
+              )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Refund Request Dialog */}
+      <Dialog open={refundDialog} onOpenChange={(open) => { if (!open) setRefundDialog(false); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCcw className="w-5 h-5 text-destructive" />
+              Solicitar Reembolso
+            </DialogTitle>
+          </DialogHeader>
+          {selectedTx && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                <p className="text-muted-foreground">{selectedTx.description}</p>
+                <p className="text-lg font-bold mt-1">${Math.abs(selectedTx.amount).toLocaleString()} MXN</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">¿Por qué solicitas el reembolso?</label>
+                <Textarea
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  placeholder="Describe el motivo de tu solicitud..."
+                  rows={3}
+                />
+              </div>
+              <div className="flex items-start gap-2 p-3 bg-info/10 border border-info/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-info shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground">
+                  Tu solicitud será revisada por el equipo administrativo. Recibirás una notificación cuando sea procesada.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefundDialog(false)}>Cancelar</Button>
+            <Button 
+              onClick={handleRequestRefund}
+              disabled={isSubmittingRefund || !refundReason.trim()}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isSubmittingRefund ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
+              Enviar solicitud
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
