@@ -105,6 +105,7 @@ const Prescriptions = React.lazy(() => import("./pages/Prescriptions"));
 const CreatePrescription = React.lazy(() => import("./pages/CreatePrescription"));
 const PrescriptionDetail = React.lazy(() => import("./pages/PrescriptionDetail"));
 const ReportIssue = React.lazy(() => import("./pages/ReportIssue"));
+const EmailConfirmed = React.lazy(() => import("./pages/EmailConfirmed"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
