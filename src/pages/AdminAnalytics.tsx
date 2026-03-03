@@ -20,7 +20,7 @@ import {
   BarChart3, TrendingUp, Users, DollarSign, Stethoscope, Video, ArrowLeft,
   Star, Download, Printer,
 } from 'lucide-react';
-import { format, subMonths, subWeeks, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
+import { format, subMonths, subWeeks, subDays, startOfMonth, startOfWeek, startOfYear, addWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface MonthData { month: string; revenue: number; transactions: number; purchases: number; subscriptions: number; consultations: number; }
@@ -76,8 +76,8 @@ export default function AdminAnalytics() {
           { data: doctorStats },
         ] = await Promise.all([
           supabase.from('wallet_transactions').select('amount, type, created_at, status, metadata').eq('status', 'paid').gte('created_at', dateFromStr),
-          supabase.from('purchases').select('amount, created_at'),
-          supabase.from('subscriptions').select('price_paid, created_at').eq('is_active', true),
+          supabase.from('purchases').select('amount, created_at').gte('created_at', dateFromStr),
+          supabase.from('subscriptions').select('price_paid, created_at').eq('is_active', true).gte('created_at', dateFromStr),
           supabase.from('recordings').select('*', { count: 'exact', head: true }),
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
           supabase.from('doctor_profiles').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
@@ -110,26 +110,53 @@ export default function AdminAnalytics() {
           }));
         }
 
-        // Build month-by-month data
+        // Build period-grouped data
         const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
         const revenueByMonth: MonthData[] = [];
         const livesByMonth: { month: string; count: number }[] = [];
 
-        for (let i = monthCount - 1; i >= 0; i--) {
-          const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          const label = monthNames[date.getMonth()];
-          const y = date.getFullYear(); const m = date.getMonth();
+        if (period === 'week') {
+          // Weekly grouping: 4 weeks
+          for (let i = 3; i >= 0; i--) {
+            const weekStart = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            const label = `Sem ${4 - i} (${format(weekStart, 'dd/MM')}-${format(weekEnd, 'dd/MM')})`;
 
-          const monthTx = transactions?.filter(t => { const d = new Date(t.created_at); return d.getFullYear() === y && d.getMonth() === m; }) || [];
-          const topups = monthTx.filter(t => t.type === 'topup').reduce((s, t) => s + Number(t.amount), 0);
-          const mPurchases = monthTx.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
-          const mEarnings = monthTx.filter(t => t.type === 'earning' && (t.metadata as any)?.source === 'consultation').reduce((s, t) => s + Number(t.amount), 0);
-          const mSubs = monthTx.filter(t => t.type === 'earning' && ((t.metadata as any)?.source === 'subscription' || (t.metadata as any)?.source === 'subscription_renewal')).reduce((s, t) => s + Number(t.amount), 0);
+            const weekTx = transactions?.filter(t => {
+              const d = new Date(t.created_at);
+              return d >= weekStart && d <= weekEnd;
+            }) || [];
+            const topups = weekTx.filter(t => t.type === 'topup').reduce((s, t) => s + Number(t.amount), 0);
+            const mPurchases = weekTx.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
+            const mEarnings = weekTx.filter(t => t.type === 'earning' && (t.metadata as any)?.source === 'consultation').reduce((s, t) => s + Number(t.amount), 0);
+            const mSubs = weekTx.filter(t => t.type === 'earning' && ((t.metadata as any)?.source === 'subscription' || (t.metadata as any)?.source === 'subscription_renewal')).reduce((s, t) => s + Number(t.amount), 0);
 
-          revenueByMonth.push({ month: label, revenue: topups, transactions: monthTx.length, purchases: mPurchases, subscriptions: mSubs, consultations: mEarnings });
+            revenueByMonth.push({ month: label, revenue: topups, transactions: weekTx.length, purchases: mPurchases, subscriptions: mSubs, consultations: mEarnings });
 
-          const monthLives = livesData?.filter(l => { const d = new Date(l.started_at); return d.getFullYear() === y && d.getMonth() === m; }) || [];
-          livesByMonth.push({ month: label, count: monthLives.length });
+            const weekLives = livesData?.filter(l => {
+              const d = new Date(l.started_at);
+              return d >= weekStart && d <= weekEnd;
+            }) || [];
+            livesByMonth.push({ month: label, count: weekLives.length });
+          }
+        } else {
+          for (let i = monthCount - 1; i >= 0; i--) {
+            const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const label = monthNames[date.getMonth()];
+            const y = date.getFullYear(); const m = date.getMonth();
+
+            const monthTx = transactions?.filter(t => { const d = new Date(t.created_at); return d.getFullYear() === y && d.getMonth() === m; }) || [];
+            const topups = monthTx.filter(t => t.type === 'topup').reduce((s, t) => s + Number(t.amount), 0);
+            const mPurchases = monthTx.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
+            const mEarnings = monthTx.filter(t => t.type === 'earning' && (t.metadata as any)?.source === 'consultation').reduce((s, t) => s + Number(t.amount), 0);
+            const mSubs = monthTx.filter(t => t.type === 'earning' && ((t.metadata as any)?.source === 'subscription' || (t.metadata as any)?.source === 'subscription_renewal')).reduce((s, t) => s + Number(t.amount), 0);
+
+            revenueByMonth.push({ month: label, revenue: topups, transactions: monthTx.length, purchases: mPurchases, subscriptions: mSubs, consultations: mEarnings });
+
+            const monthLives = livesData?.filter(l => { const d = new Date(l.started_at); return d.getFullYear() === y && d.getMonth() === m; }) || [];
+            livesByMonth.push({ month: label, count: monthLives.length });
+          }
         }
 
         setAnalytics({
@@ -150,12 +177,12 @@ export default function AdminAnalytics() {
   }, [role, period]);
 
   const handlePrintPDF = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow || !analytics) return;
+    if (!analytics) return;
     const periodLabel = period === 'week' ? 'Últimas 4 semanas' : period === 'month' ? 'Últimos 6 meses' : 'Último año';
+    const periodColumnLabel = period === 'week' ? 'Semana' : 'Mes';
     const formatCurrency = (n: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
 
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Reporte Analytics - Medical Masters</title>
+    const html = `<!DOCTYPE html><html><head><title>Reporte Analytics - Medical Masters</title>
     <style>body{font-family:system-ui,sans-serif;padding:40px;color:#333;max-width:900px;margin:0 auto}
     h1{font-size:24px;margin-bottom:4px}h2{font-size:18px;margin-top:30px;border-bottom:2px solid #0d9488;padding-bottom:6px}
     .subtitle{color:#666;font-size:14px}.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:20px 0}
@@ -184,8 +211,8 @@ export default function AdminAnalytics() {
       <div class="kpi"><div class="value">${formatCurrency(analytics.consultationsRevenue)}</div><div class="label">Consultas Médicas</div></div>
     </div>
     
-    <h2>Ingresos Mes a Mes</h2>
-    <table><thead><tr><th>Mes</th><th class="text-right">Recargas</th><th class="text-right">Compras</th><th class="text-right">Suscripciones</th><th class="text-right">Consultas</th><th class="text-right">Transacciones</th></tr></thead><tbody>
+    <h2>Ingresos por ${periodColumnLabel}</h2>
+    <table><thead><tr><th>${periodColumnLabel}</th><th class="text-right">Recargas</th><th class="text-right">Compras</th><th class="text-right">Suscripciones</th><th class="text-right">Consultas</th><th class="text-right">Transacciones</th></tr></thead><tbody>
     ${analytics.revenueByMonth.map(m => `<tr><td>${m.month}</td><td class="text-right">${formatCurrency(m.revenue)}</td><td class="text-right">${formatCurrency(m.purchases)}</td><td class="text-right">${formatCurrency(m.subscriptions)}</td><td class="text-right">${formatCurrency(m.consultations)}</td><td class="text-right">${m.transactions}</td></tr>`).join('')}
     <tr style="font-weight:700;background:#f0fdfa"><td>TOTAL</td><td class="text-right text-success">${formatCurrency(analytics.revenueByMonth.reduce((s,m)=>s+m.revenue,0))}</td><td class="text-right">${formatCurrency(analytics.revenueByMonth.reduce((s,m)=>s+m.purchases,0))}</td><td class="text-right">${formatCurrency(analytics.revenueByMonth.reduce((s,m)=>s+m.subscriptions,0))}</td><td class="text-right">${formatCurrency(analytics.revenueByMonth.reduce((s,m)=>s+m.consultations,0))}</td><td class="text-right">${analytics.revenueByMonth.reduce((s,m)=>s+m.transactions,0)}</td></tr>
     </tbody></table>
@@ -200,15 +227,34 @@ export default function AdminAnalytics() {
     ${analytics.topDoctors.map((d, i) => `<tr><td>${i + 1}</td><td>${d.name}</td><td class="text-right">${d.consultations}</td><td class="text-right">${d.rating.toFixed(1)}</td><td class="text-right text-success">${formatCurrency(d.revenue)}</td></tr>`).join('')}
     </tbody></table>
     
-    <h2>Lives por Mes</h2>
-    <table><thead><tr><th>Mes</th><th class="text-right">Cantidad</th></tr></thead><tbody>
+    <h2>Lives por ${periodColumnLabel}</h2>
+    <table><thead><tr><th>${periodColumnLabel}</th><th class="text-right">Cantidad</th></tr></thead><tbody>
     ${analytics.livesByMonth.map(m => `<tr><td>${m.month}</td><td class="text-right">${m.count}</td></tr>`).join('')}
     </tbody></table>
     
     <div class="footer">Medical Masters · Reporte generado automáticamente · ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}</div>
-    </body></html>`);
-    printWindow.document.close();
-    setTimeout(() => printWindow.print(), 500);
+    </body></html>`;
+
+    // Use hidden iframe to avoid popup blockers
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentWindow?.document;
+    if (!iframeDoc) { document.body.removeChild(iframe); return; }
+    iframeDoc.open();
+    iframeDoc.write(html);
+    iframeDoc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow?.print();
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 500);
   };
 
   if (role !== 'admin') return null;
@@ -287,7 +333,7 @@ export default function AdminAnalytics() {
             {/* Charts */}
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <Card>
-                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5" />Ingresos por Mes</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5" />Ingresos por {period === 'week' ? 'Semana' : 'Mes'}</CardTitle></CardHeader>
                 <CardContent>
                   <ChartContainer config={chartConfig} className="h-[250px]">
                     <AreaChart data={analytics.revenueByMonth}>
@@ -318,7 +364,7 @@ export default function AdminAnalytics() {
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Video className="w-5 h-5" />Lives por Mes</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Video className="w-5 h-5" />Lives por {period === 'week' ? 'Semana' : 'Mes'}</CardTitle></CardHeader>
                 <CardContent>
                   <ChartContainer config={chartConfig} className="h-[250px]">
                     <BarChart data={analytics.livesByMonth}>
@@ -356,11 +402,11 @@ export default function AdminAnalytics() {
 
             {/* Monthly Table */}
             <Card>
-              <CardHeader><CardTitle className="text-lg">Desglose Mes a Mes</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-lg">Desglose {period === 'week' ? 'Semanal' : 'Mes a Mes'}</CardTitle></CardHeader>
               <CardContent className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead><tr className="border-b">
-                    <th className="text-left p-2 font-semibold">Mes</th>
+                    <th className="text-left p-2 font-semibold">{period === 'week' ? 'Semana' : 'Mes'}</th>
                     <th className="text-right p-2 font-semibold">Recargas</th>
                     <th className="text-right p-2 font-semibold">Compras</th>
                     <th className="text-right p-2 font-semibold">Suscripciones</th>
