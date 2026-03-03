@@ -124,6 +124,14 @@ export default function Landing() {
       {/* Hero Section */}
       <header className="relative min-h-screen flex items-end pt-20 overflow-hidden bg-[#163a83] mb-[-1px]">
         <div className="absolute inset-0 z-0">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            src="https://gestomarketing.com.mx/wp-content/uploads/2026/03/Video_de_Landing_Page_Hiperrealista-1-1.mp4"
+          />
           <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d45] via-[#163a83] to-[#00768b] opacity-90" />
           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%23163a83' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E\")" }} />
           <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)", backgroundSize: "32px 32px" }} />
