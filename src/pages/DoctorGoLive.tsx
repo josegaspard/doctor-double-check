@@ -254,10 +254,10 @@ export default function DoctorGoLive() {
         status: 'ended', ended_at: new Date().toISOString(),
       }).eq('id', liveData.id);
 
-      // Upload local recording
+      // Upload local recording (all lives are saved as recordings)
       let recordingCreated = false;
-      const localBlob = enableRecording ? localRecording.getRecordingBlob() : null;
-      if (enableRecording && localBlob && localBlob.size > 0) {
+      const localBlob = localRecording.getRecordingBlob();
+      if (localBlob && localBlob.size > 0) {
         setEndingStage('uploading');
         const uploadResult = await localRecording.uploadRecording({
           liveId: liveData.id, doctorId: user.id, title: liveData.title,
