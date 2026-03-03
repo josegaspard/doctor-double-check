@@ -107,7 +107,26 @@ export function useAuthState() {
           return;
         }
         if (!profile) {
-          // Profile missing (or access denied). Treat as signed out.
+          // Retry once after 2s before giving up
+          console.warn('[Auth] fetchUserProfile returned null, retrying in 2s...');
+          await new Promise(r => setTimeout(r, 2000));
+          try {
+            profile = await fetchUserProfile(session.user.id);
+          } catch (retryErr) {
+            console.warn('[Auth] Retry fetchUserProfile failed:', retryErr);
+          }
+        }
+
+        if (!profile) {
+          // Check cached user as final fallback
+          const cached = getCachedUser();
+          if (cached && cached.id === session.user.id) {
+            console.warn('[Auth] Using cached user as fallback (profile fetch failed twice)');
+            setUser(cached);
+            setIsLoading(false);
+            return;
+          }
+          // Genuinely missing profile — sign out
           try {
             await supabase.auth.signOut();
           } catch {
