@@ -1,47 +1,26 @@
 
-# Plan: Arreglar menu "Mas" vacio para visitantes en movil
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
 ## Problema
-Cuando un visitante (no logueado) toca el boton "Mas" (3 bolitas) en movil, el sheet se abre pero aparece vacio -- solo se ve el logo y el boton de login. Esto pasa porque:
-1. `moreNavItems` filtra los items que ya estan en los bottom tabs, y para visitor Lives y Noticias ya estan ahi, asi que queda vacio
-2. La seccion "Cuenta" esta oculta para visitors
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
 ## Solucion
 
-### Archivo: `src/components/layout/MainLayout.tsx`
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-Agregar contenido visible al More sheet cuando el usuario es visitante:
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-1. **Agregar links utiles para visitantes** debajo del boton de login:
-   - "Para Doctores" -> `/for-doctors`
-   - "Para Pacientes" -> `/for-patients`
-   - "Casos de Exito" -> `/success-stories`
-   - "Contacto" -> `/contact`
-   - "Ayuda" -> `/help`
-
-2. **Estructura del bloque visitor en el More sheet** (lineas 575-583):
-   - Mantener el login prompt existente
-   - Agregar una seccion "Explorar" con los links de arriba
-   - Agregar seccion "Legal" con links a Terminos, Privacidad
-   - Esto llena el sheet con opciones relevantes para visitantes
-
-3. **Agregar el bloque justo despues del login prompt** (despues de linea 583), condicionado a `role === 'visitor' || (!isAuthenticated && !role)`:
-
-```text
-Explorar:
-  - Para Doctores (Stethoscope icon)
-  - Para Pacientes (User icon)
-  - Casos de Exito (Star icon)
-  - Contacto (Mail icon)
-  - Ayuda (HelpCircle icon)
-
-Legal:
-  - Terminos (FileText icon)
-  - Privacidad (Shield icon)
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-## Archivo a modificar
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+
+## Archivos a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/components/layout/MainLayout.tsx` | Agregar links de exploracion y legales al More sheet para visitantes |
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
