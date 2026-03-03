@@ -180,7 +180,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       // 8. Refresh wallet
       await refreshWallet();
 
-      toast.success('Double Check iniciado correctamente');
+      toast.success('Segunda Opinión iniciada correctamente');
       onClose();
       navigate('/chat', { state: { sessionId: chatResult.session?.id } });
 
