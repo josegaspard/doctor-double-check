@@ -119,13 +119,12 @@ const queryClient = new QueryClient({
   },
 });
 
-function PageLoader() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-    </div>
-  );
-}
+const PageLoader = React.forwardRef<HTMLDivElement>((_, ref) => (
+  <div ref={ref} className="min-h-screen flex items-center justify-center">
+    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+  </div>
+));
+PageLoader.displayName = 'PageLoader';
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
