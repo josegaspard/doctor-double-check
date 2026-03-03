@@ -197,7 +197,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
               </Button>
             )}
             <p className="text-xs text-muted-foreground">
-              Se mostrará en el catálogo de grabaciones premium. Si no subes una, se generará automáticamente.
+              Recomendado: imagen menor a 1 MB. Se comprimirá automáticamente al subirla.
             </p>
           </div>
 
