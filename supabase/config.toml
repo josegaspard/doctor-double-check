@@ -65,6 +65,8 @@ project_id = "jbthjpnxiwnegzgfzfth"
     verify_jwt = false
   [functions.trigger-post-consultation-ratings]
     verify_jwt = false
+  [functions.send-approval-email]
+    verify_jwt = false
   [functions.unsubscribe-email]
     verify_jwt = false
   [functions.upload-payout-receipt]
