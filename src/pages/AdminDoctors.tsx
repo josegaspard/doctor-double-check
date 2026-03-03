@@ -438,6 +438,48 @@ export default function AdminDoctors() {
                             {t('admin.cedula')}: {doctor.cedula_profesional}
                           </p>
                         )}
+
+                        {/* Admin SEP Verification Button */}
+                        {!doctor.cedula_verification?.is_verified && (doctor.license || doctor.cedula_profesional) && (
+                          <div className="mt-2 space-y-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1.5 text-xs h-8"
+                              onClick={() => handleVerifyCedula(doctor)}
+                              disabled={verifyingCedulaId === doctor.id}
+                            >
+                              {verifyingCedulaId === doctor.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <ShieldCheck className="w-3 h-3" />
+                              )}
+                              Verificar Cédula SEP
+                            </Button>
+                            <a
+                              href="https://cedulaprofesional.sep.gob.mx"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-[10px] text-primary hover:underline"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Verificar manualmente en SEP
+                            </a>
+                            {verificationResults[doctor.id] && !verificationResults[doctor.id].verified && !verificationResults[doctor.id].error && (
+                              <div className="p-2 rounded-md bg-warning/10 border border-warning/20">
+                                <div className="flex items-center gap-1 text-xs text-warning">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  {verificationResults[doctor.id].message || 'No se encontró en la base de datos de la SEP'}
+                                </div>
+                              </div>
+                            )}
+                            {verificationResults[doctor.id]?.error && (
+                              <div className="p-2 rounded-md bg-destructive/10 border border-destructive/20">
+                                <p className="text-xs text-destructive">Servicio SEP no disponible. Verifique manualmente.</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         {doctor.bio && (
                           <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{doctor.bio}</p>
                         )}
