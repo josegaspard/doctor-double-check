@@ -118,9 +118,9 @@ export const SignupEmail = ({
           {userRole === 'resident' && (
             <>
               <Hr style={divider} />
-              <Heading as="h2" style={h2}>🎓 Información para residentes</Heading>
+              <Heading as="h2" style={h2}>🎓 Tu proceso de registro como residente</Heading>
               <Text style={text}>
-                Tu solicitud de registro como residente médico está siendo revisada. Esto es lo que debes saber:
+                Tu solicitud de registro como residente médico está siendo revisada por nuestro equipo. Aquí te explicamos los pasos:
               </Text>
 
               <Section style={stepBox}>
@@ -129,20 +129,33 @@ export const SignupEmail = ({
               </Section>
 
               <Section style={stepBox}>
-                <Text style={stepTitle}>👨‍⚕️ Paso 2 — Revisión de documentación</Text>
+                <Text style={stepTitle}>🏥 Paso 2 — Completa tu perfil institucional</Text>
+                <Text style={stepText}>Durante el onboarding podrás registrar tu institución, especialidad y año de residencia.</Text>
+              </Section>
+
+              <Section style={stepBox}>
+                <Text style={stepTitle}>👨‍⚕️ Paso 3 — Revisión por el equipo</Text>
                 <Text style={stepText}>Nuestro equipo verificará tu información institucional. El proceso toma entre 24 y 48 horas hábiles.</Text>
               </Section>
 
               <Section style={stepBox}>
-                <Text style={stepTitle}>🎉 Paso 3 — ¡Acceso con beneficios!</Text>
-                <Text style={stepText}>Una vez aprobado, tendrás acceso a la plataforma con descuentos exclusivos.</Text>
+                <Text style={stepTitle}>🎉 Paso 4 — ¡Acceso con beneficios exclusivos!</Text>
+                <Text style={stepText}>Una vez aprobado, tendrás acceso completo a la plataforma con descuentos automáticos.</Text>
+              </Section>
+
+              <Section style={discountBox}>
+                <Text style={discountTitle}>🏷️ 50% de descuento automático</Text>
+                <Text style={discountText}>Como residente verificado, recibirás automáticamente un 50% de descuento en orientaciones médicas, contenido premium y grabaciones de video.</Text>
               </Section>
 
               <Heading as="h2" style={h2}>Beneficios exclusivos para residentes</Heading>
-              <Text style={featureItem}>🏷️ 50% de descuento en todo el contenido</Text>
-              <Text style={featureItem}>📡 Acceso a transmisiones en vivo</Text>
+              <Text style={featureItem}>🏷️ <strong>50% de descuento</strong> en orientaciones médicas, contenido premium y grabaciones</Text>
+              <Text style={featureItem}>📡 Acceso a transmisiones en vivo de especialistas</Text>
               <Text style={featureItem}>📚 Biblioteca de contenido educativo</Text>
-              <Text style={featureItem}>👥 Grupos de estudio con otros residentes</Text>
+              <Text style={featureItem}>👥 Grupos de estudio y networking con otros residentes</Text>
+              <Text style={featureItem}>💬 Chat de colaboración profesional con doctores</Text>
+              <Text style={featureItem}>🎓 Acceso a Meets Médicos y sesiones clínicas</Text>
+              <Text style={featureItem}>💰 Recarga saldo en tu wallet para acceder a contenido con descuento</Text>
             </>
           )}
 
