@@ -177,10 +177,8 @@ export default function DoctorGoLive() {
       setDailyRoomUrl(room.url);
       setDailyOwnerToken(room.ownerToken || '');
 
-      // Start local recording from second 0
-      if (config.enableRecording) {
-        localRecording.startRecording(stream);
-      }
+      // Always start local recording from second 0 (all lives become recordings)
+      localRecording.startRecording(stream);
 
       setLiveData({
         id: live.id, title: live.title, description: live.description || '',
