@@ -451,10 +451,10 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       )
       .subscribe();
 
-    // Polling fallback: catch any missed realtime events
+    // Polling fallback: catch any missed realtime events (30s since realtime covers most cases)
     const pollInterval = setInterval(() => {
       fetchLives(false);
-    }, 8000);
+    }, 30000);
 
     return () => {
       clearInterval(pollInterval);

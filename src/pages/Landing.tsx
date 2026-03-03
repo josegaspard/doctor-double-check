@@ -126,9 +126,7 @@ export default function Landing() {
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d45] via-[#163a83] to-[#00768b] opacity-90" />
           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%23163a83' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E\")" }} />
-          <video autoPlay muted loop playsInline preload="none" className="w-full h-full object-cover opacity-20 mix-blend-overlay">
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-glitch-heart-heartbeat-32454-large.mp4" type="video/mp4" />
-          </video>
+          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)", backgroundSize: "32px 32px" }} />
         </div>
 
         <div className="container mx-auto px-6 lg:px-12 relative z-10 h-full">
@@ -154,10 +152,10 @@ export default function Landing() {
               {/* Social Proof */}
               <div className="flex items-center gap-4 pt-2 pb-2">
                 <div className="flex -space-x-3">
-                  <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop" alt="User 1" />
-                  <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop" alt="User 2" />
-                  <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop" alt="User 3" />
-                  <img className="w-10 h-10 rounded-full border-2 border-[#0b1d45] object-cover" src="https://randomuser.me/api/portraits/men/32.jpg" alt="User 4" />
+                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#839ed5] to-[#163a83] flex items-center justify-center text-white text-xs font-bold">CM</div>
+                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#00768b] to-[#0b1d45] flex items-center justify-center text-white text-xs font-bold">LF</div>
+                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#aed3d9] to-[#00768b] flex items-center justify-center text-white text-xs font-bold">MR</div>
+                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#163a83] to-[#839ed5] flex items-center justify-center text-white text-xs font-bold">JP</div>
                   <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-[#00768b] text-white flex items-center justify-center text-xs font-bold">+5k</div>
                 </div>
                 <div className="flex flex-col">
@@ -306,9 +304,9 @@ export default function Landing() {
                   </p>
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center gap-4">
                     <div className="flex -space-x-3">
-                      <img className="w-10 h-10 rounded-full border-2 border-white object-cover" src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop" alt="Doctor 1" />
-                      <img className="w-10 h-10 rounded-full border-2 border-white object-cover" src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop" alt="Doctor 2" />
-                      <img className="w-10 h-10 rounded-full border-2 border-white object-cover" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop" alt="Doctor 3" />
+                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#839ed5] to-[#163a83] flex items-center justify-center text-white text-xs font-bold">CM</div>
+                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#00768b] to-[#0b1d45] flex items-center justify-center text-white text-xs font-bold">LF</div>
+                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#aed3d9] to-[#00768b] flex items-center justify-center text-white text-xs font-bold">MR</div>
                       <div className="w-10 h-10 rounded-full border-2 border-white bg-[#00768b] text-white flex items-center justify-center text-xs font-bold">+5k</div>
                     </div>
                     <span className="text-sm font-bold text-[#00768b]">Red de +5,000 expertos</span>
@@ -358,18 +356,18 @@ export default function Landing() {
               </p>
             </div>
             
-            <div className="relative w-full max-w-5xl mx-auto rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-black group">
-              <video
-                src="https://gestomarketing.com.mx/wp-content/uploads/2026/01/Video_de_Landing_Page_Hiperrealista.mp4"
-                className="w-full h-full object-cover"
-                autoPlay
-                muted 
-                loop
-                playsInline
-                controls
-                preload="auto"
-                poster=""
-              />
+            <div 
+              className="relative w-full max-w-5xl mx-auto rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-black group cursor-pointer"
+              onClick={() => setShowDemoModal(true)}
+            >
+              <div className="w-full aspect-video bg-gradient-to-br from-[#0b1d45] via-[#163a83] to-[#00768b] flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                    <PlayCircle className="w-10 h-10 text-white" />
+                  </div>
+                  <p className="text-white/80 text-lg font-medium">Ver Demo Interactiva</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -416,9 +414,9 @@ export default function Landing() {
             <h2 className="text-3xl lg:text-4xl font-bold text-center mb-16 text-[#163a83]">Colegas y Pacientes Confían en Nosotros</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[
-                { text: '"He reducido mi tiempo administrativo en un 40%. La herramienta de IA para notas clínicas es impresionante, entiende perfectamente la terminología médica."', name: 'Dr. Carlos Méndez', role: 'Cardiólogo, Hospital Angeles', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
-                { text: '"El sistema de videoconsultas es increíble. Mis pacientes en zonas rurales ahora tienen acceso a especialistas sin viajar cientos de kilómetros."', name: 'Dra. Lucía Fernández', role: 'Médico General, Clínica Satélite', avatar: 'https://randomuser.me/api/portraits/women/68.jpg' },
-                { text: '"Por primera vez siento que tengo el control de mi salud. Puedo ver mi historial, mis estudios y hablar con mi médico sin esperas."', name: 'María Rodríguez', role: 'Paciente, CDMX', avatar: 'https://randomuser.me/api/portraits/women/45.jpg' },
+                { text: '"He reducido mi tiempo administrativo en un 40%. La herramienta de IA para notas clínicas es impresionante, entiende perfectamente la terminología médica."', name: 'Dr. Carlos Méndez', role: 'Cardiólogo, Hospital Angeles', initials: 'CM', gradient: 'from-[#839ed5] to-[#163a83]' },
+                { text: '"El sistema de videoconsultas es increíble. Mis pacientes en zonas rurales ahora tienen acceso a especialistas sin viajar cientos de kilómetros."', name: 'Dra. Lucía Fernández', role: 'Médico General, Clínica Satélite', initials: 'LF', gradient: 'from-[#00768b] to-[#0b1d45]' },
+                { text: '"Por primera vez siento que tengo el control de mi salud. Puedo ver mi historial, mis estudios y hablar con mi médico sin esperas."', name: 'María Rodríguez', role: 'Paciente, CDMX', initials: 'MR', gradient: 'from-[#aed3d9] to-[#00768b]' },
               ].map((review, idx) => (
                 <div key={idx} className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-all duration-300">
                   <div className="flex items-center gap-1 text-yellow-400 mb-4 text-sm">
@@ -426,7 +424,7 @@ export default function Landing() {
                   </div>
                   <p className="text-slate-600 mb-6 italic leading-relaxed">{review.text}</p>
                   <div className="flex items-center gap-4">
-                    <img src={review.avatar} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" alt={review.name} />
+                    <div className={`w-12 h-12 rounded-full border-2 border-white shadow-sm bg-gradient-to-br ${review.gradient} flex items-center justify-center text-white font-bold text-sm`}>{review.initials}</div>
                     <div>
                       <p className="font-bold text-slate-900">{review.name}</p>
                       <p className="text-sm text-slate-500">{review.role}</p>
@@ -601,26 +599,6 @@ export default function Landing() {
         </div>
       </footer>
 
-      {/* Custom Styles */}
-      <style>{`
-        @keyframes scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .animate-scroll {
-          animation: scroll 40s linear infinite;
-        }
-        .animate-scroll:hover {
-          animation-play-state: paused;
-        }
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(40px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-      `}</style>
     </div>
   );
 }
