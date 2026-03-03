@@ -1635,6 +1635,7 @@ export type Database = {
           storage_limit_bytes: number
           storage_used_bytes: number
           updated_at: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1648,6 +1649,7 @@ export type Database = {
           storage_limit_bytes?: number
           storage_used_bytes?: number
           updated_at?: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1661,6 +1663,7 @@ export type Database = {
           storage_limit_bytes?: number
           storage_used_bytes?: number
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
