@@ -154,7 +154,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
             user_id: doctor.userId,
             type: 'earning',
             amount: amountCharged,
-            description: `Ganancia por Double Check`,
+            description: `Ganancia por Segunda Opinión`,
             status: 'paid',
             metadata: { source: 'double_check', patient_id: user.id, consultation_id: consultation.id },
           });
