@@ -276,37 +276,7 @@ export default function DoctorGoLive() {
             .eq('live_id', liveData.id)
             .eq('doctor_id', user.id);
 
-          // Auto-save as premium content
-          const saveAsContent = async (retries = 3) => {
-            for (let i = 0; i < retries; i++) {
-              const { data: recData } = await supabase
-                .from('recordings')
-                .select('video_url, thumbnail_url')
-                .eq('live_id', liveData.id)
-                .eq('doctor_id', user.id)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-
-              if (recData?.video_url) {
-                await supabase.from('doctor_content').insert({
-                  creator_id: user.id,
-                  title: `📹 ${liveData.title}`,
-                  description: liveData.description || `Grabación del en vivo: ${liveData.title}`,
-                  type: 'video',
-                  file_url: recData.video_url,
-                  thumbnail_url: recData.thumbnail_url || null,
-                  is_public: true,
-                  price: recordingPrice,
-                  audience_type: recordingPrice > 0 ? 'subscribers' : 'all',
-                  category: liveData.specialty,
-                });
-                return;
-              }
-              if (i < retries - 1) await new Promise(r => setTimeout(r, 2000));
-            }
-          };
-          saveAsContent().catch(err => console.warn('Auto-save to premium content failed:', err));
+          // Recording saved to recordings table only — no auto-insert into doctor_content
         }
       }
 
