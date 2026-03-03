@@ -122,7 +122,7 @@ export function ChatSessionsList({
       <CardHeader className="pb-3 pt-4 px-3 flex-shrink-0 space-y-3">
         <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as 'active' | 'history')} className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-11">
-            <TabsTrigger value="active" className="gap-1.5 data-[state=active]:shadow-sm">
+            <TabsTrigger value="active" className="gap-1.5">
               <MessageSquare className="w-4 h-4" />
               <span>{t('chat.active')}</span>
               {activeSessions.length > 0 && (
