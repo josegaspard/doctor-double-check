@@ -20,17 +20,19 @@ function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <>{children}</>;
   return (
-    <WalletProvider>
-      <VaultProvider>
-        <ChatProvider>
-          <PostConsultationRatingProvider>
-            <IncomingCallProvider>
-              {children}
-            </IncomingCallProvider>
-          </PostConsultationRatingProvider>
-        </ChatProvider>
-      </VaultProvider>
-    </WalletProvider>
+    <LivesProvider>
+      <WalletProvider>
+        <VaultProvider>
+          <ChatProvider>
+            <PostConsultationRatingProvider>
+              <IncomingCallProvider>
+                {children}
+              </IncomingCallProvider>
+            </PostConsultationRatingProvider>
+          </ChatProvider>
+        </VaultProvider>
+      </WalletProvider>
+    </LivesProvider>
   );
 }
 
@@ -130,8 +132,7 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="light" storageKey="theme" enableSystem={false}>
       <AuthProvider>
         <LanguageProvider>
-          <LivesProvider>
-            <TooltipProvider>
+          <TooltipProvider>
               <Toaster />
               <Sonner />
               <BrowserRouter>
@@ -210,7 +211,6 @@ const App = () => (
                 </AuthenticatedProviders>
               </BrowserRouter>
             </TooltipProvider>
-          </LivesProvider>
         </LanguageProvider>
       </AuthProvider>
     </ThemeProvider>
