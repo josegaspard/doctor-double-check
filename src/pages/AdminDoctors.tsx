@@ -287,11 +287,11 @@ export default function AdminDoctors() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" /> {t('admin.pending')}</Badge>;
+        return <Badge variant="warning"><Clock className="w-3 h-3 mr-1" /> {t('admin.pending')}</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" /> {t('admin.approved')}</Badge>;
+        return <Badge variant="success"><CheckCircle className="w-3 h-3 mr-1" /> {t('admin.approved')}</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" /> {t('admin.rejected')}</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" /> {t('admin.rejected')}</Badge>;
       default:
         return null;
     }
