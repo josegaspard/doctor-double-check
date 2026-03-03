@@ -108,7 +108,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           patient_id: user.id,
           doctor_id: doctor.userId,
           status: 'active',
-          notes: 'Double Check - Segunda opinión médica',
+          notes: 'Segunda Opinión médica',
         })
         .select()
         .single();
