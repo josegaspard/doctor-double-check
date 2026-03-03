@@ -405,8 +405,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               
               {/* Wallet */}
               {(role === 'patient' || role === 'resident') && (
-                <Link to="/wallet" className="hidden sm:block">
-                  <Button variant="outline" size="sm" className="gap-2">
+                <Link to="/wallet" className="hidden sm:flex items-center">
+                  <Button variant="outline" size="sm" className="gap-2 h-9 items-center">
                     <Wallet className="w-4 h-4" />
                     <AnimatedBalance balance={balance} />
                   </Button>
