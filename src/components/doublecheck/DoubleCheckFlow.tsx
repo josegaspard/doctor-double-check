@@ -437,7 +437,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         {step === 'processing' && (
           <div className="py-12 text-center">
             <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary mb-4" />
-            <p className="font-medium">Procesando tu Double Check...</p>
+            <p className="font-medium">Procesando tu Segunda Opinión...</p>
             <p className="text-sm text-muted-foreground mt-1">
               No cierres esta ventana
             </p>
