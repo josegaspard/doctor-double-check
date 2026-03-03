@@ -185,8 +185,8 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       navigate('/chat', { state: { sessionId: chatResult.session?.id } });
 
     } catch (error: any) {
-      console.error('Double Check error:', error);
-      toast.error(error.message || 'Error al iniciar Double Check');
+      console.error('Segunda Opinión error:', error);
+      toast.error(error.message || 'Error al iniciar Segunda Opinión');
       setStep('confirm');
     } finally {
       setIsProcessing(false);
