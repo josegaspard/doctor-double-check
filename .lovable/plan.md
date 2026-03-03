@@ -1,26 +1,29 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
+
+# Plan: Mejorar visualización de imagen de avatar en perfil
 
 ## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+La imagen de avatar se ve comprimida/ajustada porque no tiene `object-cover`, lo que causa que la imagen se deforme en lugar de recortarse proporcionalmente.
 
-## Solucion
+## Solución
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+**Archivo**: `src/components/ui/avatar.tsx` (línea 22)
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+Agregar `object-cover` a la clase de `AvatarImage` para que la imagen se escale proporcionalmente y llene el círculo sin deformarse:
 
+```tsx
+// Antes
+className={cn("aspect-square h-full w-full", className)}
+
+// Después  
+className={cn("aspect-square h-full w-full object-cover", className)}
 ```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+Esto aplica globalmente a todos los avatares de la app, asegurando que cualquier imagen subida se vea bien sin importar sus proporciones originales.
 
 ## Archivos a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+| `src/components/ui/avatar.tsx` | Línea 22: agregar `object-cover` a AvatarImage |
+
