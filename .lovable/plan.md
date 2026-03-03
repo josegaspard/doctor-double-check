@@ -1,36 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Fix: Email Confirmation "Enlace Expirado" Error
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Root Cause
+## Solucion
 
-The Supabase JS client automatically detects the `#access_token=...` hash fragment in the URL and processes it internally, **removing it from `window.location.hash`**. By the time the `EmailConfirmed` component's `useEffect` runs, the hash is already empty (`#` or `""`), so the check `hash.includes("access_token")` fails and the page shows "Enlace expirado" -- even though the verification actually succeeded.
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-Meanwhile, the `onAuthStateChange` listener in `useAuthState.ts` fires a `SIGNED_IN` event and correctly redirects to `/onboarding`. But there's a race condition: the EmailConfirmed component shows the error state before the redirect happens.
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-## Fix
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-**File: `src/pages/EmailConfirmed.tsx`** -- Complete rewrite of the detection logic:
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-1. Remove the hash-checking approach entirely
-2. Instead, use `supabase.auth.getSession()` to detect if a session was established
-3. Start in "loading" state and wait for either:
-   - The `onAuthStateChange` listener to redirect (which it will on `SIGNED_IN`)
-   - A session check after a short delay to confirm verification worked
-4. Only show "error" if after ~5 seconds there's still no session AND no redirect happened
-5. The fallback timer redirects to `/onboarding` if the auth listener hasn't already done so
+## Archivos a modificar
 
-**Key changes:**
-- Import `supabase` client
-- On mount: call `supabase.auth.getSession()` after a brief delay (to let the client process the hash)
-- If session found → show success, let `useAuthState` handle redirect
-- If no session after timeout → show error with login button
-- Keep "loading" as initial state (not "error")
-
-This ensures the page works regardless of whether the hash is still present, and correctly handles all user roles (patient, doctor, resident) since the redirect logic in `useAuthState.ts` already checks onboarding status and role for all types.
-
-## Files to modify
-- `src/pages/EmailConfirmed.tsx` -- Rewrite session detection logic
-
-No other files need changes -- the `useAuthState.ts` redirect logic is already correct for all roles.
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
