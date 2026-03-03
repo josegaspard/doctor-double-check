@@ -461,8 +461,8 @@ export default function Onboarding() {
     // Mark that user has attempted to submit
     setHasAttemptedSubmit(true);
     
-    // Validate form for doctors and residents
-    if (selectedRole !== 'patient') {
+    // Validate form for all roles
+    {
       const errors = validateForm;
       setValidationErrors(errors);
       
