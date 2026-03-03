@@ -1,48 +1,28 @@
 
+# Plan: Cambiar "Mi Wallet" a "Saldo" para doctores en menu movil
 
-# Plan: Optimizar velocidad de carga y corregir navegacion
+## Problema
+En el menu "Mas" de la navegacion movil, los doctores ven "Mi Wallet" con el saldo de su billetera de consumo (`wallets.balance`). Lo correcto es mostrar **"Saldo"** con el monto de ganancias pendientes (`doctor_profiles.pending_earnings`) y que al hacer clic los lleve a `/doctor/earnings` en vez de `/wallet`.
 
-## Problema actual
-1. **Carga lenta**: La Landing Page carga un video externo pesado, muchas imagenes de Unsplash, iconos animados y CSS inline. Los contextos (Lives, Wallet, Vault, Chat) hacen multiples queries al montar.
-2. **Enlace cirugiaesteticauribe.com**: No hay logica que maneje la llegada desde el dominio personalizado hacia la landing. Actualmente el `useAuthState` redirige usuarios autenticados desde `/` a su dashboard, lo cual ya funciona.
-3. **Cierre de sesion**: El logout ya redirige a `/lives` (confirmado en `useAuthActions.ts` linea 46). Esto ya esta correcto.
+## Cambios
 
-## Cambios propuestos
+### 1. `src/components/layout/MainLayout.tsx` (lineas 598-609)
+- Cuando `role === 'doctor'`:
+  - Cambiar el texto de "Mi Wallet" a "Saldo"
+  - Cambiar la ruta de `/wallet` a `/doctor/earnings`
+  - Mostrar el monto de `pending_earnings` del doctor en vez del `balance` del wallet
+  - Usar icono `DollarSign` o `TrendingUp` en vez de `Wallet` para diferenciar visualmente
+- Para `patient` y `resident` mantener el comportamiento actual ("Mi Wallet", `/wallet`, saldo del wallet)
 
-### 1. Optimizar Landing Page (mayor impacto)
-- **Eliminar video de fondo del hero**: El video de Mixkit (~5MB) se carga en cada visita. Reemplazarlo con un gradiente CSS puro o un SVG pattern ligero.
-- **Reemplazar imagenes de Unsplash del social proof** con avatares SVG inline o gradientes (elimina 4 requests HTTP externos).
-- **Mover el CSS de animaciones** (scroll, fade-in, float) del `<style>` inline al archivo `index.css` para evitar repintados.
-- **Agregar `loading="lazy"`** a la imagen principal del hero (doctora) que ya tiene lazy pero falta `fetchpriority="low"`.
+### 2. Obtener `pending_earnings` del doctor
+- En el componente `MainLayout`, agregar un query ligero a `doctor_profiles` para obtener `pending_earnings` cuando el rol es `doctor`
+- Usar `useState` + `useEffect` con el `user.id` como dependencia
+- Formatear el monto como moneda MXN (`$X,XXX`)
 
-### 2. Optimizar carga de contextos
-- **LivesContext**: El polling cada 8 segundos (`setInterval` linea 455) es agresivo. Aumentarlo a 30 segundos ya que el realtime lo cubre.
-- **fetchUserProfile**: Ya hace queries en paralelo, esta bien optimizado. Sin cambios.
-- **WalletContext y VaultContext**: Solo se montan para usuarios autenticados (via `AuthenticatedProviders`), correcto.
+### 3. Traducciones (`src/lib/i18n/es.ts` y `en.ts`)
+- Agregar clave `nav.earnings` con valor "Saldo" (es) / "Balance" (en) para doctores
 
-### 3. Optimizar Vite build
-- Agregar **manualChunks** en `vite.config.ts` para separar vendor (react, supabase, framer-motion, recharts) del codigo de la app, mejorando cache del navegador.
-
-### 4. Precargar fuentes correctamente
-- Cambiar el `<link rel="stylesheet">` de Google Fonts a `<link rel="preload" as="style">` para no bloquear el render.
-
-### 5. Verificar navegacion del dominio personalizado
-- El dominio `cirugiaesteticauribe.com` apunta a la app publicada. La ruta `/` ya muestra la Landing y redirige usuarios autenticados. No se necesitan cambios aqui.
-- El logout ya redirige a `/lives`. Confirmado y correcto.
-
-## Detalle tecnico de archivos a modificar
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/pages/Landing.tsx` | Eliminar tag `<video>`, reemplazar imagenes externas de social proof con iniciales SVG, mover estilos CSS inline |
-| `src/index.css` | Agregar keyframes scroll, fade-in, float |
-| `index.html` | Cambiar carga de Google Fonts a preload no-bloqueante |
-| `vite.config.ts` | Agregar manualChunks para vendor splitting |
-| `src/contexts/LivesContext.tsx` | Cambiar intervalo de polling de 8s a 30s |
-
-## Resultado esperado
-- Landing Page carga ~60% mas rapido (elimina video de 5MB + 4 imagenes externas)
-- Mejor cache del navegador con vendor splitting
-- Fuentes no bloquean el primer render
-- Navegacion desde dominio personalizado y logout funcionan correctamente (ya estaban bien)
-
+## Resultado
+- Doctores ven "Saldo $X,XXX" en el menu movil que refleja sus ganancias pendientes
+- Al hacer clic van directo a la pagina de Ganancias (`/doctor/earnings`)
+- Pacientes y residentes siguen viendo "Mi Wallet" con su saldo de consumo
