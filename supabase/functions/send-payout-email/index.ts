@@ -66,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "Dr Double Check <onboarding@resend.dev>",
+      from: "Medical Masters <no-reply@cirugiaesteticauribe.com>",
       to: [doctor_email],
       subject: `💰 Pago procesado - ${formattedAmount} | Medical Masters`,
       attachments: attachments.length > 0 ? attachments : undefined,
