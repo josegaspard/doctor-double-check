@@ -841,7 +841,7 @@ export default function Onboarding() {
         <div className="w-full max-w-lg">
           {/* Progress Indicator */}
           <motion.div 
-            className="mb-8"
+            className="mb-4 sm:mb-8"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
