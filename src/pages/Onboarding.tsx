@@ -978,6 +978,24 @@ export default function Onboarding() {
                         </motion.div>
                       )}
 
+                      {/* Username Field */}
+                      <motion.div className="space-y-2" variants={itemVariants}>
+                        <Label htmlFor="username" className="text-sm font-medium">
+                          Nombre de usuario
+                        </Label>
+                        <Input
+                          id="username"
+                          placeholder="ej: dr.martinez"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
+                          maxLength={30}
+                          className="lowercase"
+                        />
+                        <p className="text-[11px] text-muted-foreground">
+                          Este será tu identificador único en la plataforma. Solo letras, números, puntos, guiones.
+                        </p>
+                      </motion.div>
+
                       <motion.div className="space-y-3" variants={itemVariants}>
                         <Label className="text-base font-medium">{t('onboarding.selectRole')}</Label>
                         <RadioGroup 

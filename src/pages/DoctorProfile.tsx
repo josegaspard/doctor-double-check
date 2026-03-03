@@ -340,6 +340,33 @@ export default function DoctorProfile() {
           {t('doctorProfile.back')}
         </Button>
 
+        {/* Pending Verification Banner */}
+        {showPendingBanner && (
+          <Card className="mb-4 border-warning/50 bg-warning/5">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-warning" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Verificación pendiente</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Tu perfil está siendo revisado por nuestro equipo. Mientras tanto, puedes completar tu información.
+                    Te notificaremos por email cuando tu cuenta sea aprobada.
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant="outline" className="text-xs gap-1">
+                      <Shield className="w-3 h-3" />
+                      En revisión
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground">Tiempo estimado: 24-48 horas</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Live Indicator Banner */}
         {activeLive && (
           <Card 
