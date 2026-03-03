@@ -517,9 +517,9 @@ export default function Onboarding() {
         // Create wallet for resident
         const { error: walletError } = await supabase
           .from('wallets')
-          .insert({ user_id: supabaseUser.id, balance: 0 });
+          .upsert({ user_id: supabaseUser.id, balance: 0 }, { onConflict: 'user_id' });
         
-        if (walletError && !walletError.message.includes('duplicate')) {
+        if (walletError) {
           console.error('Wallet creation error:', walletError);
         }
 
