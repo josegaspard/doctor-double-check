@@ -1,26 +1,32 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Fix: New Users Skip Onboarding After Email Confirmation
 
-## Solucion
+## Root Cause
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
-
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
-
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
+In `src/hooks/auth/fetchUserProfile.ts` line 26:
+```typescript
+onboardingCompleted: profile.onboarding_completed ?? true,
 ```
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+The nullish coalescing operator `?? true` means: if `onboarding_completed` is `null` or `undefined`, default to `true`. For newly registered users, this column is `null` in the database (no default value of `false` set), so the system treats them as having completed onboarding and redirects them directly to the dashboard.
 
-## Archivos a modificar
+## Fix
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+**File: `src/hooks/auth/fetchUserProfile.ts`** -- Change line 26:
+```typescript
+onboardingCompleted: profile.onboarding_completed ?? false,
+```
+
+Default to `false` when null. This ensures all new users go through onboarding after email confirmation, regardless of role (patient, doctor, resident).
+
+**Database migration** -- Set the default value for `onboarding_completed` to `false` so new rows are never null:
+```sql
+ALTER TABLE public.profiles 
+  ALTER COLUMN onboarding_completed SET DEFAULT false;
+```
+
+## Files to modify
+- `src/hooks/auth/fetchUserProfile.ts` -- Change `?? true` to `?? false`
+- Database migration -- Set column default to `false`
+
