@@ -235,6 +235,7 @@ export default function Onboarding() {
   const [cedulaVerificationId, setCedulaVerificationId] = useState<string | null>(null);
   const [doctorLocation, setDoctorLocation] = useState('');
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [username, setUsername] = useState('');
   // Clinical History State
   const [clinicalHistory, setClinicalHistory] = useState<ClinicalHistoryData>({
     bloodType: '',
