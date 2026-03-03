@@ -219,7 +219,7 @@ export const en = {
     active: 'Active',
     history: 'History',
     typing: 'typing...',
-    doubleCheck: 'Double Check',
+    doubleCheck: 'Second Opinion',
     patient: 'Patient',
     doctor: 'Doctor',
     closeSessionTitle: 'Close this session?',
