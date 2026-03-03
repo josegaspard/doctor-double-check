@@ -1182,15 +1182,25 @@ export default function Onboarding() {
                             cedula={license.trim()}
                           />
 
-                          {/* Auto Verification Component */}
+                          {/* SEP Verification UX Text */}
                           {supabaseUser && cedulaStatus === 'valid_pending' && !cedulaVerified && (
-                            <CedulaAutoVerify
-                              cedula={license.trim()}
-                              userId={supabaseUser.id}
-                              onVerified={handleCedulaVerified}
-                              onClaimed={handleCedulaClaimed}
-                              language={language}
-                            />
+                            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+                              <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                                <Shield className="w-4 h-4 text-primary" />
+                                ¿Quieres acelerar tu proceso?
+                              </p>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                Si no quieres esperar la verificación manual, puedes utilizar nuestro verificador automático de cédula profesional
+                                a través de la SEP. Este proceso es opcional, pero te permite avanzar más rápido con tu cuenta.
+                              </p>
+                              <CedulaAutoVerify
+                                cedula={license.trim()}
+                                userId={supabaseUser.id}
+                                onVerified={handleCedulaVerified}
+                                onClaimed={handleCedulaClaimed}
+                                language={language}
+                              />
+                            </div>
                           )}
                         </motion.div>
                       )}
