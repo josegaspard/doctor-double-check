@@ -1,144 +1,53 @@
 
-# Plan: Refund Flow + Analytics PDF + Invoice Accounting + Admin UX Overhaul
+# Plan: Fix Incoming Call Persistence, Session Stability, Live Thumbnail
 
-## 1. User Refund Request Flow (New Feature)
+## Issue 1: Incoming Call Modal Persists After Answering
 
-Currently refunds are admin-initiated only. Users have no way to request one.
+**Root cause**: When the patient clicks "Accept", `handleAccept` calls `onClose()` (which is `dismissCall`) and navigates to `/video-call`. However, the `notifChannel` keeps listening for `postgres_changes` on the `notifications` table. If there are multiple notification inserts for the same call (broadcast + DB notification arriving at different times), the modal can re-appear because the dismissed ID is only tracked in a `useRef` that gets lost when the component unmounts/remounts during navigation.
 
-**New DB table** `refund_requests`:
-- `id`, `user_id`, `transaction_id`, `amount`, `reason` (text), `status` (pending/approved/rejected/processed), `admin_notes`, `created_at`, `reviewed_at`, `reviewed_by`
-- RLS: users can INSERT their own, SELECT their own; admins can SELECT/UPDATE all
+Additionally, `dismissCall` only marks notifications of type `video_call` as read, but doesn't filter by the specific `consultationId`, so if the timing is off the notification INSERT event fires before the dismiss completes.
 
-**Changes in `TransactionHistory.tsx`**:
-- Add a "Solicitar reembolso" button on each purchase/topup transaction (in the detail dialog)
-- Opens a small form: reason text + confirm
-- Inserts into `refund_requests`
-- Shows badge "Reembolso solicitado" on transactions that have a pending request
+**Fix in `useIncomingCall.ts`**:
+- When the user navigates to `/video-call`, auto-dismiss any incoming call for that consultation by checking the current URL path
+- Add the consultationId to the dismissed set BEFORE navigating (already done, but also persist dismissed IDs to `sessionStorage` so they survive navigation/remount)
+- On the notification channel listener, also check if the user is already on the `/video-call` page -- if so, suppress the modal entirely
+- Delete the `video_call` notification row (not just mark as read) to prevent the realtime INSERT from retriggering on other channels
 
-**Changes in `AdminRefunds.tsx`**:
-- Add a new tab "Solicitudes" showing pending refund requests from users
-- Each request shows: user info, original transaction, reason, amount
-- Admin can approve (which triggers the existing `admin-refund` edge function) or reject with notes
-- User gets notification on approval/rejection
+**Fix in `IncomingCallModal.tsx`**:
+- No changes needed, the issue is in the hook
 
----
+## Issue 2: Random Session Logout on Mobile
 
-## 2. Analytics with Real Data + PDF Export (`AdminAnalytics.tsx`)
+**Root cause**: In `useAuthState.ts`, line 109: when `fetchUserProfile` returns `null` (which can happen due to transient RLS/network errors), the code calls `supabase.auth.signOut()` and clears the session. On mobile browsers, network is less reliable, so `fetchUserProfile` fails more often.
 
-**Problem**: The period selector (Week/Month/Year) doesn't actually filter data. Charts show only last 6 months hardcoded.
+The problematic flow:
+1. `onAuthStateChange` fires (e.g. `TOKEN_REFRESHED` is skipped, but `INITIAL_SESSION` is not)
+2. `fetchUserProfile` throws or returns null due to a momentary network glitch
+3. Code treats this as "profile missing" and signs out
 
-**Fixes**:
-- Make period selector actually filter the date range for all queries
-- Add more granular breakdown: consultations revenue, content purchases, subscription revenue as separate chart series
-- Add a table view below charts with month-by-month rows showing all metrics
+**Fix in `useAuthState.ts`**:
+- When `fetchUserProfile` returns `null`, don't immediately sign out. Instead, retry once after a short delay (2 seconds)
+- If retry also fails, check if there's a cached user in localStorage -- if so, keep the session alive and just log a warning
+- Only force sign-out if the profile is genuinely missing (multiple retries fail AND no cached user exists)
+- Add a `retryCount` guard to prevent infinite loops
 
-**PDF Export**:
-- Add "Descargar PDF" button
-- Use browser `window.print()` with a print-optimized hidden div containing all analytics data in table format
-- Include: date range, all KPIs, revenue by month table, users by role, top doctors, revenue breakdown by type
-- Apply `@media print` styles for clean output
+## Issue 3: Live Card Thumbnail Not Showing
 
----
+**Root cause**: The storage upload policy for the `thumbnails` bucket requires the first folder in the path to be the user's UUID: `(auth.uid())::text = (storage.foldername(name))[1]`. But the code uploads to `live-thumbnails/${user.id}/timestamp.jpg`, where folder[1] = `live-thumbnails` (not the UUID). This causes the upload to silently fail (the error is caught but thumbnailUrl stays null).
 
-## 3. Invoice Review for Accounting (`AdminInvoiceReview.tsx`)
+**Verified**: All lives in the DB have `thumbnail_url = null` despite users uploading images.
 
-**New features for accountants**:
-- Period filter: date range picker (from/to) for filtering invoices by `period_start`/`period_end`
-- Quick filters: "Este mes", "Mes anterior", "Esta semana", "Trimestre"
-- Summary card showing: total invoiced amount, approved count, pending count for selected period
-- **Excel export**: Generate CSV/Excel with columns: Invoice #, Doctor, RFC, Period, Amount, Status, Date, File URL
-- **PDF export**: Print-optimized summary report with header, period, totals, and line items
-- Group by doctor option for accountant view
+**Fix in `DoctorGoLive.tsx`**:
+- Change the upload path from `live-thumbnails/${user.id}/...` to `${user.id}/live-${Date.now()}.${ext}` so the first folder matches the RLS policy
+
+This is a one-line fix that will make all future thumbnail uploads work.
 
 ---
 
-## 4. Payout Settings UX (`AdminPayoutSettings.tsx`)
+## Files to modify (3)
 
-**Improvements**:
-- Add info banner: "Los pagos automaticos solo aplican para doctores con cuenta Stripe Connect verificada. Los doctores sin Stripe deben pagarse manualmente."
-- Better card layout with visual grouping
-- Add preview of what the current settings mean (e.g., "Proximo pago automatico: Lunes 10 de Marzo")
-- Mobile-optimized form fields
+1. **`src/hooks/useIncomingCall.ts`** -- Persist dismissed IDs in sessionStorage; suppress modal when already on video-call page; delete notification row on dismiss
+2. **`src/hooks/auth/useAuthState.ts`** -- Add retry logic for fetchUserProfile before signing out; use cached user as fallback
+3. **`src/pages/DoctorGoLive.tsx`** -- Fix thumbnail upload path to match storage RLS policy
 
----
-
-## 5. Admin Dashboard Modules UX (`AdminDashboard.tsx`)
-
-**Improvements**:
-- Better visual hierarchy: group modules into categories (Financiero, Usuarios, Contenido, Configuracion)
-- Add colored left border to each card matching its icon color
-- Add pending counts as badges on relevant modules (pending invoices, pending refund requests, pending verifications)
-- Responsive: 1 column on mobile, 2 on tablet, 3 on desktop for modules
-
----
-
-## 6. Admin Payouts Mobile UX (`AdminPayouts.tsx`)
-
-**Mobile optimization**:
-- Doctor cards: stack layout on mobile (avatar+name on top, badges below, amounts + buttons on separate row)
-- Summary cards: 2x2 grid on mobile instead of 4-column
-- Breakdown detail: full-width on mobile with scrollable transaction list
-- Action buttons (Search, Select all, Pay, Delete) in a sticky bottom bar on mobile
-
----
-
-## 7. Content Gallery Fix (`ContentGallery.tsx`)
-
-**Problem**: ContentGallery queries `doctor_content` table which is for uploaded educational content. It already filters by `is_public = true` and does NOT include recordings (those are in the `recordings` table). The issue is likely that the data hasn't been properly cleaned.
-
-**No code change needed** -- ContentGallery already only shows `doctor_content` items. If deleted content still appears, the user needs to delete from `doctor_content` table (which was addressed in the previous plan with DoctorUpload deletion tools).
-
----
-
-## Files Summary
-
-**New migration** (1):
-- Create `refund_requests` table with RLS policies
-
-**Files to modify** (6):
-1. `src/components/wallet/TransactionHistory.tsx` -- Add "Request refund" button in detail dialog
-2. `src/pages/AdminRefunds.tsx` -- Add "Solicitudes" tab for user refund requests
-3. `src/pages/AdminAnalytics.tsx` -- Real data filtering by period + PDF export
-4. `src/pages/AdminInvoiceReview.tsx` -- Accounting features: period filter, Excel/PDF export
-5. `src/pages/AdminPayoutSettings.tsx` -- UX improvements + Stripe-only auto-payout banner
-6. `src/pages/AdminDashboard.tsx` -- Module categories, badges, better grid
-7. `src/pages/AdminPayouts.tsx` -- Mobile-optimized layout
-
----
-
-## Technical Details
-
-### refund_requests table
-```sql
-CREATE TABLE public.refund_requests (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  transaction_id UUID NOT NULL,
-  amount NUMERIC NOT NULL,
-  reason TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','processed')),
-  admin_notes TEXT,
-  reviewed_by UUID,
-  reviewed_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE public.refund_requests ENABLE ROW LEVEL SECURITY;
--- Users can create and view their own requests
-CREATE POLICY "Users can insert own requests" ON public.refund_requests FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can view own requests" ON public.refund_requests FOR SELECT TO authenticated USING (auth.uid() = user_id OR public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Admins can update requests" ON public.refund_requests FOR UPDATE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-```
-
-### Excel Export (Invoice Review)
-Uses a simple CSV generation function that creates a downloadable file with proper encoding for Spanish characters. Columns include all invoice fields plus the download URL for each PDF.
-
-### PDF Export (Analytics)
-Creates a hidden printable div with `@media print` CSS. Contains all tables and KPIs formatted for A4 paper. Triggered via `window.print()` with the print div set as the only visible content.
-
-### Admin Dashboard Module Categories
-```text
-FINANCIERO: Analytics, Pagos a Doctores, Facturas, Config. Pagos, Reembolsos
-USUARIOS: Usuarios, Doctores, Residentes, Verificaciones, Credenciales
-CONTENIDO: Noticias, Config. Sitio
-SOPORTE: Reportes
-```
+**No database migrations needed.**
