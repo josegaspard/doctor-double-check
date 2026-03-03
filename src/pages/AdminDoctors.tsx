@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2, Star, Shield, MapPin, GraduationCap, Building, Calendar, FileText, ShieldCheck } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2, Star, Shield, MapPin, GraduationCap, Building, Calendar, FileText, ShieldCheck, ExternalLink, AlertTriangle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
