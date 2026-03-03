@@ -34,7 +34,7 @@ export function DoctorDashboardHeader({ userName, isApproved, isPending, isRejec
         {isApproved && (
           <Button
             onClick={() => navigate('/doctor/go-live')}
-            className="gap-1.5 bg-red-600 hover:bg-red-700 h-8 sm:h-10 px-3 sm:px-5 text-xs sm:text-sm flex-shrink-0"
+            className="gap-1.5 bg-live hover:bg-live/90 h-8 sm:h-10 px-3 sm:px-5 text-xs sm:text-sm flex-shrink-0"
           >
             <Radio className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">{t('dashboard.startLive')}</span>
