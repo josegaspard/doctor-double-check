@@ -352,7 +352,57 @@ export default function AdminDoctors() {
                           <span className="text-xs text-muted-foreground">
                             {t('admin.license')}: {doctor.license || t('admin.notSpecified')}
                           </span>
+                          {doctor.location && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <MapPin className="w-3 h-3" /> {doctor.location}
+                            </span>
+                          )}
                         </div>
+
+                        {/* SEP Verification Details */}
+                        {doctor.cedula_verification && doctor.cedula_verification.is_verified && (
+                          <div className="mt-2 p-2 rounded-md bg-success/10 border border-success/20">
+                            <div className="flex items-center gap-1 mb-1">
+                              <ShieldCheck className="w-3.5 h-3.5 text-success" />
+                              <span className="text-xs font-semibold text-success">Verificado por SEP</span>
+                              {doctor.cedula_verification.verified_at && (
+                                <span className="text-[10px] text-muted-foreground ml-auto">
+                                  {new Date(doctor.cedula_verification.verified_at).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <User className="w-3 h-3" />
+                                {doctor.cedula_verification.nombre} {doctor.cedula_verification.paterno} {doctor.cedula_verification.materno}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <GraduationCap className="w-3 h-3" />
+                                {doctor.cedula_verification.titulo}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Building className="w-3 h-3" />
+                                {doctor.cedula_verification.institucion}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                Año: {doctor.cedula_verification.anio_registro}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Document Signatures Status */}
+                        <div className="flex items-center gap-1 mt-1">
+                          <FileText className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            Firmas: {doctor.document_signatures_count || 0} documento(s)
+                          </span>
+                          {(doctor.document_signatures_count || 0) >= 2 && (
+                            <Badge variant="success" className="text-[10px] ml-1 px-1.5 py-0">✓</Badge>
+                          )}
+                        </div>
+
                         {doctor.cedula_profesional && (
                           <p className="text-xs text-muted-foreground">
                             {t('admin.cedula')}: {doctor.cedula_profesional}
