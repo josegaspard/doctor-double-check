@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
             currency: "mxn",
             product_data: {
               name: "Recarga de Wallet",
-              description: `Recarga de $${amount} MXN a tu wallet de Dr Double Check`,
+              description: `Recarga de $${amount} MXN a tu wallet de Medical Masters`,
             },
              unit_amount: Math.round(amount * 100), // Stripe uses cents
           },

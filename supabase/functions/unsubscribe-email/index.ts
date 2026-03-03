@@ -186,7 +186,7 @@ function generateConfirmationPage(token: string, doctorName: string, type: strin
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Desuscribirse - Dr Double Check</title>
+  <title>Desuscribirse - Medical Masters</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -214,7 +214,7 @@ function generateConfirmationPage(token: string, doctorName: string, type: strin
   <div class="card">
     <div class="header">
       <h1>📧 Gestionar Notificaciones</h1>
-      <p>Dr Double Check</p>
+      <p>Medical Masters</p>
     </div>
     <div class="content">
       <h2>¿Deseas desuscribirte?</h2>
@@ -235,7 +235,7 @@ function generateConfirmationPage(token: string, doctorName: string, type: strin
       </div>
     </div>
     <div class="footer">
-      © 2026 Dr Double Check. Todos los derechos reservados.
+      © 2026 Medical Masters. Todos los derechos reservados.
     </div>
   </div>
 </body>
@@ -260,7 +260,7 @@ function generateSuccessPage(token: string, doctorName: string, type: string): s
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Desuscripción Exitosa - Dr Double Check</title>
+  <title>Desuscripción Exitosa - Medical Masters</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -301,7 +301,7 @@ function generateSuccessPage(token: string, doctorName: string, type: string): s
       </div>
     </div>
     <div class="footer">
-      © 2026 Dr Double Check. Todos los derechos reservados.
+      © 2026 Medical Masters. Todos los derechos reservados.
     </div>
   </div>
 </body>
@@ -325,7 +325,7 @@ function generateResubscribeSuccessPage(doctorName: string, type: string): strin
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Re-suscripción Exitosa - Dr Double Check</title>
+  <title>Re-suscripción Exitosa - Medical Masters</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -354,7 +354,7 @@ function generateResubscribeSuccessPage(doctorName: string, type: string): strin
       <a href="https://cirugiaesteticauribe.com" class="btn">Ir a la App</a>
     </div>
     <div class="footer">
-      © 2026 Dr Double Check. Todos los derechos reservados.
+      © 2026 Medical Masters. Todos los derechos reservados.
     </div>
   </div>
 </body>
@@ -369,7 +369,7 @@ function generateErrorPage(message: string): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Error - Dr Double Check</title>
+  <title>Error - Medical Masters</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -394,7 +394,7 @@ function generateErrorPage(message: string): string {
       <a href="https://cirugiaesteticauribe.com" class="btn">Ir al Inicio</a>
     </div>
     <div class="footer">
-      © 2026 Dr Double Check. Todos los derechos reservados.
+      © 2026 Medical Masters. Todos los derechos reservados.
     </div>
   </div>
 </body>

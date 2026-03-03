@@ -118,6 +118,31 @@ export default function AdminDoctors() {
 
       if (error) throw error;
 
+      // Send approval email and in-app notification
+      if (newStatus === 'approved' && actionDialog.doctor.profile?.email) {
+        // Send approval email
+        try {
+          await supabase.functions.invoke('send-approval-email', {
+            body: {
+              email: actionDialog.doctor.profile.email,
+              name: actionDialog.doctor.profile.name || 'Doctor',
+              role: 'doctor',
+            },
+          });
+        } catch (emailErr) {
+          console.error('Approval email error:', emailErr);
+        }
+
+        // Insert in-app notification
+        await supabase.from('notifications').insert({
+          user_id: actionDialog.doctor.user_id,
+          type: 'system' as any,
+          title: '¡Tu cuenta ha sido aprobada!',
+          message: 'Tu perfil de médico ha sido verificado y aprobado. Ya puedes acceder a todas las funciones de la plataforma.',
+          data: { action_url: '/doctor' },
+        });
+      }
+
       toast({
         title: actionDialog.action === 'approve' ? t('admin.doctorApproved') : t('admin.doctorRejected'),
         description: `${actionDialog.doctor.profile?.name} ${newStatus === 'approved' ? t('admin.hasBeenApproved') : t('admin.hasBeenRejected')}`,

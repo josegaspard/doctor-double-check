@@ -108,6 +108,29 @@ export default function AdminResidents() {
 
       if (error) throw error;
 
+      // Send approval email and in-app notification
+      if (newStatus === 'approved' && actionDialog.resident.profile?.email) {
+        try {
+          await supabase.functions.invoke('send-approval-email', {
+            body: {
+              email: actionDialog.resident.profile.email,
+              name: actionDialog.resident.profile.name || 'Residente',
+              role: 'resident',
+            },
+          });
+        } catch (emailErr) {
+          console.error('Approval email error:', emailErr);
+        }
+
+        await supabase.from('notifications').insert({
+          user_id: actionDialog.resident.user_id,
+          type: 'system' as any,
+          title: '¡Tu cuenta ha sido aprobada!',
+          message: 'Tu perfil de residente ha sido verificado y aprobado. Ya puedes acceder a todas las funciones con descuento del 50%.',
+          data: { action_url: '/lives' },
+        });
+      }
+
       toast({
         title: actionDialog.action === 'approve' ? t('admin.residentApproved') : t('admin.residentRejected'),
         description: `${actionDialog.resident.profile?.name} ${newStatus === 'approved' ? t('admin.hasBeenApproved') : t('admin.hasBeenRejected')}`,

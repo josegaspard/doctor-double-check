@@ -24,7 +24,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const roleMessages = {
       patient: {
-        subject: "¡Bienvenido a Dr Double Check!",
+        subject: "¡Bienvenido a Medical Masters!",
         greeting: "Estamos felices de tenerte con nosotros",
         content: `
           <p>Ahora puedes:</p>
@@ -34,10 +34,17 @@ const handler = async (req: Request): Promise<Response> => {
             <li>Subir tu historial médico de forma segura</li>
             <li>Consultar con médicos verificados</li>
           </ul>
+          <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <p style="color: #92400e; font-weight: 600; margin: 0 0 8px;">💰 Configura tu método de pago</p>
+            <p style="color: #92400e; margin: 0; font-size: 14px;">
+              Para acceder a contenido premium, suscripciones y consultas médicas, necesitarás recargar saldo en tu wallet. 
+              Ve a <strong>Wallet</strong> en la plataforma para agregar fondos de forma segura con tarjeta de crédito o débito.
+            </p>
+          </div>
         `,
       },
       doctor: {
-        subject: "Solicitud de registro recibida - Dr Double Check",
+        subject: "Solicitud de registro recibida - Medical Masters",
         greeting: "Tu solicitud está siendo revisada",
         content: `
           <p>Hemos recibido tu solicitud de registro como médico.</p>
@@ -46,7 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
         `,
       },
       resident: {
-        subject: "Solicitud de registro recibida - Dr Double Check",
+        subject: "Solicitud de registro recibida - Medical Masters",
         greeting: "Tu solicitud está siendo revisada",
         content: `
           <p>Hemos recibido tu solicitud de registro como residente médico.</p>

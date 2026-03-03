@@ -39,7 +39,7 @@ const SENDER_DOMAIN = "notify.cirugiaesteticauribe.com"
 const ROOT_DOMAIN = "cirugiaesteticauribe.com"
 const FROM_DOMAIN = "cirugiaesteticauribe.com"
 
-const SAMPLE_PROJECT_URL = "https://doc-seek-relay.lovable.app"
+const SAMPLE_PROJECT_URL = "https://cirugiaesteticauribe.com"
 const SAMPLE_EMAIL = "user@example.test"
 const SAMPLE_DATA: Record<string, object> = {
   signup: {
