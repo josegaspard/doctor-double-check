@@ -185,21 +185,19 @@ export default function AdminInvoiceReview() {
     toast.success('Excel exportado');
   };
 
-  // PDF export for accountants
+  // PDF export for accountants (hidden iframe to avoid popup blockers)
   const handleExportPDF = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+    if (filtered.length === 0) return;
     const periodLabel = quickPeriod === 'this_month' ? 'Este mes' : quickPeriod === 'last_month' ? 'Mes anterior' : quickPeriod === 'this_week' ? 'Esta semana' : quickPeriod === 'quarter' ? 'Trimestre' : 'Todas';
-    const formatCurrency = (n: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
+    const fmtCur = (n: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
     const total = filtered.reduce((s, i) => s + i.amount, 0);
     const approved = filtered.filter(i => i.status === 'approved');
     const pending = filtered.filter(i => i.status === 'pending');
 
-    // Group by doctor
     const byDoctor: Record<string, Invoice[]> = {};
     filtered.forEach(i => { const name = i.doctor_name || 'Sin nombre'; if (!byDoctor[name]) byDoctor[name] = []; byDoctor[name].push(i); });
 
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Reporte Facturas - Contabilidad</title>
+    const html = `<!DOCTYPE html><html><head><title>Reporte Facturas - Contabilidad</title>
     <style>body{font-family:system-ui,sans-serif;padding:30px;color:#333;max-width:1000px;margin:0 auto;font-size:12px}
     h1{font-size:20px;margin-bottom:4px}h2{font-size:16px;margin-top:24px;border-bottom:2px solid #0d9488;padding-bottom:4px}h3{font-size:14px;margin-top:16px}
     .meta{color:#666;font-size:11px;margin-bottom:20px}
@@ -217,9 +215,9 @@ export default function AdminInvoiceReview() {
     
     <div class="summary">
       <div class="summary-item"><div class="val">${filtered.length}</div><div class="lbl">Total facturas</div></div>
-      <div class="summary-item"><div class="val">${formatCurrency(total)}</div><div class="lbl">Monto total</div></div>
-      <div class="summary-item"><div class="val">${approved.length}</div><div class="lbl">Aprobadas (${formatCurrency(approved.reduce((s,i)=>s+i.amount,0))})</div></div>
-      <div class="summary-item"><div class="val">${pending.length}</div><div class="lbl">Pendientes (${formatCurrency(pending.reduce((s,i)=>s+i.amount,0))})</div></div>
+      <div class="summary-item"><div class="val">${fmtCur(total)}</div><div class="lbl">Monto total</div></div>
+      <div class="summary-item"><div class="val">${approved.length}</div><div class="lbl">Aprobadas (${fmtCur(approved.reduce((s,i)=>s+i.amount,0))})</div></div>
+      <div class="summary-item"><div class="val">${pending.length}</div><div class="lbl">Pendientes (${fmtCur(pending.reduce((s,i)=>s+i.amount,0))})</div></div>
     </div>
 
     <h2>Listado completo</h2>
@@ -227,26 +225,44 @@ export default function AdminInvoiceReview() {
     ${filtered.map(i => `<tr>
       <td>${i.invoice_number}</td><td>${i.doctor_name}</td><td>${(i as any).doctor_rfc || '-'}</td>
       <td>${format(new Date(i.period_start), 'dd/MM/yy')} - ${format(new Date(i.period_end), 'dd/MM/yy')}</td>
-      <td class="text-right">${formatCurrency(i.amount)}</td>
+      <td class="text-right">${fmtCur(i.amount)}</td>
       <td class="${i.status === 'approved' ? 'text-success' : i.status === 'pending' ? 'text-warning' : ''}">${i.status === 'approved' ? 'Aprobada' : i.status === 'pending' ? 'Pendiente' : 'Rechazada'}</td>
       <td>${format(new Date(i.created_at), 'dd/MM/yyyy')}</td>
     </tr>`).join('')}
-    <tr class="group-total"><td colspan="4">TOTAL</td><td class="text-right text-success">${formatCurrency(total)}</td><td colspan="2"></td></tr>
+    <tr class="group-total"><td colspan="4">TOTAL</td><td class="text-right text-success">${fmtCur(total)}</td><td colspan="2"></td></tr>
     </tbody></table>
 
     <h2>Agrupado por Doctor</h2>
     ${Object.entries(byDoctor).map(([name, invs]) => `
       <h3>${name} (${invs.length} facturas)</h3>
       <table><thead><tr><th>No. Factura</th><th>Periodo</th><th class="text-right">Monto</th><th>Status</th></tr></thead><tbody>
-      ${invs.map(i => `<tr><td>${i.invoice_number}</td><td>${format(new Date(i.period_start), 'dd/MM/yy')} - ${format(new Date(i.period_end), 'dd/MM/yy')}</td><td class="text-right">${formatCurrency(i.amount)}</td><td>${i.status === 'approved' ? 'Aprobada' : i.status === 'pending' ? 'Pendiente' : 'Rechazada'}</td></tr>`).join('')}
-      <tr class="group-total"><td colspan="2">Subtotal</td><td class="text-right text-success">${formatCurrency(invs.reduce((s,i)=>s+i.amount,0))}</td><td></td></tr>
+      ${invs.map(i => `<tr><td>${i.invoice_number}</td><td>${format(new Date(i.period_start), 'dd/MM/yy')} - ${format(new Date(i.period_end), 'dd/MM/yy')}</td><td class="text-right">${fmtCur(i.amount)}</td><td>${i.status === 'approved' ? 'Aprobada' : i.status === 'pending' ? 'Pendiente' : 'Rechazada'}</td></tr>`).join('')}
+      <tr class="group-total"><td colspan="2">Subtotal</td><td class="text-right text-success">${fmtCur(invs.reduce((s,i)=>s+i.amount,0))}</td><td></td></tr>
       </tbody></table>
     `).join('')}
 
     <div class="footer">Medical Masters · Reporte contable generado automáticamente · ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}</div>
-    </body></html>`);
-    printWindow.document.close();
-    setTimeout(() => printWindow.print(), 500);
+    </body></html>`;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc) { document.body.removeChild(iframe); return; }
+    iframeDoc.open();
+    iframeDoc.write(html);
+    iframeDoc.close();
+
+    setTimeout(() => {
+      try { iframe.contentWindow?.print(); } catch (e) { console.error('Print failed', e); }
+      setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 1000);
+    }, 500);
   };
 
   const getStatusBadge = (status: string) => {
@@ -359,10 +375,10 @@ export default function AdminInvoiceReview() {
                           <Trash2 className="w-4 h-4" />Eliminar ({selectedFilteredCount})
                         </Button>
                       )}
-                      <Button size="sm" variant="outline" onClick={handleExportCSV} className="gap-2">
+                      <Button size="sm" variant="outline" onClick={handleExportCSV} disabled={filtered.length === 0} className="gap-2">
                         <FileSpreadsheet className="w-4 h-4" />Excel
                       </Button>
-                      <Button size="sm" variant="outline" onClick={handleExportPDF} className="gap-2">
+                      <Button size="sm" variant="outline" onClick={handleExportPDF} disabled={filtered.length === 0} className="gap-2">
                         <Download className="w-4 h-4" />PDF Contable
                       </Button>
                     </div>
