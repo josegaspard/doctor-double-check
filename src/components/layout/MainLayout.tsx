@@ -576,7 +576,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               </div>
             )}
 
-            {role === 'visitor' && (
+            {(!isAuthenticated || role === 'visitor') && (
               <>
                 <div className="mx-5 mb-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
                   <p className="text-sm text-muted-foreground mb-3">Inicia sesión para acceder a todas las funciones</p>
