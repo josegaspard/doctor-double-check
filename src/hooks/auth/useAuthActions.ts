@@ -10,7 +10,7 @@ export function useAuthActions(
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -20,7 +20,13 @@ export function useAuthActions(
         return { success: false, error: error.message };
       }
 
-      // onAuthStateChange will handle fetchUserProfile + setUser + setIsLoading
+      if (data.user) {
+        const profile = await fetchUserProfile(data.user.id);
+        setUser(profile);
+        setSupabaseUser(data.user);
+      }
+
+      setIsLoading(false);
       return { success: true };
     } catch (error: any) {
       setIsLoading(false);

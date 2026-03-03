@@ -291,20 +291,15 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     const loadData = async () => {
       if (!isMounted) return;
       setIsLoading(true);
-      try {
-        await Promise.all([fetchLives(true), fetchRecordings(), fetchLikedLives()]);
-      } catch (error) {
-        console.error('LivesProvider: error loading initial data:', error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+      await Promise.all([fetchLives(true), fetchRecordings(), fetchLikedLives()]);
+      if (isMounted) {
+        setIsLoading(false);
       }
     };
 
     loadData();
     
-    // Safety timeout: if isLoading is still true after 5s, force it off
+    // Safety timeout: if isLoading is still true after 10s, force it off
     const safetyTimeout = setTimeout(() => {
       if (isMounted) {
         setIsLoading(prev => {
@@ -315,7 +310,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           return prev;
         });
       }
-    }, 5000);
+    }, 10000);
     
     return () => {
       isMounted = false;

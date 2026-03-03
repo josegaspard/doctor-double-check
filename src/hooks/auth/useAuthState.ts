@@ -46,6 +46,8 @@ export function useAuthState() {
       try {
         const { data, error } = await supabase.auth.getUser();
         if (error || !data.user) {
+          // Only sign out if there's genuinely no valid session
+          // Check if we have a local session first to avoid false positives from network errors
           const { data: sessionData } = await supabase.auth.getSession();
           if (!sessionData.session) {
             try {
@@ -56,17 +58,20 @@ export function useAuthState() {
             forceSignedOutState();
             return false;
           }
+          // We have a local session but getUser failed - likely a transient network error
+          // Don't sign out, just return true to keep the session alive
           console.warn('[Auth] getUser failed but session exists, keeping session');
           return true;
         }
         return true;
       } catch (e) {
+        // Network error - don't sign out
         console.warn('[Auth] validateAuthSession network error, keeping session:', e);
         return true;
       }
     };
 
-    // Set up auth state listener
+    // Set up auth state listener FIRST
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -80,88 +85,81 @@ export function useAuthState() {
       }
 
       if (!session?.user) {
+        // Only sign out on explicit SIGNED_OUT events
         if (event === 'SIGNED_OUT') {
           forceSignedOutState();
         }
         return;
       }
 
-      // For INITIAL_SESSION with cached user, update supabaseUser and refresh profile in background
-      if (event === 'INITIAL_SESSION' && getCachedUser()) {
-        // We already have cached user data showing in the UI — refresh in background
-        fetchUserProfile(session.user.id).then(profile => {
-          if (profile) {
-            setUserAndCache(profile);
-          } else {
-            // Profile gone — sign out
-            supabase.auth.signOut().catch(() => {});
-            forceSignedOutState();
-          }
-        }).catch(e => {
-          console.warn('[Auth] Background profile refresh failed:', e);
-        });
-        setIsLoading(false);
-        return;
-      }
+      // Use setTimeout to avoid potential race conditions with triggers
+      setTimeout(async () => {
+        // If the user was deleted server-side, the session can become stale.
+        const stillValid = await validateAuthSession();
+        if (!stillValid) return;
 
-      // For SIGNED_IN and INITIAL_SESSION (no cache): fetch profile directly (no validateAuthSession needed)
-      let profile;
-      try {
-        profile = await fetchUserProfile(session.user.id);
-      } catch (e) {
-        console.warn('[Auth] fetchUserProfile network error, keeping session:', e);
-        setIsLoading(false);
-        return;
-      }
-
-      if (!profile) {
+        let profile;
         try {
-          await supabase.auth.signOut();
-        } catch {
-          // ignore
+          profile = await fetchUserProfile(session.user.id);
+        } catch (e) {
+          console.warn('[Auth] fetchUserProfile network error, keeping session:', e);
+          setIsLoading(false);
+          return;
         }
-        forceSignedOutState();
-        return;
-      }
+        if (!profile) {
+          // Profile missing (or access denied). Treat as signed out.
+          try {
+            await supabase.auth.signOut();
+          } catch {
+            // ignore
+          }
+          forceSignedOutState();
+          return;
+        }
 
-      setUserAndCache(profile);
-      setIsLoading(false);
+        setUserAndCache(profile);
+        setIsLoading(false);
 
-      // Redirect signed users away from login/root
-      const currentPath = window.location.pathname;
-      const shouldRedirect = currentPath === '/' || currentPath === '/login';
+        // Redirect signed users away from login/root regardless of provider metadata.
+        // Some linked accounts can report provider=email even when login happened with Google.
+        const currentPath = window.location.pathname;
+        const shouldRedirect = currentPath === '/' || currentPath === '/login';
 
-      if (shouldRedirect) {
-        if (event === 'SIGNED_IN') {
-          console.log('[Auth] SIGNED_IN redirect - Role:', profile?.role, 'OnboardingCompleted:', profile?.onboardingCompleted);
-          if (!profile?.onboardingCompleted) {
-            console.log('[Auth] Redirecting to onboarding');
-            window.location.replace('/onboarding');
-            return;
+        if (shouldRedirect) {
+          if (event === 'SIGNED_IN') {
+            // Fresh login: check onboarding status
+            console.log('[Auth] SIGNED_IN redirect - Role:', profile?.role, 'OnboardingCompleted:', profile?.onboardingCompleted);
+            if (!profile?.onboardingCompleted) {
+              console.log('[Auth] Redirecting to onboarding');
+              window.location.replace('/onboarding');
+              return;
+            }
+          }
+
+          // Both SIGNED_IN (with completed onboarding) and INITIAL_SESSION: redirect to dashboard
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+            console.log('[Auth] Redirecting based on role:', profile?.role);
+            if (profile?.role === 'doctor') {
+              window.location.replace('/doctor/dashboard');
+            } else if (profile?.role === 'admin') {
+              window.location.replace('/admin');
+            } else {
+              window.location.replace('/lives');
+            }
           }
         }
-
-        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-          console.log('[Auth] Redirecting based on role:', profile?.role);
-          if (profile?.role === 'doctor') {
-            window.location.replace('/doctor/dashboard');
-          } else if (profile?.role === 'admin') {
-            window.location.replace('/admin');
-          } else {
-            window.location.replace('/lives');
-          }
-        }
-      }
+      }, 0);
     });
 
-    // Check current session — only set loading false if no session
+    // THEN check current session — only set loading false if onAuthStateChange hasn't fired yet
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session?.user) {
         forceSignedOutState();
       }
+      // If session exists, onAuthStateChange will handle it — avoid duplicate fetchUserProfile calls
     });
 
-    // Validate on focus only (re-validation when returning to tab)
+    // Extra safety: validate on focus (no constant polling to save resources)
     const onFocus = () => {
       validateAuthSession();
     };
