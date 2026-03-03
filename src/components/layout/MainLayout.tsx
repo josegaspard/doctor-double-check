@@ -577,64 +577,13 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             )}
 
             {(!isAuthenticated || role === 'visitor') && (
-              <>
-                <div className="mx-5 mb-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
-                  <p className="text-sm text-muted-foreground mb-3">Inicia sesión para acceder a todas las funciones</p>
-                  <Button size="sm" onClick={() => { setMoreSheetOpen(false); navigate('/login'); }} className="w-full gap-2">
-                    <LogIn className="w-4 h-4" />
-                    {t('nav.login')}
-                  </Button>
-                </div>
-
-                {/* Visitor explore links */}
-                <div className="px-5 mb-4">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">Explorar</p>
-                  <div className="space-y-1">
-                    {[
-                      { label: 'Para Doctores', href: '/for-doctors', icon: Stethoscope },
-                      { label: 'Para Pacientes', href: '/for-patients', icon: User },
-                      { label: t('nav.successStories') || 'Casos de Éxito', href: '/success-stories', icon: Star },
-                      { label: t('nav.contact') || 'Contacto', href: '/contact', icon: Mail },
-                      { label: t('nav.help') || 'Ayuda', href: '/help', icon: HelpCircle },
-                    ].map((item) => (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        onClick={() => setMoreSheetOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
-                          location.pathname === item.href ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        <item.icon className="w-5 h-5" />
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Visitor legal links */}
-                <div className="px-5 mb-4">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">Legal</p>
-                  <div className="space-y-1">
-                    {[
-                      { label: t('nav.terms') || 'Términos', href: '/terms', icon: FileText },
-                      { label: t('nav.privacy') || 'Privacidad', href: '/privacy', icon: Shield },
-                    ].map((item) => (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        onClick={() => setMoreSheetOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
-                          location.pathname === item.href ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        <item.icon className="w-5 h-5" />
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </>
+              <div className="mx-5 mb-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                <p className="text-sm text-muted-foreground mb-3">Inicia sesión para acceder a todas las funciones</p>
+                <Button size="sm" onClick={() => { setMoreSheetOpen(false); navigate('/login'); }} className="w-full gap-2">
+                  <LogIn className="w-4 h-4" />
+                  {t('nav.login')}
+                </Button>
+              </div>
             )}
 
             {/* Navigation items */}
