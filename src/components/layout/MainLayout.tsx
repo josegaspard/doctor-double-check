@@ -152,10 +152,10 @@ function AnimatedBalance({ balance }: { balance: number }) {
   return (
     <motion.span
       key={balance}
-      initial={{ scale: 1.25, color: 'hsl(var(--success))' }}
+      initial={{ scale: 1.1, color: 'hsl(var(--success))' }}
       animate={{ scale: 1, color: 'hsl(var(--foreground))' }}
-      transition={{ duration: 0.5 }}
-      className="font-semibold"
+      transition={{ duration: 0.4 }}
+      className="font-semibold leading-none"
     >
       ${balance.toLocaleString()}
     </motion.span>
@@ -405,8 +405,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               
               {/* Wallet */}
               {(role === 'patient' || role === 'resident') && (
-                <Link to="/wallet" className="hidden sm:block">
-                  <Button variant="outline" size="sm" className="gap-2">
+                <Link to="/wallet" className="hidden sm:flex items-center">
+                  <Button variant="outline" size="sm" className="gap-2 h-9 items-center">
                     <Wallet className="w-4 h-4" />
                     <AnimatedBalance balance={balance} />
                   </Button>
