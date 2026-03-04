@@ -23,14 +23,11 @@ function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
     <WalletProvider>
       <VaultProvider>
         <ChatProvider>
-          <ActiveStreamProvider>
-            <PostConsultationRatingProvider>
-              <IncomingCallProvider>
-                {children}
-                <LiveStreamBubble />
-              </IncomingCallProvider>
-            </PostConsultationRatingProvider>
-          </ActiveStreamProvider>
+          <PostConsultationRatingProvider>
+            <IncomingCallProvider>
+              {children}
+            </IncomingCallProvider>
+          </PostConsultationRatingProvider>
         </ChatProvider>
       </VaultProvider>
     </WalletProvider>
