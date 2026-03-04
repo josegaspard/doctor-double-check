@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Send, MessageSquare, User, LogIn } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Send, MessageSquare, User, LogIn, Stethoscope, AlertCircle } from 'lucide-react';
 
 interface LiveChatMessage {
   id: string;
@@ -16,6 +17,7 @@ interface LiveChatMessage {
   content: string;
   createdAt: Date;
   elapsedSeconds: number;
+  isDoctor?: boolean;
 }
 
 interface LiveChatProps {
@@ -31,6 +33,45 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [chatEnabled, setChatEnabled] = useState(true);
+  const [maxQuestions, setMaxQuestions] = useState<number | null>(null);
+  const [questionsCount, setQuestionsCount] = useState(0);
+  const [doctorIds, setDoctorIds] = useState<Set<string>>(new Set());
+
+  // Fetch live interaction settings
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await supabase
+        .from('lives')
+        .select('chat_enabled, max_questions, questions_count')
+        .eq('id', liveId)
+        .single();
+      if (data) {
+        setChatEnabled(data.chat_enabled);
+        setMaxQuestions(data.max_questions);
+        setQuestionsCount(data.questions_count);
+      }
+    };
+    fetchSettings();
+
+    // Subscribe to live updates for real-time chat toggle
+    const channel = supabase
+      .channel(`live-chat-settings-${liveId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'lives',
+        filter: `id=eq.${liveId}`,
+      }, (payload) => {
+        const d = payload.new as any;
+        setChatEnabled(d.chat_enabled);
+        setMaxQuestions(d.max_questions);
+        setQuestionsCount(d.questions_count);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [liveId]);
 
   // Load existing persisted messages on mount
   useEffect(() => {
@@ -42,6 +83,16 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         .order('elapsed_seconds', { ascending: true });
 
       if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(m => m.user_id))];
+        // Check which users are doctors
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .in('user_id', userIds)
+          .eq('role', 'doctor');
+        const docIds = new Set((roles || []).map(r => r.user_id));
+        setDoctorIds(docIds);
+
         setMessages(data.map(m => ({
           id: m.id,
           userId: m.user_id,
@@ -49,6 +100,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
           content: m.content,
           createdAt: new Date(m.created_at),
           elapsedSeconds: m.elapsed_seconds,
+          isDoctor: docIds.has(m.user_id),
         })));
       }
     };
@@ -67,8 +119,22 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
           table: 'live_chat_messages',
           filter: `live_id=eq.${liveId}`,
         },
-        (payload) => {
+        async (payload) => {
           const m = payload.new as any;
+          // Check if sender is doctor
+          let isDoc = doctorIds.has(m.user_id);
+          if (!isDoc) {
+            const { data: roleData } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', m.user_id)
+              .eq('role', 'doctor')
+              .maybeSingle();
+            if (roleData) {
+              isDoc = true;
+              setDoctorIds(prev => new Set([...prev, m.user_id]));
+            }
+          }
           setMessages((prev) => {
             if (prev.some(p => p.id === m.id)) return prev;
             return [...prev, {
@@ -78,6 +144,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
               content: m.content,
               createdAt: new Date(m.created_at),
               elapsedSeconds: m.elapsed_seconds,
+              isDoctor: isDoc,
             }];
           });
         }
@@ -87,12 +154,18 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [liveId]);
+  }, [liveId, doctorIds]);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages]);
+
+  const handleToggleChat = async () => {
+    const newValue = !chatEnabled;
+    setChatEnabled(newValue);
+    await supabase.from('lives').update({ chat_enabled: newValue }).eq('id', liveId);
+  };
 
   const handleSend = async () => {
     if (!newMessage.trim() || !user || isSending) return;
@@ -112,6 +185,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         content: newMessage.trim(),
         createdAt: new Date(),
         elapsedSeconds: elapsed,
+        isDoctor: role === 'doctor',
       };
 
       setMessages((prev) => [...prev, message]);
@@ -125,6 +199,15 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         content: newMessage.trim(),
         elapsed_seconds: elapsed,
       });
+
+      // Increment questions count
+      if (!isOwner) {
+        await supabase
+          .from('lives')
+          .update({ questions_count: questionsCount + 1 })
+          .eq('id', liveId);
+        setQuestionsCount(prev => prev + 1);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -133,6 +216,8 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   };
 
   const isDisabled = role === 'visitor' || !user;
+  const questionLimitReached = !isOwner && maxQuestions != null && questionsCount >= maxQuestions;
+  const chatDisabledForViewers = !isOwner && !chatEnabled;
 
   return (
     <div className="flex flex-col h-full min-h-0 max-h-full bg-card rounded-lg border overflow-hidden">
@@ -142,9 +227,17 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
           <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
           <span className="font-medium text-xs sm:text-sm">{t('livePlayer.liveChat')}</span>
         </div>
-        <Badge variant="secondary" className="text-[10px] sm:text-xs">
-          {messages.length} {t('livePlayer.messages')}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {isOwner && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-muted-foreground">Chat</span>
+              <Switch checked={chatEnabled} onCheckedChange={handleToggleChat} className="scale-75" />
+            </div>
+          )}
+          <Badge variant="secondary" className="text-[10px] sm:text-xs">
+            {messages.length} {t('livePlayer.messages')}
+          </Badge>
+        </div>
       </div>
 
       {/* Messages */}
@@ -157,14 +250,27 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
           ) : (
             messages.map((msg) => (
               <div key={msg.id} className="flex gap-2">
-                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
+                <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  msg.isDoctor ? 'bg-primary/20' : 'bg-primary/10'
+                }`}>
+                  {msg.isDoctor ? (
+                    <Stethoscope className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
+                  ) : (
+                    <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-1 sm:gap-2 flex-wrap">
-                    <span className="font-medium text-[10px] sm:text-xs text-foreground truncate max-w-[100px] sm:max-w-[150px]">
-                      {msg.userName}
+                    <span className={`font-medium text-[10px] sm:text-xs truncate max-w-[100px] sm:max-w-[150px] ${
+                      msg.isDoctor ? 'text-primary' : 'text-foreground'
+                    }`}>
+                      {msg.isDoctor ? `Dr. ${msg.userName}` : msg.userName}
                     </span>
+                    {msg.isDoctor && (
+                      <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 border-primary/30 text-primary">
+                        Médico
+                      </Badge>
+                    )}
                     <span className="text-[9px] sm:text-[10px] text-muted-foreground">
                       {msg.createdAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                     </span>
@@ -193,6 +299,16 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
                 {t('livePlayer.loginButton')}
               </Button>
             </Link>
+          </div>
+        ) : chatDisabledForViewers ? (
+          <div className="flex items-center gap-2 justify-center py-2 text-muted-foreground">
+            <AlertCircle className="w-4 h-4" />
+            <span className="text-xs">El doctor ha desactivado el chat</span>
+          </div>
+        ) : questionLimitReached ? (
+          <div className="flex items-center gap-2 justify-center py-2 text-muted-foreground">
+            <AlertCircle className="w-4 h-4" />
+            <span className="text-xs">Se alcanzó el límite de preguntas</span>
           </div>
         ) : (
           <div className="flex gap-1 sm:gap-2">

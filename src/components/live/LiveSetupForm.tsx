@@ -294,6 +294,47 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             )}
           </div>
 
+          {/* Interaction Limits */}
+          <div className="space-y-4 pt-4 border-t">
+            <h3 className="text-sm font-semibold text-foreground">Interacción del chat</h3>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Permitir preguntas en el chat</Label>
+                <p className="text-xs text-muted-foreground">Los espectadores pueden enviar mensajes</p>
+              </div>
+              <Switch checked={chatEnabled} onCheckedChange={setChatEnabled} />
+            </div>
+
+            {chatEnabled && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="maxQuestions">Límite de preguntas (opcional)</Label>
+                  <Input
+                    id="maxQuestions"
+                    type="number"
+                    min={1}
+                    placeholder="Sin límite"
+                    value={maxQuestions}
+                    onChange={(e) => setMaxQuestions(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                  <p className="text-xs text-muted-foreground">Deja vacío para preguntas ilimitadas</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxPaidChats">Límite de orientaciones pagadas (opcional)</Label>
+                  <Input
+                    id="maxPaidChats"
+                    type="number"
+                    min={1}
+                    placeholder="Sin límite"
+                    value={maxPaidChats}
+                    onChange={(e) => setMaxPaidChats(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                  <p className="text-xs text-muted-foreground">Deja vacío para orientaciones ilimitadas</p>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Recording info */}
           {enableRecording && (
             <Alert className="border-primary/50 bg-primary/5">
