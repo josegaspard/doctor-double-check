@@ -16,7 +16,7 @@ import {
   ExternalLink,
   CheckCircle2,
   XCircle,
-  ImagePlus,
+  
 } from 'lucide-react';
 // Codec check removed — local recording supports all codecs
 
