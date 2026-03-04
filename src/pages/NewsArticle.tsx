@@ -30,6 +30,8 @@ interface Comment {
   user_role?: string;
   is_approved_doctor?: boolean;
   replies?: Comment[];
+  likes_count?: number;
+  liked_by_me?: boolean;
 }
 
 export default function NewsArticle() {
@@ -43,11 +45,12 @@ export default function NewsArticle() {
   const [editorProfile, setEditorProfile] = useState<any>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [replyTo, setReplyTo] = useState<string | null>(null);
-  const [replyContent, setReplyContent] = useState('');
+  const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
   const [collapsedThreads, setCollapsedThreads] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
+  const commentInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchArticle = async () => {
