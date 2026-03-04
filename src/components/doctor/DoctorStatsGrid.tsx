@@ -9,13 +9,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
-  activeLivesCount: number;
   recordingsCount: number;
   vaultFilesCount: number;
   rating: number;
 }
 
-export function DoctorStatsGrid({ activeLivesCount, recordingsCount, vaultFilesCount, rating }: Props) {
+export function DoctorStatsGrid({ recordingsCount, vaultFilesCount, rating }: Props) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { user } = useAuth();
