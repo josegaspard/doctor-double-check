@@ -72,49 +72,6 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
     setTags(tags.filter(t => t !== tagToRemove));
   };
 
-  const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<File> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const scale = Math.min(1, maxWidth / img.width);
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
-            } else {
-              resolve(file);
-            }
-          },
-          'image/jpeg',
-          quality
-        );
-      };
-      img.onerror = () => resolve(file);
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
-  const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) return;
-    const compressed = await compressImage(file);
-    setThumbnailFile(compressed);
-    const reader = new FileReader();
-    reader.onload = () => setThumbnailPreview(reader.result as string);
-    reader.readAsDataURL(compressed);
-  };
-
-  const removeThumbnail = () => {
-    setThumbnailFile(null);
-    setThumbnailPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
 
   const handleSubmit = () => {
     onStartLive({
