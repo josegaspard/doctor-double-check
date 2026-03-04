@@ -40,6 +40,9 @@ export interface LiveConfig {
   recordingPrice: number;
   enableRecording: boolean;
   thumbnailFile?: File | null;
+  chatEnabled: boolean;
+  maxQuestions: number | null;
+  maxPaidChats: number | null;
 }
 
 export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
