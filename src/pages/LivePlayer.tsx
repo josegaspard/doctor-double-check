@@ -62,6 +62,9 @@ export default function LivePlayer() {
   const [saveAsRecording, setSaveAsRecording] = useState(true);
   const [isEnding, setIsEnding] = useState(false);
   const [showChat, setShowChat] = useState(true);
+  const [showBooking, setShowBooking] = useState(false);
+  const [consultationFee, setConsultationFee] = useState(0);
+  const [liveInteraction, setLiveInteraction] = useState<{ chat_enabled: boolean; max_paid_chats: number | null; paid_chats_count: number }>({ chat_enabled: true, max_paid_chats: null, paid_chats_count: 0 });
   
   // Daily viewer state
   const [viewerToken, setViewerToken] = useState<string | null>(null);
