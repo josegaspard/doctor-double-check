@@ -141,7 +141,7 @@ export function LiveConsultationBooking({
           },
         });
 
-        await refreshBalance();
+        await refreshWallet();
         toast.success('¡Orientación reservada! Te redirigimos al chat');
         onOpenChange(false);
         navigate(`/chat?session=${result.session_id}`);
