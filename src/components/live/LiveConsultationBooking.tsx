@@ -55,7 +55,7 @@ export function LiveConsultationBooking({
 }: LiveConsultationBookingProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { balance, refreshBalance } = useWallet();
+  const { balance, refreshWallet } = useWallet();
   const { t } = useLanguage();
   const [message, setMessage] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'stripe'>('wallet');
