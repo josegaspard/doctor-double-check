@@ -120,7 +120,18 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   };
 
   const handleSubmit = () => {
-    onStartLive({ title, description, specialty, tags, recordingPrice: Number(recordingPrice) || 0, enableRecording, thumbnailFile });
+    onStartLive({
+      title,
+      description,
+      specialty,
+      tags,
+      recordingPrice: Number(recordingPrice) || 0,
+      enableRecording,
+      thumbnailFile,
+      chatEnabled,
+      maxQuestions: maxQuestions === '' ? null : Number(maxQuestions),
+      maxPaidChats: maxPaidChats === '' ? null : Number(maxPaidChats),
+    });
   };
 
   return (
