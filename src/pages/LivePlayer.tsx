@@ -515,7 +515,7 @@ export default function LivePlayer() {
                 ))}
               </div>
               <Separator className="my-3 sm:my-4" />
-              {/* Action buttons - sticky on mobile */}
+              {/* Action buttons */}
               <div className="flex flex-wrap gap-2">
                 <Button 
                   variant={isLiked ? "default" : "outline"} 
@@ -557,9 +557,24 @@ export default function LivePlayer() {
                     Reservar Orientación - ${consultationFee}
                   </Button>
                 )}
+                {isOwner && isLiveActive && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5 h-9 sm:h-8 text-xs sm:text-sm min-w-[44px] ml-auto"
+                    onClick={() => setShowEndDialog(true)}
+                  >
+                    <StopCircle className="w-4 h-4" />
+                    <span className="hidden sm:inline">{t('livePlayer.endLive')}</span>
+                  </Button>
+                )}
               </div>
-              <Separator className="my-3 sm:my-4" />
-              <p className="text-muted-foreground text-sm break-words whitespace-pre-wrap overflow-hidden">{live.description}</p>
+              {live.description && (
+                <>
+                  <Separator className="my-3 sm:my-4" />
+                  <p className="text-muted-foreground text-sm break-words whitespace-pre-wrap overflow-hidden line-clamp-3">{live.description}</p>
+                </>
+              )}
             </div>
           </div>
 
