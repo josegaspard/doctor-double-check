@@ -54,9 +54,6 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const [recordingPrice, setRecordingPrice] = useState<number | ''>('');
   const [enableRecording, setEnableRecording] = useState(true);
   const [showRtmpsInfo, setShowRtmpsInfo] = useState(false);
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [chatEnabled, setChatEnabled] = useState(true);
   const [maxQuestions, setMaxQuestions] = useState<number | ''>('');
   const [maxPaidChats, setMaxPaidChats] = useState<number | ''>('');
