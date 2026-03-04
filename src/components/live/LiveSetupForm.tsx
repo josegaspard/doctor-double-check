@@ -133,44 +133,6 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             <p className="text-xs text-muted-foreground">{description.length}/500 caracteres</p>
           </div>
 
-          {/* Thumbnail */}
-          <div className="space-y-2">
-            <Label>Portada del Live (opcional)</Label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleThumbnailChange}
-              className="hidden"
-            />
-            {thumbnailPreview ? (
-              <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border">
-                <img src={thumbnailPreview} alt="Portada" className="w-full h-full object-cover" />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2 h-7 w-7 rounded-full"
-                  onClick={removeThumbnail}
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-24 border-dashed gap-2"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <ImagePlus className="w-5 h-5 text-muted-foreground" />
-                <span className="text-muted-foreground">Subir imagen de portada</span>
-              </Button>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Recomendado: imagen menor a 1 MB. Se comprimirá automáticamente al subirla.
-            </p>
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="specialty">Especialidad *</Label>
