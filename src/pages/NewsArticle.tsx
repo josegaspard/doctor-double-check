@@ -115,10 +115,14 @@ export default function NewsArticle() {
     if (!commentsData || commentsData.length === 0) { setComments([]); return; }
 
     const userIds = [...new Set(commentsData.map(c => c.user_id))];
-    const [{ data: profiles }, { data: roles }, { data: doctorProfiles }] = await Promise.all([
+    const commentIds = commentsData.map(c => c.id);
+
+    const [{ data: profiles }, { data: roles }, { data: doctorProfiles }, { data: likesData }, myLikesResult] = await Promise.all([
       supabase.from('profiles_public').select('id, name, avatar_url').in('id', userIds),
       supabase.from('user_roles' as any).select('user_id, role').in('user_id', userIds),
       supabase.from('doctor_profiles_public').select('user_id, status').in('user_id', userIds),
+      supabase.from('news_comment_likes' as any).select('comment_id').in('comment_id', commentIds),
+      user ? supabase.from('news_comment_likes' as any).select('comment_id').eq('user_id', user.id).in('comment_id', commentIds) : Promise.resolve({ data: [] }),
     ]);
 
     const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -127,6 +131,13 @@ export default function NewsArticle() {
       (doctorProfiles as any[])?.filter((d: any) => d.status === 'approved').map((d: any) => d.user_id) || []
     );
 
+    // Count likes per comment
+    const likesCountMap = new Map<string, number>();
+    (likesData as any[])?.forEach((l: any) => {
+      likesCountMap.set(l.comment_id, (likesCountMap.get(l.comment_id) || 0) + 1);
+    });
+    const myLikedSet = new Set((myLikesResult?.data as any[])?.map((l: any) => l.comment_id) || []);
+
     const enriched = commentsData.map(c => ({
       ...c,
       parent_comment_id: (c as any).parent_comment_id || null,
@@ -134,6 +145,8 @@ export default function NewsArticle() {
       user_avatar: profileMap.get(c.user_id)?.avatar_url || null,
       user_role: roleMap.get(c.user_id) || 'patient',
       is_approved_doctor: approvedDoctorSet.has(c.user_id),
+      likes_count: likesCountMap.get(c.id) || 0,
+      liked_by_me: myLikedSet.has(c.id),
       replies: [] as Comment[],
     }));
 
@@ -152,15 +165,16 @@ export default function NewsArticle() {
     setComments(rootComments);
   };
 
-  const handleSubmitComment = async (parentId: string | null = null) => {
-    const content = parentId ? replyContent : newComment;
+  const handleSubmitComment = async () => {
+    const content = newComment;
     if (!content.trim() || !user || !article) return;
     setIsSending(true);
     const insertData: any = { news_id: article.id, user_id: user.id, content: content.trim() };
-    if (parentId) insertData.parent_comment_id = parentId;
+    if (replyTo) insertData.parent_comment_id = replyTo.id;
     const { error } = await supabase.from('news_comments').insert(insertData);
     if (error) { toast.error('Error al comentar'); setIsSending(false); return; }
-    if (parentId) { setReplyContent(''); setReplyTo(null); } else { setNewComment(''); }
+    setNewComment('');
+    setReplyTo(null);
     fetchComments(article.id);
     setIsSending(false);
   };
@@ -169,6 +183,26 @@ export default function NewsArticle() {
     const { error } = await supabase.from('news_comments').delete().eq('id', commentId);
     if (error) { toast.error('Error'); return; }
     if (article) fetchComments(article.id);
+  };
+
+  const handleToggleLike = async (commentId: string, isLiked: boolean) => {
+    if (!user || !article) return;
+    setLikingComments(prev => new Set(prev).add(commentId));
+    try {
+      if (isLiked) {
+        await supabase.from('news_comment_likes' as any).delete().eq('user_id', user.id).eq('comment_id', commentId);
+      } else {
+        await supabase.from('news_comment_likes' as any).insert({ user_id: user.id, comment_id: commentId });
+      }
+      await fetchComments(article.id);
+    } catch { /* ignore */ }
+    setLikingComments(prev => { const n = new Set(prev); n.delete(commentId); return n; });
+  };
+
+  const handleReply = (comment: Comment) => {
+    setReplyTo({ id: comment.id, name: comment.user_name || 'Usuario' });
+    setNewComment(`@${comment.user_name} `);
+    setTimeout(() => commentInputRef.current?.focus(), 50);
   };
 
   const toggleThread = (commentId: string) => {
@@ -181,97 +215,105 @@ export default function NewsArticle() {
 
   const getRoleBadge = (userRole: string) => {
     switch (userRole) {
-      case 'doctor': return <Badge variant="default" className="text-[10px] gap-1"><Stethoscope className="w-2.5 h-2.5" />Doctor</Badge>;
-      case 'resident': return <Badge variant="secondary" className="text-[10px] gap-1"><GraduationCap className="w-2.5 h-2.5" />Residente</Badge>;
-      default: return <Badge variant="outline" className="text-[10px] gap-1"><User className="w-2.5 h-2.5" />Paciente</Badge>;
+      case 'doctor': return <Badge variant="default" className="text-[10px] gap-0.5 h-4 px-1.5"><Stethoscope className="w-2.5 h-2.5" />Médico</Badge>;
+      case 'resident': return <Badge variant="secondary" className="text-[10px] gap-0.5 h-4 px-1.5"><GraduationCap className="w-2.5 h-2.5" />Residente</Badge>;
+      default: return null;
     }
+  };
+
+  const getRelativeTime = (dateStr: string) => {
+    return formatDistanceToNow(new Date(dateStr), { addSuffix: false, locale: es });
   };
 
   const getTotalCommentCount = useCallback((comments: Comment[]): number => {
     return comments.reduce((acc, c) => acc + 1 + getTotalCommentCount(c.replies || []), 0);
   }, []);
 
-  const canEdit = article && user && (user.id === article.created_by || role === 'admin');
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const shareTitle = article?.title || '';
-  const authorSocial = article?.author_social || {};
-
   const renderComment = (comment: Comment, depth: number = 0) => {
     const isCollapsed = collapsedThreads.has(comment.id);
     const hasReplies = (comment.replies?.length || 0) > 0;
     const maxDepth = 4;
+    const isLiking = likingComments.has(comment.id);
 
     return (
-      <div key={comment.id} className={depth > 0 ? 'ml-4 sm:ml-6 pl-3 sm:pl-4 border-l-2 border-muted' : ''}>
-        <div className="flex gap-2 sm:gap-3 py-2">
-          <Avatar className="w-7 h-7 mt-0.5 shrink-0">
-            <AvatarImage src={comment.user_avatar || ''} />
-            <AvatarFallback className="text-xs">{comment.user_name?.charAt(0) || 'U'}</AvatarFallback>
-          </Avatar>
+      <div key={comment.id} className={depth > 0 ? 'ml-5 sm:ml-8' : ''}>
+        <div className="flex gap-2.5 py-2.5 group">
+          {/* Avatar */}
+          <div className="relative flex flex-col items-center">
+            <Avatar className="w-8 h-8 shrink-0">
+              <AvatarImage src={comment.user_avatar || ''} />
+              <AvatarFallback className="text-xs bg-muted text-muted-foreground">{comment.user_name?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+            {/* Thread connector line */}
+            {hasReplies && !isCollapsed && (
+              <div className="w-[2px] bg-border flex-1 mt-1 min-h-[8px]" />
+            )}
+          </div>
+
+          {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Header: name · time */}
+            <div className="flex items-center gap-1.5">
               {comment.is_approved_doctor ? (
-                <Link to={`/doctor/${comment.user_id}`} className="font-medium text-sm text-foreground hover:underline hover:text-primary transition-colors">
+                <Link to={`/doctor/${comment.user_id}`} className="font-semibold text-[13px] text-foreground hover:text-primary transition-colors">
                   {comment.user_name}
                 </Link>
               ) : (
-                <span className="font-medium text-sm text-foreground">{comment.user_name}</span>
+                <span className="font-semibold text-[13px] text-foreground">{comment.user_name}</span>
               )}
               {getRoleBadge(comment.user_role || 'patient')}
-              <span className="text-xs text-muted-foreground">
-                {format(new Date(comment.created_at), "d MMM yyyy, HH:mm", { locale: es })}
-              </span>
+              <span className="text-[11px] text-muted-foreground">· {getRelativeTime(comment.created_at)}</span>
             </div>
-            <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap">{comment.content}</p>
-            <div className="flex items-center gap-2 mt-1.5">
+
+            {/* Comment text */}
+            <p className="text-[13px] text-foreground/90 mt-0.5 whitespace-pre-wrap leading-snug">{comment.content}</p>
+
+            {/* Actions row: likes · Reply · Delete */}
+            <div className="flex items-center gap-3 mt-1">
+              {/* Like button */}
+              <button
+                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                onClick={() => isAuthenticated && handleToggleLike(comment.id, !!comment.liked_by_me)}
+                disabled={!isAuthenticated || isLiking}
+              >
+                <Heart
+                  className={`w-3.5 h-3.5 transition-all ${comment.liked_by_me ? 'fill-destructive text-destructive scale-110' : ''}`}
+                />
+                {(comment.likes_count || 0) > 0 && (
+                  <span className={comment.liked_by_me ? 'text-destructive font-medium' : ''}>{comment.likes_count}</span>
+                )}
+              </button>
+
+              {/* Reply */}
               {isAuthenticated && depth < maxDepth && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
-                  onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+                <button
+                  className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => handleReply(comment)}
                 >
-                  <Reply className="w-3 h-3" /> Responder
-                </Button>
+                  Responder
+                </button>
               )}
-              {hasReplies && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
-                  onClick={() => toggleThread(comment.id)}
-                >
-                  {isCollapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
-                  {comment.replies!.length} {comment.replies!.length === 1 ? 'respuesta' : 'respuestas'}
-                </Button>
-              )}
+
+              {/* Delete */}
               {user?.id === comment.user_id && (
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteComment(comment.id)}>
+                <button
+                  className="text-[11px] text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                  onClick={() => handleDeleteComment(comment.id)}
+                >
                   <Trash2 className="w-3 h-3" />
-                </Button>
+                </button>
               )}
             </div>
 
-            {/* Reply input */}
-            {replyTo === comment.id && (
-              <div className="flex gap-2 mt-2">
-                <Textarea
-                  placeholder={`Responder a ${comment.user_name}...`}
-                  value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
-                  rows={2}
-                  maxLength={2000}
-                  className="text-sm min-h-[60px]"
-                />
-                <div className="flex flex-col gap-1">
-                  <Button size="sm" className="h-7 px-2" onClick={() => handleSubmitComment(comment.id)} disabled={isSending || !replyContent.trim()}>
-                    <Send className="w-3 h-3" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setReplyTo(null); setReplyContent(''); }}>
-                    ✕
-                  </Button>
-                </div>
-              </div>
+            {/* Collapsed replies toggle */}
+            {hasReplies && isCollapsed && (
+              <button
+                className="flex items-center gap-1.5 mt-2 text-[12px] font-medium text-primary hover:text-primary/80 transition-colors"
+                onClick={() => toggleThread(comment.id)}
+              >
+                <div className="w-6 h-[1px] bg-border" />
+                Ver {comment.replies!.length} {comment.replies!.length === 1 ? 'respuesta' : 'respuestas'}
+              </button>
             )}
           </div>
         </div>
@@ -280,6 +322,15 @@ export default function NewsArticle() {
         {hasReplies && !isCollapsed && (
           <div>
             {comment.replies!.map(reply => renderComment(reply, depth + 1))}
+            {comment.replies!.length > 2 && !collapsedThreads.has(comment.id) && (
+              <button
+                className="ml-10 sm:ml-[3.25rem] text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors mb-1"
+                onClick={() => toggleThread(comment.id)}
+              >
+                <ChevronDown className="w-3 h-3 inline mr-1" />
+                Ocultar respuestas
+              </button>
+            )}
           </div>
         )}
       </div>
