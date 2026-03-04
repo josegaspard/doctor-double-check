@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,17 +6,16 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import DOMPurify from 'dompurify';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   ArrowLeft, Clock, Share2, MessageCircle, Send, Loader2,
   Trash2, Stethoscope, User, GraduationCap, Facebook, Twitter, Link as LinkIcon,
-  Globe, Instagram, Linkedin, Pencil, Reply, ChevronDown, ChevronUp,
-  Star, MapPin, Users, Edit, LogIn, Eye
+  Globe, Instagram, Linkedin, Pencil, ChevronDown,
+  Star, MapPin, Users, Edit, LogIn, Eye, Heart
 } from 'lucide-react';
 import { toast } from 'sonner';
 
