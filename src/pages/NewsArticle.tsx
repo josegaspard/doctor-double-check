@@ -352,6 +352,11 @@ export default function NewsArticle() {
     );
   }
 
+  const canEdit = article && user && (user.id === article.created_by || role === 'admin');
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const shareTitle = article?.title || '';
+  const authorSocial = article?.author_social || {};
+
   return (
     <MainLayout>
       <article className="container mx-auto px-4 py-6 max-w-3xl">
