@@ -582,62 +582,87 @@ export default function NewsArticle() {
 
         {/* Comments */}
         <section>
-          <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-foreground mb-1 flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-primary" />
-            Comentarios ({getTotalCommentCount(comments)})
+            Comentarios
           </h2>
+          <p className="text-[13px] text-muted-foreground mb-4">
+            {getTotalCommentCount(comments)} {getTotalCommentCount(comments) === 1 ? 'comentario' : 'comentarios'}
+          </p>
 
-          {/* New comment */}
+          {/* Comments list */}
+          <div className="divide-y divide-border/50">
+            {comments.map((comment) => renderComment(comment))}
+          </div>
+
+          {/* Empty state */}
+          {comments.length === 0 && (
+            <div className="flex flex-col items-center py-10 text-center">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-3">
+                <MessageCircle className="w-7 h-7 text-muted-foreground" />
+              </div>
+              <p className="font-medium text-foreground text-sm">Aún no hay comentarios</p>
+              <p className="text-muted-foreground text-xs mt-1">Sé el primero en compartir tu opinión</p>
+            </div>
+          )}
+
+          {/* Comment input — Instagram-style sticky bottom */}
           {isAuthenticated ? (
-            <div className="flex gap-3 mb-6">
-              <Avatar className="w-8 h-8 mt-1 shrink-0">
-                <AvatarImage src={user?.avatarUrl || ''} />
-                <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 space-y-2">
-                <Textarea
-                  placeholder="Escribe un comentario..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  rows={2}
-                  maxLength={2000}
-                />
-                <div className="flex justify-end">
-                  <Button size="sm" onClick={() => handleSubmitComment(null)} disabled={isSending || !newComment.trim()}>
-                    {isSending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />}
-                    Comentar
-                  </Button>
+            <div className="sticky bottom-0 bg-background pt-3 pb-2 border-t border-border mt-4">
+              {replyTo && (
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <span className="text-xs text-muted-foreground">
+                    Respondiendo a <span className="font-medium text-foreground">@{replyTo.name}</span>
+                  </span>
+                  <button
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => { setReplyTo(null); setNewComment(''); }}
+                  >
+                    ✕
+                  </button>
                 </div>
+              )}
+              <div className="flex items-center gap-2.5">
+                <Avatar className="w-8 h-8 shrink-0">
+                  <AvatarImage src={user?.avatarUrl || ''} />
+                  <AvatarFallback className="text-xs">{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 relative">
+                  <input
+                    ref={commentInputRef}
+                    type="text"
+                    placeholder="Añade un comentario..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && newComment.trim()) { e.preventDefault(); handleSubmitComment(); } }}
+                    maxLength={2000}
+                    className="w-full bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground py-2"
+                  />
+                </div>
+                {newComment.trim() && (
+                  <button
+                    className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors disabled:opacity-50 shrink-0"
+                    onClick={() => handleSubmitComment()}
+                    disabled={isSending}
+                  >
+                    {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Publicar'}
+                  </button>
+                )}
               </div>
             </div>
           ) : (
-            <Card className="p-6 mb-6 text-center border-primary/20 bg-primary/5">
-              <LogIn className="w-8 h-8 mx-auto text-primary mb-2" />
-              <p className="text-foreground font-medium mb-1">Inicia sesión para comentar</p>
-              <p className="text-muted-foreground text-sm mb-3">
-                Crea una cuenta gratuita para participar en la conversación
-              </p>
-              <div className="flex gap-2 justify-center">
+            <div className="border-t border-border mt-4 pt-4 pb-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Inicia sesión para comentar</span>
                 <Link to="/login">
-                  <Button size="sm" className="gap-2">
-                    <LogIn className="w-4 h-4" />
+                  <Button size="sm" variant="outline" className="gap-1.5 h-8">
+                    <LogIn className="w-3.5 h-3.5" />
                     Iniciar sesión
                   </Button>
                 </Link>
-                <Link to="/login">
-                  <Button size="sm" variant="outline">Crear cuenta</Button>
-                </Link>
               </div>
-            </Card>
+            </div>
           )}
-
-          {/* Comments list - threaded */}
-          <div className="space-y-1">
-            {comments.map((comment) => renderComment(comment))}
-            {comments.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">Sé el primero en comentar</p>
-            )}
-          </div>
         </section>
       </article>
     </MainLayout>
