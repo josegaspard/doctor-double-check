@@ -1,24 +1,25 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Video,
   Radio,
   Loader2,
   X,
   Plus,
-  ExternalLink,
-  CheckCircle2,
-  XCircle,
-  
+  DollarSign,
+  MessageSquare,
+  Tag,
+  ChevronDown,
+  Info,
+  Mic,
+  FilmIcon,
 } from 'lucide-react';
-// Codec check removed — local recording supports all codecs
 
 const SPECIALTIES = [
   'Cardiología', 'Dermatología', 'Endocrinología', 'Gastroenterología',
@@ -39,10 +40,23 @@ export interface LiveConfig {
   tags: string[];
   recordingPrice: number;
   enableRecording: boolean;
-  thumbnailFile?: File | null;
   chatEnabled: boolean;
   maxQuestions: number | null;
   maxPaidChats: number | null;
+}
+
+function SectionHeader({ number, icon: Icon, title, subtitle }: { number: number; icon: React.ElementType; title: string; subtitle?: string }) {
+  return (
+    <div className="flex items-start gap-3 mb-4">
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+        {number}
+      </div>
+      <div className="min-w-0">
+        <h3 className="font-semibold text-foreground text-base">{title}</h3>
+        {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+      </div>
+    </div>
+  );
 }
 
 export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
@@ -53,12 +67,10 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const [tagInput, setTagInput] = useState('');
   const [recordingPrice, setRecordingPrice] = useState<number | ''>('');
   const [enableRecording, setEnableRecording] = useState(true);
-  const [showRtmpsInfo, setShowRtmpsInfo] = useState(false);
   const [chatEnabled, setChatEnabled] = useState(true);
   const [maxQuestions, setMaxQuestions] = useState<number | ''>('');
   const [maxPaidChats, setMaxPaidChats] = useState<number | ''>('');
-
-  // Codec check removed — local recording supports all browser codecs
+  const [showAdvancedChat, setShowAdvancedChat] = useState(false);
 
   const addTag = () => {
     const trimmed = tagInput.trim().toLowerCase();
@@ -72,7 +84,6 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
     setTags(tags.filter(t => t !== tagToRemove));
   };
 
-
   const handleSubmit = () => {
     onStartLive({
       title,
@@ -81,150 +92,146 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
       tags,
       recordingPrice: Number(recordingPrice) || 0,
       enableRecording,
-      
       chatEnabled,
       maxQuestions: maxQuestions === '' ? null : Number(maxQuestions),
       maxPaidChats: maxPaidChats === '' ? null : Number(maxPaidChats),
     });
   };
 
+  const isValid = title.trim().length > 0 && specialty.length > 0;
+
   return (
-    <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-2xl pb-24 sm:pb-8">
-      <div className="flex items-center gap-3 mb-4 sm:mb-6">
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-          <Radio className="w-5 h-5 sm:w-6 sm:h-6 text-destructive" />
+    <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-xl pb-36 sm:pb-8">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+          <Radio className="w-5 h-5 text-destructive" />
         </div>
         <div>
           <h1 className="font-heading text-xl sm:text-2xl font-bold">Iniciar Transmisión</h1>
-          <p className="text-sm text-muted-foreground">Configura tu live antes de comenzar</p>
+          <p className="text-xs text-muted-foreground">Completa los campos y comienza tu live</p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Detalles del Live</CardTitle>
-          <CardDescription>Esta información se mostrará a los espectadores</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Título *</Label>
+      <div className="space-y-6">
+        {/* ── Section 1: About your live ── */}
+        <section className="space-y-4">
+          <SectionHeader number={1} icon={Mic} title="¿De qué trata tu live?" subtitle="Estos datos se muestran a los espectadores" />
+          
+          <div className="space-y-1.5">
+            <Label htmlFor="title" className="flex items-center gap-1">
+              Título <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="title"
               placeholder="Ej: Consulta abierta sobre hipertensión"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={100}
+              className={!title.trim() && title.length > 0 ? 'border-destructive' : ''}
             />
-            <p className="text-xs text-muted-foreground">{title.length}/100 caracteres</p>
+            <p className="text-[11px] text-muted-foreground text-right">{title.length}/100</p>
           </div>
 
-          {/* Description */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="description">Descripción</Label>
             <Textarea
               id="description"
-              placeholder="Describe de qué tratará tu transmisión..."
+              placeholder="Describe brevemente tu transmisión..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={3}
+              rows={2}
               maxLength={500}
             />
-            <p className="text-xs text-muted-foreground">{description.length}/500 caracteres</p>
           </div>
 
-
-          <div className="space-y-2">
-            <Label htmlFor="specialty">Especialidad *</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="specialty" className="flex items-center gap-1">
+              Especialidad <span className="text-destructive">*</span>
+            </Label>
             <select
               id="specialty"
               value={specialty}
               onChange={(e) => setSpecialty(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <option value="" disabled>Selecciona una especialidad</option>
               {SPECIALTIES.map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
-            <p className="text-xs text-muted-foreground">
-              La especialidad ayuda a los pacientes a encontrar tu transmisión
-            </p>
+          </div>
+        </section>
+
+        <div className="border-t border-border" />
+
+        {/* ── Section 2: Recording & Monetization ── */}
+        <section className="space-y-4">
+          <SectionHeader number={2} icon={FilmIcon} title="Grabación y monetización" subtitle="Decide si grabas y cuánto cobrarás" />
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-sm">Grabar transmisión</Label>
+              <p className="text-[11px] text-muted-foreground">Podrás vender la grabación después</p>
+            </div>
+            <Switch checked={enableRecording} onCheckedChange={setEnableRecording} />
           </div>
 
-          {/* Tags */}
-          <div className="space-y-2">
-            <Label>Etiquetas</Label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Añade una etiqueta"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                maxLength={30}
-              />
-              <Button type="button" variant="outline" size="icon" onClick={addTag} disabled={tags.length >= 5}>
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="gap-1">
-                    #{tag}
-                    <button onClick={() => removeTag(tag)} className="ml-1 hover:text-destructive">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground">{tags.length}/5 etiquetas</p>
-          </div>
-
-          {/* Recording settings */}
-          <div className="space-y-4 pt-4 border-t">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Grabar transmisión</Label>
-                <p className="text-xs text-muted-foreground">Guarda la grabación para venderla después</p>
-              </div>
-              <Switch checked={enableRecording} onCheckedChange={setEnableRecording} />
-            </div>
-
-            {enableRecording && (
-              <div className="space-y-2">
-                <Label htmlFor="price">Precio de la grabación (MXN)</Label>
+          {enableRecording && (
+            <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-2">
+              <Label htmlFor="price" className="flex items-center gap-2 text-sm font-semibold text-primary">
+                <DollarSign className="w-4 h-4" />
+                Precio de la grabación (MXN)
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-base">$</span>
                 <Input
                   id="price"
                   type="number"
                   min={0}
                   step={10}
-                  placeholder="0 = gratuita"
+                  placeholder="0"
                   value={recordingPrice}
                   onChange={(e) => setRecordingPrice(e.target.value === '' ? '' : Number(e.target.value))}
                   onFocus={(e) => { if (e.target.value === '0') setRecordingPrice(''); }}
+                  className="pl-8 text-lg h-12 font-semibold"
                 />
-                <p className="text-xs text-muted-foreground">Deja en 0 para ofrecer la grabación gratis</p>
               </div>
-            )}
+              <div className="flex items-start gap-1.5">
+                <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <p className="text-[11px] text-muted-foreground">
+                  ¿Cuánto cobrarás por la grabación? Escribe <strong>0</strong> si será gratuita. Los suscriptores premium la obtienen gratis.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <div className="border-t border-border" />
+
+        {/* ── Section 3: Chat ── */}
+        <section className="space-y-4">
+          <SectionHeader number={3} icon={MessageSquare} title="Chat en vivo" subtitle="Configura cómo interactúan los espectadores" />
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-sm">Permitir preguntas</Label>
+              <p className="text-[11px] text-muted-foreground">Los espectadores pueden escribir en el chat</p>
+            </div>
+            <Switch checked={chatEnabled} onCheckedChange={setChatEnabled} />
           </div>
 
-          {/* Interaction Limits */}
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-semibold text-foreground">Interacción del chat</h3>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Permitir preguntas en el chat</Label>
-                <p className="text-xs text-muted-foreground">Los espectadores pueden enviar mensajes</p>
-              </div>
-              <Switch checked={chatEnabled} onCheckedChange={setChatEnabled} />
-            </div>
-
-            {chatEnabled && (
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="maxQuestions">Límite de preguntas (opcional)</Label>
+          {chatEnabled && (
+            <Collapsible open={showAdvancedChat} onOpenChange={setShowAdvancedChat}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvancedChat ? 'rotate-180' : ''}`} />
+                  Opciones avanzadas
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-3 space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="maxQuestions" className="text-xs">Límite de preguntas</Label>
                   <Input
                     id="maxQuestions"
                     type="number"
@@ -232,11 +239,11 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                     placeholder="Sin límite"
                     value={maxQuestions}
                     onChange={(e) => setMaxQuestions(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="h-9"
                   />
-                  <p className="text-xs text-muted-foreground">Deja vacío para preguntas ilimitadas</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="maxPaidChats">Límite de orientaciones pagadas (opcional)</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="maxPaidChats" className="text-xs">Límite de orientaciones pagadas</Label>
                   <Input
                     id="maxPaidChats"
                     type="number"
@@ -244,90 +251,78 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                     placeholder="Sin límite"
                     value={maxPaidChats}
                     onChange={(e) => setMaxPaidChats(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="h-9"
                   />
-                  <p className="text-xs text-muted-foreground">Deja vacío para orientaciones ilimitadas</p>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Recording info */}
-          {enableRecording && (
-            <Alert className="border-primary/50 bg-primary/5">
-              <CheckCircle2 className="h-4 w-4 text-primary" />
-              <AlertTitle>Grabación local activa</AlertTitle>
-              <AlertDescription className="text-muted-foreground">
-                La grabación se guardará localmente y se subirá al finalizar el live.
-              </AlertDescription>
-            </Alert>
+              </CollapsibleContent>
+            </Collapsible>
           )}
+        </section>
 
-          {showRtmpsInfo && (
-            <Card className="bg-muted/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <ExternalLink className="w-4 h-4" />
-                  Transmitir con OBS
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <p>Puedes usar OBS Studio (gratuito) para transmitir con mejor calidad:</p>
-                <ol className="list-decimal list-inside space-y-2">
-                  <li>Descarga <a href="https://obsproject.com" target="_blank" rel="noopener" className="text-primary underline">OBS Studio</a></li>
-                  <li>Ve a <strong>Configuración → Stream</strong></li>
-                  <li>Selecciona <strong>Servicio: Personalizado</strong></li>
-                  <li>La URL y clave se generarán al iniciar</li>
-                </ol>
-              </CardContent>
-            </Card>
-          )}
+        <div className="border-t border-border" />
 
-          {/* Submit - hidden on mobile (sticky version below) */}
-          <div className="hidden sm:block">
-            <Button
-              className="w-full gap-2"
-              size="lg"
-              onClick={handleSubmit}
-              disabled={isCreating || !title.trim() || !specialty}
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Preparando transmisión...
-                </>
-              ) : (
-                <>
-                  <Video className="w-5 h-5" />
-                  Iniciar Transmisión en Vivo
-                </>
-              )}
+        {/* ── Section 4: Tags (compact) ── */}
+        <section className="space-y-3">
+          <SectionHeader number={4} icon={Tag} title="Etiquetas" subtitle="Opcional · Ayudan a encontrar tu live" />
+          <div className="flex gap-2">
+            <Input
+              placeholder="Añade una etiqueta"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+              maxLength={30}
+              className="h-9"
+            />
+            <Button type="button" variant="outline" size="icon" onClick={addTag} disabled={tags.length >= 5} className="h-9 w-9">
+              <Plus className="w-4 h-4" />
             </Button>
           </div>
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="gap-1 text-xs">
+                  #{tag}
+                  <button onClick={() => removeTag(tag)} className="ml-0.5 hover:text-destructive">
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+        </section>
 
-          <p className="text-xs text-center text-muted-foreground">
-            Al iniciar, se notificará automáticamente a tus suscriptores
+        {/* Desktop submit */}
+        <div className="hidden sm:block pt-2">
+          <Button
+            className="w-full gap-2"
+            size="lg"
+            onClick={handleSubmit}
+            disabled={isCreating || !isValid}
+          >
+            {isCreating ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> Preparando transmisión...</>
+            ) : (
+              <><Video className="w-5 h-5" /> Iniciar Transmisión en Vivo</>
+            )}
+          </Button>
+          <p className="text-[11px] text-center text-muted-foreground mt-2">
+            Se notificará automáticamente a tus suscriptores
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Sticky mobile submit button */}
+      {/* Sticky mobile submit */}
       <div className="fixed bottom-16 inset-x-0 z-50 p-3 bg-background/95 backdrop-blur border-t border-border sm:hidden" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
         <Button
           className="w-full gap-2"
           size="lg"
           onClick={handleSubmit}
-          disabled={isCreating || !title.trim() || !specialty}
+          disabled={isCreating || !isValid}
         >
           {isCreating ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Preparando...
-            </>
+            <><Loader2 className="w-5 h-5 animate-spin" /> Preparando...</>
           ) : (
-            <>
-              <Video className="w-5 h-5" />
-              Iniciar Transmisión
-            </>
+            <><Video className="w-5 h-5" /> Iniciar Transmisión</>
           )}
         </Button>
       </div>
