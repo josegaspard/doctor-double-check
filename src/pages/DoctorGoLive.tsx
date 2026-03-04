@@ -398,7 +398,6 @@ export default function DoctorGoLive() {
           onEndClick={() => setShowEndDialog(true)}
           roomUrl={dailyRoomUrl || ''}
           ownerToken={dailyOwnerToken || ''}
-          useContextVideo={activeStream.isLive}
         />
         <LiveDialogs
           showEndDialog={showEndDialog}
