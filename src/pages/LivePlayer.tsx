@@ -143,6 +143,19 @@ export default function LivePlayer() {
   const isLiveActive = live?.status === 'live';
   const mySubToDoctor = live?.doctorId ? getSubscription(live.doctorId) : undefined;
 
+  // Fetch consultation fee & live interaction limits
+  useEffect(() => {
+    if (!live?.doctorId) return;
+    supabase.from('doctor_profiles').select('consultation_fee').eq('user_id', live.doctorId).single().then(({ data }) => {
+      if (data) setConsultationFee(Number(data.consultation_fee) || 0);
+    });
+    if (id) {
+      supabase.from('lives').select('chat_enabled, max_paid_chats, paid_chats_count').eq('id', id).single().then(({ data }) => {
+        if (data) setLiveInteraction({ chat_enabled: data.chat_enabled, max_paid_chats: data.max_paid_chats, paid_chats_count: data.paid_chats_count });
+      });
+    }
+  }, [live?.doctorId, id]);
+
   // Real-time viewer count hook
   const { viewerCount, likesCount: realtimeLikesCount } = useViewerCount({
     liveId: id || '',
