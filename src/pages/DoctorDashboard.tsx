@@ -85,7 +85,6 @@ export default function DoctorDashboard() {
           <TabsContent value="overview" className="space-y-4 sm:space-y-6">
             {/* Section 1: Stats */}
             <DoctorStatsGrid
-              activeLivesCount={myLives.filter(l => l.status === 'live').length}
               recordingsCount={recordingsCount}
               vaultFilesCount={accessibleVaultFiles.length}
               rating={doctorProfile?.rating || 0}

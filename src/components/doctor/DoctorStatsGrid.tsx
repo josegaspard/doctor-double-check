@@ -41,7 +41,6 @@ export function DoctorStatsGrid({ recordingsCount, vaultFilesCount, rating }: Pr
   }, [user?.id]);
 
   const stats = [
-    { label: t('dashboard.activeLives'), value: activeLivesCount, icon: Radio, color: 'live' },
     { label: t('dashboard.totalRecordings'), value: recordingsCount, icon: PlayCircle, color: 'premium', onClick: () => navigate('/doctor/recordings') },
     { label: t('dashboard.vaultAccess'), value: vaultFilesCount, icon: Folder, color: 'primary', onClick: () => navigate('/doctor/vault') },
     { label: t('dashboard.rating'), value: rating, icon: Star, color: 'success', onClick: () => navigate(`/doctor/${user?.id}#reviews`) },

@@ -668,6 +668,22 @@ export default function LivePlayer() {
         </div>
       </div>
 
+      {/* Consultation Booking Dialog */}
+      {live && (
+        <LiveConsultationBooking
+          open={showBooking}
+          onOpenChange={setShowBooking}
+          doctorId={live.doctorId}
+          doctorName={live.doctorName}
+          doctorAvatar={live.doctorAvatar}
+          specialty={live.specialty}
+          consultationFee={consultationFee}
+          liveId={live.id}
+          maxPaidChats={liveInteraction.max_paid_chats}
+          paidChatsCount={liveInteraction.paid_chats_count}
+        />
+      )}
+
       {/* End Live Dialog */}
       <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>
         <DialogContent>

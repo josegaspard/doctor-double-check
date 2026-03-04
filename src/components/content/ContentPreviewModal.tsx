@@ -170,31 +170,6 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
             <p className="text-sm text-muted-foreground">{content.description}</p>
           )}
 
-          <div className="flex gap-2 pt-2">
-            <Button 
-              onClick={() => signedUrl && window.open(signedUrl, '_blank')}
-              disabled={!signedUrl}
-              className="flex-1 gap-2"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Abrir en nueva pestaña
-            </Button>
-            <Button 
-              variant="outline"
-              disabled={!signedUrl}
-              onClick={() => {
-                if (!signedUrl) return;
-                const a = document.createElement('a');
-                a.href = signedUrl;
-                a.download = content.title;
-                a.click();
-              }}
-              className="gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Descargar
-            </Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
