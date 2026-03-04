@@ -57,6 +57,9 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [chatEnabled, setChatEnabled] = useState(true);
+  const [maxQuestions, setMaxQuestions] = useState<number | ''>('');
+  const [maxPaidChats, setMaxPaidChats] = useState<number | ''>('');
 
   // Codec check removed — local recording supports all browser codecs
 
