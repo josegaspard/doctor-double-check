@@ -162,7 +162,7 @@ function ContentCardBody({
   locale,
 }: {
   content: DoctorContent;
-  locale: Locale;
+  locale: typeof es;
 }) {
   return (
     <CardContent className="p-4 space-y-2.5">
