@@ -435,7 +435,7 @@ export default function LivePlayer() {
                 roomUrl={roomUrl}
                 token={viewerToken}
                 isOwner={isOwner}
-                onLeave={() => navigate('/lives')}
+                onLeave={isOwner && isLiveActive ? () => setShowEndDialog(true) : () => navigate('/lives')}
                 onParticipantCountChange={() => {}}
               />
             ) : (
