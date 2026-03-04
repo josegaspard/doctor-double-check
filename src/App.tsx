@@ -10,8 +10,6 @@ import { WalletProvider } from "@/contexts/WalletContext";
 import { LivesProvider } from "@/contexts/LivesContext";
 import { VaultProvider } from "@/contexts/VaultContext";
 import { ChatProvider } from "@/contexts/ChatContext";
-import { ActiveStreamProvider } from "@/contexts/ActiveStreamContext";
-import { LiveStreamBubble } from "@/components/live/LiveStreamBubble";
 import { PostConsultationRatingProvider } from "@/components/ratings/PostConsultationRatingProvider";
 import { IncomingCallProvider } from "@/components/videocall/IncomingCallProvider";
 import React, { Suspense } from "react";
