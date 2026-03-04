@@ -542,6 +542,17 @@ export default function LivePlayer() {
                   <MessageSquare className="w-4 h-4" />
                   Chat
                 </Button>
+                {role === 'patient' && !isOwner && isLiveActive && consultationFee > 0 && (
+                  <Button
+                    variant="success"
+                    size="sm"
+                    className="gap-1.5 h-9 sm:h-8 text-xs sm:text-sm min-w-[44px]"
+                    onClick={() => setShowBooking(true)}
+                  >
+                    <Stethoscope className="w-4 h-4" />
+                    Reservar Orientación - ${consultationFee}
+                  </Button>
+                )}
               </div>
               <Separator className="my-3 sm:my-4" />
               <p className="text-muted-foreground text-sm break-words whitespace-pre-wrap overflow-hidden">{live.description}</p>
