@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,8 +114,21 @@ export default function LivesGrid() {
   const { role, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const { getSubscription } = useSubscriptions();
+  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
+
+  // Extract unique specialties and tags from active lives
+  const specialties = [...new Set(activeLives.map(l => l.specialty))];
+  const allTags = [...new Set(activeLives.flatMap(l => l.tags || []))];
+
+  // Filter lives
+  const filteredLives = activeLives.filter(l => {
+    if (selectedSpecialty && l.specialty !== selectedSpecialty) return false;
+    if (selectedTag && !(l.tags || []).includes(selectedTag)) return false;
+    return true;
+  });
 
   // Track known IDs to detect new ones for animation
   const knownIdsRef = useRef<Set<string>>(new Set());
@@ -145,7 +158,7 @@ export default function LivesGrid() {
               {t('lives.title')}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {activeLives.length} de 20 {t('lives.activeLives')}
+              {filteredLives.length} de {activeLives.length} {t('lives.activeLives')}
             </p>
           </div>
           
@@ -177,6 +190,56 @@ export default function LivesGrid() {
           </div>
         </div>
 
+        {/* Filter Chips */}
+        {(specialties.length > 1 || allTags.length > 0) && (
+          <div className="space-y-2 mb-4">
+            {/* Specialty chips */}
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
+              <button
+                onClick={() => setSelectedSpecialty(null)}
+                className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                  !selectedSpecialty
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background text-foreground border-border hover:border-primary/50'
+                }`}
+              >
+                Todas
+              </button>
+              {specialties.map(spec => (
+                <button
+                  key={spec}
+                  onClick={() => setSelectedSpecialty(selectedSpecialty === spec ? null : spec)}
+                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                    selectedSpecialty === spec
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background text-foreground border-border hover:border-primary/50'
+                  }`}
+                >
+                  {spec}
+                </button>
+              ))}
+            </div>
+            {/* Tag chips */}
+            {allTags.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
+                {allTags.map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                    className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                      selectedTag === tag
+                        ? 'bg-accent text-accent-foreground border-accent'
+                        : 'bg-muted/50 text-muted-foreground border-border hover:border-accent/50'
+                    }`}
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {[...Array(8)].map((_, i) => (
@@ -189,10 +252,10 @@ export default function LivesGrid() {
               </Card>
             ))}
           </div>
-        ) : activeLives.length > 0 ? (
+        ) : filteredLives.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             <AnimatePresence mode="sync">
-              {activeLives.map((live) => {
+              {filteredLives.map((live) => {
                 const sub = getSubscription(live.doctorId);
                 const isPremiumSub = sub?.tier === 'premium';
                 const isNew = newIdsRef.current.has(live.id);
@@ -216,11 +279,18 @@ export default function LivesGrid() {
           <Card className="p-8 sm:p-12 text-center">
             <Video className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-              {t('lives.noLives')}
+              {selectedSpecialty || selectedTag ? 'No hay lives con estos filtros' : t('lives.noLives')}
             </h3>
             <p className="text-muted-foreground text-sm">
-              {t('lives.noLivesDescription')}
+              {selectedSpecialty || selectedTag
+                ? 'Prueba quitando filtros para ver más transmisiones'
+                : t('lives.noLivesDescription')}
             </p>
+            {(selectedSpecialty || selectedTag) && (
+              <Button variant="outline" className="mt-3" onClick={() => { setSelectedSpecialty(null); setSelectedTag(null); }}>
+                Quitar filtros
+              </Button>
+            )}
           </Card>
         )}
 

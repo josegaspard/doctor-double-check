@@ -98,27 +98,31 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
     switch (content.type) {
       case 'image':
         return (
-          <div className="relative w-full max-h-[60vh] overflow-hidden rounded-lg bg-muted">
+          <div className="relative w-full max-h-[60vh] overflow-hidden rounded-lg bg-muted select-none" onContextMenu={(e) => e.preventDefault()}>
             <img 
               src={signedUrl} 
               alt={content.title}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain pointer-events-none"
+              draggable={false}
               onError={(e) => {
                 e.currentTarget.src = '/placeholder.svg';
               }}
             />
+            <div className="absolute inset-0" />
           </div>
         );
       case 'video':
         return (
-          <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black max-w-full">
+          <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black max-w-full" onContextMenu={(e) => e.preventDefault()}>
             <video 
               src={signedUrl}
               controls
               playsInline
-              controlsList="nodownload"
+              controlsList="nodownload noremoteplayback"
+              disablePictureInPicture
               className="w-full h-full object-contain"
               poster={content.thumbnail_url || undefined}
+              onContextMenu={(e) => e.preventDefault()}
             >
               Tu navegador no soporta videos HTML5.
             </video>
@@ -126,11 +130,12 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
         );
       case 'pdf':
         return (
-          <div className="relative w-full h-[60vh] rounded-lg overflow-hidden border">
+          <div className="relative w-full h-[60vh] rounded-lg overflow-hidden border" onContextMenu={(e) => e.preventDefault()}>
             <iframe
-              src={`${signedUrl}#toolbar=0`}
+              src={`${signedUrl}#toolbar=0&navpanes=0`}
               className="w-full h-full"
               title={content.title}
+              sandbox="allow-same-origin allow-scripts"
             />
           </div>
         );
@@ -165,31 +170,6 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
             <p className="text-sm text-muted-foreground">{content.description}</p>
           )}
 
-          <div className="flex gap-2 pt-2">
-            <Button 
-              onClick={() => signedUrl && window.open(signedUrl, '_blank')}
-              disabled={!signedUrl}
-              className="flex-1 gap-2"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Abrir en nueva pestaña
-            </Button>
-            <Button 
-              variant="outline"
-              disabled={!signedUrl}
-              onClick={() => {
-                if (!signedUrl) return;
-                const a = document.createElement('a');
-                a.href = signedUrl;
-                a.download = content.title;
-                a.click();
-              }}
-              className="gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Descargar
-            </Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

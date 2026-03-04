@@ -154,6 +154,9 @@ export default function DoctorGoLive() {
           recording_price: config.enableRecording ? config.recordingPrice : null,
           thumbnail_url: thumbnailUrl,
           status: 'live',
+          chat_enabled: config.chatEnabled,
+          max_questions: config.maxQuestions,
+          max_paid_chats: config.maxPaidChats,
         })
         .select()
         .single();

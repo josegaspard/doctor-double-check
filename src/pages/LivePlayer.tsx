@@ -5,8 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LiveEndedOverlay } from '@/components/live/LiveEndedOverlay';
+import { LiveConsultationBooking } from '@/components/live/LiveConsultationBooking';
 
 import { useViewerCount } from '@/hooks/useViewerCount';
+import { useWallet } from '@/contexts/WalletContext';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useDaily } from '@/hooks/useDaily';
 import MainLayout from '@/components/layout/MainLayout';
@@ -60,6 +62,9 @@ export default function LivePlayer() {
   const [saveAsRecording, setSaveAsRecording] = useState(true);
   const [isEnding, setIsEnding] = useState(false);
   const [showChat, setShowChat] = useState(true);
+  const [showBooking, setShowBooking] = useState(false);
+  const [consultationFee, setConsultationFee] = useState(0);
+  const [liveInteraction, setLiveInteraction] = useState<{ chat_enabled: boolean; max_paid_chats: number | null; paid_chats_count: number }>({ chat_enabled: true, max_paid_chats: null, paid_chats_count: 0 });
   
   // Daily viewer state
   const [viewerToken, setViewerToken] = useState<string | null>(null);
@@ -137,6 +142,19 @@ export default function LivePlayer() {
   const isOwner = user?.id === live?.doctorId;
   const isLiveActive = live?.status === 'live';
   const mySubToDoctor = live?.doctorId ? getSubscription(live.doctorId) : undefined;
+
+  // Fetch consultation fee & live interaction limits
+  useEffect(() => {
+    if (!live?.doctorId) return;
+    supabase.from('doctor_profiles').select('consultation_fee').eq('user_id', live.doctorId).single().then(({ data }) => {
+      if (data) setConsultationFee(Number(data.consultation_fee) || 0);
+    });
+    if (id) {
+      supabase.from('lives').select('chat_enabled, max_paid_chats, paid_chats_count').eq('id', id).single().then(({ data }) => {
+        if (data) setLiveInteraction({ chat_enabled: data.chat_enabled, max_paid_chats: data.max_paid_chats, paid_chats_count: data.paid_chats_count });
+      });
+    }
+  }, [live?.doctorId, id]);
 
   // Real-time viewer count hook
   const { viewerCount, likesCount: realtimeLikesCount } = useViewerCount({
@@ -524,6 +542,17 @@ export default function LivePlayer() {
                   <MessageSquare className="w-4 h-4" />
                   Chat
                 </Button>
+                {role === 'patient' && !isOwner && isLiveActive && consultationFee > 0 && (
+                  <Button
+                    variant="success"
+                    size="sm"
+                    className="gap-1.5 h-9 sm:h-8 text-xs sm:text-sm min-w-[44px]"
+                    onClick={() => setShowBooking(true)}
+                  >
+                    <Stethoscope className="w-4 h-4" />
+                    Reservar Orientación - ${consultationFee}
+                  </Button>
+                )}
               </div>
               <Separator className="my-3 sm:my-4" />
               <p className="text-muted-foreground text-sm break-words whitespace-pre-wrap overflow-hidden">{live.description}</p>
@@ -638,6 +667,22 @@ export default function LivePlayer() {
           </div>
         </div>
       </div>
+
+      {/* Consultation Booking Dialog */}
+      {live && (
+        <LiveConsultationBooking
+          open={showBooking}
+          onOpenChange={setShowBooking}
+          doctorId={live.doctorId}
+          doctorName={live.doctorName}
+          doctorAvatar={live.doctorAvatar}
+          specialty={live.specialty}
+          consultationFee={consultationFee}
+          liveId={live.id}
+          maxPaidChats={liveInteraction.max_paid_chats}
+          paidChatsCount={liveInteraction.paid_chats_count}
+        />
+      )}
 
       {/* End Live Dialog */}
       <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>

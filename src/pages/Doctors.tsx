@@ -365,7 +365,42 @@ export default function Doctors() {
           <p className="text-sm sm:text-base text-muted-foreground">{t('doctors.exploreSubtitle')}</p>
         </div>
 
-        {/* Filters */}
+        {/* Specialty filter chips */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
+          {SPECIALTIES.map(spec => (
+            <button
+              key={spec}
+              onClick={() => setSelectedSpecialty(spec)}
+              className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border whitespace-nowrap ${
+                selectedSpecialty === spec
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-foreground border-border hover:border-primary/50'
+              }`}
+            >
+              {spec}
+            </button>
+          ))}
+        </div>
+
+        {/* City filter chips */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
+          {['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'].map(city => (
+            <button
+              key={city}
+              onClick={() => setSearchQuery(searchQuery === city ? '' : city)}
+              className={`flex-shrink-0 snap-start flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                searchQuery === city
+                  ? 'bg-accent text-accent-foreground border-accent'
+                  : 'bg-muted/50 text-muted-foreground border-border hover:border-accent/50'
+              }`}
+            >
+              <MapPin className="w-3 h-3" />
+              {city}
+            </button>
+          ))}
+        </div>
+
+        {/* Search */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -377,17 +412,6 @@ export default function Doctors() {
             />
           </div>
           <div className="flex gap-2">
-            <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty}>
-              <SelectTrigger className="w-full sm:w-48">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Especialidad" />
-              </SelectTrigger>
-              <SelectContent>
-                {SPECIALTIES.map(spec => (
-                  <SelectItem key={spec} value={spec}>{spec}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Button
               variant={nearbyMode ? "default" : "outline"}
               size="icon"

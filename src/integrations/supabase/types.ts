@@ -1102,6 +1102,73 @@ export type Database = {
           },
         ]
       }
+      live_consultation_requests: {
+        Row: {
+          amount: number
+          chat_session_id: string | null
+          consultation_id: string | null
+          created_at: string
+          doctor_id: string
+          id: string
+          live_id: string
+          message: string
+          patient_id: string
+          payment_method: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          chat_session_id?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          doctor_id: string
+          id?: string
+          live_id: string
+          message: string
+          patient_id: string
+          payment_method?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          chat_session_id?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          live_id?: string
+          message?: string
+          patient_id?: string
+          payment_method?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_consultation_requests_chat_session_id_fkey"
+            columns: ["chat_session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_consultation_requests_consultation_id_fkey"
+            columns: ["consultation_id"]
+            isOneToOne: false
+            referencedRelation: "consultations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_consultation_requests_live_id_fkey"
+            columns: ["live_id"]
+            isOneToOne: false
+            referencedRelation: "lives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_likes: {
         Row: {
           created_at: string
@@ -1133,13 +1200,18 @@ export type Database = {
       }
       lives: {
         Row: {
+          chat_enabled: boolean
           daily_room_name: string | null
           description: string | null
           doctor_id: string
           ended_at: string | null
           id: string
           likes_count: number
+          max_paid_chats: number | null
+          max_questions: number | null
+          paid_chats_count: number
           peak_viewers: number
+          questions_count: number
           recording_price: number | null
           specialty: string
           started_at: string
@@ -1150,13 +1222,18 @@ export type Database = {
           viewer_count: number
         }
         Insert: {
+          chat_enabled?: boolean
           daily_room_name?: string | null
           description?: string | null
           doctor_id: string
           ended_at?: string | null
           id?: string
           likes_count?: number
+          max_paid_chats?: number | null
+          max_questions?: number | null
+          paid_chats_count?: number
           peak_viewers?: number
+          questions_count?: number
           recording_price?: number | null
           specialty: string
           started_at?: string
@@ -1167,13 +1244,18 @@ export type Database = {
           viewer_count?: number
         }
         Update: {
+          chat_enabled?: boolean
           daily_room_name?: string | null
           description?: string | null
           doctor_id?: string
           ended_at?: string | null
           id?: string
           likes_count?: number
+          max_paid_chats?: number | null
+          max_questions?: number | null
+          paid_chats_count?: number
           peak_viewers?: number
+          questions_count?: number
           recording_price?: number | null
           specialty?: string
           started_at?: string

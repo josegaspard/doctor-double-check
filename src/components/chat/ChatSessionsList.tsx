@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, History, Trash2, X, CheckSquare, Info } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { MessageSquare, History, Trash2, X, Info, Search } from 'lucide-react';
 import { ChatSessionItem } from '@/components/chat/ChatSessionItem';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { ChatSession, useChat } from '@/contexts/ChatContext';
@@ -68,6 +69,7 @@ export function ChatSessionsList({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleDeleteSession = async () => {
     if (!deleteConfirmId) return;
@@ -116,6 +118,17 @@ export function ChatSessionsList({
     setShowBulkDeleteConfirm(false);
   };
 
+  // Filter sessions by search query
+  const filteredSessions = sessions.filter(session => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const info = getDisplayInfo(session);
+    if (info.name.toLowerCase().includes(query)) return true;
+    if (info.specialty?.toLowerCase().includes(query)) return true;
+    if (session.lastMessage?.toLowerCase().includes(query)) return true;
+    return false;
+  });
+
   return (
     <>
     <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-gradient-to-b from-blue-50/70 to-sky-50/30 dark:from-primary/[0.06] dark:to-transparent ${hidden ? 'hidden md:flex' : 'flex'}`}>
@@ -142,6 +155,17 @@ export function ChatSessionsList({
             </TabsTrigger>
           </TabsList>
         </Tabs>
+
+        {/* Search bar */}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Buscar doctor o tema..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 h-9 text-xs"
+          />
+        </div>
 
         {/* Selection mode toolbar for history */}
         {activeTab === 'history' && closedSessions.length > 0 && (
@@ -191,8 +215,8 @@ export function ChatSessionsList({
       <CardContent className="p-2 flex-1 min-h-0 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="space-y-1 pr-2">
-            {sessions.length > 0 ? (
-              sessions.map(session => {
+            {filteredSessions.length > 0 ? (
+              filteredSessions.map(session => {
                 const displayInfo = getDisplayInfo(session);
                 const officeHours = formatOfficeHours(session);
                 const isAvailable = isWithinOfficeHours(session);
@@ -220,14 +244,17 @@ export function ChatSessionsList({
                   />
                 );
               })
+            ) : searchQuery.trim() ? (
+              <div className="text-center py-8 text-muted-foreground text-xs">
+                <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <p>No se encontraron resultados para "{searchQuery}"</p>
+              </div>
             ) : (
               <EmptyState type="no-sessions" activeTab={activeTab} />
             )}
           </div>
         </ScrollArea>
       </CardContent>
-
-      {/* Floating bulk delete bar - rendered via portal below */}
     </Card>
 
     {/* Single delete confirmation */}
