@@ -72,12 +72,14 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
       if (!url) throw new Error('No URL');
       setSignedUrl(url);
 
-      // For PDFs, fetch as blob to bypass X-Frame-Options restrictions
+      // For PDFs/documents, fetch as blob to bypass X-Frame-Options restrictions
       if (content.type === 'pdf') {
         const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to fetch PDF');
-        const blob = await response.blob();
-        const objectUrl = URL.createObjectURL(blob);
+        if (!response.ok) throw new Error('Failed to fetch file');
+        const rawBlob = await response.blob();
+        // Force correct MIME type for PDF rendering in iframe
+        const pdfBlob = new Blob([rawBlob], { type: 'application/pdf' });
+        const objectUrl = URL.createObjectURL(pdfBlob);
         setBlobUrl(objectUrl);
       }
     } catch (err) {

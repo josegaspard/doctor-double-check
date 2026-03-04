@@ -98,9 +98,9 @@ function ContentCardThumbnail({
         </div>
       )}
 
-      {/* Type badge */}
+      {/* Type badge - always green bg with white text */}
       <div className="absolute top-2 left-2">
-        <Badge variant="secondary" className="gap-1 capitalize text-xs backdrop-blur-sm bg-background/70">
+        <Badge className="gap-1 capitalize text-xs bg-primary text-primary-foreground hover:bg-primary/90 border-0">
           <TypeIcon className="w-3 h-3" />
           {config.label}
         </Badge>
