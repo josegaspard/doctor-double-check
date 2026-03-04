@@ -1,10 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Quitar sección de Portada del Live
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-Eliminar el bloque completo de thumbnail (líneas 182-219) en `src/components/live/LiveSetupForm.tsx`, incluyendo el label, input file, preview de imagen, botón de subir, y el texto de recomendación.
+## Solucion
 
-También limpiar las variables y funciones relacionadas al thumbnail que ya no se usarán (`thumbnailFile`, `thumbnailPreview`, `handleThumbnailChange`, `removeThumbnail`, `fileInputRef`, `ImagePlus` import si no se usa en otro lugar).
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-**Archivo a modificar:** `src/components/live/LiveSetupForm.tsx`
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
+
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+
+## Archivos a modificar
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
