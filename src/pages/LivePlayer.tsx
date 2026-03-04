@@ -435,7 +435,7 @@ export default function LivePlayer() {
                 roomUrl={roomUrl}
                 token={viewerToken}
                 isOwner={isOwner}
-                onLeave={() => navigate('/lives')}
+                onLeave={isOwner && isLiveActive ? () => setShowEndDialog(true) : () => navigate('/lives')}
                 onParticipantCountChange={() => {}}
               />
             ) : (
@@ -505,7 +505,7 @@ export default function LivePlayer() {
               </h1>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {mySubToDoctor?.tier === 'premium' && (
-                  <Badge className="gap-1 bg-yellow-500/10 text-yellow-600 border-yellow-300">
+                  <Badge className="gap-1 bg-premium/10 text-premium border-premium/30">
                     <Star className="w-3 h-3" />
                     {t('livePlayer.premiumEarlyAccess')}
                   </Badge>
@@ -515,7 +515,7 @@ export default function LivePlayer() {
                 ))}
               </div>
               <Separator className="my-3 sm:my-4" />
-              {/* Action buttons - sticky on mobile */}
+              {/* Action buttons */}
               <div className="flex flex-wrap gap-2">
                 <Button 
                   variant={isLiked ? "default" : "outline"} 
@@ -557,9 +557,24 @@ export default function LivePlayer() {
                     Reservar Orientación - ${consultationFee}
                   </Button>
                 )}
+                {isOwner && isLiveActive && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5 h-9 sm:h-8 text-xs sm:text-sm min-w-[44px] ml-auto"
+                    onClick={() => setShowEndDialog(true)}
+                  >
+                    <StopCircle className="w-4 h-4" />
+                    <span className="hidden sm:inline">{t('livePlayer.endLive')}</span>
+                  </Button>
+                )}
               </div>
-              <Separator className="my-3 sm:my-4" />
-              <p className="text-muted-foreground text-sm break-words whitespace-pre-wrap overflow-hidden">{live.description}</p>
+              {live.description && (
+                <>
+                  <Separator className="my-3 sm:my-4" />
+                  <p className="text-muted-foreground text-sm break-words whitespace-pre-wrap overflow-hidden line-clamp-3">{live.description}</p>
+                </>
+              )}
             </div>
           </div>
 
@@ -572,99 +587,69 @@ export default function LivePlayer() {
               </div>
             )}
 
-            {/* Doctor Info Card */}
+            {/* Compact Doctor Info Card */}
             <Card>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <Avatar className="w-11 h-11 sm:w-14 sm:h-14 flex-shrink-0">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10 flex-shrink-0">
                     {live.doctorAvatar ? (
                       <AvatarImage src={live.doctorAvatar} alt={live.doctorName} />
                     ) : null}
                     <AvatarFallback className="bg-primary/10">
-                      <Stethoscope className="w-5 h-5 sm:w-7 sm:h-7 text-primary" />
+                      <Stethoscope className="w-5 h-5 text-primary" />
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground">{live.doctorName}</h3>
-                    <p className="text-sm text-muted-foreground">{live.specialty}</p>
-                    <Badge variant="verified" className="mt-2 gap-1">
-                      <Award className="w-3 h-3" />
-                      {t('livePlayer.verified')}
-                    </Badge>
+                    <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{live.doctorName}</h3>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs text-muted-foreground truncate">{live.specialty}</span>
+                      <Badge variant="verified" className="gap-0.5 text-[10px] px-1.5 py-0 h-4">
+                        <Award className="w-2.5 h-2.5" />
+                        {t('livePlayer.verified')}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-                <Separator className="my-4" />
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{realtimeLikesCount || live.likesCount}</p>
-                    <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                      <Heart className="w-3 h-3 fill-destructive text-destructive" />
-                      {t('livePlayer.likes')}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{live.followersCount || 0}</p>
-                    <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                      <Star className="w-3 h-3 fill-premium text-premium" />
-                      {t('livePlayer.followers')}
-                    </p>
-                  </div>
+
+                {/* Inline stats */}
+                <div className="flex items-center gap-3 mt-3">
+                  <Badge variant="outline" className="gap-1 text-xs font-normal">
+                    <Heart className="w-3 h-3 fill-destructive text-destructive" />
+                    {realtimeLikesCount || live.likesCount} {t('livePlayer.likes')}
+                  </Badge>
+                  <Badge variant="outline" className="gap-1 text-xs font-normal">
+                    <Star className="w-3 h-3 fill-premium text-premium" />
+                    {live.followersCount || 0} {t('livePlayer.followers')}
+                  </Badge>
                 </div>
-                <Separator className="my-4" />
-                <Button className="w-full h-10" onClick={() => navigate(`/doctor/${live.doctorId}`)}>{t('livePlayer.viewProfile')}</Button>
-                {role === 'patient' && (
-                  <Button variant="outline" className="w-full mt-2 h-10" onClick={handleStartPrivateChat}>
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    {t('livePlayer.startPrivateChat')}
+
+                {/* Compact actions */}
+                <div className="flex gap-2 mt-3">
+                  <Button size="sm" variant="outline" className="flex-1 h-8 text-xs" onClick={() => navigate(`/doctor/${live.doctorId}`)}>
+                    {t('livePlayer.viewProfile')}
                   </Button>
-                )}
-              </CardContent>
-            </Card>
+                  {role === 'patient' && (
+                    <Button size="sm" variant="outline" className="flex-1 h-8 text-xs gap-1" onClick={handleStartPrivateChat}>
+                      <MessageSquare className="w-3 h-3" />
+                      {t('livePlayer.startPrivateChat')}
+                    </Button>
+                  )}
+                </div>
 
-            {/* Premium Recording Card */}
-            <Card className="bg-premium/5 border-premium/20">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-premium/10 flex items-center justify-center flex-shrink-0">
-                    <Video className="w-5 h-5 text-premium" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-foreground text-sm">{t('livePlayer.premiumRecording')}</h4>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t('livePlayer.premiumRecordingDesc')}
-                    </p>
-                  </div>
+                {/* Premium recording inline banner */}
+                <div className="flex items-center gap-2 mt-3 p-2 rounded-md bg-premium/5 border border-premium/15">
+                  <Video className="w-4 h-4 text-premium flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground leading-tight">{t('livePlayer.premiumRecordingDesc')}</p>
                 </div>
               </CardContent>
             </Card>
-
-            {/* Doctor Controls */}
-            {isOwner && isLiveActive && (
-              <Card className="bg-destructive/5 border-destructive/20">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                      <StopCircle className="w-5 h-5 text-destructive" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-foreground text-sm">{t('livePlayer.doctorPanel')}</h4>
-                      <p className="text-xs text-muted-foreground mt-1 mb-3">{t('livePlayer.doctorPanelDesc')}</p>
-                      <Button variant="destructive" size="sm" className="w-full h-10" onClick={() => setShowEndDialog(true)}>
-                        <StopCircle className="w-4 h-4 mr-2" />
-                        {t('livePlayer.endLive')}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Visitor CTA */}
             {role === 'visitor' && (
               <Card className="bg-info/5 border-info/20">
-                <CardContent className="p-4 text-center">
-                  <p className="text-sm text-muted-foreground mb-3">{t('livePlayer.registerToChat')}</p>
-                  <Button size="sm" className="h-10" onClick={() => navigate('/login')}>{t('livePlayer.createAccount')}</Button>
+                <CardContent className="p-3 text-center">
+                  <p className="text-xs text-muted-foreground mb-2">{t('livePlayer.registerToChat')}</p>
+                  <Button size="sm" className="h-8 text-xs" onClick={() => navigate('/login')}>{t('livePlayer.createAccount')}</Button>
                 </CardContent>
               </Card>
             )}
