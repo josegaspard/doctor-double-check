@@ -5,8 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LiveEndedOverlay } from '@/components/live/LiveEndedOverlay';
+import { LiveConsultationBooking } from '@/components/live/LiveConsultationBooking';
 
 import { useViewerCount } from '@/hooks/useViewerCount';
+import { useWallet } from '@/contexts/WalletContext';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useDaily } from '@/hooks/useDaily';
 import MainLayout from '@/components/layout/MainLayout';
