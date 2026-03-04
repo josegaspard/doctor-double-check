@@ -5,10 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -17,10 +16,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ContentPreviewModal } from '@/components/content/ContentPreviewModal';
-import { 
-  FileText, 
-  Image as ImageIcon, 
-  Video, 
+import {
+  FileText,
+  Image as ImageIcon,
+  Video,
   Search,
   Filter,
   Clock,
@@ -34,6 +33,7 @@ import {
   Lock,
   ShoppingBag,
   Sparkles,
+  DollarSign,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { usePurchases } from '@/hooks/usePurchases';
@@ -58,47 +58,160 @@ interface DoctorContent {
   creator_specialty?: string;
 }
 
-const getAudienceIcon = (audience: string) => {
-  switch (audience) {
-    case 'professionals':
-      return <Stethoscope className="w-3 h-3" />;
-    case 'patients':
-      return <Users className="w-3 h-3" />;
-    default:
-      return <Globe className="w-3 h-3" />;
-  }
+// --- Extracted sub-components ---
+
+const typeConfig: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
+  video: { icon: Video, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Video' },
+  pdf: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'PDF' },
+  image: { icon: ImageIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Imagen' },
 };
 
-const getAudienceLabel = (audience: string, t: any) => {
-  switch (audience) {
-    case 'professionals':
-      return t('content.professionals');
-    case 'patients':
-      return t('content.patients');
-    default:
-      return t('content.all');
-  }
-};
+function ContentCardThumbnail({
+  content,
+  thumbUrl,
+  locked,
+  t,
+}: {
+  content: DoctorContent;
+  thumbUrl: string | null;
+  locked: boolean;
+  t: any;
+}) {
+  const config = typeConfig[content.type] || typeConfig.pdf;
+  const TypeIcon = config.icon;
 
-const getTypeIcon = (type: string) => {
-  switch (type) {
-    case 'video':
-      return <Video className="w-5 h-5" />;
-    case 'pdf':
-      return <FileText className="w-5 h-5" />;
-    case 'image':
-      return <ImageIcon className="w-5 h-5" />;
-    default:
-      return <FileText className="w-5 h-5" />;
-  }
-};
+  return (
+    <div className="relative aspect-video bg-muted/40 overflow-hidden">
+      {thumbUrl ? (
+        <img
+          src={thumbUrl}
+          alt={content.title}
+          loading="lazy"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      ) : (
+        <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
+          <div className={`w-12 h-12 rounded-xl ${config.bg} flex items-center justify-center`}>
+            <TypeIcon className={`w-6 h-6 ${config.color}`} />
+          </div>
+          <span className={`text-xs font-medium ${config.color}`}>{config.label}</span>
+        </div>
+      )}
+
+      {/* Type badge */}
+      <div className="absolute top-2 left-2">
+        <Badge variant="secondary" className="gap-1 capitalize text-xs backdrop-blur-sm bg-background/70">
+          <TypeIcon className="w-3 h-3" />
+          {config.label}
+        </Badge>
+      </div>
+
+      {/* Price badge */}
+      {content.price > 0 && (
+        <div className="absolute bottom-2 left-2">
+          <Badge className="gap-1 text-xs bg-primary text-primary-foreground">
+            <DollarSign className="w-3 h-3" />${content.price}
+          </Badge>
+        </div>
+      )}
+
+      {/* Audience badge */}
+      {content.audience_type !== 'all' && (
+        <div className="absolute top-2 right-2">
+          <Badge
+            variant={content.audience_type === 'subscribers' ? 'default' : 'outline'}
+            className={
+              content.audience_type === 'subscribers'
+                ? 'bg-warning text-warning-foreground gap-1 text-xs'
+                : 'bg-background/70 backdrop-blur-sm text-xs'
+            }
+          >
+            {content.audience_type === 'subscribers' ? (
+              <Crown className="w-3 h-3" />
+            ) : content.audience_type === 'professionals' ? (
+              <Stethoscope className="w-3 h-3" />
+            ) : (
+              <Users className="w-3 h-3" />
+            )}
+            <span className="ml-0.5">
+              {content.audience_type === 'subscribers'
+                ? t('subscribers.subscribersOnly')
+                : content.audience_type === 'professionals'
+                ? t('content.professionals')
+                : t('content.patients')}
+            </span>
+          </Badge>
+        </div>
+      )}
+
+      {/* Lock overlay */}
+      {locked && (
+        <div className="absolute inset-0 bg-background/60 flex items-center justify-center backdrop-blur-sm">
+          <div className="text-center">
+            <Lock className="w-8 h-8 text-warning mx-auto mb-1" />
+            <p className="text-xs font-medium text-foreground">{t('subscribers.subscribersOnly')}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ContentCardBody({
+  content,
+  locale,
+}: {
+  content: DoctorContent;
+  locale: typeof es;
+}) {
+  return (
+    <CardContent className="p-4 space-y-2.5">
+      <h3 className="font-semibold text-foreground line-clamp-2 text-sm leading-snug">
+        {content.title}
+      </h3>
+
+      {content.description && (
+        <p className="text-xs text-muted-foreground line-clamp-2">{content.description}</p>
+      )}
+
+      {/* Doctor info */}
+      <div className="flex items-center gap-2">
+        <Avatar className="w-6 h-6">
+          <AvatarImage src={content.creator_avatar || undefined} />
+          <AvatarFallback><User className="w-3 h-3" /></AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium truncate">{content.creator_name}</p>
+          {content.creator_specialty && (
+            <p className="text-[11px] text-muted-foreground truncate">{content.creator_specialty}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+        <span className="flex items-center gap-1">
+          <Clock className="w-3 h-3" />
+          {format(new Date(content.created_at), 'd MMM yyyy', { locale })}
+        </span>
+        {content.category && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+            {content.category}
+          </Badge>
+        )}
+      </div>
+    </CardContent>
+  );
+}
+
+// --- Main page ---
 
 export default function ContentGallery() {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const { language, t } = useLanguage();
-  const { isSubscribedTo, getSubscription } = useSubscriptions();
+  const { getSubscription } = useSubscriptions();
   const { purchases } = usePurchases();
   const locale = language === 'es' ? es : enUS;
+
   const [contents, setContents] = useState<DoctorContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -107,12 +220,12 @@ export default function ContentGallery() {
   const [previewContent, setPreviewContent] = useState<DoctorContent | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [contentTab, setContentTab] = useState('all');
+  const [signedThumbs, setSignedThumbs] = useState<Record<string, string>>({});
 
   const fetchContents = useCallback(async () => {
     try {
       setIsLoading(true);
-      
-      // Fetch public content based on RLS policies
+
       const { data, error } = await supabase
         .from('doctor_content')
         .select('*')
@@ -121,36 +234,47 @@ export default function ContentGallery() {
 
       if (error) throw error;
 
-      // Get unique creator IDs
       const creatorIds = [...new Set((data || []).map(c => c.creator_id))];
-      
-      // Use public views to avoid exposing sensitive data
-      const { data: profiles } = await supabase
-        .from('profiles_public')
-        .select('id, name, avatar_url')
-        .in('id', creatorIds);
-      
-      // Use public view for doctor specialties
-      const { data: doctorProfiles } = await supabase
-        .from('doctor_profiles_public')
-        .select('user_id, specialty')
-        .in('user_id', creatorIds);
+
+      const [{ data: profiles }, { data: doctorProfiles }] = await Promise.all([
+        supabase.from('profiles_public').select('id, name, avatar_url').in('id', creatorIds),
+        supabase.from('doctor_profiles_public').select('user_id, specialty').in('user_id', creatorIds),
+      ]);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
       const specialtyMap = new Map(doctorProfiles?.map(d => [d.user_id, d.specialty]) || []);
-      
-      // Get unique categories
+
       const uniqueCategories = [...new Set((data || []).map(c => c.category).filter(Boolean))] as string[];
       setCategories(uniqueCategories);
 
-      setContents((data || []).map(c => ({
+      const mapped: DoctorContent[] = (data || []).map(c => ({
         ...c,
         type: c.type as 'video' | 'pdf' | 'image',
         audience_type: c.audience_type as 'all' | 'patients' | 'professionals' | 'subscribers',
         creator_name: profileMap.get(c.creator_id)?.name,
         creator_avatar: profileMap.get(c.creator_id)?.avatar_url,
         creator_specialty: specialtyMap.get(c.creator_id),
-      })));
+      }));
+
+      setContents(mapped);
+
+      // Generate signed thumbnail URLs for image-type content without a thumbnail_url
+      const needThumb = mapped.filter(c => c.type === 'image' && !c.thumbnail_url && !c.file_url.startsWith('http'));
+      if (needThumb.length > 0) {
+        const thumbResults = await Promise.all(
+          needThumb.map(async c => {
+            const { data: sd } = await supabase.storage
+              .from('doctor-content')
+              .createSignedUrl(c.file_url, 60 * 60);
+            return { id: c.id, url: sd?.signedUrl || null };
+          }),
+        );
+        const thumbMap: Record<string, string> = {};
+        thumbResults.forEach(r => {
+          if (r.url) thumbMap[r.id] = r.url;
+        });
+        setSignedThumbs(thumbMap);
+      }
     } catch (error) {
       console.error('Error fetching content:', error);
     } finally {
@@ -162,28 +286,27 @@ export default function ContentGallery() {
     fetchContents();
   }, [fetchContents]);
 
-  // Check if user can see subscriber-only content
   const canViewSubscriberContent = (content: DoctorContent) => {
     if (content.audience_type !== 'subscribers') return true;
     if (!user?.id) return false;
-    if (content.creator_id === user.id) return true; // Creator can always see
+    if (content.creator_id === user.id) return true;
     const sub = getSubscription(content.creator_id);
     return sub && (sub.tier === 'basic' || sub.tier === 'premium');
   };
 
-  // Build purchased IDs set — check both recording_id and content_id
   const purchasedIds = new Set([
     ...(purchases?.map(p => p.recordingId) || []),
     ...(purchases?.filter(p => (p as any).contentId).map(p => (p as any).contentId) || []),
   ]);
 
   const filteredContents = contents.filter(content => {
-    const matchesSearch = content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch =
+      content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       content.creator_name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = typeFilter === 'all' || content.type === typeFilter;
     const matchesCategory = categoryFilter === 'all' || content.category === categoryFilter;
     const isPurchased = purchasedIds.has(content.id);
-    
+
     if (contentTab === 'purchased') return matchesSearch && matchesType && matchesCategory && isPurchased;
     if (contentTab === 'new') return matchesSearch && matchesType && matchesCategory && !isPurchased;
     return matchesSearch && matchesType && matchesCategory;
@@ -191,19 +314,17 @@ export default function ContentGallery() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header */}
         <div className="mb-6">
           <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
             <Library className="w-6 h-6 text-primary" />
             {t('content.library')}
           </h1>
-          <p className="text-muted-foreground mt-1">
-            {t('content.explore')}
-          </p>
+          <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
         </div>
 
-        {/* Content Tabs */}
+        {/* Tabs */}
         <Tabs value={contentTab} onValueChange={setContentTab} className="mb-4">
           <TabsList>
             <TabsTrigger value="all" className="gap-1.5">
@@ -228,7 +349,7 @@ export default function ContentGallery() {
             <Input
               placeholder={t('inputs.searchByTitle')}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -252,120 +373,45 @@ export default function ContentGallery() {
               <SelectContent>
                 <SelectItem value="all">{t('content.allCategories')}</SelectItem>
                 {categories.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           )}
         </div>
 
-        {/* Content Grid */}
+        {/* Grid */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : filteredContents.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredContents.map((content) => (
-              <Card 
-                key={content.id} 
-                className={`group overflow-hidden hover:shadow-lg transition-all cursor-pointer ${!canViewSubscriberContent(content) ? 'opacity-75' : ''}`}
-                onClick={() => {
-                  if (!canViewSubscriberContent(content)) {
-                    return; // Don't open preview for locked content
-                  }
-                  setPreviewContent(content);
-                }}
-              >
-                {/* Thumbnail */}
-                <div className="relative aspect-video bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
-                  {content.thumbnail_url ? (
-                    <img 
-                      src={content.thumbnail_url} 
-                      alt={content.title}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-primary/40">
-                      {getTypeIcon(content.type)}
-                    </div>
-                  )}
-                  
-                  {/* Type Badge */}
-                  <div className="absolute top-2 left-2">
-                    <Badge variant="secondary" className="gap-1 capitalize">
-                      {getTypeIcon(content.type)}
-                      {content.type}
-                    </Badge>
-                  </div>
-                  
-                  {/* Audience Badge */}
-                  {content.audience_type !== 'all' && (
-                    <div className="absolute top-2 right-2">
-                      <Badge variant={content.audience_type === 'subscribers' ? 'default' : 'outline'} className={content.audience_type === 'subscribers' ? 'bg-warning text-warning-foreground gap-1' : 'bg-background/80'}>
-                        {content.audience_type === 'subscribers' ? <Crown className="w-3 h-3" /> : getAudienceIcon(content.audience_type)}
-                        <span className="ml-1">{content.audience_type === 'subscribers' ? t('subscribers.subscribersOnly') : getAudienceLabel(content.audience_type, t)}</span>
-                      </Badge>
-                    </div>
-                  )}
-                  {/* Lock overlay for non-subscribers */}
-                  {!canViewSubscriberContent(content) && (
-                    <div className="absolute inset-0 bg-background/60 flex items-center justify-center backdrop-blur-sm">
-                      <div className="text-center">
-                        <Lock className="w-8 h-8 text-warning mx-auto mb-1" />
-                        <p className="text-xs font-medium text-foreground">{t('subscribers.subscribersOnly')}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-foreground line-clamp-2 mb-2">
-                    {content.title}
-                  </h3>
-                  
-                  {content.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                      {content.description}
-                    </p>
-                  )}
-                  
-                  {/* Doctor Info */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <Avatar className="w-6 h-6">
-                      <AvatarImage src={content.creator_avatar || undefined} />
-                      <AvatarFallback><User className="w-3 h-3" /></AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{content.creator_name}</p>
-                      {content.creator_specialty && (
-                        <p className="text-xs text-muted-foreground truncate">{content.creator_specialty}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {format(new Date(content.created_at), "d MMM yyyy", { locale })}
-                    </span>
-                    {content.category && (
-                      <Badge variant="outline" className="text-xs">
-                        {content.category}
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {filteredContents.map(content => {
+              const locked = !canViewSubscriberContent(content);
+              const thumbUrl = content.thumbnail_url || signedThumbs[content.id] || null;
+
+              return (
+                <Card
+                  key={content.id}
+                  className={`group overflow-hidden hover:shadow-lg transition-all cursor-pointer border-border/60 ${locked ? 'opacity-75' : ''}`}
+                  onClick={() => {
+                    if (locked) return;
+                    setPreviewContent(content);
+                  }}
+                >
+                  <ContentCardThumbnail content={content} thumbUrl={thumbUrl} locked={locked} t={t} />
+                  <ContentCardBody content={content} locale={locale} />
+                </Card>
+              );
+            })}
           </div>
         ) : (
           <Card className="p-12 text-center">
             <Library className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              {t('content.noContent')}
-            </h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t('content.noContent')}</h3>
             <p className="text-muted-foreground">
               {searchQuery || typeFilter !== 'all' || categoryFilter !== 'all'
                 ? t('content.noContentFilters')
@@ -375,7 +421,6 @@ export default function ContentGallery() {
         )}
       </div>
 
-      {/* Content Preview Modal */}
       <ContentPreviewModal
         isOpen={!!previewContent}
         onClose={() => setPreviewContent(null)}
