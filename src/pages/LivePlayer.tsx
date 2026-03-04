@@ -363,9 +363,13 @@ export default function LivePlayer() {
         .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${live.doctorId}),and(participant1_id.eq.${live.doctorId},participant2_id.eq.${user.id})`);
       
       if (sessions && sessions.length > 0) {
+        // Already has active session → go to chat
         navigate(`/chat?session=${sessions[0].id}`);
+      } else if (consultationFee > 0 && isLiveActive) {
+        // No active session → open booking dialog (orientation from live)
+        setShowBooking(true);
       } else {
-        toast.info(t('livePlayer.noActiveSession'));
+        // Fallback: go to doctor profile
         navigate(`/doctor/${live.doctorId}`);
       }
     } catch {

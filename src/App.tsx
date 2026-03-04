@@ -10,6 +10,8 @@ import { WalletProvider } from "@/contexts/WalletContext";
 import { LivesProvider } from "@/contexts/LivesContext";
 import { VaultProvider } from "@/contexts/VaultContext";
 import { ChatProvider } from "@/contexts/ChatContext";
+import { ActiveStreamProvider } from "@/contexts/ActiveStreamContext";
+import { LiveStreamBubble } from "@/components/live/LiveStreamBubble";
 import { PostConsultationRatingProvider } from "@/components/ratings/PostConsultationRatingProvider";
 import { IncomingCallProvider } from "@/components/videocall/IncomingCallProvider";
 import React, { Suspense } from "react";
@@ -23,11 +25,14 @@ function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
     <WalletProvider>
       <VaultProvider>
         <ChatProvider>
-          <PostConsultationRatingProvider>
-            <IncomingCallProvider>
-              {children}
-            </IncomingCallProvider>
-          </PostConsultationRatingProvider>
+          <ActiveStreamProvider>
+            <PostConsultationRatingProvider>
+              <IncomingCallProvider>
+                {children}
+                <LiveStreamBubble />
+              </IncomingCallProvider>
+            </PostConsultationRatingProvider>
+          </ActiveStreamProvider>
         </ChatProvider>
       </VaultProvider>
     </WalletProvider>
