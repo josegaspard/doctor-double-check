@@ -505,7 +505,7 @@ export default function LivePlayer() {
               </h1>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {mySubToDoctor?.tier === 'premium' && (
-                  <Badge className="gap-1 bg-yellow-500/10 text-yellow-600 border-yellow-300">
+                  <Badge className="gap-1 bg-premium/10 text-premium border-premium/30">
                     <Star className="w-3 h-3" />
                     {t('livePlayer.premiumEarlyAccess')}
                   </Badge>
