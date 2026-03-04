@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useViewerCount } from '@/hooks/useViewerCount';
 import { useDaily } from '@/hooks/useDaily';
 import { useLocalRecording } from '@/hooks/cloudflare/useLocalRecording';
+import { useActiveStream } from '@/contexts/ActiveStreamContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { LiveSetupForm, LiveConfig } from '@/components/live/LiveSetupForm';
@@ -27,8 +28,10 @@ interface LiveData {
 
 export default function DoctorGoLive() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, role, isLoading: isAuthLoading } = useAuth();
   const { t } = useLanguage();
+  const activeStream = useActiveStream();
 
   // Live state
   const [isCreating, setIsCreating] = useState(false);
@@ -40,13 +43,12 @@ export default function DoctorGoLive() {
   const [isEnding, setIsEnding] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showEndingModal, setShowEndingModal] = useState(false);
-  const [showNavigationWarning, setShowNavigationWarning] = useState(false);
   const [endingStage, setEndingStage] = useState<'ending' | 'saving' | 'uploading' | 'done'>('ending');
   const [enableRecording, setEnableRecording] = useState(true);
   const [tags, setTags] = useState<string[]>([]);
   const [recordingPrice, setRecordingPrice] = useState(0);
 
-  // Local media stream for preview + recording
+  // Local media stream for recording
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [dailyRoomUrl, setDailyRoomUrl] = useState<string | null>(null);
   const [dailyOwnerToken, setDailyOwnerToken] = useState<string | null>(null);
@@ -57,12 +59,35 @@ export default function DoctorGoLive() {
 
   // Real-time viewer count
   const { viewerCount, likesCount } = useViewerCount({
-    liveId: liveData?.id || '',
+    liveId: liveData?.id || activeStream.liveData?.id || '',
     autoJoin: false,
   });
 
-  // Timer
+  // Sync viewer/likes to context
   useEffect(() => {
+    if (viewerCount > 0) activeStream.setViewerCount(viewerCount);
+    if (likesCount > 0) activeStream.setLikesCount(likesCount);
+  }, [viewerCount, likesCount]);
+
+  // Restore from active stream context (doctor returns to page)
+  useEffect(() => {
+    if (activeStream.isLive && activeStream.liveData && !isLive) {
+      setLiveData({
+        ...activeStream.liveData,
+        viewerCount: activeStream.viewerCount,
+        likesCount: activeStream.likesCount,
+      });
+      setIsLive(true);
+      activeStream.maximizeStream();
+    }
+  }, [activeStream.isLive, activeStream.liveData]);
+
+  // Use context timer when restored
+  const displayElapsedTime = activeStream.isLive ? activeStream.elapsedTime : elapsedTime;
+
+  // Timer (only when not using context)
+  useEffect(() => {
+    if (activeStream.isLive) return; // context handles timer
     let interval: NodeJS.Timeout;
     if (isLive && liveData?.startedAt) {
       interval = setInterval(() => {
@@ -70,31 +95,12 @@ export default function DoctorGoLive() {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isLive, liveData?.startedAt]);
-
-  // Navigation guard refs
-  const isLiveRef = useRef(isLive);
-  const isEndingRef = useRef(isEnding);
-  useEffect(() => { isLiveRef.current = isLive; isEndingRef.current = isEnding; }, [isLive, isEnding]);
-
-  // Handle browser back/forward
-  useEffect(() => {
-    if (!isLive || isEnding) return;
-    window.history.pushState({ isLiveGuard: true }, '');
-    const handlePopState = () => {
-      if (isLiveRef.current && !isEndingRef.current) {
-        window.history.pushState({ isLiveGuard: true }, '');
-        setShowNavigationWarning(true);
-      }
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [isLive, isEnding]);
+  }, [isLive, liveData?.startedAt, activeStream.isLive]);
 
   // Browser close warning
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isLive && !isEnding) {
+      if ((isLive || activeStream.isLive) && !isEnding) {
         e.preventDefault();
         e.returnValue = t('doctorGoLive.confirmExit');
         return e.returnValue;
@@ -102,9 +108,24 @@ export default function DoctorGoLive() {
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isLive, isEnding]);
+  }, [isLive, isEnding, activeStream.isLive]);
 
-  // No longer need local stream controls - Daily handles mute/video
+  // Minimize on navigate away (detect route change)
+  const prevPathRef = useRef(location.pathname);
+  useEffect(() => {
+    // This effect runs when location changes. If we were on this page and now leaving,
+    // minimize the stream. But we need to detect "leaving" in the cleanup.
+    prevPathRef.current = location.pathname;
+  }, [location.pathname]);
+
+  // When this component unmounts while live, minimize the stream
+  useEffect(() => {
+    return () => {
+      if (activeStream.isLive && !isEnding) {
+        activeStream.minimizeStream();
+      }
+    };
+  }, [activeStream.isLive, isEnding]);
 
   const handleStartLive = async (config: LiveConfig) => {
     if (!user?.id) return;
@@ -128,20 +149,6 @@ export default function DoctorGoLive() {
     setRecordingPrice(config.recordingPrice);
 
     try {
-      // Upload thumbnail if provided
-      let thumbnailUrl: string | null = null;
-      if (config.thumbnailFile) {
-        const ext = config.thumbnailFile.name.split('.').pop() || 'jpg';
-        const path = `live-thumbnails/${user.id}/${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from('thumbnails')
-          .upload(path, config.thumbnailFile, { upsert: true });
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage.from('thumbnails').getPublicUrl(path);
-          thumbnailUrl = urlData.publicUrl;
-        }
-      }
-
       // Create live record in DB
       const { data: live, error: liveError } = await supabase
         .from('lives')
@@ -152,7 +159,7 @@ export default function DoctorGoLive() {
           specialty: config.specialty,
           tags: config.tags.length > 0 ? config.tags : null,
           recording_price: config.enableRecording ? config.recordingPrice : null,
-          thumbnail_url: thumbnailUrl,
+          thumbnail_url: null,
           status: 'live',
           chat_enabled: config.chatEnabled,
           max_questions: config.maxQuestions,
@@ -180,7 +187,16 @@ export default function DoctorGoLive() {
       setDailyRoomUrl(room.url);
       setDailyOwnerToken(room.ownerToken || '');
 
-      // Always start local recording from second 0 (all lives become recordings)
+      // Start the stream in the global context (persists across navigation)
+      await activeStream.startStream(room.url, room.ownerToken || '', {
+        id: live.id,
+        title: live.title,
+        description: live.description || '',
+        specialty: live.specialty,
+        startedAt: new Date(live.started_at),
+      });
+
+      // Start local recording
       localRecording.startRecording(stream);
 
       setLiveData({
@@ -221,7 +237,13 @@ export default function DoctorGoLive() {
 
   // End live
   const handleEndLive = async () => {
-    if (!liveData?.id || !user?.id || isEnding) return;
+    const currentLiveData = liveData || (activeStream.liveData ? {
+      ...activeStream.liveData,
+      viewerCount: activeStream.viewerCount,
+      likesCount: activeStream.likesCount,
+    } : null);
+    
+    if (!currentLiveData?.id || !user?.id || isEnding) return;
 
     setIsEnding(true);
     setShowEndDialog(false);
@@ -235,14 +257,18 @@ export default function DoctorGoLive() {
       }
 
       // Save peak viewers
-      if (viewerCount > 0) {
+      const currentViewerCount = viewerCount || activeStream.viewerCount;
+      if (currentViewerCount > 0) {
         await supabase
           .from('lives')
-          .update({ peak_viewers: viewerCount })
-          .eq('id', liveData.id);
+          .update({ peak_viewers: currentViewerCount })
+          .eq('id', currentLiveData.id);
       }
 
-      // End Daily room (non-blocking — room auto-expires anyway)
+      // End the stream in context (destroys Daily call)
+      activeStream.endStream();
+
+      // End Daily room (non-blocking)
       if (dailyRoomName) {
         try {
           await endRoom(dailyRoomName);
@@ -255,29 +281,25 @@ export default function DoctorGoLive() {
       setEndingStage('saving');
       await supabase.from('lives').update({
         status: 'ended', ended_at: new Date().toISOString(),
-      }).eq('id', liveData.id);
+      }).eq('id', currentLiveData.id);
 
-      // Upload local recording (all lives are saved as recordings)
+      // Upload local recording
       let recordingCreated = false;
       const localBlob = localRecording.getRecordingBlob();
       if (localBlob && localBlob.size > 0) {
         setEndingStage('uploading');
         const uploadResult = await localRecording.uploadRecording({
-          liveId: liveData.id, doctorId: user.id, title: liveData.title,
-          description: liveData.description, specialty: liveData.specialty,
+          liveId: currentLiveData.id, doctorId: user.id, title: currentLiveData.title,
+          description: currentLiveData.description, specialty: currentLiveData.specialty,
           tags, price: enableRecording ? recordingPrice : 0,
         });
         if (uploadResult.success) {
           recordingCreated = true;
-
-          // Update the recording with peak_viewers from the live
           await supabase
             .from('recordings')
-            .update({ peak_viewers: viewerCount || 0 })
-            .eq('live_id', liveData.id)
+            .update({ peak_viewers: currentViewerCount || 0 })
+            .eq('live_id', currentLiveData.id)
             .eq('doctor_id', user.id);
-
-          // Recording saved to recordings table only — no auto-insert into doctor_content
         }
       }
 
@@ -288,6 +310,9 @@ export default function DoctorGoLive() {
 
       setEndingStage('done');
       await new Promise(resolve => setTimeout(resolve, 1500));
+
+      setIsLive(false);
+      setLiveData(null);
 
       if (enableRecording && recordingCreated) {
         toast.success('¡Transmisión finalizada! La grabación está disponible como contenido premium.');
@@ -302,14 +327,17 @@ export default function DoctorGoLive() {
     } catch (error: any) {
       console.error('Error ending live:', error);
       toast.error(t('doctorGoLive.endError'));
+      activeStream.endStream();
       localStream?.getTracks().forEach(t => t.stop());
       setLocalStream(null);
       localRecording.cleanup();
       try {
         await supabase.from('lives').update({
           status: 'ended', ended_at: new Date().toISOString(),
-        }).eq('id', liveData.id);
+        }).eq('id', currentLiveData.id);
       } catch {}
+      setIsLive(false);
+      setLiveData(null);
       navigate('/doctor/dashboard');
     } finally {
       setIsEnding(false);
@@ -349,20 +377,28 @@ export default function DoctorGoLive() {
     );
   }
 
-  // Live streaming view (skip MainLayout on mobile for true fullscreen)
-  if (isLive && liveData) {
+  // Live streaming view
+  const currentIsLive = isLive || activeStream.isLive;
+  const currentLiveData = liveData || (activeStream.liveData ? {
+    ...activeStream.liveData,
+    viewerCount: activeStream.viewerCount,
+    likesCount: activeStream.likesCount,
+  } : null);
+
+  if (currentIsLive && currentLiveData) {
     const liveContent = (
       <>
         <LiveStreamView
-          liveData={liveData}
-          elapsedTime={elapsedTime}
-          viewerCount={viewerCount}
-          likesCount={likesCount}
+          liveData={currentLiveData}
+          elapsedTime={displayElapsedTime}
+          viewerCount={viewerCount || activeStream.viewerCount}
+          likesCount={likesCount || activeStream.likesCount}
           showChat={showChat}
           onToggleChat={() => setShowChat(!showChat)}
           onEndClick={() => setShowEndDialog(true)}
           roomUrl={dailyRoomUrl || ''}
           ownerToken={dailyOwnerToken || ''}
+          useContextVideo={activeStream.isLive}
         />
         <LiveDialogs
           showEndDialog={showEndDialog}
@@ -373,15 +409,14 @@ export default function DoctorGoLive() {
           showEndingModal={showEndingModal}
           endingStage={endingStage}
           uploadProgress={localRecording.uploadProgress}
-          showNavigationWarning={showNavigationWarning}
-          onNavigationWarningChange={setShowNavigationWarning}
-          onConfirmNavigation={async () => { setShowNavigationWarning(false); await handleEndLive(); }}
-          onCancelNavigation={() => setShowNavigationWarning(false)}
+          showNavigationWarning={false}
+          onNavigationWarningChange={() => {}}
+          onConfirmNavigation={async () => {}}
+          onCancelNavigation={() => {}}
         />
       </>
     );
 
-    // On mobile, render without MainLayout for true fullscreen
     const isMobileCheck = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
     if (isMobileCheck) {
       return liveContent;
