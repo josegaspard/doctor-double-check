@@ -310,7 +310,8 @@ export default function MedicalHistory() {
                   {medicalHistory.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg"
+                      className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted active:scale-[0.98] transition-all"
+                      onClick={() => handlePreviewStudy(item)}
                     >
                       <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
                         {getFileIcon(item.fileType)}
