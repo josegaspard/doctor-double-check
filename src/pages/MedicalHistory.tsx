@@ -171,14 +171,6 @@ export default function MedicalHistory() {
             </div>
           </div>
         </div>
-          
-          {medicalHistory.length > 0 && (
-            <Button variant="outline" onClick={handleExportPDF} className="gap-2 w-full sm:w-auto">
-              <Download className="w-4 h-4" />
-              {t('medicalHistory.exportPdf')}
-            </Button>
-          )}
-        </div>
 
         <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
           <Card>
