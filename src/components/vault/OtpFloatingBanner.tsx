@@ -35,7 +35,7 @@ export function OtpFloatingBanner({ isVisible, patientName, secondsLeft, onReope
             }`}
           >
             <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-              isUrgent ? 'bg-destructive/20' : 'bg-primary/20'
+              isUrgent ? 'bg-destructive-foreground/20' : 'bg-primary-foreground/20'
             }`}>
               <KeyRound className="w-4 h-4" />
             </div>
