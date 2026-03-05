@@ -27,9 +27,8 @@ import {
   Trash2,
   Image as ImageIcon,
   FileSpreadsheet,
-  Download,
 } from 'lucide-react';
-import { exportMedicalHistoryToPDF } from '@/lib/exportMedicalHistoryPDF';
+import { VaultFilePreviewModal } from '@/components/vault/VaultFilePreviewModal';
 import { toast } from 'sonner';
 
 const CATEGORIES = [

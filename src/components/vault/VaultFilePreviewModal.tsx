@@ -8,13 +8,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Image, Download, ExternalLink, X, Calendar, User } from 'lucide-react';
+import { FileText, Image, Calendar, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface VaultFilePreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  viewOnly?: boolean; // When true, hides download/open buttons (doctor OTP access)
+  viewOnly?: boolean;
   file: {
     id: string;
     name: string;
@@ -29,52 +29,62 @@ interface VaultFilePreviewModalProps {
 }
 
 export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false }: VaultFilePreviewModalProps) {
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && file) {
-      generateSignedUrl();
+      loadFileAsBlob();
     } else {
-      setSignedUrl(null);
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      setBlobUrl(null);
       setError(null);
     }
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
   }, [isOpen, file?.id]);
 
-  const generateSignedUrl = async () => {
+  const loadFileAsBlob = async () => {
     if (!file) return;
     
     setIsLoading(true);
     setError(null);
 
     try {
-      // Extract file path from the stored URL or use directly if it's a path
+      // Extract file path from the stored URL
       let filePath = file.fileUrl;
-      
-      // If it's a signed URL, extract the path
       if (filePath.includes('/vault-files/')) {
         const match = filePath.match(/vault-files\/([^?]+)/);
-        if (match) {
-          filePath = match[1];
-        }
+        if (match) filePath = match[1];
       }
 
       // Generate a fresh signed URL
       const { data, error: urlError } = await supabase.storage
         .from('vault-files')
-        .createSignedUrl(filePath, 3600); // 1 hour expiration
+        .createSignedUrl(filePath, 3600);
 
-      if (urlError) {
-        // If path extraction failed, try using the original URL directly
-        setSignedUrl(file.fileUrl);
+      const signedUrl = urlError ? file.fileUrl : data.signedUrl;
+
+      // Fetch as blob to prevent direct URL exposure
+      const response = await fetch(signedUrl);
+      const rawBlob = await response.blob();
+
+      let finalBlob: Blob;
+      if (file.type === 'pdf') {
+        finalBlob = new Blob([rawBlob], { type: 'application/pdf' });
+      } else if (file.type === 'image') {
+        finalBlob = new Blob([rawBlob], { type: rawBlob.type || 'image/png' });
       } else {
-        setSignedUrl(data.signedUrl);
+        finalBlob = rawBlob;
       }
+
+      const objectUrl = URL.createObjectURL(finalBlob);
+      setBlobUrl(objectUrl);
     } catch (err) {
-      console.error('Error generating signed URL:', err);
-      // Fallback to original URL
-      setSignedUrl(file.fileUrl);
+      console.error('Error loading file:', err);
+      setError('No se pudo cargar el archivo');
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +105,10 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        onContextMenu={(e) => e.preventDefault()}
+      >
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -130,8 +143,12 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
           <p className="text-sm text-muted-foreground py-2">{file.description}</p>
         )}
 
-        {/* Preview Area */}
-        <div className="flex-1 overflow-auto min-h-[300px] bg-muted/30 rounded-lg">
+        {/* Preview Area — protected */}
+        <div
+          className="flex-1 overflow-auto min-h-[300px] bg-muted/30 rounded-lg"
+          style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <Skeleton className="w-full h-full" />
@@ -139,58 +156,42 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
               <p className="text-destructive text-center">{error}</p>
-              <Button onClick={generateSignedUrl}>Reintentar</Button>
+              <Button onClick={loadFileAsBlob}>Reintentar</Button>
             </div>
-          ) : signedUrl ? (
+          ) : blobUrl ? (
             <div className="w-full h-full flex items-center justify-center p-4">
               {file.type === 'image' ? (
-                <img
-                  src={signedUrl}
-                  alt={file.name}
-                  className="max-w-full max-h-[500px] object-contain rounded-lg"
-                />
+                <div className="relative">
+                  <img
+                    src={blobUrl}
+                    alt={file.name}
+                    className="max-w-full max-h-[500px] object-contain rounded-lg"
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                  />
+                  {/* Transparent overlay to prevent drag-save */}
+                  <div className="absolute inset-0 pointer-events-none" />
+                </div>
               ) : file.type === 'pdf' ? (
                 <iframe
-                  src={signedUrl}
+                  src={`${blobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
                   className="w-full h-[500px] rounded-lg border"
                   title={file.name}
                 />
               ) : (
                 <div className="text-center p-8">
                   <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-muted-foreground">
                     Vista previa no disponible para este tipo de archivo
                   </p>
-                  <Button asChild>
-                    <a href={signedUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Abrir en nueva pestaña
-                    </a>
-                  </Button>
                 </div>
               )}
             </div>
           ) : null}
         </div>
 
-        {/* Actions */}
+        {/* Actions — no download/open buttons */}
         <div className="flex justify-end gap-2 pt-4 flex-shrink-0">
-          {signedUrl && !viewOnly && (
-            <>
-              <Button variant="outline" asChild>
-                <a href={signedUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Abrir
-                </a>
-              </Button>
-              <Button variant="outline" asChild>
-                <a href={signedUrl} download={file.name}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Descargar
-                </a>
-              </Button>
-            </>
-          )}
           {viewOnly && (
             <p className="text-xs text-muted-foreground mr-auto flex items-center gap-1">
               🔒 Solo lectura — acceso temporal por OTP
