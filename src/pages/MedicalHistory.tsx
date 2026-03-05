@@ -56,6 +56,8 @@ export default function MedicalHistory() {
     dateOfStudy: '',
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewFile, setPreviewFile] = useState<any>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Redirect non-patients using declarative Navigate
   if (role !== 'patient') {
