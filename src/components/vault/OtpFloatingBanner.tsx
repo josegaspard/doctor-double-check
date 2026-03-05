@@ -43,13 +43,13 @@ export function OtpFloatingBanner({ isVisible, patientName, secondsLeft, onReope
               <p className="text-xs font-semibold truncate">OTP pendiente: {patientName}</p>
               <div className="flex items-center gap-1 mt-0.5">
                 <Timer className="w-3 h-3" />
-                <span className={`text-sm font-mono font-bold ${isUrgent ? 'text-destructive' : ''}`}>
+                <span className="text-sm font-mono font-bold">
                   {timeStr}
                 </span>
-                <span className="text-[10px] text-muted-foreground ml-1">restante</span>
+                <span className="text-[10px] opacity-75 ml-1">restante</span>
               </div>
             </div>
-            <span className="text-xs font-medium px-2 py-1 rounded-lg bg-background/80 text-foreground">
+            <span className="text-xs font-medium px-2 py-1 rounded-lg bg-background text-foreground shadow-sm">
               Abrir
             </span>
           </button>
