@@ -130,11 +130,11 @@ export function OtpVerificationDialog({
 
           {hasActiveTimer && (
             <div className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg ${
-              secondsLeft! <= 30 ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning-foreground'
+              secondsLeft! <= 30 ? 'bg-destructive/10 text-destructive' : 'bg-primary/10'
             }`}>
-              <Timer className="w-4 h-4" />
-              <span className="text-sm font-medium">Tiempo restante:</span>
-              <span className="font-mono font-bold text-lg">{timeStr}</span>
+              <Timer className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">Tiempo restante:</span>
+              <span className={`font-mono font-bold text-lg ${secondsLeft! <= 30 ? 'text-destructive' : 'text-primary'}`}>{timeStr}</span>
             </div>
           )}
 

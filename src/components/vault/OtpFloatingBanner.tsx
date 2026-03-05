@@ -28,10 +28,10 @@ export function OtpFloatingBanner({ isVisible, patientName, secondsLeft, onReope
         >
           <button
             onClick={onReopen}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border transition-colors ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border transition-colors backdrop-blur-sm ${
               isUrgent
-                ? 'bg-destructive/10 border-destructive/30 text-destructive'
-                : 'bg-primary/10 border-primary/30 text-primary'
+                ? 'bg-destructive border-destructive/50 text-destructive-foreground'
+                : 'bg-primary border-primary/50 text-primary-foreground'
             }`}
           >
             <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
