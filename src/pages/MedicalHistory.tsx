@@ -27,9 +27,8 @@ import {
   Trash2,
   Image as ImageIcon,
   FileSpreadsheet,
-  Download,
 } from 'lucide-react';
-import { exportMedicalHistoryToPDF } from '@/lib/exportMedicalHistoryPDF';
+import { VaultFilePreviewModal } from '@/components/vault/VaultFilePreviewModal';
 import { toast } from 'sonner';
 
 const CATEGORIES = [
@@ -57,6 +56,8 @@ export default function MedicalHistory() {
     dateOfStudy: '',
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewFile, setPreviewFile] = useState<any>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Redirect non-patients using declarative Navigate
   if (role !== 'patient') {
@@ -138,34 +139,23 @@ export default function MedicalHistory() {
     }).format(date);
   };
 
-  const handleExportPDF = () => {
-    if (medicalHistory.length === 0) {
-      toast.error(t('medicalHistory.noStudiesToExport'));
-      return;
-    }
-
-    exportMedicalHistoryToPDF(
-      medicalHistory.map(item => ({
-        id: item.id,
-        title: item.title,
-        category: item.category,
-        description: item.description,
-        dateOfStudy: item.dateOfStudy,
-        fileType: item.fileType,
-        fileSize: item.fileSize,
-        createdAt: item.createdAt,
-      })),
-      {
-        name: user?.name || 'Paciente',
-        email: user?.email || '',
-      }
-    );
-    toast.success(t('medicalHistory.generatingPdf'));
+  const handlePreviewStudy = (item: any) => {
+    setPreviewFile({
+      id: item.id,
+      name: item.title,
+      type: item.fileType === 'image' ? 'image' : 'pdf',
+      category: item.category,
+      size: item.fileSize,
+      fileUrl: item.fileUrl,
+      description: item.description,
+      uploadedAt: item.createdAt,
+    });
+    setIsPreviewOpen(true);
   };
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl" onContextMenu={(e) => e.preventDefault()}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -180,13 +170,6 @@ export default function MedicalHistory() {
               </p>
             </div>
           </div>
-          
-          {medicalHistory.length > 0 && (
-            <Button variant="outline" onClick={handleExportPDF} className="gap-2 w-full sm:w-auto">
-              <Download className="w-4 h-4" />
-              {t('medicalHistory.exportPdf')}
-            </Button>
-          )}
         </div>
 
         <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
@@ -319,7 +302,8 @@ export default function MedicalHistory() {
                   {medicalHistory.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg"
+                      className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted active:scale-[0.98] transition-all"
+                      onClick={() => handlePreviewStudy(item)}
                     >
                       <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
                         {getFileIcon(item.fileType)}
@@ -373,6 +357,15 @@ export default function MedicalHistory() {
             </div>
           </CardContent>
         </Card>
+
+        <VaultFilePreviewModal
+          isOpen={isPreviewOpen}
+          onClose={() => {
+            setIsPreviewOpen(false);
+            setPreviewFile(null);
+          }}
+          file={previewFile}
+        />
       </div>
     </MainLayout>
   );

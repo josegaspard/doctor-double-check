@@ -1,52 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Content Protection for Expediente Médico (Vault + Medical History)
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Scope
+## Solucion
 
-Apply the same content protection strategy already used in the Content Library to the medical record sections: **Vault** (`/vault`), **Medical History** (`/medical-history`), and the **VaultFilePreviewModal**.
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-## Changes
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-### 1. VaultFilePreviewModal — Remove download/open buttons, add protections
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-**File:** `src/components/vault/VaultFilePreviewModal.tsx`
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-- **Remove** the "Abrir" and "Descargar" buttons (lines 178-192) entirely — even for non-viewOnly mode
-- **Add** `onContextMenu={e => e.preventDefault()}` to the entire `DialogContent` to block right-click
-- **Images**: Add `draggable={false}` and wrap with a transparent overlay div (`pointer-events-none`) to prevent drag-save
-- **PDFs**: Use blob fetch approach (like ContentPreviewModal) — fetch signed URL as blob, create local objectURL, render in iframe with `#toolbar=0` to hide browser PDF toolbar. This prevents direct URL exposure
-- **Add** CSS `user-select: none` on the preview area
-- Keep the "Cerrar" button and the viewOnly OTP message
+## Archivos a modificar
 
-### 2. Vault page — Remove download references
-
-**File:** `src/pages/Vault.tsx`
-
-- Add `onContextMenu` prevention on the file list area
-- No download buttons exist on this page currently (only Permissions and Delete), so minimal changes needed
-
-### 3. MedicalHistory page — Remove export/download, add protections
-
-**File:** `src/pages/MedicalHistory.tsx`
-
-- **Remove** the "Exportar PDF" button (line 185-189) and related `handleExportPDF` function — this generates a downloadable PDF of all records
-- **Remove** the `Download` icon import
-- Add `onContextMenu` prevention on the studies list
-- Add click-to-preview functionality on study items using `VaultFilePreviewModal` (currently items are not clickable)
-
-### 4. DoctorVault — Ensure viewOnly protections
-
-**File:** `src/pages/DoctorVault.tsx`
-
-- Confirm `viewOnly={true}` is already passed (it is) — the modal changes above will handle the rest
-
-## Summary of protections applied
-
-- No download or "open in new tab" buttons anywhere
-- Right-click disabled on all preview areas
-- Images wrapped with transparent overlay to prevent drag-save
-- PDFs rendered via blob URL with toolbar hidden
-- `user-select: none` on preview content
-- No direct signed URLs exposed in the DOM
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
