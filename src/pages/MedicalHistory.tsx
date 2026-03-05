@@ -365,6 +365,15 @@ export default function MedicalHistory() {
             </div>
           </CardContent>
         </Card>
+
+        <VaultFilePreviewModal
+          isOpen={isPreviewOpen}
+          onClose={() => {
+            setIsPreviewOpen(false);
+            setPreviewFile(null);
+          }}
+          file={previewFile}
+        />
       </div>
     </MainLayout>
   );
