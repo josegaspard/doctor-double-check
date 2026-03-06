@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { supabase } from '@/integrations/supabase/client';
 
@@ -33,6 +33,8 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPortrait, setIsPortrait] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const fetchSignedUrl = useCallback(async () => {
     if (!storagePath) return;
@@ -68,6 +70,16 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
     fetchSignedUrl();
   }, [storagePath, fetchSignedUrl]);
 
+  const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const vid = e.currentTarget;
+    const w = vid.videoWidth;
+    const h = vid.videoHeight;
+    setIsPortrait(h > w);
+    if (onDurationUpdate && Number.isFinite(vid.duration) && vid.duration > 0) {
+      onDurationUpdate(Math.floor(vid.duration));
+    }
+  };
+
   if (!storagePath) {
     return (
       <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} />
@@ -90,7 +102,11 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   }
 
   return (
-    <div className="relative aspect-video max-h-[80vh] mx-auto bg-black rounded-xl overflow-hidden">
+    <div
+      className={`relative max-h-[80vh] mx-auto bg-black rounded-xl overflow-hidden ${
+        isPortrait ? 'aspect-[9/16] max-w-[min(100%,450px)]' : 'aspect-video'
+      }`}
+    >
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80">
           <Loader2 className="w-12 h-12 text-primary animate-spin" />
@@ -98,15 +114,13 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
       )}
 
       <video
+        ref={videoRef}
         className="w-full h-full object-contain"
         src={signedUrl || undefined}
         controls
         playsInline
         controlsList="nodownload"
-        onLoadedMetadata={(e) => {
-          const d = (e.currentTarget as HTMLVideoElement).duration;
-          if (onDurationUpdate && Number.isFinite(d) && d > 0) onDurationUpdate(Math.floor(d));
-        }}
+        onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={(e) => {
           if (onTimeUpdate) onTimeUpdate(Math.floor((e.currentTarget as HTMLVideoElement).currentTime));
         }}
