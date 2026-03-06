@@ -1,29 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Auto-open chat on mobile + Fix vertical video orientation
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Problem 1: Chat hidden on mobile during live stream
-In `LiveStreamView.tsx` line 50, `mobileChatOpen` defaults to `false`. On mobile, the doctor has to tap the chat button to see comments. It should auto-open.
+## Solucion
 
-## Problem 2: Portrait recordings display sideways
-When a doctor streams from a phone held vertically, the MediaRecorder captures the raw stream. The recording player forces an `aspect-video` (16:9) container, which can cause portrait videos to display incorrectly. The player needs to detect the video's natural dimensions and adapt the container.
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-## Changes
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-### 1. `src/components/live/LiveStreamView.tsx`
-- Change `mobileChatOpen` initial state from `false` to `true` so the chat overlay opens automatically on mobile when the stream starts.
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-### 2. `src/components/recordings/RecordingVideoPlayer.tsx`
-- Remove the hardcoded `aspect-video` wrapper on the storage video player.
-- Add an `onLoadedMetadata` handler that detects if the video is portrait (naturalHeight > naturalWidth) and dynamically switches the container to a portrait-friendly aspect ratio.
-- Keep `object-contain` so the video always displays with correct proportions regardless of orientation.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-### 3. `src/components/live/DailyVideoPlayer.tsx`
-- On mobile, the local video element currently uses `object-cover`. This is fine for the live view (fills the screen). No change needed for the live experience itself — this is purely about how the recorded output looks.
+## Archivos a modificar
 
-### 4. `src/pages/RecordingPlayer.tsx`
-- The wrapper around `RecordingVideoPlayer` also has no forced aspect ratio of its own, so no changes needed here.
-
-## Summary
-- Two focused changes: auto-open mobile chat + responsive video container for portrait recordings.
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
