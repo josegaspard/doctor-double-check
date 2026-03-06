@@ -33,7 +33,6 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isPortrait, setIsPortrait] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const fetchSignedUrl = useCallback(async () => {
