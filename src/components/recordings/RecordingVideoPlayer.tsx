@@ -103,9 +103,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
 
   return (
     <div
-      className={`relative max-h-[80vh] mx-auto bg-black rounded-xl overflow-hidden ${
-        isPortrait ? 'aspect-[9/16] max-w-[min(100%,450px)]' : 'aspect-video'
-      }`}
+      className="relative max-h-[80vh] mx-auto bg-black rounded-xl overflow-hidden aspect-video"
     >
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80">
