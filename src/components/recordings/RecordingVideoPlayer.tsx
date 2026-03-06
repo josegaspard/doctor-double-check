@@ -33,7 +33,6 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isPortrait, setIsPortrait] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const fetchSignedUrl = useCallback(async () => {
@@ -72,9 +71,6 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
 
   const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const vid = e.currentTarget;
-    const w = vid.videoWidth;
-    const h = vid.videoHeight;
-    setIsPortrait(h > w);
     if (onDurationUpdate && Number.isFinite(vid.duration) && vid.duration > 0) {
       onDurationUpdate(Math.floor(vid.duration));
     }

@@ -13,7 +13,8 @@ interface LocalRecordingState {
 /**
  * Hook para grabación local en el navegador como respaldo.
  * Usa MediaRecorder para capturar el stream mientras se transmite.
- * Si Cloudflare no genera la grabación, sube el archivo a Supabase Storage.
+ * Utiliza un canvas intermedio para garantizar que los frames se graben
+ * con la orientación correcta (fix para grabaciones verticales desde móvil).
  */
 export function useLocalRecording() {
   const [state, setState] = useState<LocalRecordingState>({
@@ -30,8 +31,28 @@ export function useLocalRecording() {
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const stopPromiseResolveRef = useRef<(() => void) | null>(null);
 
+  // Canvas pipeline refs
+  const sourceVideoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const cleanupCanvasPipeline = useCallback(() => {
+    if (drawIntervalRef.current) {
+      clearInterval(drawIntervalRef.current);
+      drawIntervalRef.current = null;
+    }
+    if (sourceVideoRef.current) {
+      sourceVideoRef.current.pause();
+      sourceVideoRef.current.srcObject = null;
+      sourceVideoRef.current.remove();
+      sourceVideoRef.current = null;
+    }
+    canvasRef.current = null;
+  }, []);
+
   /**
-   * Inicia la grabación local del stream
+   * Inicia la grabación local del stream.
+   * Usa un canvas intermedio para capturar frames con orientación correcta.
    */
   const startRecording = useCallback((stream: MediaStream) => {
     if (!stream) {
@@ -40,14 +61,12 @@ export function useLocalRecording() {
     }
 
     try {
-      // Verificar soporte de MediaRecorder
       if (!window.MediaRecorder) {
         console.error('[LocalRecording] MediaRecorder not supported');
         return false;
       }
 
       // Determinar el mejor formato soportado
-      // MP4 first for maximum mobile compatibility (iOS only supports MP4)
       const mimeTypes = [
         'video/mp4',
         'video/webm;codecs=h264,opus',
@@ -71,56 +90,105 @@ export function useLocalRecording() {
 
       console.log('[LocalRecording] Starting with MIME type:', selectedMimeType);
 
-      // Limpiar chunks anteriores
+      // Limpiar chunks anteriores y canvas previo
       recordedChunksRef.current = [];
+      cleanupCanvasPipeline();
 
-      // Crear MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: selectedMimeType,
-        videoBitsPerSecond: 2500000, // 2.5 Mbps
+      // Crear video oculto para renderizar el stream con orientación correcta del navegador
+      const sourceVideo = document.createElement('video');
+      sourceVideo.srcObject = stream;
+      sourceVideo.muted = true;
+      sourceVideo.playsInline = true;
+      sourceVideo.setAttribute('playsinline', 'true');
+      sourceVideo.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+      document.body.appendChild(sourceVideo);
+      sourceVideoRef.current = sourceVideo;
+
+      // Cuando el video tenga metadatos, crear canvas y empezar a grabar
+      sourceVideo.onloadedmetadata = () => {
+        const w = sourceVideo.videoWidth || 640;
+        const h = sourceVideo.videoHeight || 480;
+
+        console.log('[LocalRecording] Source video dimensions:', w, 'x', h);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d')!;
+        canvasRef.current = canvas;
+
+        // Loop de dibujo: captura frames del video (ya orientados por el navegador)
+        // Usa setInterval para que siga funcionando en background
+        const drawLoop = setInterval(() => {
+          if (sourceVideo.readyState >= 2) {
+            ctx.drawImage(sourceVideo, 0, 0, w, h);
+          }
+        }, 1000 / 30);
+        drawIntervalRef.current = drawLoop;
+
+        // Crear stream del canvas + audio original
+        const recordStream = canvas.captureStream(30);
+        stream.getAudioTracks().forEach(t => {
+          recordStream.addTrack(t);
+        });
+
+        // Crear MediaRecorder con el stream del canvas (frames correctamente orientados)
+        const mediaRecorder = new MediaRecorder(recordStream, {
+          mimeType: selectedMimeType,
+          videoBitsPerSecond: 2500000,
+        });
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunksRef.current.push(event.data);
+            console.log('[LocalRecording] Chunk received:', event.data.size, 'bytes');
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          console.log('[LocalRecording] Recording stopped, total chunks:', recordedChunksRef.current.length);
+          cleanupCanvasPipeline();
+          setState(prev => ({
+            ...prev,
+            isRecording: false,
+            hasRecording: recordedChunksRef.current.length > 0,
+          }));
+
+          if (durationIntervalRef.current) {
+            clearInterval(durationIntervalRef.current);
+            durationIntervalRef.current = null;
+          }
+
+          if (stopPromiseResolveRef.current) {
+            stopPromiseResolveRef.current();
+            stopPromiseResolveRef.current = null;
+          }
+        };
+
+        mediaRecorder.onerror = (event) => {
+          console.error('[LocalRecording] Error:', event);
+          cleanupCanvasPipeline();
+          setState(prev => ({ ...prev, isRecording: false }));
+        };
+
+        // Iniciar grabación - capturar datos cada 5 segundos
+        mediaRecorder.start(5000);
+        mediaRecorderRef.current = mediaRecorder;
+        startTimeRef.current = Date.now();
+
+        // Actualizar duración cada segundo
+        durationIntervalRef.current = setInterval(() => {
+          const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+          setState(prev => ({ ...prev, recordingDuration: duration }));
+        }, 1000);
+
+        console.log('[LocalRecording] ✅ Recording started via canvas pipeline');
+      };
+
+      sourceVideo.play().catch(err => {
+        console.error('[LocalRecording] Failed to play source video:', err);
+        cleanupCanvasPipeline();
       });
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          recordedChunksRef.current.push(event.data);
-          console.log('[LocalRecording] Chunk received:', event.data.size, 'bytes');
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        console.log('[LocalRecording] Recording stopped, total chunks:', recordedChunksRef.current.length);
-        setState(prev => ({
-          ...prev,
-          isRecording: false,
-          hasRecording: recordedChunksRef.current.length > 0,
-        }));
-
-        if (durationIntervalRef.current) {
-          clearInterval(durationIntervalRef.current);
-          durationIntervalRef.current = null;
-        }
-
-        if (stopPromiseResolveRef.current) {
-          stopPromiseResolveRef.current();
-          stopPromiseResolveRef.current = null;
-        }
-      };
-
-      mediaRecorder.onerror = (event) => {
-        console.error('[LocalRecording] Error:', event);
-        setState(prev => ({ ...prev, isRecording: false }));
-      };
-
-      // Iniciar grabación - capturar datos cada 5 segundos
-      mediaRecorder.start(5000);
-      mediaRecorderRef.current = mediaRecorder;
-      startTimeRef.current = Date.now();
-
-      // Actualizar duración cada segundo
-      durationIntervalRef.current = setInterval(() => {
-        const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
-        setState(prev => ({ ...prev, recordingDuration: duration }));
-      }, 1000);
 
       setState(prev => ({
         ...prev,
@@ -129,20 +197,19 @@ export function useLocalRecording() {
         recordingDuration: 0,
       }));
 
-      console.log('[LocalRecording] ✅ Recording started');
       return true;
     } catch (error) {
       console.error('[LocalRecording] Failed to start:', error);
+      cleanupCanvasPipeline();
       return false;
     }
-  }, []);
+  }, [cleanupCanvasPipeline]);
 
   /**
    * Detiene la grabación local
    */
   const stopRecording = useCallback(() => {
     return new Promise<void>((resolve) => {
-      // Always clear interval immediately
       if (durationIntervalRef.current) {
         clearInterval(durationIntervalRef.current);
         durationIntervalRef.current = null;
@@ -156,9 +223,10 @@ export function useLocalRecording() {
         return;
       }
 
+      cleanupCanvasPipeline();
       resolve();
     });
-  }, []);
+  }, [cleanupCanvasPipeline]);
 
   /**
    * Obtiene el blob de la grabación
@@ -183,7 +251,7 @@ export function useLocalRecording() {
     specialty: string;
     tags?: string[];
     price: number;
-    recordingId?: string; // si existe, actualiza este registro en lugar de crear uno nuevo
+    recordingId?: string;
   }): Promise<{ success: boolean; recordingId?: string }> => {
     const blob = getRecordingBlob();
     
@@ -197,14 +265,12 @@ export function useLocalRecording() {
     setState(prev => ({ ...prev, isUploading: true, uploadProgress: 0 }));
 
     try {
-      // Generar nombre de archivo único
       const fileExtension = blob.type.includes('mp4') ? 'mp4' : 'webm';
       const fileName = `${params.liveId}-${Date.now()}.${fileExtension}`;
       const filePath = `${params.doctorId}/${fileName}`;
 
       console.log('[LocalRecording] Uploading to path:', filePath);
 
-      // Subir a Supabase Storage (bucket 'recordings')
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('recordings')
         .upload(filePath, blob, {
@@ -219,16 +285,13 @@ export function useLocalRecording() {
 
       setState(prev => ({ ...prev, uploadProgress: 50 }));
 
-      // Guardamos únicamente la ruta (no URL firmada) para poder generar URLs firmadas al reproducir
       const videoRef = `storage:${filePath}`;
       console.log('[LocalRecording] Video stored at path:', filePath);
 
       setState(prev => ({ ...prev, uploadProgress: 75 }));
 
-      // Calcular duración
       const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
-      // Crear o actualizar registro en la tabla recordings
       const payload = {
         live_id: params.liveId,
         doctor_id: params.doctorId,
@@ -282,6 +345,7 @@ export function useLocalRecording() {
    */
   const cleanup = useCallback(() => {
     stopRecording();
+    cleanupCanvasPipeline();
     recordedChunksRef.current = [];
     setState({
       isRecording: false,
@@ -290,7 +354,7 @@ export function useLocalRecording() {
       uploadProgress: 0,
       recordingDuration: 0,
     });
-  }, [stopRecording]);
+  }, [stopRecording, cleanupCanvasPipeline]);
 
   return {
     ...state,
