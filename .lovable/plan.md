@@ -1,20 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Always-visible controls on mobile live stream video
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Problem
-With the chat now auto-opening on mobile, the bottom control bar (mute, camera, end stream) gets hidden behind the chat overlay which takes up the bottom 60% of the screen. The streamer can't access controls.
+## Solucion
 
-## Solution
-Move the control buttons from the absolute bottom of the screen to **inside the video area**, positioned just above where the chat overlay starts. They'll always be visible regardless of chat state.
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-### File: `src/components/live/LiveStreamView.tsx`
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-1. **Move the control bar inside the video container** (the `flex-1 relative overflow-hidden` div, line 125) instead of being an absolute-bottom overlay on the full screen.
-2. Position controls at the **bottom of the video area** with `absolute bottom-2` inside the video container, so they float over the video but above the chat panel.
-3. Remove the old absolute-bottom control bar (lines 138-189).
-4. Keep all buttons (mute, camera, chat toggle, end stream) with the same styling — compact circular buttons with semi-transparent backgrounds.
-5. Add `z-30` so they stay above the video element.
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-This ensures controls are always visible in the top 40% of the screen (the video area) even when the chat sheet occupies the bottom 60%.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
+## Archivos a modificar
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |

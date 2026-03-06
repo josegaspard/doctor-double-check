@@ -121,7 +121,7 @@ export function LiveStreamView({
           </div>
         </div>
 
-        {/* Video fills the screen — no internal controls */}
+        {/* Video fills the screen — controls inside */}
         <div className="flex-1 relative overflow-hidden">
           <DailyVideoPlayer
             ref={playerRef}
@@ -132,60 +132,57 @@ export function LiveStreamView({
             onLeave={onEndClick}
             onParticipantCountChange={() => {}}
           />
-        </div>
 
-        {/* Single bottom control bar */}
-        <div
-          className="absolute bottom-0 left-0 right-0 z-30 flex items-center justify-center gap-3 px-4 py-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent"
-          style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
-        >
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              playerRef.current?.toggleMute();
-              forceUpdate(n => n + 1);
-            }}
-            className={`h-12 w-12 rounded-full border-white/20 text-white ${isMuted ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
-          >
-            {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              playerRef.current?.toggleVideo();
-              forceUpdate(n => n + 1);
-            }}
-            className={`h-12 w-12 rounded-full border-white/20 text-white ${isVideoOff ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
-          >
-            {isVideoOff ? <VideoOff className="w-5 h-5" /> : <VideoIcon className="w-5 h-5" />}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              setMobileChatOpen(true);
-            }}
-            className="h-12 w-12 rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20"
-          >
-            <MessageSquare className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="destructive"
-            size="lg"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEndClick();
-            }}
-            className="h-12 gap-1.5 rounded-full px-6"
-          >
-            <StopCircle className="w-5 h-5" />
-            Finalizar
-          </Button>
+          {/* Control bar inside the video area — always visible */}
+          <div className="absolute bottom-2 left-0 right-0 z-30 flex items-center justify-center gap-3 px-4">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                playerRef.current?.toggleMute();
+                forceUpdate(n => n + 1);
+              }}
+              className={`h-11 w-11 rounded-full border-white/20 text-white ${isMuted ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
+            >
+              {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                playerRef.current?.toggleVideo();
+                forceUpdate(n => n + 1);
+              }}
+              className={`h-11 w-11 rounded-full border-white/20 text-white ${isVideoOff ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
+            >
+              {isVideoOff ? <VideoOff className="w-5 h-5" /> : <VideoIcon className="w-5 h-5" />}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMobileChatOpen(!mobileChatOpen);
+              }}
+              className={`h-11 w-11 rounded-full border-white/20 text-white ${mobileChatOpen ? 'bg-primary/70 hover:bg-primary/90' : 'bg-white/10 hover:bg-white/20'}`}
+            >
+              <MessageSquare className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEndClick();
+              }}
+              className="h-11 gap-1.5 rounded-full px-5"
+            >
+              <StopCircle className="w-5 h-5" />
+              Finalizar
+            </Button>
+          </div>
         </div>
 
         {/* Mobile chat overlay */}
