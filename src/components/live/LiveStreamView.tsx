@@ -14,6 +14,8 @@ import {
   MicOff,
   VideoIcon,
   VideoOff,
+  Maximize,
+  Minimize,
 } from 'lucide-react';
 
 interface LiveStreamViewProps {
@@ -48,6 +50,7 @@ export function LiveStreamView({
 }: LiveStreamViewProps) {
   const isMobile = useIsMobile();
   const [mobileChatOpen, setMobileChatOpen] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
   const playerRef = useRef<DailyVideoPlayerHandle>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -121,8 +124,8 @@ export function LiveStreamView({
           </div>
         </div>
 
-        {/* Video fills the screen — controls inside */}
-        <div className="flex-1 relative overflow-hidden">
+        {/* Video area — flex child */}
+        <div className={`relative overflow-hidden ${isFullscreen ? 'flex-1' : 'h-[40dvh]'}`}>
           <DailyVideoPlayer
             ref={playerRef}
             roomUrl={roomUrl}
@@ -133,7 +136,7 @@ export function LiveStreamView({
             onParticipantCountChange={() => {}}
           />
 
-          {/* Control bar inside the video area — always visible */}
+          {/* Control bar — always visible inside video */}
           <div className="absolute bottom-2 left-0 right-0 z-30 flex items-center justify-center gap-3 px-4">
             <Button
               variant="outline"
@@ -164,12 +167,25 @@ export function LiveStreamView({
               size="icon"
               onClick={(e) => {
                 e.stopPropagation();
-                setMobileChatOpen(!mobileChatOpen);
+                setIsFullscreen(!isFullscreen);
               }}
-              className={`h-11 w-11 rounded-full border-white/20 text-white ${mobileChatOpen ? 'bg-primary/70 hover:bg-primary/90' : 'bg-white/10 hover:bg-white/20'}`}
+              className={`h-11 w-11 rounded-full border-white/20 text-white ${isFullscreen ? 'bg-primary/70 hover:bg-primary/90' : 'bg-white/10 hover:bg-white/20'}`}
             >
-              <MessageSquare className="w-5 h-5" />
+              {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
             </Button>
+            {!isFullscreen && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMobileChatOpen(!mobileChatOpen);
+                }}
+                className={`h-11 w-11 rounded-full border-white/20 text-white ${mobileChatOpen ? 'bg-primary/70 hover:bg-primary/90' : 'bg-white/10 hover:bg-white/20'}`}
+              >
+                <MessageSquare className="w-5 h-5" />
+              </Button>
+            )}
             <Button
               variant="destructive"
               size="sm"
@@ -185,13 +201,13 @@ export function LiveStreamView({
           </div>
         </div>
 
-        {/* Mobile chat overlay */}
-        {mobileChatOpen && (
+        {/* Chat below video — flex child, only when not fullscreen */}
+        {!isFullscreen && mobileChatOpen && (
           <div
-            className="absolute inset-x-0 bottom-0 z-40 h-[60dvh] bg-background rounded-t-2xl shadow-2xl flex flex-col animate-slide-in-bottom"
+            className="flex-1 bg-background flex flex-col min-h-0"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 py-2 border-b">
+            <div className="flex items-center justify-between px-4 py-2 border-b shrink-0">
               <span className="font-semibold text-sm">Chat en vivo</span>
               <Button variant="ghost" size="icon" onClick={() => setMobileChatOpen(false)} className="h-8 w-8">
                 <X className="w-4 h-4" />
