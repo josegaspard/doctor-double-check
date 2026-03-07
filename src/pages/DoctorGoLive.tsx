@@ -262,11 +262,13 @@ export default function DoctorGoLive() {
     } catch (error: any) {
       console.error('Error ending live:', error);
       toast.error(t('doctorGoLive.endError'));
-      if (callObjectRef.current) {
-        callObjectRef.current.leave().catch(() => {});
-        callObjectRef.current.destroy().catch(() => {});
-        callObjectRef.current = null;
-      }
+      try {
+        const call = Daily.getCallInstance();
+        if (call) {
+          call.leave().catch(() => {});
+          call.destroy().catch(() => {});
+        }
+      } catch { /* no instance */ }
       localStream?.getTracks().forEach(t => t.stop());
       setLocalStream(null);
       localRecording.cleanup();
