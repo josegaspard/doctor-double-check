@@ -49,7 +49,7 @@ export default function DoctorGoLive() {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [dailyRoomUrl, setDailyRoomUrl] = useState<string | null>(null);
   const [dailyOwnerToken, setDailyOwnerToken] = useState<string | null>(null);
-  const callObjectRef = useRef<ReturnType<typeof Daily.createCallObject> | null>(null);
+  
 
   const { createRoom, endRoom } = useDaily();
   const localRecording = useLocalRecording();
