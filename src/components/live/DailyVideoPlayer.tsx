@@ -524,6 +524,8 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
           </div>
         </>
       )}
+
+      {children}
     </div>
   );
 });
