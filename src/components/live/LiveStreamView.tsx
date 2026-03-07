@@ -14,6 +14,8 @@ import {
   MicOff,
   VideoIcon,
   VideoOff,
+  Maximize,
+  Minimize,
 } from 'lucide-react';
 
 interface LiveStreamViewProps {
