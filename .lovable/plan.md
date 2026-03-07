@@ -1,26 +1,28 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Mobile controls inside video + fullscreen toggle
 
-## Solucion
+## Current problem
+The chat overlay is `absolute` with `z-40` covering 60% of the screen, while controls are `z-30` inside the video area — they get buried under the chat. The controls need to always be visible inside the video portion.
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+## Changes — `src/components/live/LiveStreamView.tsx`
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+### 1. Add fullscreen state
+Add `const [isFullscreen, setIsFullscreen] = useState(false)` to track when the user wants the video to fill the entire screen.
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+### 2. Restructure mobile layout from absolute overlay to flex split
+Replace the current absolute-positioned chat overlay with a proper **flex column layout**:
+- When `isFullscreen = false`: video takes top ~40%, chat takes bottom ~60% — both as flex children (not absolute). Controls float inside the video container with `absolute bottom-2 z-30`.
+- When `isFullscreen = true`: video takes 100% of screen, chat is hidden. Controls remain visible inside the video area.
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+### 3. Add fullscreen button to the control bar
+Add a `Maximize`/`Minimize` icon button between the camera toggle and the chat toggle. Tapping it toggles `isFullscreen`:
+- **Enter fullscreen**: hides chat, video fills screen, controls stay visible.
+- **Exit fullscreen**: restores the split view with chat below.
 
-## Archivos a modificar
+### 4. Control bar always visible
+The control bar stays at `absolute bottom-2` inside the video container div. Since the chat is now a sibling flex child (not an absolute overlay), it can never cover the controls.
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+### Buttons in order (matching reference image style):
+Mute | Camera | Fullscreen | Chat toggle | End stream
+
