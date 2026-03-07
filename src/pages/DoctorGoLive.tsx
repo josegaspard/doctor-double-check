@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -49,7 +49,7 @@ export default function DoctorGoLive() {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [dailyRoomUrl, setDailyRoomUrl] = useState<string | null>(null);
   const [dailyOwnerToken, setDailyOwnerToken] = useState<string | null>(null);
-  const callObjectRef = useRef<ReturnType<typeof Daily.createCallObject> | null>(null);
+  
 
   const { createRoom, endRoom } = useDaily();
   const localRecording = useLocalRecording();
@@ -86,11 +86,13 @@ export default function DoctorGoLive() {
   // Cleanup on unmount if still live
   useEffect(() => {
     return () => {
-      if (callObjectRef.current) {
-        callObjectRef.current.leave().catch(() => {});
-        callObjectRef.current.destroy().catch(() => {});
-        callObjectRef.current = null;
-      }
+      try {
+        const call = Daily.getCallInstance();
+        if (call) {
+          call.leave().catch(() => {});
+          call.destroy().catch(() => {});
+        }
+      } catch { /* no instance */ }
     };
   }, []);
 
@@ -146,16 +148,6 @@ export default function DoctorGoLive() {
       setDailyRoomName(room.name);
       setDailyRoomUrl(room.url);
       setDailyOwnerToken(room.ownerToken || '');
-
-      // Create and join Daily call locally
-      try {
-        const existing = Daily.getCallInstance();
-        if (existing) await existing.destroy();
-      } catch { /* no existing */ }
-
-      const call = Daily.createCallObject({ videoSource: true, audioSource: true });
-      callObjectRef.current = call;
-      await call.join({ url: room.url, token: room.ownerToken || '' });
 
       localRecording.startRecording(stream);
 
@@ -213,11 +205,13 @@ export default function DoctorGoLive() {
       }
 
       // Destroy Daily call
-      if (callObjectRef.current) {
-        callObjectRef.current.leave().catch(() => {});
-        callObjectRef.current.destroy().catch(() => {});
-        callObjectRef.current = null;
-      }
+      try {
+        const call = Daily.getCallInstance();
+        if (call) {
+          call.leave().catch(() => {});
+          call.destroy().catch(() => {});
+        }
+      } catch { /* no instance */ }
 
       if (dailyRoomName) {
         try { await endRoom(dailyRoomName); } catch {}
@@ -268,11 +262,13 @@ export default function DoctorGoLive() {
     } catch (error: any) {
       console.error('Error ending live:', error);
       toast.error(t('doctorGoLive.endError'));
-      if (callObjectRef.current) {
-        callObjectRef.current.leave().catch(() => {});
-        callObjectRef.current.destroy().catch(() => {});
-        callObjectRef.current = null;
-      }
+      try {
+        const call = Daily.getCallInstance();
+        if (call) {
+          call.leave().catch(() => {});
+          call.destroy().catch(() => {});
+        }
+      } catch { /* no instance */ }
       localStream?.getTracks().forEach(t => t.stop());
       setLocalStream(null);
       localRecording.cleanup();

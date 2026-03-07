@@ -1,25 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Fix mobile live stream not starting (stuck on "preparando")
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Root cause
+## Solucion
 
-There are **two Daily call objects** being created when going live:
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-1. **`DoctorGoLive.tsx` (line 156-158)**: Creates a call object and joins inside `handleStartLive`
-2. **`DailyVideoPlayer.tsx` (line 65-120)**: When it mounts (after `isLive` becomes true), its `useEffect` destroys the existing call and creates a **new** one
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-On mobile, this second creation happens inside a `useEffect` — outside the user gesture context. Mobile browsers (especially Safari) block media access (`getUserMedia`) when not triggered directly by a user tap. This causes the new call to fail silently, leaving the stream stuck on "preparando/conectando".
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-## Fix — `src/pages/DoctorGoLive.tsx`
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-**Remove the duplicate Daily call creation** (lines 150-158). Let `DailyVideoPlayer` be the single owner of the Daily call lifecycle — it already creates, joins, and cleans up the call in its own `useEffect`.
+## Archivos a modificar
 
-Changes:
-1. Remove lines 150-158 (the `Daily.createCallObject` + `call.join` block in `handleStartLive`)
-2. Remove the `callObjectRef` ref and its cleanup in `useEffect` (line 52, lines 87-95)
-3. In `handleEndLive`, replace `callObjectRef.current` usage with `Daily.getCallInstance()` to get and destroy the active call
-4. Remove the `import Daily` since we'll use try/catch with `Daily.getCallInstance()` — actually keep the import for `getCallInstance`
-
-This ensures only one Daily call object exists, created by `DailyVideoPlayer`, and the user gesture chain from `handleStartLive` (which calls `getUserMedia` at line 102) is not broken by a second competing creation.
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
