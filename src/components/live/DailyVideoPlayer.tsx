@@ -33,6 +33,8 @@ interface DailyVideoPlayerProps {
   hideControls?: boolean;
   onLeave?: () => void;
   onParticipantCountChange?: (count: number) => void;
+  className?: string;
+  children?: React.ReactNode;
 }
 
 export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPlayerProps>(function DailyVideoPlayer({
