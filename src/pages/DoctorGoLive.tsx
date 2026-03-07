@@ -86,11 +86,13 @@ export default function DoctorGoLive() {
   // Cleanup on unmount if still live
   useEffect(() => {
     return () => {
-      if (callObjectRef.current) {
-        callObjectRef.current.leave().catch(() => {});
-        callObjectRef.current.destroy().catch(() => {});
-        callObjectRef.current = null;
-      }
+      try {
+        const call = Daily.getCallInstance();
+        if (call) {
+          call.leave().catch(() => {});
+          call.destroy().catch(() => {});
+        }
+      } catch { /* no instance */ }
     };
   }, []);
 
