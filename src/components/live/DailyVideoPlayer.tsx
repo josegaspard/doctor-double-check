@@ -44,6 +44,8 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   hideControls = false,
   onLeave,
   onParticipantCountChange,
+  className: externalClassName,
+  children,
 }, ref) {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const screenShareRef = useRef<HTMLDivElement>(null);
