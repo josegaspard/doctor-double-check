@@ -48,6 +48,7 @@ export function LiveStreamView({
 }: LiveStreamViewProps) {
   const isMobile = useIsMobile();
   const [mobileChatOpen, setMobileChatOpen] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
   const playerRef = useRef<DailyVideoPlayerHandle>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
