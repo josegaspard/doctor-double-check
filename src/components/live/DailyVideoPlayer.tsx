@@ -33,6 +33,8 @@ interface DailyVideoPlayerProps {
   hideControls?: boolean;
   onLeave?: () => void;
   onParticipantCountChange?: (count: number) => void;
+  className?: string;
+  children?: React.ReactNode;
 }
 
 export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPlayerProps>(function DailyVideoPlayer({
@@ -42,6 +44,8 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   hideControls = false,
   onLeave,
   onParticipantCountChange,
+  className: externalClassName,
+  children,
 }, ref) {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const screenShareRef = useRef<HTMLDivElement>(null);
@@ -391,7 +395,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   return (
     <div
       ref={wrapperRef}
-      className={`relative bg-black rounded-xl overflow-hidden group ${
+      className={externalClassName || `relative bg-black rounded-xl overflow-hidden group ${
         isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'aspect-video'
       }`}
     >
@@ -520,6 +524,8 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
           </div>
         </>
       )}
+
+      {children}
     </div>
   );
 });

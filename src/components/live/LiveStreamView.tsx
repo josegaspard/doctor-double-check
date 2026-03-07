@@ -125,18 +125,17 @@ export function LiveStreamView({
         </div>
 
         {/* Video area — flex child */}
-        <div className={`relative overflow-hidden ${isFullscreen ? 'flex-1' : 'h-[40dvh]'}`}>
-          <DailyVideoPlayer
-            ref={playerRef}
-            roomUrl={roomUrl}
-            token={ownerToken}
-            isOwner={true}
-            hideControls={true}
-            onLeave={onEndClick}
-            onParticipantCountChange={() => {}}
-          />
-
-          {/* Control bar — always visible inside video */}
+        <DailyVideoPlayer
+          ref={playerRef}
+          roomUrl={roomUrl}
+          token={ownerToken}
+          isOwner={true}
+          hideControls={true}
+          onLeave={onEndClick}
+          onParticipantCountChange={() => {}}
+          className={`relative bg-black overflow-hidden group ${isFullscreen ? 'flex-1' : 'h-[40dvh]'}`}
+        >
+          {/* Control bar — rendered inside DailyVideoPlayer's wrapper */}
           <div className="absolute bottom-2 left-0 right-0 z-30 flex items-center justify-center gap-3 px-4">
             <Button
               variant="outline"
@@ -199,7 +198,7 @@ export function LiveStreamView({
               Finalizar
             </Button>
           </div>
-        </div>
+        </DailyVideoPlayer>
 
         {/* Chat below video — flex child, only when not fullscreen */}
         {!isFullscreen && mobileChatOpen && (
