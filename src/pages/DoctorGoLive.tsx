@@ -149,16 +149,6 @@ export default function DoctorGoLive() {
       setDailyRoomUrl(room.url);
       setDailyOwnerToken(room.ownerToken || '');
 
-      // Create and join Daily call locally
-      try {
-        const existing = Daily.getCallInstance();
-        if (existing) await existing.destroy();
-      } catch { /* no existing */ }
-
-      const call = Daily.createCallObject({ videoSource: true, audioSource: true });
-      callObjectRef.current = call;
-      await call.join({ url: room.url, token: room.ownerToken || '' });
-
       localRecording.startRecording(stream);
 
       setLiveData({
