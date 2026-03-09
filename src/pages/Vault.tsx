@@ -645,9 +645,9 @@ export default function Vault() {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <Folder className="w-8 h-8 text-primary/60" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">Tu vault está vacío</h3>
+                <h3 className="font-semibold text-foreground mb-2">{t('ads.emptyVaultTitle')}</h3>
                 <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-4">
-                  Guarda tus estudios, laboratorios e imágenes médicas de forma segura y compártelos con tus doctores.
+                  {t('ads.emptyVaultDesc')}
                 </p>
                 <Button
                   variant="outline"
@@ -655,7 +655,7 @@ export default function Vault() {
                   className="gap-2"
                 >
                   <Upload className="w-4 h-4" />
-                  Subir mi primer archivo
+                  {t('ads.uploadFirst')}
                 </Button>
               </div>
             )}
