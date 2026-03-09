@@ -1450,7 +1450,7 @@ export const en = {
     payWithCard: 'Pay with card',
     orUseBalance: 'or use your balance',
     payWithBalance: 'Pay with balance',
-    insufficientBalance: 'Insufficient balance',
+    vaultInsufficientBalance: 'Insufficient balance',
     youHave: 'You have',
     needMore: 'you need',
     more: 'more',
