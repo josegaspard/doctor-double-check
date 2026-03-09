@@ -240,7 +240,7 @@ export function TransactionHistory() {
                         </span>
                         <span className="hidden sm:inline">{getTypeBadge(tx.type)}</span>
                         {pendingRefundTxIds.has(tx.id) && (
-                          <Badge variant="warning" className="text-[10px] px-1.5 py-0">Reembolso solicitado</Badge>
+                          <Badge variant="warning" className="text-[10px] px-1.5 py-0">{t('wallet.refundRequested')}</Badge>
                         )}
                       </div>
                     </div>
