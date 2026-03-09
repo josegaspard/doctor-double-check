@@ -858,6 +858,17 @@ export const es = {
     step3Desc: 'Inicia una consulta por chat o videollamada',
     readMore: 'Leer más',
     readLess: 'Leer menos',
+    officeHours: 'Horario de atención',
+    availableNow: 'Disponible ahora',
+    notAvailableNow: 'No disponible',
+    noSchedule: 'Sin horario definido',
+    monday: 'Lun',
+    tuesday: 'Mar',
+    wednesday: 'Mié',
+    thursday: 'Jue',
+    friday: 'Vie',
+    saturday: 'Sáb',
+    sunday: 'Dom',
   },
   // Medical History
   medicalHistory: {
