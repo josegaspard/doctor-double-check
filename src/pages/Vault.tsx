@@ -452,7 +452,7 @@ export default function Vault() {
                 onClick={() => setShowUpgradeDialog(true)}
               >
                 <Zap className="w-3 h-3" />
-                {isStorageFull ? 'Ampliar' : 'Ver planes'}
+                {isStorageFull ? t('ads.expand') : t('ads.viewPlans')}
               </Button>
             </div>
           </CardContent>
