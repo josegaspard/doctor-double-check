@@ -16,7 +16,6 @@ import {
   Image as ImageIcon,
   Video,
   Search,
-  Filter,
   Clock,
   Users,
   Stethoscope,
