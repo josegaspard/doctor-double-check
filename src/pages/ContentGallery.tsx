@@ -387,10 +387,10 @@ export default function ContentGallery() {
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-2 pb-1">
               {[
-                { value: 'all', label: language === 'es' ? 'Todos' : 'All', icon: Globe },
+                { value: 'all', label: t('ads.contentAll'), icon: Globe },
                 { value: 'video', label: 'Videos', icon: Video },
                 { value: 'pdf', label: 'PDFs', icon: FileText },
-                { value: 'image', label: language === 'es' ? 'Imágenes' : 'Images', icon: ImageIcon },
+                { value: 'image', label: t('ads.contentImages'), icon: ImageIcon },
               ].map(chip => {
                 const active = typeFilter === chip.value;
                 return (
