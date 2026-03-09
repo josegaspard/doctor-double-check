@@ -64,7 +64,12 @@ export function UnifiedFooter({ variant }: Props) {
   const { footerLinks } = useFooterLinks();
   const { socialLinks } = useSocialLinks();
   const { t } = useLanguage();
+  const { config: adConfig } = useAdConfig();
 
+  // Inject "Publicidad" link into resources when ads are active
+  const resourcesLinks = adConfig.is_active
+    ? [...footerLinks.resources, { label: 'Publicidad', href: '/advertising' }]
+    : footerLinks.resources;
   if (variant === 'app') {
     return (
       <footer className="bg-[#0b1d45] text-slate-300 pt-8 sm:pt-10 pb-24 sm:pb-6 mt-auto">
