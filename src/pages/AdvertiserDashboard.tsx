@@ -429,8 +429,8 @@ export default function AdvertiserDashboard() {
         <div className="grid grid-cols-3 gap-3 mb-6">
           <Card><CardContent className="p-3 text-center">
             <Eye className="w-5 h-5 text-info mx-auto mb-1" />
-            <p className="text-lg font-bold text-info">{totalImpressions.toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">{es ? 'Impresiones' : 'Impressions'}</p>
+             <p className="text-lg font-bold text-info">{totalImpressions.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground">{t('ads.impressions')}</p>
           </CardContent></Card>
           <Card><CardContent className="p-3 text-center">
             <MousePointerClick className="w-5 h-5 text-warning mx-auto mb-1" />
