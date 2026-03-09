@@ -713,9 +713,9 @@ export default function Vault() {
               <Separator />
 
               <div>
-                <h4 className="text-sm font-medium text-foreground mb-2">Dar acceso a:</h4>
+                <h4 className="text-sm font-medium text-foreground mb-2">{t('ads.grantAccessTo')}</h4>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Solo aparecen médicos que sigues, con los que tienes consultas o chats activos.
+                  {t('ads.grantAccessHint')}
                 </p>
                 
                 {/* Search input for doctors */}
