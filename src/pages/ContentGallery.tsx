@@ -38,48 +38,6 @@ import { usePurchases } from '@/hooks/usePurchases';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 
-/** Generate a data-URL thumbnail from the first second of a video */
-function generateVideoThumbnail(videoUrl: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    video.crossOrigin = 'anonymous';
-    video.muted = true;
-    video.preload = 'metadata';
-
-    const cleanup = () => {
-      video.removeAttribute('src');
-      video.load();
-    };
-
-    video.onloadeddata = () => {
-      video.currentTime = Math.min(1, video.duration * 0.1);
-    };
-
-    video.onseeked = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 640;
-        canvas.height = 360;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) { cleanup(); return reject('No canvas context'); }
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        cleanup();
-        resolve(dataUrl);
-      } catch (err) {
-        cleanup();
-        reject(err);
-      }
-    };
-
-    video.onerror = () => { cleanup(); reject('Video load error'); };
-
-    // Timeout after 8s
-    setTimeout(() => { cleanup(); reject('Timeout'); }, 8000);
-
-    video.src = videoUrl;
-  });
-}
 
 interface DoctorContent {
   id: string;
@@ -127,12 +85,21 @@ function ContentCardThumbnail({
   return (
     <div className="relative aspect-video bg-muted/40 overflow-hidden">
       {isPdf ? (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-red-500/10 to-red-600/5">
-          <div className="w-16 h-20 rounded-lg bg-red-500 flex flex-col items-center justify-center shadow-md">
-            <FileText className="w-7 h-7 text-white mb-0.5" />
-            <span className="text-white text-xs font-bold tracking-wider">PDF</span>
+        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-destructive/10 to-destructive/5">
+          <div className="w-16 h-20 rounded-lg bg-destructive flex flex-col items-center justify-center shadow-md">
+            <FileText className="w-7 h-7 text-destructive-foreground mb-0.5" />
+            <span className="text-destructive-foreground text-xs font-bold tracking-wider">PDF</span>
           </div>
         </div>
+      ) : thumbUrl && content.type === 'video' ? (
+        <video
+          src={thumbUrl}
+          muted
+          preload="metadata"
+          playsInline
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          onLoadedMetadata={(e) => { (e.target as HTMLVideoElement).currentTime = 0.5; }}
+        />
       ) : thumbUrl ? (
         <img
           src={thumbUrl}
@@ -313,69 +280,23 @@ export default function ContentGallery() {
 
       setContents(mapped);
 
-      // Generate thumbnails for content without a thumbnail_url
-      // Videos: generate from video frame. Images: get signed URL from storage. PDFs: skip (use icon).
-      const needThumbVideos = mapped.filter(c => !c.thumbnail_url && c.type === 'video');
-      const needThumbOther = mapped.filter(c => !c.thumbnail_url && c.type === 'image' && !c.file_url.startsWith('http'));
+      // Resolve signed URLs for content without thumbnail_url (skip PDFs)
+      const needThumb = mapped.filter(c => !c.thumbnail_url && c.type !== 'pdf');
 
-      const allThumbPromises: Promise<{ id: string; url: string | null }>[] = [];
-
-      // Videos - handle both storage paths and HTTP URLs (e.g. Cloudflare)
-      for (const c of needThumbVideos) {
-        allThumbPromises.push(
-          (async () => {
-            let videoUrl: string;
+      if (needThumb.length > 0) {
+        const thumbResults = await Promise.all(
+          needThumb.map(async (c) => {
             if (c.file_url.startsWith('http')) {
-              videoUrl = c.file_url;
-            } else {
-              const { data: sd } = await supabase.storage
-                .from('doctor-content')
-                .createSignedUrl(c.file_url, 60 * 60);
-              if (!sd?.signedUrl) return { id: c.id, url: null };
-              videoUrl = sd.signedUrl;
+              return { id: c.id, url: c.file_url };
             }
-            try {
-              const dataUrl = await generateVideoThumbnail(videoUrl);
-              return { id: c.id, url: dataUrl };
-            } catch {
-              // Fallback: try without crossOrigin for CORS-restricted URLs
-              try {
-                const video = document.createElement('video');
-                video.muted = true;
-                video.preload = 'metadata';
-                video.src = videoUrl;
-                await new Promise<void>((resolve, reject) => {
-                  video.onloadeddata = () => resolve();
-                  video.onerror = () => reject();
-                  setTimeout(() => reject(), 5000);
-                });
-                return { id: c.id, url: null };
-              } catch {
-                return { id: c.id, url: null };
-              }
-            }
-          })()
-        );
-      }
-
-      // Other file types (images from storage)
-      for (const c of needThumbOther) {
-        allThumbPromises.push(
-          (async () => {
             const { data: sd } = await supabase.storage
               .from('doctor-content')
               .createSignedUrl(c.file_url, 60 * 60);
             return { id: c.id, url: sd?.signedUrl || null };
-          })()
+          })
         );
-      }
-
-      if (allThumbPromises.length > 0) {
-        const thumbResults = await Promise.all(allThumbPromises);
         const thumbMap: Record<string, string> = {};
-        thumbResults.forEach(r => {
-          if (r.url) thumbMap[r.id] = r.url;
-        });
+        thumbResults.forEach(r => { if (r.url) thumbMap[r.id] = r.url; });
         setSignedThumbs(prev => ({ ...prev, ...thumbMap }));
       }
     } catch (error) {

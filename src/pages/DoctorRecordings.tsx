@@ -887,15 +887,15 @@ export default function DoctorRecordings() {
 
         {/* Floating bulk delete bar */}
         {selectionMode && selectedIds.size > 0 && (
-          <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-destructive text-destructive-foreground px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-slide-in-bottom">
-            <span className="text-sm font-medium">{selectedIds.size} seleccionada(s)</span>
+          <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-sm mx-auto bg-destructive text-destructive-foreground px-4 py-2.5 rounded-xl shadow-2xl flex items-center justify-between animate-slide-in-bottom">
+            <span className="text-xs sm:text-sm font-medium whitespace-nowrap">{selectedIds.size} seleccionada(s)</span>
             <Button
               variant="secondary"
               size="sm"
-              className="rounded-full gap-1.5"
+              className="rounded-lg gap-1.5 text-xs h-8 px-3 shrink-0"
               onClick={() => setBulkDeleteDialogOpen(true)}
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5" />
               Eliminar
             </Button>
           </div>

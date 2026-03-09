@@ -1,34 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Fix Mobile Floating Bar + Content Thumbnails
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## 1. Fix Floating Selection Bar on Mobile (`DoctorRecordings.tsx`)
+## Solucion
 
-**Problem**: The floating bulk-delete bar at line 890 uses a simple `rounded-full` pill layout that breaks on small screens — the text "1 seleccionada(s)" wraps badly and the whole element looks oversized (as seen in the screenshot).
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-**Fix**:
-- Replace the current pill layout with a proper bottom sheet-style bar: `w-[calc(100%-2rem)]` with `rounded-xl` instead of `rounded-full`
-- Use `flex items-center justify-between` so the count and button are spaced properly
-- Shrink text to `text-xs` on mobile, keep `sm:text-sm`
-- Reduce padding: `px-4 py-2.5` instead of `px-5 py-3`
-- Add `max-w-sm mx-auto` to prevent it from being too wide on tablets
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-## 2. Fix Content Thumbnails Not Showing (`ContentGallery.tsx`)
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-**Problem**: The `generateVideoThumbnail` function fails silently due to CORS restrictions on cross-origin videos (Supabase signed URLs and Cloudflare URLs both block canvas `toDataURL`). When it fails, the fallback just returns `null`, so videos show a generic icon placeholder instead of a real thumbnail.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-**Fix**:
-- For **video** content that has no `thumbnail_url`: instead of trying to generate a canvas thumbnail (which fails due to CORS), generate a signed URL for the video file and use a `<video>` element as the thumbnail with `poster` or show the video element itself muted at the first frame
-- Simplify: just get a signed URL for the `file_url` and use it as the thumb source (for both images and videos stored in Supabase storage)
-- For videos with HTTP URLs (Cloudflare), use the file_url directly as thumb source with a `<video>` element displaying the first frame
-- Remove the complex `generateVideoThumbnail` canvas approach entirely — replace with direct signed URL resolution for all non-HTTP storage paths
+## Archivos a modificar
 
-**Approach**: In `fetchContents`, for any content without `thumbnail_url`:
-- If `file_url` starts with `http` → use it directly as `signedThumbs[id]`
-- Otherwise → get a signed URL from `doctor-content` bucket
-- In `ContentCardThumbnail`, for videos render a `<video>` element (muted, preload metadata) showing the first frame; for images render an `<img>`
-
-## Files to Modify
-- `src/pages/DoctorRecordings.tsx` — fix floating bar layout
-- `src/pages/ContentGallery.tsx` — replace canvas thumbnail generation with signed URL + `<video>` element approach
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
