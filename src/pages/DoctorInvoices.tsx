@@ -327,8 +327,8 @@ export default function DoctorInvoices() {
             </CardContent>
           </Card>
 
-          <Card className={earnings?.payouts_enabled ? 'border-success/30' : 'border-warning/30 bg-warning/5'}>
-            <CardContent className="p-4">
+          <Card className={`min-w-[200px] snap-center flex-shrink-0 md:min-w-0 md:flex-shrink ${earnings?.payouts_enabled ? 'border-success/30' : 'border-warning/30 bg-warning/5'}`}>
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${earnings?.payouts_enabled ? 'bg-success/10' : 'bg-warning/10'}`}>
                   <CreditCard className={`w-5 h-5 ${earnings?.payouts_enabled ? 'text-success' : 'text-warning'}`} />
