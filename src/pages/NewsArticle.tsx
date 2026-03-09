@@ -200,7 +200,10 @@ export default function NewsArticle() {
   };
 
   const handleReply = (comment: Comment) => {
-    setReplyTo({ id: comment.id, name: comment.user_name || 'Usuario' });
+    // Instagram-style: replies to replies target the root parent
+    const rootId = comment.parent_comment_id || comment.id;
+    const rootComment = comments.find(c => c.id === rootId);
+    setReplyTo({ id: rootId, name: comment.user_name || 'Usuario' });
     setNewComment(`@${comment.user_name} `);
     setTimeout(() => commentInputRef.current?.focus(), 50);
   };
