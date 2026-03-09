@@ -368,7 +368,7 @@ export default function ContentGallery() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {/* Header */}
         <div className="mb-6">
           <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
