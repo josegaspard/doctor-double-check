@@ -675,7 +675,7 @@ export default function Vault() {
             <div className="space-y-4 py-4">
               {currentPermissionFile?.permissions && currentPermissionFile.permissions.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-medium text-foreground mb-3">Con acceso actualmente:</h4>
+                  <h4 className="text-sm font-medium text-foreground mb-3">{t('ads.currentAccess')}</h4>
                   <div className="space-y-2">
                     {currentPermissionFile.permissions.map(perm => (
                       <div key={perm.doctorId} className="flex items-center justify-between p-3 bg-success/5 border border-success/20 rounded-lg">
