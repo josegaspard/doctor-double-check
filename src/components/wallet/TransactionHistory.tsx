@@ -69,8 +69,8 @@ function translateDescription(desc: string, lang: string): string {
 type FilterType = 'all' | 'topup' | 'purchase' | 'earning' | 'refund';
 
 export function TransactionHistory() {
-  const { t } = useLanguage();
-  const { user } = useAuth();
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'es' ? es : enUS;
   const { transactions, isLoading } = useWallet();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<FilterType>('all');

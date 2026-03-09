@@ -298,15 +298,15 @@ export default function Doctors() {
         <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2">
           {SPECIALTIES.map(spec => (
             <button
-              key={spec}
-              onClick={() => setSelectedSpecialty(spec)}
+              key={spec.value}
+              onClick={() => setSelectedSpecialty(spec.value)}
               className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
-                selectedSpecialty === spec
+                selectedSpecialty === spec.value
                   ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                   : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
               }`}
             >
-              {spec}
+              {t(spec.labelKey)}
             </button>
           ))}
         </div>
