@@ -369,10 +369,10 @@ export default function AdminAds() {
                         {isExpanded && (
                           <div className="mt-4 pt-3 border-t border-border">
                             <h4 className="text-xs font-semibold flex items-center gap-1.5 mb-2">
-                              <ImageIcon className="w-3.5 h-3.5" /> Creativos ({campaignCreatives.length})
+                              <ImageIcon className="w-3.5 h-3.5" /> {t('ads.creatives')} ({campaignCreatives.length})
                             </h4>
                             {campaignCreatives.length === 0 ? (
-                              <p className="text-xs text-muted-foreground">Sin creativos</p>
+                              <p className="text-xs text-muted-foreground">{t('ads.noCreatives')}</p>
                             ) : (
                               <div className="space-y-2">
                                 {campaignCreatives.map(cr => {
