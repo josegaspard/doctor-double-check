@@ -144,7 +144,7 @@ export function ChatHeader({
                 {displayInfo.name}
               </button>
             ) : (
-              <span className="text-sm font-semibold truncate">{displayInfo.name}</span>
+              <span className="text-base font-semibold truncate">{displayInfo.name}</span>
             )}
             {session.isDoubleCheck && (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-0.5">
