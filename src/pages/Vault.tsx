@@ -554,9 +554,9 @@ export default function Vault() {
                 <>
                   <Upload className="w-8 h-8 text-primary/60" />
                   <span className="text-sm font-medium text-foreground">
-                    {description.trim() ? 'Toca para seleccionar archivo' : 'Primero añade una descripción'}
+                    {description.trim() ? t('ads.tapToSelect') : t('ads.addDescriptionFirst')}
                   </span>
-                  <span className="text-xs text-muted-foreground">PDF, JPG, PNG — Máx. {formatStorageSize(storageLimit - storageUsed)} disponible</span>
+                  <span className="text-xs text-muted-foreground">{t('ads.fileTypes')} — {t('common.loading').includes('...') ? '' : ''}{formatStorageSize(storageLimit - storageUsed)} {t('ads.available')}</span>
                 </>
               )}
             </button>
