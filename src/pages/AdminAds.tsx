@@ -224,9 +224,9 @@ export default function AdminAds() {
         <Tabs defaultValue="dashboard">
           <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:flex mb-4">
             <TabsTrigger value="dashboard" className="gap-1.5 text-xs sm:text-sm"><BarChart3 className="w-3.5 h-3.5" />Dashboard</TabsTrigger>
-            <TabsTrigger value="campaigns" className="gap-1.5 text-xs sm:text-sm"><Megaphone className="w-3.5 h-3.5" />Campañas</TabsTrigger>
-            <TabsTrigger value="placements" className="gap-1.5 text-xs sm:text-sm"><LayoutGrid className="w-3.5 h-3.5" />Placements</TabsTrigger>
-            <TabsTrigger value="config" className="gap-1.5 text-xs sm:text-sm"><Settings className="w-3.5 h-3.5" />Config</TabsTrigger>
+            <TabsTrigger value="campaigns" className="gap-1.5 text-xs sm:text-sm"><Megaphone className="w-3.5 h-3.5" />{t('ads.campaigns')}</TabsTrigger>
+            <TabsTrigger value="placements" className="gap-1.5 text-xs sm:text-sm"><LayoutGrid className="w-3.5 h-3.5" />{t('ads.placements')}</TabsTrigger>
+            <TabsTrigger value="config" className="gap-1.5 text-xs sm:text-sm"><Settings className="w-3.5 h-3.5" />{t('ads.config')}</TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
