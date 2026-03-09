@@ -634,7 +634,7 @@ export default function Vault() {
                         }
                       }} className="text-destructive hover:text-destructive flex-1 sm:flex-none h-10 sm:h-8 text-xs min-w-[100px]">
                         <Trash2 className="w-3.5 h-3.5 mr-1" />
-                        Eliminar
+                        {t('ads.deleteFile')}
                       </Button>
                     </div>
                   </div>
