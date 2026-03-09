@@ -457,10 +457,10 @@ export default function AdvertiserDashboard() {
                 <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={es ? 'Mi campaña' : 'My campaign'} />
               </div>
               <div>
-                <Label className="text-xs">{es ? 'Presupuesto (MXN)' : 'Budget (MXN)'}</Label>
+                <Label className="text-xs">{t('ads.budget')}</Label>
                 <Input type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: Number(e.target.value) }))} min={config.min_budget} />
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  Mínimo: ${config.min_budget.toLocaleString()} · ~{estimatedImpressions.toLocaleString()} imp · ~{estimatedClicks.toLocaleString()} clics
+                  {t('ads.minimum')}: ${config.min_budget.toLocaleString()} · ~{estimatedImpressions.toLocaleString()} {t('ads.estimatedImp')} · ~{estimatedClicks.toLocaleString()} {t('ads.estimatedClicks')}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
