@@ -66,6 +66,9 @@ export const en = {
     share: 'Share',
     copyLink: 'Copy link',
     copied: 'Copied',
+    of: 'of',
+    doctor: 'Doctor',
+    resident: 'Resident',
   },
   // Inputs
   inputs: {
