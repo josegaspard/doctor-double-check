@@ -262,6 +262,7 @@ export default function ContentGallery() {
   const { user } = useAuth();
   const { language, t } = useLanguage();
   const { getSubscription } = useSubscriptions();
+  const { balance } = useWallet();
   const { purchases } = usePurchases();
   const locale = language === 'es' ? es : enUS;
 
