@@ -1,26 +1,64 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Complete Remaining i18n + News Translation + Header Spacing
 
-## Solucion
+## Status Check — What's Done vs Not Done
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+| Task | Status |
+|------|--------|
+| Specialty filters i18n | ✅ Done |
+| TransactionHistory descriptions | ✅ Done |
+| Vault page — structure/labels | ✅ Partially (many `t()` calls) |
+| Vault page — toast messages | ❌ ~15 toasts still hardcoded Spanish |
+| NewsArticle.tsx full i18n | ❌ Fully hardcoded Spanish (~30 strings) |
+| News translate button | ❌ Not started |
+| Header spacing | ❌ Not touched |
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+## Remaining Work
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+### 1. Vault.tsx — Replace ~15 hardcoded Spanish toast messages
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+Replace strings like:
+- `'¡Almacenamiento ampliado exitosamente!'` → `t('vault.storageExpanded')`
+- `'Error al cargar los médicos'` → `t('vault.errorLoadingDoctors')`
+- `'Archivo subido correctamente'` → `t('vault.uploadSuccess')`
+- `'Saldo insuficiente'` → `t('vault.insufficientBalance')`
+- `'Se debitaron $X...'` → template with `t('vault.walletDebited')`
+- `'Acceso otorgado/revocado correctamente'` → `t('vault.accessGranted/Revoked')`
+- All error toasts → corresponding `t()` keys
+- `"de"` in storage display → `t('common.of')`
 
-## Archivos a modificar
+### 2. NewsArticle.tsx — Full i18n migration (~30 strings)
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+- Import `useLanguage`, use `t()` for all UI strings
+- Replace hardcoded: "Artículo no encontrado", "Volver a noticias", "Editar artículo", "Autor", "Editado el", "consultas", "seguidores", "Consulta:", "Consulta gratuita", "lecturas", "Ver X respuestas", "Ocultar respuestas", comment section strings
+- Fix date locale: use `language === 'es' ? es : enUS`
+- Add translate button for article content using Lovable AI edge function
+
+### 3. News Translation Edge Function
+
+Create `supabase/functions/translate-news/index.ts`:
+- Accepts `{ title, content, targetLang }` 
+- Uses Lovable AI (`google/gemini-3-flash-preview`) to translate
+- Returns `{ title, content }` translated
+- Client caches result in state, shows toggle "Show original" / "Translate"
+
+### 4. Header Spacing Fix (`MainLayout.tsx`)
+
+- Increase nav item padding: `px-1.5 lg:px-2 xl:px-3`
+- Ensure right-side items have `gap-2` spacing
+
+### 5. i18n Keys — Add ~40 new keys to en.ts and es.ts
+
+New keys for vault toasts, NewsArticle strings, common.of, translate feature
+
+## Files to Modify
+
+1. `src/pages/Vault.tsx` — Replace 15 Spanish toast/display strings
+2. `src/pages/NewsArticle.tsx` — Full i18n + translate button
+3. `src/lib/i18n/en.ts` — Add ~40 keys
+4. `src/lib/i18n/es.ts` — Add ~40 keys  
+5. `src/components/layout/MainLayout.tsx` — Header spacing
+6. `supabase/functions/translate-news/index.ts` — New edge function
+7. `supabase/config.toml` — Register new function
+
