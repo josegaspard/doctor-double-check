@@ -8,20 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { ContentPreviewModal } from '@/components/content/ContentPreviewModal';
 import {
   FileText,
   Image as ImageIcon,
   Video,
   Search,
-  Filter,
   Clock,
   Users,
   Stethoscope,
@@ -396,45 +390,78 @@ export default function ContentGallery() {
           </TabsList>
         </Tabs>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder={t('inputs.searchByTitle')}
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-full sm:w-40">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder={t('content.type')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('content.all')}</SelectItem>
-              <SelectItem value="video">{t('content.videos')}</SelectItem>
-              <SelectItem value="pdf">{t('content.pdfs')}</SelectItem>
-              <SelectItem value="image">{t('content.images')}</SelectItem>
-            </SelectContent>
-          </Select>
-          {categories.length > 0 && (
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder={t('content.category')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('content.allCategories')}</SelectItem>
-                {categories.map(cat => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+        {/* Search */}
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder={t('inputs.searchByTitle')}
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pl-9 h-10"
+          />
         </div>
+
+        {/* Type filter chips */}
+        <div className="mb-3">
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex gap-2 pb-1">
+              {[
+                { value: 'all', label: language === 'es' ? 'Todos' : 'All', icon: Globe },
+                { value: 'video', label: 'Videos', icon: Video },
+                { value: 'pdf', label: 'PDFs', icon: FileText },
+                { value: 'image', label: language === 'es' ? 'Imágenes' : 'Images', icon: ImageIcon },
+              ].map(chip => {
+                const active = typeFilter === chip.value;
+                return (
+                  <Button
+                    key={chip.value}
+                    variant={active ? 'default' : 'outline'}
+                    size="sm"
+                    className={`gap-1.5 rounded-full shrink-0 text-xs h-8 px-3.5 ${active ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
+                    onClick={() => setTypeFilter(chip.value)}
+                  >
+                    <chip.icon className="w-3.5 h-3.5" />
+                    {chip.label}
+                  </Button>
+                );
+              })}
+            </div>
+            <ScrollBar orientation="horizontal" className="h-0" />
+          </ScrollArea>
+        </div>
+
+        {/* Category filter chips */}
+        {categories.length > 0 && (
+          <div className="mb-5">
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex gap-2 pb-1">
+                <Button
+                  variant={categoryFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  className={`rounded-full shrink-0 text-xs h-7 px-3 ${categoryFilter === 'all' ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
+                  onClick={() => setCategoryFilter('all')}
+                >
+                  {t('content.allCategories')}
+                </Button>
+                {categories.map(cat => {
+                  const active = categoryFilter === cat;
+                  return (
+                    <Button
+                      key={cat}
+                      variant={active ? 'default' : 'outline'}
+                      size="sm"
+                      className={`rounded-full shrink-0 text-xs h-7 px-3 ${active ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
+                      onClick={() => setCategoryFilter(cat)}
+                    >
+                      {cat}
+                    </Button>
+                  );
+                })}
+              </div>
+              <ScrollBar orientation="horizontal" className="h-0" />
+            </ScrollArea>
+          </div>
+        )}
 
         {/* Grid */}
         {isLoading ? (
@@ -442,7 +469,7 @@ export default function ContentGallery() {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : filteredContents.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
             {filteredContents.map(content => {
               const locked = !canViewSubscriberContent(content);
               const thumbUrl = content.thumbnail_url || signedThumbs[content.id] || null;
