@@ -39,6 +39,9 @@ interface DoctorData {
   location?: string;
   followersCount: number;
   avatarUrl?: string;
+  officeHoursStart?: string;
+  officeHoursEnd?: string;
+  officeDays?: string[];
 }
 
 interface LiveData {
