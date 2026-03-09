@@ -251,10 +251,10 @@ export default function AdminAds() {
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="w-4 h-4 text-primary" />
-                    <span className="font-semibold text-sm">CTR Global</span>
+                    <span className="font-semibold text-sm">{t('ads.globalCtr')}</span>
                   </div>
                   <p className="text-3xl font-bold text-primary">{((totalClicks / totalImpressions) * 100).toFixed(2)}%</p>
-                  <p className="text-xs text-muted-foreground mt-1">{totalClicks} clics / {totalImpressions} impresiones</p>
+                  <p className="text-xs text-muted-foreground mt-1">{totalClicks} {t('ads.clicksImpressions').replace('/', ` / ${totalImpressions} `)}</p>
                 </CardContent>
               </Card>
             )}
