@@ -78,7 +78,7 @@ const statusColors: Record<string, string> = {
 export default function AdvertiserDashboard() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { config } = useAdConfig();
   const { placements } = useAdPlacements();
 
