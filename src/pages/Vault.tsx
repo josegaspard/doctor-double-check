@@ -285,8 +285,8 @@ export default function Vault() {
 
       if (!result?.success) {
         toast.error(result?.error === 'Insufficient balance' 
-          ? 'Saldo insuficiente' 
-          : (result?.error || 'Error al procesar la compra'));
+          ? t('ads.insufficientBalance') 
+          : (result?.error || t('ads.purchaseError')));
         return;
       }
 
