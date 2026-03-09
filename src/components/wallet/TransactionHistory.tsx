@@ -151,7 +151,7 @@ export function TransactionHistory() {
       setRefundDialog(false);
       setRefundReason('');
     } catch (error: any) {
-      toast.error(error.message || 'Error al enviar solicitud');
+      toast.error(error.message || t('wallet.refundError'));
     } finally {
       setIsSubmittingRefund(false);
     }
