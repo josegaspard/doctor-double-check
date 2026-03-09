@@ -283,18 +283,20 @@ export default function ContentGallery() {
 
       setContents(mapped);
 
-      // Resolve signed URLs for content without thumbnail_url (skip PDFs)
-      const needThumb = mapped.filter(c => !c.thumbnail_url && c.type !== 'pdf');
+      // Resolve signed URLs for thumbnails and content (skip PDFs)
+      const needThumb = mapped.filter(c => c.type !== 'pdf');
 
       if (needThumb.length > 0) {
         const thumbResults = await Promise.all(
           needThumb.map(async (c) => {
-            if (c.file_url.startsWith('http')) {
-              return { id: c.id, url: c.file_url };
+            // Prefer thumbnail_url, fall back to file_url
+            const pathToSign = c.thumbnail_url || c.file_url;
+            if (pathToSign.startsWith('http')) {
+              return { id: c.id, url: pathToSign };
             }
             const { data: sd } = await supabase.storage
               .from('doctor-content')
-              .createSignedUrl(c.file_url, 60 * 60);
+              .createSignedUrl(pathToSign, 60 * 60);
             return { id: c.id, url: sd?.signedUrl || null };
           })
         );
