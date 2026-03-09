@@ -232,7 +232,7 @@ export default function NewsArticle() {
   const renderComment = (comment: Comment, depth: number = 0) => {
     const isCollapsed = collapsedThreads.has(comment.id);
     const hasReplies = (comment.replies?.length || 0) > 0;
-    const maxDepth = 4;
+    const maxDepth = 1;
     const isLiking = likingComments.has(comment.id);
 
     return (
