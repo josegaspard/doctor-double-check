@@ -23,7 +23,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Crown,
-  DollarSign,
+  MessageCircle,
+  Clock,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
@@ -103,41 +104,6 @@ interface DoctorRow {
   is_identity_verified: boolean;
   total_count: number;
 }
-
-// Specialty → accent color mapping (using design system tokens)
-const SPECIALTY_COLORS: Record<string, string> = {
-  'Cardiología': 'border-t-red-500',
-  'Dermatología': 'border-t-pink-500',
-  'Endocrinología': 'border-t-amber-500',
-  'Gastroenterología': 'border-t-orange-500',
-  'Ginecología': 'border-t-fuchsia-500',
-  'Medicina General': 'border-t-blue-500',
-  'Medicina Interna': 'border-t-indigo-500',
-  'Neurología': 'border-t-purple-500',
-  'Oftalmología': 'border-t-cyan-500',
-  'Oncología': 'border-t-rose-500',
-  'Ortopedia': 'border-t-emerald-500',
-  'Pediatría': 'border-t-sky-500',
-  'Psiquiatría': 'border-t-violet-500',
-  'Urología': 'border-t-teal-500',
-};
-
-const SPECIALTY_EMOJI: Record<string, string> = {
-  'Cardiología': '🫀',
-  'Dermatología': '🧴',
-  'Endocrinología': '🔬',
-  'Gastroenterología': '🫁',
-  'Ginecología': '🩺',
-  'Medicina General': '👨‍⚕️',
-  'Medicina Interna': '💊',
-  'Neurología': '🧠',
-  'Oftalmología': '👁️',
-  'Oncología': '🎗️',
-  'Ortopedia': '🦴',
-  'Pediatría': '👶',
-  'Psiquiatría': '🧘',
-  'Urología': '🏥',
-};
 
 const SPECIALTIES = [
   'Todas',
@@ -305,54 +271,56 @@ export default function Doctors() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
-        {/* Onboarding banner */}
-        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-primary/5 to-info/5 border border-primary/15 rounded-xl">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 hidden sm:flex">
-              <Stethoscope className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-sm text-foreground mb-1">{t('doctors.howItWorks')}</h3>
-              <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                <p><Heart className="w-3 h-3 inline text-destructive mr-1" /><strong>{t('doctors.follow')}</strong> — {t('doctors.followDescription')}</p>
-                <p><Crown className="w-3 h-3 inline text-warning mr-1" /><strong>{t('doctors.proSubscription')}</strong> — {t('doctors.proDescription')}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        {/* Header */}
         <div className="mb-4 sm:mb-6">
-          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-1 sm:mb-2">{t('doctors.exploreTitle')}</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">{t('doctors.exploreSubtitle')}</p>
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-1">{t('doctors.exploreTitle')}</h1>
+          <p className="text-sm text-muted-foreground">{t('doctors.exploreSubtitle')}</p>
         </div>
 
-        {/* Specialty filter chips with emojis */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
+        {/* Search bar */}
+        <div className="flex gap-2 mb-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder={t('inputs.searchDoctors')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-11" />
+          </div>
+          <Button
+            variant={nearbyMode ? "default" : "outline"}
+            size="icon"
+            className="flex-shrink-0 h-11 w-11"
+            title="Cerca de mí"
+            onClick={handleNearbyToggle}
+          >
+            <MapPin className={`w-4 h-4 ${nearbyMode ? 'text-primary-foreground' : ''}`} />
+          </Button>
+        </div>
+
+        {/* Specialty filter chips — clean, no emojis */}
+        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2">
           {SPECIALTIES.map(spec => (
             <button
               key={spec}
               onClick={() => setSelectedSpecialty(spec)}
-              className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border whitespace-nowrap ${
+              className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
                 selectedSpecialty === spec
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-foreground border-border hover:border-primary/50'
+                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                  : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
               }`}
             >
-              {spec !== 'Todas' && SPECIALTY_EMOJI[spec] ? `${SPECIALTY_EMOJI[spec]} ` : ''}{spec}
+              {spec}
             </button>
           ))}
         </div>
 
         {/* City filter chips */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
+        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
           {['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'].map(city => (
             <button
               key={city}
               onClick={() => setLocationFilter(locationFilter === city ? '' : city)}
-              className={`flex-shrink-0 snap-start flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+              className={`flex-shrink-0 snap-start flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all border ${
                 locationFilter === city
-                  ? 'bg-accent text-accent-foreground border-accent'
-                  : 'bg-muted/50 text-muted-foreground border-border hover:border-accent/50'
+                  ? 'bg-accent text-accent-foreground border-accent shadow-sm'
+                  : 'bg-card text-muted-foreground border-border hover:border-accent/50'
               }`}
             >
               <MapPin className="w-3 h-3" />
@@ -361,30 +329,14 @@ export default function Doctors() {
           ))}
         </div>
 
-        {/* Search */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder={t('inputs.searchDoctors')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
-          </div>
-          <Button
-            variant={nearbyMode ? "default" : "outline"}
-            size="icon"
-            className="flex-shrink-0 h-10 w-10"
-            title="Cerca de mí"
-            onClick={handleNearbyToggle}
-          >
-            <MapPin className={`w-4 h-4 ${nearbyMode ? 'text-primary-foreground' : ''}`} />
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 sm:mb-4">
+        {/* Results count */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
           <span>
             {totalCount} {t('doctors.found')}
-            {totalPages > 1 && ` — ${t('doctors.page')} ${currentPage} ${t('doctors.of')} ${totalPages}`}
+            {totalPages > 1 && ` · ${t('doctors.page')} ${currentPage}/${totalPages}`}
           </span>
           {nearbyMode && (
-            <Badge variant="secondary" className="gap-1 text-xs">
+            <Badge variant="secondary" className="gap-1 text-[10px]">
               <MapPin className="w-3 h-3" />
               {t('doctors.nearMe') || 'Cerca de mí'}
             </Badge>
@@ -393,16 +345,16 @@ export default function Doctors() {
 
         {/* Doctors Grid */}
         {isLoading ? (
-          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <Card key={i}>
+              <Card key={i} className="overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <Skeleton className="w-14 h-14 rounded-full" />
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-5 w-32" />
                       <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-full" />
                     </div>
                   </div>
                 </CardContent>
@@ -419,136 +371,146 @@ export default function Doctors() {
           </Card>
         ) : (
           <>
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {doctors.map(doctor => {
                 const isAvailable = isDoctorAvailableNow(doctor);
                 const isFollowing = followedDoctors.has(doctor.user_id);
                 const subscription = getSubscription(doctor.user_id);
                 const isPaid = subscription?.tier === 'basic' || subscription?.tier === 'premium';
-                const accentBorder = SPECIALTY_COLORS[doctor.specialty] || 'border-t-primary';
 
                 return (
                   <Card
                     key={doctor.id}
-                    className={`hover:shadow-lg transition-all cursor-pointer group border-t-4 ${accentBorder} ${
-                      isAvailable ? 'ring-1 ring-success/30 shadow-[0_0_12px_-3px_hsl(var(--success)/0.2)]' : ''
+                    className={`group hover:shadow-md transition-all cursor-pointer overflow-hidden ${
+                      isAvailable ? 'ring-1 ring-success/25' : ''
                     }`}
                     onClick={() => navigate(`/doctor/${doctor.user_id}`)}
                   >
-                    <CardContent className="p-4">
-                      {/* Top section: avatar + info + price */}
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 relative">
-                          <Avatar className="w-14 h-14 border-2 border-background shadow-md">
-                            <AvatarImage src={doctor.avatar_url || undefined} />
-                            <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
-                              {getInitials(doctor.name || 'Dr')}
-                            </AvatarFallback>
-                          </Avatar>
-                          {/* Available dot on avatar */}
-                          {isAvailable && (
-                            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-success border-2 border-background animate-pulse" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <h3 className="font-semibold truncate group-hover:text-primary transition-colors text-sm sm:text-base">
-                              {doctor.name || 'Doctor'}
-                            </h3>
-                            {doctor.is_identity_verified && (
-                              <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                    <CardContent className="p-0">
+                      {/* Top section with subtle gradient */}
+                      <div className="p-4 pb-3">
+                        <div className="flex items-start gap-3">
+                          {/* Avatar */}
+                          <div className="relative flex-shrink-0">
+                            <Avatar className="w-14 h-14 border-2 border-background shadow-sm">
+                              <AvatarImage src={doctor.avatar_url || undefined} />
+                              <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
+                                {getInitials(doctor.name || 'Dr')}
+                              </AvatarFallback>
+                            </Avatar>
+                            {isAvailable && (
+                              <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-success border-2 border-background" />
                             )}
                           </div>
-                          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+
+                          {/* Name + specialty + badge */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                                {doctor.name || 'Doctor'}
+                              </h3>
+                              {doctor.is_identity_verified && (
+                                <CheckCircle className="w-3.5 h-3.5 text-success flex-shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-xs text-primary/80 font-medium mb-1 truncate">{doctor.specialty}</p>
                             <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
-                            <Badge variant="secondary" className="text-[11px] px-1.5 py-0">
-                              {SPECIALTY_EMOJI[doctor.specialty] || '🩺'} {doctor.specialty}
-                            </Badge>
                           </div>
-                          {/* Stats row */}
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Star className="w-3.5 h-3.5 text-warning fill-warning" />
-                              {Number(doctor.rating).toFixed(1)}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Users className="w-3.5 h-3.5" />
-                              {doctor.followers_count}
-                            </span>
+
+                          {/* Fee */}
+                          <div className="flex-shrink-0 text-right">
+                            <span className="text-lg font-bold text-foreground">${doctor.consultation_fee}</span>
+                            <p className="text-[10px] text-muted-foreground -mt-0.5">{t('doctors.perConsult') || 'consulta'}</p>
                           </div>
-                        </div>
-                        {/* Price badge */}
-                        <div className="flex-shrink-0">
-                          <Badge className="bg-success/10 text-success border-success/30 font-bold text-xs px-2 py-1">
-                            <DollarSign className="w-3 h-3 mr-0.5" />
-                            {doctor.consultation_fee}
-                          </Badge>
                         </div>
                       </div>
 
-                      {/* Bio (always visible) */}
+                      {/* Stats bar */}
+                      <div className="px-4 pb-3 flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Star className="w-3.5 h-3.5 text-warning fill-warning" />
+                          <span className="font-medium text-foreground">{Number(doctor.rating).toFixed(1)}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3.5 h-3.5" />
+                          {doctor.followers_count}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          {doctor.total_consultations}
+                        </span>
+                        {doctor.location && (
+                          <span className="flex items-center gap-1 ml-auto truncate max-w-[120px]">
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{doctor.location}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Bio */}
                       {doctor.bio && (
-                        <p className="text-xs text-muted-foreground mt-2.5 line-clamp-2 leading-relaxed">{doctor.bio}</p>
-                      )}
-
-                      {/* Location row */}
-                      {doctor.location && (
-                        <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
-                          <MapPin className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate">{doctor.location}</span>
-                          {nearbyMode && userLocation && (() => {
-                            const coords = geocodeLocation(doctor.location!);
-                            if (!coords) return null;
-                            const dist = haversineDistance(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
-                            return <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0 flex-shrink-0">~{Math.round(dist)} km</Badge>;
-                          })()}
+                        <div className="px-4 pb-3">
+                          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{doctor.bio}</p>
                         </div>
                       )}
 
-                      {/* Availability pill */}
-                      <div className="mt-2.5">
-                        {isAvailable ? (
-                          <Badge className="bg-success/15 text-success border-success/30 text-xs gap-1 px-2.5 py-0.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                            {t('doctors.availableNow')}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-muted-foreground text-xs gap-1 px-2.5 py-0.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                            {t('doctors.notAvailable')}
-                          </Badge>
-                        )}
+                      {/* Bottom: availability + actions */}
+                      <div className="px-4 py-3 border-t bg-muted/20 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {isAvailable ? (
+                            <div className="flex items-center gap-1.5 text-success text-xs font-medium">
+                              <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                              {t('doctors.availableNow')}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                              <Clock className="w-3 h-3" />
+                              {t('doctors.notAvailable')}
+                            </div>
+                          )}
+                          {isPaid && (
+                            <Badge variant="secondary" className="h-5 px-1.5 text-[10px] gap-0.5 bg-warning/10 text-warning border-warning/20">
+                              <Crown className="w-3 h-3" />
+                              Pro
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-9 w-9 rounded-full ${
+                              isFollowing
+                                ? 'text-destructive hover:text-destructive/80'
+                                : 'text-muted-foreground hover:text-destructive'
+                            }`}
+                            onClick={(e) => { e.stopPropagation(); handleFollow(doctor.user_id); }}
+                          >
+                            <Heart className={`w-4 h-4 ${isFollowing ? 'fill-current' : ''}`} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="h-9 px-4 text-xs font-medium"
+                            onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
+                          >
+                            {t('doctors.viewProfile')}
+                          </Button>
+                        </div>
                       </div>
 
-                      {/* Footer buttons */}
-                      <div className="mt-3 pt-3 border-t flex gap-2 w-full">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="flex-1 h-10 text-sm active:scale-95 transition-transform"
-                          onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
-                        >
-                          {t('doctors.viewProfile')}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className={`h-10 w-10 flex-shrink-0 active:scale-95 transition-all ${
-                            isFollowing
-                              ? 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20'
-                              : 'hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20'
-                          }`}
-                          onClick={(e) => { e.stopPropagation(); handleFollow(doctor.user_id); }}
-                        >
-                          <Heart className={`w-4 h-4 ${isFollowing ? 'fill-current' : ''}`} />
-                        </Button>
-                        {isPaid && (
-                          <Badge variant="secondary" className="h-10 px-2.5 flex items-center gap-1 bg-warning/10 text-warning border-warning/20">
-                            <Crown className="w-3.5 h-3.5" />
-                            Pro
-                          </Badge>
-                        )}
-                      </div>
+                      {/* Nearby distance badge */}
+                      {nearbyMode && userLocation && doctor.location && (() => {
+                        const coords = geocodeLocation(doctor.location);
+                        if (!coords) return null;
+                        const dist = haversineDistance(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
+                        return (
+                          <div className="px-4 py-1.5 bg-accent/30 text-[11px] text-accent-foreground flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            ~{Math.round(dist)} km
+                          </div>
+                        );
+                      })()}
                     </CardContent>
                   </Card>
                 );
