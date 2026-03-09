@@ -537,7 +537,7 @@ export default function ContentGallery() {
                     setPreviewContent(content);
                   }}
                 >
-                  <ContentCardThumbnail content={content} thumbUrl={thumbUrl} locked={locked} t={t} />
+                  <ContentCardThumbnail content={content} thumbUrl={thumbUrl} locked={locked} showInsufficientHint={content.price > 0 && balance < content.price && !locked} t={t} />
                   <ContentCardBody content={content} locale={locale} />
                 </Card>
               );
