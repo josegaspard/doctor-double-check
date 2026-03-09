@@ -61,10 +61,12 @@ interface DailyEvent {
   clicks: number;
 }
 
-const statusLabels: Record<string, string> = {
-  draft: 'Borrador', pending_payment: 'Pago Pendiente', pending_review: 'En Revisión',
-  active: 'Activa', paused: 'Pausada', completed: 'Completada', rejected: 'Rechazada',
-};
+function getStatusLabels(t: (path: string) => string): Record<string, string> {
+  return {
+    draft: t('ads.draft'), pending_payment: t('ads.pendingPayment'), pending_review: t('ads.pendingReview'),
+    active: t('ads.active'), paused: t('ads.paused'), completed: t('ads.completed'), rejected: t('ads.rejected'),
+  };
+}
 
 const statusColors: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground', pending_payment: 'bg-warning/20 text-warning',
