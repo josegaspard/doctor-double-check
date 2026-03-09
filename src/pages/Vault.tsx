@@ -506,7 +506,7 @@ export default function Vault() {
             <div>
               <div className="relative">
                 <Input
-                  placeholder="Describe brevemente tu estudio *"
+                  placeholder={t('ads.descPlaceholder')}
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   className={`h-10 ${!description.trim() ? 'border-destructive/40 focus-visible:ring-destructive/30' : ''}`}
@@ -514,7 +514,7 @@ export default function Vault() {
               </div>
               <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3 text-destructive" />
-                Obligatorio — describe el contenido del archivo
+                {t('ads.descRequired')}
               </p>
             </div>
 
