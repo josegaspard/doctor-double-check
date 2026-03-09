@@ -388,16 +388,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
             {/* Right Side */}
             <div className="flex items-center gap-1.5">
-              {/* Search - hidden on mobile (accessible via Doctores tab) */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 text-muted-foreground hover:text-foreground hidden sm:flex"
-                onClick={() => navigate('/doctors')}
-              >
-                <Search className="w-4 h-4" />
-                <span className="hidden sm:inline text-xs">{t('common.search')}</span>
-              </Button>
+              {/* Global Search */}
+              <GlobalSearch />
               
               <LanguageSwitcher />
               
