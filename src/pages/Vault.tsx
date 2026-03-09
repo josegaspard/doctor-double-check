@@ -788,8 +788,8 @@ export default function Vault() {
                       <div className="text-center py-4 text-muted-foreground text-sm">
                         <CheckCircle className="w-8 h-8 mx-auto mb-2 text-success" />
                         {doctorSearch 
-                          ? 'No se encontraron médicos con ese criterio'
-                          : 'Todos los médicos disponibles ya tienen acceso'}
+                          ? t('ads.noDocsFound')
+                          : t('ads.allDocsHaveAccess')}
                       </div>
                     )}
                   </div>
