@@ -61,7 +61,7 @@ export function AdBanner({ placementName, className }: AdBannerProps) {
 
       {/* App Store compliance label */}
       <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-background/70 text-[10px] font-medium text-muted-foreground backdrop-blur-sm">
-        Publicidad
+        {t('ads.adLabel')}
       </span>
     </div>
   );

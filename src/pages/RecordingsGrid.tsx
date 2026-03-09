@@ -367,7 +367,7 @@ export default function RecordingsGrid() {
             </p>
             {(contentFilter !== 'all' || selectedSpecialty) && (
               <Button variant="outline" className="mt-3" onClick={() => { setContentFilter('all'); setSelectedSpecialty(null); }}>
-                Quitar filtros
+                {t('ads.removeFilters')}
               </Button>
             )}
           </Card>

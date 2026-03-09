@@ -160,11 +160,11 @@ export default function Advertising() {
         <div className="text-center">
           <Button size="lg" className="gap-2 text-base px-8" onClick={handleGetStarted}>
             <Megaphone className="w-5 h-5" />
-            {es ? 'Crear mi campaña' : 'Create my campaign'}
+            {t('ads.createMyCampaign')}
             <ArrowRight className="w-4 h-4" />
           </Button>
           <p className="text-xs text-muted-foreground mt-3">
-            {es ? 'Necesitas una cuenta registrada para comenzar' : 'You need a registered account to get started'}
+            {t('ads.needAccount')}
           </p>
         </div>
       </div>
