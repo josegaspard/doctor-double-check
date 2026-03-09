@@ -210,30 +210,27 @@ function ContentCardBody({
   locale: typeof es;
 }) {
   return (
-    <CardContent className="p-4 space-y-2.5">
-      <h3 className="font-semibold text-foreground line-clamp-2 text-sm leading-snug">
+    <CardContent className="p-3.5 sm:p-5 space-y-2 sm:space-y-3">
+      <h3 className="font-semibold text-foreground line-clamp-1 sm:line-clamp-2 text-sm sm:text-base leading-snug">
         {content.title}
       </h3>
 
       {content.description && (
-        <p className="text-xs text-muted-foreground line-clamp-2">{content.description}</p>
+        <p className="text-xs text-muted-foreground line-clamp-1 sm:line-clamp-2 hidden sm:block">{content.description}</p>
       )}
 
       {/* Doctor info */}
       <div className="flex items-center gap-2">
-        <Avatar className="w-6 h-6">
+        <Avatar className="w-6 h-6 sm:w-7 sm:h-7">
           <AvatarImage src={content.creator_avatar || undefined} />
           <AvatarFallback><User className="w-3 h-3" /></AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium truncate">{content.creator_name}</p>
-          {content.creator_specialty && (
-            <p className="text-[11px] text-muted-foreground truncate">{content.creator_specialty}</p>
-          )}
+          <p className="text-xs sm:text-sm font-medium truncate">{content.creator_name}</p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+      <div className="flex items-center flex-wrap gap-1.5 text-[11px] text-muted-foreground pt-0.5">
         <span className="flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {format(new Date(content.created_at), 'd MMM yyyy', { locale })}
