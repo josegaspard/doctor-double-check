@@ -39,6 +39,9 @@ interface DoctorData {
   location?: string;
   followersCount: number;
   avatarUrl?: string;
+  officeHoursStart?: string;
+  officeHoursEnd?: string;
+  officeDays?: string[];
 }
 
 interface LiveData {
@@ -109,6 +112,9 @@ export default function DoctorProfile() {
           location: doctorProfile.location || undefined,
           followersCount: doctorProfile.followers_count,
           avatarUrl: doctorProfile.avatar_url || undefined,
+          officeHoursStart: doctorProfile.office_hours_start || undefined,
+          officeHoursEnd: doctorProfile.office_hours_end || undefined,
+          officeDays: doctorProfile.office_days || undefined,
         });
 
         const { data: liveData } = await supabase
@@ -513,6 +519,59 @@ export default function DoctorProfile() {
                 )}
               </div>
             </div>
+
+            {/* Office Hours */}
+            {(doctor.officeHoursStart || (doctor.officeDays && doctor.officeDays.length > 0)) && (
+              <div className="mb-5 p-3.5 bg-muted/40 rounded-lg border border-border/50">
+                <div className="flex items-center justify-between mb-2.5">
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-primary" />
+                    {t('doctorProfile.officeHours')}
+                  </h4>
+                  {(() => {
+                    if (!doctor.officeHoursStart || !doctor.officeHoursEnd || !doctor.officeDays?.length) return null;
+                    const now = new Date();
+                    const dayMap: Record<string, number> = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 0 };
+                    const todayNum = now.getDay();
+                    const isToday = doctor.officeDays.some(d => dayMap[d.toLowerCase()] === todayNum);
+                    const [startH, startM] = doctor.officeHoursStart.split(':').map(Number);
+                    const [endH, endM] = doctor.officeHoursEnd.split(':').map(Number);
+                    const nowMins = now.getHours() * 60 + now.getMinutes();
+                    const isInHours = isToday && nowMins >= startH * 60 + startM && nowMins <= endH * 60 + endM;
+                    return (
+                      <Badge variant={isInHours ? 'default' : 'outline'} className={`text-xs gap-1 ${isInHours ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isInHours ? 'bg-white animate-pulse' : 'bg-muted-foreground'}`} />
+                        {isInHours ? t('doctorProfile.availableNow') : t('doctorProfile.notAvailableNow')}
+                      </Badge>
+                    );
+                  })()}
+                </div>
+                {doctor.officeHoursStart && doctor.officeHoursEnd && (
+                  <p className="text-sm font-medium text-foreground mb-2">
+                    {doctor.officeHoursStart.slice(0, 5)} — {doctor.officeHoursEnd.slice(0, 5)}
+                  </p>
+                )}
+                {doctor.officeDays && doctor.officeDays.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => {
+                      const isActive = doctor.officeDays?.some(d => d.toLowerCase() === day);
+                      return (
+                        <span
+                          key={day}
+                          className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${
+                            isActive
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                        >
+                          {t(`doctorProfile.${day}`)}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* CTA buttons: full-width stacked on mobile */}
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">

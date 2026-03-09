@@ -31,6 +31,7 @@ export const es = {
     content: 'Contenido',
     allDoctors: 'Ver todos los doctores',
     allRecordings: 'Ver todas las grabaciones',
+    tip: 'Busca por nombre de doctor, especialidad o tema',
   },
   common: {
     loading: 'Cargando...',
@@ -108,6 +109,7 @@ export const es = {
   // Login page
   login: {
     title: 'Iniciar Sesión',
+    loginDescription: 'Ingresa con tu cuenta para continuar',
     email: 'Correo electrónico',
     password: 'Contraseña',
     forgotPassword: '¿Olvidaste tu contraseña?',
@@ -856,6 +858,17 @@ export const es = {
     step3Desc: 'Inicia una consulta por chat o videollamada',
     readMore: 'Leer más',
     readLess: 'Leer menos',
+    officeHours: 'Horario de atención',
+    availableNow: 'Disponible ahora',
+    notAvailableNow: 'No disponible',
+    noSchedule: 'Sin horario definido',
+    monday: 'Lun',
+    tuesday: 'Mar',
+    wednesday: 'Mié',
+    thursday: 'Jue',
+    friday: 'Vie',
+    saturday: 'Sáb',
+    sunday: 'Dom',
   },
   // Medical History
   medicalHistory: {
