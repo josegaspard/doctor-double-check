@@ -103,7 +103,7 @@ export function ChatHeader({
       <div className="flex items-center gap-3">
         {/* Back button for mobile */}
         {onBack && (
-          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden -ml-2">
+          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden -ml-2 h-10 w-10">
             <ArrowLeft className="w-5 h-5" />
           </Button>
         )}
