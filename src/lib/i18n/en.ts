@@ -109,6 +109,7 @@ export const en = {
   // Login page
   login: {
     title: 'Log In',
+    loginDescription: 'Sign in to your account to continue',
     email: 'Email',
     password: 'Password',
     forgotPassword: 'Forgot your password?',
