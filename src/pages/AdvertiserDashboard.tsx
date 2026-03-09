@@ -186,7 +186,7 @@ export default function AdvertiserDashboard() {
   const uploadCreative = async (file: File, placementId: string) => {
     if (!selectedCampaign || !user?.id) return;
     const maxSize = config.max_file_size_kb * 1024;
-    if (file.size > maxSize) { toast.error(`Archivo muy grande (máx ${config.max_file_size_kb}KB)`); return; }
+    if (file.size > maxSize) { toast.error(`${t('ads.fileTooLarge')} (${t('ads.maxSize')} ${config.max_file_size_kb}KB)`); return; }
 
     setIsUploading(true);
     const ext = file.name.split('.').pop();
