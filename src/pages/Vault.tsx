@@ -412,10 +412,10 @@ export default function Vault() {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
           <Folder className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-          Mi Vault Médico
+          {t('ads.vaultTitle')}
         </h1>
         <p className="text-muted-foreground text-sm mb-4 sm:mb-6">
-          Guarda tus estudios de forma segura y controla quién puede verlos
+          {t('ads.vaultSubtitle')}
         </p>
 
         {/* Storage Usage Bar */}
