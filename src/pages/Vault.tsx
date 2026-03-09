@@ -908,7 +908,7 @@ export default function Vault() {
                     ) : (
                       <>
                         <Wallet className="w-4 h-4" />
-                        Pagar con saldo (${balance.toLocaleString()})
+                        {t('ads.payWithBalance')} (${balance.toLocaleString()})
                       </>
                     )}
                   </Button>
