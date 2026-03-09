@@ -1,26 +1,33 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Content Library UX/UI Overhaul + Modal Fix
 
-## Solucion
+## Problems
+1. **Filters are confusing** — dropdowns for type and category are not intuitive; users don't immediately understand how to filter content
+2. **Modal close button (X) is hard to see/use on mobile** — it overlaps content, too small, no clear visual separation
+3. **Overall mobile usability** needs polish: spacing, card density, filter discoverability
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+## Changes
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+### 1. `ContentGallery.tsx` — Replace dropdown filters with horizontal chip/bubble filters
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+- **Type filter**: Replace the `<Select>` dropdown with a horizontal scrollable row of chips (Todo, Videos, PDFs, Imágenes) with icons — similar to the doctor filter bubbles pattern already used in the app
+- **Category filter**: Replace the `<Select>` dropdown with a horizontal scrollable row of chips below the type chips (only shown if categories exist)
+- **Search**: Keep the search input but make it more compact on mobile
+- **Tabs**: Keep as-is (already full-width grid on mobile)
+- **Cards on mobile**: Use `grid-cols-2` on mobile for a denser 2-column grid instead of single column, with tighter padding
+- **Empty state**: More compact on mobile
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+### 2. `ContentPreviewModal.tsx` — Improve modal header and close button
 
-## Archivos a modificar
+- Add an explicit visible close button at the top-right with a clear circular background (`bg-muted rounded-full w-8 h-8`) so it's always visible and tappable
+- Use `hideClose` on `DialogContent` and render a custom close button inside the header area
+- Reduce header padding on mobile (`px-4 pt-4 pb-2`)
+- Make the modal full-height on mobile: `max-h-[100dvh] sm:max-h-[90vh]` with `rounded-none sm:rounded-lg`
+- Doctor info card: more compact on mobile
+- Ensure the content area padding is tighter on mobile
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+### 3. Files to modify
+- `src/pages/ContentGallery.tsx`
+- `src/components/content/ContentPreviewModal.tsx`
+
