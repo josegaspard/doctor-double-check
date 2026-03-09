@@ -301,9 +301,9 @@ export default function ContentGallery() {
       setContents(mapped);
 
       // Generate thumbnails for content without a thumbnail_url
-      // Videos: generate from video frame. Others: get signed URL from storage.
+      // Videos: generate from video frame. Images: get signed URL from storage. PDFs: skip (use icon).
       const needThumbVideos = mapped.filter(c => !c.thumbnail_url && c.type === 'video');
-      const needThumbOther = mapped.filter(c => !c.thumbnail_url && c.type !== 'video' && !c.file_url.startsWith('http'));
+      const needThumbOther = mapped.filter(c => !c.thumbnail_url && c.type === 'image' && !c.file_url.startsWith('http'));
 
       const allThumbPromises: Promise<{ id: string; url: string | null }>[] = [];
 

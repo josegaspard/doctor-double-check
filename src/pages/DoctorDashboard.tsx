@@ -102,15 +102,22 @@ export default function DoctorDashboard() {
             {/* Section 4: Configuration - collapsible */}
             <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between h-10 px-3 text-sm font-medium text-muted-foreground hover:text-foreground">
-                  <span className="flex items-center gap-2">
-                    <Settings className="w-4 h-4" />
-                    Configuración
-                  </span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${configOpen ? 'rotate-180' : ''}`} />
-                </Button>
+                <Card className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-primary/40">
+                  <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Settings className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-sm sm:text-base text-foreground">Configuración</h3>
+                        <p className="text-xs text-muted-foreground">Horarios, firma y tendencias de email</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${configOpen ? 'rotate-180' : ''}`} />
+                  </CardContent>
+                </Card>
               </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-3 sm:space-y-4 mt-2">
+              <CollapsibleContent className="space-y-3 sm:space-y-4 mt-3">
                 <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
                   <OfficeHoursConfig />
                   <SignatureUpload />
