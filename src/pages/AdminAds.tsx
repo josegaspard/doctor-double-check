@@ -419,16 +419,16 @@ export default function AdminAds() {
               ))}
             </div>
             <Card>
-              <CardHeader><CardTitle className="text-base">Nuevo Placement</CardTitle></CardHeader>
+               <CardHeader><CardTitle className="text-base">{t('ads.newPlacement')}</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs">Nombre (slug)</Label><Input value={newPlacement.name} onChange={e => setNewPlacement(p => ({ ...p, name: e.target.value }))} placeholder="hero_banner" /></div>
-                  <div><Label className="text-xs">Nombre visible</Label><Input value={newPlacement.display_name} onChange={e => setNewPlacement(p => ({ ...p, display_name: e.target.value }))} placeholder="Hero Banner" /></div>
-                  <div><Label className="text-xs">Ancho (px)</Label><Input type="number" value={newPlacement.width} onChange={e => setNewPlacement(p => ({ ...p, width: parseInt(e.target.value) || 728 }))} /></div>
-                  <div><Label className="text-xs">Alto (px)</Label><Input type="number" value={newPlacement.height} onChange={e => setNewPlacement(p => ({ ...p, height: parseInt(e.target.value) || 90 }))} /></div>
+                  <div><Label className="text-xs">{t('ads.nameSlug')}</Label><Input value={newPlacement.name} onChange={e => setNewPlacement(p => ({ ...p, name: e.target.value }))} placeholder="hero_banner" /></div>
+                  <div><Label className="text-xs">{t('ads.displayName')}</Label><Input value={newPlacement.display_name} onChange={e => setNewPlacement(p => ({ ...p, display_name: e.target.value }))} placeholder="Hero Banner" /></div>
+                  <div><Label className="text-xs">{t('ads.width')}</Label><Input type="number" value={newPlacement.width} onChange={e => setNewPlacement(p => ({ ...p, width: parseInt(e.target.value) || 728 }))} /></div>
+                  <div><Label className="text-xs">{t('ads.height')}</Label><Input type="number" value={newPlacement.height} onChange={e => setNewPlacement(p => ({ ...p, height: parseInt(e.target.value) || 90 }))} /></div>
                 </div>
-                <Input value={newPlacement.description} onChange={e => setNewPlacement(p => ({ ...p, description: e.target.value }))} placeholder="Descripción..." />
-                <Button onClick={addPlacement} disabled={!newPlacement.name || !newPlacement.display_name}>Crear Placement</Button>
+                <Input value={newPlacement.description} onChange={e => setNewPlacement(p => ({ ...p, description: e.target.value }))} placeholder={t('ads.description') + '...'} />
+                <Button onClick={addPlacement} disabled={!newPlacement.name || !newPlacement.display_name}>{t('ads.createPlacement')}</Button>
               </CardContent>
             </Card>
           </TabsContent>
