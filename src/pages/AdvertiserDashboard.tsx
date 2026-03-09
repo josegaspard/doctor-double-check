@@ -292,7 +292,7 @@ export default function AdvertiserDashboard() {
             <Card><CardContent className="p-3 text-center">
               <MousePointerClick className="w-5 h-5 text-warning mx-auto mb-1" />
               <p className="text-lg font-bold text-warning">{stats.clicks}</p>
-              <p className="text-[10px] text-muted-foreground">Clics</p>
+              <p className="text-[10px] text-muted-foreground">{t('ads.clicks')}</p>
             </CardContent></Card>
             <Card><CardContent className="p-3 text-center">
               <TrendingUp className="w-5 h-5 text-success mx-auto mb-1" />
