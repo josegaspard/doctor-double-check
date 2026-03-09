@@ -38,48 +38,6 @@ import { usePurchases } from '@/hooks/usePurchases';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 
-/** Generate a data-URL thumbnail from the first second of a video */
-function generateVideoThumbnail(videoUrl: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    video.crossOrigin = 'anonymous';
-    video.muted = true;
-    video.preload = 'metadata';
-
-    const cleanup = () => {
-      video.removeAttribute('src');
-      video.load();
-    };
-
-    video.onloadeddata = () => {
-      video.currentTime = Math.min(1, video.duration * 0.1);
-    };
-
-    video.onseeked = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 640;
-        canvas.height = 360;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) { cleanup(); return reject('No canvas context'); }
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        cleanup();
-        resolve(dataUrl);
-      } catch (err) {
-        cleanup();
-        reject(err);
-      }
-    };
-
-    video.onerror = () => { cleanup(); reject('Video load error'); };
-
-    // Timeout after 8s
-    setTimeout(() => { cleanup(); reject('Timeout'); }, 8000);
-
-    video.src = videoUrl;
-  });
-}
 
 interface DoctorContent {
   id: string;
