@@ -242,14 +242,14 @@ export function GlobalSearch() {
         <Search className="w-4 h-4" />
       </Button>
       
-      {/* Trigger: Desktop search bar (xl+) */}
+      {/* Trigger: Desktop search bar (2xl+ only) */}
       <button
         onClick={() => setOpen(true)}
-        className="hidden xl:flex items-center gap-2 h-8 px-3 rounded-lg border border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-[11px] min-w-[120px] 2xl:min-w-[160px]"
+        className="hidden 2xl:flex items-center gap-1.5 h-8 px-2 rounded-lg border border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-[10px] w-[100px]"
       >
-        <Search className="w-3.5 h-3.5 flex-shrink-0" />
-        <span className="truncate">{t('search.placeholder')}</span>
-        <kbd className="ml-auto hidden 2xl:inline-flex items-center gap-0.5 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+        <Search className="w-3 h-3 flex-shrink-0" />
+        <span className="truncate">{t('common.search')}</span>
+        <kbd className="ml-auto inline-flex items-center rounded border border-border bg-muted px-1 py-0.5 text-[9px] font-mono text-muted-foreground">
           ⌘K
         </kbd>
       </button>
