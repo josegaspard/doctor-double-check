@@ -453,7 +453,7 @@ export default function AdvertiserDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-xs">{es ? 'Nombre de la campaña' : 'Campaign name'}</Label>
+                <Label className="text-xs">{t('ads.campaignName')}</Label>
                 <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={es ? 'Mi campaña' : 'My campaign'} />
               </div>
               <div>
