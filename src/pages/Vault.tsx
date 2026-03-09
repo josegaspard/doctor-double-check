@@ -47,7 +47,14 @@ import {
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
-const CATEGORIES = ['Laboratorios', 'Imagenología', 'Estudios Cardíacos', 'Recetas', 'Otros'];
+const CATEGORIES_MAP = [
+  { value: 'Laboratorios', labelKey: 'ads.vaultCatLab' },
+  { value: 'Imagenología', labelKey: 'ads.vaultCatImaging' },
+  { value: 'Estudios Cardíacos', labelKey: 'ads.vaultCatCardiac' },
+  { value: 'Recetas', labelKey: 'ads.vaultCatPrescriptions' },
+  { value: 'Otros', labelKey: 'ads.vaultCatOther' },
+];
+const CATEGORIES = CATEGORIES_MAP.map(c => c.value);
 
 interface AvailableDoctor {
   id: string;
