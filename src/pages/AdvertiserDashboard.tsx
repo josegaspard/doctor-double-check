@@ -474,12 +474,12 @@ export default function AdvertiserDashboard() {
                 </div>
               </div>
               <div>
-                <Label className="text-xs mb-2 block">{es ? 'Audiencia objetivo' : 'Target audience'}</Label>
+                <Label className="text-xs mb-2 block">{t('ads.targetAudience')}</Label>
                 <div className="flex flex-wrap gap-2">
                   {['patient', 'resident', 'doctor'].map(role => (
                     <label key={role} className="flex items-center gap-1.5 text-sm cursor-pointer">
                       <Checkbox checked={form.target_roles.includes(role)} onCheckedChange={() => toggleRole(role)} />
-                      <span className="capitalize">{role === 'patient' ? (es ? 'Pacientes' : 'Patients') : role === 'resident' ? (es ? 'Residentes' : 'Residents') : (es ? 'Doctores' : 'Doctors')}</span>
+                      <span className="capitalize">{role === 'patient' ? t('ads.patients') : role === 'resident' ? t('ads.residents') : t('ads.doctors')}</span>
                     </label>
                   ))}
                 </div>
