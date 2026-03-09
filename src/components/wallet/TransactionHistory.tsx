@@ -363,7 +363,7 @@ export function TransactionHistory() {
                 <Textarea
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
-                  placeholder="Describe el motivo de tu solicitud..."
+                  placeholder={t('wallet.refundReasonPlaceholder')}
                   rows={3}
                 />
               </div>
