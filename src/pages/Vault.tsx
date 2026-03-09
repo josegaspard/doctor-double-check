@@ -302,10 +302,10 @@ export default function Vault() {
       setStorageLimit(newLimit);
       setShowUpgradeDialog(false);
       setSelectedPlan(null);
-      toast.success(`¡Almacenamiento ampliado a ${formatStorageSize(newLimit)}!`);
+      toast.success(`${t('ads.storageExpandedTo')} ${formatStorageSize(newLimit)}!`);
     } catch (error) {
       console.error('Upgrade error:', error);
-      toast.error('Error al ampliar almacenamiento');
+      toast.error(t('ads.expandError'));
     } finally {
       setIsUpgrading(false);
     }
