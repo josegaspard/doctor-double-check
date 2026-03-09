@@ -249,7 +249,7 @@ export function ChatHeader({
             userRole === 'doctor' && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full" title={t('common.closeConsultation')}>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full" title={t('common.closeConsultation')}>
                     <XCircle className="w-4 h-4" />
                   </Button>
                 </AlertDialogTrigger>

@@ -61,12 +61,12 @@ export function ChatSessionItem({
   
   const getParticipantIcon = () => {
     if (displayInfo.type === 'doctor') {
-      return <Stethoscope className="w-4 h-4" />;
+      return <Stethoscope className="w-5 h-5" />;
     }
     if (displayInfo.type === 'resident') {
-      return <GraduationCap className="w-4 h-4" />;
+      return <GraduationCap className="w-5 h-5" />;
     }
-    return <User className="w-4 h-4" />;
+    return <User className="w-5 h-5" />;
   };
 
   const getInitials = (name: string) => {
@@ -88,7 +88,7 @@ export function ChatSessionItem({
         }
       }}
       className={`
-        group relative p-3 rounded-xl cursor-pointer transition-all duration-200
+        group relative p-3.5 rounded-xl cursor-pointer transition-all duration-200
         ${isSelecting && isChecked ? 'bg-primary/10 ring-2 ring-primary/30' : ''}
         ${!isSelecting && isSelected 
           ? 'bg-primary/10 ring-2 ring-primary/20 shadow-sm' 
@@ -113,9 +113,10 @@ export function ChatSessionItem({
         )}
         {/* Avatar with online indicator */}
         <div className="relative flex-shrink-0">
-          <Avatar className={`w-10 h-10 sm:w-12 sm:h-12 ${isClosed ? 'opacity-75' : ''} ring-2 ring-background`}>
+          <Avatar className={`w-12 h-12 ${isClosed ? 'opacity-75' : ''} ring-2 ring-background`}>
             <AvatarImage src={displayInfo.avatar} alt={displayInfo.name} />
             <AvatarFallback className={`
+              text-sm
               ${displayInfo.type === 'doctor' 
                 ? 'bg-gradient-to-br from-primary/20 to-primary/10 text-primary' 
                 : displayInfo.type === 'resident'
@@ -143,13 +144,13 @@ export function ChatSessionItem({
               <button
                 type="button"
                 onClick={onDoctorProfileClick}
-                className="font-semibold text-sm truncate text-left hover:text-primary transition-colors focus:outline-none"
+                className="font-semibold text-base truncate text-left hover:text-primary transition-colors focus:outline-none"
                 title={t('common.viewProfile')}
               >
                 {displayInfo.name}
               </button>
             ) : (
-              <p className="font-semibold text-sm truncate">{displayInfo.name}</p>
+              <p className="font-semibold text-base truncate">{displayInfo.name}</p>
             )}
           {session.isDoubleCheck && (
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-0.5">
@@ -166,16 +167,16 @@ export function ChatSessionItem({
                 <button
                   type="button"
                   onClick={onDoctorProfileClick}
-                  className="text-xs text-primary font-medium truncate text-left hover:underline focus:outline-none"
+                  className="text-sm text-primary font-medium truncate text-left hover:underline focus:outline-none"
                   title={t('common.viewProfile')}
                 >
                   {displayInfo.specialty}
                 </button>
               ) : (
-                <span className="text-xs text-primary font-medium truncate">{displayInfo.specialty}</span>
+                <span className="text-sm text-primary font-medium truncate">{displayInfo.specialty}</span>
               )}
               {displayInfo.type === 'resident' && (
-                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
                   {t('roles.resident')}
                 </Badge>
               )}
@@ -183,18 +184,18 @@ export function ChatSessionItem({
           )}
           
           {/* Last message preview */}
-          <p className="text-xs text-muted-foreground truncate pr-6">
+          <p className="text-sm text-muted-foreground truncate pr-6">
             {session.lastMessage || t('chat.noConversations')}
           </p>
           
           {/* Office hours or closed date */}
           {isClosed && session.lastMessageAt ? (
-            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Lock className="w-3 h-3" />
               <span>{t('chat.sessionClosed')} {format(session.lastMessageAt, 'dd MMM yyyy', { locale: dateLocale })}</span>
             </div>
           ) : officeHours && userRole === 'patient' ? (
-            <div className={`flex items-center gap-1 text-[11px] ${isAvailable ? 'text-success' : 'text-warning'}`}>
+            <div className={`flex items-center gap-1 text-xs ${isAvailable ? 'text-success' : 'text-warning'}`}>
               <Clock className="w-3 h-3" />
               <span>{officeHours}</span>
               {!isAvailable && <span className="text-muted-foreground">• {t('dashboard.notAvailable')}</span>}
@@ -205,7 +206,7 @@ export function ChatSessionItem({
         {/* Right side indicators */}
         <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
           {session.lastMessageAt && (
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {format(session.lastMessageAt, 'HH:mm', { locale: dateLocale })}
             </span>
           )}
@@ -218,11 +219,11 @@ export function ChatSessionItem({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
               onClick={onDelete}
               title="Eliminar chat"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-4 h-4" />
             </Button>
           )}
           {isClosed && !onDelete && (
