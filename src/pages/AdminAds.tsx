@@ -198,8 +198,8 @@ export default function AdminAds() {
   if (role !== 'admin') return null;
   const es = language === 'es';
 
-  const chartConfig = { impressions: { label: 'Impresiones', color: 'hsl(var(--info))' }, clicks: { label: 'Clics', color: 'hsl(var(--warning))' } };
-  const revenueChartConfig = { revenue: { label: 'Ingresos', color: 'hsl(var(--success))' } };
+  const chartConfig = { impressions: { label: t('ads.impressions'), color: 'hsl(var(--info))' }, clicks: { label: t('ads.clicks'), color: 'hsl(var(--warning))' } };
+  const revenueChartConfig = { revenue: { label: es ? 'Ingresos' : 'Revenue', color: 'hsl(var(--success))' } };
 
   return (
     <MainLayout>
