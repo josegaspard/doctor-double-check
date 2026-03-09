@@ -702,7 +702,7 @@ export default function Vault() {
                           ) : (
                             <UserMinus className="w-4 h-4" />
                           )}
-                          Revocar
+                          {t('ads.revoke')}
                         </Button>
                       </div>
                     ))}
