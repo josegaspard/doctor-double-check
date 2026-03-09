@@ -469,7 +469,7 @@ export default function AdvertiserDashboard() {
                   <Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} />
                 </div>
                 <div>
-                  <Label className="text-xs">{es ? 'Fecha fin' : 'End date'}</Label>
+                  <Label className="text-xs">{t('ads.endDate')}</Label>
                   <Input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} />
                 </div>
               </div>
