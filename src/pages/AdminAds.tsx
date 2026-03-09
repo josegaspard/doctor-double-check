@@ -156,7 +156,7 @@ export default function AdminAds() {
 
   const updateCampaignStatus = async (id: string, status: string) => {
     await supabase.from('ad_campaigns' as any).update({ status } as any).eq('id', id);
-    toast.success(`Campaña ${statusLabels[status] || status}`);
+    toast.success(`${t('ads.campaignStatus')} ${statusLabels[status] || status}`);
     fetchCampaigns();
   };
 
