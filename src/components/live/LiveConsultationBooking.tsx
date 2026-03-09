@@ -213,7 +213,7 @@ export function LiveConsultationBooking({
             {/* Message */}
             <div className="space-y-2">
               <Label htmlFor="booking-message">
-                Mensaje para el doctor <span className="text-destructive">*</span>
+                {t('ads.messageForDoctor')} <span className="text-destructive">*</span>
               </Label>
               <Textarea
                 id="booking-message"
