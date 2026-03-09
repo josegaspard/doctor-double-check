@@ -490,7 +490,7 @@ export default function AdminDoctors() {
                           <>
                             <div className="flex items-center gap-2 mt-2 p-2 rounded-md bg-muted/50">
                               <Star className="w-4 h-4 text-premium" />
-                              <Label className="text-xs flex-1">Badge</Label>
+                              <Label className="text-xs flex-1">Rango</Label>
                               {updatingBadgeId === doctor.id ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                               ) : (
@@ -498,7 +498,7 @@ export default function AdminDoctors() {
                                   value={doctor.badge_override || 'auto'}
                                   onValueChange={(v) => updateBadge(doctor, v)}
                                 >
-                                  <SelectTrigger className="w-32 h-7 text-xs">
+                                  <SelectTrigger className="w-36 h-7 text-xs">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>

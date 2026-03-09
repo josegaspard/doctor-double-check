@@ -107,6 +107,7 @@ const CreatePrescription = React.lazy(() => import("./pages/CreatePrescription")
 const PrescriptionDetail = React.lazy(() => import("./pages/PrescriptionDetail"));
 const ReportIssue = React.lazy(() => import("./pages/ReportIssue"));
 const EmailConfirmed = React.lazy(() => import("./pages/EmailConfirmed"));
+const AdminRanks = React.lazy(() => import("./pages/AdminRanks"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -180,6 +181,7 @@ const App = () => (
                       <Route path="/admin/invoices" element={<AdminInvoiceReview />} />
                       <Route path="/admin/credentials" element={<AdminCredentials />} />
                       <Route path="/admin/news" element={<AdminNews />} />
+                      <Route path="/admin/ranks" element={<AdminRanks />} />
                       <Route path="/doctor/news" element={<AdminNews />} />
                       <Route path="/verification-pending" element={<VerificationPending />} />
                       <Route path="/doctors" element={<Doctors />} />

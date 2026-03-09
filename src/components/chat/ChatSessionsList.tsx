@@ -134,7 +134,7 @@ export function ChatSessionsList({
     <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-gradient-to-b from-blue-50/70 to-sky-50/30 dark:from-primary/[0.06] dark:to-transparent ${hidden ? 'hidden md:flex' : 'flex'}`}>
       <CardHeader className="pb-3 pt-4 px-3 flex-shrink-0 space-y-3">
         <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as 'active' | 'history')} className="w-full">
-          <TabsList className="w-full grid grid-cols-2 h-11">
+          <TabsList className="w-full grid grid-cols-2 h-12">
             <TabsTrigger value="active" className="gap-1.5">
               <MessageSquare className="w-4 h-4" />
               <span>{t('chat.active')}</span>
@@ -158,12 +158,12 @@ export function ChatSessionsList({
 
         {/* Search bar */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar doctor o tema..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 h-9 text-xs"
+            className="pl-9 h-11 text-base"
           />
         </div>
 

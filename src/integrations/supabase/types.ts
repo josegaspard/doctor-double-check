@@ -753,6 +753,7 @@ export type Database = {
           office_hours_start: string | null
           payouts_enabled: boolean | null
           pending_earnings: number | null
+          rank_override: string | null
           rating: number
           signature_url: string | null
           specialty: string
@@ -783,6 +784,7 @@ export type Database = {
           office_hours_start?: string | null
           payouts_enabled?: boolean | null
           pending_earnings?: number | null
+          rank_override?: string | null
           rating?: number
           signature_url?: string | null
           specialty: string
@@ -813,6 +815,7 @@ export type Database = {
           office_hours_start?: string | null
           payouts_enabled?: boolean | null
           pending_earnings?: number | null
+          rank_override?: string | null
           rating?: number
           signature_url?: string | null
           specialty?: string
@@ -831,7 +834,56 @@ export type Database = {
             referencedRelation: "cedula_verifications"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "doctor_profiles_rank_override_fkey"
+            columns: ["rank_override"]
+            isOneToOne: false
+            referencedRelation: "doctor_ranks"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      doctor_ranks: {
+        Row: {
+          color: string
+          created_at: string
+          display_name: string
+          icon: string
+          id: string
+          min_consultations: number
+          min_earnings: number
+          min_months_active: number
+          min_rating: number
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          display_name: string
+          icon?: string
+          id?: string
+          min_consultations?: number
+          min_earnings?: number
+          min_months_active?: number
+          min_rating?: number
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          display_name?: string
+          icon?: string
+          id?: string
+          min_consultations?: number
+          min_earnings?: number
+          min_months_active?: number
+          min_rating?: number
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
       }
       document_signatures: {
         Row: {
@@ -2526,6 +2578,7 @@ export type Database = {
           office_days: string[] | null
           office_hours_end: string | null
           office_hours_start: string | null
+          rank_override: string | null
           rating: number | null
           specialty: string | null
           status: Database["public"]["Enums"]["doctor_status"] | null
@@ -2546,6 +2599,7 @@ export type Database = {
           office_days?: string[] | null
           office_hours_end?: string | null
           office_hours_start?: string | null
+          rank_override?: string | null
           rating?: number | null
           specialty?: string | null
           status?: Database["public"]["Enums"]["doctor_status"] | null
@@ -2566,6 +2620,7 @@ export type Database = {
           office_days?: string[] | null
           office_hours_end?: string | null
           office_hours_start?: string | null
+          rank_override?: string | null
           rating?: number | null
           specialty?: string | null
           status?: Database["public"]["Enums"]["doctor_status"] | null
@@ -2573,7 +2628,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "doctor_profiles_rank_override_fkey"
+            columns: ["rank_override"]
+            isOneToOne: false
+            referencedRelation: "doctor_ranks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payout_settings_public: {
         Row: {

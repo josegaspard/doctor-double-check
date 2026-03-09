@@ -295,28 +295,65 @@ export default function ContentGallery() {
 
       setContents(mapped);
 
-      // Generate signed thumbnail URLs for content without a thumbnail_url (images and videos)
-      const needThumb = mapped.filter(c => !c.thumbnail_url && !c.file_url.startsWith('http'));
-      if (needThumb.length > 0) {
-        const thumbResults = await Promise.all(
-          needThumb.map(async c => {
-            const { data: sd } = await supabase.storage
-              .from('doctor-content')
-              .createSignedUrl(c.file_url, 60 * 60);
-            if (!sd?.signedUrl) return { id: c.id, url: null };
+      // Generate thumbnails for content without a thumbnail_url
+      // Videos: generate from video frame. Others: get signed URL from storage.
+      const needThumbVideos = mapped.filter(c => !c.thumbnail_url && c.type === 'video');
+      const needThumbOther = mapped.filter(c => !c.thumbnail_url && c.type !== 'video' && !c.file_url.startsWith('http'));
 
-            // For videos, generate a thumbnail from the first second
-            if (c.type === 'video') {
+      const allThumbPromises: Promise<{ id: string; url: string | null }>[] = [];
+
+      // Videos - handle both storage paths and HTTP URLs (e.g. Cloudflare)
+      for (const c of needThumbVideos) {
+        allThumbPromises.push(
+          (async () => {
+            let videoUrl: string;
+            if (c.file_url.startsWith('http')) {
+              videoUrl = c.file_url;
+            } else {
+              const { data: sd } = await supabase.storage
+                .from('doctor-content')
+                .createSignedUrl(c.file_url, 60 * 60);
+              if (!sd?.signedUrl) return { id: c.id, url: null };
+              videoUrl = sd.signedUrl;
+            }
+            try {
+              const dataUrl = await generateVideoThumbnail(videoUrl);
+              return { id: c.id, url: dataUrl };
+            } catch {
+              // Fallback: try without crossOrigin for CORS-restricted URLs
               try {
-                const dataUrl = await generateVideoThumbnail(sd.signedUrl);
-                return { id: c.id, url: dataUrl };
+                const video = document.createElement('video');
+                video.muted = true;
+                video.preload = 'metadata';
+                video.src = videoUrl;
+                await new Promise<void>((resolve, reject) => {
+                  video.onloadeddata = () => resolve();
+                  video.onerror = () => reject();
+                  setTimeout(() => reject(), 5000);
+                });
+                return { id: c.id, url: null };
               } catch {
                 return { id: c.id, url: null };
               }
             }
-            return { id: c.id, url: sd.signedUrl };
-          }),
+          })()
         );
+      }
+
+      // Other file types (images from storage)
+      for (const c of needThumbOther) {
+        allThumbPromises.push(
+          (async () => {
+            const { data: sd } = await supabase.storage
+              .from('doctor-content')
+              .createSignedUrl(c.file_url, 60 * 60);
+            return { id: c.id, url: sd?.signedUrl || null };
+          })()
+        );
+      }
+
+      if (allThumbPromises.length > 0) {
+        const thumbResults = await Promise.all(allThumbPromises);
         const thumbMap: Record<string, string> = {};
         thumbResults.forEach(r => {
           if (r.url) thumbMap[r.id] = r.url;

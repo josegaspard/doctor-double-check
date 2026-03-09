@@ -180,7 +180,7 @@ export function ChatMessagesPanel({
               />
             )}
             <ScrollArea className="flex-1 min-h-0 px-3 sm:px-4 py-4">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {messages.map(msg => (
                   <ChatMessageBubble
                     key={msg.id}
@@ -217,15 +217,15 @@ export function ChatMessagesPanel({
                     value={newMessage}
                     onChange={onInputChange}
                     onKeyDown={e => e.key === 'Enter' && !e.shiftKey && onSend()}
-                    className="flex-1 h-10 sm:h-11 bg-muted/50 border-0 focus-visible:ring-1"
+                    className="flex-1 h-12 text-base bg-muted/50 border-0 focus-visible:ring-1"
                   />
                   <Button
                     onClick={onSend}
                     size="icon"
                     disabled={!newMessage.trim()}
-                    className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl flex-shrink-0"
+                    className="h-12 w-12 rounded-xl flex-shrink-0"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className="w-5 h-5" />
                   </Button>
                 </div>
               </div>

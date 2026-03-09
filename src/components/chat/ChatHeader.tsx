@@ -103,7 +103,7 @@ export function ChatHeader({
       <div className="flex items-center gap-3">
         {/* Back button for mobile */}
         {onBack && (
-          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden -ml-2">
+          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden -ml-2 h-10 w-10">
             <ArrowLeft className="w-5 h-5" />
           </Button>
         )}
@@ -138,13 +138,13 @@ export function ChatHeader({
               <button
                 type="button"
                 onClick={onDoctorProfileClick}
-                className="text-sm font-semibold text-left hover:text-primary transition-colors focus:outline-none truncate"
+                className="text-base font-semibold text-left hover:text-primary transition-colors focus:outline-none truncate"
                 title={t('common.viewProfile')}
               >
                 {displayInfo.name}
               </button>
             ) : (
-              <span className="text-sm font-semibold truncate">{displayInfo.name}</span>
+              <span className="text-base font-semibold truncate">{displayInfo.name}</span>
             )}
             {session.isDoubleCheck && (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-0.5">
@@ -197,17 +197,17 @@ export function ChatHeader({
         </div>
         
         {/* Actions */}
-        <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0">
           {/* Video call button */}
           {!isClosed && consultationId && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
+              className="h-10 w-10 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
               onClick={() => navigate(`/video-call?consultation=${consultationId}`)}
               title="Videollamada"
             >
-              <Video className="w-4 h-4" />
+              <Video className="w-5 h-5" />
             </Button>
           )}
 
@@ -219,11 +219,11 @@ export function ChatHeader({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 sm:h-9 sm:w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
+                className="h-10 w-10 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
                 onClick={() => navigate(`/prescriptions/new?patientId=${patientId}&patientName=${encodeURIComponent(patientName)}${consultationId ? `&consultationId=${consultationId}` : ''}&sessionId=${session.id}`)}
                 title={t('common.createPrescription')}
               >
-                <FileText className="w-4 h-4" />
+                <FileText className="w-5 h-5" />
               </Button>
             );
           })()}
@@ -249,7 +249,7 @@ export function ChatHeader({
             userRole === 'doctor' && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full" title={t('common.closeConsultation')}>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full" title={t('common.closeConsultation')}>
                     <XCircle className="w-4 h-4" />
                   </Button>
                 </AlertDialogTrigger>
