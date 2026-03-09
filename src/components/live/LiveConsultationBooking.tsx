@@ -242,7 +242,7 @@ export function LiveConsultationBooking({
                   }`}
                 >
                   <Wallet className="w-5 h-5 text-primary" />
-                  <span className="text-xs font-medium">Saldo</span>
+                  <span className="text-xs font-medium">{t('ads.balance')}</span>
                   <span className={`text-xs ${canAfford ? 'text-success' : 'text-destructive'}`}>
                     ${balance.toLocaleString()}
                   </span>
