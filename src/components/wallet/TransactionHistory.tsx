@@ -295,7 +295,7 @@ export function TransactionHistory() {
                   {getTypeBadge(selectedTx.type)}
                   {getStatusBadge(selectedTx.status)}
                   {pendingRefundTxIds.has(selectedTx.id) && (
-                    <Badge variant="warning">Reembolso solicitado</Badge>
+                    <Badge variant="warning">{t('wallet.refundRequested')}</Badge>
                   )}
                 </div>
               </div>
