@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAdCreative } from '@/hooks/useAds';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
 interface AdBannerProps {
