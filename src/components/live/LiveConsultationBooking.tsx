@@ -299,7 +299,7 @@ export function LiveConsultationBooking({
             </Button>
 
             <p className="text-[10px] text-center text-muted-foreground">
-              Al pagar, se creará un chat privado con tu mensaje y se notificará al doctor
+              {t('ads.paymentDisclaimer')}
             </p>
           </div>
         )}
