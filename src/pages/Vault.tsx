@@ -809,7 +809,7 @@ export default function Vault() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <HardDrive className="w-5 h-5 text-primary" />
-                Ampliar Almacenamiento
+                {t('ads.upgradeStorage')}
               </DialogTitle>
               <DialogDescription>
                 Tu almacenamiento actual: {formatStorageSize(storageUsed)} de {formatStorageSize(storageLimit)} usado.
