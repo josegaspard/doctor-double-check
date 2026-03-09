@@ -334,8 +334,8 @@ export function TransactionHistory() {
                   className="w-full gap-2 border-destructive/30 text-destructive hover:bg-destructive/10"
                   onClick={() => setRefundDialog(true)}
                 >
-                  <RefreshCcw className="w-4 h-4" />
-                  Solicitar reembolso
+                   <RefreshCcw className="w-4 h-4" />
+                   {t('wallet.requestRefund')}
                 </Button>
               )}
             </div>
