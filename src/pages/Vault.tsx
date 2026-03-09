@@ -627,10 +627,10 @@ export default function Vault() {
                       <Button variant="ghost" size="sm" onClick={async () => {
                         const result = await deleteFile(file.id);
                         if (result.success) {
-                          toast.success('Archivo eliminado');
+                          toast.success(t('ads.fileDeleted'));
                           await fetchStorage();
                         } else {
-                          toast.error(result.error || 'Error al eliminar');
+                          toast.error(result.error || t('ads.deleteError'));
                         }
                       }} className="text-destructive hover:text-destructive flex-1 sm:flex-none h-10 sm:h-8 text-xs min-w-[100px]">
                         <Trash2 className="w-3.5 h-3.5 mr-1" />
