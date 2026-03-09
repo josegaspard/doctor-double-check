@@ -223,7 +223,7 @@ export default function AdvertiserDashboard() {
       body: { campaign_id: campaignId, amount },
     });
     setIsPaying(false);
-    if (error || !data?.url) { toast.error('Error al crear checkout'); return; }
+    if (error || !data?.url) { toast.error(t('ads.checkoutError')); return; }
     window.open(data.url, '_blank');
   };
 
