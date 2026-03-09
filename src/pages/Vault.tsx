@@ -752,9 +752,9 @@ export default function Vault() {
                                 <p className="text-xs text-muted-foreground">{doctor.specialty}</p>
                                 {doctor.relationshipType && (
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                    {doctor.relationshipType === 'subscription' && 'Siguiendo'}
-                                    {doctor.relationshipType === 'chat' && 'Chat'}
-                                    {doctor.relationshipType === 'consultation' && 'Consulta'}
+                                    {doctor.relationshipType === 'subscription' && t('ads.following')}
+                                    {doctor.relationshipType === 'chat' && t('ads.chat')}
+                                    {doctor.relationshipType === 'consultation' && t('ads.consultation')}
                                   </Badge>
                                 )}
                               </div>
