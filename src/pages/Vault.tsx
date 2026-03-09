@@ -356,11 +356,10 @@ export default function Vault() {
     try {
       const result = await grantAccess(permissionFile.id, doctorId);
       if (result.success) {
-        toast.success('Acceso otorgado correctamente');
-        // Refresh the permission file state
+        toast.success(t('ads.accessGranted'));
         await refreshVault();
       } else {
-        toast.error(result.error || 'Error al dar acceso');
+        toast.error(result.error || t('ads.accessGrantError'));
       }
     } catch (error) {
       toast.error('Error al dar acceso');
