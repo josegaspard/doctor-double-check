@@ -168,7 +168,7 @@ export default function Wallet() {
               >
                 ${balance.toLocaleString()} MXN
               </motion.p>
-              <p className="text-primary-foreground/60 text-xs mt-2 truncate">{user?.name}</p>
+              <p className="text-primary-foreground text-xs mt-2 truncate">{user?.name}</p>
               {role === 'resident' && (
                 <div className="mt-2 sm:mt-3 px-2 py-1 bg-white/20 rounded-full text-xs inline-block">
                   🎓 {t('wallet.residentDiscount')}

@@ -28,6 +28,8 @@ import {
   ShoppingBag,
   Sparkles,
   DollarSign,
+  Wallet,
+  AlertCircle,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { usePurchases } from '@/hooks/usePurchases';
