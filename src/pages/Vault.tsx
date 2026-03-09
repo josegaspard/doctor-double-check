@@ -686,7 +686,7 @@ export default function Vault() {
                           <div>
                             <p className="font-medium text-sm">{perm.doctorName || 'Doctor'}</p>
                             <p className="text-xs text-muted-foreground">
-                              Desde {new Date(perm.grantedAt).toLocaleDateString('es-MX')}
+                              {t('ads.since')} {new Date(perm.grantedAt).toLocaleDateString(language === 'en' ? 'en-US' : 'es-MX')}
                             </p>
                           </div>
                         </div>
