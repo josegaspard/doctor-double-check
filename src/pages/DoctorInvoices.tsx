@@ -309,8 +309,8 @@ export default function DoctorInvoices() {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="p-4">
+          <Card className="border-primary/30 bg-primary/5 min-w-[200px] snap-center flex-shrink-0 md:min-w-0 md:flex-shrink">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                   <TrendingUp className="w-5 h-5 text-primary" />
