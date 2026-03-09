@@ -217,7 +217,7 @@ export function LiveConsultationBooking({
               </Label>
               <Textarea
                 id="booking-message"
-                placeholder="Describe brevemente tu consulta o pregunta..."
+                placeholder={t('ads.describeBriefly')}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 maxLength={500}
