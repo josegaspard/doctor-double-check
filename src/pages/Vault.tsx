@@ -772,7 +772,7 @@ export default function Vault() {
                             ) : (
                               <UserPlus className="w-4 h-4" />
                             )}
-                            Dar acceso
+                            {t('ads.grantAccess')}
                           </Button>
                         </div>
                       ))
