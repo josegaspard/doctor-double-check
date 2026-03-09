@@ -18,6 +18,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   FileText, 
   Upload, 
@@ -34,6 +35,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Info,
+  ChevronDown,
 } from 'lucide-react';
 import { InvoicePreviewModal } from '@/components/invoices/InvoicePreviewModal';
 import { toast } from 'sonner';
