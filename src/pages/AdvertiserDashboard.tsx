@@ -330,7 +330,7 @@ export default function AdvertiserDashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-primary" />
-                {es ? 'Creativos' : 'Creatives'}
+                {t('ads.creatives')}
               </CardTitle>
               <CardDescription className="text-xs">
                 {es ? `Formatos: imagen, GIF, video · Máx: ${config.max_file_size_kb}KB` : `Formats: image, GIF, video · Max: ${config.max_file_size_kb}KB`}
