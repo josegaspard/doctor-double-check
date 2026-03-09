@@ -514,9 +514,9 @@ export default function AdvertiserDashboard() {
         ) : campaigns.length === 0 ? (
           <Card className="p-8 text-center">
             <Megaphone className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-            <h3 className="font-semibold mb-1">{es ? 'Sin campañas aún' : 'No campaigns yet'}</h3>
-            <p className="text-sm text-muted-foreground mb-4">{es ? 'Crea tu primera campaña publicitaria' : 'Create your first ad campaign'}</p>
-            <Button onClick={() => setShowCreate(true)} className="gap-2"><Plus className="w-4 h-4" />{es ? 'Crear Campaña' : 'Create Campaign'}</Button>
+            <h3 className="font-semibold mb-1">{t('ads.noCampaignsYet')}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{t('ads.createFirst')}</p>
+            <Button onClick={() => setShowCreate(true)} className="gap-2"><Plus className="w-4 h-4" />{t('ads.createCampaign')}</Button>
           </Card>
         ) : (
           <div className="space-y-3">
