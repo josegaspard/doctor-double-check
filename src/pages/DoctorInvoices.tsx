@@ -290,7 +290,7 @@ export default function DoctorInvoices() {
         </div>
 
         {/* Earnings Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-3 md:overflow-visible md:pb-0 mb-6">
           <Card className="border-success/30 bg-success/5">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
