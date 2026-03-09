@@ -383,7 +383,7 @@ export default function AdvertiserDashboard() {
                           input.click();
                         }}>
                         {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                        {es ? 'Subir creativo' : 'Upload creative'}
+                        {t('ads.uploadCreative')}
                       </Button>
                     </div>
                   </div>
