@@ -288,7 +288,7 @@ export default function PaywallModal({
             {canAfford && (
               <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
                 <Zap className="w-3 h-3 text-success" />
-                Paga al instante con tu saldo
+                {t('wallet.instantPayNote')}
               </p>
             )}
             {PrimaryAction}
