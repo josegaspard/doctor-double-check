@@ -108,6 +108,9 @@ const PrescriptionDetail = React.lazy(() => import("./pages/PrescriptionDetail")
 const ReportIssue = React.lazy(() => import("./pages/ReportIssue"));
 const EmailConfirmed = React.lazy(() => import("./pages/EmailConfirmed"));
 const AdminRanks = React.lazy(() => import("./pages/AdminRanks"));
+const AdminAds = React.lazy(() => import("./pages/AdminAds"));
+const Advertising = React.lazy(() => import("./pages/Advertising"));
+const AdvertiserDashboard = React.lazy(() => import("./pages/AdvertiserDashboard"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
