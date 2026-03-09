@@ -334,7 +334,7 @@ export function TransactionHistory() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('transactions.date')}</span>
-                  <span>{format(selectedTx.createdAt, 'dd MMMM yyyy, HH:mm:ss', { locale: es })}</span>
+                  <span>{format(selectedTx.createdAt, 'dd MMMM yyyy, HH:mm:ss', { locale: dateLocale })}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('transactions.transactionId')}</span>
