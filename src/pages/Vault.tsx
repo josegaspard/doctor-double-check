@@ -425,7 +425,7 @@ export default function Vault() {
                 <span className="text-sm font-medium text-foreground">{t('ads.storage')}</span>
               </div>
               <span className="text-xs text-muted-foreground">
-                {formatStorageSize(storageUsed)} de {formatStorageSize(storageLimit)}
+                {formatStorageSize(storageUsed)} {t('common.of')} {formatStorageSize(storageLimit)}
               </span>
             </div>
             <Progress 
