@@ -46,12 +46,10 @@ export default function Advertising() {
             <Megaphone className="w-8 h-8 text-primary" />
           </div>
           <h1 className="font-heading text-2xl sm:text-4xl font-bold text-foreground mb-3">
-            {es ? 'Publicita en Medical Masters' : 'Advertise on Medical Masters'}
+            {t('ads.advertiseTitle')}
           </h1>
           <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base">
-            {es
-              ? 'Llega a miles de profesionales de la salud y pacientes con banners inteligentes, segmentados y medibles.'
-              : 'Reach thousands of healthcare professionals and patients with smart, targeted, measurable banners.'}
+            {t('ads.advertiseSubtitle')}
           </p>
         </div>
 
