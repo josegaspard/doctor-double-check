@@ -186,9 +186,9 @@ export function LiveConsultationBooking({
         {limitReached ? (
           <div className="flex flex-col items-center py-6 text-center">
             <AlertCircle className="w-12 h-12 text-muted-foreground mb-3" />
-            <p className="font-medium text-foreground">Límite alcanzado</p>
+            <p className="font-medium text-foreground">{t('ads.limitReached')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              El doctor ha alcanzado el límite de orientaciones para este live
+              {t('ads.limitReachedDesc')}
             </p>
           </div>
         ) : (
