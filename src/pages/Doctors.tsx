@@ -216,7 +216,7 @@ export default function Doctors() {
 
   useEffect(() => {
     fetchDoctors();
-  }, [currentPage, debouncedSearch, selectedSpecialty]);
+  }, [currentPage, debouncedSearch, selectedSpecialty, locationFilter]);
 
   useEffect(() => {
     if (user?.id) fetchFollowedDoctors();
