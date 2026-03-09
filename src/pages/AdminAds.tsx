@@ -437,23 +437,23 @@ export default function AdminAds() {
           <TabsContent value="config">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Configuración Global</CardTitle>
-                <CardDescription>Controla el sistema de publicidad</CardDescription>
+                <CardTitle className="text-base">{t('ads.globalConfig')}</CardTitle>
+                <CardDescription>{t('ads.globalConfigDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
                 <div className="flex items-center justify-between">
-                  <div><Label className="font-semibold">Sistema de Publicidad</Label><p className="text-xs text-muted-foreground">Activa o desactiva toda la publicidad</p></div>
+                  <div><Label className="font-semibold">{t('ads.adSystem')}</Label><p className="text-xs text-muted-foreground">{t('ads.adSystemDesc')}</p></div>
                   <Switch checked={configForm.is_active} onCheckedChange={v => setConfigForm(f => ({ ...f, is_active: v }))} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label className="text-xs">CPM (por 1,000 impresiones)</Label><Input type="number" value={configForm.cpm_rate} onChange={e => setConfigForm(f => ({ ...f, cpm_rate: Number(e.target.value) }))} /></div>
-                  <div><Label className="text-xs">CPC (por clic)</Label><Input type="number" value={configForm.cpc_rate} onChange={e => setConfigForm(f => ({ ...f, cpc_rate: Number(e.target.value) }))} /></div>
-                  <div><Label className="text-xs">Presupuesto Mínimo</Label><Input type="number" value={configForm.min_budget} onChange={e => setConfigForm(f => ({ ...f, min_budget: Number(e.target.value) }))} /></div>
-                  <div><Label className="text-xs">Tamaño Máx. Archivo (KB)</Label><Input type="number" value={configForm.max_file_size_kb} onChange={e => setConfigForm(f => ({ ...f, max_file_size_kb: Number(e.target.value) }))} /></div>
+                  <div><Label className="text-xs">{t('ads.cpm')}</Label><Input type="number" value={configForm.cpm_rate} onChange={e => setConfigForm(f => ({ ...f, cpm_rate: Number(e.target.value) }))} /></div>
+                  <div><Label className="text-xs">{t('ads.cpc')}</Label><Input type="number" value={configForm.cpc_rate} onChange={e => setConfigForm(f => ({ ...f, cpc_rate: Number(e.target.value) }))} /></div>
+                  <div><Label className="text-xs">{t('ads.minBudget')}</Label><Input type="number" value={configForm.min_budget} onChange={e => setConfigForm(f => ({ ...f, min_budget: Number(e.target.value) }))} /></div>
+                  <div><Label className="text-xs">{t('ads.maxFileSize')}</Label><Input type="number" value={configForm.max_file_size_kb} onChange={e => setConfigForm(f => ({ ...f, max_file_size_kb: Number(e.target.value) }))} /></div>
                 </div>
                 <Button onClick={saveConfig} disabled={isSaving} className="gap-2">
                   {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Guardar Configuración
+                  {t('ads.saveConfig')}
                 </Button>
               </CardContent>
             </Card>
