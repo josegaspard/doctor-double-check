@@ -258,22 +258,33 @@ export default function ContentGallery() {
 
       setContents(mapped);
 
-      // Generate signed thumbnail URLs for image-type content without a thumbnail_url
-      const needThumb = mapped.filter(c => c.type === 'image' && !c.thumbnail_url && !c.file_url.startsWith('http'));
+      // Generate signed thumbnail URLs for content without a thumbnail_url (images and videos)
+      const needThumb = mapped.filter(c => !c.thumbnail_url && !c.file_url.startsWith('http'));
       if (needThumb.length > 0) {
         const thumbResults = await Promise.all(
           needThumb.map(async c => {
             const { data: sd } = await supabase.storage
               .from('doctor-content')
               .createSignedUrl(c.file_url, 60 * 60);
-            return { id: c.id, url: sd?.signedUrl || null };
+            if (!sd?.signedUrl) return { id: c.id, url: null };
+
+            // For videos, generate a thumbnail from the first second
+            if (c.type === 'video') {
+              try {
+                const dataUrl = await generateVideoThumbnail(sd.signedUrl);
+                return { id: c.id, url: dataUrl };
+              } catch {
+                return { id: c.id, url: null };
+              }
+            }
+            return { id: c.id, url: sd.signedUrl };
           }),
         );
         const thumbMap: Record<string, string> = {};
         thumbResults.forEach(r => {
           if (r.url) thumbMap[r.id] = r.url;
         });
-        setSignedThumbs(thumbMap);
+        setSignedThumbs(prev => ({ ...prev, ...thumbMap }));
       }
     } catch (error) {
       console.error('Error fetching content:', error);
