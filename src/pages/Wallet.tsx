@@ -1,15 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useWallet } from '@/contexts/WalletContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Wallet as WalletIcon, Plus, CreditCard, Loader2, ExternalLink, TrendingUp } from 'lucide-react';
+import {
+  Wallet as WalletIcon,
+  Plus,
+  CreditCard,
+  Loader2,
+  ExternalLink,
+  TrendingUp,
+  PlayCircle,
+  FileText,
+  Stethoscope,
+  CheckCheck,
+  ChevronRight,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+} from 'lucide-react';
 import { TransactionHistory } from '@/components/wallet/TransactionHistory';
 import { UserBankAccountForm } from '@/components/wallet/UserBankAccountForm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,7 +35,7 @@ const MIN_TOPUP_AMOUNT = 50;
 const MAX_TOPUP_AMOUNT = 999999;
 
 export default function Wallet() {
-  
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, role } = useAuth();
   const { t } = useLanguage();
@@ -32,7 +48,6 @@ export default function Wallet() {
   const [topUpAmount, setTopUpAmount] = useState(0);
   const prevBalanceRef = useRef(balance);
 
-  // Detect balance increase and trigger animation
   useEffect(() => {
     if (balance > prevBalanceRef.current && prevBalanceRef.current > 0) {
       const diff = balance - prevBalanceRef.current;
@@ -53,7 +68,6 @@ export default function Wallet() {
         title: t('wallet.paymentSuccess'),
         description: `$${amount} MXN ${t('wallet.paymentSuccessMessage')}`,
       });
-      // Polling to catch the webhook-triggered balance update
       let attempts = 0;
       const poll = setInterval(async () => {
         await refreshWallet();
@@ -79,187 +93,207 @@ export default function Wallet() {
   const handleStripeCheckout = async () => {
     const amount = selectedAmount ?? Number.parseInt(customAmount, 10);
     if (!Number.isFinite(amount) || amount < MIN_TOPUP_AMOUNT) {
-      toast({
-        title: t('wallet.invalidAmount'),
-        description: t('wallet.minAmount'),
-        variant: 'destructive',
-      });
+      toast({ title: t('wallet.invalidAmount'), description: t('wallet.minAmount'), variant: 'destructive' });
       return;
     }
-
     if (amount > MAX_TOPUP_AMOUNT) {
-      toast({
-        title: t('wallet.invalidAmount'),
-        description: `${t('wallet.maxAmount')} $${MAX_TOPUP_AMOUNT.toLocaleString()} MXN`,
-        variant: 'destructive',
-      });
+      toast({ title: t('wallet.invalidAmount'), description: `${t('wallet.maxAmount')} $${MAX_TOPUP_AMOUNT.toLocaleString()} MXN`, variant: 'destructive' });
       return;
     }
 
     setIsProcessing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-wallet-checkout', {
-        body: { amount },
-      });
-
+      const { data, error } = await supabase.functions.invoke('create-wallet-checkout', { body: { amount } });
       if (error) throw error;
-
-      if (data?.url) {
-        window.location.href = data.url;
-      }
+      if (data?.url) window.location.href = data.url;
     } catch (error) {
       console.error('Checkout error:', error);
-      toast({
-        title: t('common.error'),
-        description: t('wallet.checkoutError'),
-        variant: 'destructive',
-      });
+      toast({ title: t('common.error'), description: t('wallet.checkoutError'), variant: 'destructive' });
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const whereToUse = [
+    { icon: PlayCircle, label: t('wallet.useRecordings'), desc: t('wallet.useRecordingsDesc'), href: '/recordings' },
+    { icon: FileText, label: t('wallet.useContent'), desc: t('wallet.useContentDesc'), href: '/content' },
+    { icon: Stethoscope, label: t('wallet.useConsultations'), desc: t('wallet.useConsultationsDesc'), href: '/lives' },
+    { icon: CheckCheck, label: t('wallet.useDoubleCheck'), desc: t('wallet.useDoubleCheckDesc'), href: '/doctors' },
+  ];
+
+  const isEmptyBalance = balance === 0 && transactions.length === 0;
+
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
+        {/* Page header */}
         <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
           <WalletIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
           {t('wallet.title')}
         </h1>
 
-        {/* Explanatory hero banner */}
+        {/* Balance Card — full width hero */}
+        <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground relative overflow-hidden mb-4 sm:mb-6">
+          <CardContent className="p-5 sm:p-8">
+            <p className="text-primary-foreground/80 text-xs sm:text-sm mb-1 font-medium">{t('wallet.balance')}</p>
+            <motion.p
+              key={balance}
+              initial={{ scale: 1 }}
+              animate={showTopUpAnimation ? { scale: [1, 1.08, 1] } : {}}
+              transition={{ duration: 0.5 }}
+              className="text-4xl sm:text-5xl font-bold tracking-tight"
+            >
+              ${balance.toLocaleString()} <span className="text-xl sm:text-2xl font-normal opacity-70">MXN</span>
+            </motion.p>
+            <p className="text-primary-foreground/60 text-xs sm:text-sm mt-2 truncate">{user?.name}</p>
+            {role === 'resident' && (
+              <div className="mt-3 px-2.5 py-1 bg-white/20 rounded-full text-xs inline-flex items-center gap-1">
+                🎓 {t('wallet.residentDiscount')}
+              </div>
+            )}
+            <AnimatePresence>
+              {showTopUpAnimation && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: -10 }}
+                  exit={{ opacity: 0, y: -40 }}
+                  transition={{ duration: 1.5, ease: 'easeOut' }}
+                  className="absolute top-4 right-5 flex items-center gap-1 text-lg font-bold text-white drop-shadow-lg"
+                >
+                  <TrendingUp className="w-5 h-5" />
+                  +${topUpAmount.toLocaleString()}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </CardContent>
+        </Card>
+
+        {/* Empty state — first time user */}
+        {isEmptyBalance && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 sm:mb-6 p-5 sm:p-6 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 text-center"
+          >
+            <Sparkles className="w-10 h-10 mx-auto text-primary mb-3" />
+            <h3 className="font-semibold text-base sm:text-lg text-foreground mb-1">{t('wallet.emptyTitle')}</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">{t('wallet.emptyDescription')}</p>
+          </motion.div>
+        )}
+
+        {/* How it works stepper */}
         <div className="mb-4 sm:mb-6 p-4 sm:p-5 rounded-xl bg-muted/50 border border-border">
-          <p className="text-sm text-foreground font-medium mb-3">
-            Tu billetera te permite comprar grabaciones, contenido premium y consultas de forma instantánea sin necesidad de ingresar tu tarjeta cada vez.
-          </p>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="flex flex-col items-center text-center gap-1.5">
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-primary" />
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t('wallet.howItWorks')}</p>
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            {[
+              { step: '1', icon: CreditCard, label: t('wallet.step1') },
+              { step: '2', icon: WalletIcon, label: t('wallet.step2') },
+              { step: '3', icon: ShieldCheck, label: t('wallet.step3') },
+            ].map((s) => (
+              <div key={s.step} className="flex flex-col items-center text-center gap-1.5">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center relative">
+                  <s.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">{s.step}</span>
+                </div>
+                <span className="text-xs text-foreground font-medium leading-tight">{s.label}</span>
               </div>
-              <span className="text-xs text-foreground font-medium">Compras instantáneas</span>
-            </div>
-            <div className="flex flex-col items-center text-center gap-1.5">
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                <CreditCard className="w-4 h-4 text-primary" />
-              </div>
-              <span className="text-xs text-foreground font-medium">Sin tarjeta cada vez</span>
-            </div>
-            <div className="flex flex-col items-center text-center gap-1.5">
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                <WalletIcon className="w-4 h-4 text-primary" />
-              </div>
-              <span className="text-xs text-foreground font-medium">Historial completo</span>
-            </div>
+            ))}
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-          {/* Balance Card */}
-          <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground relative overflow-hidden">
-            <CardContent className="p-4 sm:p-6">
-              <p className="text-primary-foreground text-xs sm:text-sm mb-1 font-medium">{t('wallet.balance')}</p>
-              <motion.p
-                key={balance}
-                initial={{ scale: 1 }}
-                animate={showTopUpAnimation ? { scale: [1, 1.1, 1] } : {}}
-                transition={{ duration: 0.5 }}
-                className="text-3xl sm:text-4xl font-bold"
-              >
-                ${balance.toLocaleString()} MXN
-              </motion.p>
-              <p className="text-primary-foreground text-xs mt-2 truncate">{user?.name}</p>
-              {role === 'resident' && (
-                <div className="mt-2 sm:mt-3 px-2 py-1 bg-white/20 rounded-full text-xs inline-block">
-                  🎓 {t('wallet.residentDiscount')}
-                </div>
+        {/* Top Up Card */}
+        <Card className="mb-4 sm:mb-6">
+          <CardContent className="p-4 sm:p-6 space-y-4">
+            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              {t('wallet.topUp')}
+            </h2>
+
+            {/* Amount chips — horizontal scroll on mobile */}
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x -mx-1 px-1">
+              {TOPUP_AMOUNTS.map(amount => (
+                <Button
+                  key={amount}
+                  variant={selectedAmount === amount ? "default" : "outline"}
+                  onClick={() => { setSelectedAmount(amount); setCustomAmount(''); }}
+                  className="h-11 min-w-[90px] flex-shrink-0 snap-start text-sm font-semibold"
+                >
+                  ${amount}
+                </Button>
+              ))}
+            </div>
+
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+              <Input
+                type="number"
+                placeholder={t('wallet.otherAmount')}
+                value={customAmount}
+                onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
+                className="pl-7 h-11"
+                min={MIN_TOPUP_AMOUNT}
+                max={MAX_TOPUP_AMOUNT}
+              />
+            </div>
+
+            <Button
+              onClick={handleStripeCheckout}
+              disabled={isProcessing || (!selectedAmount && !customAmount)}
+              className="w-full h-12 gap-2 text-sm font-semibold"
+            >
+              {isProcessing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4" />
+                  {t('wallet.payWithStripe')}
+                  <ExternalLink className="w-3 h-3" />
+                </>
               )}
-              
-              {/* Top-up animation overlay */}
-              <AnimatePresence>
-                {showTopUpAnimation && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: -10 }}
-                    exit={{ opacity: 0, y: -40 }}
-                    transition={{ duration: 1.5, ease: 'easeOut' }}
-                    className="absolute top-3 right-4 flex items-center gap-1 text-lg font-bold text-white drop-shadow-lg"
-                  >
-                    <TrendingUp className="w-5 h-5" />
-                    +${topUpAmount.toLocaleString()}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </CardContent>
-          </Card>
+            </Button>
 
-          {/* Top Up Card */}
-          <Card>
-            <CardHeader className="pb-2 sm:pb-3 px-4 sm:px-6">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                {t('wallet.topUp')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-              <div className="grid grid-cols-2 gap-2">
-                {TOPUP_AMOUNTS.map(amount => (
-                  <Button
-                    key={amount}
-                    variant={selectedAmount === amount ? "default" : "outline"}
-                    onClick={() => { setSelectedAmount(amount); setCustomAmount(''); }}
-                    className="h-10 sm:h-12 text-sm"
-                  >
-                    ${amount} MXN
-                  </Button>
-                ))}
-              </div>
-              
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                <Input
-                  type="number"
-                  placeholder={t('wallet.otherAmount')}
-                  value={customAmount}
-                  onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
-                  className="pl-7 h-10"
-                  min={MIN_TOPUP_AMOUNT}
-                  max={MAX_TOPUP_AMOUNT}
-                />
-              </div>
+            <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+              <ShieldCheck className="w-3 h-3" />
+              {t('wallet.securePayment')}
+            </p>
+          </CardContent>
+        </Card>
 
-              <Button 
-                onClick={handleStripeCheckout} 
-                disabled={isProcessing || (!selectedAmount && !customAmount)}
-                className="w-full h-10 sm:h-12 gap-2 text-sm"
-              >
-                {isProcessing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4" />
-                    {t('wallet.payWithStripe')}
-                    <ExternalLink className="w-3 h-3" />
-                  </>
-                )}
-              </Button>
-
-              <p className="text-xs text-muted-foreground text-center">
-                {t('wallet.securePayment')}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Where to use your wallet */}
+        <Card className="mb-4 sm:mb-6">
+          <CardContent className="p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold mb-3 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              {t('wallet.whereToUse')}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {whereToUse.map((item) => (
+                <button
+                  key={item.href}
+                  onClick={() => navigate(item.href)}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-left group"
+                >
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <item.icon className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">{item.label}</p>
+                    <p className="text-xs text-muted-foreground truncate">{item.desc}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Bank Account Section */}
-        <div className="mt-4 sm:mt-6">
+        <div className="mb-4 sm:mb-6">
           <UserBankAccountForm />
         </div>
 
-        {/* Detailed Transaction History */}
-        <div className="mt-4 sm:mt-6">
-          <TransactionHistory />
-        </div>
+        {/* Transaction History */}
+        <TransactionHistory />
       </div>
     </MainLayout>
   );

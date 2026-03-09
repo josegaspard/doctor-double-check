@@ -176,19 +176,19 @@ export function LiveConsultationBooking({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Stethoscope className="w-5 h-5 text-primary" />
-            Reservar Orientación
+            {t('ads.bookConsultation')}
           </DialogTitle>
           <DialogDescription>
-            Reserva una consulta privada con el doctor desde este live
+            {t('ads.bookConsultationDesc')}
           </DialogDescription>
         </DialogHeader>
 
         {limitReached ? (
           <div className="flex flex-col items-center py-6 text-center">
             <AlertCircle className="w-12 h-12 text-muted-foreground mb-3" />
-            <p className="font-medium text-foreground">Límite alcanzado</p>
+            <p className="font-medium text-foreground">{t('ads.limitReached')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              El doctor ha alcanzado el límite de orientaciones para este live
+              {t('ads.limitReachedDesc')}
             </p>
           </div>
         ) : (
@@ -213,11 +213,11 @@ export function LiveConsultationBooking({
             {/* Message */}
             <div className="space-y-2">
               <Label htmlFor="booking-message">
-                Mensaje para el doctor <span className="text-destructive">*</span>
+                {t('ads.messageForDoctor')} <span className="text-destructive">*</span>
               </Label>
               <Textarea
                 id="booking-message"
-                placeholder="Describe brevemente tu consulta o pregunta..."
+                placeholder={t('ads.describeBriefly')}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 maxLength={500}
@@ -230,7 +230,7 @@ export function LiveConsultationBooking({
 
             {/* Payment method */}
             <div className="space-y-3">
-              <Label>Método de pago</Label>
+              <Label>{t('ads.paymentMethod')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -242,7 +242,7 @@ export function LiveConsultationBooking({
                   }`}
                 >
                   <Wallet className="w-5 h-5 text-primary" />
-                  <span className="text-xs font-medium">Saldo</span>
+                  <span className="text-xs font-medium">{t('ads.balance')}</span>
                   <span className={`text-xs ${canAfford ? 'text-success' : 'text-destructive'}`}>
                     ${balance.toLocaleString()}
                   </span>
@@ -257,7 +257,7 @@ export function LiveConsultationBooking({
                   }`}
                 >
                   <CreditCard className="w-5 h-5 text-primary" />
-                  <span className="text-xs font-medium">Tarjeta</span>
+                  <span className="text-xs font-medium">{t('ads.card')}</span>
                   <span className="text-xs text-muted-foreground">Stripe</span>
                 </button>
               </div>
@@ -266,15 +266,12 @@ export function LiveConsultationBooking({
                 <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 text-destructive text-xs">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>
-                    Saldo insuficiente.{' '}
+                    {t('ads.insufficientRecharge')}{' '}
                     <button
                       className="underline font-medium"
-                      onClick={() => {
-                        onOpenChange(false);
-                        navigate('/wallet');
-                      }}
+                      onClick={() => { onOpenChange(false); navigate('/wallet'); }}
                     >
-                      Recargar aquí
+                      {t('ads.rechargeHere')}
                     </button>
                   </span>
                 </div>
@@ -291,18 +288,18 @@ export function LiveConsultationBooking({
               {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Procesando...
+                  {t('ads.processing')}
                 </>
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  Pagar ${consultationFee} MXN y Reservar
+                  {t('ads.payAndBook')} ${consultationFee} MXN
                 </>
               )}
             </Button>
 
             <p className="text-[10px] text-center text-muted-foreground">
-              Al pagar, se creará un chat privado con tu mensaje y se notificará al doctor
+              {t('ads.paymentDisclaimer')}
             </p>
           </div>
         )}

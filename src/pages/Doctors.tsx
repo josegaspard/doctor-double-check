@@ -11,13 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import {
   Search,
@@ -27,10 +20,10 @@ import {
   Stethoscope,
   Heart,
   CheckCircle,
-  Filter,
   ChevronLeft,
   ChevronRight,
   Crown,
+  DollarSign,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
@@ -45,7 +38,6 @@ function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Known Mexican city coordinates for geocoding doctor locations
 const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
   'ciudad de mexico': { lat: 19.4326, lng: -99.1332 },
   'cdmx': { lat: 19.4326, lng: -99.1332 },
@@ -112,6 +104,41 @@ interface DoctorRow {
   total_count: number;
 }
 
+// Specialty → accent color mapping (using design system tokens)
+const SPECIALTY_COLORS: Record<string, string> = {
+  'Cardiología': 'border-t-red-500',
+  'Dermatología': 'border-t-pink-500',
+  'Endocrinología': 'border-t-amber-500',
+  'Gastroenterología': 'border-t-orange-500',
+  'Ginecología': 'border-t-fuchsia-500',
+  'Medicina General': 'border-t-blue-500',
+  'Medicina Interna': 'border-t-indigo-500',
+  'Neurología': 'border-t-purple-500',
+  'Oftalmología': 'border-t-cyan-500',
+  'Oncología': 'border-t-rose-500',
+  'Ortopedia': 'border-t-emerald-500',
+  'Pediatría': 'border-t-sky-500',
+  'Psiquiatría': 'border-t-violet-500',
+  'Urología': 'border-t-teal-500',
+};
+
+const SPECIALTY_EMOJI: Record<string, string> = {
+  'Cardiología': '🫀',
+  'Dermatología': '🧴',
+  'Endocrinología': '🔬',
+  'Gastroenterología': '🫁',
+  'Ginecología': '🩺',
+  'Medicina General': '👨‍⚕️',
+  'Medicina Interna': '💊',
+  'Neurología': '🧠',
+  'Oftalmología': '👁️',
+  'Oncología': '🎗️',
+  'Ortopedia': '🦴',
+  'Pediatría': '👶',
+  'Psiquiatría': '🧘',
+  'Urología': '🏥',
+};
+
 const SPECIALTIES = [
   'Todas',
   'Cardiología',
@@ -132,12 +159,25 @@ const SPECIALTIES = [
 
 const DOCTORS_PER_PAGE = 20;
 
+function isDoctorAvailableNow(doctor: DoctorRow) {
+  const now = new Date();
+  const currentDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  return !!(
+    doctor.office_days?.includes(currentDay) &&
+    doctor.office_hours_start &&
+    doctor.office_hours_end &&
+    currentTime >= doctor.office_hours_start &&
+    currentTime <= doctor.office_hours_end
+  );
+}
+
 export default function Doctors() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useLanguage();
   const isMobile = useIsMobile();
-  const { isSubscribedTo, getSubscription } = useSubscriptions();
+  const { getSubscription } = useSubscriptions();
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,46 +188,32 @@ export default function Doctors() {
   const [currentPage, setCurrentPage] = useState(1);
   const [nearbyMode, setNearbyMode] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [, setTick] = useState(0); // Forces re-render for time-based availability
+  const [, setTick] = useState(0);
 
   const fetchDoctorsStableRef = useRef<() => void>(() => {});
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Re-evaluate availability every 60 seconds
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60_000);
     return () => clearInterval(interval);
   }, []);
 
-  // Realtime subscription: refetch when doctors update office hours
   useEffect(() => {
     const channel = supabase
       .channel('doctor-availability-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'doctor_profiles',
-        },
-        (payload) => {
-          const changed = payload.new as any;
-          // Only refetch if availability-related fields changed
-          const old = payload.old as any;
-          if (
-            changed.office_hours_start !== old.office_hours_start ||
-            changed.office_hours_end !== old.office_hours_end ||
-            JSON.stringify(changed.office_days) !== JSON.stringify(old.office_days)
-          ) {
-            fetchDoctorsStableRef.current();
-          }
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'doctor_profiles' }, (payload) => {
+        const changed = payload.new as any;
+        const old = payload.old as any;
+        if (
+          changed.office_hours_start !== old.office_hours_start ||
+          changed.office_hours_end !== old.office_hours_end ||
+          JSON.stringify(changed.office_days) !== JSON.stringify(old.office_days)
+        ) {
+          fetchDoctorsStableRef.current();
         }
-      )
+      })
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const handleNearbyToggle = () => {
@@ -198,43 +224,24 @@ export default function Doctors() {
             setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
             setNearbyMode(true);
           },
-          () => {
-            toast.error('No se pudo obtener tu ubicación. Habilita los permisos de ubicación.');
-          }
+          () => toast.error(t('doctors.locationError') || 'No se pudo obtener tu ubicación')
         );
-      } else {
-        toast.error('Tu navegador no soporta geolocalización');
       }
     } else {
       setNearbyMode(!nearbyMode);
     }
   };
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch, selectedSpecialty, locationFilter]);
-
-  useEffect(() => {
-    fetchDoctors();
-  }, [currentPage, debouncedSearch, selectedSpecialty, locationFilter]);
-
-  useEffect(() => {
-    if (user?.id) fetchFollowedDoctors();
-  }, [user?.id]);
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch, selectedSpecialty, locationFilter]);
+  useEffect(() => { fetchDoctors(); }, [currentPage, debouncedSearch, selectedSpecialty, locationFilter]);
+  useEffect(() => { if (user?.id) fetchFollowedDoctors(); }, [user?.id]);
 
   const fetchDoctors = async () => {
     setIsLoading(true);
     try {
-      // Map city chip labels to broader location search terms for ILIKE matching
       const locationSearchMap: Record<string, string> = {
-        'CDMX': 'Ciudad de M',
-        'Mérida': 'rida',
-        'Cancún': 'Canc',
-        'Querétaro': 'quer',
-        'Monterrey': 'Monterrey',
-        'Puebla': 'Puebla',
-        'Guadalajara': 'Guadalajara',
-        'Tijuana': 'Tijuana',
+        'CDMX': 'Ciudad de M', 'Mérida': 'rida', 'Cancún': 'Canc', 'Querétaro': 'quer',
+        'Monterrey': 'Monterrey', 'Puebla': 'Puebla', 'Guadalajara': 'Guadalajara', 'Tijuana': 'Tijuana',
       };
       const locationSearch = locationFilter ? (locationSearchMap[locationFilter] || locationFilter) : '';
 
@@ -245,12 +252,9 @@ export default function Doctors() {
         p_specialty: selectedSpecialty === 'Todas' ? '' : selectedSpecialty,
         p_location: locationSearch,
       });
-
       if (error) throw error;
 
       let rows = (data || []) as DoctorRow[];
-      
-      // When nearby mode is on, sort by real haversine distance
       if (nearbyMode && userLocation) {
         rows = rows.sort((a, b) => {
           const aCoords = a.location ? geocodeLocation(a.location) : null;
@@ -258,12 +262,10 @@ export default function Doctors() {
           if (!aCoords && !bCoords) return 0;
           if (!aCoords) return 1;
           if (!bCoords) return -1;
-          const aDist = haversineDistance(userLocation.lat, userLocation.lng, aCoords.lat, aCoords.lng);
-          const bDist = haversineDistance(userLocation.lat, userLocation.lng, bCoords.lat, bCoords.lng);
-          return aDist - bDist;
+          return haversineDistance(userLocation.lat, userLocation.lng, aCoords.lat, aCoords.lng) -
+                 haversineDistance(userLocation.lat, userLocation.lng, bCoords.lat, bCoords.lng);
         });
       }
-      
       setDoctors(rows);
       setTotalCount(rows.length > 0 ? Number(rows[0].total_count) : 0);
     } catch (error) {
@@ -274,92 +276,36 @@ export default function Doctors() {
     }
   };
 
-  // Keep ref updated so realtime callback always calls latest fetchDoctors
-  useEffect(() => {
-    fetchDoctorsStableRef.current = fetchDoctors;
-  });
+  useEffect(() => { fetchDoctorsStableRef.current = fetchDoctors; });
 
   const fetchFollowedDoctors = async () => {
     if (!user?.id) return;
-    const { data } = await supabase
-      .from('followers')
-      .select('followed_id')
-      .eq('follower_id', user.id);
-    if (data) {
-      setFollowedDoctors(new Set(data.map(f => f.followed_id)));
-    }
+    const { data } = await supabase.from('followers').select('followed_id').eq('follower_id', user.id);
+    if (data) setFollowedDoctors(new Set(data.map(f => f.followed_id)));
   };
 
   const handleFollow = async (doctorUserId: string) => {
-    if (!user?.id) {
-      toast.error('Debes iniciar sesión para seguir doctores');
-      navigate('/login');
-      return;
-    }
+    if (!user?.id) { toast.error(t('doctors.loginToFollow') || 'Debes iniciar sesión'); navigate('/login'); return; }
     try {
       if (followedDoctors.has(doctorUserId)) {
         await supabase.from('followers').delete().eq('follower_id', user.id).eq('followed_id', doctorUserId);
         setFollowedDoctors(prev => { const next = new Set(prev); next.delete(doctorUserId); return next; });
-        toast.success('Dejaste de seguir al doctor');
+        toast.success(t('doctors.unfollowed') || 'Dejaste de seguir al doctor');
       } else {
         await supabase.from('followers').insert({ follower_id: user.id, followed_id: doctorUserId });
         setFollowedDoctors(prev => new Set([...prev, doctorUserId]));
-        toast.success('Ahora sigues a este doctor');
+        toast.success(t('doctors.followed') || 'Ahora sigues a este doctor');
       }
-    } catch {
-      toast.error('Error al actualizar seguimiento');
-    }
+    } catch { toast.error('Error'); }
   };
 
-  const getInitials = (name: string) =>
-    name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-
+  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const totalPages = Math.ceil(totalCount / DOCTORS_PER_PAGE);
-
-  const renderCardFooter = (doctor: DoctorRow) => {
-    const isFollowing = followedDoctors.has(doctor.user_id);
-    const subscription = getSubscription(doctor.user_id);
-    const isPaid = subscription?.tier === 'basic' || subscription?.tier === 'premium';
-
-    return (
-      <div className="flex gap-2 w-full">
-        {/* Primary CTA: Always show Ver Perfil */}
-        <Button
-          variant="default"
-          size="sm"
-          className="flex-1 h-10 text-sm active:scale-95 transition-transform"
-          onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
-        >
-          {t('doctors.viewProfile')}
-        </Button>
-        {/* Follow/Unfollow heart button */}
-        <Button
-          variant="outline"
-          size="icon"
-          className={`h-10 w-10 flex-shrink-0 active:scale-95 transition-all ${
-            isFollowing 
-              ? 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20' 
-              : 'hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20'
-          }`}
-          onClick={(e) => { e.stopPropagation(); handleFollow(doctor.user_id); }}
-        >
-          <Heart className={`w-4 h-4 ${isFollowing ? 'fill-current' : ''}`} />
-        </Button>
-        {/* Pro badge if subscribed */}
-        {isPaid && (
-          <Badge variant="secondary" className="h-10 px-2.5 flex items-center gap-1 bg-warning/10 text-warning border-warning/20">
-            <Crown className="w-3.5 h-3.5" />
-            Pro
-          </Badge>
-        )}
-      </div>
-    );
-  };
 
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
-        {/* Onboarding banner explaining follow vs subscribe */}
+        {/* Onboarding banner */}
         <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-primary/5 to-info/5 border border-primary/15 rounded-xl">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 hidden sm:flex">
@@ -380,7 +326,7 @@ export default function Doctors() {
           <p className="text-sm sm:text-base text-muted-foreground">{t('doctors.exploreSubtitle')}</p>
         </div>
 
-        {/* Specialty filter chips */}
+        {/* Specialty filter chips with emojis */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
           {SPECIALTIES.map(spec => (
             <button
@@ -392,14 +338,14 @@ export default function Doctors() {
                   : 'bg-background text-foreground border-border hover:border-primary/50'
               }`}
             >
-              {spec}
+              {spec !== 'Todas' && SPECIALTY_EMOJI[spec] ? `${SPECIALTY_EMOJI[spec]} ` : ''}{spec}
             </button>
           ))}
         </div>
 
         {/* City filter chips */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
-        {['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'].map(city => (
+          {['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'].map(city => (
             <button
               key={city}
               onClick={() => setLocationFilter(locationFilter === city ? '' : city)}
@@ -419,24 +365,17 @@ export default function Doctors() {
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder={t('inputs.searchDoctors')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+            <Input placeholder={t('inputs.searchDoctors')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant={nearbyMode ? "default" : "outline"}
-              size="icon"
-              className="flex-shrink-0 h-10 w-10"
-              title="Cerca de mí"
-              onClick={handleNearbyToggle}
-            >
-              <MapPin className={`w-4 h-4 ${nearbyMode ? 'text-primary-foreground' : ''}`} />
-            </Button>
-          </div>
+          <Button
+            variant={nearbyMode ? "default" : "outline"}
+            size="icon"
+            className="flex-shrink-0 h-10 w-10"
+            title="Cerca de mí"
+            onClick={handleNearbyToggle}
+          >
+            <MapPin className={`w-4 h-4 ${nearbyMode ? 'text-primary-foreground' : ''}`} />
+          </Button>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 sm:mb-4">
@@ -447,7 +386,7 @@ export default function Doctors() {
           {nearbyMode && (
             <Badge variant="secondary" className="gap-1 text-xs">
               <MapPin className="w-3 h-3" />
-              Cerca de mí
+              {t('doctors.nearMe') || 'Cerca de mí'}
             </Badge>
           )}
         </div>
@@ -457,9 +396,9 @@ export default function Doctors() {
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map(i => (
               <Card key={i}>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <Skeleton className="w-12 h-12 sm:w-16 sm:h-16 rounded-full" />
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <Skeleton className="w-14 h-14 rounded-full" />
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-5 w-32" />
                       <Skeleton className="h-4 w-24" />
@@ -481,94 +420,146 @@ export default function Doctors() {
         ) : (
           <>
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {doctors.map(doctor => (
-                <Card key={doctor.id} className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate(`/doctor/${doctor.user_id}`)}>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0">
-                        <Avatar className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} border-2 border-background shadow-md`}>
-                          <AvatarImage src={doctor.avatar_url || undefined} />
-                          <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                            {getInitials(doctor.name || 'Dr')}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3
-                            className="font-semibold truncate group-hover:text-primary transition-colors text-sm sm:text-base"
-                          >
-                            {doctor.name || 'Doctor'}
-                          </h3>
-                          {doctor.is_identity_verified && (
-                            <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+              {doctors.map(doctor => {
+                const isAvailable = isDoctorAvailableNow(doctor);
+                const isFollowing = followedDoctors.has(doctor.user_id);
+                const subscription = getSubscription(doctor.user_id);
+                const isPaid = subscription?.tier === 'basic' || subscription?.tier === 'premium';
+                const accentBorder = SPECIALTY_COLORS[doctor.specialty] || 'border-t-primary';
+
+                return (
+                  <Card
+                    key={doctor.id}
+                    className={`hover:shadow-lg transition-all cursor-pointer group border-t-4 ${accentBorder} ${
+                      isAvailable ? 'ring-1 ring-success/30 shadow-[0_0_12px_-3px_hsl(var(--success)/0.2)]' : ''
+                    }`}
+                    onClick={() => navigate(`/doctor/${doctor.user_id}`)}
+                  >
+                    <CardContent className="p-4">
+                      {/* Top section: avatar + info + price */}
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 relative">
+                          <Avatar className="w-14 h-14 border-2 border-background shadow-md">
+                            <AvatarImage src={doctor.avatar_url || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
+                              {getInitials(doctor.name || 'Dr')}
+                            </AvatarFallback>
+                          </Avatar>
+                          {/* Available dot on avatar */}
+                          {isAvailable && (
+                            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-success border-2 border-background animate-pulse" />
                           )}
                         </div>
-                        <div className="flex flex-wrap items-center gap-1.5 mb-1.5 sm:mb-2">
-                          <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
-                          <Badge variant="secondary">
-                            <Stethoscope className="w-3 h-3 mr-1" />
-                            {doctor.specialty}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <h3 className="font-semibold truncate group-hover:text-primary transition-colors text-sm sm:text-base">
+                              {doctor.name || 'Doctor'}
+                            </h3>
+                            {doctor.is_identity_verified && (
+                              <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                            <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
+                            <Badge variant="secondary" className="text-[11px] px-1.5 py-0">
+                              {SPECIALTY_EMOJI[doctor.specialty] || '🩺'} {doctor.specialty}
+                            </Badge>
+                          </div>
+                          {/* Stats row */}
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Star className="w-3.5 h-3.5 text-warning fill-warning" />
+                              {Number(doctor.rating).toFixed(1)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3.5 h-3.5" />
+                              {doctor.followers_count}
+                            </span>
+                          </div>
+                        </div>
+                        {/* Price badge */}
+                        <div className="flex-shrink-0">
+                          <Badge className="bg-success/10 text-success border-success/30 font-bold text-xs px-2 py-1">
+                            <DollarSign className="w-3 h-3 mr-0.5" />
+                            {doctor.consultation_fee}
                           </Badge>
                         </div>
-                        {/* Stats row: rating + followers only */}
-                        <div className="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Star className="w-3.5 h-3.5 text-warning fill-warning" />
-                            {Number(doctor.rating).toFixed(1)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5" />
-                            {doctor.followers_count}
-                          </span>
+                      </div>
+
+                      {/* Bio (always visible) */}
+                      {doctor.bio && (
+                        <p className="text-xs text-muted-foreground mt-2.5 line-clamp-2 leading-relaxed">{doctor.bio}</p>
+                      )}
+
+                      {/* Location row */}
+                      {doctor.location && (
+                        <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{doctor.location}</span>
+                          {nearbyMode && userLocation && (() => {
+                            const coords = geocodeLocation(doctor.location!);
+                            if (!coords) return null;
+                            const dist = haversineDistance(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
+                            return <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0 flex-shrink-0">~{Math.round(dist)} km</Badge>;
+                          })()}
                         </div>
-                        {/* Location row (separate, always visible) */}
-                        {doctor.location && (
-                          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-                            <MapPin className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">{doctor.location}</span>
-                            {nearbyMode && userLocation && (() => {
-                              const coords = geocodeLocation(doctor.location!);
-                              if (!coords) return null;
-                              const dist = haversineDistance(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
-                              return <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0 flex-shrink-0">~{Math.round(dist)} km</Badge>;
-                            })()}
-                          </div>
-                        )}
-                        {/* Availability row */}
-                        {(() => {
-                          const now = new Date();
-                          const currentDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
-                          const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                          const isAvailable = doctor.office_days?.includes(currentDay) &&
-                            doctor.office_hours_start && doctor.office_hours_end &&
-                            currentTime >= doctor.office_hours_start && currentTime <= doctor.office_hours_end;
-                           return (
-                            <div className={`flex items-center gap-1.5 mt-1.5 text-xs font-medium ${isAvailable ? 'text-success' : 'text-muted-foreground'}`}>
-                              <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-success animate-pulse' : 'bg-muted-foreground/40'}`} />
-                              {isAvailable ? t('doctors.availableNow') : t('doctors.notAvailable')}
-                            </div>
-                          );
-                        })()}
-                        {doctor.bio && !isMobile && (
-                          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{doctor.bio}</p>
+                      )}
+
+                      {/* Availability pill */}
+                      <div className="mt-2.5">
+                        {isAvailable ? (
+                          <Badge className="bg-success/15 text-success border-success/30 text-xs gap-1 px-2.5 py-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                            {t('doctors.availableNow')}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground text-xs gap-1 px-2.5 py-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                            {t('doctors.notAvailable')}
+                          </Badge>
                         )}
                       </div>
-                    </div>
-                    <div className="mt-3 pt-3 border-t">
-                      {renderCardFooter(doctor)}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+
+                      {/* Footer buttons */}
+                      <div className="mt-3 pt-3 border-t flex gap-2 w-full">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="flex-1 h-10 text-sm active:scale-95 transition-transform"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
+                        >
+                          {t('doctors.viewProfile')}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className={`h-10 w-10 flex-shrink-0 active:scale-95 transition-all ${
+                            isFollowing
+                              ? 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20'
+                              : 'hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20'
+                          }`}
+                          onClick={(e) => { e.stopPropagation(); handleFollow(doctor.user_id); }}
+                        >
+                          <Heart className={`w-4 h-4 ${isFollowing ? 'fill-current' : ''}`} />
+                        </Button>
+                        {isPaid && (
+                          <Badge variant="secondary" className="h-10 px-2.5 flex items-center gap-1 bg-warning/10 text-warning border-warning/20">
+                            <Crown className="w-3.5 h-3.5" />
+                            Pro
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-8 pb-4">
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="outline" size="sm"
                   disabled={currentPage === 1}
                   onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 >
@@ -600,8 +591,7 @@ export default function Doctors() {
                     )}
                 </div>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="outline" size="sm"
                   disabled={currentPage === totalPages}
                   onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 >

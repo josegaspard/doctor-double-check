@@ -147,11 +147,11 @@ export function TransactionHistory() {
       } as any);
       if (error) throw error;
       setPendingRefundTxIds(prev => new Set([...prev, selectedTx.id]));
-      toast.success('Solicitud de reembolso enviada');
+      toast.success(t('wallet.refundSent'));
       setRefundDialog(false);
       setRefundReason('');
     } catch (error: any) {
-      toast.error(error.message || 'Error al enviar solicitud');
+      toast.error(error.message || t('wallet.refundError'));
     } finally {
       setIsSubmittingRefund(false);
     }
@@ -171,7 +171,7 @@ export function TransactionHistory() {
               <div className="relative flex-1 md:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar..."
+                  placeholder={t('wallet.searchTransactions')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9"
@@ -240,7 +240,7 @@ export function TransactionHistory() {
                         </span>
                         <span className="hidden sm:inline">{getTypeBadge(tx.type)}</span>
                         {pendingRefundTxIds.has(tx.id) && (
-                          <Badge variant="warning" className="text-[10px] px-1.5 py-0">Reembolso solicitado</Badge>
+                          <Badge variant="warning" className="text-[10px] px-1.5 py-0">{t('wallet.refundRequested')}</Badge>
                         )}
                       </div>
                     </div>
@@ -295,7 +295,7 @@ export function TransactionHistory() {
                   {getTypeBadge(selectedTx.type)}
                   {getStatusBadge(selectedTx.status)}
                   {pendingRefundTxIds.has(selectedTx.id) && (
-                    <Badge variant="warning">Reembolso solicitado</Badge>
+                    <Badge variant="warning">{t('wallet.refundRequested')}</Badge>
                   )}
                 </div>
               </div>
@@ -334,8 +334,8 @@ export function TransactionHistory() {
                   className="w-full gap-2 border-destructive/30 text-destructive hover:bg-destructive/10"
                   onClick={() => setRefundDialog(true)}
                 >
-                  <RefreshCcw className="w-4 h-4" />
-                  Solicitar reembolso
+                   <RefreshCcw className="w-4 h-4" />
+                   {t('wallet.requestRefund')}
                 </Button>
               )}
             </div>
@@ -349,7 +349,7 @@ export function TransactionHistory() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <RefreshCcw className="w-5 h-5 text-destructive" />
-              Solicitar Reembolso
+              {t('wallet.refundTitle')}
             </DialogTitle>
           </DialogHeader>
           {selectedTx && (
@@ -359,33 +359,33 @@ export function TransactionHistory() {
                 <p className="text-lg font-bold mt-1">${Math.abs(selectedTx.amount).toLocaleString()} MXN</p>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">¿Por qué solicitas el reembolso?</label>
+                <label className="text-sm font-medium">{t('wallet.refundReason')}</label>
                 <Textarea
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
-                  placeholder="Describe el motivo de tu solicitud..."
+                  placeholder={t('wallet.refundReasonPlaceholder')}
                   rows={3}
                 />
               </div>
               <div className="flex items-start gap-2 p-3 bg-info/10 border border-info/20 rounded-lg">
                 <AlertCircle className="w-4 h-4 text-info shrink-0 mt-0.5" />
                 <div className="text-xs text-muted-foreground space-y-1">
-                  <p>Si pagaste con tarjeta, el reembolso se procesará directamente a tu tarjeta.</p>
-                  <p>Si no, se te pedirá registrar tu cuenta bancaria y el proceso tarda hasta 15 días hábiles.</p>
-                  <p>Tu solicitud será revisada por el equipo administrativo.</p>
+                  <p>{t('wallet.refundCardNote')}</p>
+                  <p>{t('wallet.refundBankNote')}</p>
+                  <p>{t('wallet.refundAdminNote')}</p>
                 </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundDialog(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setRefundDialog(false)}>{t('common.cancel')}</Button>
             <Button 
               onClick={handleRequestRefund}
               disabled={isSubmittingRefund || !refundReason.trim()}
               className="bg-destructive hover:bg-destructive/90"
             >
               {isSubmittingRefund ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
-              Enviar solicitud
+              {t('wallet.submitRefund')}
             </Button>
           </DialogFooter>
         </DialogContent>
