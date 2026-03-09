@@ -283,7 +283,7 @@ export default function RecordingsGrid() {
                       ) : isFree ? (
                         <Badge className="gap-1 bg-success/90 text-white border-0">
                           <Gift className="w-3 h-3" />
-                          Gratis
+                          {t('ads.filterFree')}
                         </Badge>
                       ) : (
                         <Badge variant="secondary" className="gap-1">
