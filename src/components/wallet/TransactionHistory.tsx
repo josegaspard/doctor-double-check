@@ -385,7 +385,7 @@ export function TransactionHistory() {
               className="bg-destructive hover:bg-destructive/90"
             >
               {isSubmittingRefund ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
-              Enviar solicitud
+              {t('wallet.submitRefund')}
             </Button>
           </DialogFooter>
         </DialogContent>
