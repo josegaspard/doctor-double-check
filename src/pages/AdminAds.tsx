@@ -60,9 +60,10 @@ function getStatusLabels(t: (path: string) => string): Record<string, string> {
 export default function AdminAds() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { config, refetch: refetchConfig } = useAdConfig();
   const { placements, refetch: refetchPlacements } = useAdPlacements();
+  const statusLabels = getStatusLabels(t);
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignStats, setCampaignStats] = useState<Record<string, CampaignStats>>({});
