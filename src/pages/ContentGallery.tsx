@@ -371,7 +371,7 @@ export default function ContentGallery() {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
             <Library className="w-6 h-6 text-primary" />
             {t('content.library')}
           </h1>
