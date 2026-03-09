@@ -163,6 +163,9 @@ export default function NewsArticle() {
     });
 
     setComments(rootComments);
+    // Collapse all threads by default (Instagram-style)
+    const threadsWithReplies = rootComments.filter(c => (c.replies?.length || 0) > 0).map(c => c.id);
+    setCollapsedThreads(new Set(threadsWithReplies));
   };
 
   const handleSubmitComment = async () => {
@@ -200,7 +203,10 @@ export default function NewsArticle() {
   };
 
   const handleReply = (comment: Comment) => {
-    setReplyTo({ id: comment.id, name: comment.user_name || 'Usuario' });
+    // Instagram-style: replies to replies target the root parent
+    const rootId = comment.parent_comment_id || comment.id;
+    const rootComment = comments.find(c => c.id === rootId);
+    setReplyTo({ id: rootId, name: comment.user_name || 'Usuario' });
     setNewComment(`@${comment.user_name} `);
     setTimeout(() => commentInputRef.current?.focus(), 50);
   };
@@ -232,7 +238,7 @@ export default function NewsArticle() {
   const renderComment = (comment: Comment, depth: number = 0) => {
     const isCollapsed = collapsedThreads.has(comment.id);
     const hasReplies = (comment.replies?.length || 0) > 0;
-    const maxDepth = 4;
+    const maxDepth = 1;
     const isLiking = likingComments.has(comment.id);
 
     return (
@@ -322,15 +328,13 @@ export default function NewsArticle() {
         {hasReplies && !isCollapsed && (
           <div>
             {comment.replies!.map(reply => renderComment(reply, depth + 1))}
-            {comment.replies!.length > 2 && !collapsedThreads.has(comment.id) && (
-              <button
-                className="ml-10 sm:ml-[3.25rem] text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors mb-1"
-                onClick={() => toggleThread(comment.id)}
-              >
-                <ChevronDown className="w-3 h-3 inline mr-1" />
-                Ocultar respuestas
-              </button>
-            )}
+            <button
+              className="ml-10 sm:ml-[3.25rem] text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors mb-1"
+              onClick={() => toggleThread(comment.id)}
+            >
+              <ChevronDown className="w-3 h-3 inline mr-1 rotate-180" />
+              Ocultar respuestas
+            </button>
           </div>
         )}
       </div>

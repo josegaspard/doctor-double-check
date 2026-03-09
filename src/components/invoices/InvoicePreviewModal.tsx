@@ -211,7 +211,7 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-col sm:flex-row gap-2 pt-2">
             <Button 
               onClick={handleOpenNewTab}
               disabled={!signedUrl}
@@ -224,7 +224,7 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
               variant="outline"
               disabled={!signedUrl}
               onClick={handleDownload}
-              className="gap-2"
+              className="flex-1 sm:flex-initial gap-2"
             >
               <Download className="w-4 h-4" />
               Descargar

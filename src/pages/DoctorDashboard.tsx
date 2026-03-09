@@ -82,7 +82,7 @@ export default function DoctorDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+          <TabsContent value="overview" className="space-y-3 sm:space-y-5">
             {/* Section 1: Stats */}
             <DoctorStatsGrid
               recordingsCount={recordingsCount}
@@ -94,7 +94,7 @@ export default function DoctorDashboard() {
             <DoctorQuickActions isApproved={isApproved} userId={user?.id} canPublishNews={canPublishNews} />
 
             {/* Section 3: Finance & Communications - side by side on desktop */}
-            <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+            <div className="grid gap-3 lg:grid-cols-2">
               <EarningsCard />
               <EmailStatsCard />
             </div>

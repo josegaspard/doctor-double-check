@@ -142,6 +142,7 @@ export default function Doctors() {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
   const [followedDoctors, setFollowedDoctors] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
@@ -211,11 +212,11 @@ export default function Doctors() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, selectedSpecialty]);
+  }, [debouncedSearch, selectedSpecialty, locationFilter]);
 
   useEffect(() => {
     fetchDoctors();
-  }, [currentPage, debouncedSearch, selectedSpecialty]);
+  }, [currentPage, debouncedSearch, selectedSpecialty, locationFilter]);
 
   useEffect(() => {
     if (user?.id) fetchFollowedDoctors();
@@ -224,11 +225,21 @@ export default function Doctors() {
   const fetchDoctors = async () => {
     setIsLoading(true);
     try {
+      // Map city chip labels to location search terms
+      const locationSearchMap: Record<string, string> = {
+        'CDMX': 'Ciudad de M',
+        'Mérida': 'rida',
+        'Cancún': 'Canc',
+        'Querétaro': 'quer',
+      };
+      const locationSearch = locationFilter ? (locationSearchMap[locationFilter] || locationFilter) : '';
+
       const { data, error } = await supabase.rpc('get_doctors_paginated', {
         p_page: currentPage,
         p_page_size: DOCTORS_PER_PAGE,
         p_search: debouncedSearch,
         p_specialty: selectedSpecialty === 'Todas' ? '' : selectedSpecialty,
+        p_location: locationSearch,
       });
 
       if (error) throw error;
@@ -384,12 +395,12 @@ export default function Doctors() {
 
         {/* City filter chips */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
-          {['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'].map(city => (
+        {['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'].map(city => (
             <button
               key={city}
-              onClick={() => setSearchQuery(searchQuery === city ? '' : city)}
+              onClick={() => setLocationFilter(locationFilter === city ? '' : city)}
               className={`flex-shrink-0 snap-start flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                searchQuery === city
+                locationFilter === city
                   ? 'bg-accent text-accent-foreground border-accent'
                   : 'bg-muted/50 text-muted-foreground border-border hover:border-accent/50'
               }`}

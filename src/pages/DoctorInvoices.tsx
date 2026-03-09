@@ -18,6 +18,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   FileText, 
   Upload, 
@@ -34,6 +35,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Info,
+  ChevronDown,
 } from 'lucide-react';
 import { InvoicePreviewModal } from '@/components/invoices/InvoicePreviewModal';
 import { toast } from 'sonner';
@@ -262,7 +264,7 @@ export default function DoctorInvoices() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         <Button
           variant="ghost"
           size="sm"
@@ -290,9 +292,9 @@ export default function DoctorInvoices() {
         </div>
 
         {/* Earnings Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="border-success/30 bg-success/5">
-            <CardContent className="p-4">
+        <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-3 md:overflow-visible md:pb-0 mb-6">
+          <Card className="border-success/30 bg-success/5 min-w-[200px] snap-center flex-shrink-0 md:min-w-0 md:flex-shrink">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
                   <Clock className="w-5 h-5 text-success" />
@@ -309,8 +311,8 @@ export default function DoctorInvoices() {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="p-4">
+          <Card className="border-primary/30 bg-primary/5 min-w-[200px] snap-center flex-shrink-0 md:min-w-0 md:flex-shrink">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                   <TrendingUp className="w-5 h-5 text-primary" />
@@ -327,8 +329,8 @@ export default function DoctorInvoices() {
             </CardContent>
           </Card>
 
-          <Card className={earnings?.payouts_enabled ? 'border-success/30' : 'border-warning/30 bg-warning/5'}>
-            <CardContent className="p-4">
+          <Card className={`min-w-[200px] snap-center flex-shrink-0 md:min-w-0 md:flex-shrink ${earnings?.payouts_enabled ? 'border-success/30' : 'border-warning/30 bg-warning/5'}`}>
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${earnings?.payouts_enabled ? 'bg-success/10' : 'bg-warning/10'}`}>
                   <CreditCard className={`w-5 h-5 ${earnings?.payouts_enabled ? 'text-success' : 'text-warning'}`} />
@@ -379,15 +381,20 @@ export default function DoctorInvoices() {
           </Card>
         )}
 
-        {/* Invoicing Guide */}
-        <Card className="mb-6 border-muted">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <FileText className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold mb-2">
-                  {language === 'es' ? '¿Cómo facturar mis ganancias?' : 'How to invoice my earnings?'}
-                </p>
+        {/* Invoicing Guide - Collapsible on mobile */}
+        <Collapsible>
+          <Card className="mb-6 border-muted">
+            <CardContent className="p-3 sm:p-4">
+              <CollapsibleTrigger className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                  <p className="text-sm font-semibold">
+                    {language === 'es' ? '¿Cómo facturar mis ganancias?' : 'How to invoice my earnings?'}
+                  </p>
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3">
                 <div className="space-y-2 text-xs text-muted-foreground">
                   <p>
                     {language === 'es'
@@ -401,8 +408,8 @@ export default function DoctorInvoices() {
                       </p>
                       <p>
                         {language === 'es'
-                          ? 'Sube una sola factura por el total de tus ganancias pendientes. Ideal si facturas todo bajo un mismo concepto de servicios profesionales.'
-                          : 'Upload one invoice for your total pending earnings. Ideal if you invoice everything under a single professional services concept.'}
+                          ? 'Sube una sola factura por el total de tus ganancias pendientes.'
+                          : 'Upload one invoice for your total pending earnings.'}
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/50 border border-border">
@@ -411,21 +418,21 @@ export default function DoctorInvoices() {
                       </p>
                       <p>
                         {language === 'es'
-                          ? 'Sube facturas separadas por tipo de servicio (orientaciones, grabaciones, suscripciones). Revisa el desglose en la sección "Mis Ganancias" para ver los montos por categoría.'
-                          : 'Upload separate invoices per service type (consultations, recordings, subscriptions). Check the breakdown in "My Earnings" to see amounts by category.'}
+                          ? 'Sube facturas separadas por tipo de servicio.'
+                          : 'Upload separate invoices per service type.'}
                       </p>
                     </div>
                   </div>
                   <p className="mt-2 text-muted-foreground">
                     {language === 'es'
-                      ? '💡 Tip: Consulta con tu contador cuál opción se adapta mejor a tu régimen fiscal. Ambas son válidas para el procesamiento de tu pago.'
-                      : '💡 Tip: Consult with your accountant to determine which option best suits your tax situation. Both are valid for payment processing.'}
+                      ? '💡 Tip: Consulta con tu contador cuál opción se adapta mejor a tu régimen fiscal.'
+                      : '💡 Tip: Consult your accountant for the best option for your tax situation.'}
                   </p>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CollapsibleContent>
+            </CardContent>
+          </Card>
+        </Collapsible>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
