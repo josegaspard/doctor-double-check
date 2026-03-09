@@ -538,7 +538,7 @@ export default function AdvertiserDashboard() {
                     <div className="grid grid-cols-3 gap-2 mt-3">
                       <div className="rounded-lg bg-muted/50 p-2 text-center">
                         <p className="text-sm font-bold text-info">{stats.impressions.toLocaleString()}</p>
-                        <p className="text-[10px] text-muted-foreground">{es ? 'Imp' : 'Imp'}</p>
+                        <p className="text-[10px] text-muted-foreground">{t('ads.impressions').substring(0,3)}</p>
                       </div>
                       <div className="rounded-lg bg-muted/50 p-2 text-center">
                         <p className="text-sm font-bold text-warning">{stats.clicks}</p>
