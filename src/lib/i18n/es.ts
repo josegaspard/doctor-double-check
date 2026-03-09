@@ -109,6 +109,7 @@ export const es = {
   // Login page
   login: {
     title: 'Iniciar Sesión',
+    loginDescription: 'Ingresa con tu cuenta para continuar',
     email: 'Correo electrónico',
     password: 'Contraseña',
     forgotPassword: '¿Olvidaste tu contraseña?',
