@@ -106,21 +106,21 @@ interface DoctorRow {
 }
 
 const SPECIALTIES = [
-  'Todas',
-  'Cardiología',
-  'Dermatología',
-  'Endocrinología',
-  'Gastroenterología',
-  'Ginecología',
-  'Medicina General',
-  'Medicina Interna',
-  'Neurología',
-  'Oftalmología',
-  'Oncología',
-  'Ortopedia',
-  'Pediatría',
-  'Psiquiatría',
-  'Urología',
+  { value: 'Todas', labelKey: 'doctors.specAll' },
+  { value: 'Cardiología', labelKey: 'doctors.specCardiology' },
+  { value: 'Dermatología', labelKey: 'doctors.specDermatology' },
+  { value: 'Endocrinología', labelKey: 'doctors.specEndocrinology' },
+  { value: 'Gastroenterología', labelKey: 'doctors.specGastroenterology' },
+  { value: 'Ginecología', labelKey: 'doctors.specGynecology' },
+  { value: 'Medicina General', labelKey: 'doctors.specGeneralMedicine' },
+  { value: 'Medicina Interna', labelKey: 'doctors.specInternalMedicine' },
+  { value: 'Neurología', labelKey: 'doctors.specNeurology' },
+  { value: 'Oftalmología', labelKey: 'doctors.specOphthalmology' },
+  { value: 'Oncología', labelKey: 'doctors.specOncology' },
+  { value: 'Ortopedia', labelKey: 'doctors.specOrthopedics' },
+  { value: 'Pediatría', labelKey: 'doctors.specPediatrics' },
+  { value: 'Psiquiatría', labelKey: 'doctors.specPsychiatry' },
+  { value: 'Urología', labelKey: 'doctors.specUrology' },
 ];
 
 const DOCTORS_PER_PAGE = 20;
@@ -298,15 +298,15 @@ export default function Doctors() {
         <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2">
           {SPECIALTIES.map(spec => (
             <button
-              key={spec}
-              onClick={() => setSelectedSpecialty(spec)}
+              key={spec.value}
+              onClick={() => setSelectedSpecialty(spec.value)}
               className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
-                selectedSpecialty === spec
+                selectedSpecialty === spec.value
                   ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                   : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
               }`}
             >
-              {spec}
+              {t(spec.labelKey)}
             </button>
           ))}
         </div>

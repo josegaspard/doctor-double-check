@@ -37,14 +37,41 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
+
+/** Translate DB-stored Spanish descriptions to English */
+function translateDescription(desc: string, lang: string): string {
+  if (lang === 'es') return desc;
+  // Pattern-based translation for known DB descriptions
+  const patterns: [RegExp, string | ((m: RegExpMatchArray) => string)][] = [
+    [/^Consulta médica por chat$/, 'Medical chat consultation'],
+    [/^Ganancia por consulta médica$/, 'Medical consultation earning'],
+    [/^Recarga via Stripe - (.+)$/, (m) => `Top-up via Stripe - ${m[1]}`],
+    [/^Recarga de saldo$/, 'Balance top-up'],
+    [/^Expansión de almacenamiento: (.+)$/, (m) => `Storage expansion: ${m[1]}`],
+    [/^Grabación: (.+)$/, (m) => `Recording: ${m[1]}`],
+    [/^Solicitud aprobada: (.+)$/, (m) => `Approved request: ${m[1]}`],
+    [/^Segunda Opinión con (.+)$/, (m) => `Second Opinion with ${m[1]}`],
+    [/^Bono por código de referido$/, 'Referral code bonus'],
+    [/^Bono por referido exitoso$/, 'Successful referral bonus'],
+    [/^Expansión de almacenamiento: (.+?) \(Stripe\)$/, (m) => `Storage expansion: ${m[1]} (Stripe)`],
+  ];
+  for (const [re, replacement] of patterns) {
+    const match = desc.match(re);
+    if (match) {
+      return typeof replacement === 'function' ? replacement(match) : replacement;
+    }
+  }
+  return desc;
+}
 
 type FilterType = 'all' | 'topup' | 'purchase' | 'earning' | 'refund';
 
 export function TransactionHistory() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuth();
+  const dateLocale = language === 'es' ? es : enUS;
   const { transactions, isLoading } = useWallet();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<FilterType>('all');
@@ -233,10 +260,10 @@ export function TransactionHistory() {
                       {getTypeIcon(tx.type, tx.amount)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs sm:text-sm truncate">{tx.description}</p>
+                      <p className="font-medium text-xs sm:text-sm truncate">{translateDescription(tx.description, language)}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-[10px] sm:text-xs text-muted-foreground">
-                          {format(tx.createdAt, 'dd MMM, HH:mm', { locale: es })}
+                          {format(tx.createdAt, 'dd MMM, HH:mm', { locale: dateLocale })}
                         </span>
                         <span className="hidden sm:inline">{getTypeBadge(tx.type)}</span>
                         {pendingRefundTxIds.has(tx.id) && (
@@ -307,7 +334,7 @@ export function TransactionHistory() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('transactions.date')}</span>
-                  <span>{format(selectedTx.createdAt, 'dd MMMM yyyy, HH:mm:ss', { locale: es })}</span>
+                  <span>{format(selectedTx.createdAt, 'dd MMMM yyyy, HH:mm:ss', { locale: dateLocale })}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('transactions.transactionId')}</span>

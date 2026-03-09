@@ -47,7 +47,14 @@ import {
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
-const CATEGORIES = ['Laboratorios', 'Imagenología', 'Estudios Cardíacos', 'Recetas', 'Otros'];
+const CATEGORIES_MAP = [
+  { value: 'Laboratorios', labelKey: 'ads.vaultCatLab' },
+  { value: 'Imagenología', labelKey: 'ads.vaultCatImaging' },
+  { value: 'Estudios Cardíacos', labelKey: 'ads.vaultCatCardiac' },
+  { value: 'Recetas', labelKey: 'ads.vaultCatPrescriptions' },
+  { value: 'Otros', labelKey: 'ads.vaultCatOther' },
+];
+const CATEGORIES = CATEGORIES_MAP.map(c => c.value);
 
 interface AvailableDoctor {
   id: string;
@@ -405,10 +412,10 @@ export default function Vault() {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
           <Folder className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-          Mi Vault Médico
+          {t('ads.vaultTitle')}
         </h1>
         <p className="text-muted-foreground text-sm mb-4 sm:mb-6">
-          Guarda tus estudios de forma segura y controla quién puede verlos
+          {t('ads.vaultSubtitle')}
         </p>
 
         {/* Storage Usage Bar */}
@@ -417,7 +424,7 @@ export default function Vault() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <HardDrive className={`w-4 h-4 ${isStorageFull ? 'text-destructive' : isStorageNearFull ? 'text-warning' : 'text-primary'}`} />
-                <span className="text-sm font-medium text-foreground">Almacenamiento</span>
+                <span className="text-sm font-medium text-foreground">{t('ads.storage')}</span>
               </div>
               <span className="text-xs text-muted-foreground">
                 {formatStorageSize(storageUsed)} de {formatStorageSize(storageLimit)}
@@ -431,12 +438,12 @@ export default function Vault() {
               {isStorageFull ? (
                 <p className="text-xs text-destructive flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
-                  Almacenamiento lleno
+                  {t('ads.storageFull')}
                 </p>
               ) : isStorageNearFull ? (
-                <p className="text-xs text-warning">Casi lleno — considera ampliar tu espacio</p>
+                <p className="text-xs text-warning">{t('ads.storageNearFull')}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">Necesitas más espacio? Consulta nuestros planes</p>
+                <p className="text-xs text-muted-foreground">{t('ads.storageNeedMore')}</p>
               )}
               <Button 
                 size="sm" 
@@ -445,7 +452,7 @@ export default function Vault() {
                 onClick={() => setShowUpgradeDialog(true)}
               >
                 <Zap className="w-3 h-3" />
-                {isStorageFull ? 'Ampliar' : 'Ver planes'}
+                {isStorageFull ? t('ads.expand') : t('ads.viewPlans')}
               </Button>
             </div>
           </CardContent>
@@ -456,9 +463,9 @@ export default function Vault() {
             <div className="flex items-start gap-3">
               <Shield className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-foreground text-sm">Tú controlas el acceso</h3>
+                <h3 className="font-semibold text-foreground text-sm">{t('ads.accessControl')}</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Solo los médicos que tú autorices podrán ver tus archivos.
+                  {t('ads.accessControlDesc')}
                 </p>
               </div>
             </div>
@@ -469,7 +476,7 @@ export default function Vault() {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Upload className="w-5 h-5" />
-              Subir Archivo
+              {t('ads.uploadFile')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 px-3 sm:px-6">
@@ -477,29 +484,29 @@ export default function Vault() {
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
                 <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">1</span>
-                <span className="text-[11px] text-muted-foreground leading-tight">Categoría</span>
+                <span className="text-[11px] text-muted-foreground leading-tight">{t('ads.stepCategory')}</span>
               </div>
               <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
                 <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">2</span>
-                <span className="text-[11px] text-muted-foreground leading-tight">Descripción</span>
+                <span className="text-[11px] text-muted-foreground leading-tight">{t('ads.stepDescription')}</span>
               </div>
               <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
                 <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">3</span>
-                <span className="text-[11px] text-muted-foreground leading-tight">Archivo</span>
+                <span className="text-[11px] text-muted-foreground leading-tight">{t('ads.stepFile')}</span>
               </div>
             </div>
 
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {CATEGORIES_MAP.map(c => <SelectItem key={c.value} value={c.value}>{t(c.labelKey)}</SelectItem>)}
               </SelectContent>
             </Select>
 
             <div>
               <div className="relative">
                 <Input
-                  placeholder="Describe brevemente tu estudio *"
+                  placeholder={t('ads.descPlaceholder')}
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   className={`h-10 ${!description.trim() ? 'border-destructive/40 focus-visible:ring-destructive/30' : ''}`}
@@ -507,7 +514,7 @@ export default function Vault() {
               </div>
               <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3 text-destructive" />
-                Obligatorio — describe el contenido del archivo
+                {t('ads.descRequired')}
               </p>
             </div>
 
@@ -516,8 +523,8 @@ export default function Vault() {
             {/* Drop zone style upload button */}
             <button
               onClick={() => {
-                if (!description.trim()) {
-                  toast.error('Por favor, añade una descripción antes de seleccionar el archivo');
+              if (!description.trim()) {
+                  toast.error(t('ads.addDescFirst'));
                   return;
                 }
                 if (isStorageFull) {
@@ -540,16 +547,16 @@ export default function Vault() {
               ) : isStorageFull ? (
                 <>
                   <Lock className="w-8 h-8 text-destructive/60" />
-                  <span className="text-sm font-medium text-destructive">Almacenamiento lleno</span>
-                  <span className="text-xs text-muted-foreground">Amplía tu espacio para subir más archivos</span>
+                  <span className="text-sm font-medium text-destructive">{t('ads.storageFull')}</span>
+                  <span className="text-xs text-muted-foreground">{t('ads.storageNeedMore')}</span>
                 </>
               ) : (
                 <>
                   <Upload className="w-8 h-8 text-primary/60" />
                   <span className="text-sm font-medium text-foreground">
-                    {description.trim() ? 'Toca para seleccionar archivo' : 'Primero añade una descripción'}
+                    {description.trim() ? t('ads.tapToSelect') : t('ads.addDescriptionFirst')}
                   </span>
-                  <span className="text-xs text-muted-foreground">PDF, JPG, PNG — Máx. {formatStorageSize(storageLimit - storageUsed)} disponible</span>
+                  <span className="text-xs text-muted-foreground">{t('ads.fileTypes')} — {t('common.loading').includes('...') ? '' : ''}{formatStorageSize(storageLimit - storageUsed)} {t('ads.available')}</span>
                 </>
               )}
             </button>
@@ -557,7 +564,7 @@ export default function Vault() {
             {uploadProgress !== null && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Subiendo...</span>
+                  <span className="text-muted-foreground">{t('ads.uploading')}</span>
                   <span className="font-medium">{uploadProgress}%</span>
                 </div>
                 <Progress value={uploadProgress} className="h-2" />
@@ -568,7 +575,7 @@ export default function Vault() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Mis Expedientes ({files.length})</CardTitle>
+            <CardTitle className="text-lg">{t('ads.myFiles')} ({files.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {files.length > 0 ? (
@@ -605,7 +612,7 @@ export default function Vault() {
                           ) : (
                             <Badge variant="secondary" className="text-[10px] gap-1">
                               <Lock className="w-3 h-3" />
-                              Solo tú
+                              {t('ads.onlyYou')}
                             </Badge>
                           )}
                         </div>
@@ -615,19 +622,19 @@ export default function Vault() {
                     <div className="flex sm:flex-col gap-2 sm:gap-1.5 mt-1 sm:mt-0">
                       <Button variant="outline" size="sm" onClick={() => openPermissions(file)} className="gap-1.5 flex-1 sm:flex-none h-10 sm:h-8 text-xs min-w-[100px]">
                         <Share2 className="w-3.5 h-3.5" />
-                        Permisos
+                        {t('ads.permissions')}
                       </Button>
                       <Button variant="ghost" size="sm" onClick={async () => {
                         const result = await deleteFile(file.id);
                         if (result.success) {
-                          toast.success('Archivo eliminado');
+                          toast.success(t('ads.fileDeleted'));
                           await fetchStorage();
                         } else {
-                          toast.error(result.error || 'Error al eliminar');
+                          toast.error(result.error || t('ads.deleteError'));
                         }
                       }} className="text-destructive hover:text-destructive flex-1 sm:flex-none h-10 sm:h-8 text-xs min-w-[100px]">
                         <Trash2 className="w-3.5 h-3.5 mr-1" />
-                        Eliminar
+                        {t('ads.deleteFile')}
                       </Button>
                     </div>
                   </div>
@@ -638,9 +645,9 @@ export default function Vault() {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <Folder className="w-8 h-8 text-primary/60" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">Tu vault está vacío</h3>
+                <h3 className="font-semibold text-foreground mb-2">{t('ads.emptyVaultTitle')}</h3>
                 <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-4">
-                  Guarda tus estudios, laboratorios e imágenes médicas de forma segura y compártelos con tus doctores.
+                  {t('ads.emptyVaultDesc')}
                 </p>
                 <Button
                   variant="outline"
@@ -648,7 +655,7 @@ export default function Vault() {
                   className="gap-2"
                 >
                   <Upload className="w-4 h-4" />
-                  Subir mi primer archivo
+                  {t('ads.uploadFirst')}
                 </Button>
               </div>
             )}
@@ -660,7 +667,7 @@ export default function Vault() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Share2 className="w-5 h-5 text-primary" />
-                Gestionar Permisos
+                {t('ads.managePermissions')}
               </DialogTitle>
               <DialogDescription className="truncate">{currentPermissionFile?.name}</DialogDescription>
             </DialogHeader>
@@ -668,7 +675,7 @@ export default function Vault() {
             <div className="space-y-4 py-4">
               {currentPermissionFile?.permissions && currentPermissionFile.permissions.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-medium text-foreground mb-3">Con acceso actualmente:</h4>
+                  <h4 className="text-sm font-medium text-foreground mb-3">{t('ads.currentAccess')}</h4>
                   <div className="space-y-2">
                     {currentPermissionFile.permissions.map(perm => (
                       <div key={perm.doctorId} className="flex items-center justify-between p-3 bg-success/5 border border-success/20 rounded-lg">
@@ -679,7 +686,7 @@ export default function Vault() {
                           <div>
                             <p className="font-medium text-sm">{perm.doctorName || 'Doctor'}</p>
                             <p className="text-xs text-muted-foreground">
-                              Desde {new Date(perm.grantedAt).toLocaleDateString('es-MX')}
+                              {t('ads.since')} {new Date(perm.grantedAt).toLocaleDateString(language === 'en' ? 'en-US' : 'es-MX')}
                             </p>
                           </div>
                         </div>
@@ -695,7 +702,7 @@ export default function Vault() {
                           ) : (
                             <UserMinus className="w-4 h-4" />
                           )}
-                          Revocar
+                          {t('ads.revoke')}
                         </Button>
                       </div>
                     ))}
@@ -706,9 +713,9 @@ export default function Vault() {
               <Separator />
 
               <div>
-                <h4 className="text-sm font-medium text-foreground mb-2">Dar acceso a:</h4>
+                <h4 className="text-sm font-medium text-foreground mb-2">{t('ads.grantAccessTo')}</h4>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Solo aparecen médicos que sigues, con los que tienes consultas o chats activos.
+                  {t('ads.grantAccessHint')}
                 </p>
                 
                 {/* Search input for doctors */}
@@ -745,9 +752,9 @@ export default function Vault() {
                                 <p className="text-xs text-muted-foreground">{doctor.specialty}</p>
                                 {doctor.relationshipType && (
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                    {doctor.relationshipType === 'subscription' && 'Siguiendo'}
-                                    {doctor.relationshipType === 'chat' && 'Chat'}
-                                    {doctor.relationshipType === 'consultation' && 'Consulta'}
+                                    {doctor.relationshipType === 'subscription' && t('ads.following')}
+                                    {doctor.relationshipType === 'chat' && t('ads.chat')}
+                                    {doctor.relationshipType === 'consultation' && t('ads.consultation')}
                                   </Badge>
                                 )}
                               </div>
@@ -765,24 +772,24 @@ export default function Vault() {
                             ) : (
                               <UserPlus className="w-4 h-4" />
                             )}
-                            Dar acceso
+                            {t('ads.grantAccess')}
                           </Button>
                         </div>
                       ))
                     ) : availableDoctors.length === 0 ? (
                       <div className="text-center py-6 text-muted-foreground text-sm">
                         <Stethoscope className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                        <p className="font-medium">No hay médicos disponibles</p>
+                        <p className="font-medium">{t('ads.noDocsAvailable')}</p>
                         <p className="text-xs mt-1">
-                          Suscríbete a un médico o inicia una orientación médica para poder compartir archivos.
+                          {t('ads.noDocsAvailableDesc')}
                         </p>
                       </div>
                     ) : (
                       <div className="text-center py-4 text-muted-foreground text-sm">
                         <CheckCircle className="w-8 h-8 mx-auto mb-2 text-success" />
                         {doctorSearch 
-                          ? 'No se encontraron médicos con ese criterio'
-                          : 'Todos los médicos disponibles ya tienen acceso'}
+                          ? t('ads.noDocsFound')
+                          : t('ads.allDocsHaveAccess')}
                       </div>
                     )}
                   </div>
@@ -791,7 +798,7 @@ export default function Vault() {
             </div>
 
             <Button variant="outline" onClick={() => setShowPermissionDialog(false)} className="w-full">
-              Cerrar
+              {t('ads.close')}
             </Button>
           </DialogContent>
         </Dialog>
@@ -802,7 +809,7 @@ export default function Vault() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <HardDrive className="w-5 h-5 text-primary" />
-                Ampliar Almacenamiento
+                {t('ads.upgradeStorage')}
               </DialogTitle>
               <DialogDescription>
                 Tu almacenamiento actual: {formatStorageSize(storageUsed)} de {formatStorageSize(storageLimit)} usado.
@@ -840,7 +847,7 @@ export default function Vault() {
                   );
                 })}
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  Residentes reciben 50% de descuento automático.
+                  {t('ads.residentDiscount')}
                 </p>
               </div>
             ) : (
@@ -872,7 +879,7 @@ export default function Vault() {
                   ) : (
                     <>
                       <CreditCard className="w-4 h-4" />
-                      Pagar con tarjeta
+                      {t('ads.payWithCard')}
                       <ExternalLink className="w-3 h-3 ml-1" />
                     </>
                   )}
@@ -884,7 +891,7 @@ export default function Vault() {
                     <span className="w-full border-t" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">o usa tu saldo</span>
+                    <span className="bg-background px-2 text-muted-foreground">{t('ads.orUseBalance')}</span>
                   </div>
                 </div>
 
@@ -901,7 +908,7 @@ export default function Vault() {
                     ) : (
                       <>
                         <Wallet className="w-4 h-4" />
-                        Pagar con saldo (${balance.toLocaleString()})
+                        {t('ads.payWithBalance')} (${balance.toLocaleString()})
                       </>
                     )}
                   </Button>
@@ -910,9 +917,9 @@ export default function Vault() {
                     <div className="flex items-start gap-2 p-3 bg-warning/10 rounded-lg border border-warning/30">
                       <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
                       <div className="text-sm">
-                        <p className="font-medium text-warning">Saldo insuficiente</p>
+                        <p className="font-medium text-warning">{t('ads.vaultInsufficientBalance')}</p>
                         <p className="text-warning/80 text-xs">
-                          Tienes ${balance.toLocaleString()} — necesitas ${(getEffectivePrice(selectedPlan.price) - balance).toLocaleString()} más
+                          {t('ads.youHave')} ${balance.toLocaleString()} — {t('ads.needMore')} ${(getEffectivePrice(selectedPlan.price) - balance).toLocaleString()} {t('ads.more')}
                         </p>
                       </div>
                     </div>
@@ -922,13 +929,13 @@ export default function Vault() {
                       className="w-full gap-2"
                     >
                       <Wallet className="w-4 h-4" />
-                      Recargar billetera
+                      {t('ads.rechargeWallet')}
                     </Button>
                   </div>
                 )}
 
                 <Button variant="ghost" size="sm" onClick={() => setSelectedPlan(null)} className="w-full">
-                  ← Cambiar plan
+                  {t('ads.changePlan')}
                 </Button>
               </div>
             )}
