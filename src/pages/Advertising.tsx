@@ -56,10 +56,10 @@ export default function Advertising() {
         {/* Benefits */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
           {[
-            { icon: Target, label: es ? 'Segmentación precisa' : 'Precise targeting', desc: es ? 'Por rol, idioma y ubicación' : 'By role, language & location' },
-            { icon: BarChart3, label: es ? 'Métricas en tiempo real' : 'Real-time metrics', desc: es ? 'Impresiones, clics y CTR' : 'Impressions, clicks & CTR' },
-            { icon: Shield, label: es ? 'App Store compliant' : 'App Store compliant', desc: es ? 'Cumple políticas de Google y Apple' : 'Google & Apple policy compliant' },
-            { icon: Zap, label: es ? 'Activación instantánea' : 'Instant activation', desc: es ? 'Paga y tu campaña se activa' : 'Pay and your campaign activates' },
+            { icon: Target, label: t('ads.preciseTargeting'), desc: t('ads.preciseTargetingDesc') },
+            { icon: BarChart3, label: t('ads.realTimeMetrics'), desc: t('ads.realTimeMetricsDesc') },
+            { icon: Shield, label: t('ads.appStoreCompliant'), desc: t('ads.appStoreCompliantDesc') },
+            { icon: Zap, label: t('ads.instantActivation'), desc: t('ads.instantActivationDesc') },
           ].map((b, i) => (
             <Card key={i} className="text-center">
               <CardContent className="p-4">
