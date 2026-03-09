@@ -192,7 +192,7 @@ export default function AdvertiserDashboard() {
     const ext = file.name.split('.').pop();
     const path = `${user.id}/${selectedCampaign}/${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from('ad-creatives').upload(path, file);
-    if (upErr) { toast.error('Error al subir archivo'); setIsUploading(false); return; }
+    if (upErr) { toast.error(t('ads.creativeUploadError')); setIsUploading(false); return; }
 
     const { data: { publicUrl } } = supabase.storage.from('ad-creatives').getPublicUrl(path);
     const mediaType = file.type.startsWith('video') ? 'video' : file.type.includes('gif') ? 'gif' : 'image';
