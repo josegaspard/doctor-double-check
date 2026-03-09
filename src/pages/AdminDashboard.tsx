@@ -109,32 +109,34 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
     <MainLayout>
       <div ref={ref} className="container mx-auto px-4 py-6 max-w-5xl">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+        <div className="mb-8 rounded-2xl bg-gradient-to-r from-primary/5 via-primary/10 to-transparent p-5 sm:p-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shadow-sm">
               <LayoutDashboard className="w-6 h-6 text-primary" />
             </div>
             <div>
               <h1 className="font-heading text-2xl font-bold">{t('adminDashboard.title')}</h1>
-              <p className="text-muted-foreground">{t('adminDashboard.subtitle')}</p>
+              <p className="text-muted-foreground text-sm">{t('adminDashboard.subtitle')}</p>
             </div>
           </div>
         </div>
 
         {/* Platform Totals */}
         <h2 className="font-heading text-lg font-semibold mb-3">{t('adminDashboard.platformTotals')}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {[
-            { value: stats.totalDoctors, label: t('adminDashboard.activeDoctors'), icon: Stethoscope, color: 'text-secondary', border: 'border-l-secondary' },
-            { value: stats.totalPatients, label: t('adminDashboard.patients'), icon: Users, color: 'text-primary', border: 'border-l-primary' },
-            { value: stats.totalResidents, label: t('adminDashboard.residents'), icon: GraduationCap, color: 'text-accent', border: 'border-l-accent' },
-            { value: stats.totalUsers, label: t('adminDashboard.totalUsers'), icon: Users, color: 'text-warning', border: 'border-l-warning' },
+            { value: stats.totalDoctors, label: t('adminDashboard.activeDoctors'), icon: Stethoscope, color: 'text-secondary', bgGrad: 'from-secondary/10 to-secondary/5' },
+            { value: stats.totalPatients, label: t('adminDashboard.patients'), icon: Users, color: 'text-primary', bgGrad: 'from-primary/10 to-primary/5' },
+            { value: stats.totalResidents, label: t('adminDashboard.residents'), icon: GraduationCap, color: 'text-accent', bgGrad: 'from-accent/10 to-accent/5' },
+            { value: stats.totalUsers, label: t('adminDashboard.totalUsers'), icon: Users, color: 'text-warning', bgGrad: 'from-warning/10 to-warning/5' },
           ].map((item, i) => (
-            <Card key={i} className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${item.border}`} onClick={() => navigate('/admin/users')}>
-              <CardContent className="p-4 text-center">
+            <Card key={i} className={`cursor-pointer hover:shadow-md transition-all rounded-xl overflow-hidden bg-gradient-to-br ${item.bgGrad}`} onClick={() => navigate('/admin/users')}>
+              <CardContent className="p-4 sm:p-5 text-center">
+                <div className={`w-10 h-10 rounded-xl bg-background/80 flex items-center justify-center mx-auto mb-2.5 shadow-sm`}>
+                  <item.icon className={`w-5 h-5 ${item.color}`} />
+                </div>
                 {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className={`text-3xl font-bold ${item.color} mb-1`}>{item.value}</p>}
-                <item.icon className={`w-5 h-5 mx-auto ${item.color} mb-1`} />
-                <div className="text-xs text-muted-foreground">{item.label}</div>
+                <div className="text-xs text-muted-foreground font-medium">{item.label}</div>
               </CardContent>
             </Card>
           ))}
@@ -142,17 +144,22 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
 
         {/* Pending Review */}
         <h2 className="font-heading text-lg font-semibold mb-3">{t('adminDashboard.pendingReview')}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-8">
           {[
             { value: stats.pendingVerifications, label: t('adminDashboard.verifications'), icon: UserCheck, color: 'text-info', href: '/admin/verifications' },
             { value: stats.pendingDoctors, label: t('adminDashboard.pendingDoctors'), icon: Stethoscope, color: 'text-success', href: '/admin/doctors' },
             { value: stats.pendingResidents, label: t('adminDashboard.pendingResidents'), icon: GraduationCap, color: 'text-accent', href: '/admin/residents' },
           ].map((item, i) => (
-            <Card key={i} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(item.href)}>
-              <CardContent className="p-4 text-center">
+            <Card key={i} className="cursor-pointer hover:shadow-md transition-all rounded-xl" onClick={() => navigate(item.href)}>
+              <CardContent className="p-4 sm:p-5 text-center relative">
+                {!isLoading && item.value > 0 && (
+                  <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+                )}
+                <div className={`w-10 h-10 rounded-xl bg-muted flex items-center justify-center mx-auto mb-2.5`}>
+                  <item.icon className={`w-5 h-5 ${item.color}`} />
+                </div>
                 {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className={`text-3xl font-bold ${item.color} mb-1`}>{item.value}</p>}
-                <item.icon className={`w-5 h-5 mx-auto ${item.color} mb-1`} />
-                <div className="text-xs text-muted-foreground">{item.label}</div>
+                <div className="text-xs text-muted-foreground font-medium">{item.label}</div>
               </CardContent>
             </Card>
           ))}
@@ -168,23 +175,24 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
                 return (
                   <Card 
                     key={mod.id}
-                    className={`cursor-pointer hover:shadow-lg transition-all hover:border-primary/50 group border-l-4 ${mod.borderColor}`}
+                    className="cursor-pointer hover:shadow-lg transition-all group rounded-xl overflow-hidden"
                     onClick={() => navigate(mod.href)}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className={`w-10 h-10 rounded-lg bg-muted flex items-center justify-center ${mod.color}`}>
+                    <div className={`h-1 ${mod.borderColor.replace('border-l-', 'bg-')}/30`} />
+                    <CardContent className="p-4 sm:p-5">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className={`w-11 h-11 rounded-xl bg-muted flex items-center justify-center ${mod.color}`}>
                           <Icon className="w-5 h-5" />
                         </div>
                         <div className="flex items-center gap-2">
                           {mod.badge && mod.badge > 0 ? (
-                            <Badge variant="destructive" className="text-xs">{mod.badge}</Badge>
+                            <Badge variant="destructive" className="text-xs animate-pulse">{mod.badge}</Badge>
                           ) : null}
                           <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                         </div>
                       </div>
-                      <CardTitle className="text-base mb-0.5">{mod.title}</CardTitle>
-                      <CardDescription className="text-xs">{mod.desc}</CardDescription>
+                      <CardTitle className="text-sm sm:text-base mb-1">{mod.title}</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm">{mod.desc}</CardDescription>
                     </CardContent>
                   </Card>
                 );

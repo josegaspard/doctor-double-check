@@ -56,11 +56,12 @@ export function DoctorStatsGrid({ recordingsCount, vaultFilesCount, rating }: Pr
           return (
             <Card
               key={stat.label}
-              className={`min-w-[130px] snap-center flex-shrink-0 sm:min-w-0 sm:flex-shrink hover:shadow-md transition-shadow ${stat.onClick ? 'cursor-pointer' : ''}`}
+              className={`min-w-[130px] snap-center flex-shrink-0 sm:min-w-0 sm:flex-shrink hover:shadow-md transition-all overflow-hidden ${stat.onClick ? 'cursor-pointer' : ''}`}
               onClick={stat.onClick}
             >
+              <div className={`h-1 bg-${stat.color}/30`} />
               <CardContent className="p-3 sm:p-4 lg:p-5">
-                <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-${stat.color}/10 flex items-center justify-center mb-2`}>
+                <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-${stat.color}/10 flex items-center justify-center mb-2`}>
                   <Icon className={`w-4.5 h-4.5 sm:w-5 sm:h-5 text-${stat.color}`} />
                 </div>
                 <p className="text-xl sm:text-2xl font-bold text-foreground leading-none">{stat.value}</p>

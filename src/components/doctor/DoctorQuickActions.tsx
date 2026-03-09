@@ -71,12 +71,13 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
         return (
           <Card
             key={action.title}
-            className={`${disabled ? 'opacity-50 pointer-events-none' : `hover:shadow-md transition-all cursor-pointer border-l-[3px] border-l-${action.color}/40`}`}
+            className={`overflow-hidden ${disabled ? 'opacity-50 pointer-events-none' : 'hover:shadow-md transition-all cursor-pointer'}`}
             onClick={() => !disabled && action.onClick()}
           >
+            <div className={`h-1 bg-${action.color}/30`} />
             <CardContent className="p-3 sm:p-5">
               <div className="flex items-center gap-3 sm:items-start sm:gap-4">
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-${action.color}/10 flex items-center justify-center flex-shrink-0`}>
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-${action.color}/10 flex items-center justify-center flex-shrink-0`}>
                   <Icon className={`w-5 h-5 sm:w-6 sm:h-6 text-${action.color}`} />
                 </div>
                 <div className="flex-1 min-w-0">
