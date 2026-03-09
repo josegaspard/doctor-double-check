@@ -370,9 +370,9 @@ export function TransactionHistory() {
               <div className="flex items-start gap-2 p-3 bg-info/10 border border-info/20 rounded-lg">
                 <AlertCircle className="w-4 h-4 text-info shrink-0 mt-0.5" />
                 <div className="text-xs text-muted-foreground space-y-1">
-                  <p>Si pagaste con tarjeta, el reembolso se procesará directamente a tu tarjeta.</p>
-                  <p>Si no, se te pedirá registrar tu cuenta bancaria y el proceso tarda hasta 15 días hábiles.</p>
-                  <p>Tu solicitud será revisada por el equipo administrativo.</p>
+                  <p>{t('wallet.refundCardNote')}</p>
+                  <p>{t('wallet.refundBankNote')}</p>
+                  <p>{t('wallet.refundAdminNote')}</p>
                 </div>
               </div>
             </div>
