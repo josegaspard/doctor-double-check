@@ -523,8 +523,8 @@ export default function Vault() {
             {/* Drop zone style upload button */}
             <button
               onClick={() => {
-                if (!description.trim()) {
-                  toast.error('Por favor, añade una descripción antes de seleccionar el archivo');
+              if (!description.trim()) {
+                  toast.error(t('ads.addDescFirst'));
                   return;
                 }
                 if (isStorageFull) {
