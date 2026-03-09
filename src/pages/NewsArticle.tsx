@@ -163,6 +163,9 @@ export default function NewsArticle() {
     });
 
     setComments(rootComments);
+    // Collapse all threads by default (Instagram-style)
+    const threadsWithReplies = rootComments.filter(c => (c.replies?.length || 0) > 0).map(c => c.id);
+    setCollapsedThreads(new Set(threadsWithReplies));
   };
 
   const handleSubmitComment = async () => {
