@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useFooterLinks } from '@/hooks/useFooterLinks';
 import { useSocialLinks } from '@/hooks/useSiteSettings';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAdConfig } from '@/hooks/useAds';
 import { Facebook, Instagram, Twitter, Linkedin, Youtube } from 'lucide-react';
 import logoWhite from '@/assets/logo-medical-masters-white.png';
 
