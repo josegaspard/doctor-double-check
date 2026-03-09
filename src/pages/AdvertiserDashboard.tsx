@@ -214,7 +214,7 @@ export default function AdvertiserDashboard() {
   const deleteCreative = async (id: string) => {
     await supabase.from('ad_creatives' as any).delete().eq('id', id);
     setCreatives(c => c.filter(cr => cr.id !== id));
-    toast.success('Creativo eliminado');
+    toast.success(t('ads.creativeDeleted'));
   };
 
   const payCampaign = async (campaignId: string, amount: number) => {
