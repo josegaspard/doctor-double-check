@@ -667,7 +667,7 @@ export default function Vault() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Share2 className="w-5 h-5 text-primary" />
-                Gestionar Permisos
+                {t('ads.managePermissions')}
               </DialogTitle>
               <DialogDescription className="truncate">{currentPermissionFile?.name}</DialogDescription>
             </DialogHeader>
