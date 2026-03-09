@@ -219,11 +219,11 @@ export function ChatHeader({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 sm:h-9 sm:w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
+                className="h-10 w-10 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
                 onClick={() => navigate(`/prescriptions/new?patientId=${patientId}&patientName=${encodeURIComponent(patientName)}${consultationId ? `&consultationId=${consultationId}` : ''}&sessionId=${session.id}`)}
                 title={t('common.createPrescription')}
               >
-                <FileText className="w-4 h-4" />
+                <FileText className="w-5 h-5" />
               </Button>
             );
           })()}
