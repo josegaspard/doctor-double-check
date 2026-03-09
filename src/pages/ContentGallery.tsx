@@ -59,11 +59,13 @@ interface DoctorContent {
 
 // --- Extracted sub-components ---
 
-const typeConfig: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
-  video: { icon: Video, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Video' },
-  pdf: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'PDF' },
-  image: { icon: ImageIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Imagen' },
-};
+function getTypeConfig(t: (path: string) => string): Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> {
+  return {
+    video: { icon: Video, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Video' },
+    pdf: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'PDF' },
+    image: { icon: ImageIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: t('ads.contentImage') },
+  };
+}
 
 function ContentCardThumbnail({
   content,
