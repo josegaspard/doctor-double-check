@@ -212,7 +212,7 @@ export default function Doctors() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, selectedSpecialty]);
+  }, [debouncedSearch, selectedSpecialty, locationFilter]);
 
   useEffect(() => {
     fetchDoctors();
