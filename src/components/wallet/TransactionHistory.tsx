@@ -349,7 +349,7 @@ export function TransactionHistory() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <RefreshCcw className="w-5 h-5 text-destructive" />
-              Solicitar Reembolso
+              {t('wallet.refundTitle')}
             </DialogTitle>
           </DialogHeader>
           {selectedTx && (
