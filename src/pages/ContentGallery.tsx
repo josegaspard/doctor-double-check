@@ -116,10 +116,18 @@ function ContentCardThumbnail({
 }) {
   const config = typeConfig[content.type] || typeConfig.pdf;
   const TypeIcon = config.icon;
+  const isPdf = content.type === 'pdf';
 
   return (
     <div className="relative aspect-video bg-muted/40 overflow-hidden">
-      {thumbUrl ? (
+      {isPdf ? (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-red-500/10 to-red-600/5">
+          <div className="w-16 h-20 rounded-lg bg-red-500 flex flex-col items-center justify-center shadow-md">
+            <FileText className="w-7 h-7 text-white mb-0.5" />
+            <span className="text-white text-xs font-bold tracking-wider">PDF</span>
+          </div>
+        </div>
+      ) : thumbUrl ? (
         <img
           src={thumbUrl}
           alt={content.title}
