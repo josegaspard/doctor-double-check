@@ -288,12 +288,12 @@ export function LiveConsultationBooking({
               {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Procesando...
+                  {t('ads.processing')}
                 </>
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  Pagar ${consultationFee} MXN y Reservar
+                  {t('ads.payAndBook')} ${consultationFee} MXN
                 </>
               )}
             </Button>
