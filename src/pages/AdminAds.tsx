@@ -359,7 +359,7 @@ export default function AdminAds() {
                             )}
                             {campaign.status === 'paused' && (
                               <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => updateCampaignStatus(campaign.id, 'active')}>
-                                <Play className="w-3.5 h-3.5" /> Reactivar
+                                <Play className="w-3.5 h-3.5" /> {t('ads.reactivate')}
                               </Button>
                             )}
                           </div>
