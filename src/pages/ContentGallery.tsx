@@ -85,12 +85,21 @@ function ContentCardThumbnail({
   return (
     <div className="relative aspect-video bg-muted/40 overflow-hidden">
       {isPdf ? (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-red-500/10 to-red-600/5">
-          <div className="w-16 h-20 rounded-lg bg-red-500 flex flex-col items-center justify-center shadow-md">
-            <FileText className="w-7 h-7 text-white mb-0.5" />
-            <span className="text-white text-xs font-bold tracking-wider">PDF</span>
+        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-destructive/10 to-destructive/5">
+          <div className="w-16 h-20 rounded-lg bg-destructive flex flex-col items-center justify-center shadow-md">
+            <FileText className="w-7 h-7 text-destructive-foreground mb-0.5" />
+            <span className="text-destructive-foreground text-xs font-bold tracking-wider">PDF</span>
           </div>
         </div>
+      ) : thumbUrl && content.type === 'video' ? (
+        <video
+          src={thumbUrl}
+          muted
+          preload="metadata"
+          playsInline
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          onLoadedMetadata={(e) => { (e.target as HTMLVideoElement).currentTime = 0.5; }}
+        />
       ) : thumbUrl ? (
         <img
           src={thumbUrl}
