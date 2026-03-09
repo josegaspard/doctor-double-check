@@ -424,7 +424,7 @@ export default function Vault() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <HardDrive className={`w-4 h-4 ${isStorageFull ? 'text-destructive' : isStorageNearFull ? 'text-warning' : 'text-primary'}`} />
-                <span className="text-sm font-medium text-foreground">Almacenamiento</span>
+                <span className="text-sm font-medium text-foreground">{t('ads.storage')}</span>
               </div>
               <span className="text-xs text-muted-foreground">
                 {formatStorageSize(storageUsed)} de {formatStorageSize(storageLimit)}
