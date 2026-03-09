@@ -263,7 +263,7 @@ export function TransactionHistory() {
                       <p className="font-medium text-xs sm:text-sm truncate">{tx.description}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-[10px] sm:text-xs text-muted-foreground">
-                          {format(tx.createdAt, 'dd MMM, HH:mm', { locale: es })}
+                          {format(tx.createdAt, 'dd MMM, HH:mm', { locale: dateLocale })}
                         </span>
                         <span className="hidden sm:inline">{getTypeBadge(tx.type)}</span>
                         {pendingRefundTxIds.has(tx.id) && (
