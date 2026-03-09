@@ -32,6 +32,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { useWallet } from '@/contexts/WalletContext';
 import { usePurchases } from '@/hooks/usePurchases';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
