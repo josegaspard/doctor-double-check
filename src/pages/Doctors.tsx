@@ -106,21 +106,21 @@ interface DoctorRow {
 }
 
 const SPECIALTIES = [
-  'Todas',
-  'Cardiología',
-  'Dermatología',
-  'Endocrinología',
-  'Gastroenterología',
-  'Ginecología',
-  'Medicina General',
-  'Medicina Interna',
-  'Neurología',
-  'Oftalmología',
-  'Oncología',
-  'Ortopedia',
-  'Pediatría',
-  'Psiquiatría',
-  'Urología',
+  { value: 'Todas', labelKey: 'doctors.specAll' },
+  { value: 'Cardiología', labelKey: 'doctors.specCardiology' },
+  { value: 'Dermatología', labelKey: 'doctors.specDermatology' },
+  { value: 'Endocrinología', labelKey: 'doctors.specEndocrinology' },
+  { value: 'Gastroenterología', labelKey: 'doctors.specGastroenterology' },
+  { value: 'Ginecología', labelKey: 'doctors.specGynecology' },
+  { value: 'Medicina General', labelKey: 'doctors.specGeneralMedicine' },
+  { value: 'Medicina Interna', labelKey: 'doctors.specInternalMedicine' },
+  { value: 'Neurología', labelKey: 'doctors.specNeurology' },
+  { value: 'Oftalmología', labelKey: 'doctors.specOphthalmology' },
+  { value: 'Oncología', labelKey: 'doctors.specOncology' },
+  { value: 'Ortopedia', labelKey: 'doctors.specOrthopedics' },
+  { value: 'Pediatría', labelKey: 'doctors.specPediatrics' },
+  { value: 'Psiquiatría', labelKey: 'doctors.specPsychiatry' },
+  { value: 'Urología', labelKey: 'doctors.specUrology' },
 ];
 
 const DOCTORS_PER_PAGE = 20;
