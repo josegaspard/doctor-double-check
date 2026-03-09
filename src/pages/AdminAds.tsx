@@ -233,10 +233,10 @@ export default function AdminAds() {
           <TabsContent value="dashboard">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               {[
-                { label: 'Ingresos Totales', value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-success' },
-                { label: 'Campañas Activas', value: campaigns.filter(c => c.status === 'active').length, icon: Megaphone, color: 'text-primary' },
-                { label: 'Impresiones', value: totalImpressions.toLocaleString(), icon: Eye, color: 'text-info' },
-                { label: 'Clics', value: totalClicks.toLocaleString(), icon: MousePointerClick, color: 'text-warning' },
+                { label: t('ads.totalRevenue'), value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-success' },
+                { label: t('ads.activeCampaigns'), value: campaigns.filter(c => c.status === 'active').length, icon: Megaphone, color: 'text-primary' },
+                { label: t('ads.impressions'), value: totalImpressions.toLocaleString(), icon: Eye, color: 'text-info' },
+                { label: t('ads.clicks'), value: totalClicks.toLocaleString(), icon: MousePointerClick, color: 'text-warning' },
               ].map((stat, i) => (
                 <Card key={i}><CardContent className="p-4 text-center">
                   <stat.icon className={`w-6 h-6 mx-auto mb-2 ${stat.color}`} />
