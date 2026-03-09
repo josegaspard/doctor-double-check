@@ -37,8 +37,34 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
+
+/** Translate DB-stored Spanish descriptions to English */
+function translateDescription(desc: string, lang: string): string {
+  if (lang === 'es') return desc;
+  // Pattern-based translation for known DB descriptions
+  const patterns: [RegExp, string | ((m: RegExpMatchArray) => string)][] = [
+    [/^Consulta médica por chat$/, 'Medical chat consultation'],
+    [/^Ganancia por consulta médica$/, 'Medical consultation earning'],
+    [/^Recarga via Stripe - (.+)$/, (m) => `Top-up via Stripe - ${m[1]}`],
+    [/^Recarga de saldo$/, 'Balance top-up'],
+    [/^Expansión de almacenamiento: (.+)$/, (m) => `Storage expansion: ${m[1]}`],
+    [/^Grabación: (.+)$/, (m) => `Recording: ${m[1]}`],
+    [/^Solicitud aprobada: (.+)$/, (m) => `Approved request: ${m[1]}`],
+    [/^Segunda Opinión con (.+)$/, (m) => `Second Opinion with ${m[1]}`],
+    [/^Bono por código de referido$/, 'Referral code bonus'],
+    [/^Bono por referido exitoso$/, 'Successful referral bonus'],
+    [/^Expansión de almacenamiento: (.+?) \(Stripe\)$/, (m) => `Storage expansion: ${m[1]} (Stripe)`],
+  ];
+  for (const [re, replacement] of patterns) {
+    const match = desc.match(re);
+    if (match) {
+      return typeof replacement === 'function' ? replacement(match) : replacement;
+    }
+  }
+  return desc;
+}
 
 type FilterType = 'all' | 'topup' | 'purchase' | 'earning' | 'refund';
 
