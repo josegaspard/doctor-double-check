@@ -378,7 +378,7 @@ export function TransactionHistory() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundDialog(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setRefundDialog(false)}>{t('common.cancel')}</Button>
             <Button 
               onClick={handleRequestRefund}
               disabled={isSubmittingRefund || !refundReason.trim()}
