@@ -440,17 +440,17 @@ export default function DoctorAvailabilityPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>{language === 'es' ? 'Fecha' : 'Date'}</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs sm:text-sm">{language === 'es' ? 'Fecha' : 'Date'}</Label>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left font-normal">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {format(formData.date, 'PPP', { locale: language === 'es' ? es : enUS })}
+                          <Button variant="outline" className="w-full justify-start text-left font-normal h-9 sm:h-10 text-xs sm:text-sm">
+                            <CalendarIcon className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                            <span className="truncate">{format(formData.date, 'd MMM yyyy', { locale: language === 'es' ? es : enUS })}</span>
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0" align="start" side="bottom">
                           <Calendar
                             mode="single"
                             selected={formData.date}
@@ -462,32 +462,44 @@ export default function DoctorAvailabilityPage() {
                       </Popover>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="time">{language === 'es' ? 'Hora' : 'Time'}</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="time" className="text-xs sm:text-sm">{language === 'es' ? 'Hora' : 'Time'}</Label>
                       <Input
                         id="time"
                         type="time"
                         value={formData.time}
                         onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                        className="h-9 sm:h-10 text-xs sm:text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">{language === 'es' ? 'Duración (minutos)' : 'Duration (minutes)'}</Label>
-                    <select
-                      id="duration"
-                      value={String(formData.duration)}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, duration: parseInt(e.target.value, 10) }))}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      <option value="15">15 min</option>
-                      <option value="30">30 min</option>
-                      <option value="45">45 min</option>
-                      <option value="60">{language === 'es' ? '1 hora' : '1 hour'}</option>
-                      <option value="90">{language === 'es' ? '1.5 horas' : '1.5 hours'}</option>
-                      <option value="120">{language === 'es' ? '2 horas' : '2 hours'}</option>
-                    </select>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">{language === 'es' ? 'Duración' : 'Duration'}</Label>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                      {[
+                        { value: 15, label: '15m' },
+                        { value: 30, label: '30m' },
+                        { value: 45, label: '45m' },
+                        { value: 60, label: '1h' },
+                        { value: 90, label: '1.5h' },
+                        { value: 120, label: '2h' },
+                      ].map(d => (
+                        <button
+                          key={d.value}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, duration: d.value }))}
+                          className={cn(
+                            'h-9 rounded-md border text-xs font-medium transition-colors',
+                            formData.duration === d.value
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'border-border text-foreground hover:border-primary/40'
+                          )}
+                        >
+                          {d.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
