@@ -542,7 +542,7 @@ export default function AdvertiserDashboard() {
                       </div>
                       <div className="rounded-lg bg-muted/50 p-2 text-center">
                         <p className="text-sm font-bold text-warning">{stats.clicks}</p>
-                        <p className="text-[10px] text-muted-foreground">Clics</p>
+                        <p className="text-[10px] text-muted-foreground">{t('ads.clicks')}</p>
                       </div>
                       <div className="rounded-lg bg-muted/50 p-2 text-center">
                         <p className="text-sm font-bold text-success">{ctr}%</p>
