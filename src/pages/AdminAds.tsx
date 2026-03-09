@@ -348,7 +348,7 @@ export default function AdminAds() {
                                   <CheckCircle className="w-3.5 h-3.5" /> {t('ads.approve')}
                                 </Button>
                                 <Button size="sm" variant="destructive" className="gap-1 text-xs" onClick={() => updateCampaignStatus(campaign.id, 'rejected')}>
-                                  <XCircle className="w-3.5 h-3.5" /> Rechazar
+                                  <XCircle className="w-3.5 h-3.5" /> {t('ads.reject')}
                                 </Button>
                               </>
                             )}
