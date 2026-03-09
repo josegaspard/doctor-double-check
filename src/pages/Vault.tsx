@@ -362,7 +362,7 @@ export default function Vault() {
         toast.error(result.error || t('ads.accessGrantError'));
       }
     } catch (error) {
-      toast.error('Error al dar acceso');
+      toast.error(t('ads.accessGrantError'));
     } finally {
       setGrantingAccess(null);
     }
