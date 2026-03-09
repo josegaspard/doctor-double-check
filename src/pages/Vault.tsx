@@ -779,9 +779,9 @@ export default function Vault() {
                     ) : availableDoctors.length === 0 ? (
                       <div className="text-center py-6 text-muted-foreground text-sm">
                         <Stethoscope className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                        <p className="font-medium">No hay médicos disponibles</p>
+                        <p className="font-medium">{t('ads.noDocsAvailable')}</p>
                         <p className="text-xs mt-1">
-                          Suscríbete a un médico o inicia una orientación médica para poder compartir archivos.
+                          {t('ads.noDocsAvailableDesc')}
                         </p>
                       </div>
                     ) : (
