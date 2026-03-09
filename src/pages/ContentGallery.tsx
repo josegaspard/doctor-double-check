@@ -28,8 +28,11 @@ import {
   ShoppingBag,
   Sparkles,
   DollarSign,
+  Wallet,
+  AlertCircle,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { useWallet } from '@/contexts/WalletContext';
 import { usePurchases } from '@/hooks/usePurchases';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
@@ -107,11 +110,13 @@ function ContentCardThumbnail({
   content,
   thumbUrl,
   locked,
+  showInsufficientHint,
   t,
 }: {
   content: DoctorContent;
   thumbUrl: string | null;
   locked: boolean;
+  showInsufficientHint?: boolean;
   t: any;
 }) {
   const config = typeConfig[content.type] || typeConfig.pdf;
@@ -151,12 +156,18 @@ function ContentCardThumbnail({
         </Badge>
       </div>
 
-      {/* Price badge */}
+      {/* Price badge with wallet awareness */}
       {content.price > 0 && (
-        <div className="absolute bottom-2 left-2">
+        <div className="absolute bottom-2 left-2 flex gap-1">
           <Badge className="gap-1 text-xs bg-primary text-primary-foreground">
             <DollarSign className="w-3 h-3" />${content.price}
           </Badge>
+          {showInsufficientHint && (
+            <Badge variant="outline" className="gap-1 text-xs bg-background/90 text-foreground border-border backdrop-blur-sm">
+              <AlertCircle className="w-3 h-3 text-destructive" />
+              Saldo insuficiente
+            </Badge>
+          )}
         </div>
       )}
 
@@ -251,6 +262,7 @@ export default function ContentGallery() {
   const { user } = useAuth();
   const { language, t } = useLanguage();
   const { getSubscription } = useSubscriptions();
+  const { balance } = useWallet();
   const { purchases } = usePurchases();
   const locale = language === 'es' ? es : enUS;
 
@@ -525,7 +537,7 @@ export default function ContentGallery() {
                     setPreviewContent(content);
                   }}
                 >
-                  <ContentCardThumbnail content={content} thumbUrl={thumbUrl} locked={locked} t={t} />
+                  <ContentCardThumbnail content={content} thumbUrl={thumbUrl} locked={locked} showInsufficientHint={content.price > 0 && balance < content.price && !locked} t={t} />
                   <ContentCardBody content={content} locale={locale} />
                 </Card>
               );

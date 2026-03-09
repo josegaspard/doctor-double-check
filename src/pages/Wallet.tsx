@@ -127,11 +127,38 @@ export default function Wallet() {
           {t('wallet.title')}
         </h1>
 
+        {/* Explanatory hero banner */}
+        <div className="mb-4 sm:mb-6 p-4 sm:p-5 rounded-xl bg-muted/50 border border-border">
+          <p className="text-sm text-foreground font-medium mb-3">
+            Tu billetera te permite comprar grabaciones, contenido premium y consultas de forma instantánea sin necesidad de ingresar tu tarjeta cada vez.
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="flex flex-col items-center text-center gap-1.5">
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-xs text-foreground font-medium">Compras instantáneas</span>
+            </div>
+            <div className="flex flex-col items-center text-center gap-1.5">
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                <CreditCard className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-xs text-foreground font-medium">Sin tarjeta cada vez</span>
+            </div>
+            <div className="flex flex-col items-center text-center gap-1.5">
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                <WalletIcon className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-xs text-foreground font-medium">Historial completo</span>
+            </div>
+          </div>
+        </div>
+
         <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
           {/* Balance Card */}
           <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground relative overflow-hidden">
             <CardContent className="p-4 sm:p-6">
-              <p className="text-primary-foreground/80 text-xs sm:text-sm mb-1">{t('wallet.balance')}</p>
+              <p className="text-primary-foreground text-xs sm:text-sm mb-1 font-medium">{t('wallet.balance')}</p>
               <motion.p
                 key={balance}
                 initial={{ scale: 1 }}
@@ -141,7 +168,7 @@ export default function Wallet() {
               >
                 ${balance.toLocaleString()} MXN
               </motion.p>
-              <p className="text-primary-foreground/60 text-xs mt-2 truncate">{user?.name}</p>
+              <p className="text-primary-foreground text-xs mt-2 truncate">{user?.name}</p>
               {role === 'resident' && (
                 <div className="mt-2 sm:mt-3 px-2 py-1 bg-white/20 rounded-full text-xs inline-block">
                   🎓 {t('wallet.residentDiscount')}

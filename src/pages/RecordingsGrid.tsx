@@ -221,14 +221,21 @@ export default function RecordingsGrid() {
 
         {/* No balance CTA */}
         {isAuthenticated && (role === 'patient' || role === 'resident') && balance === 0 && (
-          <div className="mb-4 p-3 rounded-lg bg-primary/5 border border-primary/15 flex items-center gap-3">
-            <Wallet className="w-5 h-5 text-primary flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">No tienes saldo</p>
-              <p className="text-xs text-muted-foreground">Recarga tu billetera para comprar contenido premium</p>
+          <div className="mb-4 p-4 rounded-xl bg-muted border border-border">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Wallet className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">Para comprar contenido premium necesitas saldo en tu billetera</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Recarga tu billetera y compra al instante sin ingresar tu tarjeta cada vez.</p>
+              </div>
             </div>
-            <Link to="/wallet">
-              <Button size="sm" variant="default">Recargar</Button>
+            <Link to="/wallet" className="block mt-3">
+              <Button className="w-full sm:w-auto gap-2">
+                <Wallet className="w-4 h-4" />
+                Recargar ahora
+              </Button>
             </Link>
           </div>
         )}
