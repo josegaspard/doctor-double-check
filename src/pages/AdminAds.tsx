@@ -163,7 +163,7 @@ export default function AdminAds() {
   const toggleCreativeActive = async (id: string, is_active: boolean) => {
     await supabase.from('ad_creatives' as any).update({ is_active } as any).eq('id', id);
     setCampaignCreatives(c => c.map(cr => cr.id === id ? { ...cr, is_active } : cr));
-    toast.success(is_active ? 'Creativo activado' : 'Creativo desactivado');
+    toast.success(is_active ? t('ads.creativeActivated') : t('ads.creativeDeactivated'));
   };
 
   const addPlacement = async () => {
