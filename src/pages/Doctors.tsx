@@ -395,12 +395,12 @@ export default function Doctors() {
 
         {/* City filter chips */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
-          {['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'].map(city => (
+        {['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'].map(city => (
             <button
               key={city}
-              onClick={() => setSearchQuery(searchQuery === city ? '' : city)}
+              onClick={() => setLocationFilter(locationFilter === city ? '' : city)}
               className={`flex-shrink-0 snap-start flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                searchQuery === city
+                locationFilter === city
                   ? 'bg-accent text-accent-foreground border-accent'
                   : 'bg-muted/50 text-muted-foreground border-border hover:border-accent/50'
               }`}

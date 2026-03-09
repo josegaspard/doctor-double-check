@@ -137,6 +137,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <ScrollToTop />
                 <AuthenticatedProviders>
                   <Suspense fallback={<PageLoader />}>
                     <Routes>

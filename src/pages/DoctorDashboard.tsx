@@ -94,7 +94,7 @@ export default function DoctorDashboard() {
             <DoctorQuickActions isApproved={isApproved} userId={user?.id} canPublishNews={canPublishNews} />
 
             {/* Section 3: Finance & Communications - side by side on desktop */}
-            <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+            <div className="grid gap-3 lg:grid-cols-2">
               <EarningsCard />
               <EmailStatsCard />
             </div>

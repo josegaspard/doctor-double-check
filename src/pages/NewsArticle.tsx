@@ -328,15 +328,13 @@ export default function NewsArticle() {
         {hasReplies && !isCollapsed && (
           <div>
             {comment.replies!.map(reply => renderComment(reply, depth + 1))}
-            {comment.replies!.length > 2 && !collapsedThreads.has(comment.id) && (
-              <button
-                className="ml-10 sm:ml-[3.25rem] text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors mb-1"
-                onClick={() => toggleThread(comment.id)}
-              >
-                <ChevronDown className="w-3 h-3 inline mr-1" />
-                Ocultar respuestas
-              </button>
-            )}
+            <button
+              className="ml-10 sm:ml-[3.25rem] text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors mb-1"
+              onClick={() => toggleThread(comment.id)}
+            >
+              <ChevronDown className="w-3 h-3 inline mr-1 rotate-180" />
+              Ocultar respuestas
+            </button>
           </div>
         )}
       </div>
