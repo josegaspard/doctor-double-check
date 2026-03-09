@@ -225,11 +225,21 @@ export default function Doctors() {
   const fetchDoctors = async () => {
     setIsLoading(true);
     try {
+      // Map city chip labels to location search terms
+      const locationSearchMap: Record<string, string> = {
+        'CDMX': 'Ciudad de M',
+        'Mérida': 'rida',
+        'Cancún': 'Canc',
+        'Querétaro': 'quer',
+      };
+      const locationSearch = locationFilter ? (locationSearchMap[locationFilter] || locationFilter) : '';
+
       const { data, error } = await supabase.rpc('get_doctors_paginated', {
         p_page: currentPage,
         p_page_size: DOCTORS_PER_PAGE,
         p_search: debouncedSearch,
         p_specialty: selectedSpecialty === 'Todas' ? '' : selectedSpecialty,
+        p_location: locationSearch,
       });
 
       if (error) throw error;
