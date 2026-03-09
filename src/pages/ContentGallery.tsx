@@ -59,11 +59,13 @@ interface DoctorContent {
 
 // --- Extracted sub-components ---
 
-const typeConfig: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
-  video: { icon: Video, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Video' },
-  pdf: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'PDF' },
-  image: { icon: ImageIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Imagen' },
-};
+function getTypeConfig(t: (path: string) => string): Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> {
+  return {
+    video: { icon: Video, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Video' },
+    pdf: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'PDF' },
+    image: { icon: ImageIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: t('ads.contentImage') },
+  };
+}
 
 function ContentCardThumbnail({
   content,
@@ -78,6 +80,7 @@ function ContentCardThumbnail({
   showInsufficientHint?: boolean;
   t: any;
 }) {
+  const typeConfig = getTypeConfig(t);
   const config = typeConfig[content.type] || typeConfig.pdf;
   const TypeIcon = config.icon;
   const isPdf = content.type === 'pdf';
@@ -133,7 +136,7 @@ function ContentCardThumbnail({
           {showInsufficientHint && (
             <Badge variant="outline" className="gap-1 text-xs bg-background/90 text-foreground border-border backdrop-blur-sm">
               <AlertCircle className="w-3 h-3 text-destructive" />
-              Saldo insuficiente
+              {t('ads.insufficientBalance')}
             </Badge>
           )}
         </div>
@@ -280,18 +283,20 @@ export default function ContentGallery() {
 
       setContents(mapped);
 
-      // Resolve signed URLs for content without thumbnail_url (skip PDFs)
-      const needThumb = mapped.filter(c => !c.thumbnail_url && c.type !== 'pdf');
+      // Resolve signed URLs for thumbnails and content (skip PDFs)
+      const needThumb = mapped.filter(c => c.type !== 'pdf');
 
       if (needThumb.length > 0) {
         const thumbResults = await Promise.all(
           needThumb.map(async (c) => {
-            if (c.file_url.startsWith('http')) {
-              return { id: c.id, url: c.file_url };
+            // Prefer thumbnail_url, fall back to file_url
+            const pathToSign = c.thumbnail_url || c.file_url;
+            if (pathToSign.startsWith('http')) {
+              return { id: c.id, url: pathToSign };
             }
             const { data: sd } = await supabase.storage
               .from('doctor-content')
-              .createSignedUrl(c.file_url, 60 * 60);
+              .createSignedUrl(pathToSign, 60 * 60);
             return { id: c.id, url: sd?.signedUrl || null };
           })
         );
@@ -353,15 +358,15 @@ export default function ContentGallery() {
           <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
             <TabsTrigger value="all" className="gap-1.5 text-xs sm:text-sm">
               <Library className="w-3.5 h-3.5" />
-              {language === 'es' ? 'Todo' : 'All'}
+              {t('ads.contentAll')}
             </TabsTrigger>
             <TabsTrigger value="purchased" className="gap-1.5 text-xs sm:text-sm">
               <ShoppingBag className="w-3.5 h-3.5" />
-              {language === 'es' ? 'Comprados' : 'Purchased'}
+              {t('ads.contentPurchased')}
             </TabsTrigger>
             <TabsTrigger value="new" className="gap-1.5 text-xs sm:text-sm">
               <Sparkles className="w-3.5 h-3.5" />
-              {language === 'es' ? 'Nuevos' : 'New'}
+              {t('ads.contentNew')}
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -382,10 +387,10 @@ export default function ContentGallery() {
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-2 pb-1">
               {[
-                { value: 'all', label: language === 'es' ? 'Todos' : 'All', icon: Globe },
+                { value: 'all', label: t('ads.contentAll'), icon: Globe },
                 { value: 'video', label: 'Videos', icon: Video },
                 { value: 'pdf', label: 'PDFs', icon: FileText },
-                { value: 'image', label: language === 'es' ? 'Imágenes' : 'Images', icon: ImageIcon },
+                { value: 'image', label: t('ads.contentImages'), icon: ImageIcon },
               ].map(chip => {
                 const active = typeFilter === chip.value;
                 return (
@@ -451,7 +456,7 @@ export default function ContentGallery() {
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
             {filteredContents.map(content => {
               const locked = !canViewSubscriberContent(content);
-              const thumbUrl = content.thumbnail_url || signedThumbs[content.id] || null;
+              const thumbUrl = signedThumbs[content.id] || content.thumbnail_url || null;
 
               return (
                 <Card

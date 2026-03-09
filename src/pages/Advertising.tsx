@@ -19,12 +19,10 @@ import {
 export default function Advertising() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const { config } = useAdConfig();
   const { placements } = useAdPlacements();
   const [budget, setBudget] = useState(5000);
-
-  const es = language === 'es';
 
   const estimatedImpressions = Math.floor((budget / config.cpm_rate) * 1000);
   const estimatedClicks = Math.floor(budget / config.cpc_rate);
@@ -48,22 +46,20 @@ export default function Advertising() {
             <Megaphone className="w-8 h-8 text-primary" />
           </div>
           <h1 className="font-heading text-2xl sm:text-4xl font-bold text-foreground mb-3">
-            {es ? 'Publicita en Medical Masters' : 'Advertise on Medical Masters'}
+            {t('ads.advertiseTitle')}
           </h1>
           <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base">
-            {es
-              ? 'Llega a miles de profesionales de la salud y pacientes con banners inteligentes, segmentados y medibles.'
-              : 'Reach thousands of healthcare professionals and patients with smart, targeted, measurable banners.'}
+            {t('ads.advertiseSubtitle')}
           </p>
         </div>
 
         {/* Benefits */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
           {[
-            { icon: Target, label: es ? 'Segmentación precisa' : 'Precise targeting', desc: es ? 'Por rol, idioma y ubicación' : 'By role, language & location' },
-            { icon: BarChart3, label: es ? 'Métricas en tiempo real' : 'Real-time metrics', desc: es ? 'Impresiones, clics y CTR' : 'Impressions, clicks & CTR' },
-            { icon: Shield, label: es ? 'App Store compliant' : 'App Store compliant', desc: es ? 'Cumple políticas de Google y Apple' : 'Google & Apple policy compliant' },
-            { icon: Zap, label: es ? 'Activación instantánea' : 'Instant activation', desc: es ? 'Paga y tu campaña se activa' : 'Pay and your campaign activates' },
+            { icon: Target, label: t('ads.preciseTargeting'), desc: t('ads.preciseTargetingDesc') },
+            { icon: BarChart3, label: t('ads.realTimeMetrics'), desc: t('ads.realTimeMetricsDesc') },
+            { icon: Shield, label: t('ads.appStoreCompliant'), desc: t('ads.appStoreCompliantDesc') },
+            { icon: Zap, label: t('ads.instantActivation'), desc: t('ads.instantActivationDesc') },
           ].map((b, i) => (
             <Card key={i} className="text-center">
               <CardContent className="p-4">
@@ -80,13 +76,13 @@ export default function Advertising() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Calculator className="w-5 h-5 text-primary" />
-              {es ? 'Calculadora de Presupuesto' : 'Budget Calculator'}
+              {t('ads.budgetCalculator')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
               <Label className="text-sm font-medium mb-2 block">
-                {es ? 'Presupuesto' : 'Budget'}: <span className="text-primary font-bold">${budget.toLocaleString()} MXN</span>
+                {t('ads.budget').split(' ')[0]}: <span className="text-primary font-bold">${budget.toLocaleString()} MXN</span>
               </Label>
               <Slider
                 value={[budget]}
@@ -107,7 +103,7 @@ export default function Advertising() {
                 <Eye className="w-6 h-6 text-info mx-auto mb-1" />
                 <p className="text-2xl font-bold text-info">{estimatedImpressions.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">
-                  {es ? 'Impresiones estimadas' : 'Estimated impressions'}
+                  {t('ads.estimatedImpressions')}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-1">
                   CPM: ${config.cpm_rate}
@@ -117,7 +113,7 @@ export default function Advertising() {
                 <MousePointerClick className="w-6 h-6 text-warning mx-auto mb-1" />
                 <p className="text-2xl font-bold text-warning">{estimatedClicks.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">
-                  {es ? 'Clics estimados' : 'Estimated clicks'}
+                  {t('ads.estimatedClicksLabel')}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-1">
                   CPC: ${config.cpc_rate}
@@ -132,7 +128,7 @@ export default function Advertising() {
           <div className="mb-10">
             <h2 className="font-heading text-lg font-bold mb-4 flex items-center gap-2">
               <Layout className="w-5 h-5 text-primary" />
-              {es ? 'Espacios Disponibles' : 'Available Placements'}
+              {t('ads.availablePlacements')}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {activePlacements.map(p => (
@@ -164,11 +160,11 @@ export default function Advertising() {
         <div className="text-center">
           <Button size="lg" className="gap-2 text-base px-8" onClick={handleGetStarted}>
             <Megaphone className="w-5 h-5" />
-            {es ? 'Crear mi campaña' : 'Create my campaign'}
+            {t('ads.createMyCampaign')}
             <ArrowRight className="w-4 h-4" />
           </Button>
           <p className="text-xs text-muted-foreground mt-3">
-            {es ? 'Necesitas una cuenta registrada para comenzar' : 'You need a registered account to get started'}
+            {t('ads.needAccount')}
           </p>
         </div>
       </div>

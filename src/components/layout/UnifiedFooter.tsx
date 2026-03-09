@@ -68,7 +68,7 @@ export function UnifiedFooter({ variant }: Props) {
 
   // Inject "Publicidad" link into resources when ads are active
   const resourcesLinks = adConfig.is_active
-    ? [...footerLinks.resources, { label: 'Publicidad', href: '/advertising' }]
+    ? [...footerLinks.resources, { label: t('ads.advertising'), href: '/advertising' }]
     : footerLinks.resources;
   if (variant === 'app') {
     return (

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAdCreative } from '@/hooks/useAds';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
 interface AdBannerProps {
@@ -9,6 +10,7 @@ interface AdBannerProps {
 
 export function AdBanner({ placementName, className }: AdBannerProps) {
   const { creative, isActive, trackImpression, trackClick } = useAdCreative(placementName);
+  const { t } = useLanguage();
   const impressionSent = useRef(false);
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function AdBanner({ placementName, className }: AdBannerProps) {
       )}
       onClick={handleClick}
       role="banner"
-      aria-label={creative.alt_text || 'Publicidad'}
+      aria-label={creative.alt_text || t('ads.adLabel')}
     >
       {isVideo ? (
         <video
@@ -59,7 +61,7 @@ export function AdBanner({ placementName, className }: AdBannerProps) {
 
       {/* App Store compliance label */}
       <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-background/70 text-[10px] font-medium text-muted-foreground backdrop-blur-sm">
-        Publicidad
+        {t('ads.adLabel')}
       </span>
     </div>
   );

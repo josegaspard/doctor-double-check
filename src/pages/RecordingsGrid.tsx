@@ -125,11 +125,11 @@ export default function RecordingsGrid() {
     : false;
 
   const filterOptions: { key: ContentFilter; label: string; icon: React.ReactNode }[] = [
-    { key: 'all', label: 'Todo', icon: <Library className="w-3.5 h-3.5" /> },
-    { key: 'free', label: 'Gratis', icon: <Gift className="w-3.5 h-3.5" /> },
-    { key: 'paid', label: 'De Pago', icon: <Sparkles className="w-3.5 h-3.5" /> },
-    { key: 'purchased', label: 'Comprados', icon: <ShoppingBag className="w-3.5 h-3.5" /> },
-    { key: 'not_purchased', label: 'Sin Comprar', icon: <Lock className="w-3.5 h-3.5" /> },
+    { key: 'all', label: t('ads.filterAll'), icon: <Library className="w-3.5 h-3.5" /> },
+    { key: 'free', label: t('ads.filterFree'), icon: <Gift className="w-3.5 h-3.5" /> },
+    { key: 'paid', label: t('ads.filterPaid'), icon: <Sparkles className="w-3.5 h-3.5" /> },
+    { key: 'purchased', label: t('ads.filterPurchased'), icon: <ShoppingBag className="w-3.5 h-3.5" /> },
+    { key: 'not_purchased', label: t('ads.filterNotPurchased'), icon: <Lock className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -194,7 +194,7 @@ export default function RecordingsGrid() {
                   : 'bg-muted/50 text-muted-foreground border-border hover:border-accent/50'
               }`}
             >
-              Todas
+              {t('recordings.allSpecialties')}
             </button>
             {specialties.map(spec => (
               <button
@@ -278,17 +278,17 @@ export default function RecordingsGrid() {
                       {owned ? (
                         <Badge className="gap-1 bg-success/90 text-white border-0">
                           <CheckCircle className="w-3 h-3" />
-                          {isFree ? 'Gratis' : 'Comprado'}
+                          {isFree ? t('ads.filterFree') : t('ads.filterPurchased')}
                         </Badge>
                       ) : isFree ? (
                         <Badge className="gap-1 bg-success/90 text-white border-0">
                           <Gift className="w-3 h-3" />
-                          Gratis
+                          {t('ads.filterFree')}
                         </Badge>
                       ) : (
                         <Badge variant="secondary" className="gap-1">
                           <Lock className="w-3 h-3" />
-                          De Pago
+                          {t('ads.filterPaid')}
                         </Badge>
                       )}
                     </div>
@@ -322,7 +322,7 @@ export default function RecordingsGrid() {
                     {recording.peakViewers != null && recording.peakViewers > 0 && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
                         <Eye className="w-3.5 h-3.5" />
-                        <span>{recording.peakViewers.toLocaleString()} espectadores</span>
+                        <span>{recording.peakViewers.toLocaleString()} {t('ads.viewers')}</span>
                       </div>
                     )}
                     {(!recording.peakViewers || recording.peakViewers === 0) && <div className="mb-3" />}
@@ -360,14 +360,14 @@ export default function RecordingsGrid() {
           <Card className="p-8 sm:p-12 text-center">
             <PlayCircle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-              {contentFilter !== 'all' || selectedSpecialty ? 'No hay grabaciones con estos filtros' : t('recordings.noRecordings')}
+              {contentFilter !== 'all' || selectedSpecialty ? t('ads.noRecordingsFilters') : t('recordings.noRecordings')}
             </h3>
             <p className="text-muted-foreground text-sm">
               {t('common.noResults')}
             </p>
             {(contentFilter !== 'all' || selectedSpecialty) && (
               <Button variant="outline" className="mt-3" onClick={() => { setContentFilter('all'); setSelectedSpecialty(null); }}>
-                Quitar filtros
+                {t('ads.removeFilters')}
               </Button>
             )}
           </Card>

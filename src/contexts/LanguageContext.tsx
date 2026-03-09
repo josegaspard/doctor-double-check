@@ -15,7 +15,14 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const authContext = useContext(AuthContext);
   const supabaseUser = authContext?.supabaseUser ?? null;
-  const [language, setLanguageState] = useState<SupportedLanguage>('es');
+  const [language, setLanguageState] = useState<SupportedLanguage>(() => {
+    // Check cached preference first
+    const cached = typeof window !== 'undefined' ? localStorage.getItem('preferred_language') : null;
+    if (cached === 'es' || cached === 'en') return cached;
+    // Auto-detect from browser language
+    if (typeof navigator !== 'undefined' && navigator.language?.startsWith('en')) return 'en';
+    return 'es';
+  });
 
   // Load user's language preference on mount
   useEffect(() => {

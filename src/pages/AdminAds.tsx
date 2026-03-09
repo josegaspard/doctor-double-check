@@ -50,17 +50,20 @@ const statusColors: Record<string, string> = {
   rejected: 'bg-destructive/20 text-destructive',
 };
 
-const statusLabels: Record<string, string> = {
-  draft: 'Borrador', pending_payment: 'Pago Pendiente', pending_review: 'En Revisión',
-  active: 'Activa', paused: 'Pausada', completed: 'Completada', rejected: 'Rechazada',
-};
+function getStatusLabels(t: (path: string) => string): Record<string, string> {
+  return {
+    draft: t('ads.draft'), pending_payment: t('ads.pendingPayment'), pending_review: t('ads.pendingReview'),
+    active: t('ads.active'), paused: t('ads.paused'), completed: t('ads.completed'), rejected: t('ads.rejected'),
+  };
+}
 
 export default function AdminAds() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { config, refetch: refetchConfig } = useAdConfig();
   const { placements, refetch: refetchPlacements } = useAdPlacements();
+  const statusLabels = getStatusLabels(t);
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignStats, setCampaignStats] = useState<Record<string, CampaignStats>>({});
@@ -146,27 +149,27 @@ export default function AdminAds() {
     setIsSaving(true);
     const { error } = await supabase.from('ad_config' as any).update({ ...configForm, updated_at: new Date().toISOString() } as any).eq('id', 'default');
     setIsSaving(false);
-    if (error) { toast.error('Error al guardar'); return; }
-    toast.success('Configuración guardada');
+    if (error) { toast.error(t('ads.configError')); return; }
+    toast.success(t('ads.configSaved'));
     refetchConfig();
   };
 
   const updateCampaignStatus = async (id: string, status: string) => {
     await supabase.from('ad_campaigns' as any).update({ status } as any).eq('id', id);
-    toast.success(`Campaña ${statusLabels[status] || status}`);
+    toast.success(`${t('ads.campaignStatus')} ${statusLabels[status] || status}`);
     fetchCampaigns();
   };
 
   const toggleCreativeActive = async (id: string, is_active: boolean) => {
     await supabase.from('ad_creatives' as any).update({ is_active } as any).eq('id', id);
     setCampaignCreatives(c => c.map(cr => cr.id === id ? { ...cr, is_active } : cr));
-    toast.success(is_active ? 'Creativo activado' : 'Creativo desactivado');
+    toast.success(is_active ? t('ads.creativeActivated') : t('ads.creativeDeactivated'));
   };
 
   const addPlacement = async () => {
     if (!newPlacement.name || !newPlacement.display_name) return;
     await supabase.from('ad_placements' as any).insert({ ...newPlacement, sort_order: placements.length + 1 } as any);
-    toast.success('Placement creado');
+    toast.success(t('ads.placementCreated'));
     setNewPlacement({ name: '', display_name: '', description: '', width: 728, height: 90, format: 'banner' });
     refetchPlacements();
   };
@@ -195,8 +198,8 @@ export default function AdminAds() {
   if (role !== 'admin') return null;
   const es = language === 'es';
 
-  const chartConfig = { impressions: { label: 'Impresiones', color: 'hsl(var(--info))' }, clicks: { label: 'Clics', color: 'hsl(var(--warning))' } };
-  const revenueChartConfig = { revenue: { label: 'Ingresos', color: 'hsl(var(--success))' } };
+  const chartConfig = { impressions: { label: t('ads.impressions'), color: 'hsl(var(--info))' }, clicks: { label: t('ads.clicks'), color: 'hsl(var(--warning))' } };
+  const revenueChartConfig = { revenue: { label: es ? 'Ingresos' : 'Revenue', color: 'hsl(var(--success))' } };
 
   return (
     <MainLayout>
@@ -208,9 +211,9 @@ export default function AdminAds() {
           <div className="flex-1">
             <h1 className="font-heading text-xl sm:text-2xl font-bold flex items-center gap-2">
               <Megaphone className="w-6 h-6 text-primary" />
-              {es ? 'Gestión de Publicidad' : 'Advertising Management'}
+              {t('ads.management')}
             </h1>
-            <p className="text-muted-foreground text-sm">{es ? 'Administra campañas, placements y configuración' : 'Manage campaigns, placements and settings'}</p>
+            <p className="text-muted-foreground text-sm">{t('ads.managementSubtitle')}</p>
           </div>
           <div className="flex items-center gap-1.5">
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleExportCSV} title="CSV"><FileDown className="w-4 h-4" /></Button>
@@ -221,19 +224,19 @@ export default function AdminAds() {
         <Tabs defaultValue="dashboard">
           <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:flex mb-4">
             <TabsTrigger value="dashboard" className="gap-1.5 text-xs sm:text-sm"><BarChart3 className="w-3.5 h-3.5" />Dashboard</TabsTrigger>
-            <TabsTrigger value="campaigns" className="gap-1.5 text-xs sm:text-sm"><Megaphone className="w-3.5 h-3.5" />Campañas</TabsTrigger>
-            <TabsTrigger value="placements" className="gap-1.5 text-xs sm:text-sm"><LayoutGrid className="w-3.5 h-3.5" />Placements</TabsTrigger>
-            <TabsTrigger value="config" className="gap-1.5 text-xs sm:text-sm"><Settings className="w-3.5 h-3.5" />Config</TabsTrigger>
+            <TabsTrigger value="campaigns" className="gap-1.5 text-xs sm:text-sm"><Megaphone className="w-3.5 h-3.5" />{t('ads.campaigns')}</TabsTrigger>
+            <TabsTrigger value="placements" className="gap-1.5 text-xs sm:text-sm"><LayoutGrid className="w-3.5 h-3.5" />{t('ads.placements')}</TabsTrigger>
+            <TabsTrigger value="config" className="gap-1.5 text-xs sm:text-sm"><Settings className="w-3.5 h-3.5" />{t('ads.config')}</TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               {[
-                { label: 'Ingresos Totales', value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-success' },
-                { label: 'Campañas Activas', value: campaigns.filter(c => c.status === 'active').length, icon: Megaphone, color: 'text-primary' },
-                { label: 'Impresiones', value: totalImpressions.toLocaleString(), icon: Eye, color: 'text-info' },
-                { label: 'Clics', value: totalClicks.toLocaleString(), icon: MousePointerClick, color: 'text-warning' },
+                { label: t('ads.totalRevenue'), value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-success' },
+                { label: t('ads.activeCampaigns'), value: campaigns.filter(c => c.status === 'active').length, icon: Megaphone, color: 'text-primary' },
+                { label: t('ads.impressions'), value: totalImpressions.toLocaleString(), icon: Eye, color: 'text-info' },
+                { label: t('ads.clicks'), value: totalClicks.toLocaleString(), icon: MousePointerClick, color: 'text-warning' },
               ].map((stat, i) => (
                 <Card key={i}><CardContent className="p-4 text-center">
                   <stat.icon className={`w-6 h-6 mx-auto mb-2 ${stat.color}`} />
@@ -248,10 +251,10 @@ export default function AdminAds() {
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="w-4 h-4 text-primary" />
-                    <span className="font-semibold text-sm">CTR Global</span>
+                    <span className="font-semibold text-sm">{t('ads.globalCtr')}</span>
                   </div>
                   <p className="text-3xl font-bold text-primary">{((totalClicks / totalImpressions) * 100).toFixed(2)}%</p>
-                  <p className="text-xs text-muted-foreground mt-1">{totalClicks} clics / {totalImpressions} impresiones</p>
+                  <p className="text-xs text-muted-foreground mt-1">{totalClicks} {t('ads.clicksImpressions').replace('/', ` / ${totalImpressions} `)}</p>
                 </CardContent>
               </Card>
             )}
@@ -262,7 +265,7 @@ export default function AdminAds() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-primary" />
-                    {es ? 'Impresiones y Clics (últimos 30 días)' : 'Impressions & Clicks (last 30 days)'}
+                    {t('ads.impressionsClicks')} ({t('ads.last30Days')})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -286,7 +289,7 @@ export default function AdminAds() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-success" />
-                    {es ? 'Ingresos Mensuales' : 'Monthly Revenue'}
+                    {t('ads.monthlyRevenue')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -311,7 +314,7 @@ export default function AdminAds() {
             ) : campaigns.length === 0 ? (
               <Card className="p-8 text-center">
                 <Megaphone className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">No hay campañas aún</p>
+                <p className="text-muted-foreground">{t('ads.noCampaigns')}</p>
               </Card>
             ) : (
               <div className="space-y-3">
@@ -342,21 +345,21 @@ export default function AdminAds() {
                             {campaign.status === 'pending_review' && (
                               <>
                                 <Button size="sm" variant="default" className="gap-1 text-xs" onClick={() => updateCampaignStatus(campaign.id, 'active')}>
-                                  <CheckCircle className="w-3.5 h-3.5" /> Aprobar
+                                  <CheckCircle className="w-3.5 h-3.5" /> {t('ads.approve')}
                                 </Button>
                                 <Button size="sm" variant="destructive" className="gap-1 text-xs" onClick={() => updateCampaignStatus(campaign.id, 'rejected')}>
-                                  <XCircle className="w-3.5 h-3.5" /> Rechazar
+                                  <XCircle className="w-3.5 h-3.5" /> {t('ads.reject')}
                                 </Button>
                               </>
                             )}
                             {campaign.status === 'active' && (
                               <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => updateCampaignStatus(campaign.id, 'paused')}>
-                                <Pause className="w-3.5 h-3.5" /> Pausar
+                                <Pause className="w-3.5 h-3.5" /> {t('ads.pause')}
                               </Button>
                             )}
                             {campaign.status === 'paused' && (
                               <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => updateCampaignStatus(campaign.id, 'active')}>
-                                <Play className="w-3.5 h-3.5" /> Reactivar
+                                <Play className="w-3.5 h-3.5" /> {t('ads.reactivate')}
                               </Button>
                             )}
                           </div>
@@ -366,10 +369,10 @@ export default function AdminAds() {
                         {isExpanded && (
                           <div className="mt-4 pt-3 border-t border-border">
                             <h4 className="text-xs font-semibold flex items-center gap-1.5 mb-2">
-                              <ImageIcon className="w-3.5 h-3.5" /> Creativos ({campaignCreatives.length})
+                              <ImageIcon className="w-3.5 h-3.5" /> {t('ads.creatives')} ({campaignCreatives.length})
                             </h4>
                             {campaignCreatives.length === 0 ? (
-                              <p className="text-xs text-muted-foreground">Sin creativos</p>
+                              <p className="text-xs text-muted-foreground">{t('ads.noCreatives')}</p>
                             ) : (
                               <div className="space-y-2">
                                 {campaignCreatives.map(cr => {
@@ -416,16 +419,16 @@ export default function AdminAds() {
               ))}
             </div>
             <Card>
-              <CardHeader><CardTitle className="text-base">Nuevo Placement</CardTitle></CardHeader>
+               <CardHeader><CardTitle className="text-base">{t('ads.newPlacement')}</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs">Nombre (slug)</Label><Input value={newPlacement.name} onChange={e => setNewPlacement(p => ({ ...p, name: e.target.value }))} placeholder="hero_banner" /></div>
-                  <div><Label className="text-xs">Nombre visible</Label><Input value={newPlacement.display_name} onChange={e => setNewPlacement(p => ({ ...p, display_name: e.target.value }))} placeholder="Hero Banner" /></div>
-                  <div><Label className="text-xs">Ancho (px)</Label><Input type="number" value={newPlacement.width} onChange={e => setNewPlacement(p => ({ ...p, width: parseInt(e.target.value) || 728 }))} /></div>
-                  <div><Label className="text-xs">Alto (px)</Label><Input type="number" value={newPlacement.height} onChange={e => setNewPlacement(p => ({ ...p, height: parseInt(e.target.value) || 90 }))} /></div>
+                  <div><Label className="text-xs">{t('ads.nameSlug')}</Label><Input value={newPlacement.name} onChange={e => setNewPlacement(p => ({ ...p, name: e.target.value }))} placeholder="hero_banner" /></div>
+                  <div><Label className="text-xs">{t('ads.displayName')}</Label><Input value={newPlacement.display_name} onChange={e => setNewPlacement(p => ({ ...p, display_name: e.target.value }))} placeholder="Hero Banner" /></div>
+                  <div><Label className="text-xs">{t('ads.width')}</Label><Input type="number" value={newPlacement.width} onChange={e => setNewPlacement(p => ({ ...p, width: parseInt(e.target.value) || 728 }))} /></div>
+                  <div><Label className="text-xs">{t('ads.height')}</Label><Input type="number" value={newPlacement.height} onChange={e => setNewPlacement(p => ({ ...p, height: parseInt(e.target.value) || 90 }))} /></div>
                 </div>
-                <Input value={newPlacement.description} onChange={e => setNewPlacement(p => ({ ...p, description: e.target.value }))} placeholder="Descripción..." />
-                <Button onClick={addPlacement} disabled={!newPlacement.name || !newPlacement.display_name}>Crear Placement</Button>
+                <Input value={newPlacement.description} onChange={e => setNewPlacement(p => ({ ...p, description: e.target.value }))} placeholder={t('ads.description') + '...'} />
+                <Button onClick={addPlacement} disabled={!newPlacement.name || !newPlacement.display_name}>{t('ads.createPlacement')}</Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -434,23 +437,23 @@ export default function AdminAds() {
           <TabsContent value="config">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Configuración Global</CardTitle>
-                <CardDescription>Controla el sistema de publicidad</CardDescription>
+                <CardTitle className="text-base">{t('ads.globalConfig')}</CardTitle>
+                <CardDescription>{t('ads.globalConfigDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
                 <div className="flex items-center justify-between">
-                  <div><Label className="font-semibold">Sistema de Publicidad</Label><p className="text-xs text-muted-foreground">Activa o desactiva toda la publicidad</p></div>
+                  <div><Label className="font-semibold">{t('ads.adSystem')}</Label><p className="text-xs text-muted-foreground">{t('ads.adSystemDesc')}</p></div>
                   <Switch checked={configForm.is_active} onCheckedChange={v => setConfigForm(f => ({ ...f, is_active: v }))} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label className="text-xs">CPM (por 1,000 impresiones)</Label><Input type="number" value={configForm.cpm_rate} onChange={e => setConfigForm(f => ({ ...f, cpm_rate: Number(e.target.value) }))} /></div>
-                  <div><Label className="text-xs">CPC (por clic)</Label><Input type="number" value={configForm.cpc_rate} onChange={e => setConfigForm(f => ({ ...f, cpc_rate: Number(e.target.value) }))} /></div>
-                  <div><Label className="text-xs">Presupuesto Mínimo</Label><Input type="number" value={configForm.min_budget} onChange={e => setConfigForm(f => ({ ...f, min_budget: Number(e.target.value) }))} /></div>
-                  <div><Label className="text-xs">Tamaño Máx. Archivo (KB)</Label><Input type="number" value={configForm.max_file_size_kb} onChange={e => setConfigForm(f => ({ ...f, max_file_size_kb: Number(e.target.value) }))} /></div>
+                  <div><Label className="text-xs">{t('ads.cpm')}</Label><Input type="number" value={configForm.cpm_rate} onChange={e => setConfigForm(f => ({ ...f, cpm_rate: Number(e.target.value) }))} /></div>
+                  <div><Label className="text-xs">{t('ads.cpc')}</Label><Input type="number" value={configForm.cpc_rate} onChange={e => setConfigForm(f => ({ ...f, cpc_rate: Number(e.target.value) }))} /></div>
+                  <div><Label className="text-xs">{t('ads.minBudget')}</Label><Input type="number" value={configForm.min_budget} onChange={e => setConfigForm(f => ({ ...f, min_budget: Number(e.target.value) }))} /></div>
+                  <div><Label className="text-xs">{t('ads.maxFileSize')}</Label><Input type="number" value={configForm.max_file_size_kb} onChange={e => setConfigForm(f => ({ ...f, max_file_size_kb: Number(e.target.value) }))} /></div>
                 </div>
                 <Button onClick={saveConfig} disabled={isSaving} className="gap-2">
                   {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Guardar Configuración
+                  {t('ads.saveConfig')}
                 </Button>
               </CardContent>
             </Card>

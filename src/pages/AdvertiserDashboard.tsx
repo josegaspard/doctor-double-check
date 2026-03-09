@@ -61,10 +61,12 @@ interface DailyEvent {
   clicks: number;
 }
 
-const statusLabels: Record<string, string> = {
-  draft: 'Borrador', pending_payment: 'Pago Pendiente', pending_review: 'En Revisión',
-  active: 'Activa', paused: 'Pausada', completed: 'Completada', rejected: 'Rechazada',
-};
+function getStatusLabels(t: (path: string) => string): Record<string, string> {
+  return {
+    draft: t('ads.draft'), pending_payment: t('ads.pendingPayment'), pending_review: t('ads.pendingReview'),
+    active: t('ads.active'), paused: t('ads.paused'), completed: t('ads.completed'), rejected: t('ads.rejected'),
+  };
+}
 
 const statusColors: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground', pending_payment: 'bg-warning/20 text-warning',
@@ -76,7 +78,7 @@ const statusColors: Record<string, string> = {
 export default function AdvertiserDashboard() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { config } = useAdConfig();
   const { placements } = useAdPlacements();
 
@@ -100,6 +102,7 @@ export default function AdvertiserDashboard() {
   });
 
   const es = language === 'es';
+  const statusLabels = getStatusLabels(t);
 
   useEffect(() => { if (!isAuthenticated) navigate('/login'); }, [isAuthenticated, navigate]);
 
@@ -163,7 +166,7 @@ export default function AdvertiserDashboard() {
   const estimatedClicks = Math.floor(form.budget / config.cpc_rate);
 
   const createCampaign = async () => {
-    if (!form.name || form.budget < config.min_budget) { toast.error(es ? 'Completa todos los campos requeridos' : 'Complete all required fields'); return; }
+    if (!form.name || form.budget < config.min_budget) { toast.error(t('ads.completeRequired')); return; }
     setIsCreating(true);
     const { error } = await supabase.from('ad_campaigns' as any).insert({
       advertiser_id: user?.id, name: form.name, budget: form.budget,
@@ -173,8 +176,8 @@ export default function AdvertiserDashboard() {
       placement_ids: form.placement_ids, status: 'draft',
     } as any);
     setIsCreating(false);
-    if (error) { toast.error('Error al crear campaña'); return; }
-    toast.success(es ? 'Campaña creada' : 'Campaign created');
+    if (error) { toast.error(t('ads.campaignCreateError')); return; }
+    toast.success(t('ads.campaignCreated'));
     setShowCreate(false);
     setForm({ name: '', budget: config.min_budget, start_date: '', end_date: '', target_roles: ['patient', 'resident', 'doctor'], target_language: '', placement_ids: [] });
     fetchCampaigns();
@@ -183,13 +186,13 @@ export default function AdvertiserDashboard() {
   const uploadCreative = async (file: File, placementId: string) => {
     if (!selectedCampaign || !user?.id) return;
     const maxSize = config.max_file_size_kb * 1024;
-    if (file.size > maxSize) { toast.error(`Archivo muy grande (máx ${config.max_file_size_kb}KB)`); return; }
+    if (file.size > maxSize) { toast.error(`${t('ads.fileTooLarge')} (${t('ads.maxSize')} ${config.max_file_size_kb}KB)`); return; }
 
     setIsUploading(true);
     const ext = file.name.split('.').pop();
     const path = `${user.id}/${selectedCampaign}/${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from('ad-creatives').upload(path, file);
-    if (upErr) { toast.error('Error al subir archivo'); setIsUploading(false); return; }
+    if (upErr) { toast.error(t('ads.creativeUploadError')); setIsUploading(false); return; }
 
     const { data: { publicUrl } } = supabase.storage.from('ad-creatives').getPublicUrl(path);
     const mediaType = file.type.startsWith('video') ? 'video' : file.type.includes('gif') ? 'gif' : 'image';
@@ -200,8 +203,8 @@ export default function AdvertiserDashboard() {
       click_url: clickUrl || '#', alt_text: file.name,
     } as any);
     setIsUploading(false);
-    if (insErr) { toast.error('Error al guardar creativo'); return; }
-    toast.success(es ? 'Creativo subido' : 'Creative uploaded');
+    if (insErr) { toast.error(t('ads.creativeSaveError')); return; }
+    toast.success(t('ads.creativeUploaded'));
     setClickUrl('');
     // Refresh creatives
     const { data: crs } = await supabase.from('ad_creatives' as any).select('*').eq('campaign_id', selectedCampaign);
@@ -211,7 +214,7 @@ export default function AdvertiserDashboard() {
   const deleteCreative = async (id: string) => {
     await supabase.from('ad_creatives' as any).delete().eq('id', id);
     setCreatives(c => c.filter(cr => cr.id !== id));
-    toast.success('Creativo eliminado');
+    toast.success(t('ads.creativeDeleted'));
   };
 
   const payCampaign = async (campaignId: string, amount: number) => {
@@ -220,7 +223,7 @@ export default function AdvertiserDashboard() {
       body: { campaign_id: campaignId, amount },
     });
     setIsPaying(false);
-    if (error || !data?.url) { toast.error('Error al crear checkout'); return; }
+    if (error || !data?.url) { toast.error(t('ads.checkoutError')); return; }
     window.open(data.url, '_blank');
   };
 
@@ -248,8 +251,8 @@ export default function AdvertiserDashboard() {
   const campaign = selectedCampaign ? campaigns.find(c => c.id === selectedCampaign) : null;
 
   const chartConfig = {
-    impressions: { label: 'Impresiones', color: 'hsl(var(--info))' },
-    clicks: { label: 'Clics', color: 'hsl(var(--warning))' },
+    impressions: { label: t('ads.impressions'), color: 'hsl(var(--info))' },
+    clicks: { label: t('ads.clicks'), color: 'hsl(var(--warning))' },
   };
 
   // Campaign detail view
@@ -274,7 +277,7 @@ export default function AdvertiserDashboard() {
               <Button size="sm" className="gap-1.5" disabled={isPaying || creatives.length === 0}
                 onClick={() => payCampaign(campaign.id, campaign.budget)}>
                 {isPaying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                {es ? 'Pagar y Activar' : 'Pay & Activate'}
+                {t('ads.payActivate')}
               </Button>
             )}
           </div>
@@ -284,12 +287,12 @@ export default function AdvertiserDashboard() {
             <Card><CardContent className="p-3 text-center">
               <Eye className="w-5 h-5 text-info mx-auto mb-1" />
               <p className="text-lg font-bold text-info">{stats.impressions.toLocaleString()}</p>
-              <p className="text-[10px] text-muted-foreground">{es ? 'Impresiones' : 'Impressions'}</p>
+              <p className="text-[10px] text-muted-foreground">{t('ads.impressions')}</p>
             </CardContent></Card>
             <Card><CardContent className="p-3 text-center">
               <MousePointerClick className="w-5 h-5 text-warning mx-auto mb-1" />
               <p className="text-lg font-bold text-warning">{stats.clicks}</p>
-              <p className="text-[10px] text-muted-foreground">Clics</p>
+              <p className="text-[10px] text-muted-foreground">{t('ads.clicks')}</p>
             </CardContent></Card>
             <Card><CardContent className="p-3 text-center">
               <TrendingUp className="w-5 h-5 text-success mx-auto mb-1" />
@@ -304,7 +307,7 @@ export default function AdvertiserDashboard() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-primary" />
-                  {es ? 'Rendimiento (últimos 30 días)' : 'Performance (last 30 days)'}
+                  {t('ads.performanceLast30')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -327,10 +330,10 @@ export default function AdvertiserDashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-primary" />
-                {es ? 'Creativos' : 'Creatives'}
+                {t('ads.creatives')}
               </CardTitle>
               <CardDescription className="text-xs">
-                {es ? `Formatos: imagen, GIF, video · Máx: ${config.max_file_size_kb}KB` : `Formats: image, GIF, video · Max: ${config.max_file_size_kb}KB`}
+                {t('ads.formats')}: {es ? 'imagen, GIF, video' : 'image, GIF, video'} · {t('ads.maxSize')}: {config.max_file_size_kb}KB
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -367,7 +370,7 @@ export default function AdvertiserDashboard() {
                   <div key={pl.id} className="border border-dashed border-border rounded-lg p-3">
                     <p className="text-xs font-medium mb-1">{pl.display_name} <span className="text-muted-foreground">({pl.width}×{pl.height}px)</span></p>
                     <div className="space-y-2">
-                      <Input placeholder="URL de destino (click)" value={clickUrl} onChange={e => setClickUrl(e.target.value)} className="text-xs h-8" />
+                      <Input placeholder={t('ads.clickDestUrl')} value={clickUrl} onChange={e => setClickUrl(e.target.value)} className="text-xs h-8" />
                       <Button variant="outline" size="sm" className="gap-1.5 w-full text-xs" disabled={isUploading}
                         onClick={() => {
                           const input = document.createElement('input');
@@ -380,7 +383,7 @@ export default function AdvertiserDashboard() {
                           input.click();
                         }}>
                         {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                        {es ? 'Subir creativo' : 'Upload creative'}
+                        {t('ads.uploadCreative')}
                       </Button>
                     </div>
                   </div>
@@ -404,9 +407,9 @@ export default function AdvertiserDashboard() {
           <div className="flex-1">
             <h1 className="font-heading text-xl sm:text-2xl font-bold flex items-center gap-2">
               <Megaphone className="w-6 h-6 text-primary" />
-              {es ? 'Mis Campañas' : 'My Campaigns'}
+              {t('ads.myCampaigns')}
             </h1>
-            <p className="text-muted-foreground text-sm">{es ? 'Gestiona y monitorea tus campañas publicitarias' : 'Manage and monitor your ad campaigns'}</p>
+            <p className="text-muted-foreground text-sm">{t('ads.myCampaignsSubtitle')}</p>
           </div>
           <div className="flex items-center gap-1.5">
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleExportCSV} title="CSV">
@@ -426,18 +429,18 @@ export default function AdvertiserDashboard() {
         <div className="grid grid-cols-3 gap-3 mb-6">
           <Card><CardContent className="p-3 text-center">
             <Eye className="w-5 h-5 text-info mx-auto mb-1" />
-            <p className="text-lg font-bold text-info">{totalImpressions.toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">{es ? 'Impresiones' : 'Impressions'}</p>
+             <p className="text-lg font-bold text-info">{totalImpressions.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground">{t('ads.impressions')}</p>
           </CardContent></Card>
           <Card><CardContent className="p-3 text-center">
             <MousePointerClick className="w-5 h-5 text-warning mx-auto mb-1" />
             <p className="text-lg font-bold text-warning">{totalClicks.toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">Clics</p>
+              <p className="text-[10px] text-muted-foreground">{t('ads.clicks')}</p>
           </CardContent></Card>
           <Card><CardContent className="p-3 text-center">
             <DollarSign className="w-5 h-5 text-success mx-auto mb-1" />
             <p className="text-lg font-bold text-success">${totalSpent.toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">{es ? 'Gastado' : 'Spent'}</p>
+            <p className="text-[10px] text-muted-foreground">{t('ads.spent')}</p>
           </CardContent></Card>
         </div>
 
@@ -445,38 +448,38 @@ export default function AdvertiserDashboard() {
         {showCreate && (
           <Card className="mb-6 border-primary/30">
             <CardHeader>
-              <CardTitle className="text-base">{es ? 'Nueva Campaña' : 'New Campaign'}</CardTitle>
-              <CardDescription>{es ? 'Configura tu campaña publicitaria' : 'Set up your ad campaign'}</CardDescription>
+              <CardTitle className="text-base">{t('ads.newCampaign')}</CardTitle>
+              <CardDescription>{t('ads.createCampaignSubtitle')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-xs">{es ? 'Nombre de la campaña' : 'Campaign name'}</Label>
+                <Label className="text-xs">{t('ads.campaignName')}</Label>
                 <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={es ? 'Mi campaña' : 'My campaign'} />
               </div>
               <div>
-                <Label className="text-xs">{es ? 'Presupuesto (MXN)' : 'Budget (MXN)'}</Label>
+                <Label className="text-xs">{t('ads.budget')}</Label>
                 <Input type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: Number(e.target.value) }))} min={config.min_budget} />
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  Mínimo: ${config.min_budget.toLocaleString()} · ~{estimatedImpressions.toLocaleString()} imp · ~{estimatedClicks.toLocaleString()} clics
+                  {t('ads.minimum')}: ${config.min_budget.toLocaleString()} · ~{estimatedImpressions.toLocaleString()} {t('ads.estimatedImp')} · ~{estimatedClicks.toLocaleString()} {t('ads.estimatedClicks')}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs">{es ? 'Fecha inicio' : 'Start date'}</Label>
+                  <Label className="text-xs">{t('ads.startDate')}</Label>
                   <Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} />
                 </div>
                 <div>
-                  <Label className="text-xs">{es ? 'Fecha fin' : 'End date'}</Label>
+                  <Label className="text-xs">{t('ads.endDate')}</Label>
                   <Input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} />
                 </div>
               </div>
               <div>
-                <Label className="text-xs mb-2 block">{es ? 'Audiencia objetivo' : 'Target audience'}</Label>
+                <Label className="text-xs mb-2 block">{t('ads.targetAudience')}</Label>
                 <div className="flex flex-wrap gap-2">
                   {['patient', 'resident', 'doctor'].map(role => (
                     <label key={role} className="flex items-center gap-1.5 text-sm cursor-pointer">
                       <Checkbox checked={form.target_roles.includes(role)} onCheckedChange={() => toggleRole(role)} />
-                      <span className="capitalize">{role === 'patient' ? (es ? 'Pacientes' : 'Patients') : role === 'resident' ? (es ? 'Residentes' : 'Residents') : (es ? 'Doctores' : 'Doctors')}</span>
+                      <span className="capitalize">{role === 'patient' ? t('ads.patients') : role === 'resident' ? t('ads.residents') : t('ads.doctors')}</span>
                     </label>
                   ))}
                 </div>
@@ -497,9 +500,9 @@ export default function AdvertiserDashboard() {
               <div className="flex gap-2 pt-2">
                 <Button onClick={createCampaign} disabled={isCreating} className="gap-2">
                   {isCreating && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {es ? 'Crear Campaña' : 'Create Campaign'}
+                  {t('ads.createCampaign')}
                 </Button>
-                <Button variant="outline" onClick={() => setShowCreate(false)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+                <Button variant="outline" onClick={() => setShowCreate(false)}>{t('common.cancel')}</Button>
               </div>
             </CardContent>
           </Card>
@@ -511,9 +514,9 @@ export default function AdvertiserDashboard() {
         ) : campaigns.length === 0 ? (
           <Card className="p-8 text-center">
             <Megaphone className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-            <h3 className="font-semibold mb-1">{es ? 'Sin campañas aún' : 'No campaigns yet'}</h3>
-            <p className="text-sm text-muted-foreground mb-4">{es ? 'Crea tu primera campaña publicitaria' : 'Create your first ad campaign'}</p>
-            <Button onClick={() => setShowCreate(true)} className="gap-2"><Plus className="w-4 h-4" />{es ? 'Crear Campaña' : 'Create Campaign'}</Button>
+            <h3 className="font-semibold mb-1">{t('ads.noCampaignsYet')}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{t('ads.createFirst')}</p>
+            <Button onClick={() => setShowCreate(true)} className="gap-2"><Plus className="w-4 h-4" />{t('ads.createCampaign')}</Button>
           </Card>
         ) : (
           <div className="space-y-3">
@@ -535,11 +538,11 @@ export default function AdvertiserDashboard() {
                     <div className="grid grid-cols-3 gap-2 mt-3">
                       <div className="rounded-lg bg-muted/50 p-2 text-center">
                         <p className="text-sm font-bold text-info">{stats.impressions.toLocaleString()}</p>
-                        <p className="text-[10px] text-muted-foreground">{es ? 'Imp' : 'Imp'}</p>
+                        <p className="text-[10px] text-muted-foreground">{t('ads.impressions').substring(0,3)}</p>
                       </div>
                       <div className="rounded-lg bg-muted/50 p-2 text-center">
                         <p className="text-sm font-bold text-warning">{stats.clicks}</p>
-                        <p className="text-[10px] text-muted-foreground">Clics</p>
+                        <p className="text-[10px] text-muted-foreground">{t('ads.clicks')}</p>
                       </div>
                       <div className="rounded-lg bg-muted/50 p-2 text-center">
                         <p className="text-sm font-bold text-success">{ctr}%</p>
