@@ -82,7 +82,7 @@ export default function DoctorDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+          <TabsContent value="overview" className="space-y-3 sm:space-y-5">
             {/* Section 1: Stats */}
             <DoctorStatsGrid
               recordingsCount={recordingsCount}
