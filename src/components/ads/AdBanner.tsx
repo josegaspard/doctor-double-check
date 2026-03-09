@@ -39,7 +39,7 @@ export function AdBanner({ placementName, className }: AdBannerProps) {
       )}
       onClick={handleClick}
       role="banner"
-      aria-label={creative.alt_text || 'Publicidad'}
+      aria-label={creative.alt_text || t('ads.adLabel')}
     >
       {isVideo ? (
         <video
