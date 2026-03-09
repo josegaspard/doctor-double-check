@@ -407,9 +407,9 @@ export default function AdvertiserDashboard() {
           <div className="flex-1">
             <h1 className="font-heading text-xl sm:text-2xl font-bold flex items-center gap-2">
               <Megaphone className="w-6 h-6 text-primary" />
-              {es ? 'Mis Campañas' : 'My Campaigns'}
+              {t('ads.myCampaigns')}
             </h1>
-            <p className="text-muted-foreground text-sm">{es ? 'Gestiona y monitorea tus campañas publicitarias' : 'Manage and monitor your ad campaigns'}</p>
+            <p className="text-muted-foreground text-sm">{t('ads.myCampaignsSubtitle')}</p>
           </div>
           <div className="flex items-center gap-1.5">
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleExportCSV} title="CSV">
