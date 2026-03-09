@@ -113,7 +113,7 @@ export default function Advertising() {
                 <MousePointerClick className="w-6 h-6 text-warning mx-auto mb-1" />
                 <p className="text-2xl font-bold text-warning">{estimatedClicks.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">
-                  {es ? 'Clics estimados' : 'Estimated clicks'}
+                  {t('ads.estimatedClicksLabel')}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-1">
                   CPC: ${config.cpc_rate}
