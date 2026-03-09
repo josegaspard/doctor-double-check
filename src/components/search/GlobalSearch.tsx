@@ -232,11 +232,11 @@ export function GlobalSearch() {
         <Search className="w-4 h-4" />
       </Button>
       
-      {/* Trigger: Tablet icon (md-lg) */}
+      {/* Trigger: Tablet/Desktop icon (md to 2xl) */}
       <Button
         variant="ghost"
         size="icon"
-        className="hidden md:flex xl:hidden h-8 w-8 text-muted-foreground"
+        className="hidden md:flex 2xl:hidden h-8 w-8 text-muted-foreground"
         onClick={() => setOpen(true)}
       >
         <Search className="w-4 h-4" />
