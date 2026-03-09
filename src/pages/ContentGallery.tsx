@@ -456,7 +456,7 @@ export default function ContentGallery() {
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
             {filteredContents.map(content => {
               const locked = !canViewSubscriberContent(content);
-              const thumbUrl = content.thumbnail_url || signedThumbs[content.id] || null;
+              const thumbUrl = signedThumbs[content.id] || content.thumbnail_url || null;
 
               return (
                 <Card
