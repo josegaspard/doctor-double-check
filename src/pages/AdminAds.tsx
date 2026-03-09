@@ -169,7 +169,7 @@ export default function AdminAds() {
   const addPlacement = async () => {
     if (!newPlacement.name || !newPlacement.display_name) return;
     await supabase.from('ad_placements' as any).insert({ ...newPlacement, sort_order: placements.length + 1 } as any);
-    toast.success('Placement creado');
+    toast.success(t('ads.placementCreated'));
     setNewPlacement({ name: '', display_name: '', description: '', width: 728, height: 90, format: 'banner' });
     refetchPlacements();
   };
