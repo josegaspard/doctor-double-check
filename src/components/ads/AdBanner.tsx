@@ -35,6 +35,7 @@ export function AdBanner({ placementName, className }: AdBannerProps) {
     <div
       className={cn(
         'relative rounded-xl overflow-hidden cursor-pointer group border border-border/50 bg-muted/30',
+        'w-full',
         className
       )}
       onClick={handleClick}
@@ -44,7 +45,7 @@ export function AdBanner({ placementName, className }: AdBannerProps) {
       {isVideo ? (
         <video
           src={creative.media_url}
-          className="w-full h-auto object-cover"
+          className="w-full h-auto object-cover max-h-[160px] sm:max-h-[220px] lg:max-h-[280px]"
           autoPlay
           muted
           loop
@@ -53,8 +54,8 @@ export function AdBanner({ placementName, className }: AdBannerProps) {
       ) : (
         <img
           src={creative.media_url}
-          alt={creative.alt_text || 'Publicidad'}
-          className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          alt={creative.alt_text || t('ads.adLabel')}
+          className="w-full h-auto object-cover max-h-[160px] sm:max-h-[220px] lg:max-h-[280px] transition-transform duration-300 group-hover:scale-[1.02]"
           loading="lazy"
         />
       )}
