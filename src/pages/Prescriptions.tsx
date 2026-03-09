@@ -122,13 +122,13 @@ export default function Prescriptions() {
 
           {role === 'doctor' && (
             <Button 
-              className="gap-2 w-full sm:w-auto flex-shrink-0" 
+              className="gap-2 w-full sm:w-auto flex-shrink-0 h-12 text-base" 
               onClick={() => {
                 setShowPatientPicker(true);
                 fetchPatients();
               }}
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-5 h-5" />
               {language === 'es' ? 'Nueva Receta' : 'New Prescription'}
             </Button>
           )}
