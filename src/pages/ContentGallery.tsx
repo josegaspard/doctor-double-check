@@ -110,11 +110,13 @@ function ContentCardThumbnail({
   content,
   thumbUrl,
   locked,
+  showInsufficientHint,
   t,
 }: {
   content: DoctorContent;
   thumbUrl: string | null;
   locked: boolean;
+  showInsufficientHint?: boolean;
   t: any;
 }) {
   const config = typeConfig[content.type] || typeConfig.pdf;
