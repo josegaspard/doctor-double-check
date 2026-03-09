@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useFooterLinks } from '@/hooks/useFooterLinks';
 import { useSocialLinks } from '@/hooks/useSiteSettings';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAdConfig } from '@/hooks/useAds';
 import { Facebook, Instagram, Twitter, Linkedin, Youtube } from 'lucide-react';
 import logoWhite from '@/assets/logo-medical-masters-white.png';
 
@@ -63,7 +64,12 @@ export function UnifiedFooter({ variant }: Props) {
   const { footerLinks } = useFooterLinks();
   const { socialLinks } = useSocialLinks();
   const { t } = useLanguage();
+  const { config: adConfig } = useAdConfig();
 
+  // Inject "Publicidad" link into resources when ads are active
+  const resourcesLinks = adConfig.is_active
+    ? [...footerLinks.resources, { label: 'Publicidad', href: '/advertising' }]
+    : footerLinks.resources;
   if (variant === 'app') {
     return (
       <footer className="bg-[#0b1d45] text-slate-300 pt-8 sm:pt-10 pb-24 sm:pb-6 mt-auto">
@@ -80,7 +86,7 @@ export function UnifiedFooter({ variant }: Props) {
             </div>
 
             <FooterLinkColumn title={t('landingFooter.platform')} links={footerLinks.platform} />
-            <FooterLinkColumn title={t('landingFooter.resources')} links={footerLinks.resources} />
+            <FooterLinkColumn title={t('landingFooter.resources')} links={resourcesLinks} />
             <FooterLinkColumn title={t('landingFooter.legal')} links={footerLinks.legal} />
           </div>
 
@@ -114,7 +120,7 @@ export function UnifiedFooter({ variant }: Props) {
 
           {/* Platform */}
           <FooterLinkColumn title={t('landingFooter.platform')} links={footerLinks.platform} />
-          <FooterLinkColumn title={t('landingFooter.resources')} links={footerLinks.resources} />
+          <FooterLinkColumn title={t('landingFooter.resources')} links={resourcesLinks} />
           <FooterLinkColumn title={t('landingFooter.legal')} links={footerLinks.legal} />
         </div>
 

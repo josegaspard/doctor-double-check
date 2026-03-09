@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AdBanner } from '@/components/ads/AdBanner';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -134,6 +135,9 @@ export default function RecordingsGrid() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        {/* Ad Banner */}
+        <AdBanner placementName="recordings_top_banner" className="mb-4" />
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
           <div>

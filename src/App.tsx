@@ -108,6 +108,9 @@ const PrescriptionDetail = React.lazy(() => import("./pages/PrescriptionDetail")
 const ReportIssue = React.lazy(() => import("./pages/ReportIssue"));
 const EmailConfirmed = React.lazy(() => import("./pages/EmailConfirmed"));
 const AdminRanks = React.lazy(() => import("./pages/AdminRanks"));
+const AdminAds = React.lazy(() => import("./pages/AdminAds"));
+const Advertising = React.lazy(() => import("./pages/Advertising"));
+const AdvertiserDashboard = React.lazy(() => import("./pages/AdvertiserDashboard"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -210,6 +213,9 @@ const App = () => (
                       <Route path="/prescriptions/:id" element={<PrescriptionDetail />} />
                       <Route path="/report-issue" element={<ReportIssue />} />
                       <Route path="/email-confirmed" element={<EmailConfirmed />} />
+                      <Route path="/advertising" element={<Advertising />} />
+                      <Route path="/advertiser/dashboard" element={<AdvertiserDashboard />} />
+                      <Route path="/admin/ads" element={<AdminAds />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { AdBanner } from '@/components/ads/AdBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -516,6 +517,9 @@ export default function ContentGallery() {
             </ScrollArea>
           </div>
         )}
+
+        {/* Ad Banner */}
+        <AdBanner placementName="content_inline" className="mb-4" />
 
         {/* Grid */}
         {isLoading ? (
