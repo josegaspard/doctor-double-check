@@ -138,7 +138,7 @@ export function ChatHeader({
               <button
                 type="button"
                 onClick={onDoctorProfileClick}
-                className="text-sm font-semibold text-left hover:text-primary transition-colors focus:outline-none truncate"
+                className="text-base font-semibold text-left hover:text-primary transition-colors focus:outline-none truncate"
                 title={t('common.viewProfile')}
               >
                 {displayInfo.name}
