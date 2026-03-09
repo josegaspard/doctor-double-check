@@ -291,7 +291,7 @@ export default function Vault() {
       }
 
       // Show debit notification
-      toast.success(`Se debitaron $${result.amount_charged} de tu wallet. Nuevo saldo: $${result.new_balance}`);
+      toast.success(`${t('ads.walletDebited')} $${result.amount_charged} ${t('ads.fromWallet')} $${result.new_balance}`);
 
       const newLimit = storageLimit + (extraGB * 1073741824);
       await supabase
