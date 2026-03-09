@@ -612,7 +612,7 @@ export default function Vault() {
                           ) : (
                             <Badge variant="secondary" className="text-[10px] gap-1">
                               <Lock className="w-3 h-3" />
-                              Solo tú
+                              {t('ads.onlyYou')}
                             </Badge>
                           )}
                         </div>
