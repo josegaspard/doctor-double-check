@@ -265,7 +265,7 @@ export default function AdminAds() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-primary" />
-                    {es ? 'Impresiones y Clics (últimos 30 días)' : 'Impressions & Clicks (last 30 days)'}
+                    {t('ads.impressionsClicks')} ({t('ads.last30Days')})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
