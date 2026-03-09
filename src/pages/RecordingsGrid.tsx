@@ -288,7 +288,7 @@ export default function RecordingsGrid() {
                       ) : (
                         <Badge variant="secondary" className="gap-1">
                           <Lock className="w-3 h-3" />
-                          De Pago
+                          {t('ads.filterPaid')}
                         </Badge>
                       )}
                     </div>
