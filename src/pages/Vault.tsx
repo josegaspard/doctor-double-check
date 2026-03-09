@@ -127,7 +127,7 @@ export default function Vault() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('storage_success') === 'true') {
-      toast.success('¡Almacenamiento ampliado exitosamente!');
+      toast.success(t('ads.storageExpanded'));
       fetchStorage();
       // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
