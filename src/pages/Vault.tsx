@@ -810,8 +810,8 @@ export default function Vault() {
                 {t('ads.upgradeStorage')}
               </DialogTitle>
               <DialogDescription>
-                Tu almacenamiento actual: {formatStorageSize(storageUsed)} de {formatStorageSize(storageLimit)} usado.
-                {!selectedPlan ? ' Selecciona cuánto espacio adicional necesitas.' : ''}
+                {t('ads.storageCurrentUsage')} {formatStorageSize(storageUsed)} {t('common.of')} {formatStorageSize(storageLimit)} {t('ads.used')}
+                {!selectedPlan ? ` ${t('ads.selectPlan')}` : ''}
               </DialogDescription>
             </DialogHeader>
             
