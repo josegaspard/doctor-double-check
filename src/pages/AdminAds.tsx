@@ -354,7 +354,7 @@ export default function AdminAds() {
                             )}
                             {campaign.status === 'active' && (
                               <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => updateCampaignStatus(campaign.id, 'paused')}>
-                                <Pause className="w-3.5 h-3.5" /> Pausar
+                                <Pause className="w-3.5 h-3.5" /> {t('ads.pause')}
                               </Button>
                             )}
                             {campaign.status === 'paused' && (
