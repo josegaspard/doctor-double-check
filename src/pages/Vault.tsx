@@ -547,8 +547,8 @@ export default function Vault() {
               ) : isStorageFull ? (
                 <>
                   <Lock className="w-8 h-8 text-destructive/60" />
-                  <span className="text-sm font-medium text-destructive">Almacenamiento lleno</span>
-                  <span className="text-xs text-muted-foreground">Amplía tu espacio para subir más archivos</span>
+                  <span className="text-sm font-medium text-destructive">{t('ads.storageFull')}</span>
+                  <span className="text-xs text-muted-foreground">{t('ads.storageNeedMore')}</span>
                 </>
               ) : (
                 <>
