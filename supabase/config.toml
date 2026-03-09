@@ -73,3 +73,5 @@ project_id = "jbthjpnxiwnegzgfzfth"
     verify_jwt = false
   [functions.verify-cedula-sep]
     verify_jwt = false
+  [functions.translate-news]
+    verify_jwt = false
