@@ -289,7 +289,7 @@ export default function AdminAds() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-success" />
-                    {es ? 'Ingresos Mensuales' : 'Monthly Revenue'}
+                    {t('ads.monthlyRevenue')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
