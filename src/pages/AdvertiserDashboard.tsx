@@ -370,7 +370,7 @@ export default function AdvertiserDashboard() {
                   <div key={pl.id} className="border border-dashed border-border rounded-lg p-3">
                     <p className="text-xs font-medium mb-1">{pl.display_name} <span className="text-muted-foreground">({pl.width}×{pl.height}px)</span></p>
                     <div className="space-y-2">
-                      <Input placeholder="URL de destino (click)" value={clickUrl} onChange={e => setClickUrl(e.target.value)} className="text-xs h-8" />
+                      <Input placeholder={t('ads.clickDestUrl')} value={clickUrl} onChange={e => setClickUrl(e.target.value)} className="text-xs h-8" />
                       <Button variant="outline" size="sm" className="gap-1.5 w-full text-xs" disabled={isUploading}
                         onClick={() => {
                           const input = document.createElement('input');
