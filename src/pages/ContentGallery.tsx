@@ -136,7 +136,7 @@ function ContentCardThumbnail({
           {showInsufficientHint && (
             <Badge variant="outline" className="gap-1 text-xs bg-background/90 text-foreground border-border backdrop-blur-sm">
               <AlertCircle className="w-3 h-3 text-destructive" />
-              Saldo insuficiente
+              {t('ads.insufficientBalance')}
             </Badge>
           )}
         </div>
