@@ -50,10 +50,12 @@ const statusColors: Record<string, string> = {
   rejected: 'bg-destructive/20 text-destructive',
 };
 
-const statusLabels: Record<string, string> = {
-  draft: 'Borrador', pending_payment: 'Pago Pendiente', pending_review: 'En Revisión',
-  active: 'Activa', paused: 'Pausada', completed: 'Completada', rejected: 'Rechazada',
-};
+function getStatusLabels(t: (path: string) => string): Record<string, string> {
+  return {
+    draft: t('ads.draft'), pending_payment: t('ads.pendingPayment'), pending_review: t('ads.pendingReview'),
+    active: t('ads.active'), paused: t('ads.paused'), completed: t('ads.completed'), rejected: t('ads.rejected'),
+  };
+}
 
 export default function AdminAds() {
   const navigate = useNavigate();
