@@ -112,6 +112,9 @@ export default function DoctorProfile() {
           location: doctorProfile.location || undefined,
           followersCount: doctorProfile.followers_count,
           avatarUrl: doctorProfile.avatar_url || undefined,
+          officeHoursStart: doctorProfile.office_hours_start || undefined,
+          officeHoursEnd: doctorProfile.office_hours_end || undefined,
+          officeDays: doctorProfile.office_days || undefined,
         });
 
         const { data: liveData } = await supabase
