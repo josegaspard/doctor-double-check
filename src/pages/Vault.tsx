@@ -847,7 +847,7 @@ export default function Vault() {
                   );
                 })}
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  Residentes reciben 50% de descuento automático.
+                  {t('ads.residentDiscount')}
                 </p>
               </div>
             ) : (
