@@ -260,7 +260,7 @@ export function TransactionHistory() {
                       {getTypeIcon(tx.type, tx.amount)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs sm:text-sm truncate">{tx.description}</p>
+                      <p className="font-medium text-xs sm:text-sm truncate">{translateDescription(tx.description, language)}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-[10px] sm:text-xs text-muted-foreground">
                           {format(tx.createdAt, 'dd MMM, HH:mm', { locale: dateLocale })}
