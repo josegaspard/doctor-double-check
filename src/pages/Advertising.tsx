@@ -19,12 +19,10 @@ import {
 export default function Advertising() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const { config } = useAdConfig();
   const { placements } = useAdPlacements();
   const [budget, setBudget] = useState(5000);
-
-  const es = language === 'es';
 
   const estimatedImpressions = Math.floor((budget / config.cpm_rate) * 1000);
   const estimatedClicks = Math.floor(budget / config.cpc_rate);
