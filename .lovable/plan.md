@@ -1,43 +1,26 @@
 
-# Plan: Header UX/UI Optimization — Fix Nav Items Truncation + Search Bar Width
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problem Analysis
-From the screenshot, the header has too many nav items and the search bar (`min-w-[150px]`) takes too much space on medium screens (md breakpoint ~1024px), causing nav items like "Recetas" and "Pa..." to be cut off.
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Solution
+## Solucion
 
-### 1. GlobalSearch.tsx — Reduce Desktop Width + Icon-Only on md
-**Current:** `hidden lg:flex ... min-w-[150px] xl:min-w-[180px]`  
-**Fix:** Change to icon-only button on `md-lg` screens, only show full search bar on `xl+`
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-```tsx
-// Current trigger (desktop)
-className="hidden lg:flex items-center gap-2 h-8 px-3 ... min-w-[150px] xl:min-w-[180px]"
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-// Change to: Icon only on md-xl, full bar only on 2xl
-- Button icon: `hidden md:flex xl:hidden` (shows search icon on md/lg)
-- Full bar: `hidden xl:flex min-w-[120px] 2xl:min-w-[160px]`
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-### 2. MainLayout.tsx — Reduce Nav Item Padding + Hide More Icons
-**Current:** `px-1.5 lg:px-2 xl:px-2.5` and `text-[10px] lg:text-[11px] xl:text-xs`
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-**Fix:**
-- Reduce padding: `px-1 lg:px-1.5 xl:px-2`
-- Hide icons completely on md/lg (not just xl): `hidden 2xl:block`
-- Reduce gap between items: `gap-px` only
+## Archivos a modificar
 
-### 3. Right Side Items — Tighter Spacing
-- Reduce wallet button size on md screens
-- Hide user name completely on screens < xl
-
-## Files to Modify
-
-1. **`src/components/search/GlobalSearch.tsx`**
-   - Icon-only trigger for `md` to `xl` screens
-   - Full search bar only on `xl+` with reduced width (`min-w-[120px]`)
-
-2. **`src/components/layout/MainLayout.tsx`**
-   - Reduce nav item padding to `px-1 lg:px-1.5 xl:px-2`
-   - Hide nav icons except on `2xl+`
-   - Wallet button: compact on md, icon-only option
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
