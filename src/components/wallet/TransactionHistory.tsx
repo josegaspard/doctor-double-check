@@ -147,7 +147,7 @@ export function TransactionHistory() {
       } as any);
       if (error) throw error;
       setPendingRefundTxIds(prev => new Set([...prev, selectedTx.id]));
-      toast.success('Solicitud de reembolso enviada');
+      toast.success(t('wallet.refundSent'));
       setRefundDialog(false);
       setRefundReason('');
     } catch (error: any) {
