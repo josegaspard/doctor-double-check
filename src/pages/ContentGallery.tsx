@@ -80,6 +80,7 @@ function ContentCardThumbnail({
   showInsufficientHint?: boolean;
   t: any;
 }) {
+  const typeConfig = getTypeConfig(t);
   const config = typeConfig[content.type] || typeConfig.pdf;
   const TypeIcon = config.icon;
   const isPdf = content.type === 'pdf';
