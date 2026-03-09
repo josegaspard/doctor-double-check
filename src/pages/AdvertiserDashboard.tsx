@@ -307,7 +307,7 @@ export default function AdvertiserDashboard() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-primary" />
-                  {es ? 'Rendimiento (últimos 30 días)' : 'Performance (last 30 days)'}
+                  {t('ads.performanceLast30')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
