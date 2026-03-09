@@ -314,7 +314,7 @@ export default function AdminAds() {
             ) : campaigns.length === 0 ? (
               <Card className="p-8 text-center">
                 <Megaphone className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">No hay campañas aún</p>
+                <p className="text-muted-foreground">{t('ads.noCampaigns')}</p>
               </Card>
             ) : (
               <div className="space-y-3">
