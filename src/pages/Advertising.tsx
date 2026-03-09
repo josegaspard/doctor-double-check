@@ -82,7 +82,7 @@ export default function Advertising() {
           <CardContent className="space-y-6">
             <div>
               <Label className="text-sm font-medium mb-2 block">
-                {es ? 'Presupuesto' : 'Budget'}: <span className="text-primary font-bold">${budget.toLocaleString()} MXN</span>
+                {t('ads.budget').split(' ')[0]}: <span className="text-primary font-bold">${budget.toLocaleString()} MXN</span>
               </Label>
               <Slider
                 value={[budget]}
