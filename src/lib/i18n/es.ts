@@ -1393,7 +1393,6 @@ export const es = {
     uploadError: 'Error al subir archivo',
     errorLoadingDoctors: 'Error al cargar los médicos',
     expandStorage: 'Expansión de almacenamiento',
-    insufficientBalance: 'Saldo insuficiente',
     purchaseError: 'Error al procesar la compra',
     walletDebited: 'Se debitaron',
     fromWallet: 'de tu wallet. Nuevo saldo:',

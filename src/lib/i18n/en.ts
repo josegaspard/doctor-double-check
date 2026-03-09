@@ -1393,7 +1393,6 @@ export const en = {
     uploadError: 'Error uploading file',
     errorLoadingDoctors: 'Error loading doctors',
     expandStorage: 'Storage expansion',
-    insufficientBalance: 'Insufficient balance',
     purchaseError: 'Error processing purchase',
     walletDebited: 'Debited',
     fromWallet: 'from your wallet. New balance:',
