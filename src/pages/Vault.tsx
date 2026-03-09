@@ -463,9 +463,9 @@ export default function Vault() {
             <div className="flex items-start gap-3">
               <Shield className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-foreground text-sm">Tú controlas el acceso</h3>
+                <h3 className="font-semibold text-foreground text-sm">{t('ads.accessControl')}</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Solo los médicos que tú autorices podrán ver tus archivos.
+                  {t('ads.accessControlDesc')}
                 </p>
               </div>
             </div>
