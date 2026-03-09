@@ -251,8 +251,8 @@ export default function AdvertiserDashboard() {
   const campaign = selectedCampaign ? campaigns.find(c => c.id === selectedCampaign) : null;
 
   const chartConfig = {
-    impressions: { label: 'Impresiones', color: 'hsl(var(--info))' },
-    clicks: { label: 'Clics', color: 'hsl(var(--warning))' },
+    impressions: { label: t('ads.impressions'), color: 'hsl(var(--info))' },
+    clicks: { label: t('ads.clicks'), color: 'hsl(var(--warning))' },
   };
 
   // Campaign detail view
