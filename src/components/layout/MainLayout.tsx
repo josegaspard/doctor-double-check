@@ -59,6 +59,7 @@ import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
@@ -72,6 +73,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
+  { labelKey: 'nav.doctors', href: '/doctors', icon: Stethoscope, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.recordings', href: '/recordings', icon: PlayCircle, roles: ['patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.content', shortLabelKey: 'nav.contentShort', href: '/content', icon: Folder, roles: ['patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
@@ -387,16 +389,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
             {/* Right Side */}
             <div className="flex items-center gap-1.5">
-              {/* Search - hidden on mobile (accessible via Doctores tab) */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 text-muted-foreground hover:text-foreground hidden sm:flex"
-                onClick={() => navigate('/doctors')}
-              >
-                <Search className="w-4 h-4" />
-                <span className="hidden sm:inline text-xs">{t('common.search')}</span>
-              </Button>
+              {/* Global Search */}
+              <GlobalSearch />
               
               <LanguageSwitcher />
               

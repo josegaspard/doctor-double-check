@@ -25,6 +25,13 @@ export const es = {
     doctors: 'Doctores',
   },
   // Common
+  search: {
+    placeholder: 'Buscar doctores, grabaciones, lives...',
+    quickAccess: 'Acceso rápido',
+    content: 'Contenido',
+    allDoctors: 'Ver todos los doctores',
+    allRecordings: 'Ver todas las grabaciones',
+  },
   common: {
     loading: 'Cargando...',
     save: 'Guardar',
