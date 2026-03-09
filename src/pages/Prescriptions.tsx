@@ -138,25 +138,25 @@ export default function Prescriptions() {
 
         {/* Patient Picker Dialog */}
         <Dialog open={showPatientPicker} onOpenChange={setShowPatientPicker}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+          <DialogContent className="max-w-md max-h-[100dvh] sm:max-h-[85vh] h-full sm:h-auto rounded-none sm:rounded-lg p-0">
+            <DialogHeader className="px-5 pt-5 pb-3">
+              <DialogTitle className="flex items-center gap-2 text-lg">
                 <FileText className="w-5 h-5 text-primary" />
-                Seleccionar Paciente
+                {language === 'es' ? 'Seleccionar Paciente' : 'Select Patient'}
               </DialogTitle>
-              <DialogDescription>
-                Elige el paciente para el que quieres crear la receta.
+              <DialogDescription className="text-sm">
+                {language === 'es' ? 'Elige el paciente para el que quieres crear la receta.' : 'Choose the patient for the prescription.'}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-3">
+            <div className="px-5 pb-5 space-y-3 flex-1 overflow-hidden flex flex-col">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar paciente..."
+                  placeholder={language === 'es' ? 'Buscar paciente...' : 'Search patient...'}
                   value={patientSearch}
                   onChange={(e) => setPatientSearch(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 h-12 text-base"
                 />
               </div>
 
@@ -165,28 +165,28 @@ export default function Prescriptions() {
                   <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 </div>
               ) : filteredPatients.length > 0 ? (
-                <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                <div className="space-y-2 flex-1 overflow-y-auto">
                   {filteredPatients.map(patient => (
                     <button
                       key={patient.id}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-primary/5 transition-all text-left"
+                      className="w-full flex items-center gap-3 p-4 rounded-xl border hover:border-primary/50 hover:bg-primary/5 transition-all text-left active:scale-[0.98]"
                       onClick={() => {
                         setShowPatientPicker(false);
                         navigate(`/prescriptions/new?patientId=${patient.id}&patientName=${encodeURIComponent(patient.name)}`);
                       }}
                     >
-                      <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
-                        <User className="w-4 h-4 text-muted-foreground" />
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                        <User className="w-5 h-5 text-muted-foreground" />
                       </div>
-                      <span className="font-medium text-sm">{patient.name}</span>
+                      <span className="font-medium text-base">{patient.name}</span>
                     </button>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <User className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No se encontraron pacientes</p>
-                  <p className="text-xs mt-1">Inicia una consulta o chat para que aparezcan aquí.</p>
+                  <User className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">{language === 'es' ? 'No se encontraron pacientes' : 'No patients found'}</p>
+                  <p className="text-xs mt-1">{language === 'es' ? 'Inicia una consulta o chat para que aparezcan aquí.' : 'Start a consultation or chat first.'}</p>
                 </div>
               )}
             </div>

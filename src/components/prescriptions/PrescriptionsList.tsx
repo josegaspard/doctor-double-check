@@ -316,10 +316,10 @@ export function PrescriptionsList() {
           <div className="bg-card/95 backdrop-blur-lg border border-border rounded-xl shadow-2xl p-3">
             <Button
               variant="destructive"
-              className="w-full gap-2 h-11 text-sm font-medium"
+              className="w-full gap-2 h-12 text-base font-medium"
               onClick={() => setShowDeleteDialog(true)}
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-5 h-5" />
               {t('manage.deleteSelected')} ({selectedIds.size})
             </Button>
           </div>
