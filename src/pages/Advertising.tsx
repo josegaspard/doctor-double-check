@@ -76,7 +76,7 @@ export default function Advertising() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Calculator className="w-5 h-5 text-primary" />
-              {es ? 'Calculadora de Presupuesto' : 'Budget Calculator'}
+              {t('ads.budgetCalculator')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
