@@ -564,7 +564,7 @@ export default function Vault() {
             {uploadProgress !== null && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Subiendo...</span>
+                  <span className="text-muted-foreground">{t('ads.uploading')}</span>
                   <span className="font-medium">{uploadProgress}%</span>
                 </div>
                 <Progress value={uploadProgress} className="h-2" />
