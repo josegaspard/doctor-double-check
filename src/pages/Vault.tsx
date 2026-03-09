@@ -438,12 +438,12 @@ export default function Vault() {
               {isStorageFull ? (
                 <p className="text-xs text-destructive flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
-                  Almacenamiento lleno
+                  {t('ads.storageFull')}
                 </p>
               ) : isStorageNearFull ? (
-                <p className="text-xs text-warning">Casi lleno — considera ampliar tu espacio</p>
+                <p className="text-xs text-warning">{t('ads.storageNearFull')}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">Necesitas más espacio? Consulta nuestros planes</p>
+                <p className="text-xs text-muted-foreground">{t('ads.storageNeedMore')}</p>
               )}
               <Button 
                 size="sm" 
