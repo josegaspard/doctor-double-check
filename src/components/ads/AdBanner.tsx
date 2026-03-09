@@ -10,6 +10,7 @@ interface AdBannerProps {
 
 export function AdBanner({ placementName, className }: AdBannerProps) {
   const { creative, isActive, trackImpression, trackClick } = useAdCreative(placementName);
+  const { t } = useLanguage();
   const impressionSent = useRef(false);
 
   useEffect(() => {
