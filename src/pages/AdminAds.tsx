@@ -211,9 +211,9 @@ export default function AdminAds() {
           <div className="flex-1">
             <h1 className="font-heading text-xl sm:text-2xl font-bold flex items-center gap-2">
               <Megaphone className="w-6 h-6 text-primary" />
-              {es ? 'Gestión de Publicidad' : 'Advertising Management'}
+              {t('ads.management')}
             </h1>
-            <p className="text-muted-foreground text-sm">{es ? 'Administra campañas, placements y configuración' : 'Manage campaigns, placements and settings'}</p>
+            <p className="text-muted-foreground text-sm">{t('ads.managementSubtitle')}</p>
           </div>
           <div className="flex items-center gap-1.5">
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleExportCSV} title="CSV"><FileDown className="w-4 h-4" /></Button>
