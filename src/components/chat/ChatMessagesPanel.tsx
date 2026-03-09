@@ -180,7 +180,7 @@ export function ChatMessagesPanel({
               />
             )}
             <ScrollArea className="flex-1 min-h-0 px-3 sm:px-4 py-4">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {messages.map(msg => (
                   <ChatMessageBubble
                     key={msg.id}
