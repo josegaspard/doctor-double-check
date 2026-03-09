@@ -390,7 +390,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             </nav>
 
             {/* Right Side */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               {/* Global Search */}
               <GlobalSearch />
               

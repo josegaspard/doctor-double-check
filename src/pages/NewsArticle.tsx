@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,12 +11,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import DOMPurify from 'dompurify';
 import { format, formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import {
   ArrowLeft, Clock, Share2, MessageCircle, Send, Loader2,
   Trash2, Stethoscope, User, GraduationCap, Facebook, Twitter, Link as LinkIcon,
   Globe, Instagram, Linkedin, Pencil, ChevronDown,
-  Star, MapPin, Users, Edit, LogIn, Eye, Heart
+  Star, MapPin, Users, Edit, LogIn, Eye, Heart, Languages
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -38,6 +39,8 @@ export default function NewsArticle() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user, role, isAuthenticated } = useAuth();
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'es' ? es : enUS;
   const [article, setArticle] = useState<any>(null);
   const [authorProfile, setAuthorProfile] = useState<any>(null);
   const [authorDoctorProfile, setAuthorDoctorProfile] = useState<any>(null);
@@ -52,6 +55,11 @@ export default function NewsArticle() {
   const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
   const commentInputRef = useRef<HTMLInputElement>(null);
 
+  // Translation state
+  const [translatedContent, setTranslatedContent] = useState<{ title: string; content: string } | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [showTranslated, setShowTranslated] = useState(false);
+
   useEffect(() => {
     const fetchArticle = async () => {
       const { data } = await supabase
@@ -62,10 +70,8 @@ export default function NewsArticle() {
         .maybeSingle();
       setArticle(data);
       if (data) {
-        // Increment view count
         supabase.rpc('increment_news_view', { news_id: data.id }).then(() => {});
         fetchComments(data.id);
-        // Fetch author profile
         const { data: authorP } = await supabase
           .from('profiles_public')
           .select('id, name, avatar_url')
@@ -73,7 +79,6 @@ export default function NewsArticle() {
           .maybeSingle();
         setAuthorProfile(authorP);
 
-        // Fetch author doctor profile for extra info
         const { data: doctorP } = await supabase
           .from('doctor_profiles_public')
           .select('*')
@@ -81,14 +86,12 @@ export default function NewsArticle() {
           .maybeSingle();
         setAuthorDoctorProfile(doctorP);
 
-        // Fetch author role
         const { data: roleData } = await supabase
           .from('user_roles' as any)
           .select('role')
           .eq('user_id', data.created_by)
           .maybeSingle();
         setAuthorRole((roleData as any)?.role || 'patient');
-        // Fetch editor profile if edited
         if (data.last_edited_by && data.last_edited_by !== data.created_by) {
           const { data: editorP } = await supabase
             .from('profiles_public')
@@ -131,7 +134,6 @@ export default function NewsArticle() {
       (doctorProfiles as any[])?.filter((d: any) => d.status === 'approved').map((d: any) => d.user_id) || []
     );
 
-    // Count likes per comment
     const likesCountMap = new Map<string, number>();
     (likesData as any[])?.forEach((l: any) => {
       likesCountMap.set(l.comment_id, (likesCountMap.get(l.comment_id) || 0) + 1);
@@ -150,7 +152,6 @@ export default function NewsArticle() {
       replies: [] as Comment[],
     }));
 
-    // Build thread tree
     const commentMap = new Map<string, Comment>();
     const rootComments: Comment[] = [];
     enriched.forEach(c => commentMap.set(c.id, c));
@@ -163,7 +164,6 @@ export default function NewsArticle() {
     });
 
     setComments(rootComments);
-    // Collapse all threads by default (Instagram-style)
     const threadsWithReplies = rootComments.filter(c => (c.replies?.length || 0) > 0).map(c => c.id);
     setCollapsedThreads(new Set(threadsWithReplies));
   };
@@ -175,7 +175,7 @@ export default function NewsArticle() {
     const insertData: any = { news_id: article.id, user_id: user.id, content: content.trim() };
     if (replyTo) insertData.parent_comment_id = replyTo.id;
     const { error } = await supabase.from('news_comments').insert(insertData);
-    if (error) { toast.error('Error al comentar'); setIsSending(false); return; }
+    if (error) { toast.error(t('ads.commentError')); setIsSending(false); return; }
     setNewComment('');
     setReplyTo(null);
     fetchComments(article.id);
@@ -184,7 +184,7 @@ export default function NewsArticle() {
 
   const handleDeleteComment = async (commentId: string) => {
     const { error } = await supabase.from('news_comments').delete().eq('id', commentId);
-    if (error) { toast.error('Error'); return; }
+    if (error) { toast.error(t('common.error')); return; }
     if (article) fetchComments(article.id);
   };
 
@@ -203,9 +203,7 @@ export default function NewsArticle() {
   };
 
   const handleReply = (comment: Comment) => {
-    // Instagram-style: replies to replies target the root parent
     const rootId = comment.parent_comment_id || comment.id;
-    const rootComment = comments.find(c => c.id === rootId);
     setReplyTo({ id: rootId, name: comment.user_name || 'Usuario' });
     setNewComment(`@${comment.user_name} `);
     setTimeout(() => commentInputRef.current?.focus(), 50);
@@ -219,16 +217,51 @@ export default function NewsArticle() {
     });
   };
 
+  const handleTranslate = async () => {
+    if (!article) return;
+    
+    if (showTranslated && translatedContent) {
+      setShowTranslated(false);
+      return;
+    }
+
+    if (translatedContent) {
+      setShowTranslated(true);
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const targetLang = language === 'es' ? 'en' : 'es';
+      const { data, error } = await supabase.functions.invoke('translate-news', {
+        body: { title: article.title, content: article.content, targetLang },
+      });
+
+      if (error) throw error;
+      if (data?.title && data?.content) {
+        setTranslatedContent({ title: data.title, content: data.content });
+        setShowTranslated(true);
+      } else {
+        throw new Error('Invalid response');
+      }
+    } catch (err) {
+      console.error('Translation error:', err);
+      toast.error(t('ads.translateError'));
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const getRoleBadge = (userRole: string) => {
     switch (userRole) {
-      case 'doctor': return <Badge variant="default" className="text-[10px] gap-0.5 h-4 px-1.5"><Stethoscope className="w-2.5 h-2.5" />Médico</Badge>;
-      case 'resident': return <Badge variant="secondary" className="text-[10px] gap-0.5 h-4 px-1.5"><GraduationCap className="w-2.5 h-2.5" />Residente</Badge>;
+      case 'doctor': return <Badge variant="default" className="text-[10px] gap-0.5 h-4 px-1.5"><Stethoscope className="w-2.5 h-2.5" />{t('common.doctor')}</Badge>;
+      case 'resident': return <Badge variant="secondary" className="text-[10px] gap-0.5 h-4 px-1.5"><GraduationCap className="w-2.5 h-2.5" />{t('common.resident')}</Badge>;
       default: return null;
     }
   };
 
   const getRelativeTime = (dateStr: string) => {
-    return formatDistanceToNow(new Date(dateStr), { addSuffix: false, locale: es });
+    return formatDistanceToNow(new Date(dateStr), { addSuffix: false, locale: dateLocale });
   };
 
   const getTotalCommentCount = useCallback((comments: Comment[]): number => {
@@ -244,21 +277,17 @@ export default function NewsArticle() {
     return (
       <div key={comment.id} className={depth > 0 ? 'ml-5 sm:ml-8' : ''}>
         <div className="flex gap-2.5 py-2.5 group">
-          {/* Avatar */}
           <div className="relative flex flex-col items-center">
             <Avatar className="w-8 h-8 shrink-0">
               <AvatarImage src={comment.user_avatar || ''} />
               <AvatarFallback className="text-xs bg-muted text-muted-foreground">{comment.user_name?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
-            {/* Thread connector line */}
             {hasReplies && !isCollapsed && (
               <div className="w-[2px] bg-border flex-1 mt-1 min-h-[8px]" />
             )}
           </div>
 
-          {/* Content */}
           <div className="flex-1 min-w-0">
-            {/* Header: name · time */}
             <div className="flex items-center gap-1.5">
               {comment.is_approved_doctor ? (
                 <Link to={`/doctor/${comment.user_id}`} className="font-semibold text-[13px] text-foreground hover:text-primary transition-colors">
@@ -271,12 +300,9 @@ export default function NewsArticle() {
               <span className="text-[11px] text-muted-foreground">· {getRelativeTime(comment.created_at)}</span>
             </div>
 
-            {/* Comment text */}
             <p className="text-[13px] text-foreground/90 mt-0.5 whitespace-pre-wrap leading-snug">{comment.content}</p>
 
-            {/* Actions row: likes · Reply · Delete */}
             <div className="flex items-center gap-3 mt-1">
-              {/* Like button */}
               <button
                 className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                 onClick={() => isAuthenticated && handleToggleLike(comment.id, !!comment.liked_by_me)}
@@ -290,17 +316,15 @@ export default function NewsArticle() {
                 )}
               </button>
 
-              {/* Reply */}
               {isAuthenticated && depth < maxDepth && (
                 <button
                   className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => handleReply(comment)}
                 >
-                  Responder
+                  {t('ads.reply')}
                 </button>
               )}
 
-              {/* Delete */}
               {user?.id === comment.user_id && (
                 <button
                   className="text-[11px] text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
@@ -311,20 +335,18 @@ export default function NewsArticle() {
               )}
             </div>
 
-            {/* Collapsed replies toggle */}
             {hasReplies && isCollapsed && (
               <button
                 className="flex items-center gap-1.5 mt-2 text-[12px] font-medium text-primary hover:text-primary/80 transition-colors"
                 onClick={() => toggleThread(comment.id)}
               >
                 <div className="w-6 h-[1px] bg-border" />
-                Ver {comment.replies!.length} {comment.replies!.length === 1 ? 'respuesta' : 'respuestas'}
+                {t('ads.viewReplies')} {comment.replies!.length} {comment.replies!.length === 1 ? t('ads.replySingular') : t('ads.repliesPlural')}
               </button>
             )}
           </div>
         </div>
 
-        {/* Replies */}
         {hasReplies && !isCollapsed && (
           <div>
             {comment.replies!.map(reply => renderComment(reply, depth + 1))}
@@ -333,7 +355,7 @@ export default function NewsArticle() {
               onClick={() => toggleThread(comment.id)}
             >
               <ChevronDown className="w-3 h-3 inline mr-1 rotate-180" />
-              Ocultar respuestas
+              {t('ads.hideReplies')}
             </button>
           </div>
         )}
@@ -349,8 +371,8 @@ export default function NewsArticle() {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-12 text-center">
-          <h2 className="text-xl font-semibold mb-4">Artículo no encontrado</h2>
-          <Link to="/news"><Button variant="outline" className="hidden sm:inline-flex"><ArrowLeft className="w-4 h-4 mr-2" /> Volver a noticias</Button></Link>
+          <h2 className="text-xl font-semibold mb-4">{t('ads.newsArticleNotFound')}</h2>
+          <Link to="/news"><Button variant="outline" className="hidden sm:inline-flex"><ArrowLeft className="w-4 h-4 mr-2" /> {t('ads.backToNews')}</Button></Link>
         </div>
       </MainLayout>
     );
@@ -361,18 +383,38 @@ export default function NewsArticle() {
   const shareTitle = article?.title || '';
   const authorSocial = article?.author_social || {};
 
+  const displayTitle = showTranslated && translatedContent ? translatedContent.title : article.title;
+  const displayContent = showTranslated && translatedContent ? translatedContent.content : article.content;
+
   return (
     <MainLayout>
       <article className="container mx-auto px-4 py-6 max-w-3xl">
         <div className="flex items-center justify-between mb-4">
           <Link to="/news" className="hidden sm:inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> Volver a noticias
+            <ArrowLeft className="w-4 h-4" /> {t('ads.backToNews')}
           </Link>
-          {canEdit && (
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate('/admin/news', { state: { editId: article.id } })}>
-              <Edit className="w-3.5 h-3.5" /> Editar artículo
+          <div className="flex items-center gap-2">
+            {/* Translate button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={handleTranslate}
+              disabled={isTranslating}
+            >
+              {isTranslating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Languages className="w-3.5 h-3.5" />
+              )}
+              {isTranslating ? t('ads.translating') : showTranslated ? t('ads.showOriginal') : t('ads.translateArticle')}
             </Button>
-          )}
+            {canEdit && (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate('/admin/news', { state: { editId: article.id } })}>
+                <Edit className="w-3.5 h-3.5" /> {t('ads.editArticle')}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Cover Image */}
@@ -387,27 +429,38 @@ export default function NewsArticle() {
           <Badge variant="secondary">{article.category}</Badge>
           <span className="text-sm text-muted-foreground flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            {format(new Date(article.published_at || article.created_at), "d 'de' MMMM, yyyy", { locale: es })}
+            {format(new Date(article.published_at || article.created_at), "d 'de' MMMM, yyyy", { locale: dateLocale })}
           </span>
           {article.view_count > 0 && (
             <span className="text-sm text-muted-foreground flex items-center gap-1">
               <Eye className="w-3 h-3" />
-              {article.view_count} lecturas
+              {article.view_count} {t('ads.readings')}
             </span>
           )}
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl font-bold text-foreground mb-3">{article.title}</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-3">{displayTitle}</h1>
         {article.summary && <p className="text-lg text-muted-foreground mb-6">{article.summary}</p>}
+
+        {/* Translation indicator */}
+        {showTranslated && (
+          <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground bg-primary/5 rounded-md px-3 py-2 border border-primary/20">
+            <Languages className="w-3 h-3 text-primary" />
+            <span>{language === 'es' ? 'Translated to English' : 'Traducido al español'}</span>
+            <button className="ml-auto text-primary hover:underline" onClick={() => setShowTranslated(false)}>
+              {t('ads.showOriginal')}
+            </button>
+          </div>
+        )}
 
         {/* Edit History Badge */}
         {article.last_edited_at && (
           <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 border">
             <Pencil className="w-3 h-3" />
             <span>
-              Editado el {format(new Date(article.last_edited_at), "d 'de' MMMM yyyy, HH:mm", { locale: es })}
-              {editorProfile && <> por <strong className="text-foreground">{editorProfile.name}</strong></>}
+              {t('ads.editedOn')} {format(new Date(article.last_edited_at), "d 'de' MMMM yyyy, HH:mm", { locale: dateLocale })}
+              {editorProfile && <> {t('ads.by')} <strong className="text-foreground">{editorProfile.name}</strong></>}
             </span>
           </div>
         )}
@@ -439,7 +492,7 @@ export default function NewsArticle() {
                     ) : (
                       <span className="font-semibold text-foreground text-base">{authorProfile.name}</span>
                     )}
-                    <Badge variant="outline" className="text-[10px]">Autor</Badge>
+                    <Badge variant="outline" className="text-[10px]">{t('ads.author')}</Badge>
                     {authorRole && getRoleBadge(authorRole)}
                   </div>
                   {/* Doctor-specific info */}
@@ -466,23 +519,23 @@ export default function NewsArticle() {
                       {authorDoctorProfile.total_consultations > 0 && (
                         <span className="flex items-center gap-1">
                           <MessageCircle className="w-3 h-3" />
-                          {authorDoctorProfile.total_consultations} consultas
+                          {authorDoctorProfile.total_consultations} {t('ads.consultationsLabel')}
                         </span>
                       )}
                       {authorDoctorProfile.followers_count > 0 && (
                         <span className="flex items-center gap-1">
                           <Users className="w-3 h-3" />
-                          {authorDoctorProfile.followers_count} seguidores
+                          {authorDoctorProfile.followers_count} {t('ads.followersLabel')}
                         </span>
                       )}
                       {authorDoctorProfile.consultation_fee > 0 && (
                         <Badge variant="secondary" className="text-[10px]">
-                          Consulta: ${Number(authorDoctorProfile.consultation_fee).toFixed(0)} MXN
+                          {t('ads.consultationFee')} ${Number(authorDoctorProfile.consultation_fee).toFixed(0)} MXN
                         </Badge>
                       )}
                       {authorDoctorProfile.consultation_fee === 0 && (
                         <Badge variant="default" className="text-[10px]">
-                          Consulta gratuita
+                          {t('ads.freeConsultation')}
                         </Badge>
                       )}
                     </div>
@@ -521,12 +574,12 @@ export default function NewsArticle() {
                     </div>
                   )}
 
-                  {/* View profile button - only for approved doctors */}
+                  {/* View profile button */}
                   {authorDoctorProfile && (
                     <div className="mt-2">
                       <Link to={`/doctor/${authorProfile.id}`}>
                         <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                          <User className="w-3 h-3" /> Ver perfil
+                          <User className="w-3 h-3" /> {t('ads.viewProfileBtn')}
                         </Button>
                       </Link>
                     </div>
@@ -539,7 +592,7 @@ export default function NewsArticle() {
 
         {/* Share Buttons */}
         <div className="flex items-center gap-2.5 mb-6 flex-wrap">
-          <span className="text-sm text-muted-foreground mr-1 flex items-center gap-1.5"><Share2 className="w-4 h-4" />Compartir:</span>
+          <span className="text-sm text-muted-foreground mr-1 flex items-center gap-1.5"><Share2 className="w-4 h-4" />{t('ads.shareLabel')}</span>
           <Button
             variant="outline"
             size="sm"
@@ -568,9 +621,9 @@ export default function NewsArticle() {
             variant="outline"
             size="sm"
             className="gap-1.5 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors duration-200"
-            onClick={() => { navigator.clipboard.writeText(shareUrl); toast.success('¡Enlace copiado al portapapeles!'); }}
+            onClick={() => { navigator.clipboard.writeText(shareUrl); toast.success(t('ads.linkCopied')); }}
           >
-            <LinkIcon className="w-3.5 h-3.5" /> Copiar
+            <LinkIcon className="w-3.5 h-3.5" /> {t('ads.copy')}
           </Button>
         </div>
 
@@ -579,7 +632,7 @@ export default function NewsArticle() {
         {/* Content */}
         <div
           className="news-article-content"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(displayContent) }}
         />
 
         <Separator className="my-8" />
@@ -588,35 +641,32 @@ export default function NewsArticle() {
         <section>
           <h2 className="text-lg font-bold text-foreground mb-1 flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-primary" />
-            Comentarios
+            {t('ads.commentsTitle')}
           </h2>
           <p className="text-[13px] text-muted-foreground mb-4">
-            {getTotalCommentCount(comments)} {getTotalCommentCount(comments) === 1 ? 'comentario' : 'comentarios'}
+            {getTotalCommentCount(comments)} {getTotalCommentCount(comments) === 1 ? t('ads.comment') : t('ads.commentsPlural')}
           </p>
 
-          {/* Comments list */}
           <div className="divide-y divide-border/50">
             {comments.map((comment) => renderComment(comment))}
           </div>
 
-          {/* Empty state */}
           {comments.length === 0 && (
             <div className="flex flex-col items-center py-10 text-center">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-3">
                 <MessageCircle className="w-7 h-7 text-muted-foreground" />
               </div>
-              <p className="font-medium text-foreground text-sm">Aún no hay comentarios</p>
-              <p className="text-muted-foreground text-xs mt-1">Sé el primero en compartir tu opinión</p>
+              <p className="font-medium text-foreground text-sm">{t('ads.noComments')}</p>
+              <p className="text-muted-foreground text-xs mt-1">{t('ads.beFirstComment')}</p>
             </div>
           )}
 
-          {/* Comment input — Instagram-style sticky bottom */}
           {isAuthenticated ? (
             <div className="sticky bottom-0 bg-background pt-3 pb-2 border-t border-border mt-4">
               {replyTo && (
                 <div className="flex items-center justify-between mb-2 px-1">
                   <span className="text-xs text-muted-foreground">
-                    Respondiendo a <span className="font-medium text-foreground">@{replyTo.name}</span>
+                    {t('ads.replyingTo')} <span className="font-medium text-foreground">@{replyTo.name}</span>
                   </span>
                   <button
                     className="text-xs text-muted-foreground hover:text-foreground"
@@ -635,7 +685,7 @@ export default function NewsArticle() {
                   <input
                     ref={commentInputRef}
                     type="text"
-                    placeholder="Añade un comentario..."
+                    placeholder={t('ads.addComment')}
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && newComment.trim()) { e.preventDefault(); handleSubmitComment(); } }}
@@ -649,7 +699,7 @@ export default function NewsArticle() {
                     onClick={() => handleSubmitComment()}
                     disabled={isSending}
                   >
-                    {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Publicar'}
+                    {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : t('ads.publish')}
                   </button>
                 )}
               </div>
@@ -657,11 +707,11 @@ export default function NewsArticle() {
           ) : (
             <div className="border-t border-border mt-4 pt-4 pb-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Inicia sesión para comentar</span>
+                <span className="text-sm text-muted-foreground">{t('ads.loginToComment')}</span>
                 <Link to="/login">
                   <Button size="sm" variant="outline" className="gap-1.5 h-8">
                     <LogIn className="w-3.5 h-3.5" />
-                    Iniciar sesión
+                    {t('nav.login')}
                   </Button>
                 </Link>
               </div>
