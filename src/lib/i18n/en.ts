@@ -1053,6 +1053,7 @@ export const en = {
     viewProfile: 'View Profile',
     availableNow: 'Available now',
     notAvailable: 'Not available',
+    perConsult: 'per consult',
     // Specialties
     specAll: 'All',
     specCardiology: 'Cardiology',
