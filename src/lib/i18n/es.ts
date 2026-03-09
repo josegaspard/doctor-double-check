@@ -66,6 +66,9 @@ export const es = {
     share: 'Compartir',
     copyLink: 'Copiar enlace',
     copied: 'Copiado',
+    of: 'de',
+    doctor: 'Médico',
+    resident: 'Residente',
   },
   // Inputs
   inputs: {
