@@ -149,8 +149,8 @@ export default function AdminAds() {
     setIsSaving(true);
     const { error } = await supabase.from('ad_config' as any).update({ ...configForm, updated_at: new Date().toISOString() } as any).eq('id', 'default');
     setIsSaving(false);
-    if (error) { toast.error('Error al guardar'); return; }
-    toast.success('Configuración guardada');
+    if (error) { toast.error(t('ads.configError')); return; }
+    toast.success(t('ads.configSaved'));
     refetchConfig();
   };
 
