@@ -257,7 +257,7 @@ export function LiveConsultationBooking({
                   }`}
                 >
                   <CreditCard className="w-5 h-5 text-primary" />
-                  <span className="text-xs font-medium">Tarjeta</span>
+                  <span className="text-xs font-medium">{t('ads.card')}</span>
                   <span className="text-xs text-muted-foreground">Stripe</span>
                 </button>
               </div>
