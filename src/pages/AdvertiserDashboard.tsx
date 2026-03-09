@@ -440,7 +440,7 @@ export default function AdvertiserDashboard() {
           <Card><CardContent className="p-3 text-center">
             <DollarSign className="w-5 h-5 text-success mx-auto mb-1" />
             <p className="text-lg font-bold text-success">${totalSpent.toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">{es ? 'Gastado' : 'Spent'}</p>
+            <p className="text-[10px] text-muted-foreground">{t('ads.spent')}</p>
           </CardContent></Card>
         </div>
 
