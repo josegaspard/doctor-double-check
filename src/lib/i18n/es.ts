@@ -1054,6 +1054,8 @@ export const es = {
     availableNow: 'Disponible ahora',
     notAvailable: 'No disponible',
     perConsult: 'por consulta',
+    followed: 'Ahora sigues a este doctor',
+    unfollowed: 'Dejaste de seguir al doctor',
     // Specialties
     specAll: 'Todas',
     specCardiology: 'Cardiología',

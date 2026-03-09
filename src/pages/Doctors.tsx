@@ -505,7 +505,7 @@ export default function Doctors() {
                         if (!coords) return null;
                         const dist = haversineDistance(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
                         return (
-                          <div className="px-4 py-1.5 bg-accent/30 text-[11px] text-accent-foreground flex items-center gap-1">
+                          <div className="px-4 py-1.5 bg-primary/80 text-[11px] text-primary-foreground flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
                             ~{Math.round(dist)} km
                           </div>
