@@ -879,7 +879,7 @@ export default function Vault() {
                   ) : (
                     <>
                       <CreditCard className="w-4 h-4" />
-                      Pagar con tarjeta
+                      {t('ads.payWithCard')}
                       <ExternalLink className="w-3 h-3 ml-1" />
                     </>
                   )}
