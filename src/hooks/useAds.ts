@@ -57,13 +57,14 @@ async function fetchAdConfig(): Promise<AdConfig> {
       .select('*')
       .eq('id', 'default')
       .maybeSingle();
-    cachedConfig = data ? {
-      is_active: data.is_active,
-      cpm_rate: Number(data.cpm_rate),
-      cpc_rate: Number(data.cpc_rate),
-      min_budget: Number(data.min_budget),
-      max_file_size_kb: data.max_file_size_kb,
-      allowed_formats: data.allowed_formats,
+    const d = data as any;
+    cachedConfig = d ? {
+      is_active: d.is_active,
+      cpm_rate: Number(d.cpm_rate),
+      cpc_rate: Number(d.cpc_rate),
+      min_budget: Number(d.min_budget),
+      max_file_size_kb: d.max_file_size_kb,
+      allowed_formats: d.allowed_formats,
     } : DEFAULT_CONFIG;
     return cachedConfig;
   })();
