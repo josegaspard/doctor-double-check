@@ -798,7 +798,7 @@ export default function Vault() {
             </div>
 
             <Button variant="outline" onClick={() => setShowPermissionDialog(false)} className="w-full">
-              Cerrar
+              {t('ads.close')}
             </Button>
           </DialogContent>
         </Dialog>
