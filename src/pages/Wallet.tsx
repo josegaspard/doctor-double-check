@@ -158,7 +158,7 @@ export default function Wallet() {
           {/* Balance Card */}
           <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground relative overflow-hidden">
             <CardContent className="p-4 sm:p-6">
-              <p className="text-primary-foreground/80 text-xs sm:text-sm mb-1">{t('wallet.balance')}</p>
+              <p className="text-primary-foreground text-xs sm:text-sm mb-1 font-medium">{t('wallet.balance')}</p>
               <motion.p
                 key={balance}
                 initial={{ scale: 1 }}
