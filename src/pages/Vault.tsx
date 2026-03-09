@@ -231,7 +231,7 @@ export default function Vault() {
       }
     } catch (error) {
       console.error('Error fetching related doctors:', error);
-      toast.error('Error al cargar los médicos');
+      toast.error(t('ads.errorLoadingDoctors'));
     } finally {
       setLoadingDoctors(false);
     }
