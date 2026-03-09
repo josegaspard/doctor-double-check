@@ -1,26 +1,42 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Wallet & Payment UX/UI Overhaul
 
-## Solucion
+## Problems
+1. **PaywallModal** shows "Pay with Card" as primary and wallet as secondary — but if user HAS balance, wallet should be primary (instant). If user has NO balance, card should be primary (no extra step).
+2. Text readability issues — some colors (like `text-warning/80`, `text-muted-foreground`) are too faint on certain backgrounds.
+3. Users don't understand they need wallet balance to buy things — no clear onboarding/communication about the wallet system.
+4. Wallet page itself lacks explanatory context about what the wallet is for.
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+## Changes
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+### 1. `PaywallModal.tsx` — Smart payment priority based on balance
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+**Logic change:**
+- If `canAfford` (user has enough wallet balance) → show **Wallet as primary button** (solid/default), Card as secondary below with "o pagar con tarjeta" divider
+- If `!canAfford` (insufficient or zero balance) → show **Card as primary button** (solid/default), wallet section below showing balance deficit + "Recargar" link
+- Increase text contrast: replace `text-warning/80` with `text-warning-foreground` or `text-foreground`, replace faint muted colors with readable ones
+- Make price text larger and bolder for clarity
+- Add a brief explanation line: "Paga al instante con tu saldo" for wallet, "Pago seguro con tarjeta" for card
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+### 2. `Wallet.tsx` — Add explanatory hero section
 
-## Archivos a modificar
+- Add a short info banner below the header explaining what the wallet is for: "Tu billetera te permite comprar grabaciones, contenido premium y consultas de forma instantánea sin necesidad de ingresar tu tarjeta cada vez."
+- Add 3 small benefit icons: "Compras instantáneas", "Sin tarjeta cada vez", "Historial completo"
+- Improve text contrast on the balance card (ensure `text-primary-foreground` is fully opaque, not `/60` or `/80`)
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+### 3. `RecordingsGrid.tsx` — Better zero-balance CTA
+
+- When balance is 0, make the CTA banner more prominent with clearer text: "Para comprar contenido premium necesitas saldo en tu billetera" with a larger "Recargar ahora" button
+- When balance > 0 but low (less than cheapest recording), show a softer hint
+
+### 4. `ContentGallery.tsx` — Add wallet awareness for premium content
+
+- For premium content cards that require purchase, show a small wallet balance indicator or "Saldo insuficiente" warning if user can't afford it — making it clear before they click
+
+## Files to modify
+- `src/components/PaywallModal.tsx` — Smart priority + text contrast
+- `src/pages/Wallet.tsx` — Explanatory hero
+- `src/pages/RecordingsGrid.tsx` — Better zero-balance CTA
+- `src/pages/ContentGallery.tsx` — Wallet awareness hints on cards
+
