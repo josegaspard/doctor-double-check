@@ -291,8 +291,8 @@ export default function DoctorInvoices() {
 
         {/* Earnings Summary Cards */}
         <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-3 md:overflow-visible md:pb-0 mb-6">
-          <Card className="border-success/30 bg-success/5">
-            <CardContent className="p-4">
+          <Card className="border-success/30 bg-success/5 min-w-[200px] snap-center flex-shrink-0 md:min-w-0 md:flex-shrink">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
                   <Clock className="w-5 h-5 text-success" />
