@@ -125,11 +125,11 @@ export default function RecordingsGrid() {
     : false;
 
   const filterOptions: { key: ContentFilter; label: string; icon: React.ReactNode }[] = [
-    { key: 'all', label: 'Todo', icon: <Library className="w-3.5 h-3.5" /> },
-    { key: 'free', label: 'Gratis', icon: <Gift className="w-3.5 h-3.5" /> },
-    { key: 'paid', label: 'De Pago', icon: <Sparkles className="w-3.5 h-3.5" /> },
-    { key: 'purchased', label: 'Comprados', icon: <ShoppingBag className="w-3.5 h-3.5" /> },
-    { key: 'not_purchased', label: 'Sin Comprar', icon: <Lock className="w-3.5 h-3.5" /> },
+    { key: 'all', label: t('ads.filterAll'), icon: <Library className="w-3.5 h-3.5" /> },
+    { key: 'free', label: t('ads.filterFree'), icon: <Gift className="w-3.5 h-3.5" /> },
+    { key: 'paid', label: t('ads.filterPaid'), icon: <Sparkles className="w-3.5 h-3.5" /> },
+    { key: 'purchased', label: t('ads.filterPurchased'), icon: <ShoppingBag className="w-3.5 h-3.5" /> },
+    { key: 'not_purchased', label: t('ads.filterNotPurchased'), icon: <Lock className="w-3.5 h-3.5" /> },
   ];
 
   return (
