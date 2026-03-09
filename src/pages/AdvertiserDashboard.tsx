@@ -500,9 +500,9 @@ export default function AdvertiserDashboard() {
               <div className="flex gap-2 pt-2">
                 <Button onClick={createCampaign} disabled={isCreating} className="gap-2">
                   {isCreating && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {es ? 'Crear Campaña' : 'Create Campaign'}
+                  {t('ads.createCampaign')}
                 </Button>
-                <Button variant="outline" onClick={() => setShowCreate(false)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+                <Button variant="outline" onClick={() => setShowCreate(false)}>{t('common.cancel')}</Button>
               </div>
             </CardContent>
           </Card>
