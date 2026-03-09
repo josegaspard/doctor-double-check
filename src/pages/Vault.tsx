@@ -935,7 +935,7 @@ export default function Vault() {
                 )}
 
                 <Button variant="ghost" size="sm" onClick={() => setSelectedPlan(null)} className="w-full">
-                  ← Cambiar plan
+                  {t('ads.changePlan')}
                 </Button>
               </div>
             )}
