@@ -1,36 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Reorder Nav Items + Optimize Mobile for Doctors & Recordings
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Changes
+## Solucion
 
-### 1. Reorder `navItems` array (`MainLayout.tsx`, line 74-88)
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-Change order to: **Lives → Recordings → Doctors → Content → News → rest**
-
-Also make `recordings` visible to `visitor` role so non-logged-in users can browse.
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
 ```
-Lives → Recordings → Doctors → Content → News → Chat → Prescriptions → ...
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-### 2. Update bottom tabs (`MainLayout.tsx`, lines 91-138)
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-Add Recordings to mobile bottom tabs for quick access:
+## Archivos a modificar
 
-- **Patient**: Lives, Recordings, Doctors, Chat + More
-- **Doctor**: Lives, Recordings, Chat, Dashboard + More  
-- **Visitor**: Lives, Recordings, Doctors, News + More (no More needed if ≤4)
-- **Resident**: Lives, Recordings, Doctors, Notifications + More
-- **Admin**: Lives, Recordings, Doctors, Admin + More
-
-### 3. Recordings visibility for visitors
-
-Add `'visitor'` to recordings navItem roles so visitors can browse (purchase requires login).
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/components/layout/MainLayout.tsx` | Reorder navItems; add Recordings to bottom tabs; add visitor to recordings roles |
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
