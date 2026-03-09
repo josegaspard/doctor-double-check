@@ -222,22 +222,34 @@ export function GlobalSearch() {
 
   return (
     <>
-      {/* Trigger: Mobile + md = icon, lg+ = search bar */}
+      {/* Trigger: Mobile icon */}
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 text-muted-foreground lg:hidden"
+        className="h-8 w-8 text-muted-foreground md:hidden"
         onClick={() => setOpen(true)}
       >
         <Search className="w-4 h-4" />
       </Button>
+      
+      {/* Trigger: Tablet icon (md-lg) */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="hidden md:flex xl:hidden h-8 w-8 text-muted-foreground"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="w-4 h-4" />
+      </Button>
+      
+      {/* Trigger: Desktop search bar (xl+) */}
       <button
         onClick={() => setOpen(true)}
-        className="hidden lg:flex items-center gap-2 h-8 px-3 rounded-lg border border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-[11px] min-w-[150px] xl:min-w-[180px]"
+        className="hidden xl:flex items-center gap-2 h-8 px-3 rounded-lg border border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-[11px] min-w-[120px] 2xl:min-w-[160px]"
       >
         <Search className="w-3.5 h-3.5 flex-shrink-0" />
         <span className="truncate">{t('search.placeholder')}</span>
-        <kbd className="ml-auto hidden xl:inline-flex items-center gap-0.5 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+        <kbd className="ml-auto hidden 2xl:inline-flex items-center gap-0.5 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
           ⌘K
         </kbd>
       </button>
