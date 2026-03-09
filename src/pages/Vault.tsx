@@ -484,15 +484,15 @@ export default function Vault() {
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
                 <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">1</span>
-                <span className="text-[11px] text-muted-foreground leading-tight">Categoría</span>
+                <span className="text-[11px] text-muted-foreground leading-tight">{t('ads.stepCategory')}</span>
               </div>
               <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
                 <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">2</span>
-                <span className="text-[11px] text-muted-foreground leading-tight">Descripción</span>
+                <span className="text-[11px] text-muted-foreground leading-tight">{t('ads.stepDescription')}</span>
               </div>
               <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
                 <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">3</span>
-                <span className="text-[11px] text-muted-foreground leading-tight">Archivo</span>
+                <span className="text-[11px] text-muted-foreground leading-tight">{t('ads.stepFile')}</span>
               </div>
             </div>
 
