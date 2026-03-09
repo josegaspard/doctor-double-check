@@ -375,10 +375,10 @@ export default function Vault() {
     try {
       const result = await revokeAccess(permissionFile.id, doctorId);
       if (result.success) {
-        toast.success('Acceso revocado correctamente');
+        toast.success(t('ads.accessRevoked'));
         await refreshVault();
       } else {
-        toast.error(result.error || 'Error al revocar acceso');
+        toast.error(result.error || t('ads.accessRevokeError'));
       }
     } catch (error) {
       toast.error('Error al revocar acceso');
