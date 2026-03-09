@@ -929,7 +929,7 @@ export default function Vault() {
                       className="w-full gap-2"
                     >
                       <Wallet className="w-4 h-4" />
-                      Recargar billetera
+                      {t('ads.rechargeWallet')}
                     </Button>
                   </div>
                 )}
