@@ -575,7 +575,7 @@ export default function Vault() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Mis Expedientes ({files.length})</CardTitle>
+            <CardTitle className="text-lg">{t('ads.myFiles')} ({files.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {files.length > 0 ? (
