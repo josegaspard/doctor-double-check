@@ -322,7 +322,7 @@ export default function RecordingsGrid() {
                     {recording.peakViewers != null && recording.peakViewers > 0 && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
                         <Eye className="w-3.5 h-3.5" />
-                        <span>{recording.peakViewers.toLocaleString()} espectadores</span>
+                        <span>{recording.peakViewers.toLocaleString()} {t('ads.viewers')}</span>
                       </div>
                     )}
                     {(!recording.peakViewers || recording.peakViewers === 0) && <div className="mb-3" />}
