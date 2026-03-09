@@ -359,7 +359,7 @@ export function TransactionHistory() {
                 <p className="text-lg font-bold mt-1">${Math.abs(selectedTx.amount).toLocaleString()} MXN</p>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">¿Por qué solicitas el reembolso?</label>
+                <label className="text-sm font-medium">{t('wallet.refundReason')}</label>
                 <Textarea
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
