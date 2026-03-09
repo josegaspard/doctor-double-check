@@ -8,7 +8,6 @@ import {
   User, 
   CheckCheck, 
   Lock, 
-  Clock,
   GraduationCap,
   Trash2,
 } from 'lucide-react';
@@ -44,7 +43,6 @@ export function ChatSessionItem({
   session,
   isSelected,
   displayInfo,
-  officeHours,
   isAvailable,
   canOpenDoctorProfile,
   userRole,
@@ -60,23 +58,13 @@ export function ChatSessionItem({
   const dateLocale = language === 'en' ? enUS : es;
   
   const getParticipantIcon = () => {
-    if (displayInfo.type === 'doctor') {
-      return <Stethoscope className="w-5 h-5" />;
-    }
-    if (displayInfo.type === 'resident') {
-      return <GraduationCap className="w-5 h-5" />;
-    }
+    if (displayInfo.type === 'doctor') return <Stethoscope className="w-5 h-5" />;
+    if (displayInfo.type === 'resident') return <GraduationCap className="w-5 h-5" />;
     return <User className="w-5 h-5" />;
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitials = (name: string) =>
+    name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <div
@@ -88,7 +76,7 @@ export function ChatSessionItem({
         }
       }}
       className={`
-        group relative p-3.5 rounded-xl cursor-pointer transition-all duration-200
+        group relative p-3 rounded-xl cursor-pointer transition-all duration-200
         ${isSelecting && isChecked ? 'bg-primary/10 ring-2 ring-primary/30' : ''}
         ${!isSelecting && isSelected 
           ? 'bg-primary/10 ring-2 ring-primary/20 shadow-sm' 
@@ -99,10 +87,10 @@ export function ChatSessionItem({
         ${isClosed ? 'opacity-80' : ''}
       `}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         {/* Checkbox for selection mode */}
         {isSelecting && (
-          <div className="flex items-center pt-1 flex-shrink-0">
+          <div className="flex items-center flex-shrink-0">
             <Checkbox
               checked={isChecked}
               onCheckedChange={(checked) => onCheckChange?.(!!checked)}
@@ -111,124 +99,94 @@ export function ChatSessionItem({
             />
           </div>
         )}
-        {/* Avatar with online indicator */}
+
+        {/* Avatar with availability dot */}
         <div className="relative flex-shrink-0">
-          <Avatar className={`w-12 h-12 ${isClosed ? 'opacity-75' : ''} ring-2 ring-background`}>
+          <Avatar className={`w-11 h-11 ${isClosed ? 'opacity-75' : ''} ring-2 ring-background`}>
             <AvatarImage src={displayInfo.avatar} alt={displayInfo.name} />
             <AvatarFallback className={`
-              text-sm
+              text-sm font-medium
               ${displayInfo.type === 'doctor' 
-                ? 'bg-gradient-to-br from-primary/20 to-primary/10 text-primary' 
+                ? 'bg-primary/15 text-primary' 
                 : displayInfo.type === 'resident'
-                  ? 'bg-gradient-to-br from-secondary/30 to-secondary/10 text-secondary-foreground'
-                  : 'bg-gradient-to-br from-muted to-muted/50 text-muted-foreground'
+                  ? 'bg-secondary/20 text-secondary-foreground'
+                  : 'bg-muted text-muted-foreground'
               }
-              font-medium
             `}>
               {displayInfo.avatar ? getParticipantIcon() : getInitials(displayInfo.name)}
             </AvatarFallback>
           </Avatar>
-          {/* Online/Available indicator for doctors */}
+          {/* Availability dot — only for doctors, from patient view */}
           {!isClosed && displayInfo.type === 'doctor' && userRole === 'patient' && (
             <span className={`
-              absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-background
-              ${isAvailable ? 'bg-success' : 'bg-warning'}
+              absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background
+              ${isAvailable ? 'bg-success' : 'bg-muted-foreground/40'}
             `} />
           )}
         </div>
         
-        <div className="flex-1 min-w-0 space-y-0.5">
-          {/* Name row */}
-          <div className="flex items-center gap-2">
-            {canOpenDoctorProfile ? (
-              <button
-                type="button"
-                onClick={onDoctorProfileClick}
-                className="font-semibold text-base truncate text-left hover:text-primary transition-colors focus:outline-none"
-                title={t('common.viewProfile')}
-              >
-                {displayInfo.name}
-              </button>
-            ) : (
-              <p className="font-semibold text-base truncate">{displayInfo.name}</p>
-            )}
-          {session.isDoubleCheck && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-0.5">
-              <CheckCheck className="w-3 h-3" />
-              2nd
-            </Badge>
-          )}
-        </div>
-        
-        {/* Specialty and role badge */}
-          {displayInfo.specialty && (
-            <div className="flex items-center gap-1.5">
+        {/* Content — clean 2-line layout */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
               {canOpenDoctorProfile ? (
                 <button
                   type="button"
                   onClick={onDoctorProfileClick}
-                  className="text-sm text-primary font-medium truncate text-left hover:underline focus:outline-none"
+                  className="font-semibold text-sm truncate text-left hover:text-primary transition-colors focus:outline-none"
                   title={t('common.viewProfile')}
                 >
-                  {displayInfo.specialty}
+                  {displayInfo.name}
                 </button>
               ) : (
-                <span className="text-sm text-primary font-medium truncate">{displayInfo.specialty}</span>
+                <p className="font-semibold text-sm truncate">{displayInfo.name}</p>
               )}
-              {displayInfo.type === 'resident' && (
-                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
-                  {t('roles.resident')}
+              {session.isDoubleCheck && (
+                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 gap-0.5 flex-shrink-0">
+                  <CheckCheck className="w-3 h-3" />
+                  2nd
                 </Badge>
               )}
             </div>
-          )}
-          
-          {/* Last message preview */}
-          <p className="text-sm text-muted-foreground truncate pr-6">
-            {session.lastMessage || t('chat.noConversations')}
-          </p>
-          
-          {/* Office hours or closed date */}
-          {isClosed && session.lastMessageAt ? (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Lock className="w-3 h-3" />
-              <span>{t('chat.sessionClosed')} {format(session.lastMessageAt, 'dd MMM yyyy', { locale: dateLocale })}</span>
-            </div>
-          ) : officeHours && userRole === 'patient' ? (
-            <div className={`flex items-center gap-1 text-xs ${isAvailable ? 'text-success' : 'text-warning'}`}>
-              <Clock className="w-3 h-3" />
-              <span>{officeHours}</span>
-              {!isAvailable && <span className="text-muted-foreground">• {t('dashboard.notAvailable')}</span>}
-            </div>
-          ) : null}
-        </div>
-        
-        {/* Right side indicators */}
-        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-          {session.lastMessageAt && (
-            <span className="text-xs text-muted-foreground">
-              {format(session.lastMessageAt, 'HH:mm', { locale: dateLocale })}
+            {/* Time */}
+            <span className="text-[11px] text-muted-foreground flex-shrink-0">
+              {session.lastMessageAt && format(session.lastMessageAt, 'HH:mm', { locale: dateLocale })}
+            </span>
+          </div>
+
+          {/* Specialty inline */}
+          {displayInfo.specialty && (
+            <span className="text-xs text-primary/80 font-medium truncate block">
+              {displayInfo.specialty}
             </span>
           )}
-          {!isClosed && session.unreadCount > 0 && (
-            <Badge className="h-5 min-w-5 px-1.5 text-xs bg-primary hover:bg-primary">
-              {session.unreadCount}
-            </Badge>
-          )}
-          {isClosed && onDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-              onClick={onDelete}
-              title="Eliminar chat"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
-          {isClosed && !onDelete && (
-            <Lock className="w-3.5 h-3.5 text-muted-foreground/50" />
-          )}
+
+          {/* Last message */}
+          <div className="flex items-center justify-between gap-2 mt-0.5">
+            <p className="text-xs text-muted-foreground truncate flex-1">
+              {session.lastMessage || t('chat.noConversations')}
+            </p>
+            {/* Right indicators */}
+            {!isClosed && session.unreadCount > 0 && (
+              <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-primary hover:bg-primary flex-shrink-0">
+                {session.unreadCount}
+              </Badge>
+            )}
+            {isClosed && onDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive flex-shrink-0"
+                onClick={onDelete}
+                title="Eliminar chat"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            )}
+            {isClosed && !onDelete && (
+              <Lock className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
+            )}
+          </div>
         </div>
       </div>
     </div>
