@@ -203,8 +203,8 @@ export default function AdvertiserDashboard() {
       click_url: clickUrl || '#', alt_text: file.name,
     } as any);
     setIsUploading(false);
-    if (insErr) { toast.error('Error al guardar creativo'); return; }
-    toast.success(es ? 'Creativo subido' : 'Creative uploaded');
+    if (insErr) { toast.error(t('ads.creativeSaveError')); return; }
+    toast.success(t('ads.creativeUploaded'));
     setClickUrl('');
     // Refresh creatives
     const { data: crs } = await supabase.from('ad_creatives' as any).select('*').eq('campaign_id', selectedCampaign);
