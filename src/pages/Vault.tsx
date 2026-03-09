@@ -127,7 +127,7 @@ export default function Vault() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('storage_success') === 'true') {
-      toast.success('¡Almacenamiento ampliado exitosamente!');
+      toast.success(t('ads.storageExpanded'));
       fetchStorage();
       // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
@@ -231,7 +231,7 @@ export default function Vault() {
       }
     } catch (error) {
       console.error('Error fetching related doctors:', error);
-      toast.error('Error al cargar los médicos');
+      toast.error(t('ads.errorLoadingDoctors'));
     } finally {
       setLoadingDoctors(false);
     }
@@ -258,11 +258,10 @@ export default function Vault() {
 
     const result = await uploadFile(file, selectedCategory, description);
     if (result.success) {
-      toast.success('Archivo subido correctamente');
-      // Re-fetch storage to reflect new usage
+      toast.success(t('ads.uploadSuccess'));
       await fetchStorage();
     } else {
-      toast.error(result.error || 'Error al subir archivo');
+      toast.error(result.error || t('ads.uploadError'));
     }
     setDescription('');
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -286,13 +285,13 @@ export default function Vault() {
 
       if (!result?.success) {
         toast.error(result?.error === 'Insufficient balance' 
-          ? 'Saldo insuficiente' 
-          : (result?.error || 'Error al procesar la compra'));
+          ? t('ads.insufficientBalance') 
+          : (result?.error || t('ads.purchaseError')));
         return;
       }
 
       // Show debit notification
-      toast.success(`Se debitaron $${result.amount_charged} de tu wallet. Nuevo saldo: $${result.new_balance}`);
+      toast.success(`${t('ads.walletDebited')} $${result.amount_charged} ${t('ads.fromWallet')} $${result.new_balance}`);
 
       const newLimit = storageLimit + (extraGB * 1073741824);
       await supabase
@@ -303,10 +302,10 @@ export default function Vault() {
       setStorageLimit(newLimit);
       setShowUpgradeDialog(false);
       setSelectedPlan(null);
-      toast.success(`¡Almacenamiento ampliado a ${formatStorageSize(newLimit)}!`);
+      toast.success(`${t('ads.storageExpandedTo')} ${formatStorageSize(newLimit)}!`);
     } catch (error) {
       console.error('Upgrade error:', error);
-      toast.error('Error al ampliar almacenamiento');
+      toast.error(t('ads.expandError'));
     } finally {
       setIsUpgrading(false);
     }
@@ -326,7 +325,7 @@ export default function Vault() {
       }
     } catch (error: any) {
       console.error('Storage checkout error:', error);
-      toast.error(error.message || 'Error al procesar el pago');
+      toast.error(error.message || t('ads.checkoutStorageError'));
     } finally {
       setIsStripeProcessing(false);
     }
@@ -357,14 +356,13 @@ export default function Vault() {
     try {
       const result = await grantAccess(permissionFile.id, doctorId);
       if (result.success) {
-        toast.success('Acceso otorgado correctamente');
-        // Refresh the permission file state
+        toast.success(t('ads.accessGranted'));
         await refreshVault();
       } else {
-        toast.error(result.error || 'Error al dar acceso');
+        toast.error(result.error || t('ads.accessGrantError'));
       }
     } catch (error) {
-      toast.error('Error al dar acceso');
+      toast.error(t('ads.accessGrantError'));
     } finally {
       setGrantingAccess(null);
     }
@@ -377,13 +375,13 @@ export default function Vault() {
     try {
       const result = await revokeAccess(permissionFile.id, doctorId);
       if (result.success) {
-        toast.success('Acceso revocado correctamente');
+        toast.success(t('ads.accessRevoked'));
         await refreshVault();
       } else {
-        toast.error(result.error || 'Error al revocar acceso');
+        toast.error(result.error || t('ads.accessRevokeError'));
       }
     } catch (error) {
-      toast.error('Error al revocar acceso');
+      toast.error(t('ads.accessRevokeError'));
     } finally {
       setRevokingAccess(null);
     }
@@ -427,7 +425,7 @@ export default function Vault() {
                 <span className="text-sm font-medium text-foreground">{t('ads.storage')}</span>
               </div>
               <span className="text-xs text-muted-foreground">
-                {formatStorageSize(storageUsed)} de {formatStorageSize(storageLimit)}
+                {formatStorageSize(storageUsed)} {t('common.of')} {formatStorageSize(storageLimit)}
               </span>
             </div>
             <Progress 
@@ -812,8 +810,8 @@ export default function Vault() {
                 {t('ads.upgradeStorage')}
               </DialogTitle>
               <DialogDescription>
-                Tu almacenamiento actual: {formatStorageSize(storageUsed)} de {formatStorageSize(storageLimit)} usado.
-                {!selectedPlan ? ' Selecciona cuánto espacio adicional necesitas.' : ''}
+                {t('ads.storageCurrentUsage')} {formatStorageSize(storageUsed)} {t('common.of')} {formatStorageSize(storageLimit)} {t('ads.used')}
+                {!selectedPlan ? ` ${t('ads.selectPlan')}` : ''}
               </DialogDescription>
             </DialogHeader>
             

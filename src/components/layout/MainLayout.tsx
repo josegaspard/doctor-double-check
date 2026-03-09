@@ -357,8 +357,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             </div>
 
             {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start overflow-x-auto scrollbar-hide mx-1 lg:mx-2">
-              <div className="flex items-center gap-0">
+            <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start overflow-x-auto scrollbar-hide mx-2 lg:mx-3">
+              <div className="flex items-center gap-0.5">
                 {filteredNavItems.map((item) => {
                   const isActive = location.pathname === item.href;
                   const isPanelItem = item.href === '/doctor/dashboard';
@@ -366,7 +366,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     <Link
                       key={item.href}
                       to={item.href}
-                      className={`relative flex items-center gap-0.5 px-1 lg:px-1.5 xl:px-2.5 py-1 lg:py-1.5 rounded-md text-[10px] lg:text-[11px] xl:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      className={`relative flex items-center gap-1 px-1.5 lg:px-2 xl:px-3 py-1.5 lg:py-1.5 rounded-md text-[10px] lg:text-[11px] xl:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                         isActive
                           ? 'text-primary'
                           : isPanelItem
@@ -390,7 +390,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             </nav>
 
             {/* Right Side */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               {/* Global Search */}
               <GlobalSearch />
               

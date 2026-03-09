@@ -66,6 +66,9 @@ export const en = {
     share: 'Share',
     copyLink: 'Copy link',
     copied: 'Copied',
+    of: 'of',
+    doctor: 'Doctor',
+    resident: 'Resident',
   },
   // Inputs
   inputs: {
@@ -1387,7 +1390,13 @@ export const en = {
     expandError: 'Error expanding storage',
     checkoutStorageError: 'Error processing payment',
     uploadSuccess: 'File uploaded successfully',
+    uploadError: 'Error uploading file',
+    errorLoadingDoctors: 'Error loading doctors',
     expandStorage: 'Storage expansion',
+    purchaseError: 'Error processing purchase',
+    walletDebited: 'Debited',
+    fromWallet: 'from your wallet. New balance:',
+    storageCurrentUsage: 'Your current storage:',
     // Vault categories
     vaultCatLab: 'Lab Results',
     vaultCatImaging: 'Imaging',

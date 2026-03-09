@@ -66,6 +66,9 @@ export const es = {
     share: 'Compartir',
     copyLink: 'Copiar enlace',
     copied: 'Copiado',
+    of: 'de',
+    doctor: 'Médico',
+    resident: 'Residente',
   },
   // Inputs
   inputs: {
@@ -1387,7 +1390,13 @@ export const es = {
     expandError: 'Error al ampliar almacenamiento',
     checkoutStorageError: 'Error al procesar el pago',
     uploadSuccess: 'Archivo subido correctamente',
+    uploadError: 'Error al subir archivo',
+    errorLoadingDoctors: 'Error al cargar los médicos',
     expandStorage: 'Expansión de almacenamiento',
+    purchaseError: 'Error al procesar la compra',
+    walletDebited: 'Se debitaron',
+    fromWallet: 'de tu wallet. Nuevo saldo:',
+    storageCurrentUsage: 'Tu almacenamiento actual:',
     // Vault categories
     vaultCatLab: 'Laboratorios',
     vaultCatImaging: 'Imagenología',
