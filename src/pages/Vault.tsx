@@ -622,7 +622,7 @@ export default function Vault() {
                     <div className="flex sm:flex-col gap-2 sm:gap-1.5 mt-1 sm:mt-0">
                       <Button variant="outline" size="sm" onClick={() => openPermissions(file)} className="gap-1.5 flex-1 sm:flex-none h-10 sm:h-8 text-xs min-w-[100px]">
                         <Share2 className="w-3.5 h-3.5" />
-                        Permisos
+                        {t('ads.permissions')}
                       </Button>
                       <Button variant="ghost" size="sm" onClick={async () => {
                         const result = await deleteFile(file.id);
