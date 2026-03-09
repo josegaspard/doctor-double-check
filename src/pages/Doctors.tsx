@@ -225,12 +225,16 @@ export default function Doctors() {
   const fetchDoctors = async () => {
     setIsLoading(true);
     try {
-      // Map city chip labels to location search terms
+      // Map city chip labels to broader location search terms for ILIKE matching
       const locationSearchMap: Record<string, string> = {
         'CDMX': 'Ciudad de M',
         'Mérida': 'rida',
         'Cancún': 'Canc',
         'Querétaro': 'quer',
+        'Monterrey': 'Monterrey',
+        'Puebla': 'Puebla',
+        'Guadalajara': 'Guadalajara',
+        'Tijuana': 'Tijuana',
       };
       const locationSearch = locationFilter ? (locationSearchMap[locationFilter] || locationFilter) : '';
 

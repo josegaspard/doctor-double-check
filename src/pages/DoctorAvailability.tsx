@@ -383,27 +383,40 @@ export default function DoctorAvailabilityPage() {
                   {t('availability.schedule')}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto">
-                <DialogHeader>
-                  <DialogTitle>{language === 'es' ? 'Programar disponibilidad' : 'Schedule availability'}</DialogTitle>
-                  <DialogDescription>
+              <DialogContent className="sm:max-w-md max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto mx-0 sm:mx-auto rounded-none sm:rounded-lg h-full sm:h-auto">
+                <DialogHeader className="pb-2">
+                  <DialogTitle className="text-base sm:text-lg">{language === 'es' ? 'Programar disponibilidad' : 'Schedule availability'}</DialogTitle>
+                  <DialogDescription className="text-xs sm:text-sm">
                     {language === 'es' ? 'Crea un horario de live, consulta u horario de oficina' : 'Create a live, consultation, or office hours schedule'}
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4 py-4">
+                <div className="space-y-3 sm:space-y-4 py-2 sm:py-4">
+                  {/* Visual type selector */}
                   <div className="space-y-2">
-                    <Label htmlFor="type">{language === 'es' ? 'Tipo' : 'Type'}</Label>
-                    <select
-                      id="type"
-                      value={formData.type}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value as AvailabilityType }))}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      {availabilityTypeOptions.map((type) => (
-                        <option key={type.value} value={type.value}>{type.label}</option>
+                    <Label className="text-xs sm:text-sm">{language === 'es' ? 'Tipo' : 'Type'}</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { value: 'live' as AvailabilityType, icon: Video, label: 'Live', color: 'text-red-500 border-red-500 bg-red-500/10' },
+                        { value: 'consultation' as AvailabilityType, icon: MessageSquare, label: language === 'es' ? 'Consulta' : 'Consultation', color: 'text-blue-500 border-blue-500 bg-blue-500/10' },
+                        { value: 'office_hours' as AvailabilityType, icon: Clock, label: language === 'es' ? 'Oficina' : 'Office', color: 'text-muted-foreground border-border bg-muted/50' },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, type: opt.value }))}
+                          className={cn(
+                            'flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all text-xs font-medium',
+                            formData.type === opt.value
+                              ? opt.color
+                              : 'border-border text-muted-foreground hover:border-primary/30'
+                          )}
+                        >
+                          <opt.icon className="w-5 h-5" />
+                          {opt.label}
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -427,17 +440,17 @@ export default function DoctorAvailabilityPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>{language === 'es' ? 'Fecha' : 'Date'}</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs sm:text-sm">{language === 'es' ? 'Fecha' : 'Date'}</Label>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left font-normal">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {format(formData.date, 'PPP', { locale: language === 'es' ? es : enUS })}
+                          <Button variant="outline" className="w-full justify-start text-left font-normal h-9 sm:h-10 text-xs sm:text-sm">
+                            <CalendarIcon className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                            <span className="truncate">{format(formData.date, 'd MMM yyyy', { locale: language === 'es' ? es : enUS })}</span>
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0" align="start" side="bottom">
                           <Calendar
                             mode="single"
                             selected={formData.date}
@@ -449,41 +462,57 @@ export default function DoctorAvailabilityPage() {
                       </Popover>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="time">{language === 'es' ? 'Hora' : 'Time'}</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="time" className="text-xs sm:text-sm">{language === 'es' ? 'Hora' : 'Time'}</Label>
                       <Input
                         id="time"
                         type="time"
                         value={formData.time}
                         onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                        className="h-9 sm:h-10 text-xs sm:text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">{language === 'es' ? 'Duración (minutos)' : 'Duration (minutes)'}</Label>
-                    <select
-                      id="duration"
-                      value={String(formData.duration)}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, duration: parseInt(e.target.value, 10) }))}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      <option value="15">15 min</option>
-                      <option value="30">30 min</option>
-                      <option value="45">45 min</option>
-                      <option value="60">{language === 'es' ? '1 hora' : '1 hour'}</option>
-                      <option value="90">{language === 'es' ? '1.5 horas' : '1.5 hours'}</option>
-                      <option value="120">{language === 'es' ? '2 horas' : '2 hours'}</option>
-                    </select>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">{language === 'es' ? 'Duración' : 'Duration'}</Label>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                      {[
+                        { value: 15, label: '15m' },
+                        { value: 30, label: '30m' },
+                        { value: 45, label: '45m' },
+                        { value: 60, label: '1h' },
+                        { value: 90, label: '1.5h' },
+                        { value: 120, label: '2h' },
+                      ].map(d => (
+                        <button
+                          key={d.value}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, duration: d.value }))}
+                          className={cn(
+                            'h-9 rounded-md border text-xs font-medium transition-colors',
+                            formData.duration === d.value
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'border-border text-foreground hover:border-primary/40'
+                          )}
+                        >
+                          {d.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
                     {t('common.cancel')}
                   </Button>
-                  <Button onClick={handleCreate} disabled={isSubmitting}>
-                    {isSubmitting ? (language === 'es' ? 'Creando...' : 'Creating...') : (language === 'es' ? 'Crear' : 'Create')}
+                  <Button onClick={handleCreate} disabled={isSubmitting} className="w-full sm:w-auto">
+                    {isSubmitting ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'es' ? 'Creando...' : 'Creating...'}</>
+                    ) : (
+                      <><Plus className="w-4 h-4 mr-2" />{language === 'es' ? 'Crear' : 'Create'}</>
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>

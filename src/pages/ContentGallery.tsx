@@ -40,6 +40,49 @@ import { usePurchases } from '@/hooks/usePurchases';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 
+/** Generate a data-URL thumbnail from the first second of a video */
+function generateVideoThumbnail(videoUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.crossOrigin = 'anonymous';
+    video.muted = true;
+    video.preload = 'metadata';
+
+    const cleanup = () => {
+      video.removeAttribute('src');
+      video.load();
+    };
+
+    video.onloadeddata = () => {
+      video.currentTime = Math.min(1, video.duration * 0.1);
+    };
+
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 640;
+        canvas.height = 360;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { cleanup(); return reject('No canvas context'); }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        cleanup();
+        resolve(dataUrl);
+      } catch (err) {
+        cleanup();
+        reject(err);
+      }
+    };
+
+    video.onerror = () => { cleanup(); reject('Video load error'); };
+
+    // Timeout after 8s
+    setTimeout(() => { cleanup(); reject('Timeout'); }, 8000);
+
+    video.src = videoUrl;
+  });
+}
+
 interface DoctorContent {
   id: string;
   title: string;
@@ -258,22 +301,33 @@ export default function ContentGallery() {
 
       setContents(mapped);
 
-      // Generate signed thumbnail URLs for image-type content without a thumbnail_url
-      const needThumb = mapped.filter(c => c.type === 'image' && !c.thumbnail_url && !c.file_url.startsWith('http'));
+      // Generate signed thumbnail URLs for content without a thumbnail_url (images and videos)
+      const needThumb = mapped.filter(c => !c.thumbnail_url && !c.file_url.startsWith('http'));
       if (needThumb.length > 0) {
         const thumbResults = await Promise.all(
           needThumb.map(async c => {
             const { data: sd } = await supabase.storage
               .from('doctor-content')
               .createSignedUrl(c.file_url, 60 * 60);
-            return { id: c.id, url: sd?.signedUrl || null };
+            if (!sd?.signedUrl) return { id: c.id, url: null };
+
+            // For videos, generate a thumbnail from the first second
+            if (c.type === 'video') {
+              try {
+                const dataUrl = await generateVideoThumbnail(sd.signedUrl);
+                return { id: c.id, url: dataUrl };
+              } catch {
+                return { id: c.id, url: null };
+              }
+            }
+            return { id: c.id, url: sd.signedUrl };
           }),
         );
         const thumbMap: Record<string, string> = {};
         thumbResults.forEach(r => {
           if (r.url) thumbMap[r.id] = r.url;
         });
-        setSignedThumbs(thumbMap);
+        setSignedThumbs(prev => ({ ...prev, ...thumbMap }));
       }
     } catch (error) {
       console.error('Error fetching content:', error);
@@ -314,10 +368,10 @@ export default function ContentGallery() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
             <Library className="w-6 h-6 text-primary" />
             {t('content.library')}
           </h1>
@@ -326,16 +380,16 @@ export default function ContentGallery() {
 
         {/* Tabs */}
         <Tabs value={contentTab} onValueChange={setContentTab} className="mb-4">
-          <TabsList>
-            <TabsTrigger value="all" className="gap-1.5">
+          <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
+            <TabsTrigger value="all" className="gap-1.5 text-xs sm:text-sm">
               <Library className="w-3.5 h-3.5" />
               {language === 'es' ? 'Todo' : 'All'}
             </TabsTrigger>
-            <TabsTrigger value="purchased" className="gap-1.5">
+            <TabsTrigger value="purchased" className="gap-1.5 text-xs sm:text-sm">
               <ShoppingBag className="w-3.5 h-3.5" />
               {language === 'es' ? 'Comprados' : 'Purchased'}
             </TabsTrigger>
-            <TabsTrigger value="new" className="gap-1.5">
+            <TabsTrigger value="new" className="gap-1.5 text-xs sm:text-sm">
               <Sparkles className="w-3.5 h-3.5" />
               {language === 'es' ? 'Nuevos' : 'New'}
             </TabsTrigger>
@@ -388,7 +442,7 @@ export default function ContentGallery() {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : filteredContents.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {filteredContents.map(content => {
               const locked = !canViewSubscriberContent(content);
               const thumbUrl = content.thumbnail_url || signedThumbs[content.id] || null;
