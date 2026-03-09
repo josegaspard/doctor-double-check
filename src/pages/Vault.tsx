@@ -917,9 +917,9 @@ export default function Vault() {
                     <div className="flex items-start gap-2 p-3 bg-warning/10 rounded-lg border border-warning/30">
                       <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
                       <div className="text-sm">
-                        <p className="font-medium text-warning">Saldo insuficiente</p>
+                        <p className="font-medium text-warning">{t('ads.vaultInsufficientBalance')}</p>
                         <p className="text-warning/80 text-xs">
-                          Tienes ${balance.toLocaleString()} — necesitas ${(getEffectivePrice(selectedPlan.price) - balance).toLocaleString()} más
+                          {t('ads.youHave')} ${balance.toLocaleString()} — {t('ads.needMore')} ${(getEffectivePrice(selectedPlan.price) - balance).toLocaleString()} {t('ads.more')}
                         </p>
                       </div>
                     </div>
