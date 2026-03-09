@@ -103,7 +103,7 @@ export default function Advertising() {
                 <Eye className="w-6 h-6 text-info mx-auto mb-1" />
                 <p className="text-2xl font-bold text-info">{estimatedImpressions.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">
-                  {es ? 'Impresiones estimadas' : 'Estimated impressions'}
+                  {t('ads.estimatedImpressions')}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-1">
                   CPM: ${config.cpm_rate}
