@@ -333,7 +333,7 @@ export default function AdvertiserDashboard() {
                 {t('ads.creatives')}
               </CardTitle>
               <CardDescription className="text-xs">
-                {es ? `Formatos: imagen, GIF, video · Máx: ${config.max_file_size_kb}KB` : `Formats: image, GIF, video · Max: ${config.max_file_size_kb}KB`}
+                {t('ads.formats')}: {es ? 'imagen, GIF, video' : 'image, GIF, video'} · {t('ads.maxSize')}: {config.max_file_size_kb}KB
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
