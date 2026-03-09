@@ -266,15 +266,12 @@ export function LiveConsultationBooking({
                 <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 text-destructive text-xs">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>
-                    Saldo insuficiente.{' '}
+                    {t('ads.insufficientRecharge')}{' '}
                     <button
                       className="underline font-medium"
-                      onClick={() => {
-                        onOpenChange(false);
-                        navigate('/wallet');
-                      }}
+                      onClick={() => { onOpenChange(false); navigate('/wallet'); }}
                     >
-                      Recargar aquí
+                      {t('ads.rechargeHere')}
                     </button>
                   </span>
                 </div>
