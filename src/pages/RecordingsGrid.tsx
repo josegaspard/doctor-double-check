@@ -194,7 +194,7 @@ export default function RecordingsGrid() {
                   : 'bg-muted/50 text-muted-foreground border-border hover:border-accent/50'
               }`}
             >
-              Todas
+              {t('recordings.allSpecialties')}
             </button>
             {specialties.map(spec => (
               <button
