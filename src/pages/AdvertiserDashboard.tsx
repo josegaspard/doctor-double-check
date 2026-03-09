@@ -102,6 +102,7 @@ export default function AdvertiserDashboard() {
   });
 
   const es = language === 'es';
+  const statusLabels = getStatusLabels(t);
 
   useEffect(() => { if (!isAuthenticated) navigate('/login'); }, [isAuthenticated, navigate]);
 
