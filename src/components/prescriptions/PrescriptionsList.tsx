@@ -248,30 +248,30 @@ export function PrescriptionsList() {
           className={`hover:shadow-md transition-shadow cursor-pointer group ${isManaging && selectedIds.has(rx.id) ? 'ring-2 ring-primary' : ''}`}
           onClick={() => isManaging ? toggleSelect(rx.id) : navigate(`/prescriptions/${rx.id}`)}
         >
-          <CardContent className="p-4">
+          <CardContent className="p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0 flex-1">
                 {isManaging && (
-                  <div className="pt-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div className="pt-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedIds.has(rx.id)}
                       onCheckedChange={() => toggleSelect(rx.id)}
                     />
                   </div>
                 )}
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  {rx.fileUrl ? <Image className="w-5 h-5 text-info" /> : <FileText className="w-5 h-5 text-primary" />}
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  {rx.fileUrl ? <Image className="w-6 h-6 text-info" /> : <FileText className="w-6 h-6 text-primary" />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                  <p className="font-semibold text-base truncate group-hover:text-primary transition-colors">
                     {role === 'doctor' ? rx.patientName : rx.doctorName}
                   </p>
                   {rx.diagnosis && (
-                    <p className="text-xs text-muted-foreground truncate">{rx.diagnosis}</p>
+                    <p className="text-sm text-muted-foreground truncate">{rx.diagnosis}</p>
                   )}
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                     {rx.medications.length > 0 && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-sm">
                         {rx.medications.length} {language === 'es' ? 'medicamentos' : 'medications'}
                       </Badge>
                     )}
@@ -281,7 +281,7 @@ export function PrescriptionsList() {
                         {language === 'es' ? 'Archivo' : 'File'}
                       </Badge>
                     )}
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-sm text-muted-foreground">
                       {new Intl.DateTimeFormat(language === 'es' ? 'es-MX' : 'en-US', {
                         day: 'numeric', month: 'short', year: 'numeric'
                       }).format(rx.createdAt)}
@@ -290,19 +290,19 @@ export function PrescriptionsList() {
                 </div>
               </div>
               {!isManaging && (
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                   {rx.medications.length > 0 && (
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="gap-1" 
+                      className="gap-1.5 h-10 text-sm" 
                       onClick={(e) => { e.stopPropagation(); handleDownload(rx); }}
                     >
-                      <Download className="w-3 h-3" />
+                      <Download className="w-4 h-4" />
                       PDF
                     </Button>
                   )}
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
               )}
             </div>
