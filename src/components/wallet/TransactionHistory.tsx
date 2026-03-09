@@ -70,6 +70,7 @@ type FilterType = 'all' | 'topup' | 'purchase' | 'earning' | 'refund';
 
 export function TransactionHistory() {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const dateLocale = language === 'es' ? es : enUS;
   const { transactions, isLoading } = useWallet();
   const [searchTerm, setSearchTerm] = useState('');
