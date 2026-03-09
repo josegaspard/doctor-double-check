@@ -278,7 +278,7 @@ export default function RecordingsGrid() {
                       {owned ? (
                         <Badge className="gap-1 bg-success/90 text-white border-0">
                           <CheckCircle className="w-3 h-3" />
-                          {isFree ? 'Gratis' : 'Comprado'}
+                          {isFree ? t('ads.filterFree') : t('ads.filterPurchased')}
                         </Badge>
                       ) : isFree ? (
                         <Badge className="gap-1 bg-success/90 text-white border-0">
