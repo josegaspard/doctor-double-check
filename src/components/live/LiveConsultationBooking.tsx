@@ -230,7 +230,7 @@ export function LiveConsultationBooking({
 
             {/* Payment method */}
             <div className="space-y-3">
-              <Label>Método de pago</Label>
+              <Label>{t('ads.paymentMethod')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
