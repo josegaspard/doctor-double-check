@@ -448,8 +448,8 @@ export default function AdvertiserDashboard() {
         {showCreate && (
           <Card className="mb-6 border-primary/30">
             <CardHeader>
-              <CardTitle className="text-base">{es ? 'Nueva Campaña' : 'New Campaign'}</CardTitle>
-              <CardDescription>{es ? 'Configura tu campaña publicitaria' : 'Set up your ad campaign'}</CardDescription>
+              <CardTitle className="text-base">{t('ads.newCampaign')}</CardTitle>
+              <CardDescription>{t('ads.createCampaignSubtitle')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
