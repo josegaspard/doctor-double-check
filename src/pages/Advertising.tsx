@@ -128,7 +128,7 @@ export default function Advertising() {
           <div className="mb-10">
             <h2 className="font-heading text-lg font-bold mb-4 flex items-center gap-2">
               <Layout className="w-5 h-5 text-primary" />
-              {es ? 'Espacios Disponibles' : 'Available Placements'}
+              {t('ads.availablePlacements')}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {activePlacements.map(p => (
