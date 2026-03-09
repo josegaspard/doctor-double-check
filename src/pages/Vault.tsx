@@ -325,7 +325,7 @@ export default function Vault() {
       }
     } catch (error: any) {
       console.error('Storage checkout error:', error);
-      toast.error(error.message || 'Error al procesar el pago');
+      toast.error(error.message || t('ads.checkoutStorageError'));
     } finally {
       setIsStripeProcessing(false);
     }
