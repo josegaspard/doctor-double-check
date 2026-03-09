@@ -197,7 +197,7 @@ export function ChatHeader({
         </div>
         
         {/* Actions */}
-        <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0">
           {/* Video call button */}
           {!isClosed && consultationId && (
             <Button
