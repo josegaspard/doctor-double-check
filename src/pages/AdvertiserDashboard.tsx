@@ -176,8 +176,8 @@ export default function AdvertiserDashboard() {
       placement_ids: form.placement_ids, status: 'draft',
     } as any);
     setIsCreating(false);
-    if (error) { toast.error('Error al crear campaña'); return; }
-    toast.success(es ? 'Campaña creada' : 'Campaign created');
+    if (error) { toast.error(t('ads.campaignCreateError')); return; }
+    toast.success(t('ads.campaignCreated'));
     setShowCreate(false);
     setForm({ name: '', budget: config.min_budget, start_date: '', end_date: '', target_roles: ['patient', 'resident', 'doctor'], target_language: '', placement_ids: [] });
     fetchCampaigns();
