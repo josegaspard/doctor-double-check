@@ -154,12 +154,18 @@ function ContentCardThumbnail({
         </Badge>
       </div>
 
-      {/* Price badge */}
+      {/* Price badge with wallet awareness */}
       {content.price > 0 && (
-        <div className="absolute bottom-2 left-2">
+        <div className="absolute bottom-2 left-2 flex gap-1">
           <Badge className="gap-1 text-xs bg-primary text-primary-foreground">
             <DollarSign className="w-3 h-3" />${content.price}
           </Badge>
+          {showInsufficientHint && (
+            <Badge variant="outline" className="gap-1 text-xs bg-background/90 text-foreground border-border backdrop-blur-sm">
+              <AlertCircle className="w-3 h-3 text-destructive" />
+              Saldo insuficiente
+            </Badge>
+          )}
         </div>
       )}
 
