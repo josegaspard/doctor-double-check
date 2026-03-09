@@ -381,7 +381,7 @@ export default function Vault() {
         toast.error(result.error || t('ads.accessRevokeError'));
       }
     } catch (error) {
-      toast.error('Error al revocar acceso');
+      toast.error(t('ads.accessRevokeError'));
     } finally {
       setRevokingAccess(null);
     }
