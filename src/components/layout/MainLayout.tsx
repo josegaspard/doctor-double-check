@@ -357,8 +357,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             </div>
 
             {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start overflow-x-auto scrollbar-hide mx-1 lg:mx-2">
-              <div className="flex items-center gap-0">
+            <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start overflow-x-auto scrollbar-hide mx-2 lg:mx-3">
+              <div className="flex items-center gap-0.5">
                 {filteredNavItems.map((item) => {
                   const isActive = location.pathname === item.href;
                   const isPanelItem = item.href === '/doctor/dashboard';
