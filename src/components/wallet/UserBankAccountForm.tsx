@@ -45,9 +45,7 @@ export function UserBankAccountForm() {
   const [holderName, setHolderName] = useState('');
   const [rfc, setRfc] = useState('');
 
-  useEffect(() => {
-    loadBankAccount();
-  }, [user?.id]);
+  useEffect(() => { loadBankAccount(); }, [user?.id]);
 
   const loadBankAccount = async () => {
     if (!user?.id) return;
@@ -73,11 +71,11 @@ export function UserBankAccountForm() {
   const handleSave = async () => {
     if (!user?.id) return;
     if (!bankName || !clabe || !holderName) {
-      toast.error('Completa los campos obligatorios');
+      toast.error(t('wallet.completeRequired'));
       return;
     }
     if (!validateClabe(clabe)) {
-      toast.error('La CLABE debe tener exactamente 18 dígitos numéricos');
+      toast.error(t('wallet.clabeExactError'));
       return;
     }
 
@@ -94,23 +92,18 @@ export function UserBankAccountForm() {
       };
 
       if (bankAccount) {
-        const { error } = await supabase
-          .from('user_bank_accounts' as any)
-          .update(payload as any)
-          .eq('id', bankAccount.id);
+        const { error } = await supabase.from('user_bank_accounts' as any).update(payload as any).eq('id', bankAccount.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from('user_bank_accounts' as any)
-          .insert(payload as any);
+        const { error } = await supabase.from('user_bank_accounts' as any).insert(payload as any);
         if (error) throw error;
       }
 
-      toast.success('Cuenta bancaria guardada');
+      toast.success(t('wallet.bankSaved'));
       setIsEditing(false);
       await loadBankAccount();
     } catch (error: any) {
-      toast.error(error.message || 'Error al guardar');
+      toast.error(error.message || t('wallet.bankSaveError'));
     } finally {
       setIsSaving(false);
     }
@@ -126,10 +119,10 @@ export function UserBankAccountForm() {
             <CardTitle className="text-base flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                Cuenta Bancaria
+                {t('wallet.bankAccount')}
                 {bankAccount && (
                   <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1">
-                    <CheckCircle className="w-3 h-3" />Registrada
+                    <CheckCircle className="w-3 h-3" />{t('wallet.bankRegistered')}
                   </Badge>
                 )}
               </span>
@@ -144,8 +137,8 @@ export function UserBankAccountForm() {
               <div className="flex items-start gap-3 p-3 bg-info/10 border border-info/20 rounded-lg">
                 <AlertCircle className="w-4 h-4 text-info shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-medium text-foreground">Registra tu cuenta bancaria</p>
-                  <p className="text-muted-foreground">Para recibir reembolsos directamente en tu cuenta, registra tu CLABE interbancaria.</p>
+                  <p className="font-medium text-foreground">{t('wallet.registerBank')}</p>
+                  <p className="text-muted-foreground">{t('wallet.registerBankDesc')}</p>
                 </div>
               </div>
             )}
@@ -154,7 +147,7 @@ export function UserBankAccountForm() {
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-xs text-muted-foreground">Banco</p>
+                    <p className="text-xs text-muted-foreground">{t('wallet.bankName')}</p>
                     <p className="font-medium text-sm">{bankAccount.bank_name}</p>
                   </div>
                   <div>
@@ -162,7 +155,7 @@ export function UserBankAccountForm() {
                     <p className="font-medium text-sm font-mono">••••••••••••••{bankAccount.clabe_last4}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Titular</p>
+                    <p className="text-xs text-muted-foreground">{t('wallet.holderName')}</p>
                     <p className="font-medium text-sm">{bankAccount.account_holder_name}</p>
                   </div>
                   {bankAccount.rfc && (
@@ -173,22 +166,22 @@ export function UserBankAccountForm() {
                   )}
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
-                  <Pencil className="w-3 h-3" />Editar
+                  <Pencil className="w-3 h-3" />{t('common.edit')}
                 </Button>
               </div>
             ) : (
               <div className="space-y-3">
                 <div>
-                  <Label>Banco *</Label>
+                  <Label>{t('wallet.bankName')} *</Label>
                   <Select value={bankName} onValueChange={setBankName}>
-                    <SelectTrigger><SelectValue placeholder="Selecciona tu banco" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t('wallet.selectBank')} /></SelectTrigger>
                     <SelectContent>
                       {MEXICAN_BANKS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>CLABE Interbancaria (18 dígitos) *</Label>
+                  <Label>{t('wallet.clabeLabel')} *</Label>
                   <Input
                     value={clabe}
                     onChange={(e) => setClabe(e.target.value.replace(/\D/g, '').slice(0, 18))}
@@ -197,15 +190,15 @@ export function UserBankAccountForm() {
                     maxLength={18}
                   />
                   {clabe && !validateClabe(clabe) && (
-                    <p className="text-xs text-destructive mt-1">La CLABE debe tener 18 dígitos</p>
+                    <p className="text-xs text-destructive mt-1">{t('wallet.clabeError')}</p>
                   )}
                 </div>
                 <div>
-                  <Label>Nombre del Titular *</Label>
-                  <Input value={holderName} onChange={(e) => setHolderName(e.target.value)} placeholder="Nombre completo" />
+                  <Label>{t('wallet.holderName')} *</Label>
+                  <Input value={holderName} onChange={(e) => setHolderName(e.target.value)} placeholder={t('wallet.fullName')} />
                 </div>
                 <div>
-                  <Label>RFC (opcional)</Label>
+                  <Label>{t('wallet.rfcOptional')}</Label>
                   <Input
                     value={rfc}
                     onChange={(e) => setRfc(e.target.value.toUpperCase().slice(0, 13))}
@@ -217,10 +210,10 @@ export function UserBankAccountForm() {
                 <div className="flex gap-2">
                   <Button onClick={handleSave} disabled={isSaving || !bankName || !holderName || !validateClabe(clabe)} className="gap-2">
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                    Guardar
+                    {t('common.save')}
                   </Button>
                   {bankAccount && (
-                    <Button variant="outline" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                    <Button variant="outline" onClick={() => setIsEditing(false)}>{t('common.cancel')}</Button>
                   )}
                 </div>
               </div>
