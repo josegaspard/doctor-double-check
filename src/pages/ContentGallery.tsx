@@ -358,15 +358,15 @@ export default function ContentGallery() {
           <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
             <TabsTrigger value="all" className="gap-1.5 text-xs sm:text-sm">
               <Library className="w-3.5 h-3.5" />
-              {language === 'es' ? 'Todo' : 'All'}
+              {t('ads.contentAll')}
             </TabsTrigger>
             <TabsTrigger value="purchased" className="gap-1.5 text-xs sm:text-sm">
               <ShoppingBag className="w-3.5 h-3.5" />
-              {language === 'es' ? 'Comprados' : 'Purchased'}
+              {t('ads.contentPurchased')}
             </TabsTrigger>
             <TabsTrigger value="new" className="gap-1.5 text-xs sm:text-sm">
               <Sparkles className="w-3.5 h-3.5" />
-              {language === 'es' ? 'Nuevos' : 'New'}
+              {t('ads.contentNew')}
             </TabsTrigger>
           </TabsList>
         </Tabs>
