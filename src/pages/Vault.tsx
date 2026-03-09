@@ -258,11 +258,10 @@ export default function Vault() {
 
     const result = await uploadFile(file, selectedCategory, description);
     if (result.success) {
-      toast.success('Archivo subido correctamente');
-      // Re-fetch storage to reflect new usage
+      toast.success(t('ads.uploadSuccess'));
       await fetchStorage();
     } else {
-      toast.error(result.error || 'Error al subir archivo');
+      toast.error(result.error || t('ads.uploadError'));
     }
     setDescription('');
     if (fileInputRef.current) fileInputRef.current.value = '';
