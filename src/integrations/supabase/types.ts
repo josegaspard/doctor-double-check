@@ -2733,64 +2733,35 @@ export type Database = {
         Args: { p_doctor_user_id: string }
         Returns: string
       }
-      get_doctors_paginated:
-        | {
-            Args: {
-              p_page?: number
-              p_page_size?: number
-              p_search?: string
-              p_specialty?: string
-            }
-            Returns: {
-              available_for_double_check: boolean
-              avatar_url: string
-              badge_override: string
-              bio: string
-              consultation_fee: number
-              followers_count: number
-              id: string
-              is_identity_verified: boolean
-              location: string
-              name: string
-              office_days: string[]
-              office_hours_end: string
-              office_hours_start: string
-              rating: number
-              specialty: string
-              total_consultations: number
-              total_count: number
-              user_id: string
-            }[]
-          }
-        | {
-            Args: {
-              p_location?: string
-              p_page?: number
-              p_page_size?: number
-              p_search?: string
-              p_specialty?: string
-            }
-            Returns: {
-              available_for_double_check: boolean
-              avatar_url: string
-              badge_override: string
-              bio: string
-              consultation_fee: number
-              followers_count: number
-              id: string
-              is_identity_verified: boolean
-              location: string
-              name: string
-              office_days: string[]
-              office_hours_end: string
-              office_hours_start: string
-              rating: number
-              specialty: string
-              total_consultations: number
-              total_count: number
-              user_id: string
-            }[]
-          }
+      get_doctors_paginated: {
+        Args: {
+          p_location?: string
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_specialty?: string
+        }
+        Returns: {
+          available_for_double_check: boolean
+          avatar_url: string
+          badge_override: string
+          bio: string
+          consultation_fee: number
+          followers_count: number
+          id: string
+          is_identity_verified: boolean
+          location: string
+          name: string
+          office_days: string[]
+          office_hours_end: string
+          office_hours_start: string
+          rating: number
+          specialty: string
+          total_consultations: number
+          total_count: number
+          user_id: string
+        }[]
+      }
       get_price_for_user: {
         Args: { _base_price: number; _user_id: string }
         Returns: number

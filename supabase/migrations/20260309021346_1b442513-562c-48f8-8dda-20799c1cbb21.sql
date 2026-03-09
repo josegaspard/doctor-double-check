@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.get_doctors_paginated(integer, integer, text, text);

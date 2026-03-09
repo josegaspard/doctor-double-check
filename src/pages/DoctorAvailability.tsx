@@ -503,12 +503,16 @@ export default function DoctorAvailabilityPage() {
                   </div>
                 </div>
 
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
                     {t('common.cancel')}
                   </Button>
-                  <Button onClick={handleCreate} disabled={isSubmitting}>
-                    {isSubmitting ? (language === 'es' ? 'Creando...' : 'Creating...') : (language === 'es' ? 'Crear' : 'Create')}
+                  <Button onClick={handleCreate} disabled={isSubmitting} className="w-full sm:w-auto">
+                    {isSubmitting ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'es' ? 'Creando...' : 'Creating...'}</>
+                    ) : (
+                      <><Plus className="w-4 h-4 mr-2" />{language === 'es' ? 'Crear' : 'Create'}</>
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>
