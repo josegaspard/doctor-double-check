@@ -142,6 +142,7 @@ export default function Doctors() {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
   const [followedDoctors, setFollowedDoctors] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
