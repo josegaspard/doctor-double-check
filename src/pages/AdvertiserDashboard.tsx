@@ -166,7 +166,7 @@ export default function AdvertiserDashboard() {
   const estimatedClicks = Math.floor(form.budget / config.cpc_rate);
 
   const createCampaign = async () => {
-    if (!form.name || form.budget < config.min_budget) { toast.error(es ? 'Completa todos los campos requeridos' : 'Complete all required fields'); return; }
+    if (!form.name || form.budget < config.min_budget) { toast.error(t('ads.completeRequired')); return; }
     setIsCreating(true);
     const { error } = await supabase.from('ad_campaigns' as any).insert({
       advertiser_id: user?.id, name: form.name, budget: form.budget,
