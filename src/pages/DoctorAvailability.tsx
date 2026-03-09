@@ -383,27 +383,40 @@ export default function DoctorAvailabilityPage() {
                   {t('availability.schedule')}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto">
-                <DialogHeader>
-                  <DialogTitle>{language === 'es' ? 'Programar disponibilidad' : 'Schedule availability'}</DialogTitle>
-                  <DialogDescription>
+              <DialogContent className="sm:max-w-md max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto mx-0 sm:mx-auto rounded-none sm:rounded-lg h-full sm:h-auto">
+                <DialogHeader className="pb-2">
+                  <DialogTitle className="text-base sm:text-lg">{language === 'es' ? 'Programar disponibilidad' : 'Schedule availability'}</DialogTitle>
+                  <DialogDescription className="text-xs sm:text-sm">
                     {language === 'es' ? 'Crea un horario de live, consulta u horario de oficina' : 'Create a live, consultation, or office hours schedule'}
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4 py-4">
+                <div className="space-y-3 sm:space-y-4 py-2 sm:py-4">
+                  {/* Visual type selector */}
                   <div className="space-y-2">
-                    <Label htmlFor="type">{language === 'es' ? 'Tipo' : 'Type'}</Label>
-                    <select
-                      id="type"
-                      value={formData.type}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value as AvailabilityType }))}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      {availabilityTypeOptions.map((type) => (
-                        <option key={type.value} value={type.value}>{type.label}</option>
+                    <Label className="text-xs sm:text-sm">{language === 'es' ? 'Tipo' : 'Type'}</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { value: 'live' as AvailabilityType, icon: Video, label: 'Live', color: 'text-red-500 border-red-500 bg-red-500/10' },
+                        { value: 'consultation' as AvailabilityType, icon: MessageSquare, label: language === 'es' ? 'Consulta' : 'Consultation', color: 'text-blue-500 border-blue-500 bg-blue-500/10' },
+                        { value: 'office_hours' as AvailabilityType, icon: Clock, label: language === 'es' ? 'Oficina' : 'Office', color: 'text-muted-foreground border-border bg-muted/50' },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, type: opt.value }))}
+                          className={cn(
+                            'flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all text-xs font-medium',
+                            formData.type === opt.value
+                              ? opt.color
+                              : 'border-border text-muted-foreground hover:border-primary/30'
+                          )}
+                        >
+                          <opt.icon className="w-5 h-5" />
+                          {opt.label}
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
