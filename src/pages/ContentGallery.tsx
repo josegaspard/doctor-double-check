@@ -518,6 +518,9 @@ export default function ContentGallery() {
           </div>
         )}
 
+        {/* Ad Banner */}
+        <AdBanner placementName="content_inline" className="mb-4" />
+
         {/* Grid */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">

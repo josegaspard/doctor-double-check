@@ -213,6 +213,9 @@ const App = () => (
                       <Route path="/prescriptions/:id" element={<PrescriptionDetail />} />
                       <Route path="/report-issue" element={<ReportIssue />} />
                       <Route path="/email-confirmed" element={<EmailConfirmed />} />
+                      <Route path="/advertising" element={<Advertising />} />
+                      <Route path="/advertiser/dashboard" element={<AdvertiserDashboard />} />
+                      <Route path="/admin/ads" element={<AdminAds />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>

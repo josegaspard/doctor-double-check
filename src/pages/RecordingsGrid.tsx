@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AdBanner } from '@/components/ads/AdBanner';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
