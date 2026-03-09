@@ -176,10 +176,10 @@ export function LiveConsultationBooking({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Stethoscope className="w-5 h-5 text-primary" />
-            Reservar Orientación
+            {t('ads.bookConsultation')}
           </DialogTitle>
           <DialogDescription>
-            Reserva una consulta privada con el doctor desde este live
+            {t('ads.bookConsultationDesc')}
           </DialogDescription>
         </DialogHeader>
 
