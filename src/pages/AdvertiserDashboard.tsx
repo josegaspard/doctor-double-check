@@ -277,7 +277,7 @@ export default function AdvertiserDashboard() {
               <Button size="sm" className="gap-1.5" disabled={isPaying || creatives.length === 0}
                 onClick={() => payCampaign(campaign.id, campaign.budget)}>
                 {isPaying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                {es ? 'Pagar y Activar' : 'Pay & Activate'}
+                {t('ads.payActivate')}
               </Button>
             )}
           </div>
