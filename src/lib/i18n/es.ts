@@ -32,6 +32,9 @@ export const es = {
     allDoctors: 'Ver todos los doctores',
     allRecordings: 'Ver todas las grabaciones',
     tip: 'Busca por nombre de doctor, especialidad o tema',
+    navigate: 'Navegar',
+    select: 'Seleccionar',
+    close: 'Cerrar',
   },
   common: {
     loading: 'Cargando...',
