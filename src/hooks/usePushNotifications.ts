@@ -90,13 +90,12 @@ export function usePushNotifications() {
         return false;
       }
 
-      // Subscribe to push — pass Uint8Array directly (no .buffer)
-      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       let subscription: PushSubscription;
       try {
+        const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey,
+          applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
         });
       } catch (pushError: any) {
         console.error('PushManager.subscribe failed:', pushError);
