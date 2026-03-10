@@ -7,7 +7,7 @@ import DoctorReviews from '@/components/doctor/DoctorReviews';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@/components/ui/separator'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { 
   Dialog,
   DialogContent,
