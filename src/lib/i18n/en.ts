@@ -32,6 +32,9 @@ export const en = {
     allDoctors: 'View all doctors',
     allRecordings: 'View all recordings',
     tip: 'Try searching by doctor name, specialty, or topic',
+    navigate: 'Navigate',
+    select: 'Select',
+    close: 'Close',
   },
   common: {
     loading: 'Loading...',
@@ -442,10 +445,11 @@ export const en = {
     pushDescription: 'Receive push notifications on your device',
     inAppDescription: 'Show notifications within the app',
     verificationComingSoon: 'Identity verification will be available soon. We will notify you when ready.',
-    managePayments: 'Manage Payments',
-    managePaymentsDescription: 'Manage your subscriptions, payment methods, and billing',
-    openPaymentPortal: 'Open Payment Portal',
+    managePayments: 'Payments & Billing',
+    managePaymentsDescription: 'Review your purchases and payment methods',
+    openPaymentPortal: 'View my payments',
     paymentPortalRedirect: 'You will be redirected to manage your subscriptions',
+    paymentPortalNote: 'Available after your first purchase or subscription.',
   },
   // Identity verification
   verification: {

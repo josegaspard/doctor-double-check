@@ -181,25 +181,27 @@ export default function Wallet() {
           </motion.div>
         )}
 
-        {/* How it works stepper */}
-        <div className="mb-4 sm:mb-6 p-4 sm:p-5 rounded-xl bg-muted/50 border border-border">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t('wallet.howItWorks')}</p>
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            {[
-              { step: '1', icon: CreditCard, label: t('wallet.step1') },
-              { step: '2', icon: WalletIcon, label: t('wallet.step2') },
-              { step: '3', icon: ShieldCheck, label: t('wallet.step3') },
-            ].map((s) => (
-              <div key={s.step} className="flex flex-col items-center text-center gap-1.5">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center relative">
-                  <s.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">{s.step}</span>
+        {/* How it works stepper — collapsible for returning users */}
+        {isEmptyBalance && (
+          <div className="mb-4 sm:mb-6 p-4 sm:p-5 rounded-xl bg-muted/50 border border-border">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t('wallet.howItWorks')}</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              {[
+                { step: '1', icon: CreditCard, label: t('wallet.step1') },
+                { step: '2', icon: WalletIcon, label: t('wallet.step2') },
+                { step: '3', icon: ShieldCheck, label: t('wallet.step3') },
+              ].map((s) => (
+                <div key={s.step} className="flex flex-col items-center text-center gap-1.5">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center relative">
+                    <s.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">{s.step}</span>
+                  </div>
+                  <span className="text-xs text-foreground font-medium leading-tight">{s.label}</span>
                 </div>
-                <span className="text-xs text-foreground font-medium leading-tight">{s.label}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Top Up Card */}
         <Card className="mb-4 sm:mb-6">

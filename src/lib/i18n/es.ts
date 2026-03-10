@@ -32,6 +32,9 @@ export const es = {
     allDoctors: 'Ver todos los doctores',
     allRecordings: 'Ver todas las grabaciones',
     tip: 'Busca por nombre de doctor, especialidad o tema',
+    navigate: 'Navegar',
+    select: 'Seleccionar',
+    close: 'Cerrar',
   },
   common: {
     loading: 'Cargando...',
@@ -442,10 +445,11 @@ export const es = {
     pushDescription: 'Recibe notificaciones push en tu dispositivo',
     inAppDescription: 'Muestra notificaciones dentro de la app',
     verificationComingSoon: 'La verificación de identidad está disponible próximamente. Te notificaremos cuando esté lista.',
-    managePayments: 'Gestionar Pagos',
-    managePaymentsDescription: 'Administra tus suscripciones, métodos de pago y facturación',
-    openPaymentPortal: 'Abrir Portal de Pagos',
+    managePayments: 'Pagos y Facturación',
+    managePaymentsDescription: 'Revisa tus compras y métodos de pago',
+    openPaymentPortal: 'Ver mis pagos',
     paymentPortalRedirect: 'Serás redirigido para gestionar tus suscripciones',
+    paymentPortalNote: 'Disponible después de tu primera compra o suscripción.',
   },
   // Identity verification
   verification: {

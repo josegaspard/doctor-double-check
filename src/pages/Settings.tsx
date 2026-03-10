@@ -316,21 +316,22 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* Subscription Management */}
+          {/* Payments & Billing */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                {t('settings.managePayments') || 'Gestionar Pagos'}
+                {t('settings.managePayments')}
               </CardTitle>
               <CardDescription>
-                {t('settings.managePaymentsDescription') || 'Administra tus suscripciones, métodos de pago y facturación'}
+                {t('settings.managePaymentsDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button 
                 onClick={handleManageSubscriptions} 
                 disabled={isLoadingPortal}
+                variant="outline"
                 className="w-full gap-2"
               >
                 {isLoadingPortal ? (
@@ -338,12 +339,10 @@ export default function Settings() {
                 ) : (
                   <ExternalLink className="h-4 w-4" />
                 )}
-                {t('settings.openPaymentPortal') || 'Abrir Portal de Pagos'}
+                {t('settings.openPaymentPortal')}
               </Button>
-              <p className="text-xs text-muted-foreground mt-3 text-center">
-                {language === 'es' 
-                  ? 'Gestiona tus suscripciones activas y métodos de pago. Si aún no has realizado ninguna compra, el portal no estará disponible.'
-                  : 'Manage your active subscriptions and payment methods. If you haven\'t made any purchases yet, the portal won\'t be available.'}
+              <p className="text-[11px] text-muted-foreground mt-2 text-center">
+                {t('settings.paymentPortalNote')}
               </p>
             </CardContent>
           </Card>
