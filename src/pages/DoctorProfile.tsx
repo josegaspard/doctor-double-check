@@ -7,7 +7,7 @@ import DoctorReviews from '@/components/doctor/DoctorReviews';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@/components/ui/separator'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { 
   Dialog,
   DialogContent,
@@ -411,21 +411,22 @@ export default function DoctorProfile() {
           </Card>
         )}
 
+        {/* Main Profile Card — Clean & Scannable */}
         <Card>
           <CardContent className="p-5 sm:p-6">
-            {/* Hero: centered on mobile, horizontal on desktop */}
+            {/* Hero: Avatar + Name + Specialty + Rating inline */}
             <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-4 sm:gap-6">
-              {/* Avatar */}
+              {/* Avatar — larger on mobile for recognition */}
               <div className="relative flex-shrink-0">
                 {doctor.avatarUrl ? (
                   <img
                     src={doctor.avatarUrl}
                     alt={doctor.name}
-                    className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ${activeLive ? 'ring-4 ring-destructive ring-offset-2' : ''}`}
+                    className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover ${activeLive ? 'ring-4 ring-destructive ring-offset-2' : ''}`}
                   />
                 ) : (
-                  <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary/10 flex items-center justify-center ${activeLive ? 'ring-4 ring-destructive ring-offset-2' : ''}`}>
-                    <Stethoscope className="w-10 h-10 sm:w-12 sm:h-12 text-primary" />
+                  <div className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-primary/10 flex items-center justify-center ${activeLive ? 'ring-4 ring-destructive ring-offset-2' : ''}`}>
+                    <Stethoscope className="w-12 h-12 text-primary" />
                   </div>
                 )}
                 {activeLive && (
@@ -435,19 +436,28 @@ export default function DoctorProfile() {
                 )}
               </div>
 
-              {/* Info */}
-              <div className="flex-1 w-full">
-                <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">{doctor.name}</h1>
-                <p className="text-muted-foreground text-sm sm:text-base">{doctor.specialty}</p>
+              {/* Name + Specialty + Rating + Key badges */}
+              <div className="flex-1 w-full space-y-2">
+                <div>
+                  <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">{doctor.name}</h1>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 mt-0.5">
+                    <p className="text-muted-foreground text-sm sm:text-base">{doctor.specialty}</p>
+                    <div className="flex items-center gap-1 bg-premium/10 px-2 py-0.5 rounded-full">
+                      <Star className="w-3.5 h-3.5 fill-premium text-premium" />
+                      <span className="font-semibold text-xs text-premium">{doctor.rating.toFixed(1)}</span>
+                    </div>
+                  </div>
+                </div>
 
-                {/* Badges */}
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2 mt-2">
-                  <DoctorBadge type={getDoctorBadgeType(doctor.totalConsultations, doctor.rating, (doctor as any).badgeOverride)} />
+                {/* Badges — minimal on mobile */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
+                  <DoctorBadge type={getDoctorBadgeType(doctor.totalConsultations, doctor.rating, (doctor as any).badgeOverride)} size="sm" />
                   <Badge variant="verified" className="gap-1 text-xs">
                     <Award className="w-3 h-3" />
                     {t('doctorProfile.verified')}
                   </Badge>
-                  <Badge variant="secondary" className="gap-1 text-xs overflow-hidden">
+                  {/* Followers — hidden on mobile to reduce clutter */}
+                  <Badge variant="secondary" className="gap-1 text-xs overflow-hidden hidden sm:inline-flex">
                     <Users className="w-3 h-3" />
                     <AnimatePresence mode="popLayout">
                       <motion.span
@@ -463,27 +473,106 @@ export default function DoctorProfile() {
                     {' '}{t('doctorProfile.followers')}
                   </Badge>
                 </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                {/* Rating */}
-                <div className="flex items-center justify-center sm:justify-start gap-1 mt-2">
-                  <div className="flex items-center gap-1 bg-premium/10 px-3 py-1 rounded-full">
-                    <Star className="w-4 h-4 fill-premium text-premium" />
-                    <span className="font-semibold text-sm">{doctor.rating.toFixed(1)}</span>
-                  </div>
-                </div>
+        {/* Stats + Office Hours + CTA — Second Card */}
+        <Card className="mt-3">
+          <CardContent className="p-5 sm:p-6 space-y-5">
+            {/* Stats grid — with icons and color tints */}
+            <div className="grid grid-cols-3 gap-2.5">
+              <div className="text-center p-3 bg-success/5 rounded-lg border border-success/10">
+                <Stethoscope className="w-4 h-4 mx-auto mb-1 text-success" />
+                <p className="text-lg sm:text-xl font-bold text-foreground">{doctor.totalConsultations}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.consultations')}</p>
+              </div>
+              <div className="text-center p-3 bg-premium/5 rounded-lg border border-premium/10">
+                <Wallet className="w-4 h-4 mx-auto mb-1 text-premium" />
+                {isFreeConsultation ? (
+                  <p className="text-lg sm:text-xl font-bold text-success">{t('doctorProfile.free')}</p>
+                ) : (
+                  <p className="text-lg sm:text-xl font-bold text-premium">${doctor.consultationFee}</p>
+                )}
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.consultation')}</p>
+              </div>
+              <div className="text-center p-3 bg-info/5 rounded-lg border border-info/10">
+                {doctor.location ? (
+                  <>
+                    <MapPin className="w-4 h-4 mx-auto mb-1 text-info" />
+                    <p className="text-xs sm:text-sm font-medium text-foreground truncate">{doctor.location}</p>
+                  </>
+                ) : (
+                  <>
+                    <Users className="w-4 h-4 mx-auto mb-1 text-info" />
+                    <p className="text-lg sm:text-xl font-bold text-foreground">{doctor.followersCount}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.followers')}</p>
+                  </>
+                )}
               </div>
             </div>
 
-            <Separator className="my-4" />
+            {/* Office Hours — Compact: only active days, inline availability */}
+            {(doctor.officeHoursStart || (doctor.officeDays && doctor.officeDays.length > 0)) && (() => {
+              let isInHours = false;
+              if (doctor.officeHoursStart && doctor.officeHoursEnd && doctor.officeDays?.length) {
+                const now = new Date();
+                const dayMap: Record<string, number> = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 0 };
+                const todayNum = now.getDay();
+                const isToday = doctor.officeDays.some(d => dayMap[d.toLowerCase()] === todayNum);
+                const [startH, startM] = doctor.officeHoursStart.split(':').map(Number);
+                const [endH, endM] = doctor.officeHoursEnd.split(':').map(Number);
+                const nowMins = now.getHours() * 60 + now.getMinutes();
+                isInHours = isToday && nowMins >= startH * 60 + startM && nowMins <= endH * 60 + endM;
+              }
+              const activeDays = doctor.officeDays?.filter(Boolean) || [];
 
-            {/* Bio with expand/collapse on mobile */}
+              return (
+                <div className="flex flex-col gap-2 p-3 bg-muted/30 rounded-lg">
+                  {/* Row: icon + time + availability */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-primary flex-shrink-0" />
+                      {doctor.officeHoursStart && doctor.officeHoursEnd && (
+                        <span className="text-sm font-medium text-foreground">
+                          {doctor.officeHoursStart.slice(0, 5)} — {doctor.officeHoursEnd.slice(0, 5)}
+                        </span>
+                      )}
+                    </div>
+                    {doctor.officeHoursStart && doctor.officeHoursEnd && doctor.officeDays?.length && (
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+                        isInHours
+                          ? 'bg-success/15 text-success'
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isInHours ? 'bg-success animate-pulse' : 'bg-muted-foreground/50'}`} />
+                        {isInHours ? t('doctorProfile.availableNow') : t('doctorProfile.notAvailableNow')}
+                      </span>
+                    )}
+                  </div>
+                  {/* Active days only */}
+                  {activeDays.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {activeDays.map(day => (
+                        <span key={day} className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary">
+                          {t(`doctorProfile.${day.toLowerCase()}`)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Bio — concise, expandable */}
             {doctor.bio && (
-              <div className="mb-4">
-                <p className={`text-muted-foreground text-sm sm:text-base ${!bioExpanded ? 'line-clamp-3 sm:line-clamp-none' : ''}`}>
+              <div>
+                <p className={`text-muted-foreground text-sm leading-relaxed ${!bioExpanded ? 'line-clamp-2 sm:line-clamp-3' : ''}`}>
                   {doctor.bio}
                 </p>
                 <button
-                  className="sm:hidden text-primary text-xs font-medium mt-1"
+                  className="text-primary text-xs font-medium mt-1"
                   onClick={() => setBioExpanded(!bioExpanded)}
                 >
                   {bioExpanded ? t('doctorProfile.readLess') : t('doctorProfile.readMore')}
@@ -491,106 +580,18 @@ export default function DoctorProfile() {
               </div>
             )}
 
-            {/* Stats grid */}
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <p className="text-lg sm:text-xl font-bold text-foreground">{doctor.totalConsultations}</p>
-                <p className="text-[11px] sm:text-xs text-muted-foreground">{t('doctorProfile.consultations')}</p>
-              </div>
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                {isFreeConsultation ? (
-                  <p className="text-lg sm:text-xl font-bold text-success">{t('doctorProfile.free')}</p>
-                ) : (
-                  <p className="text-lg sm:text-xl font-bold text-premium">${doctor.consultationFee}</p>
-                )}
-                <p className="text-[11px] sm:text-xs text-muted-foreground">{t('doctorProfile.consultation')}</p>
-              </div>
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                {doctor.location ? (
-                  <>
-                    <MapPin className="w-4 h-4 mx-auto mb-0.5 text-muted-foreground" />
-                    <p className="text-[11px] sm:text-xs text-muted-foreground truncate">{doctor.location}</p>
-                  </>
-                ) : (
-                  <>
-                    <Star className="w-4 h-4 mx-auto mb-0.5 fill-premium text-premium" />
-                    <p className="text-[11px] sm:text-xs text-muted-foreground">{doctor.rating.toFixed(1)} ★</p>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Office Hours */}
-            {(doctor.officeHoursStart || (doctor.officeDays && doctor.officeDays.length > 0)) && (
-              <div className="mb-5 p-3.5 bg-muted/40 rounded-lg border border-border/50">
-                <div className="flex items-center justify-between mb-2.5">
-                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-primary" />
-                    {t('doctorProfile.officeHours')}
-                  </h4>
-                  {(() => {
-                    if (!doctor.officeHoursStart || !doctor.officeHoursEnd || !doctor.officeDays?.length) return null;
-                    const now = new Date();
-                    const dayMap: Record<string, number> = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 0 };
-                    const todayNum = now.getDay();
-                    const isToday = doctor.officeDays.some(d => dayMap[d.toLowerCase()] === todayNum);
-                    const [startH, startM] = doctor.officeHoursStart.split(':').map(Number);
-                    const [endH, endM] = doctor.officeHoursEnd.split(':').map(Number);
-                    const nowMins = now.getHours() * 60 + now.getMinutes();
-                    const isInHours = isToday && nowMins >= startH * 60 + startM && nowMins <= endH * 60 + endM;
-                    return (
-                      <Badge variant={isInHours ? 'default' : 'outline'} className={`text-xs gap-1 ${isInHours ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isInHours ? 'bg-white animate-pulse' : 'bg-muted-foreground'}`} />
-                        {isInHours ? t('doctorProfile.availableNow') : t('doctorProfile.notAvailableNow')}
-                      </Badge>
-                    );
-                  })()}
-                </div>
-                {doctor.officeHoursStart && doctor.officeHoursEnd && (
-                  <p className="text-sm font-medium text-foreground mb-2">
-                    {doctor.officeHoursStart.slice(0, 5)} — {doctor.officeHoursEnd.slice(0, 5)}
-                  </p>
-                )}
-                {doctor.officeDays && doctor.officeDays.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => {
-                      const isActive = doctor.officeDays?.some(d => d.toLowerCase() === day);
-                      return (
-                        <span
-                          key={day}
-                          className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${
-                            isActive
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted text-muted-foreground'
-                          }`}
-                        >
-                          {t(`doctorProfile.${day}`)}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* CTA buttons: full-width stacked on mobile */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
-              <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} onSubscriptionChange={async () => {
-                await new Promise(r => setTimeout(r, 1000));
-                const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
-                const profile = Array.isArray(data) ? data[0] : data;
-                if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
-              }} />
+            {/* CTA buttons — primary prominent, secondary compact */}
+            <div className="space-y-2">
               <Button 
-                className="gap-2 h-12 sm:h-11 active:scale-95 transition-transform w-full sm:w-auto" 
+                className="gap-2 w-full active:scale-[0.98] transition-transform" 
+                size="lg"
                 onClick={handleStartConsultation}
                 disabled={isStartingChat}
-                variant={isFreeConsultation ? 'default' : canChatDirectly ? 'default' : 'secondary'}
               >
                 {isStartingChat ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <MessageSquare className="w-4 h-4" />
+                  <MessageSquare className="w-5 h-5" />
                 )}
                 {isStartingChat 
                   ? t('doctorProfile.starting')
@@ -601,33 +602,44 @@ export default function DoctorProfile() {
                       : `${t('doctorProfile.consultation')} ($${doctor.consultationFee})`
                 }
               </Button>
-              <Button variant="outline" className="gap-2 h-12 sm:h-11 active:scale-95 transition-transform w-full sm:w-auto" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
-                <Video className="w-4 h-4" />
-                {t('doctorProfile.viewLives')}
-              </Button>
-              <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
-            </div>
-
-            {/* How it works */}
-            <div className="mt-4 p-3 bg-muted/40 rounded-lg border border-border/50">
-              <h4 className="text-sm font-semibold text-foreground mb-2">{t('doctorProfile.howItWorks')}</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
-                <div className="flex items-start gap-2 p-2 rounded-md bg-background/60">
-                  <span className="text-lg">1️⃣</span>
-                  <span><strong>{t('doctorProfile.step1Title')}</strong> — {t('doctorProfile.step1Desc')}</span>
-                </div>
-                <div className="flex items-start gap-2 p-2 rounded-md bg-background/60">
-                  <span className="text-lg">2️⃣</span>
-                  <span><strong>{t('doctorProfile.step2Title')}</strong> — {t('doctorProfile.step2Desc')}</span>
-                </div>
-                <div className="flex items-start gap-2 p-2 rounded-md bg-background/60">
-                  <span className="text-lg">3️⃣</span>
-                  <span><strong>{t('doctorProfile.step3Title')}</strong> — {t('doctorProfile.step3Desc')}</span>
-                </div>
+              <div className="grid grid-cols-2 gap-2">
+                <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} onSubscriptionChange={async () => {
+                  await new Promise(r => setTimeout(r, 1000));
+                  const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
+                  const profile = Array.isArray(data) ? data[0] : data;
+                  if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
+                }} />
+                <Button variant="outline" className="gap-2 active:scale-[0.98] transition-transform" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
+                  <Video className="w-4 h-4" />
+                  {t('doctorProfile.viewLives')}
+                </Button>
               </div>
+              <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
             </div>
           </CardContent>
         </Card>
+
+        {/* How it works — separate lightweight section */}
+        <div className="mt-3 p-4 bg-muted/30 rounded-lg">
+          <h4 className="text-sm font-semibold text-foreground mb-3">{t('doctorProfile.howItWorks')}</h4>
+          <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+            <div className="text-center space-y-1">
+              <span className="text-lg">1️⃣</span>
+              <p className="font-medium text-foreground">{t('doctorProfile.step1Title')}</p>
+              <p className="leading-tight">{t('doctorProfile.step1Desc')}</p>
+            </div>
+            <div className="text-center space-y-1">
+              <span className="text-lg">2️⃣</span>
+              <p className="font-medium text-foreground">{t('doctorProfile.step2Title')}</p>
+              <p className="leading-tight">{t('doctorProfile.step2Desc')}</p>
+            </div>
+            <div className="text-center space-y-1">
+              <span className="text-lg">3️⃣</span>
+              <p className="font-medium text-foreground">{t('doctorProfile.step3Title')}</p>
+              <p className="leading-tight">{t('doctorProfile.step3Desc')}</p>
+            </div>
+          </div>
+        </div>
 
         {/* Academic & Professional Profile */}
         <DoctorCredentials 
