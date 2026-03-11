@@ -826,6 +826,7 @@ export const en = {
     watchNow: 'Watch Now',
     verified: 'Verified',
     followers: 'followers',
+    locationLabel: 'Location',
     consultations: 'Consultations',
     consultation: 'Consultation',
     free: 'Free',
