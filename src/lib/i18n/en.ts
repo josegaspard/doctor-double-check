@@ -445,11 +445,11 @@ export const en = {
     pushDescription: 'Receive push notifications on your device',
     inAppDescription: 'Show notifications within the app',
     verificationComingSoon: 'Identity verification will be available soon. We will notify you when ready.',
-    managePayments: 'Payments & Billing',
-    managePaymentsDescription: 'Review your purchases and payment methods',
-    openPaymentPortal: 'View my payments',
-    paymentPortalRedirect: 'You will be redirected to manage your subscriptions',
-    paymentPortalNote: 'Available after your first purchase or subscription.',
+    managePayments: 'Memberships & Payments',
+    managePaymentsDescription: 'Manage your active memberships, cancel renewals, or update your payment method',
+    openPaymentPortal: 'Manage my memberships',
+    paymentPortalRedirect: 'You will be redirected to the membership management portal',
+    paymentPortalNote: 'Only available if you have an active membership or purchase.',
   },
   // Identity verification
   verification: {

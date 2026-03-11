@@ -581,10 +581,10 @@ export default function DoctorProfile() {
               </div>
             )}
 
-            {/* CTA buttons — primary prominent, secondary compact */}
-            <div className="space-y-2">
+            {/* CTA buttons — primary prominent, secondary clean grid */}
+            <div className="space-y-3">
               <Button 
-                className="gap-2 w-full active:scale-[0.98] transition-transform" 
+                className="gap-2 w-full" 
                 size="lg"
                 onClick={handleStartConsultation}
                 disabled={isStartingChat}
@@ -610,12 +610,14 @@ export default function DoctorProfile() {
                   const profile = Array.isArray(data) ? data[0] : data;
                   if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
                 }} />
-                <Button variant="outline" className="gap-2 active:scale-[0.98] transition-transform" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
+                <Button variant="outline" className="gap-2 h-10" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
                   <Video className="w-4 h-4" />
                   {t('doctorProfile.viewLives')}
                 </Button>
               </div>
-              <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
+              <div className="flex justify-center">
+                <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
+              </div>
             </div>
           </CardContent>
         </Card>
