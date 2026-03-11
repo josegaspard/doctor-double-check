@@ -581,7 +581,7 @@ export default function DoctorProfile() {
               </div>
             )}
 
-            {/* CTA buttons — primary prominent, secondary clean grid */}
+            {/* CTA buttons — primary full-width, secondary as card grid */}
             <div className="space-y-3">
               <Button 
                 className="gap-2 w-full" 
@@ -603,20 +603,28 @@ export default function DoctorProfile() {
                       : `${t('doctorProfile.consultation')} ($${doctor.consultationFee})`
                 }
               </Button>
-              <div className="grid grid-cols-2 gap-2">
-                <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} onSubscriptionChange={async () => {
-                  await new Promise(r => setTimeout(r, 1000));
-                  const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
-                  const profile = Array.isArray(data) ? data[0] : data;
-                  if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
-                }} />
-                <Button variant="outline" className="gap-2 h-10" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
-                  <Video className="w-4 h-4" />
-                  {t('doctorProfile.viewLives')}
-                </Button>
-              </div>
-              <div className="flex justify-center">
-                <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                  onClick={() => {/* handled by SubscribeButton */}}
+                >
+                  <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} variant="minimal" onSubscriptionChange={async () => {
+                    await new Promise(r => setTimeout(r, 1000));
+                    const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
+                    const profile = Array.isArray(data) ? data[0] : data;
+                    if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
+                  }} />
+                </div>
+                <div 
+                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}
+                >
+                  <Video className="w-5 h-5 text-primary" />
+                  <span className="text-xs font-medium text-foreground">{t('doctorProfile.viewLives')}</span>
+                </div>
+                <div className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer">
+                  <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} variant="minimal" />
+                </div>
               </div>
             </div>
           </CardContent>
