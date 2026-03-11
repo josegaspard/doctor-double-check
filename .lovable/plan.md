@@ -1,35 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Fix Doctor Profile Layout & Improve Payment Section Clarity
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Issues from Screenshots
+## Solucion
 
-1. **Location stat card** — Missing vertical centering. The other two stat cards have icon + number + label (3 elements), but the location card only has icon + text (2 elements), so it's not vertically centered relative to siblings.
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-2. **CTA buttons layout** — The secondary buttons (Subscribe/Premium, Ver Lives) are in a carousel-like horizontal scroll with arrows, which looks broken. They should be a clean grid without carousel arrows. The "Bloquear" button is loose underneath.
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-3. **Payment section wording** — Still confusing. Needs to clearly explain it's for managing active subscriptions/memberships like Lovable or Netflix do.
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-## Changes
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-### 1. `src/pages/DoctorProfile.tsx` — Fix stat cards + button layout
+## Archivos a modificar
 
-**Location stat card (lines 500-513):** Add `flex flex-col items-center justify-center` to ensure vertical centering matches sibling cards. Add a label below ("Ubicación") for consistency.
-
-**CTA buttons (lines 584-618):** Restructure:
-- Primary CTA: full-width, `size="lg"` (keep as-is)
-- Secondary row: `grid grid-cols-2 gap-2` with proper sizing — no carousel, just clean buttons
-- Block button: smaller, ghost variant, centered below
-
-### 2. `src/lib/i18n/es.ts` + `en.ts` — Improve payment section text
-
-- `managePayments`: "Membresías y Pagos" / "Memberships & Payments"
-- `managePaymentsDescription`: "Administra tus membresías activas, cancela renovaciones o actualiza tu método de pago" / "Manage your active memberships, cancel renewals, or update your payment method"
-- `openPaymentPortal`: "Administrar mis membresías" / "Manage my memberships"
-- `paymentPortalNote`: "Solo disponible si tienes una membresía o compra activa." / "Only available if you have an active membership or purchase."
-
-## Files
-1. `src/pages/DoctorProfile.tsx`
-2. `src/lib/i18n/es.ts`
-3. `src/lib/i18n/en.ts`
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |

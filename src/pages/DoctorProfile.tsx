@@ -497,15 +497,16 @@ export default function DoctorProfile() {
                 )}
                 <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.consultation')}</p>
               </div>
-              <div className="text-center p-3 bg-info/5 rounded-lg border border-info/10">
+              <div className="flex flex-col items-center justify-center text-center p-3 bg-info/5 rounded-lg border border-info/10">
                 {doctor.location ? (
                   <>
-                    <MapPin className="w-4 h-4 mx-auto mb-1 text-info" />
-                    <p className="text-xs sm:text-sm font-medium text-foreground truncate">{doctor.location}</p>
+                    <MapPin className="w-4 h-4 mb-1 text-info" />
+                    <p className="text-xs sm:text-sm font-medium text-foreground truncate max-w-full">{doctor.location}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.locationLabel')}</p>
                   </>
                 ) : (
                   <>
-                    <Users className="w-4 h-4 mx-auto mb-1 text-info" />
+                    <Users className="w-4 h-4 mb-1 text-info" />
                     <p className="text-lg sm:text-xl font-bold text-foreground">{doctor.followersCount}</p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.followers')}</p>
                   </>
@@ -580,10 +581,10 @@ export default function DoctorProfile() {
               </div>
             )}
 
-            {/* CTA buttons — primary prominent, secondary compact */}
-            <div className="space-y-2">
+            {/* CTA buttons — primary prominent, secondary clean grid */}
+            <div className="space-y-3">
               <Button 
-                className="gap-2 w-full active:scale-[0.98] transition-transform" 
+                className="gap-2 w-full" 
                 size="lg"
                 onClick={handleStartConsultation}
                 disabled={isStartingChat}
@@ -609,12 +610,14 @@ export default function DoctorProfile() {
                   const profile = Array.isArray(data) ? data[0] : data;
                   if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
                 }} />
-                <Button variant="outline" className="gap-2 active:scale-[0.98] transition-transform" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
+                <Button variant="outline" className="gap-2 h-10" onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}>
                   <Video className="w-4 h-4" />
                   {t('doctorProfile.viewLives')}
                 </Button>
               </div>
-              <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
+              <div className="flex justify-center">
+                <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
+              </div>
             </div>
           </CardContent>
         </Card>
