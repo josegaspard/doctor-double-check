@@ -605,10 +605,8 @@ export default function DoctorProfile() {
               </Button>
 
               <div className="grid grid-cols-3 gap-2">
-                <div className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                  onClick={() => {/* handled by SubscribeButton */}}
-                >
-                  <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} variant="minimal" onSubscriptionChange={async () => {
+                <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors overflow-hidden">
+                  <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} size="sm" variant="ghost" onSubscriptionChange={async () => {
                     await new Promise(r => setTimeout(r, 1000));
                     const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
                     const profile = Array.isArray(data) ? data[0] : data;
@@ -622,8 +620,8 @@ export default function DoctorProfile() {
                   <Video className="w-5 h-5 text-primary" />
                   <span className="text-xs font-medium text-foreground">{t('doctorProfile.viewLives')}</span>
                 </div>
-                <div className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer">
-                  <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} variant="minimal" />
+                <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors overflow-hidden">
+                  <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
                 </div>
               </div>
             </div>
