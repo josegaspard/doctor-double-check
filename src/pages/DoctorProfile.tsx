@@ -497,15 +497,16 @@ export default function DoctorProfile() {
                 )}
                 <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.consultation')}</p>
               </div>
-              <div className="text-center p-3 bg-info/5 rounded-lg border border-info/10">
+              <div className="flex flex-col items-center justify-center text-center p-3 bg-info/5 rounded-lg border border-info/10">
                 {doctor.location ? (
                   <>
-                    <MapPin className="w-4 h-4 mx-auto mb-1 text-info" />
-                    <p className="text-xs sm:text-sm font-medium text-foreground truncate">{doctor.location}</p>
+                    <MapPin className="w-4 h-4 mb-1 text-info" />
+                    <p className="text-xs sm:text-sm font-medium text-foreground truncate max-w-full">{doctor.location}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.locationLabel')}</p>
                   </>
                 ) : (
                   <>
-                    <Users className="w-4 h-4 mx-auto mb-1 text-info" />
+                    <Users className="w-4 h-4 mb-1 text-info" />
                     <p className="text-lg sm:text-xl font-bold text-foreground">{doctor.followersCount}</p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.followers')}</p>
                   </>
