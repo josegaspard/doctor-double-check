@@ -20,7 +20,7 @@ interface ContentPreviewModalProps {
   content: {
     title: string;
     description?: string | null;
-    type: 'video' | 'pdf' | 'image';
+    type: 'video' | 'pdf' | 'image' | 'presentation';
     file_url: string;
     thumbnail_url?: string | null;
     price?: number;
