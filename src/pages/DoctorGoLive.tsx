@@ -117,6 +117,13 @@ export default function DoctorGoLive() {
     setRecordingPrice(config.recordingPrice);
 
     try {
+      // Fetch doctor location
+      const { data: docProfile } = await supabase
+        .from('doctor_profiles')
+        .select('location')
+        .eq('user_id', user.id)
+        .single();
+
       const { data: live, error: liveError } = await supabase
         .from('lives')
         .insert({
@@ -131,6 +138,9 @@ export default function DoctorGoLive() {
           chat_enabled: config.chatEnabled,
           max_questions: config.maxQuestions,
           max_paid_chats: config.maxPaidChats,
+          location: docProfile?.location || null,
+          chat_mode: config.chatMode,
+          chat_price: config.chatPrice,
         })
         .select()
         .single();
