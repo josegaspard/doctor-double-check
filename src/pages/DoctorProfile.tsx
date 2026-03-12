@@ -337,6 +337,7 @@ export default function DoctorProfile() {
   }
 
   const showPendingBanner = isPending && user?.id === id;
+  const isSelf = user?.id === doctor?.id;
 
   return (
     <MainLayout>
