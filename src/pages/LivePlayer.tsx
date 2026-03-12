@@ -323,31 +323,22 @@ export default function LivePlayer() {
     } finally { setIsLiking(false); }
   };
 
-  const handleShare = async () => {
-    const shareData = {
-      title: live.title,
-      text: `${live.doctorName} - ${live.title}`,
-      url: window.location.href,
-    };
+  const [showShareModal, setShowShareModal] = useState(false);
 
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const shareText = live ? `${live.doctorName} - ${live.title}` : '';
+
+  const handleCopyLink = async () => {
     try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        toast.success(t('livePlayer.sharedSuccessfully'));
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success(t('livePlayer.linkCopied'));
-      }
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        // Fallback to clipboard
-        try {
-          await navigator.clipboard.writeText(window.location.href);
-          toast.success(t('livePlayer.linkCopied'));
-        } catch {
-          toast.error(t('livePlayer.shareError'));
-        }
-      }
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success(t('livePlayer.linkCopied'));
+      setShowShareModal(false);
+    } catch {
+      toast.error(t('livePlayer.shareError'));
     }
   };
 
@@ -672,6 +663,33 @@ export default function LivePlayer() {
           paidChatsCount={liveInteraction.paid_chats_count}
         />
       )}
+
+      {/* Share Modal */}
+      <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-primary" />
+              Compartir Live
+            </DialogTitle>
+            <DialogDescription>Comparte esta transmisión en tus redes</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 py-4">
+            <Button variant="outline" className="gap-2 h-12" onClick={() => { window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank'); setShowShareModal(false); }}>
+              <span className="text-lg">💬</span> WhatsApp
+            </Button>
+            <Button variant="outline" className="gap-2 h-12" onClick={() => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank'); setShowShareModal(false); }}>
+              <span className="text-lg">📘</span> Facebook
+            </Button>
+            <Button variant="outline" className="gap-2 h-12" onClick={() => { window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`, '_blank'); setShowShareModal(false); }}>
+              <span className="text-lg">𝕏</span> X
+            </Button>
+            <Button variant="outline" className="gap-2 h-12" onClick={handleCopyLink}>
+              <span className="text-lg">🔗</span> Copiar link
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* End Live Dialog */}
       <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>

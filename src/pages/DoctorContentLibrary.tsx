@@ -52,7 +52,7 @@ interface DoctorContent {
   id: string;
   title: string;
   description: string | null;
-  type: 'video' | 'pdf' | 'image';
+  type: 'video' | 'pdf' | 'image' | 'presentation';
   file_url: string;
   thumbnail_url: string | null;
   is_public: boolean;

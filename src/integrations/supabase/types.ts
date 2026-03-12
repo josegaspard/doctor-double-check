@@ -1387,7 +1387,9 @@ export type Database = {
           content: string
           created_at: string
           elapsed_seconds: number
+          highlight_until: string | null
           id: string
+          is_paid: boolean
           live_id: string
           user_id: string
           user_name: string
@@ -1396,7 +1398,9 @@ export type Database = {
           content: string
           created_at?: string
           elapsed_seconds?: number
+          highlight_until?: string | null
           id?: string
+          is_paid?: boolean
           live_id: string
           user_id: string
           user_name: string
@@ -1405,7 +1409,9 @@ export type Database = {
           content?: string
           created_at?: string
           elapsed_seconds?: number
+          highlight_until?: string | null
           id?: string
+          is_paid?: boolean
           live_id?: string
           user_id?: string
           user_name?: string
@@ -1519,12 +1525,15 @@ export type Database = {
       lives: {
         Row: {
           chat_enabled: boolean
+          chat_mode: string
+          chat_price: number
           daily_room_name: string | null
           description: string | null
           doctor_id: string
           ended_at: string | null
           id: string
           likes_count: number
+          location: string | null
           max_paid_chats: number | null
           max_questions: number | null
           paid_chats_count: number
@@ -1541,12 +1550,15 @@ export type Database = {
         }
         Insert: {
           chat_enabled?: boolean
+          chat_mode?: string
+          chat_price?: number
           daily_room_name?: string | null
           description?: string | null
           doctor_id: string
           ended_at?: string | null
           id?: string
           likes_count?: number
+          location?: string | null
           max_paid_chats?: number | null
           max_questions?: number | null
           paid_chats_count?: number
@@ -1563,12 +1575,15 @@ export type Database = {
         }
         Update: {
           chat_enabled?: boolean
+          chat_mode?: string
+          chat_price?: number
           daily_room_name?: string | null
           description?: string | null
           doctor_id?: string
           ended_at?: string | null
           id?: string
           likes_count?: number
+          location?: string | null
           max_paid_chats?: number | null
           max_questions?: number | null
           paid_chats_count?: number
@@ -3188,7 +3203,7 @@ export type Database = {
         | "completed"
         | "cancelled"
       content_audience: "all" | "patients" | "professionals" | "subscribers"
-      content_type: "video" | "pdf" | "image"
+      content_type: "video" | "pdf" | "image" | "presentation"
       doctor_status: "pending" | "approved" | "rejected"
       identity_verification_status:
         | "pending"
@@ -3355,7 +3370,7 @@ export const Constants = {
         "cancelled",
       ],
       content_audience: ["all", "patients", "professionals", "subscribers"],
-      content_type: ["video", "pdf", "image"],
+      content_type: ["video", "pdf", "image", "presentation"],
       doctor_status: ["pending", "approved", "rejected"],
       identity_verification_status: [
         "pending",

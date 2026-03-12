@@ -20,7 +20,7 @@ interface ContentPreviewModalProps {
   content: {
     title: string;
     description?: string | null;
-    type: 'video' | 'pdf' | 'image';
+    type: 'video' | 'pdf' | 'image' | 'presentation';
     file_url: string;
     thumbnail_url?: string | null;
     price?: number;
@@ -36,6 +36,7 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; bg: s
   video: { icon: Video, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Video' },
   pdf: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'PDF' },
   image: { icon: ImageIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Imagen' },
+  presentation: { icon: FileText, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'Presentación' },
 };
 
 function PreviewLoading() {
@@ -50,12 +51,10 @@ function PreviewLoading() {
 function PreviewError({
   config,
   error,
-  signedUrl,
   onRetry,
 }: {
   config: typeof typeConfig.pdf;
   error: string | null;
-  signedUrl: string | null;
   onRetry: () => void;
 }) {
   const TypeIcon = config.icon;
@@ -67,18 +66,10 @@ function PreviewError({
       <p className="text-sm text-muted-foreground text-center max-w-xs px-4">
         {error || 'No se pudo cargar el archivo'}
       </p>
-      <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={onRetry} className="gap-1.5">
-          <RefreshCw className="w-3.5 h-3.5" />
-          Reintentar
-        </Button>
-        {signedUrl && (
-          <Button variant="default" size="sm" onClick={() => window.open(signedUrl, '_blank', 'noopener')} className="gap-1.5">
-            <ExternalLink className="w-3.5 h-3.5" />
-            Abrir en pestaña
-          </Button>
-        )}
-      </div>
+      <Button variant="outline" size="sm" onClick={onRetry} className="gap-1.5">
+        <RefreshCw className="w-3.5 h-3.5" />
+        Reintentar
+      </Button>
     </div>
   );
 }
@@ -147,16 +138,21 @@ function PreviewContent({
               </div>
             )}
           </div>
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-xs text-muted-foreground"
-              onClick={() => window.open(signedUrl, '_blank', 'noopener')}
-            >
-              <ExternalLink className="w-3 h-3" />
-              ¿No se ve? Abrir en pestaña
-            </Button>
+        </div>
+      );
+    }
+    case 'presentation': {
+      return (
+        <div className="flex flex-col items-center justify-center h-48 sm:h-56 bg-muted/50 rounded-xl border border-border/50 gap-3"
+          onContextMenu={(e) => e.preventDefault()}>
+          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+            <FileText className="w-8 h-8 text-amber-500" />
+          </div>
+          <div className="text-center px-6">
+            <p className="font-medium text-foreground text-sm">{content.title}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Presentación disponible solo para visualización en plataforma
+            </p>
           </div>
         </div>
       );
@@ -165,10 +161,7 @@ function PreviewContent({
       return (
         <div className="flex flex-col items-center justify-center h-48 bg-muted/50 rounded-xl border border-border/50 gap-3">
           <FileText className="w-12 h-12 text-muted-foreground" />
-          <Button variant="default" size="sm" onClick={() => window.open(signedUrl, '_blank', 'noopener')} className="gap-1.5">
-            <ExternalLink className="w-3.5 h-3.5" />
-            Abrir archivo
-          </Button>
+          <p className="text-sm text-muted-foreground">Vista previa no disponible</p>
         </div>
       );
   }
@@ -240,7 +233,7 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
 
   const renderPreview = () => {
     if (isLoading) return <PreviewLoading />;
-    if (error || !signedUrl) return <PreviewError config={config} error={error} signedUrl={signedUrl} onRetry={fetchSignedUrl} />;
+    if (error || !signedUrl) return <PreviewError config={config} error={error} onRetry={fetchSignedUrl} />;
     return <PreviewContent content={content} signedUrl={signedUrl} blobUrl={blobUrl} />;
   };
 
@@ -249,6 +242,7 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
       <DialogContent
         hideClose
         className="max-w-[100vw] sm:max-w-3xl max-h-[100dvh] sm:max-h-[90vh] h-full sm:h-auto overflow-y-auto p-0 rounded-none sm:rounded-lg border-0 sm:border gap-0"
+        onContextMenu={(e) => e.preventDefault()}
       >
         {/* Sticky header with close button */}
         <DialogHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 pt-3 pb-2.5 sm:px-5 sm:pt-4 sm:pb-3 border-b border-border/40">

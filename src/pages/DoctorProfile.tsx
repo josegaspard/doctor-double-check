@@ -337,6 +337,7 @@ export default function DoctorProfile() {
   }
 
   const showPendingBanner = isPending && user?.id === id;
+  const isSelf = user?.id === doctor?.id;
 
   return (
     <MainLayout>
@@ -582,6 +583,7 @@ export default function DoctorProfile() {
             )}
 
             {/* CTA buttons — primary full-width, secondary as card grid */}
+            {!isSelf && (
             <div className="space-y-3">
               <Button 
                 className="gap-2 w-full" 
@@ -625,6 +627,7 @@ export default function DoctorProfile() {
                 </div>
               </div>
             </div>
+            )}
           </CardContent>
         </Card>
 

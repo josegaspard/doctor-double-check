@@ -117,6 +117,13 @@ export default function DoctorGoLive() {
     setRecordingPrice(config.recordingPrice);
 
     try {
+      // Fetch doctor location
+      const { data: docProfile } = await supabase
+        .from('doctor_profiles')
+        .select('location')
+        .eq('user_id', user.id)
+        .single();
+
       const { data: live, error: liveError } = await supabase
         .from('lives')
         .insert({
@@ -131,6 +138,9 @@ export default function DoctorGoLive() {
           chat_enabled: config.chatEnabled,
           max_questions: config.maxQuestions,
           max_paid_chats: config.maxPaidChats,
+          location: docProfile?.location || null,
+          chat_mode: config.chatMode,
+          chat_price: config.chatPrice,
         })
         .select()
         .single();
@@ -148,6 +158,16 @@ export default function DoctorGoLive() {
       setDailyRoomName(room.name);
       setDailyRoomUrl(room.url);
       setDailyOwnerToken(room.ownerToken || '');
+      // Upload thumbnail if provided
+      if (config.thumbnailFile) {
+        const thumbExt = config.thumbnailFile.name.split('.').pop();
+        const thumbPath = `${user.id}/${live.id}.${thumbExt}`;
+        const { error: thumbError } = await supabase.storage.from('thumbnails').upload(thumbPath, config.thumbnailFile);
+        if (!thumbError) {
+          const { data: thumbUrl } = supabase.storage.from('thumbnails').getPublicUrl(thumbPath);
+          await supabase.from('lives').update({ thumbnail_url: thumbUrl.publicUrl }).eq('id', live.id);
+        }
+      }
 
       localRecording.startRecording(stream);
 

@@ -33,7 +33,7 @@ const CONTENT_CATEGORIES = [
 
 interface UploadedContent {
   id: string;
-  type: 'video' | 'pdf' | 'image';
+  type: 'video' | 'pdf' | 'image' | 'presentation';
   title: string;
   description: string;
   category: string;
@@ -105,16 +105,20 @@ export default function DoctorUpload() {
 
   const isApproved = user?.doctorProfile?.status === 'approved';
 
-  const getFileType = (file: File): 'video' | 'pdf' | 'image' => {
+  const getFileType = (file: File): 'video' | 'pdf' | 'image' | 'presentation' => {
     if (file.type.includes('video')) return 'video';
     if (file.type.includes('pdf')) return 'pdf';
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (['pptx', 'ppt', 'key', 'odp'].includes(ext || '')) return 'presentation';
+    if (file.type.includes('presentation') || file.type.includes('powerpoint')) return 'presentation';
     return 'image';
   };
 
-  const getFileIcon = (type: 'video' | 'pdf' | 'image') => {
+  const getFileIcon = (type: 'video' | 'pdf' | 'image' | 'presentation') => {
     switch (type) {
       case 'video': return <Video className="w-6 h-6 text-live" />;
       case 'pdf': return <FileText className="w-6 h-6 text-primary" />;
+      case 'presentation': return <FileText className="w-6 h-6 text-warning" />;
       case 'image': return <Image className="w-6 h-6 text-info" />;
     }
   };
@@ -281,7 +285,7 @@ export default function DoctorUpload() {
             {/* File Selection */}
             <div className="space-y-2">
               <Label>Archivo</Label>
-              <input ref={fileInputRef} type="file" accept="video/*,.pdf,image/*" className="hidden" onChange={handleFileSelect} disabled={!isApproved} />
+              <input ref={fileInputRef} type="file" accept="video/*,.pdf,image/*,.pptx,.ppt,.key,.odp" className="hidden" onChange={handleFileSelect} disabled={!isApproved} />
               {selectedFile ? (
                 <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
                   {getFileIcon(getFileType(selectedFile))}
@@ -294,10 +298,16 @@ export default function DoctorUpload() {
                   </Button>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors" onClick={() => fileInputRef.current?.click()}>
+                <div 
+                  className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+                  onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+                  onDrop={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); const file = e.dataTransfer.files?.[0]; if (file) setSelectedFile(file); }}
+                >
                   <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">Haz clic para seleccionar un archivo</p>
-                  <p className="text-xs text-muted-foreground mt-1">Video, PDF o imagen (máx. 100MB)</p>
+                  <p className="text-sm text-muted-foreground">Arrastra tu archivo aquí o haz clic para seleccionar</p>
+                  <p className="text-xs text-muted-foreground mt-1">Video, PDF, imagen o presentación (máx. 100MB)</p>
                 </div>
               )}
             </div>

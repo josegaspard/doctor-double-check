@@ -117,17 +117,20 @@ export default function LivesGrid() {
   const { getSubscription } = useSubscriptions();
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
 
   const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
 
-  // Extract unique specialties and tags from active lives
+  // Extract unique specialties, tags, and cities from active lives
   const specialties = [...new Set(activeLives.map(l => l.specialty))];
   const allTags = [...new Set(activeLives.flatMap(l => l.tags || []))];
+  const allCities = [...new Set(activeLives.map(l => (l as any).location).filter(Boolean))];
 
   // Filter lives
   const filteredLives = activeLives.filter(l => {
     if (selectedSpecialty && l.specialty !== selectedSpecialty) return false;
     if (selectedTag && !(l.tags || []).includes(selectedTag)) return false;
+    if (selectedCity && (l as any).location !== selectedCity) return false;
     return true;
   });
 
@@ -195,7 +198,7 @@ export default function LivesGrid() {
         </div>
 
         {/* Filter Chips */}
-        {(specialties.length > 1 || allTags.length > 0) && (
+        {(specialties.length > 1 || allTags.length > 0 || allCities.length > 0) && (
           <div className="space-y-2 mb-4">
             {/* Specialty chips */}
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
@@ -237,6 +240,24 @@ export default function LivesGrid() {
                     }`}
                   >
                     #{tag}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* City chips */}
+            {allCities.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
+                {allCities.map(city => (
+                  <button
+                    key={city}
+                    onClick={() => setSelectedCity(selectedCity === city ? null : city)}
+                    className={`flex-shrink-0 snap-start flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                      selectedCity === city
+                        ? 'bg-info text-info-foreground border-info'
+                        : 'bg-muted/50 text-muted-foreground border-border hover:border-info/50'
+                    }`}
+                  >
+                    📍 {city}
                   </button>
                 ))}
               </div>
@@ -283,15 +304,15 @@ export default function LivesGrid() {
           <Card className="p-8 sm:p-12 text-center">
             <Video className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-              {selectedSpecialty || selectedTag ? 'No hay lives con estos filtros' : t('lives.noLives')}
+              {selectedSpecialty || selectedTag || selectedCity ? 'No hay lives con estos filtros' : t('lives.noLives')}
             </h3>
             <p className="text-muted-foreground text-sm">
-              {selectedSpecialty || selectedTag
+              {selectedSpecialty || selectedTag || selectedCity
                 ? 'Prueba quitando filtros para ver más transmisiones'
                 : t('lives.noLivesDescription')}
             </p>
-            {(selectedSpecialty || selectedTag) && (
-              <Button variant="outline" className="mt-3" onClick={() => { setSelectedSpecialty(null); setSelectedTag(null); }}>
+            {(selectedSpecialty || selectedTag || selectedCity) && (
+              <Button variant="outline" className="mt-3" onClick={() => { setSelectedSpecialty(null); setSelectedTag(null); setSelectedCity(null); }}>
                 Quitar filtros
               </Button>
             )}
