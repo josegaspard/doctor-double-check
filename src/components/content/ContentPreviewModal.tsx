@@ -242,6 +242,7 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
       <DialogContent
         hideClose
         className="max-w-[100vw] sm:max-w-3xl max-h-[100dvh] sm:max-h-[90vh] h-full sm:h-auto overflow-y-auto p-0 rounded-none sm:rounded-lg border-0 sm:border gap-0"
+        onContextMenu={(e) => e.preventDefault()}
       >
         {/* Sticky header with close button */}
         <DialogHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 pt-3 pb-2.5 sm:px-5 sm:pt-4 sm:pb-3 border-b border-border/40">
