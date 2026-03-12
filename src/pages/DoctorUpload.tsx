@@ -298,10 +298,16 @@ export default function DoctorUpload() {
                   </Button>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors" onClick={() => fileInputRef.current?.click()}>
+                <div 
+                  className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+                  onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+                  onDrop={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); const file = e.dataTransfer.files?.[0]; if (file) setSelectedFile(file); }}
+                >
                   <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">Haz clic para seleccionar un archivo</p>
-                  <p className="text-xs text-muted-foreground mt-1">Video, PDF o imagen (máx. 100MB)</p>
+                  <p className="text-sm text-muted-foreground">Arrastra tu archivo aquí o haz clic para seleccionar</p>
+                  <p className="text-xs text-muted-foreground mt-1">Video, PDF, imagen o presentación (máx. 100MB)</p>
                 </div>
               )}
             </div>
