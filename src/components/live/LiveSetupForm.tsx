@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Video,
@@ -19,10 +20,12 @@ import {
   Info,
   Mic,
   FilmIcon,
+  Image as ImageIcon,
+  Upload,
 } from 'lucide-react';
 
 const SPECIALTIES = [
-  'Cardiología', 'Dermatología', 'Endocrinología', 'Gastroenterología',
+  'Cardiología', 'Cirugía General', 'Dermatología', 'Endocrinología', 'Gastroenterología',
   'Ginecología', 'Medicina General', 'Medicina Interna', 'Neurología',
   'Oftalmología', 'Oncología', 'Ortopedia', 'Pediatría',
   'Psiquiatría', 'Urología', 'Otra',
@@ -43,6 +46,9 @@ export interface LiveConfig {
   chatEnabled: boolean;
   maxQuestions: number | null;
   maxPaidChats: number | null;
+  thumbnailFile: File | null;
+  chatMode: 'free' | 'paid_only' | 'mixed';
+  chatPrice: number;
 }
 
 function SectionHeader({ number, icon: Icon, title, subtitle }: { number: number; icon: React.ElementType; title: string; subtitle?: string }) {
@@ -71,6 +77,11 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const [maxQuestions, setMaxQuestions] = useState<number | ''>('');
   const [maxPaidChats, setMaxPaidChats] = useState<number | ''>('');
   const [showAdvancedChat, setShowAdvancedChat] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [chatMode, setChatMode] = useState<'free' | 'paid_only' | 'mixed'>('free');
+  const [chatPrice, setChatPrice] = useState<number | ''>('');
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   const addTag = () => {
     const trimmed = tagInput.trim().toLowerCase();
@@ -84,6 +95,13 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
     setTags(tags.filter(t => t !== tagToRemove));
   };
 
+  const handleThumbnailSelect = (file: File) => {
+    setThumbnailFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setThumbnailPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = () => {
     onStartLive({
       title,
@@ -95,6 +113,9 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
       chatEnabled,
       maxQuestions: maxQuestions === '' ? null : Number(maxQuestions),
       maxPaidChats: maxPaidChats === '' ? null : Number(maxPaidChats),
+      thumbnailFile,
+      chatMode,
+      chatPrice: Number(chatPrice) || 0,
     });
   };
 
@@ -178,32 +199,72 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
           </div>
 
           {enableRecording && (
-            <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-2">
-              <Label htmlFor="price" className="flex items-center gap-2 text-sm font-semibold text-primary">
-                <DollarSign className="w-4 h-4" />
-                Precio de la grabación (MXN)
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-base">$</span>
-                <Input
-                  id="price"
-                  type="number"
-                  min={0}
-                  step={10}
-                  placeholder="0"
-                  value={recordingPrice}
-                  onChange={(e) => setRecordingPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                  onFocus={(e) => { if (e.target.value === '0') setRecordingPrice(''); }}
-                  className="pl-8 text-lg h-12 font-semibold"
+            <>
+              <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-2">
+                <Label htmlFor="price" className="flex items-center gap-2 text-sm font-semibold text-primary">
+                  <DollarSign className="w-4 h-4" />
+                  Precio de la grabación (MXN)
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-base">$</span>
+                  <Input
+                    id="price"
+                    type="number"
+                    min={0}
+                    step={10}
+                    placeholder="0"
+                    value={recordingPrice}
+                    onChange={(e) => setRecordingPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                    onFocus={(e) => { if (e.target.value === '0') setRecordingPrice(''); }}
+                    className="pl-8 text-lg h-12 font-semibold"
+                  />
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <p className="text-[11px] text-muted-foreground">
+                    ¿Cuánto cobrarás por la grabación? Escribe <strong>0</strong> si será gratuita. Los suscriptores premium la obtienen gratis.
+                  </p>
+                </div>
+              </div>
+
+              {/* Thumbnail for recording */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm">
+                  <ImageIcon className="w-4 h-4" />
+                  Portada de grabación
+                </Label>
+                <input
+                  ref={thumbnailInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleThumbnailSelect(f); }}
                 />
+                {thumbnailPreview ? (
+                  <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border">
+                    <img src={thumbnailPreview} alt="Portada" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => { setThumbnailFile(null); setThumbnailPreview(null); if (thumbnailInputRef.current) thumbnailInputRef.current.value = ''; }}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => thumbnailInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+                    onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); const f = e.dataTransfer.files?.[0]; if (f && f.type.startsWith('image/')) handleThumbnailSelect(f); }}
+                  >
+                    <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-xs text-muted-foreground">Arrastra una imagen o haz clic para seleccionar</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">Se mostrará en la sección de grabaciones</p>
+                  </div>
+                )}
               </div>
-              <div className="flex items-start gap-1.5">
-                <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                <p className="text-[11px] text-muted-foreground">
-                  ¿Cuánto cobrarás por la grabación? Escribe <strong>0</strong> si será gratuita. Los suscriptores premium la obtienen gratis.
-                </p>
-              </div>
-            </div>
+            </>
           )}
         </section>
 
@@ -222,40 +283,78 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
           </div>
 
           {chatEnabled && (
-            <Collapsible open={showAdvancedChat} onOpenChange={setShowAdvancedChat}>
-              <CollapsibleTrigger asChild>
-                <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvancedChat ? 'rotate-180' : ''}`} />
-                  Opciones avanzadas
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-3 space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="maxQuestions" className="text-xs">Límite de preguntas</Label>
-                  <Input
-                    id="maxQuestions"
-                    type="number"
-                    min={1}
-                    placeholder="Sin límite"
-                    value={maxQuestions}
-                    onChange={(e) => setMaxQuestions(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="h-9"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="maxPaidChats" className="text-xs">Límite de orientaciones pagadas</Label>
-                  <Input
-                    id="maxPaidChats"
-                    type="number"
-                    min={1}
-                    placeholder="Sin límite"
-                    value={maxPaidChats}
-                    onChange={(e) => setMaxPaidChats(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="h-9"
-                  />
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            <>
+              {/* Chat Mode */}
+              <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+                <Label className="text-sm font-medium">Modo del chat</Label>
+                <RadioGroup value={chatMode} onValueChange={(v) => setChatMode(v as any)} className="gap-2">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="free" id="chat-free" />
+                    <Label htmlFor="chat-free" className="text-sm font-normal cursor-pointer">Gratuito — Todos pueden comentar</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="paid_only" id="chat-paid" />
+                    <Label htmlFor="chat-paid" className="text-sm font-normal cursor-pointer">Solo pagado — Requiere pago para comentar</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="mixed" id="chat-mixed" />
+                    <Label htmlFor="chat-mixed" className="text-sm font-normal cursor-pointer">Mixto — Los pagados se destacan</Label>
+                  </div>
+                </RadioGroup>
+
+                {(chatMode === 'paid_only' || chatMode === 'mixed') && (
+                  <div className="space-y-1.5 mt-2">
+                    <Label htmlFor="chatPrice" className="text-xs flex items-center gap-1">
+                      <DollarSign className="w-3 h-3" /> Precio por mensaje (MXN)
+                    </Label>
+                    <Input
+                      id="chatPrice"
+                      type="number"
+                      min={1}
+                      placeholder="10"
+                      value={chatPrice}
+                      onChange={(e) => setChatPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="h-9"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <Collapsible open={showAdvancedChat} onOpenChange={setShowAdvancedChat}>
+                <CollapsibleTrigger asChild>
+                  <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvancedChat ? 'rotate-180' : ''}`} />
+                    Opciones avanzadas
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3 space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="maxQuestions" className="text-xs">Límite de preguntas</Label>
+                    <Input
+                      id="maxQuestions"
+                      type="number"
+                      min={1}
+                      placeholder="Sin límite"
+                      value={maxQuestions}
+                      onChange={(e) => setMaxQuestions(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="maxPaidChats" className="text-xs">Límite de orientaciones pagadas</Label>
+                    <Input
+                      id="maxPaidChats"
+                      type="number"
+                      min={1}
+                      placeholder="Sin límite"
+                      value={maxPaidChats}
+                      onChange={(e) => setMaxPaidChats(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="h-9"
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </>
           )}
         </section>
 
