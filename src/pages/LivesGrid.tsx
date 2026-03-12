@@ -117,17 +117,20 @@ export default function LivesGrid() {
   const { getSubscription } = useSubscriptions();
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
 
   const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
 
-  // Extract unique specialties and tags from active lives
+  // Extract unique specialties, tags, and cities from active lives
   const specialties = [...new Set(activeLives.map(l => l.specialty))];
   const allTags = [...new Set(activeLives.flatMap(l => l.tags || []))];
+  const allCities = [...new Set(activeLives.map(l => (l as any).location).filter(Boolean))];
 
   // Filter lives
   const filteredLives = activeLives.filter(l => {
     if (selectedSpecialty && l.specialty !== selectedSpecialty) return false;
     if (selectedTag && !(l.tags || []).includes(selectedTag)) return false;
+    if (selectedCity && (l as any).location !== selectedCity) return false;
     return true;
   });
 
