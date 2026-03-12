@@ -105,9 +105,12 @@ export default function DoctorUpload() {
 
   const isApproved = user?.doctorProfile?.status === 'approved';
 
-  const getFileType = (file: File): 'video' | 'pdf' | 'image' => {
+  const getFileType = (file: File): 'video' | 'pdf' | 'image' | 'presentation' => {
     if (file.type.includes('video')) return 'video';
     if (file.type.includes('pdf')) return 'pdf';
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (['pptx', 'ppt', 'key', 'odp'].includes(ext || '')) return 'presentation';
+    if (file.type.includes('presentation') || file.type.includes('powerpoint')) return 'presentation';
     return 'image';
   };
 
