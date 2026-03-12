@@ -323,31 +323,22 @@ export default function LivePlayer() {
     } finally { setIsLiking(false); }
   };
 
-  const handleShare = async () => {
-    const shareData = {
-      title: live.title,
-      text: `${live.doctorName} - ${live.title}`,
-      url: window.location.href,
-    };
+  const [showShareModal, setShowShareModal] = useState(false);
 
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const shareText = live ? `${live.doctorName} - ${live.title}` : '';
+
+  const handleCopyLink = async () => {
     try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        toast.success(t('livePlayer.sharedSuccessfully'));
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success(t('livePlayer.linkCopied'));
-      }
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        // Fallback to clipboard
-        try {
-          await navigator.clipboard.writeText(window.location.href);
-          toast.success(t('livePlayer.linkCopied'));
-        } catch {
-          toast.error(t('livePlayer.shareError'));
-        }
-      }
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success(t('livePlayer.linkCopied'));
+      setShowShareModal(false);
+    } catch {
+      toast.error(t('livePlayer.shareError'));
     }
   };
 
