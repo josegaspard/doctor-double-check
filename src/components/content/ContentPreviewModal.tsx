@@ -51,12 +51,10 @@ function PreviewLoading() {
 function PreviewError({
   config,
   error,
-  signedUrl,
   onRetry,
 }: {
   config: typeof typeConfig.pdf;
   error: string | null;
-  signedUrl: string | null;
   onRetry: () => void;
 }) {
   const TypeIcon = config.icon;
@@ -68,18 +66,10 @@ function PreviewError({
       <p className="text-sm text-muted-foreground text-center max-w-xs px-4">
         {error || 'No se pudo cargar el archivo'}
       </p>
-      <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={onRetry} className="gap-1.5">
-          <RefreshCw className="w-3.5 h-3.5" />
-          Reintentar
-        </Button>
-        {signedUrl && (
-          <Button variant="default" size="sm" onClick={() => window.open(signedUrl, '_blank', 'noopener')} className="gap-1.5">
-            <ExternalLink className="w-3.5 h-3.5" />
-            Abrir en pestaña
-          </Button>
-        )}
-      </div>
+      <Button variant="outline" size="sm" onClick={onRetry} className="gap-1.5">
+        <RefreshCw className="w-3.5 h-3.5" />
+        Reintentar
+      </Button>
     </div>
   );
 }
