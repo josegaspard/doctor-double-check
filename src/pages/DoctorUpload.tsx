@@ -285,7 +285,7 @@ export default function DoctorUpload() {
             {/* File Selection */}
             <div className="space-y-2">
               <Label>Archivo</Label>
-              <input ref={fileInputRef} type="file" accept="video/*,.pdf,image/*" className="hidden" onChange={handleFileSelect} disabled={!isApproved} />
+              <input ref={fileInputRef} type="file" accept="video/*,.pdf,image/*,.pptx,.ppt,.key,.odp" className="hidden" onChange={handleFileSelect} disabled={!isApproved} />
               {selectedFile ? (
                 <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
                   {getFileIcon(getFileType(selectedFile))}
