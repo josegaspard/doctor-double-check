@@ -198,7 +198,7 @@ export default function LivesGrid() {
         </div>
 
         {/* Filter Chips */}
-        {(specialties.length > 1 || allTags.length > 0) && (
+        {(specialties.length > 1 || allTags.length > 0 || allCities.length > 0) && (
           <div className="space-y-2 mb-4">
             {/* Specialty chips */}
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
@@ -240,6 +240,24 @@ export default function LivesGrid() {
                     }`}
                   >
                     #{tag}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* City chips */}
+            {allCities.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
+                {allCities.map(city => (
+                  <button
+                    key={city}
+                    onClick={() => setSelectedCity(selectedCity === city ? null : city)}
+                    className={`flex-shrink-0 snap-start flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                      selectedCity === city
+                        ? 'bg-info text-info-foreground border-info'
+                        : 'bg-muted/50 text-muted-foreground border-border hover:border-info/50'
+                    }`}
+                  >
+                    📍 {city}
                   </button>
                 ))}
               </div>
