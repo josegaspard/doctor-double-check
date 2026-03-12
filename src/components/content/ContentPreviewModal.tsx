@@ -36,6 +36,7 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; bg: s
   video: { icon: Video, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Video' },
   pdf: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'PDF' },
   image: { icon: ImageIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Imagen' },
+  presentation: { icon: FileText, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'Presentación' },
 };
 
 function PreviewLoading() {
