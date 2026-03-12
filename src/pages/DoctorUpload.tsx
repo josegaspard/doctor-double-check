@@ -114,10 +114,11 @@ export default function DoctorUpload() {
     return 'image';
   };
 
-  const getFileIcon = (type: 'video' | 'pdf' | 'image') => {
+  const getFileIcon = (type: 'video' | 'pdf' | 'image' | 'presentation') => {
     switch (type) {
       case 'video': return <Video className="w-6 h-6 text-live" />;
       case 'pdf': return <FileText className="w-6 h-6 text-primary" />;
+      case 'presentation': return <FileText className="w-6 h-6 text-warning" />;
       case 'image': return <Image className="w-6 h-6 text-info" />;
     }
   };
