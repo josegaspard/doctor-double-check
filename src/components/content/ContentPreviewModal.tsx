@@ -233,7 +233,7 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
 
   const renderPreview = () => {
     if (isLoading) return <PreviewLoading />;
-    if (error || !signedUrl) return <PreviewError config={config} error={error} signedUrl={signedUrl} onRetry={fetchSignedUrl} />;
+    if (error || !signedUrl) return <PreviewError config={config} error={error} onRetry={fetchSignedUrl} />;
     return <PreviewContent content={content} signedUrl={signedUrl} blobUrl={blobUrl} />;
   };
 
