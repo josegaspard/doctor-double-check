@@ -138,16 +138,21 @@ function PreviewContent({
               </div>
             )}
           </div>
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-xs text-muted-foreground"
-              onClick={() => window.open(signedUrl, '_blank', 'noopener')}
-            >
-              <ExternalLink className="w-3 h-3" />
-              ¿No se ve? Abrir en pestaña
-            </Button>
+        </div>
+      );
+    }
+    case 'presentation': {
+      return (
+        <div className="flex flex-col items-center justify-center h-48 sm:h-56 bg-muted/50 rounded-xl border border-border/50 gap-3"
+          onContextMenu={(e) => e.preventDefault()}>
+          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+            <FileText className="w-8 h-8 text-amber-500" />
+          </div>
+          <div className="text-center px-6">
+            <p className="font-medium text-foreground text-sm">{content.title}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Presentación disponible solo para visualización en plataforma
+            </p>
           </div>
         </div>
       );
@@ -156,10 +161,7 @@ function PreviewContent({
       return (
         <div className="flex flex-col items-center justify-center h-48 bg-muted/50 rounded-xl border border-border/50 gap-3">
           <FileText className="w-12 h-12 text-muted-foreground" />
-          <Button variant="default" size="sm" onClick={() => window.open(signedUrl, '_blank', 'noopener')} className="gap-1.5">
-            <ExternalLink className="w-3.5 h-3.5" />
-            Abrir archivo
-          </Button>
+          <p className="text-sm text-muted-foreground">Vista previa no disponible</p>
         </div>
       );
   }
