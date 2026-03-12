@@ -304,15 +304,15 @@ export default function LivesGrid() {
           <Card className="p-8 sm:p-12 text-center">
             <Video className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-              {selectedSpecialty || selectedTag ? 'No hay lives con estos filtros' : t('lives.noLives')}
+              {selectedSpecialty || selectedTag || selectedCity ? 'No hay lives con estos filtros' : t('lives.noLives')}
             </h3>
             <p className="text-muted-foreground text-sm">
-              {selectedSpecialty || selectedTag
+              {selectedSpecialty || selectedTag || selectedCity
                 ? 'Prueba quitando filtros para ver más transmisiones'
                 : t('lives.noLivesDescription')}
             </p>
-            {(selectedSpecialty || selectedTag) && (
-              <Button variant="outline" className="mt-3" onClick={() => { setSelectedSpecialty(null); setSelectedTag(null); }}>
+            {(selectedSpecialty || selectedTag || selectedCity) && (
+              <Button variant="outline" className="mt-3" onClick={() => { setSelectedSpecialty(null); setSelectedTag(null); setSelectedCity(null); }}>
                 Quitar filtros
               </Button>
             )}
