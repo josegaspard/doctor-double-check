@@ -158,6 +158,16 @@ export default function DoctorGoLive() {
       setDailyRoomName(room.name);
       setDailyRoomUrl(room.url);
       setDailyOwnerToken(room.ownerToken || '');
+      // Upload thumbnail if provided
+      if (config.thumbnailFile) {
+        const thumbExt = config.thumbnailFile.name.split('.').pop();
+        const thumbPath = `${user.id}/${live.id}.${thumbExt}`;
+        const { error: thumbError } = await supabase.storage.from('thumbnails').upload(thumbPath, config.thumbnailFile);
+        if (!thumbError) {
+          const { data: thumbUrl } = supabase.storage.from('thumbnails').getPublicUrl(thumbPath);
+          await supabase.from('lives').update({ thumbnail_url: thumbUrl.publicUrl }).eq('id', live.id);
+        }
+      }
 
       localRecording.startRecording(stream);
 

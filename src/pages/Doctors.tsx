@@ -108,6 +108,7 @@ interface DoctorRow {
 const SPECIALTIES = [
   { value: 'Todas', labelKey: 'doctors.specAll' },
   { value: 'Cardiología', labelKey: 'doctors.specCardiology' },
+  { value: 'Cirugía General', labelKey: 'doctors.specGeneralSurgery' },
   { value: 'Dermatología', labelKey: 'doctors.specDermatology' },
   { value: 'Endocrinología', labelKey: 'doctors.specEndocrinology' },
   { value: 'Gastroenterología', labelKey: 'doctors.specGastroenterology' },
