@@ -33,7 +33,7 @@ const CONTENT_CATEGORIES = [
 
 interface UploadedContent {
   id: string;
-  type: 'video' | 'pdf' | 'image';
+  type: 'video' | 'pdf' | 'image' | 'presentation';
   title: string;
   description: string;
   category: string;
