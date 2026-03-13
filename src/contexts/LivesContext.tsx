@@ -371,7 +371,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         (payload) => {
           // For INSERT/UPDATE, update state directly when possible
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const record = payload.new as { id: string; title: string; description?: string; doctor_id: string; specialty: string; status: string; viewer_count: number; likes_count: number; started_at: string; ended_at?: string; thumbnail_url?: string; recording_price?: number; tags?: string[]; daily_room_name?: string };
+            const record = payload.new as { id: string; title: string; description?: string; doctor_id: string; specialty: string; status: string; viewer_count: number; likes_count: number; started_at: string; ended_at?: string; thumbnail_url?: string; recording_price?: number; tags?: string[]; daily_room_name?: string; location?: string; chat_mode?: string; chat_price?: number };
             
             // If the live has ended, remove it from state entirely
             if (record.status === 'ended' || record.status === 'processing_recording' || record.status === 'recording_ready') {
