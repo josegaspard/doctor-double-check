@@ -169,6 +169,9 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           tags: l.tags || [],
           followersCount: doctorProfileCache.current.get(l.doctor_id)?.followers_count || 0,
           dailyRoomName: l.daily_room_name || undefined,
+          location: (l as any).location || undefined,
+          chatMode: (l as any).chat_mode || 'free',
+          chatPrice: (l as any).chat_price ? Number((l as any).chat_price) : 0,
         })));
       } else {
         setLives([]);

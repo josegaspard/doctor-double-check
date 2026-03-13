@@ -324,8 +324,6 @@ export default function LivePlayer() {
     } finally { setIsLiking(false); }
   };
 
-  const [showShareModal, setShowShareModal] = useState(false);
-
   const handleShare = () => {
     setShowShareModal(true);
   };
