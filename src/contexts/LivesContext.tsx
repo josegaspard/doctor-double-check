@@ -23,6 +23,9 @@ export interface Live {
   tags: string[];
   followersCount?: number;
   dailyRoomName?: string;
+  location?: string;
+  chatMode?: string;
+  chatPrice?: number;
 }
 
 export interface Recording {
