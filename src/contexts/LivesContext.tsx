@@ -399,6 +399,9 @@ export function LivesProvider({ children }: { children: ReactNode }) {
                 tags: record.tags || [],
                 followersCount: existing?.followersCount || doctorProfileCache.current.get(record.doctor_id)?.followers_count || 0,
                 dailyRoomName: record.daily_room_name || undefined,
+                location: record.location || undefined,
+                chatMode: record.chat_mode || 'free',
+                chatPrice: record.chat_price ? Number(record.chat_price) : 0,
               };
               
               if (existing) {
