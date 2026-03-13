@@ -1080,6 +1080,7 @@ export const es = {
     specDermatology: 'Dermatología',
     specEndocrinology: 'Endocrinología',
     specGastroenterology: 'Gastroenterología',
+    specGeneralSurgery: 'Cirugía General',
     specGynecology: 'Ginecología',
     specGeneralMedicine: 'Medicina General',
     specInternalMedicine: 'Medicina Interna',

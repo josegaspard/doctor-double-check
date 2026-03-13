@@ -23,6 +23,9 @@ export interface Live {
   tags: string[];
   followersCount?: number;
   dailyRoomName?: string;
+  location?: string;
+  chatMode?: string;
+  chatPrice?: number;
 }
 
 export interface Recording {
@@ -166,6 +169,9 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           tags: l.tags || [],
           followersCount: doctorProfileCache.current.get(l.doctor_id)?.followers_count || 0,
           dailyRoomName: l.daily_room_name || undefined,
+          location: (l as any).location || undefined,
+          chatMode: (l as any).chat_mode || 'free',
+          chatPrice: (l as any).chat_price ? Number((l as any).chat_price) : 0,
         })));
       } else {
         setLives([]);
@@ -365,7 +371,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         (payload) => {
           // For INSERT/UPDATE, update state directly when possible
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const record = payload.new as { id: string; title: string; description?: string; doctor_id: string; specialty: string; status: string; viewer_count: number; likes_count: number; started_at: string; ended_at?: string; thumbnail_url?: string; recording_price?: number; tags?: string[]; daily_room_name?: string };
+            const record = payload.new as { id: string; title: string; description?: string; doctor_id: string; specialty: string; status: string; viewer_count: number; likes_count: number; started_at: string; ended_at?: string; thumbnail_url?: string; recording_price?: number; tags?: string[]; daily_room_name?: string; location?: string; chat_mode?: string; chat_price?: number };
             
             // If the live has ended, remove it from state entirely
             if (record.status === 'ended' || record.status === 'processing_recording' || record.status === 'recording_ready') {
@@ -393,6 +399,9 @@ export function LivesProvider({ children }: { children: ReactNode }) {
                 tags: record.tags || [],
                 followersCount: existing?.followersCount || doctorProfileCache.current.get(record.doctor_id)?.followers_count || 0,
                 dailyRoomName: record.daily_room_name || undefined,
+                location: record.location || undefined,
+                chatMode: record.chat_mode || 'free',
+                chatPrice: record.chat_price ? Number(record.chat_price) : 0,
               };
               
               if (existing) {
@@ -535,7 +544,10 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           specialty: data.specialty || 'General',
           tags: data.tags || [],
           recording_price: data.recordingPrice,
-        })
+          location: data.location || null,
+          chat_mode: data.chatMode || 'free',
+          chat_price: data.chatPrice || 0,
+        } as any)
         .select()
         .single();
 

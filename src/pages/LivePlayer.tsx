@@ -65,6 +65,7 @@ export default function LivePlayer() {
   const [showBooking, setShowBooking] = useState(false);
   const [consultationFee, setConsultationFee] = useState(0);
   const [liveInteraction, setLiveInteraction] = useState<{ chat_enabled: boolean; max_paid_chats: number | null; paid_chats_count: number }>({ chat_enabled: true, max_paid_chats: null, paid_chats_count: 0 });
+  const [showShareModal, setShowShareModal] = useState(false);
   
   // Daily viewer state
   const [viewerToken, setViewerToken] = useState<string | null>(null);
@@ -322,8 +323,6 @@ export default function LivePlayer() {
       if (isLiked) { await unlikeLive(live.id); } else { await likeLive(live.id); }
     } finally { setIsLiking(false); }
   };
-
-  const [showShareModal, setShowShareModal] = useState(false);
 
   const handleShare = () => {
     setShowShareModal(true);
