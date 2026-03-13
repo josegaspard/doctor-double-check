@@ -189,13 +189,14 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     }
 
     try {
-      // Deduct from wallet
-      const { error } = await supabase.rpc('deduct_wallet_balance', {
-        p_user_id: user.id,
+      const { data, error } = await supabase.rpc('process_wallet_purchase', {
         p_amount: chatPrice,
         p_description: `Chat destacado en live`,
       });
       if (error) throw error;
+      if (data && typeof data === 'object' && 'error' in (data as any)) {
+        throw new Error((data as any).error);
+      }
       await refreshWallet();
       return true;
     } catch (err: any) {
