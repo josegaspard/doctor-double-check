@@ -544,7 +544,10 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           specialty: data.specialty || 'General',
           tags: data.tags || [],
           recording_price: data.recordingPrice,
-        })
+          location: data.location || null,
+          chat_mode: data.chatMode || 'free',
+          chat_price: data.chatPrice || 0,
+        } as any)
         .select()
         .single();
 
