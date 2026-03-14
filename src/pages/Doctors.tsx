@@ -476,8 +476,8 @@ export default function Doctors() {
                 if (selectedLevel) {
                   const badge = getDoctorBadgeType(d.total_consultations || 0, d.rating || 0, d.badge_override);
                   if (selectedLevel === 'new' && badge !== 'new') return false;
-                  if (selectedLevel === 'active' && badge !== 'active') return false;
-                  if (selectedLevel === 'elite' && badge !== 'top') return false;
+                  if (selectedLevel === 'active' && badge === 'new') return false; // active = not new
+                  if (selectedLevel === 'elite' && badge !== 'pro') return false;
                 }
                 return true;
               }).map(doctor => {
