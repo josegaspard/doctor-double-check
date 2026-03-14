@@ -25,7 +25,10 @@ import {
   Crown,
   MessageCircle,
   Clock,
+  SlidersHorizontal,
+  ChevronDown,
 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import { useDebounce } from '@/hooks/use-debounce';
