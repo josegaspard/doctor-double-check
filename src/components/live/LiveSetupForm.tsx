@@ -118,6 +118,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
       thumbnailFile,
       chatMode,
       chatPrice: Number(chatPrice) || 0,
+      chatHighlightSeconds,
     });
   };
 
