@@ -306,19 +306,39 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                 </RadioGroup>
 
                 {(chatMode === 'paid_only' || chatMode === 'mixed') && (
-                  <div className="space-y-1.5 mt-2">
-                    <Label htmlFor="chatPrice" className="text-xs flex items-center gap-1">
-                      <DollarSign className="w-3 h-3" /> Precio por mensaje (MXN)
-                    </Label>
-                    <Input
-                      id="chatPrice"
-                      type="number"
-                      min={1}
-                      placeholder="10"
-                      value={chatPrice}
-                      onChange={(e) => setChatPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="h-9"
-                    />
+                  <div className="space-y-3 mt-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="chatPrice" className="text-xs flex items-center gap-1">
+                        <DollarSign className="w-3 h-3" /> Precio por mensaje (MXN)
+                      </Label>
+                      <Input
+                        id="chatPrice"
+                        type="number"
+                        min={1}
+                        placeholder="10"
+                        value={chatPrice}
+                        onChange={(e) => setChatPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="chatHighlight" className="text-xs flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> Duración del destacado (segundos)
+                      </Label>
+                      <Input
+                        id="chatHighlight"
+                        type="number"
+                        min={10}
+                        max={600}
+                        placeholder="120"
+                        value={chatHighlightSeconds}
+                        onChange={(e) => setChatHighlightSeconds(Number(e.target.value) || 120)}
+                        className="h-9"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Cada mensaje pagado se destaca por {chatHighlightSeconds >= 60 ? `${Math.round(chatHighlightSeconds / 60)} min` : `${chatHighlightSeconds}s`}
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
