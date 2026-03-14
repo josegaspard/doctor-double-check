@@ -22,6 +22,7 @@ import {
   FilmIcon,
   Image as ImageIcon,
   Upload,
+  Sparkles,
 } from 'lucide-react';
 
 const SPECIALTIES = [

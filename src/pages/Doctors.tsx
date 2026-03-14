@@ -313,7 +313,7 @@ export default function Doctors() {
         </div>
 
         {/* City filter chips */}
-        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
+        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2">
           {['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'].map(city => (
             <button
               key={city}
@@ -329,6 +329,96 @@ export default function Doctors() {
             </button>
           ))}
         </div>
+
+        {/* Advanced Filters — Collapsible */}
+        <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
+          <CollapsibleTrigger asChild>
+            <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2 px-1">
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Más filtros
+              <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+              {(minRating > 0 || selectedLevel || minConsultations > 0) && (
+                <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
+                  {[minRating > 0 && '⭐', selectedLevel && '🏷', minConsultations > 0 && '📊'].filter(Boolean).length}
+                </Badge>
+              )}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mb-3">
+            <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted/30 border">
+              {/* Min Rating */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">Rating mín.</span>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      key={star}
+                      onClick={() => setMinRating(minRating === star ? 0 : star)}
+                      className="p-0.5"
+                    >
+                      <Star className={`w-3.5 h-3.5 transition-colors ${
+                        star <= minRating ? 'text-warning fill-warning' : 'text-muted-foreground/30'
+                      }`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="w-px h-6 bg-border hidden sm:block" />
+
+              {/* Level */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">Nivel</span>
+                <div className="flex gap-1">
+                  {[
+                    { value: 'new', label: 'Nuevo' },
+                    { value: 'active', label: 'Activo' },
+                    { value: 'elite', label: 'Elite' },
+                  ].map(level => (
+                    <button
+                      key={level.value}
+                      onClick={() => setSelectedLevel(selectedLevel === level.value ? '' : level.value)}
+                      className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all border ${
+                        selectedLevel === level.value
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-card text-muted-foreground border-border hover:border-primary/40'
+                      }`}
+                    >
+                      {level.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="w-px h-6 bg-border hidden sm:block" />
+
+              {/* Min consultations */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">Consultas mín.</span>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  value={minConsultations || ''}
+                  onChange={(e) => setMinConsultations(Number(e.target.value) || 0)}
+                  className="h-7 w-16 text-xs"
+                />
+              </div>
+
+              {/* Reset */}
+              {(minRating > 0 || selectedLevel || minConsultations > 0) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-[10px] px-2 text-muted-foreground"
+                  onClick={() => { setMinRating(0); setSelectedLevel(''); setMinConsultations(0); }}
+                >
+                  Limpiar
+                </Button>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Results count */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">

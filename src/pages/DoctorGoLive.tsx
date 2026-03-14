@@ -141,6 +141,7 @@ export default function DoctorGoLive() {
           location: docProfile?.location || null,
           chat_mode: config.chatMode,
           chat_price: config.chatPrice,
+          chat_highlight_seconds: config.chatHighlightSeconds,
         })
         .select()
         .single();

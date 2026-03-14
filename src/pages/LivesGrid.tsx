@@ -43,7 +43,7 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
         <div className="relative">
           <LivePreviewPlayer
             dailyRoomName={live.dailyRoomName || live.daily_room_name}
-            thumbnailUrl={live.thumbnailUrl}
+            thumbnailUrl={undefined}
           />
           
           <div className="absolute top-2 left-2 flex items-center gap-1.5">
