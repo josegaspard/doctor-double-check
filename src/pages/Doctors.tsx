@@ -158,6 +158,10 @@ export default function Doctors() {
   const [currentPage, setCurrentPage] = useState(1);
   const [nearbyMode, setNearbyMode] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [minRating, setMinRating] = useState(0);
+  const [selectedLevel, setSelectedLevel] = useState('');
+  const [minConsultations, setMinConsultations] = useState(0);
   const [, setTick] = useState(0);
 
   const fetchDoctorsStableRef = useRef<() => void>(() => {});
