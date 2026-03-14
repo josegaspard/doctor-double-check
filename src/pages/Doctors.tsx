@@ -470,7 +470,17 @@ export default function Doctors() {
         ) : (
           <>
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {doctors.map(doctor => {
+              {doctors.filter(d => {
+                if (minRating > 0 && d.rating < minRating) return false;
+                if (minConsultations > 0 && d.total_consultations < minConsultations) return false;
+                if (selectedLevel) {
+                  const badge = getDoctorBadgeType(d.total_consultations || 0, d.rating || 0, d.badge_override);
+                  if (selectedLevel === 'new' && badge !== 'new') return false;
+                  if (selectedLevel === 'active' && badge !== 'active') return false;
+                  if (selectedLevel === 'elite' && badge !== 'top') return false;
+                }
+                return true;
+              }).map(doctor => {
                 const isAvailable = isDoctorAvailableNow(doctor);
                 const isFollowing = followedDoctors.has(doctor.user_id);
                 const subscription = getSubscription(doctor.user_id);
