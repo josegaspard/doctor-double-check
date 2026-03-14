@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Send, MessageSquare, User, LogIn, Stethoscope, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
+import { Send, MessageSquare, User, LogIn, Stethoscope, AlertCircle, Sparkles, Loader2, Wallet, CreditCard } from 'lucide-react';
 
 interface LiveChatMessage {
   id: string;
@@ -41,18 +41,20 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const [chatEnabled, setChatEnabled] = useState(true);
   const [chatMode, setChatMode] = useState<string>('free');
   const [chatPrice, setChatPrice] = useState<number>(0);
+  const [chatHighlightSeconds, setChatHighlightSeconds] = useState<number>(120);
   const [maxQuestions, setMaxQuestions] = useState<number | null>(null);
   const [questionsCount, setQuestionsCount] = useState(0);
   const [doctorIds, setDoctorIds] = useState<Set<string>>(new Set());
   const [wantHighlight, setWantHighlight] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showPaymentPicker, setShowPaymentPicker] = useState(false);
 
   // Fetch live interaction settings
   useEffect(() => {
     const fetchSettings = async () => {
       const { data } = await supabase
         .from('lives')
-        .select('chat_enabled, max_questions, questions_count, chat_mode, chat_price')
+        .select('chat_enabled, max_questions, questions_count, chat_mode, chat_price, chat_highlight_seconds')
         .eq('id', liveId)
         .single();
       if (data) {
@@ -61,6 +63,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         setQuestionsCount(data.questions_count);
         setChatMode((data as any).chat_mode || 'free');
         setChatPrice(Number((data as any).chat_price) || 0);
+        setChatHighlightSeconds(Number((data as any).chat_highlight_seconds) || 120);
       }
     };
     fetchSettings();
@@ -79,6 +82,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         setQuestionsCount(d.questions_count);
         setChatMode(d.chat_mode || 'free');
         setChatPrice(Number(d.chat_price) || 0);
+        setChatHighlightSeconds(Number(d.chat_highlight_seconds) || 120);
       })
       .subscribe();
 
@@ -181,7 +185,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     await supabase.from('lives').update({ chat_enabled: newValue }).eq('id', liveId);
   };
 
-  const processPayment = async (): Promise<boolean> => {
+  const processWalletPayment = async (): Promise<boolean> => {
     if (!user) return false;
     if (balance < chatPrice) {
       toast.error(`Saldo insuficiente. Necesitas $${chatPrice} MXN`);
@@ -205,17 +209,49 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     }
   };
 
-  const handleSend = async () => {
-    if (!newMessage.trim() || !user || isSending) return;
-
-    const needsPayment = !isOwner && (chatMode === 'paid_only' || (chatMode === 'mixed' && wantHighlight));
-    
-    if (needsPayment && chatPrice > 0) {
-      setIsProcessingPayment(true);
-      const paid = await processPayment();
-      setIsProcessingPayment(false);
-      if (!paid) return;
+  const processStripePayment = async (): Promise<boolean> => {
+    if (!user) return false;
+    try {
+      const { data, error } = await supabase.functions.invoke('create-chat-checkout', {
+        body: {
+          liveId,
+          amount: chatPrice,
+          messageContent: newMessage.trim(),
+          userName: user.name || 'Usuario',
+        },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        toast.info('Completa el pago en la ventana abierta');
+        return false; // Don't send message now — webhook handles it
+      }
+      throw new Error('No checkout URL');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al crear el pago');
+      return false;
     }
+  };
+
+  const handlePayAndSend = async (method: 'wallet' | 'stripe') => {
+    setShowPaymentPicker(false);
+    setIsProcessingPayment(true);
+
+    let paid = false;
+    if (method === 'wallet') {
+      paid = await processWalletPayment();
+    } else {
+      paid = await processStripePayment();
+    }
+    setIsProcessingPayment(false);
+
+    if (paid) {
+      await sendMessage(true);
+    }
+  };
+
+  const sendMessage = async (isPaidMsg: boolean) => {
+    if (!newMessage.trim() || !user) return;
 
     setIsSending(true);
     try {
@@ -224,8 +260,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         : 0;
 
       const msgId = crypto.randomUUID();
-      const isPaidMsg = needsPayment && chatPrice > 0;
-      const highlightUntil = isPaidMsg ? new Date(Date.now() + 5 * 60 * 1000) : undefined; // 5 min highlight
+      const highlightUntil = isPaidMsg ? new Date(Date.now() + chatHighlightSeconds * 1000) : undefined;
 
       const message: LiveChatMessage = {
         id: msgId,
@@ -240,6 +275,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       };
 
       setMessages((prev) => [...prev, message]);
+      const contentToSend = newMessage.trim();
       setNewMessage('');
       setWantHighlight(false);
 
@@ -248,7 +284,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         live_id: liveId,
         user_id: user.id,
         user_name: user.name || 'Usuario',
-        content: newMessage.trim(),
+        content: contentToSend,
         elapsed_seconds: elapsed,
         is_paid: isPaidMsg,
         highlight_until: highlightUntil?.toISOString() || null,
@@ -273,6 +309,19 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     }
   };
 
+  const handleSend = async () => {
+    if (!newMessage.trim() || !user || isSending) return;
+
+    const needsPayment = !isOwner && (chatMode === 'paid_only' || (chatMode === 'mixed' && wantHighlight));
+
+    if (needsPayment && chatPrice > 0) {
+      setShowPaymentPicker(true);
+      return;
+    }
+
+    await sendMessage(false);
+  };
+
   const isDisabled = role === 'visitor' || !user;
   const questionLimitReached = !isOwner && maxQuestions != null && questionsCount >= maxQuestions;
   const chatDisabledForViewers = !isOwner && !chatEnabled;
@@ -284,6 +333,10 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     if (msg.highlightUntil && new Date() > msg.highlightUntil) return false;
     return true;
   };
+
+  const highlightDurationLabel = chatHighlightSeconds >= 60
+    ? `${Math.round(chatHighlightSeconds / 60)} min`
+    : `${chatHighlightSeconds}s`;
 
   return (
     <div className="flex flex-col h-full min-h-0 max-h-full bg-card rounded-lg border overflow-hidden">
@@ -312,8 +365,8 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
           <Sparkles className="w-3 h-3 text-primary flex-shrink-0" />
           <span className="text-[10px] sm:text-xs text-muted-foreground">
             {isPaidOnly
-              ? `Chat de pago: $${chatPrice} MXN por mensaje`
-              : `Destaca tu mensaje por $${chatPrice} MXN`}
+              ? `Chat de pago: $${chatPrice} MXN · Destacado ${highlightDurationLabel}`
+              : `Destaca tu mensaje por $${chatPrice} MXN · ${highlightDurationLabel}`}
           </span>
         </div>
       )}
@@ -407,6 +460,55 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
             <AlertCircle className="w-4 h-4" />
             <span className="text-xs">Se alcanzó el límite de preguntas</span>
           </div>
+        ) : showPaymentPicker ? (
+          /* Payment method picker */
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground text-center">
+              Elige cómo pagar <strong>${chatPrice} MXN</strong>
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-12 flex-col gap-1 text-xs"
+                onClick={() => handlePayAndSend('wallet')}
+                disabled={isProcessingPayment || balance < chatPrice}
+              >
+                {isProcessingPayment ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Wallet className="w-4 h-4" />
+                    <span>Billetera (${balance.toFixed(0)})</span>
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-12 flex-col gap-1 text-xs"
+                onClick={() => handlePayAndSend('stripe')}
+                disabled={isProcessingPayment}
+              >
+                {isProcessingPayment ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4" />
+                    <span>Tarjeta</span>
+                  </>
+                )}
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full h-7 text-[10px]"
+              onClick={() => setShowPaymentPicker(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
         ) : (
           <div className="space-y-1.5">
             {/* Highlight toggle for mixed mode */}
@@ -415,7 +517,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
                 <Switch checked={wantHighlight} onCheckedChange={setWantHighlight} className="scale-75" />
                 <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  Destacar por ${chatPrice}
+                  Destacar por ${chatPrice} · {highlightDurationLabel}
                 </span>
               </label>
             )}

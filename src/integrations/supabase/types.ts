@@ -1525,6 +1525,7 @@ export type Database = {
       lives: {
         Row: {
           chat_enabled: boolean
+          chat_highlight_seconds: number | null
           chat_mode: string
           chat_price: number
           daily_room_name: string | null
@@ -1550,6 +1551,7 @@ export type Database = {
         }
         Insert: {
           chat_enabled?: boolean
+          chat_highlight_seconds?: number | null
           chat_mode?: string
           chat_price?: number
           daily_room_name?: string | null
@@ -1575,6 +1577,7 @@ export type Database = {
         }
         Update: {
           chat_enabled?: boolean
+          chat_highlight_seconds?: number | null
           chat_mode?: string
           chat_price?: number
           daily_room_name?: string | null
