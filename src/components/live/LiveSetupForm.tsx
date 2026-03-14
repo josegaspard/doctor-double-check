@@ -82,6 +82,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [chatMode, setChatMode] = useState<'free' | 'paid_only' | 'mixed'>('free');
   const [chatPrice, setChatPrice] = useState<number | ''>('');
+  const [chatHighlightSeconds, setChatHighlightSeconds] = useState<number>(120);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   const addTag = () => {
