@@ -1,0 +1,1 @@
+ALTER TABLE lives ADD COLUMN IF NOT EXISTS chat_highlight_seconds INT DEFAULT 120;
