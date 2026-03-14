@@ -49,6 +49,7 @@ export interface LiveConfig {
   thumbnailFile: File | null;
   chatMode: 'free' | 'paid_only' | 'mixed';
   chatPrice: number;
+  chatHighlightSeconds: number;
 }
 
 function SectionHeader({ number, icon: Icon, title, subtitle }: { number: number; icon: React.ElementType; title: string; subtitle?: string }) {
