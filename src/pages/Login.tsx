@@ -356,8 +356,8 @@ export default function Login() {
                     <CardTitle>{t('login.createAccount')}</CardTitle>
                     <CardDescription>{t('login.registerTab')}</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleRegister} className="space-y-4">
+                  <CardContent className="p-4 sm:p-6 pt-0">
+                    <form onSubmit={handleRegister} className="space-y-3 sm:space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">{t('login.name')}</Label>
                         <Input
