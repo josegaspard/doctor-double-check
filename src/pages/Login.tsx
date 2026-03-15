@@ -197,10 +197,10 @@ export default function Login() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8 flex items-start sm:items-center justify-center">
         <div className="w-full max-w-md">
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
               <TabsTrigger value="login">{t('login.loginTab')}</TabsTrigger>
               <TabsTrigger value="register">{t('login.registerTab')}</TabsTrigger>
             </TabsList>
@@ -208,12 +208,12 @@ export default function Login() {
             {/* Login Tab */}
             <TabsContent value="login">
               <Card>
-                <CardHeader>
-                  <CardTitle>{t('login.title')}</CardTitle>
-                  <CardDescription>{t('login.loginDescription') || 'Ingresa con tu cuenta'}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleLogin} className="space-y-4">
+              <CardHeader className="p-4 sm:p-6 pb-2">
+                   <CardTitle className="text-lg sm:text-2xl">{t('login.title')}</CardTitle>
+                   <CardDescription className="text-xs sm:text-sm">{t('login.loginDescription') || 'Ingresa con tu cuenta'}</CardDescription>
+                 </CardHeader>
+                <CardContent className="p-4 sm:p-6 pt-0">
+                  <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">{t('login.email')}</Label>
                       <Input
@@ -266,7 +266,7 @@ export default function Login() {
                     </Button>
                   </form>
                   
-                  <div className="relative my-6">
+                  <div className="relative my-4 sm:my-6">
                     <Separator />
                     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
                       {t('login.orContinueWith')}
@@ -352,12 +352,12 @@ export default function Login() {
                 </Card>
               ) : (
                 <Card>
-                  <CardHeader>
-                    <CardTitle>{t('login.createAccount')}</CardTitle>
-                    <CardDescription>{t('login.registerTab')}</CardDescription>
+                  <CardHeader className="p-4 sm:p-6 pb-2">
+                    <CardTitle className="text-lg sm:text-2xl">{t('login.createAccount')}</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">{t('login.registerTab')}</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleRegister} className="space-y-4">
+                  <CardContent className="p-4 sm:p-6 pt-0">
+                    <form onSubmit={handleRegister} className="space-y-3 sm:space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">{t('login.name')}</Label>
                         <Input
@@ -439,7 +439,7 @@ export default function Login() {
                       </Button>
                     </form>
                     
-                    <div className="relative my-6">
+                    <div className="relative my-4 sm:my-6">
                       <Separator />
                       <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
                         {t('login.orContinueWith')}

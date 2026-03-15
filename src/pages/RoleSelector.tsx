@@ -114,33 +114,33 @@ export default function RoleSelector() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-8 md:py-16">
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 md:py-12">
         <div className="max-w-2xl mx-auto">
           {/* Hero */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-accent rounded-full px-4 py-2 mb-4">
-              <Video className="w-4 h-4 text-accent-foreground" />
-              <span className="text-sm font-medium text-accent-foreground">{t('roleSelector.tagline')}</span>
+          <div className="text-center mb-6 md:mb-10">
+            <div className="inline-flex items-center gap-2 bg-accent rounded-full px-3 py-1.5 mb-3">
+              <Video className="w-3.5 h-3.5 text-accent-foreground" />
+              <span className="text-xs sm:text-sm font-medium text-accent-foreground">{t('roleSelector.tagline')}</span>
             </div>
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">
+            <h2 className="font-heading text-2xl md:text-4xl font-bold text-foreground mb-2">
               {t('roleSelector.title')}
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               {t('roleSelector.subtitle')}
             </p>
           </div>
 
           {/* Role Cards */}
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {roleOptions.map((option) => (
               <Card
                 key={option.id}
-                className="p-4 cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary/30"
+                className="p-3 sm:p-4 cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary/30"
                 onClick={() => handleRoleSelect(option)}
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl ${option.color} flex items-center justify-center flex-shrink-0`}>
-                    <option.icon className={`w-6 h-6 ${option.iconColor}`} />
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${option.color} flex items-center justify-center flex-shrink-0`}>
+                    <option.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${option.iconColor}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground">{option.title}</h3>
@@ -157,7 +157,7 @@ export default function RoleSelector() {
           </div>
 
           {/* Features */}
-          <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="mt-6 md:mt-12 grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="text-center">
               <div className="w-10 h-10 mx-auto rounded-full bg-success/10 flex items-center justify-center mb-2">
                 <Video className="w-5 h-5 text-success" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +10,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Send, MessageSquare, User, LogIn, Stethoscope, AlertCircle, Sparkles, Loader2, Wallet, CreditCard } from 'lucide-react';
+import { Send, MessageSquare, User, LogIn, Stethoscope, AlertCircle, Sparkles, Loader2, Wallet, CreditCard, Coins } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+
+interface PaidNotification {
+  id: string;
+  userName: string;
+  amount: number;
+}
 
 interface LiveChatMessage {
   id: string;
@@ -48,6 +55,15 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const [wantHighlight, setWantHighlight] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
+  const [paidNotifications, setPaidNotifications] = useState<PaidNotification[]>([]);
+
+  const showPaidNotification = useCallback((userName: string, amount: number) => {
+    const id = crypto.randomUUID();
+    setPaidNotifications(prev => [...prev, { id, userName, amount }]);
+    setTimeout(() => {
+      setPaidNotifications(prev => prev.filter(n => n.id !== id));
+    }, 4500);
+  }, []);
 
   // Fetch live interaction settings
   useEffect(() => {
@@ -151,6 +167,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
               setDoctorIds(prev => new Set([...prev, m.user_id]));
             }
           }
+          const isPaidMsg = m.is_paid || false;
           setMessages((prev) => {
             if (prev.some(p => p.id === m.id)) return prev;
             return [...prev, {
@@ -161,10 +178,15 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
               createdAt: new Date(m.created_at),
               elapsedSeconds: m.elapsed_seconds,
               isDoctor: isDoc,
-              isPaid: m.is_paid || false,
+              isPaid: isPaidMsg,
               highlightUntil: m.highlight_until ? new Date(m.highlight_until) : undefined,
             }];
           });
+
+          // Show notification to doctor when someone pays for a highlighted message
+          if (isPaidMsg && isOwner && m.user_id !== user?.id) {
+            showPaidNotification(m.user_name, chatPrice);
+          }
         }
       )
       .subscribe();
@@ -172,7 +194,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [liveId, doctorIds]);
+  }, [liveId, doctorIds, isOwner, user?.id, chatPrice, showPaidNotification]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -339,7 +361,35 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     : `${chatHighlightSeconds}s`;
 
   return (
-    <div className="flex flex-col h-full min-h-0 max-h-full bg-card rounded-lg border overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 max-h-full bg-card rounded-lg border overflow-hidden relative">
+      {/* Paid chat notification bubbles for doctor */}
+      <AnimatePresence>
+        {paidNotifications.map((notif) => (
+          <motion.div
+            key={notif.id}
+            initial={{ opacity: 0, x: 60, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 60, scale: 0.9 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            className="absolute top-12 right-2 z-50 max-w-[220px]"
+          >
+            <div className="bg-warning/15 border border-warning/40 rounded-xl px-3 py-2.5 shadow-lg backdrop-blur-sm flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center flex-shrink-0">
+                <Coins className="w-4 h-4 text-warning" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-foreground truncate">
+                  {notif.userName}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  Chat destacado · <span className="font-medium text-warning">${notif.amount}</span>
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="p-2 sm:p-3 border-b flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
