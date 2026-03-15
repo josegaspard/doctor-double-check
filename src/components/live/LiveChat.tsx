@@ -194,7 +194,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [liveId, doctorIds]);
+  }, [liveId, doctorIds, isOwner, user?.id, chatPrice, showPaidNotification]);
 
   // Auto-scroll to bottom
   useEffect(() => {
