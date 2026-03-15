@@ -55,6 +55,15 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const [wantHighlight, setWantHighlight] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
+  const [paidNotifications, setPaidNotifications] = useState<PaidNotification[]>([]);
+
+  const showPaidNotification = useCallback((userName: string, amount: number) => {
+    const id = crypto.randomUUID();
+    setPaidNotifications(prev => [...prev, { id, userName, amount }]);
+    setTimeout(() => {
+      setPaidNotifications(prev => prev.filter(n => n.id !== id));
+    }, 4500);
+  }, []);
 
   // Fetch live interaction settings
   useEffect(() => {
