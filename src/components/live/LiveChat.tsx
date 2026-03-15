@@ -167,6 +167,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
               setDoctorIds(prev => new Set([...prev, m.user_id]));
             }
           }
+          const isPaidMsg = m.is_paid || false;
           setMessages((prev) => {
             if (prev.some(p => p.id === m.id)) return prev;
             return [...prev, {
@@ -177,10 +178,15 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
               createdAt: new Date(m.created_at),
               elapsedSeconds: m.elapsed_seconds,
               isDoctor: isDoc,
-              isPaid: m.is_paid || false,
+              isPaid: isPaidMsg,
               highlightUntil: m.highlight_until ? new Date(m.highlight_until) : undefined,
             }];
           });
+
+          // Show notification to doctor when someone pays for a highlighted message
+          if (isPaidMsg && isOwner && m.user_id !== user?.id) {
+            showPaidNotification(m.user_name, chatPrice);
+          }
         }
       )
       .subscribe();
