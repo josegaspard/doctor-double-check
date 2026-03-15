@@ -212,8 +212,8 @@ export default function Login() {
                   <CardTitle>{t('login.title')}</CardTitle>
                   <CardDescription>{t('login.loginDescription') || 'Ingresa con tu cuenta'}</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleLogin} className="space-y-4">
+                <CardContent className="p-4 sm:p-6 pt-0">
+                  <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">{t('login.email')}</Label>
                       <Input
