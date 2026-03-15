@@ -361,7 +361,35 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     : `${chatHighlightSeconds}s`;
 
   return (
-    <div className="flex flex-col h-full min-h-0 max-h-full bg-card rounded-lg border overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 max-h-full bg-card rounded-lg border overflow-hidden relative">
+      {/* Paid chat notification bubbles for doctor */}
+      <AnimatePresence>
+        {paidNotifications.map((notif) => (
+          <motion.div
+            key={notif.id}
+            initial={{ opacity: 0, x: 60, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 60, scale: 0.9 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            className="absolute top-12 right-2 z-50 max-w-[220px]"
+          >
+            <div className="bg-warning/15 border border-warning/40 rounded-xl px-3 py-2.5 shadow-lg backdrop-blur-sm flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center flex-shrink-0">
+                <Coins className="w-4 h-4 text-warning" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-foreground truncate">
+                  {notif.userName}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  Chat destacado · <span className="font-medium text-warning">${notif.amount}</span>
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="p-2 sm:p-3 border-b flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">

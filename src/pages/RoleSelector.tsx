@@ -157,7 +157,7 @@ export default function RoleSelector() {
           </div>
 
           {/* Features */}
-          <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="mt-6 md:mt-12 grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="text-center">
               <div className="w-10 h-10 mx-auto rounded-full bg-success/10 flex items-center justify-center mb-2">
                 <Video className="w-5 h-5 text-success" />
