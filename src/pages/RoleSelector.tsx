@@ -131,16 +131,16 @@ export default function RoleSelector() {
           </div>
 
           {/* Role Cards */}
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {roleOptions.map((option) => (
               <Card
                 key={option.id}
-                className="p-4 cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary/30"
+                className="p-3 sm:p-4 cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary/30"
                 onClick={() => handleRoleSelect(option)}
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl ${option.color} flex items-center justify-center flex-shrink-0`}>
-                    <option.icon className={`w-6 h-6 ${option.iconColor}`} />
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${option.color} flex items-center justify-center flex-shrink-0`}>
+                    <option.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${option.iconColor}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground">{option.title}</h3>
