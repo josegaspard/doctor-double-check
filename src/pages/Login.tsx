@@ -208,10 +208,10 @@ export default function Login() {
             {/* Login Tab */}
             <TabsContent value="login">
               <Card>
-                <CardHeader>
-                  <CardTitle>{t('login.title')}</CardTitle>
-                  <CardDescription>{t('login.loginDescription') || 'Ingresa con tu cuenta'}</CardDescription>
-                </CardHeader>
+              <CardHeader className="p-4 sm:p-6 pb-2">
+                   <CardTitle className="text-lg sm:text-2xl">{t('login.title')}</CardTitle>
+                   <CardDescription className="text-xs sm:text-sm">{t('login.loginDescription') || 'Ingresa con tu cuenta'}</CardDescription>
+                 </CardHeader>
                 <CardContent className="p-4 sm:p-6 pt-0">
                   <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
                     <div className="space-y-2">
