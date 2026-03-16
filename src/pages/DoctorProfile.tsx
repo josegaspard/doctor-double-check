@@ -43,6 +43,7 @@ interface DoctorData {
   officeHoursStart?: string;
   officeHoursEnd?: string;
   officeDays?: string[];
+  countryFlag?: string;
 }
 
 interface LiveData {
@@ -116,6 +117,7 @@ export default function DoctorProfile() {
           officeHoursStart: doctorProfile.office_hours_start || undefined,
           officeHoursEnd: doctorProfile.office_hours_end || undefined,
           officeDays: doctorProfile.office_days || undefined,
+          countryFlag: doctorProfile.country_flag || undefined,
         });
 
         const { data: liveData } = await supabase
@@ -503,7 +505,7 @@ export default function DoctorProfile() {
                 {doctor.location ? (
                   <>
                     <MapPin className="w-4 h-4 mb-1 text-info" />
-                    <p className="text-xs sm:text-sm font-medium text-foreground truncate max-w-full">{doctor.location}</p>
+                    <p className="text-xs sm:text-sm font-medium text-foreground truncate max-w-full">{doctor.countryFlag ? `${doctor.countryFlag} ` : ''}{doctor.location}</p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.locationLabel')}</p>
                   </>
                 ) : (

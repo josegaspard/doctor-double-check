@@ -112,6 +112,8 @@ interface DoctorRow {
   avatar_url: string | null;
   is_identity_verified: boolean;
   total_count: number;
+  country_code: string | null;
+  country_flag: string | null;
 }
 
 const SPECIALTIES = [
@@ -231,7 +233,7 @@ export default function Doctors() {
             setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
             setNearbyMode(true);
           },
-          () => toast.error(t('doctors.locationError') || 'No se pudo obtener tu ubicación')
+          () => toast.error(t('doctors.locationError'))
         );
       }
     } else {
@@ -587,7 +589,7 @@ export default function Doctors() {
           {nearbyMode && (
             <Badge variant="secondary" className="gap-1 text-[10px]">
               <MapPin className="w-3 h-3" />
-              {t('doctors.nearMe') || 'Cerca de mí'}
+              {t('doctors.nearMe')}
             </Badge>
           )}
         </div>
@@ -701,10 +703,14 @@ export default function Doctors() {
                           <MessageCircle className="w-3.5 h-3.5" />
                           {doctor.total_consultations}
                         </span>
-                        {doctor.location && (
-                          <span className="flex items-center gap-1 ml-auto truncate max-w-[120px]">
-                            <MapPin className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">{doctor.location}</span>
+                        {(doctor.location || doctor.country_flag) && (
+                          <span className="flex items-center gap-1 ml-auto truncate max-w-[140px]">
+                            {doctor.country_flag ? (
+                              <span className="flex-shrink-0">{doctor.country_flag}</span>
+                            ) : (
+                              <MapPin className="w-3 h-3 flex-shrink-0" />
+                            )}
+                            <span className="truncate">{doctor.location || ''}</span>
                           </span>
                         )}
                       </div>

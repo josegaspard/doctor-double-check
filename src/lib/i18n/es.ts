@@ -1133,6 +1133,8 @@ export const es = {
     nutritionSubtitle: 'Encuentra especialistas en nutrición y bienestar',
     nutritionHero: 'Transforma tu salud con orientación nutricional personalizada.',
     specNutriology: 'Nutriología',
+    nearMe: 'Cerca de mí',
+    locationError: 'No se pudo obtener tu ubicación',
   },
   // Report
   report: {

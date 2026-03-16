@@ -3095,6 +3095,8 @@ export type Database = {
           avatar_url: string
           bio: string
           consultation_fee: number
+          country_code: string
+          country_flag: string
           followers_count: number
           location: string
           name: string
@@ -3127,6 +3129,8 @@ export type Database = {
           badge_override: string
           bio: string
           consultation_fee: number
+          country_code: string
+          country_flag: string
           followers_count: number
           id: string
           is_identity_verified: boolean
