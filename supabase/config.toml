@@ -75,3 +75,7 @@ project_id = "jbthjpnxiwnegzgfzfth"
     verify_jwt = false
   [functions.translate-news]
     verify_jwt = false
+  [functions.create-veriff-session]
+    verify_jwt = false
+  [functions.veriff-webhook]
+    verify_jwt = false
