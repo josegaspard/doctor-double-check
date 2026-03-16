@@ -1,56 +1,53 @@
 
 
-# Plan: Fix Ad Banners Visibility + Confirm Routing
+# Plan: Fix Ad Banners Not Showing + Create Ad Images
 
-## 1. Database: Create Missing Ad Placements + Creatives
+## Root Cause — Ads Invisible to Regular Users
 
-**Root cause:** `MedicalNews.tsx` references 4 placement names that don't exist in the database:
-- `news_top_banner` — ❌ missing
-- `news_sidebar_left` — ❌ missing (only `news_sidebar` exists, with no creative)
-- `news_sidebar_right` — ❌ missing
-- `news_inline_mobile` — ❌ missing
+The `useAdCreative` hook queries `ad_campaigns` to check `status='active'` and filter by `target_roles`/`target_language`. However, the **RLS policy on `ad_campaigns`** only allows SELECT for `advertiser_id = auth.uid() OR admin`. 
 
-**Fix:** Run a database migration to:
-1. Insert the 4 missing placements into `ad_placements`
-2. Create `ad_creatives` entries for each, linked to the existing active campaign (`a0000000-...0001`), using the demo banner images already in storage
+**Regular users (patients, doctors, residents) get zero rows back from the campaigns query**, so `validCampaignIds` is empty, and no creatives render. This is why you see nothing.
+
+## Fix
+
+### 1. Database Migration — Add Public Read Policy for Active Campaigns
+
+Add a new SELECT policy that allows anyone (including anonymous) to read active campaigns. This is safe because it only exposes campaign targeting metadata, not billing/budget data.
 
 ```sql
--- Insert 4 new placements
-INSERT INTO ad_placements (name, display_name, width, height, format, is_active, sort_order)
-VALUES
-  ('news_top_banner', 'Noticias - Banner Superior', 728, 90, 'horizontal', true, 10),
-  ('news_sidebar_left', 'Noticias - Lateral Izquierdo', 160, 600, 'vertical', true, 11),
-  ('news_sidebar_right', 'Noticias - Lateral Derecho', 160, 600, 'vertical', true, 12),
-  ('news_inline_mobile', 'Noticias - Inline Móvil', 320, 100, 'horizontal', true, 13);
-
--- Create creatives linking to existing demo campaign
-INSERT INTO ad_creatives (campaign_id, placement_id, media_url, media_type, click_url, alt_text, is_active)
-SELECT
-  'a0000000-0000-0000-0000-000000000001'::uuid,
-  p.id,
-  CASE WHEN p.format = 'vertical'
-    THEN 'https://jbthjpnxiwnegzgfzfth.supabase.co/storage/v1/object/public/ad-creatives/demo/banner-mobile.jpg'
-    ELSE 'https://jbthjpnxiwnegzgfzfth.supabase.co/storage/v1/object/public/ad-creatives/demo/banner-wide.jpg'
-  END,
-  'image',
-  'https://cirugiaesteticauribe.com',
-  'Medical Masters - Publicidad Demo',
-  true
-FROM ad_placements p
-WHERE p.name IN ('news_top_banner', 'news_sidebar_left', 'news_sidebar_right', 'news_inline_mobile');
+CREATE POLICY "Public can read active campaigns for ad delivery"
+ON public.ad_campaigns
+FOR SELECT
+TO public
+USING (status = 'active');
 ```
 
-No code changes needed — the `MedicalNews.tsx` ad code is already correct, it just has no data to display.
+This single change will make all existing creatives (7 total across all placements) immediately visible to all users.
 
-## 2. Routing — Already Correct
+### 2. Generate Proper Ad Banner Images
 
-The routing is **already working as requested**:
-- `Landing.tsx` (line 37-47): Unauthenticated users stay on `/` (landing). Authenticated users redirect to `/lives` (patients), `/doctor/dashboard` (doctors), or `/admin` (admins).
-- `App.tsx` line 158: `<Route path="/" element={<Landing />} />`
+The current creatives use `banner-wide.jpg` and `banner-mobile.jpg` which exist but are generic. I'll create **8 distinct, professional ad banner images** as SVG-based components or static HTML-rendered images tailored to each placement size:
 
-No changes needed.
+- **Horizontal banners** (728×90): `news_top_banner`, `lives_top_banner`, `recordings_top_banner`
+- **Vertical sidebars** (160×600): `news_sidebar_left`, `news_sidebar_right`  
+- **Inline/mobile** (320×100): `news_inline_mobile`, `content_inline`
+
+Since we can't generate actual image files in code, I'll create a **fallback visual approach**: update the `AdBanner` component to render a styled placeholder when the image fails to load, and ensure the existing demo images display correctly at all responsive breakpoints by removing the restrictive `max-h` constraints for sidebar placements.
+
+### 3. Make AdBanner Fully Responsive Per Placement Type
+
+Update `AdBanner.tsx` to adapt its styling based on placement format:
+- **Sidebar (vertical)**: No max-height limit, full-height sticky display
+- **Horizontal banners**: Keep current responsive max-heights  
+- **Mobile inline**: Compact height
+
+## Files to Modify
+
+1. **Database migration** — Add public SELECT policy on `ad_campaigns`
+2. **`src/components/ads/AdBanner.tsx`** — Add placement-aware responsive styles, image error fallback
+3. **`src/hooks/useAds.ts`** — Pass placement format info to component
 
 ## Summary
-- **1 database migration** to insert 4 ad placements + 4 creatives
-- **0 code changes** — everything is already wired up correctly
+- **1 database migration** (RLS policy fix — this is the critical blocker)
+- **2 code files** (responsive improvements)
 
