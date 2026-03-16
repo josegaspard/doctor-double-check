@@ -1278,7 +1278,7 @@ export default function Onboarding() {
                             variant="outline"
                             size="sm"
                             className="gap-2"
-                            onClick={() => window.open('/identity-verification', '_blank')}
+                            onClick={() => window.open('/verify-identity', '_blank')}
                           >
                             <Shield className="w-3.5 h-3.5" />
                             {language === 'es' ? 'Verificar identidad' : 'Verify identity'}

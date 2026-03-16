@@ -110,7 +110,7 @@ export default function IdentityVerification() {
     try {
       const { data, error } = await supabase.functions.invoke('create-veriff-session', {
         body: {
-          callback_url: window.location.origin + '/identity-verification',
+          callback_url: window.location.origin + '/verify-identity',
         },
       });
 
