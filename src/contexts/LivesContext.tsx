@@ -661,6 +661,7 @@ const LIVES_DEFAULTS: LivesContextType = {
   endLive: async () => ({ success: false, error: 'Context not ready' }),
   refreshLives: async () => {},
   refreshRecordings: async () => {},
+  ensureRecordingsLoaded: async () => {},
 };
 
 export function useLives() {
