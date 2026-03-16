@@ -904,6 +904,10 @@ export const en = {
     noStudiesToExport: 'No studies to export',
     privacyTitle: 'Your history is private',
     privacyDescription: 'Only you can see these files. When you have a medical consultation, you can share specific files with your doctor from the Vault section.',
+    newestFirst: 'Newest first',
+    oldestFirst: 'Oldest first',
+    uploaded: 'Uploaded',
+    noCategoryStudies: 'No studies in this category',
   },
   // Clinical Sessions
   clinicalSessions: {
