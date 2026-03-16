@@ -119,6 +119,7 @@ export default function DoctorProfile() {
           officeHoursEnd: doctorProfile.office_hours_end || undefined,
           officeDays: doctorProfile.office_days || undefined,
           countryFlag: doctorProfile.country_flag || undefined,
+          isIdentityVerified: doctorProfile.is_identity_verified || false,
         });
 
         const { data: liveData } = await supabase
