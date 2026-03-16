@@ -1133,6 +1133,8 @@ export const en = {
     nutritionSubtitle: 'Find nutrition and wellness specialists',
     nutritionHero: 'Transform your health with personalized nutritional guidance.',
     specNutriology: 'Nutrition',
+    nearMe: 'Near me',
+    locationError: 'Could not get your location',
   },
   // Report
   report: {
