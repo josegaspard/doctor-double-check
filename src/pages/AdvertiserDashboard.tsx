@@ -456,6 +456,51 @@ export default function AdvertiserDashboard() {
               })}
             </CardContent>
           </Card>
+
+          {/* Recommendations & Insights */}
+          <Card className="mb-6 border-primary/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-warning" />
+                {es ? 'Recomendaciones' : 'Recommendations'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {stats.impressions > 0 && stats.clicks === 0 && (
+                <p className="text-xs text-muted-foreground">💡 {es ? 'Tu campaña tiene impresiones pero ningún clic. Considera mejorar el diseño del creativo o el call-to-action.' : 'Your campaign has impressions but no clicks. Consider improving your creative design or call-to-action.'}</p>
+              )}
+              {stats.impressions > 0 && Number(ctr) < 1 && stats.clicks > 0 && (
+                <p className="text-xs text-muted-foreground">📊 {es ? 'Tu CTR está por debajo del 1%. Prueba diferentes ubicaciones o audiencias para mejorar el rendimiento.' : 'Your CTR is below 1%. Try different placements or audiences to improve performance.'}</p>
+              )}
+              {Number(ctr) >= 1 && (
+                <p className="text-xs text-muted-foreground">🎯 {es ? '¡Buen CTR! Tu campaña está funcionando bien. Considera aumentar el presupuesto para maximizar el alcance.' : 'Good CTR! Your campaign is performing well. Consider increasing the budget to maximize reach.'}</p>
+              )}
+              {remaining < Number(campaign.budget) * 0.2 && remaining > 0 && (
+                <p className="text-xs text-muted-foreground">⚠️ {es ? 'Tu presupuesto se está agotando. Considera recargar para mantener la campaña activa.' : 'Your budget is running low. Consider topping up to keep the campaign active.'}</p>
+              )}
+              {creatives.length === 0 && (
+                <p className="text-xs text-muted-foreground">🖼️ {es ? 'Sube creativos para que tu campaña empiece a mostrar anuncios.' : 'Upload creatives so your campaign can start showing ads.'}</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {campaign.status === 'completed' && (
+            <Card className="border-success/20 bg-success/5">
+              <CardContent className="p-4 text-center">
+                <Target className="w-8 h-8 text-success mx-auto mb-2" />
+                <h3 className="font-semibold mb-1">{es ? '¡Campaña Finalizada!' : 'Campaign Completed!'}</h3>
+                <p className="text-xs text-muted-foreground mb-3">{es ? 'Exporta los resultados y crea una nueva campaña.' : 'Export the results and create a new campaign.'}</p>
+                <div className="flex gap-2 justify-center">
+                  <Button variant="outline" size="sm" onClick={exportCampaignPDF} className="gap-1.5">
+                    <FileDown className="w-3.5 h-3.5" /> PDF
+                  </Button>
+                  <Button size="sm" onClick={() => { setSelectedCampaign(null); setShowCreate(true); }} className="gap-1.5">
+                    <Plus className="w-3.5 h-3.5" /> {es ? 'Nueva Campaña' : 'New Campaign'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </MainLayout>
     );
