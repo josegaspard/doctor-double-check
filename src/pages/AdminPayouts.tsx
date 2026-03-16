@@ -1022,6 +1022,116 @@ export default function AdminPayouts() {
                   </div>
                 )}
               </TabsContent>
+
+              <TabsContent value="transactions">
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder={language === 'es' ? 'Buscar por usuario o descripción...' : 'Search by user or description...'}
+                      value={txSearch}
+                      onChange={(e) => setTxSearch(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select value={txTypeFilter} onValueChange={setTxTypeFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder={language === 'es' ? 'Tipo' : 'Type'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                      <SelectItem value="topup">{language === 'es' ? 'Recargas' : 'Top-ups'}</SelectItem>
+                      <SelectItem value="purchase">{language === 'es' ? 'Compras' : 'Purchases'}</SelectItem>
+                      <SelectItem value="earning">{language === 'es' ? 'Ganancias' : 'Earnings'}</SelectItem>
+                      <SelectItem value="subscription">{language === 'es' ? 'Suscripciones' : 'Subscriptions'}</SelectItem>
+                      <SelectItem value="refund">{language === 'es' ? 'Reembolsos' : 'Refunds'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm" onClick={exportTransactionsCSV} className="gap-1.5">
+                    <Banknote className="w-4 h-4" />
+                    {language === 'es' ? 'Exportar CSV' : 'Export CSV'}
+                  </Button>
+                </div>
+
+                {/* Totals summary */}
+                {Object.keys(txTotals).length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
+                    {Object.entries(txTotals).map(([type, total]) => (
+                      <div key={type} className="p-3 rounded-lg bg-muted/50 border border-border/50">
+                        <p className="text-xs text-muted-foreground">{getTxTypeLabel(type)}</p>
+                        <p className="font-bold text-sm">{formatCurrency(total)}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {txLoading ? (
+                  <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+                ) : filteredTransactions.length === 0 ? (
+                  <Card><CardContent className="text-center py-12 text-muted-foreground">
+                    {language === 'es' ? 'No hay transacciones registradas' : 'No transactions recorded'}
+                  </CardContent></Card>
+                ) : (
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-muted/50">
+                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Fecha' : 'Date'}</th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Usuario' : 'User'}</th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Tipo' : 'Type'}</th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Descripción' : 'Description'}</th>
+                            <th className="text-right p-3 font-medium text-muted-foreground">{language === 'es' ? 'Monto' : 'Amount'}</th>
+                            <th className="text-center p-3 font-medium text-muted-foreground">{language === 'es' ? 'Estado' : 'Status'}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredTransactions.map(tx => {
+                            const profile = txProfileMap.get(tx.user_id);
+                            return (
+                              <tr key={tx.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                                <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
+                                  {format(new Date(tx.created_at), 'dd MMM yyyy, HH:mm', { locale })}
+                                </td>
+                                <td className="p-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                                      {profile?.avatar_url ? (
+                                        <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                                      ) : (
+                                        <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                                      )}
+                                    </div>
+                                    <span className="text-sm truncate max-w-[150px]">{profile?.name || tx.user_id.slice(0, 8)}</span>
+                                  </div>
+                                </td>
+                                <td className="p-3">
+                                  <Badge variant={getTxTypeBadgeVariant(tx.type)} className="text-xs">
+                                    {getTxTypeLabel(tx.type)}
+                                  </Badge>
+                                </td>
+                                <td className="p-3 text-sm text-muted-foreground truncate max-w-[200px]">{tx.description}</td>
+                                <td className="p-3 text-right font-semibold whitespace-nowrap">
+                                  <span className={tx.type === 'refund' ? 'text-destructive' : tx.type === 'earning' || tx.type === 'topup' ? 'text-success' : ''}>
+                                    {tx.type === 'refund' ? '-' : ''}{formatCurrency(Math.abs(tx.amount))}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-center">
+                                  {getStatusBadge(tx.status)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="p-3 bg-muted/30 border-t text-xs text-muted-foreground text-right">
+                      {language === 'es' ? `Mostrando ${filteredTransactions.length} transacciones` : `Showing ${filteredTransactions.length} transactions`}
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
             </Tabs>
           </>
         )}
