@@ -233,7 +233,7 @@ export default function Doctors() {
             setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
             setNearbyMode(true);
           },
-          () => toast.error(t('doctors.locationError') || 'No se pudo obtener tu ubicación')
+          () => toast.error(t('doctors.locationError'))
         );
       }
     } else {
