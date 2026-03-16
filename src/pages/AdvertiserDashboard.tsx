@@ -259,6 +259,38 @@ export default function AdvertiserDashboard() {
   if (selectedCampaign && campaign) {
     const stats = campaignStats[campaign.id] || { impressions: 0, clicks: 0 };
     const ctr = stats.impressions > 0 ? ((stats.clicks / stats.impressions) * 100).toFixed(2) : '0.00';
+    const calculatedSpent = (stats.impressions / 1000 * config.cpm_rate) + (stats.clicks * config.cpc_rate);
+    const remaining = Math.max(0, Number(campaign.budget) - calculatedSpent);
+    const budgetUsedPct = Number(campaign.budget) > 0 ? Math.min(100, (calculatedSpent / Number(campaign.budget)) * 100) : 0;
+
+    // Insights: best performing placement
+    const placementStats: Record<string, { imp: number; clicks: number }> = {};
+    creatives.forEach(cr => {
+      if (!placementStats[cr.placement_id]) placementStats[cr.placement_id] = { imp: 0, clicks: 0 };
+    });
+
+    // Role-based insights (from daily events user_role if available)
+    const roleStats: Record<string, number> = {};
+    dailyEvents.forEach(d => { roleStats['all'] = (roleStats['all'] || 0) + d.clicks; });
+
+    const exportCampaignPDF = () => {
+      const tableHTML = `
+        <div class="summary">
+          <p>Campaña: <span>${campaign.name}</span></p>
+          <p>Estado: <span>${statusLabels[campaign.status] || campaign.status}</span></p>
+          <p>Presupuesto: <span>$${Number(campaign.budget).toLocaleString()} MXN</span></p>
+          <p>Gastado: <span>$${calculatedSpent.toFixed(2)} MXN</span></p>
+          <p>Saldo restante: <span>$${remaining.toFixed(2)} MXN</span></p>
+        </div>
+        <table><thead><tr><th>Métrica</th><th>Valor</th></tr></thead><tbody>
+          <tr><td>Impresiones</td><td>${stats.impressions.toLocaleString()}</td></tr>
+          <tr><td>Clics</td><td>${stats.clicks}</td></tr>
+          <tr><td>CTR</td><td>${ctr}%</td></tr>
+          <tr><td>CPM efectivo</td><td>$${stats.impressions > 0 ? ((calculatedSpent / stats.impressions) * 1000).toFixed(2) : '0'}</td></tr>
+          <tr><td>CPC efectivo</td><td>$${stats.clicks > 0 ? (calculatedSpent / stats.clicks).toFixed(2) : '0'}</td></tr>
+        </tbody></table>`;
+      exportToPDF(`Reporte - ${campaign.name}`, tableHTML);
+    };
 
     return (
       <MainLayout>
@@ -273,14 +305,47 @@ export default function AdvertiserDashboard() {
                 {statusLabels[campaign.status] || campaign.status}
               </Badge>
             </div>
-            {campaign.status === 'draft' && (
-              <Button size="sm" className="gap-1.5" disabled={isPaying || creatives.length === 0}
-                onClick={() => payCampaign(campaign.id, campaign.budget)}>
-                {isPaying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                {t('ads.payActivate')}
+            <div className="flex items-center gap-1.5">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={exportCampaignPDF} title="PDF">
+                <FileDown className="w-4 h-4" />
               </Button>
-            )}
+              {campaign.status === 'draft' && (
+                <Button size="sm" className="gap-1.5" disabled={isPaying || creatives.length === 0}
+                  onClick={() => payCampaign(campaign.id, campaign.budget)}>
+                  {isPaying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                  {t('ads.payActivate')}
+                </Button>
+              )}
+            </div>
           </div>
+
+          {/* Budget & Balance */}
+          <Card className="mb-4 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold">{es ? 'Balance de Campaña' : 'Campaign Balance'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">${Number(campaign.budget).toLocaleString()}</p>
+                  <p className="text-[10px] text-muted-foreground">{es ? 'Presupuesto' : 'Budget'}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-warning">${calculatedSpent.toFixed(0)}</p>
+                  <p className="text-[10px] text-muted-foreground">{es ? 'Gastado' : 'Spent'}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-success">${remaining.toFixed(0)}</p>
+                  <p className="text-[10px] text-muted-foreground">{es ? 'Restante' : 'Remaining'}</p>
+                </div>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${budgetUsedPct}%` }} />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1 text-right">{budgetUsedPct.toFixed(1)}% {es ? 'usado' : 'used'}</p>
+            </CardContent>
+          </Card>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3 mb-6">
@@ -298,6 +363,8 @@ export default function AdvertiserDashboard() {
               <TrendingUp className="w-5 h-5 text-success mx-auto mb-1" />
               <p className="text-lg font-bold text-success">{ctr}%</p>
               <p className="text-[10px] text-muted-foreground">CTR</p>
+            </CardContent></Card>
+          </div>
             </CardContent></Card>
           </div>
 
