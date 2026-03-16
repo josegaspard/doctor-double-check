@@ -93,6 +93,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [likedLives, setLikedLives] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const recordingsLoadedRef = useRef(false);
   
   // Track last fetch time to prevent rapid re-fetches
   const lastFetchTime = useRef<number>(0);
