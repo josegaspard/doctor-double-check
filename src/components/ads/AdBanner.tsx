@@ -9,7 +9,7 @@ interface AdBannerProps {
   disableAutoSticky?: boolean;
 }
 
-export function AdBanner({ placementName, className }: AdBannerProps) {
+export function AdBanner({ placementName, className, disableAutoSticky }: AdBannerProps) {
   const { creative, isActive, trackImpression, trackClick } = useAdCreative(placementName);
   const { t } = useLanguage();
   const impressionSent = useRef(false);
