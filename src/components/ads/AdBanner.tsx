@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils';
 interface AdBannerProps {
   placementName: string;
   className?: string;
+  disableAutoSticky?: boolean;
 }
 
-export function AdBanner({ placementName, className }: AdBannerProps) {
+export function AdBanner({ placementName, className, disableAutoSticky }: AdBannerProps) {
   const { creative, isActive, trackImpression, trackClick } = useAdCreative(placementName);
   const { t } = useLanguage();
   const impressionSent = useRef(false);
@@ -50,7 +51,7 @@ export function AdBanner({ placementName, className }: AdBannerProps) {
       className={cn(
         'relative rounded-xl overflow-hidden cursor-pointer group border border-border/50 bg-muted/30',
         'w-full',
-        isVertical && 'lg:sticky lg:top-4',
+        isVertical && !disableAutoSticky && 'lg:sticky lg:top-4',
         className
       )}
       onClick={handleClick}

@@ -396,12 +396,10 @@ export default function NewsArticle() {
         <AdBanner placementName="news_top_banner" className="mb-4" />
 
         {/* 3-column layout: sidebar | article | sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_180px] gap-6">
-          {/* Left sidebar ad — desktop only */}
-          <aside className="hidden lg:block self-start">
-            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide">
-              <AdBanner placementName="news_sidebar_left" className="w-full" />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-[160px_minmax(0,1fr)_160px] lg:grid-cols-[180px_minmax(0,1fr)_180px] gap-4 lg:gap-6">
+          {/* Left sidebar ad — tablet+ sticky */}
+          <aside className="hidden md:block self-start sticky top-24">
+            <AdBanner placementName="news_sidebar_left" className="w-full" disableAutoSticky />
           </aside>
 
           {/* Main article content */}
@@ -742,11 +740,9 @@ export default function NewsArticle() {
         </section>
       </article>
 
-          {/* Right sidebar ad — desktop only */}
-          <aside className="hidden lg:block self-start">
-            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide">
-              <AdBanner placementName="news_sidebar_right" className="w-full" />
-            </div>
+          {/* Right sidebar ad — tablet+ sticky */}
+          <aside className="hidden md:block self-start sticky top-24">
+            <AdBanner placementName="news_sidebar_right" className="w-full" disableAutoSticky />
           </aside>
         </div>
       </div>
