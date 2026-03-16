@@ -297,7 +297,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     const loadData = async () => {
       if (!isMounted) return;
       setIsLoading(true);
-      await Promise.all([fetchLives(true), fetchRecordings(), fetchLikedLives()]);
+      await Promise.all([fetchLives(true), fetchLikedLives()]);
       if (isMounted) {
         setIsLoading(false);
       }
