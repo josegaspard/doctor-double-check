@@ -42,6 +42,7 @@ interface Campaign {
 interface CampaignStats { impressions: number; clicks: number; }
 interface DailyEvent { date: string; impressions: number; clicks: number; }
 interface Creative { id: string; campaign_id: string; placement_id: string; media_url: string; media_type: string; click_url: string; alt_text: string | null; is_active: boolean; }
+interface AdvertiserProfile { id: string; name: string; email: string; avatar_url: string | null; }
 
 const statusColors: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground', pending_payment: 'bg-warning/20 text-warning',
