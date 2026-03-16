@@ -456,8 +456,10 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'recordings' },
         () => {
-          // Refresh recordings when there are changes
-          fetchRecordings();
+          // Only refresh if recordings were already loaded
+          if (recordingsLoadedRef.current) {
+            fetchRecordings();
+          }
         }
       )
       .subscribe();

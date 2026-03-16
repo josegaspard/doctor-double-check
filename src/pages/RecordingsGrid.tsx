@@ -48,6 +48,11 @@ export default function RecordingsGrid() {
   const [doctorName, setDoctorName] = useState<string | null>(null);
   const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
 
+  // Ensure recordings are loaded when this page mounts
+  useEffect(() => {
+    ensureRecordingsLoaded();
+  }, [ensureRecordingsLoaded]);
+
   useEffect(() => {
     if (!doctorFilter) { setDoctorName(null); return; }
     const fetchName = async () => {

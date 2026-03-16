@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UpcomingAvailabilities } from '@/components/availability/UpcomingAvailabilities';
 import { NewsFeed } from '@/components/news/NewsFeed';
-import LivePreviewPlayer from '@/components/live/LivePreviewPlayer';
+const LivePreviewPlayer = React.lazy(() => import('@/components/live/LivePreviewPlayer'));
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Video, 
