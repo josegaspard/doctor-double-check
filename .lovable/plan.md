@@ -1,26 +1,33 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Push notifications on identity verification status change
 
-## Solucion
+## What changes
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+### 1. Update `supabase/functions/veriff-webhook/index.ts`
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+After the existing email notification block (~line 133-142), add push notification logic directly in the webhook (no need to call `send-push-notification` which is auth-gated and designed for doctor→subscriber use).
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+The webhook already has `supabase` client with service role key. Add:
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+1. Import `web-push` at the top (same pattern as `send-push-notification`)
+2. After the email notification `try/catch`, add a new block that:
+   - Reads VAPID keys from env
+   - Configures `webpush.setVapidDetails`
+   - Queries `push_subscriptions` for the user (`existingRecord.user_id`)
+   - Sends a push with status-appropriate title/body:
+     - **verified**: "✅ Identidad verificada" / "Tu identidad ha sido verificada exitosamente"
+     - **failed**: "❌ Verificación fallida" / "Tu verificación de identidad no fue aprobada. Puedes intentarlo de nuevo."
+     - **in_progress**: skip push (intermediate state)
+   - Cleans up expired subscriptions (410/404)
+   - Notification data includes `{ url: '/verify-identity' }`
 
-## Archivos a modificar
+### 2. Update `public/sw.js`
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+The service worker already handles `data.url` in the `notificationclick` handler, so no changes needed there.
+
+### Files to modify
+- **`supabase/functions/veriff-webhook/index.ts`** — add web-push import and push notification block after email notification
+
+Single file change. No database migrations needed.
+
