@@ -3098,6 +3098,7 @@ export type Database = {
           country_code: string
           country_flag: string
           followers_count: number
+          is_identity_verified: boolean
           location: string
           name: string
           office_days: string[]
