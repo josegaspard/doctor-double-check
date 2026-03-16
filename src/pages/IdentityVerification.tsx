@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -24,13 +24,16 @@ import {
   Loader2,
   Info,
   Eye,
+  ExternalLink,
+  Fingerprint,
 } from 'lucide-react';
 
-type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+type VerificationStatus = 'pending' | 'in_progress' | 'verified' | 'failed' | 'expired';
 
 interface VerificationRecord {
   id: string;
   status: VerificationStatus;
+  provider: string;
   created_at: string;
   verified_at: string | null;
   metadata: {
@@ -38,60 +41,107 @@ interface VerificationRecord {
     front_url?: string;
     back_url?: string;
     selfie_url?: string;
+    session_url?: string;
   } | null;
 }
 
 export default function IdentityVerification() {
   const navigate = useNavigate();
-  const { user, role, refreshUser } = useAuth();
+  const { user, role } = useAuth();
   const { language } = useLanguage();
-  
-  const frontInputRef = useRef<HTMLInputElement>(null);
-  const backInputRef = useRef<HTMLInputElement>(null);
-  const selfieInputRef = useRef<HTMLInputElement>(null);
   
   const [verification, setVerification] = useState<VerificationRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isStartingVeriff, setIsStartingVeriff] = useState(false);
   
+  // Manual upload fallback state
+  const frontInputRef = useRef<HTMLInputElement>(null);
+  const backInputRef = useRef<HTMLInputElement>(null);
+  const selfieInputRef = useRef<HTMLInputElement>(null);
+  const [showManualUpload, setShowManualUpload] = useState(false);
   const [frontFile, setFrontFile] = useState<File | null>(null);
   const [frontPreview, setFrontPreview] = useState<string | null>(null);
-  
   const [backFile, setBackFile] = useState<File | null>(null);
   const [backPreview, setBackPreview] = useState<string | null>(null);
-  
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   // Fetch existing verification
-  useEffect(() => {
-    const fetchVerification = async () => {
-      if (!user?.id) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('identity_verifications')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
+  const fetchVerification = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('identity_verifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
-        if (data && !error) {
-          setVerification(data as VerificationRecord);
-        }
-      } catch (error) {
-        // No verification found
-      } finally {
-        setIsLoading(false);
+      if (data && !error) {
+        setVerification(data as unknown as VerificationRecord);
       }
-    };
-
-    fetchVerification();
+    } catch {
+      // No verification found
+    } finally {
+      setIsLoading(false);
+    }
   }, [user?.id]);
 
+  useEffect(() => {
+    fetchVerification();
+  }, [fetchVerification]);
+
+  // Poll for status updates when pending/in_progress
+  useEffect(() => {
+    if (!verification || !['pending', 'in_progress'].includes(verification.status)) return;
+    
+    const interval = setInterval(fetchVerification, 10000); // Poll every 10s
+    return () => clearInterval(interval);
+  }, [verification?.status, fetchVerification]);
+
+  const handleStartVeriff = async () => {
+    if (!user?.id) return;
+    setIsStartingVeriff(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-veriff-session', {
+        body: {
+          callback_url: window.location.origin + '/identity-verification',
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.session_url) throw new Error('No session URL returned');
+
+      // Open Veriff in a new window
+      window.open(data.session_url, '_blank', 'noopener,noreferrer');
+
+      toast.success(
+        language === 'es'
+          ? 'Verificación iniciada. Completa el proceso en la nueva ventana.'
+          : 'Verification started. Complete the process in the new window.'
+      );
+
+      // Refresh after a short delay
+      setTimeout(fetchVerification, 3000);
+    } catch (error: any) {
+      console.error('Veriff error:', error);
+      toast.error(
+        language === 'es'
+          ? 'Error al iniciar verificación. Puedes usar la verificación manual.'
+          : 'Error starting verification. You can use manual verification.'
+      );
+      setShowManualUpload(true);
+    } finally {
+      setIsStartingVeriff(false);
+    }
+  };
+
+  // Manual upload handlers (fallback)
   const handleFileSelect = (
     e: React.ChangeEvent<HTMLInputElement>,
     setFile: (f: File | null) => void,
@@ -100,13 +150,11 @@ export default function IdentityVerification() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
       toast.error(language === 'es' ? 'Solo se permiten imágenes o PDF' : 'Only images or PDF allowed');
       return;
     }
 
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast.error(language === 'es' ? 'El archivo no puede superar 10MB' : 'File cannot exceed 10MB');
       return;
@@ -123,108 +171,70 @@ export default function IdentityVerification() {
   const uploadFile = async (file: File, path: string): Promise<string> => {
     const { error } = await supabase.storage
       .from('identity-documents')
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: true,
-      });
-
+      .upload(path, file, { cacheControl: '3600', upsert: true });
     if (error) throw error;
     return path;
   };
 
-  const handleSubmit = async () => {
-    if (!user?.id) return;
+  const handleManualSubmit = async () => {
+    if (!user?.id || !frontFile) return;
     
-    if (!frontFile) {
-      toast.error(language === 'es' ? 'El frente del documento es obligatorio' : 'Front of document is required');
-      return;
-    }
-
     setIsSubmitting(true);
     setUploadProgress(0);
 
     try {
       const timestamp = Date.now();
-      const metadata: Record<string, string> = {
-        document_type: 'official_id',
-      };
+      const metadata: Record<string, string> = { document_type: 'official_id' };
 
-      // Upload front
       setUploadProgress(10);
       const frontExt = frontFile.name.split('.').pop();
-      const frontPath = `${user.id}/${timestamp}_front.${frontExt}`;
-      await uploadFile(frontFile, frontPath);
-      metadata.front_url = frontPath;
+      await uploadFile(frontFile, `${user.id}/${timestamp}_front.${frontExt}`);
+      metadata.front_url = `${user.id}/${timestamp}_front.${frontExt}`;
       setUploadProgress(40);
 
-      // Upload back if provided
       if (backFile) {
         const backExt = backFile.name.split('.').pop();
-        const backPath = `${user.id}/${timestamp}_back.${backExt}`;
-        await uploadFile(backFile, backPath);
-        metadata.back_url = backPath;
+        await uploadFile(backFile, `${user.id}/${timestamp}_back.${backExt}`);
+        metadata.back_url = `${user.id}/${timestamp}_back.${backExt}`;
       }
       setUploadProgress(70);
 
-      // Upload selfie if provided
       if (selfieFile) {
         const selfieExt = selfieFile.name.split('.').pop();
-        const selfiePath = `${user.id}/${timestamp}_selfie.${selfieExt}`;
-        await uploadFile(selfieFile, selfiePath);
-        metadata.selfie_url = selfiePath;
+        await uploadFile(selfieFile, `${user.id}/${timestamp}_selfie.${selfieExt}`);
+        metadata.selfie_url = `${user.id}/${timestamp}_selfie.${selfieExt}`;
       }
       setUploadProgress(90);
 
-      // Create verification record
-      const { data: insertedData, error } = await supabase
+      const { error } = await supabase
         .from('identity_verifications')
         .insert({
           user_id: user.id,
           provider: 'manual',
           status: 'pending',
-          metadata: metadata,
-        })
-        .select()
-        .single();
+          metadata,
+        });
 
       if (error) throw error;
 
-      // Send verification email notification
       try {
         await supabase.functions.invoke('send-verification-email', {
           body: { user_id: user.id, status: 'pending' },
         });
-      } catch (emailError) {
-        console.warn('Failed to send verification email:', emailError);
+      } catch {
+        // ignore email error
       }
 
       setUploadProgress(100);
       toast.success(
-        language === 'es' 
-          ? 'Documentos enviados para verificación' 
-          : 'Documents submitted for verification'
+        language === 'es' ? 'Documentos enviados para verificación' : 'Documents submitted for verification'
       );
-      
-      // Refresh verification status
-      const { data: newVerification } = await supabase
-        .from('identity_verifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
 
-      if (newVerification) {
-        setVerification(newVerification as VerificationRecord);
-      }
-
-      // Clear files
-      setFrontFile(null);
-      setFrontPreview(null);
-      setBackFile(null);
-      setBackPreview(null);
-      setSelfieFile(null);
-      setSelfiePreview(null);
+      await fetchVerification();
+      setFrontFile(null); setFrontPreview(null);
+      setBackFile(null); setBackPreview(null);
+      setSelfieFile(null); setSelfiePreview(null);
+      setShowManualUpload(false);
     } catch (error: any) {
       toast.error(error.message || (language === 'es' ? 'Error al enviar documentos' : 'Error submitting documents'));
     } finally {
@@ -236,42 +246,37 @@ export default function IdentityVerification() {
   const getStatusConfig = (status: VerificationStatus) => {
     const configs = {
       pending: {
-        icon: Clock,
-        color: 'text-warning',
-        bg: 'bg-warning/10',
-        badge: 'warning' as const,
+        icon: Clock, color: 'text-warning', bg: 'bg-warning/10', badge: 'warning' as const,
         title: language === 'es' ? 'Verificación en proceso' : 'Verification in progress',
         description: language === 'es' 
           ? 'Estamos revisando tus documentos. Este proceso puede tomar 24-48 horas.'
           : 'We are reviewing your documents. This process may take 24-48 hours.',
       },
-      approved: {
-        icon: CheckCircle,
-        color: 'text-success',
-        bg: 'bg-success/10',
-        badge: 'success' as const,
+      in_progress: {
+        icon: Clock, color: 'text-info', bg: 'bg-info/10', badge: 'info' as const,
+        title: language === 'es' ? 'Verificación en curso' : 'Verification in progress',
+        description: language === 'es'
+          ? 'Tu verificación biométrica está siendo procesada automáticamente.'
+          : 'Your biometric verification is being processed automatically.',
+      },
+      verified: {
+        icon: CheckCircle, color: 'text-success', bg: 'bg-success/10', badge: 'success' as const,
         title: language === 'es' ? 'Identidad verificada' : 'Identity verified',
-        description: language === 'es' 
+        description: language === 'es'
           ? 'Tu identidad ha sido verificada exitosamente.'
           : 'Your identity has been successfully verified.',
       },
-      rejected: {
-        icon: XCircle,
-        color: 'text-destructive',
-        bg: 'bg-destructive/10',
-        badge: 'destructive' as const,
+      failed: {
+        icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10', badge: 'destructive' as const,
         title: language === 'es' ? 'Verificación rechazada' : 'Verification rejected',
-        description: language === 'es' 
-          ? 'Tu solicitud fue rechazada. Por favor, intenta nuevamente con documentos claros.'
-          : 'Your request was rejected. Please try again with clear documents.',
+        description: language === 'es'
+          ? 'Tu solicitud fue rechazada. Por favor, intenta nuevamente.'
+          : 'Your request was rejected. Please try again.',
       },
       expired: {
-        icon: AlertCircle,
-        color: 'text-muted-foreground',
-        bg: 'bg-muted',
-        badge: 'secondary' as const,
+        icon: AlertCircle, color: 'text-muted-foreground', bg: 'bg-muted', badge: 'secondary' as const,
         title: language === 'es' ? 'Verificación expirada' : 'Verification expired',
-        description: language === 'es' 
+        description: language === 'es'
           ? 'Tu verificación ha expirado. Por favor, verifica nuevamente.'
           : 'Your verification has expired. Please verify again.',
       },
@@ -297,7 +302,7 @@ export default function IdentityVerification() {
     );
   }
 
-  const canSubmitNewVerification = !verification || verification.status === 'rejected' || verification.status === 'expired';
+  const canSubmitNew = !verification || verification.status === 'failed' || verification.status === 'expired';
   const statusConfig = verification ? getStatusConfig(verification.status) : null;
 
   return (
@@ -333,10 +338,17 @@ export default function IdentityVerification() {
                     <h3 className="font-semibold">{statusConfig.title}</h3>
                     <Badge variant={statusConfig.badge}>
                       {verification.status === 'pending' && (language === 'es' ? 'Pendiente' : 'Pending')}
-                      {verification.status === 'approved' && (language === 'es' ? 'Aprobado' : 'Approved')}
-                      {verification.status === 'rejected' && (language === 'es' ? 'Rechazado' : 'Rejected')}
+                      {verification.status === 'in_progress' && (language === 'es' ? 'En proceso' : 'In Progress')}
+                      {verification.status === 'verified' && (language === 'es' ? 'Verificado' : 'Verified')}
+                      {verification.status === 'failed' && (language === 'es' ? 'Rechazado' : 'Rejected')}
                       {verification.status === 'expired' && (language === 'es' ? 'Expirado' : 'Expired')}
                     </Badge>
+                    {verification.provider === 'veriff' && (
+                      <Badge variant="outline" className="text-xs">
+                        <Fingerprint className="w-3 h-3 mr-1" />
+                        Veriff
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">{statusConfig.description}</p>
                   {verification.verified_at && (
@@ -352,204 +364,295 @@ export default function IdentityVerification() {
         )}
 
         {/* Verification Form */}
-        {canSubmitNewVerification && (
-          <>
-            {/* Info Alert */}
-            <Alert className="mb-6">
-              <Info className="w-4 h-4" />
-              <AlertTitle>{language === 'es' ? 'Documentos aceptados' : 'Accepted documents'}</AlertTitle>
-              <AlertDescription>
-                {language === 'es' 
-                  ? 'INE/IFE, Pasaporte, Licencia de conducir u otro documento oficial con fotografía.'
-                  : 'Government ID, Passport, Driver\'s license or other official photo ID.'}
-              </AlertDescription>
-            </Alert>
+        {canSubmitNew && !showManualUpload && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Fingerprint className="w-5 h-5 text-primary" />
+                {language === 'es' ? 'Verificación biométrica' : 'Biometric Verification'}
+              </CardTitle>
+              <CardDescription>
+                {language === 'es'
+                  ? 'Verifica tu identidad de forma rápida y segura con reconocimiento biométrico.'
+                  : 'Verify your identity quickly and securely with biometric recognition.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Alert>
+                <Info className="w-4 h-4" />
+                <AlertTitle>{language === 'es' ? 'Proceso rápido' : 'Quick process'}</AlertTitle>
+                <AlertDescription>
+                  {language === 'es'
+                    ? 'Necesitarás tu documento de identidad (INE, pasaporte o licencia) y tu cámara para tomar una selfie. El proceso tarda menos de 2 minutos.'
+                    : 'You will need your ID document (government ID, passport or license) and your camera for a selfie. The process takes less than 2 minutes.'}
+                </AlertDescription>
+              </Alert>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5" />
-                  {language === 'es' ? 'Sube tu documento' : 'Upload your document'}
-                </CardTitle>
-                <CardDescription>
-                  {language === 'es' 
-                    ? 'Asegúrate de que el documento sea legible y esté completo'
-                    : 'Make sure the document is readable and complete'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Front of document */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <FileCheck className="w-4 h-4" />
-                    {language === 'es' ? 'Frente del documento *' : 'Front of document *'}
-                  </label>
-                  <div 
-                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                      ${frontPreview ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}`}
-                    onClick={() => frontInputRef.current?.click()}
-                  >
-                    {frontPreview ? (
-                      <div className="relative">
-                        <img src={frontPreview} alt="Front" className="max-h-48 mx-auto rounded" />
-                        <Badge className="absolute top-2 right-2" variant="success">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          {language === 'es' ? 'Cargado' : 'Uploaded'}
-                        </Badge>
-                      </div>
-                    ) : frontFile ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <FileCheck className="w-8 h-8 text-primary" />
-                        <span className="font-medium">{frontFile.name}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground">
-                          {language === 'es' ? 'Haz clic para subir' : 'Click to upload'}
-                        </p>
-                      </>
-                    )}
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CreditCard className="w-4 h-4 text-primary" />
                   </div>
-                  <input
-                    ref={frontInputRef}
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={(e) => handleFileSelect(e, setFrontFile, setFrontPreview)}
-                    className="hidden"
-                  />
+                  <div>
+                    <p className="font-medium text-sm">
+                      {language === 'es' ? '1. Fotografía tu documento' : '1. Photograph your document'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'es' ? 'INE/IFE, Pasaporte o Licencia de conducir' : 'Government ID, Passport or Driver\'s license'}
+                    </p>
+                  </div>
                 </div>
-
-                {/* Back of document */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <FileCheck className="w-4 h-4" />
-                    {language === 'es' ? 'Reverso del documento (opcional)' : 'Back of document (optional)'}
-                  </label>
-                  <div 
-                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                      ${backPreview ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}`}
-                    onClick={() => backInputRef.current?.click()}
-                  >
-                    {backPreview ? (
-                      <div className="relative">
-                        <img src={backPreview} alt="Back" className="max-h-48 mx-auto rounded" />
-                        <Badge className="absolute top-2 right-2" variant="success">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          {language === 'es' ? 'Cargado' : 'Uploaded'}
-                        </Badge>
-                      </div>
-                    ) : backFile ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <FileCheck className="w-8 h-8 text-primary" />
-                        <span className="font-medium">{backFile.name}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground">
-                          {language === 'es' ? 'Haz clic para subir' : 'Click to upload'}
-                        </p>
-                      </>
-                    )}
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Camera className="w-4 h-4 text-primary" />
                   </div>
-                  <input
-                    ref={backInputRef}
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={(e) => handleFileSelect(e, setBackFile, setBackPreview)}
-                    className="hidden"
-                  />
+                  <div>
+                    <p className="font-medium text-sm">
+                      {language === 'es' ? '2. Tómate una selfie' : '2. Take a selfie'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'es' ? 'Verificación facial automática' : 'Automatic facial verification'}
+                    </p>
+                  </div>
                 </div>
-
-                {/* Selfie */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Camera className="w-4 h-4" />
-                    {language === 'es' ? 'Selfie con documento (opcional)' : 'Selfie with document (optional)'}
-                  </label>
-                  <div 
-                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                      ${selfiePreview ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}`}
-                    onClick={() => selfieInputRef.current?.click()}
-                  >
-                    {selfiePreview ? (
-                      <div className="relative">
-                        <img src={selfiePreview} alt="Selfie" className="max-h-48 mx-auto rounded" />
-                        <Badge className="absolute top-2 right-2" variant="success">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          {language === 'es' ? 'Cargado' : 'Uploaded'}
-                        </Badge>
-                      </div>
-                    ) : selfieFile ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <FileCheck className="w-8 h-8 text-primary" />
-                        <span className="font-medium">{selfieFile.name}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Camera className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground">
-                          {language === 'es' 
-                            ? 'Tómate una foto sosteniendo tu documento' 
-                            : 'Take a photo holding your document'}
-                        </p>
-                      </>
-                    )}
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="w-4 h-4 text-primary" />
                   </div>
-                  <input
-                    ref={selfieInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileSelect(e, setSelfieFile, setSelfiePreview)}
-                    className="hidden"
-                  />
+                  <div>
+                    <p className="font-medium text-sm">
+                      {language === 'es' ? '3. Resultado automático' : '3. Automatic result'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'es' ? 'Recibirás el resultado en minutos' : 'You will receive the result in minutes'}
+                    </p>
+                  </div>
                 </div>
+              </div>
 
-                {/* Upload Progress */}
-                {isSubmitting && uploadProgress > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>{language === 'es' ? 'Subiendo documentos...' : 'Uploading documents...'}</span>
-                      <span>{uploadProgress}%</span>
-                    </div>
-                    <Progress value={uploadProgress} />
-                  </div>
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={handleStartVeriff}
+                disabled={isStartingVeriff}
+              >
+                {isStartingVeriff ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {language === 'es' ? 'Iniciando...' : 'Starting...'}
+                  </>
+                ) : (
+                  <>
+                    <Fingerprint className="w-4 h-4 mr-2" />
+                    {language === 'es' ? 'Iniciar verificación biométrica' : 'Start biometric verification'}
+                  </>
                 )}
+              </Button>
 
-                {/* Submit Button */}
-                <Button 
-                  className="w-full" 
-                  size="lg"
-                  onClick={handleSubmit}
-                  disabled={!frontFile || isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {language === 'es' ? 'Enviando...' : 'Submitting...'}
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="w-4 h-4 mr-2" />
-                      {language === 'es' ? 'Enviar para verificación' : 'Submit for verification'}
-                    </>
-                  )}
-                </Button>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    {language === 'es' ? 'o alternativamente' : 'or alternatively'}
+                  </span>
+                </div>
+              </div>
 
-                {/* Privacy Notice */}
-                <p className="text-xs text-center text-muted-foreground">
-                  {language === 'es' 
-                    ? 'Tus documentos se almacenan de forma segura y solo se usan para verificar tu identidad.'
-                    : 'Your documents are stored securely and only used to verify your identity.'}
-                </p>
-              </CardContent>
-            </Card>
-          </>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowManualUpload(true)}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {language === 'es' ? 'Subir documentos manualmente' : 'Upload documents manually'}
+              </Button>
+
+              <p className="text-xs text-center text-muted-foreground">
+                {language === 'es'
+                  ? 'Tus datos se procesan de forma segura con Veriff, líder en verificación de identidad.'
+                  : 'Your data is securely processed by Veriff, a leader in identity verification.'}
+              </p>
+            </CardContent>
+          </Card>
         )}
 
-        {/* Already verified message */}
-        {verification?.status === 'approved' && (
+        {/* Manual Upload Fallback */}
+        {canSubmitNew && showManualUpload && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5" />
+                    {language === 'es' ? 'Sube tu documento' : 'Upload your document'}
+                  </CardTitle>
+                  <CardDescription>
+                    {language === 'es'
+                      ? 'Asegúrate de que el documento sea legible y esté completo'
+                      : 'Make sure the document is readable and complete'}
+                  </CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setShowManualUpload(false)}>
+                  {language === 'es' ? 'Usar biométrica' : 'Use biometric'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Alert className="mb-4">
+                <Info className="w-4 h-4" />
+                <AlertTitle>{language === 'es' ? 'Documentos aceptados' : 'Accepted documents'}</AlertTitle>
+                <AlertDescription>
+                  {language === 'es'
+                    ? 'INE/IFE, Pasaporte, Licencia de conducir u otro documento oficial con fotografía.'
+                    : 'Government ID, Passport, Driver\'s license or other official photo ID.'}
+                </AlertDescription>
+              </Alert>
+
+              {/* Front */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <FileCheck className="w-4 h-4" />
+                  {language === 'es' ? 'Frente del documento *' : 'Front of document *'}
+                </label>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+                    ${frontPreview ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}`}
+                  onClick={() => frontInputRef.current?.click()}
+                >
+                  {frontPreview ? (
+                    <div className="relative">
+                      <img src={frontPreview} alt="Front" className="max-h-48 mx-auto rounded" />
+                      <Badge className="absolute top-2 right-2" variant="success">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        {language === 'es' ? 'Cargado' : 'Uploaded'}
+                      </Badge>
+                    </div>
+                  ) : frontFile ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <FileCheck className="w-8 h-8 text-primary" />
+                      <span className="font-medium">{frontFile.name}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'es' ? 'Haz clic para subir' : 'Click to upload'}
+                      </p>
+                    </>
+                  )}
+                </div>
+                <input ref={frontInputRef} type="file" accept="image/*,.pdf" onChange={(e) => handleFileSelect(e, setFrontFile, setFrontPreview)} className="hidden" />
+              </div>
+
+              {/* Back */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <FileCheck className="w-4 h-4" />
+                  {language === 'es' ? 'Reverso del documento (opcional)' : 'Back of document (optional)'}
+                </label>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+                    ${backPreview ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}`}
+                  onClick={() => backInputRef.current?.click()}
+                >
+                  {backPreview ? (
+                    <div className="relative">
+                      <img src={backPreview} alt="Back" className="max-h-48 mx-auto rounded" />
+                      <Badge className="absolute top-2 right-2" variant="success">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        {language === 'es' ? 'Cargado' : 'Uploaded'}
+                      </Badge>
+                    </div>
+                  ) : backFile ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <FileCheck className="w-8 h-8 text-primary" />
+                      <span className="font-medium">{backFile.name}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'es' ? 'Haz clic para subir' : 'Click to upload'}
+                      </p>
+                    </>
+                  )}
+                </div>
+                <input ref={backInputRef} type="file" accept="image/*,.pdf" onChange={(e) => handleFileSelect(e, setBackFile, setBackPreview)} className="hidden" />
+              </div>
+
+              {/* Selfie */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Camera className="w-4 h-4" />
+                  {language === 'es' ? 'Selfie con documento (opcional)' : 'Selfie with document (optional)'}
+                </label>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+                    ${selfiePreview ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}`}
+                  onClick={() => selfieInputRef.current?.click()}
+                >
+                  {selfiePreview ? (
+                    <div className="relative">
+                      <img src={selfiePreview} alt="Selfie" className="max-h-48 mx-auto rounded" />
+                      <Badge className="absolute top-2 right-2" variant="success">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        {language === 'es' ? 'Cargado' : 'Uploaded'}
+                      </Badge>
+                    </div>
+                  ) : selfieFile ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <FileCheck className="w-8 h-8 text-primary" />
+                      <span className="font-medium">{selfieFile.name}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Camera className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'es' ? 'Tómate una foto sosteniendo tu documento' : 'Take a photo holding your document'}
+                      </p>
+                    </>
+                  )}
+                </div>
+                <input ref={selfieInputRef} type="file" accept="image/*" onChange={(e) => handleFileSelect(e, setSelfieFile, setSelfiePreview)} className="hidden" />
+              </div>
+
+              {isSubmitting && uploadProgress > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>{language === 'es' ? 'Subiendo documentos...' : 'Uploading documents...'}</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <Progress value={uploadProgress} />
+                </div>
+              )}
+
+              <Button className="w-full" size="lg" onClick={handleManualSubmit} disabled={!frontFile || isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {language === 'es' ? 'Enviando...' : 'Submitting...'}
+                  </>
+                ) : (
+                  <>
+                    <Shield className="w-4 h-4 mr-2" />
+                    {language === 'es' ? 'Enviar para verificación' : 'Submit for verification'}
+                  </>
+                )}
+              </Button>
+
+              <p className="text-xs text-center text-muted-foreground">
+                {language === 'es'
+                  ? 'Tus documentos se almacenan de forma segura y solo se usan para verificar tu identidad.'
+                  : 'Your documents are stored securely and only used to verify your identity.'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Already verified */}
+        {verification?.status === 'verified' && (
           <Card>
             <CardContent className="p-8 text-center">
               <CheckCircle className="w-16 h-16 mx-auto text-success mb-4" />
@@ -557,7 +660,7 @@ export default function IdentityVerification() {
                 {language === 'es' ? '¡Ya estás verificado!' : 'You are already verified!'}
               </h3>
               <p className="text-muted-foreground mb-4">
-                {language === 'es' 
+                {language === 'es'
                   ? 'Tu identidad ha sido confirmada. Disfruta de todos los beneficios.'
                   : 'Your identity has been confirmed. Enjoy all the benefits.'}
               </p>
