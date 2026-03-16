@@ -60,6 +60,7 @@ interface LivesContextType {
   endLive: (liveId: string, saveAsRecording?: boolean) => Promise<{ success: boolean; recordingId?: string; error?: string }>;
   refreshLives: () => Promise<void>;
   refreshRecordings: () => Promise<void>;
+  ensureRecordingsLoaded: () => Promise<void>;
 }
 
 const LivesContext = createContext<LivesContextType | undefined>(undefined);
