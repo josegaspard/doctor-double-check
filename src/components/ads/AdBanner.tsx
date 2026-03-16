@@ -12,22 +12,14 @@ interface AdBannerProps {
 export function AdBanner({ placementName, className, disableAutoSticky }: AdBannerProps) {
   const { creative, isActive, trackImpression, trackClick } = useAdCreative(placementName);
   const { t } = useLanguage();
-  const prevCreativeId = useRef<string | null>(null);
   const [imgError, setImgError] = useState(false);
-  const [fading, setFading] = useState(false);
+  const hasTracked = useRef(false);
 
-  // Track impression on each creative change
+  // Track impression once on mount
   useEffect(() => {
-    if (creative && creative.id !== prevCreativeId.current) {
-      // Fade transition
-      setFading(true);
-      const fadeTimer = setTimeout(() => {
-        prevCreativeId.current = creative.id;
-        setImgError(false);
-        trackImpression();
-        setFading(false);
-      }, 200);
-      return () => clearTimeout(fadeTimer);
+    if (creative && !hasTracked.current) {
+      hasTracked.current = true;
+      trackImpression();
     }
   }, [creative, trackImpression]);
 
