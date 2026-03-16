@@ -125,6 +125,7 @@ const SPECIALTIES = [
   { value: 'Medicina General', labelKey: 'doctors.specGeneralMedicine' },
   { value: 'Medicina Interna', labelKey: 'doctors.specInternalMedicine' },
   { value: 'Neurología', labelKey: 'doctors.specNeurology' },
+  { value: 'Nutriología', labelKey: 'doctors.specNutriology' },
   { value: 'Oftalmología', labelKey: 'doctors.specOphthalmology' },
   { value: 'Oncología', labelKey: 'doctors.specOncology' },
   { value: 'Ortopedia', labelKey: 'doctors.specOrthopedics' },
@@ -132,6 +133,13 @@ const SPECIALTIES = [
   { value: 'Psiquiatría', labelKey: 'doctors.specPsychiatry' },
   { value: 'Urología', labelKey: 'doctors.specUrology' },
 ];
+
+// Continent → Country mapping for geo filters
+const CONTINENTS: Record<string, string[]> = {
+  americas: ['MX', 'US', 'CA', 'CO', 'AR', 'CL', 'PE', 'BR', 'EC', 'UY', 'PY', 'BO', 'VE', 'CR', 'PA', 'GT', 'HN', 'SV', 'NI', 'DO', 'CU'],
+  europe: ['ES', 'GB'],
+  asia: [],
+};
 
 const DOCTORS_PER_PAGE = 20;
 
