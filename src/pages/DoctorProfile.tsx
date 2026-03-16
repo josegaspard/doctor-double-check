@@ -611,25 +611,26 @@ export default function DoctorProfile() {
                 }
               </Button>
 
-              <div className="grid grid-cols-3 gap-2">
-                <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors overflow-hidden">
-                  <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} size="sm" variant="ghost" onSubscriptionChange={async () => {
-                    await new Promise(r => setTimeout(r, 1000));
-                    const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
-                    const profile = Array.isArray(data) ? data[0] : data;
-                    if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
-                  }} />
-                </div>
-                <div 
-                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+              <div className="w-full">
+                <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} size="default" variant="outline" onSubscriptionChange={async () => {
+                  await new Promise(r => setTimeout(r, 1000));
+                  const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
+                  const profile = Array.isArray(data) ? data[0] : data;
+                  if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
+                }} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="default"
+                  className="w-full gap-2"
                   onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}
                 >
-                  <Video className="w-5 h-5 text-primary" />
-                  <span className="text-xs font-medium text-foreground">{t('doctorProfile.viewLives')}</span>
-                </div>
-                <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors overflow-hidden">
-                  <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} />
-                </div>
+                  <Video className="w-4 h-4 text-primary" />
+                  {t('doctorProfile.viewLives')}
+                </Button>
+                <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} size="default" />
               </div>
             </div>
             )}

@@ -46,7 +46,10 @@ export function RecordingChatReplay({ liveId }: RecordingChatReplayProps) {
   const visibleMessages = allMessages;
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const viewport = bottomRef.current?.closest('[data-radix-scroll-area-viewport]');
+    if (viewport) {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
   }, [visibleMessages.length]);
 
   const formatTime = (seconds: number) => {

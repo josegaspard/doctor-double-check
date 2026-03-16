@@ -1,59 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Fix Doctor Profile Buttons Layout + Recording Scroll Bug
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Issue 1: Doctor Profile Action Buttons — Broken Layout
+## Solucion
 
-**Problem:** The `grid-cols-3` layout (line 614) crams the `SubscribeButton` and `BlockUserButton` into narrow 1/3-width cells. The `SubscribeButton` renders TWO buttons side-by-side when subscribed ("Suscrito" + "Suscripción Pro"), which overflows the cell. The result looks broken and cluttered (visible in the screenshot).
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-**Solution:** Replace the cramped 3-column grid with a cleaner stacked layout:
-- **Row 1:** Full-width "Iniciar Orientación" (already done)
-- **Row 2:** SubscribeButton at full width (it handles its own internal layout with popover + upgrade CTA)
-- **Row 3:** Two equal buttons side-by-side: "Ver Lives" and "Bloquear"
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-This gives each action proper breathing room and clear visual hierarchy.
-
-**File:** `src/pages/DoctorProfile.tsx` lines 614-633
-
-```text
-Before (broken):
-┌──────────┬──────────┬──────────┐
-│Suscrito + │ Ver Lives│ Bloquear │  ← overflow
-│Suscrip P..│          │          │
-└──────────┴──────────┴──────────┘
-
-After (clean):
-┌────────────────────────────────┐
-│      Iniciar Orientación       │
-├────────────────────────────────┤
-│    ✓ Suscrito  👑 Suscripción  │  ← full width
-├───────────────┬────────────────┤
-│   Ver Lives   │   Bloquear     │  ← 2-col grid
-└───────────────┴────────────────┘
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-## Issue 2: Recording Page Scrolls Down When Chat Has Messages
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-**Problem:** In `RecordingChatReplay.tsx` line 49, `scrollIntoView({ behavior: 'smooth' })` is called when `visibleMessages.length` changes. On initial load, this scrolls the ENTIRE PAGE down to the chat panel in the sidebar, jumping past the video player.
+## Archivos a modificar
 
-**Solution:** Replace `scrollIntoView` with `scrollTop` on the chat's own scroll container. The `bottomRef` should scroll only within the chat's `ScrollArea`, not the page. Use the parent container's `scrollTop` instead of `scrollIntoView`.
-
-**File:** `src/components/recordings/RecordingChatReplay.tsx` line 49
-
-Change:
-```tsx
-bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-```
-To:
-```tsx
-// Scroll within chat container only, never the page
-const parent = bottomRef.current?.closest('[data-radix-scroll-area-viewport]');
-if (parent) {
-  parent.scrollTop = parent.scrollHeight;
-}
-```
-
-## Files to Modify
-1. `src/pages/DoctorProfile.tsx` — Restructure action buttons from 3-col grid to stacked layout
-2. `src/components/recordings/RecordingChatReplay.tsx` — Fix scrollIntoView to container-scoped scroll
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
