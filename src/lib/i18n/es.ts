@@ -1586,11 +1586,4 @@ export const es = {
     emergencyName: 'Contacto de Emergencia',
     emergencyPhone: 'Teléfono de Emergencia',
   },
-  medicalHistory: {
-    ...({} as any),
-    newestFirst: 'Más recientes primero',
-    oldestFirst: 'Más antiguos primero',
-    uploaded: 'Subido',
-    noCategoryStudies: 'No hay estudios en esta categoría',
-  },
 };
