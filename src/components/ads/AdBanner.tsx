@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 interface AdBannerProps {
   placementName: string;
   className?: string;
+  disableAutoSticky?: boolean;
 }
 
 export function AdBanner({ placementName, className }: AdBannerProps) {

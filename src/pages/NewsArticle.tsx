@@ -740,11 +740,9 @@ export default function NewsArticle() {
         </section>
       </article>
 
-          {/* Right sidebar ad — desktop only */}
-          <aside className="hidden lg:block self-start">
-            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide">
-              <AdBanner placementName="news_sidebar_right" className="w-full" />
-            </div>
+          {/* Right sidebar ad — tablet+ sticky */}
+          <aside className="hidden md:block self-start sticky top-24">
+            <AdBanner placementName="news_sidebar_right" className="w-full" disableAutoSticky />
           </aside>
         </div>
       </div>

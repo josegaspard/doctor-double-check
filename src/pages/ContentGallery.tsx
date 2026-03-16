@@ -501,9 +501,6 @@ export default function ContentGallery() {
           </div>
         )}
 
-        {/* Top horizontal banner */}
-        <AdBanner placementName="content_inline" className="mb-4 [&_img]:max-h-[140px] [&_img]:sm:max-h-[160px] [&_img]:lg:max-h-[180px]" />
-
         {/* Main content */}
         <div>
           {isLoading ? (
