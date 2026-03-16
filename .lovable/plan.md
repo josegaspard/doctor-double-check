@@ -1,36 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Fix: Remove empty gap next to Premium button
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Problem
-When subscribed, `SubscribeButton` wraps its content in its own `<div className="flex items-center gap-2">` (line 161). Inside the parent `flex-1 min-w-0` container in `DoctorProfile.tsx`, this inner div doesn't stretch to fill the space — creating a visible gap.
+## Solucion
 
-## Solution
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-**`src/pages/DoctorProfile.tsx` (lines 616-635)**
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-Change from `flex` with `flex-1` to a **3-column grid** that guarantees equal sizing with no gaps:
-
-```tsx
-<div className="grid grid-cols-[1fr_1fr_auto] gap-2">
-  <SubscribeButton ... className="w-full" />
-  <Button variant="outline" size="sm" className="w-full gap-1.5" ...>
-    <Video /> Ver Lives
-  </Button>
-  <BlockUserButton size="icon" ... />
-</div>
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-This ensures:
-- Subscribe and Ver Lives each take equal space (1fr)
-- Block icon gets only the space it needs (auto)
-- No empty gaps regardless of subscription state
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-**`src/components/subscriptions/SubscribeButton.tsx`**
+## Archivos a modificar
 
-Add `className` prop support and pass `w-full` to the outer container so it fills the grid cell. Ensure both the subscribed and unsubscribed states render a single button that accepts `className`.
-
-## Files
-1. `src/pages/DoctorProfile.tsx` — Switch to `grid-cols-[1fr_1fr_auto]`
-2. `src/components/subscriptions/SubscribeButton.tsx` — Accept and forward `className` prop to fill container
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |

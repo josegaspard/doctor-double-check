@@ -30,6 +30,7 @@ interface SubscribeButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   showUpgrade?: boolean;
+  className?: string;
   onSubscriptionChange?: () => void;
 }
 
@@ -39,6 +40,7 @@ export function SubscribeButton({
   variant = 'default',
   size = 'default',
   showUpgrade = true,
+  className,
   onSubscriptionChange,
 }: SubscribeButtonProps) {
   const { user, isAuthenticated } = useAuth();
@@ -145,6 +147,7 @@ export function SubscribeButton({
         size={size}
         onClick={handleSubscribe}
         disabled={isLoading}
+        className={className}
       >
         <UserPlus className="h-4 w-4 mr-2" />
         {t('subscriptions.subscribe')}
@@ -158,7 +161,7 @@ export function SubscribeButton({
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className={`flex items-center gap-2 ${className || ''}`}>
         {/* Following button with settings popover */}
         <Popover>
           <PopoverTrigger asChild>
