@@ -557,6 +557,9 @@ export default function UserProfile() {
           </Card>
         </motion.div>
 
+        {/* Clinical History Card - Patient Only */}
+        {role === 'patient' && <PatientClinicalHistoryCard />}
+
         {/* Professional Profile Card - Doctor */}
         {role === 'doctor' && doctorProfile && (
           <motion.div variants={cardVariants}>
