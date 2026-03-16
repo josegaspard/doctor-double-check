@@ -367,7 +367,7 @@ export default function AdminVerifications() {
                             </span>
                             {getStatusBadge(verification.status)}
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                             <span className="flex items-center gap-1">
                               <Mail className="w-3 h-3" />
                               {verification.user?.email}
@@ -376,6 +376,9 @@ export default function AdminVerifications() {
                               <Calendar className="w-3 h-3" />
                               {new Date(verification.created_at).toLocaleDateString()}
                             </span>
+                            <Badge variant="outline" className="text-[10px]">
+                              {verification.provider === 'veriff' ? '🔐 Veriff' : '📄 Manual'}
+                            </Badge>
                           </div>
                         </div>
 

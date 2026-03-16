@@ -1261,6 +1261,34 @@ export default function Onboarding() {
                         </motion.div>
                       )}
 
+                      {/* Identity Verification with Veriff (doctors & residents) */}
+                      {(selectedRole === 'doctor' || selectedRole === 'resident') && supabaseUser && (
+                        <motion.div variants={itemVariants} className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                          <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-primary" />
+                            {language === 'es' ? 'Verificación de identidad (recomendado)' : 'Identity verification (recommended)'}
+                          </p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {language === 'es'
+                              ? 'Verifica tu identidad con reconocimiento biométrico para obtener un badge de verificado en tu perfil. Esto aumenta la confianza de tus pacientes.'
+                              : 'Verify your identity with biometric recognition to get a verified badge on your profile. This increases patient trust.'}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => window.open('/identity-verification', '_blank')}
+                          >
+                            <Shield className="w-3.5 h-3.5" />
+                            {language === 'es' ? 'Verificar identidad' : 'Verify identity'}
+                          </Button>
+                          <p className="text-[10px] text-muted-foreground">
+                            {language === 'es' ? 'Puedes completar esto después si lo prefieres.' : 'You can complete this later if you prefer.'}
+                          </p>
+                        </motion.div>
+                      )}
+
                       {/* Location field for doctors */}
                       {selectedRole === 'doctor' && (
                         <motion.div className="space-y-2" variants={itemVariants}>
