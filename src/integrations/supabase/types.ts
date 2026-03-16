@@ -3095,6 +3095,8 @@ export type Database = {
           avatar_url: string
           bio: string
           consultation_fee: number
+          country_code: string
+          country_flag: string
           followers_count: number
           location: string
           name: string

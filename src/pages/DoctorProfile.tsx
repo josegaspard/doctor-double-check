@@ -43,6 +43,7 @@ interface DoctorData {
   officeHoursStart?: string;
   officeHoursEnd?: string;
   officeDays?: string[];
+  countryFlag?: string;
 }
 
 interface LiveData {
