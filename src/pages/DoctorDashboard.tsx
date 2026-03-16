@@ -32,6 +32,7 @@ export default function DoctorDashboard() {
   const { t } = useLanguage();
   const { getLivesByDoctor } = useLives();
   const { getAccessibleFiles } = useVault();
+  const { hasCampaigns } = useHasAdCampaigns();
   const [recordingsCount, setRecordingsCount] = useState(0);
   const [canPublishNews, setCanPublishNews] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
