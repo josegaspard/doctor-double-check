@@ -382,20 +382,6 @@ export default function LivePlayer() {
     } finally { setIsEnding(false); }
   };
 
-  // Watermark
-  const Watermark = () => {
-    if (!user || role === 'visitor') return null;
-    return (
-      <>
-        <div className="watermark top-4 left-4">
-          {user.email} • {new Date().toISOString().slice(0, 10)}
-        </div>
-        <div className="watermark bottom-4 right-4">
-          ID: {user.id}
-        </div>
-      </>
-    );
-  };
 
   return (
     <MainLayout>
