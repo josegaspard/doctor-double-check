@@ -44,6 +44,7 @@ interface DoctorData {
   officeHoursEnd?: string;
   officeDays?: string[];
   countryFlag?: string;
+  isIdentityVerified?: boolean;
 }
 
 interface LiveData {
