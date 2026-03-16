@@ -71,7 +71,7 @@ export function RecordingChatReplay({ liveId }: RecordingChatReplayProps) {
   }
 
   return (
-    <div className="flex flex-col bg-card rounded-lg border overflow-hidden" style={{ maxHeight: 400 }}>
+    <div className="flex flex-col h-[400px] bg-card rounded-lg border overflow-hidden">
       <div className="p-2 sm:p-3 border-b flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
@@ -82,7 +82,7 @@ export function RecordingChatReplay({ liveId }: RecordingChatReplayProps) {
         </Badge>
       </div>
 
-      <ScrollArea className="flex-1 min-h-0 p-2 sm:p-3">
+      <ScrollArea className="flex-1 h-full min-h-0 p-2 sm:p-3">
         <div className="space-y-2">
           {visibleMessages.map((msg) => (
             <div key={msg.id} className="flex gap-2">

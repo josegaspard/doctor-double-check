@@ -367,7 +367,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start overflow-x-auto scrollbar-hide mx-1 lg:mx-2">
-              <div className="flex items-center gap-px">
+              <div className="flex items-center gap-0">
                 {filteredNavItems.map((item) => {
                   const isActive = location.pathname === item.href;
                   const isPanelItem = item.href === '/doctor/dashboard';
@@ -375,7 +375,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     <Link
                       key={item.href}
                       to={item.href}
-                      className={`relative flex items-center gap-1 px-1.5 lg:px-2 xl:px-2.5 py-1.5 rounded-md text-[11px] lg:text-xs xl:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      className={`relative flex items-center gap-1 px-1 lg:px-1.5 xl:px-2 py-1.5 rounded-md text-[10px] lg:text-[11px] xl:text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                         isActive
                           ? 'text-primary'
                           : isPanelItem
