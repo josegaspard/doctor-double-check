@@ -66,6 +66,11 @@ export function UnifiedFooter({ variant }: Props) {
   const { t } = useLanguage();
   const { config: adConfig } = useAdConfig();
 
+  // Ensure "Para Residentes" always appears in platform links
+  const platformLinks = footerLinks.platform.some(l => l.href === '/for-residents')
+    ? footerLinks.platform
+    : [...footerLinks.platform, { label: 'Para Residentes', href: '/for-residents' }];
+
   // Inject "Publicidad" link into resources when ads are active
   const resourcesLinks = adConfig.is_active
     ? [...footerLinks.resources, { label: t('ads.advertising'), href: '/advertising' }]

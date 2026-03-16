@@ -507,6 +507,7 @@ export const en = {
     doctorManagement: 'Doctor Management',
     residentManagement: 'Resident Management',
     userManagement: 'User Management',
+    manage: 'Manage',
     pendingRequests: 'pending requests',
     registeredUsers: 'registered users',
     searchByNameEmailSpecialty: 'Search by name, specialty or email...',
