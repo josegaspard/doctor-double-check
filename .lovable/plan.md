@@ -1,26 +1,27 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Add verified identity badge to doctor profiles
 
-## Solucion
+## What changes
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+### 1. Database: Update `get_doctor_public_profile` function
+Add `is_identity_verified boolean` to the return type, selecting `p.is_identity_verified` from the profiles table (already exists there).
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+### 2. Frontend: `src/pages/DoctorProfile.tsx`
+- Add `isIdentityVerified` to the `DoctorData` interface
+- Map it from the RPC result: `isIdentityVerified: doctorProfile.is_identity_verified`
+- In the badges section (line ~457), add a conditional verified-identity badge with a `CheckCircle` icon (matching the pattern already used in `Doctors.tsx` and `NutritionDirectory.tsx`):
+  ```tsx
+  {doctor.isIdentityVerified && (
+    <Badge variant="verified" className="gap-1 text-xs">
+      <CheckCircle className="w-3 h-3" />
+      Identidad verificada
+    </Badge>
+  )}
+  ```
+- This replaces the current unconditional "Verified" badge (line 459-462) which always shows regardless of actual verification status
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+### Files to modify
+- **Migration SQL** — `ALTER` the `get_doctor_public_profile` function to include `is_identity_verified`
+- **`src/pages/DoctorProfile.tsx`** — add field to interface, map from data, render badge conditionally
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
-
-## Archivos a modificar
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
