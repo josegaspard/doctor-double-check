@@ -178,6 +178,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const { unreadCount: notifUnread } = useNotifications();
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [pendingEarnings, setPendingEarnings] = useState<number>(0);
+  const { hasCampaigns } = useHasAdCampaigns();
 
   // Fetch pending_earnings for doctors
   useEffect(() => {
