@@ -74,7 +74,7 @@ export default function AdminAds() {
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; revenue: number }[]>([]);
   const [expandedCampaign, setExpandedCampaign] = useState<string | null>(null);
   const [campaignCreatives, setCampaignCreatives] = useState<Creative[]>([]);
-
+  const [advertiserProfiles, setAdvertiserProfiles] = useState<Record<string, AdvertiserProfile>>({});
   const [configForm, setConfigForm] = useState({ is_active: false, cpm_rate: 50, cpc_rate: 5, min_budget: 500, max_file_size_kb: 2048 });
   const [newPlacement, setNewPlacement] = useState({ name: '', display_name: '', description: '', width: 728, height: 90, format: 'banner' });
   const [totalRevenue, setTotalRevenue] = useState(0);
