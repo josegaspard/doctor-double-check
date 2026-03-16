@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { PriceDisplay } from '@/components/currency/PriceDisplay';
 
 interface LiveConsultationBookingProps {
   open: boolean;
@@ -206,7 +207,7 @@ export function LiveConsultationBooking({
                 <p className="text-xs text-muted-foreground">{specialty}</p>
               </div>
               <Badge variant="secondary" className="text-sm font-bold">
-                ${consultationFee} MXN
+                <PriceDisplay amount={consultationFee} size="sm" />
               </Badge>
             </div>
 
@@ -293,7 +294,7 @@ export function LiveConsultationBooking({
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  {t('ads.payAndBook')} ${consultationFee} MXN
+                  {t('ads.payAndBook')} <PriceDisplay amount={consultationFee} size="sm" />
                 </>
               )}
             </Button>

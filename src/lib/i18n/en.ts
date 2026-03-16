@@ -1095,6 +1095,39 @@ export const en = {
     specOther: 'Other',
     // Lives/Recordings filter
     allSpecialties: 'All specialties',
+    // Nutrition specialty
+    specNutrition: 'Nutrition',
+    // Advanced filters
+    moreFilters: 'More filters',
+    minRating: 'Min. rating',
+    level: 'Level',
+    levelNew: 'New',
+    levelActive: 'Active',
+    levelElite: 'Elite',
+    minConsultations: 'Min. consults',
+    clearFilters: 'Clear',
+    continent: 'Continent',
+    country: 'Country',
+    university: 'University / Hospital',
+    allContinents: 'All',
+    allCountries: 'All countries',
+    allUniversities: 'All',
+    americas: 'Americas',
+    europe: 'Europe',
+    asia: 'Asia',
+    // Emergency / Available Now
+    emergencyTitle: 'Doctors Available Now',
+    emergencySubtitle: 'These specialists are attending right now',
+    consultNow: 'Consult Now',
+    noAvailableNow: 'No doctors available right now',
+    // Specialized directories
+    psychologyTitle: 'Psychology Directory',
+    psychologySubtitle: 'Find mental health and emotional well-being specialists',
+    psychologyHero: 'Your mental health matters. Connect with certified professionals.',
+    nutritionTitle: 'Nutrition Directory',
+    nutritionSubtitle: 'Find nutrition and wellness specialists',
+    nutritionHero: 'Transform your health with personalized nutritional guidance.',
+    specNutriology: 'Nutrition',
   },
   // Report
   report: {

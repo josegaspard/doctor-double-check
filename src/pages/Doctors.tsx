@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import {
   Search,
   Star,
@@ -27,11 +28,16 @@ import {
   Clock,
   SlidersHorizontal,
   ChevronDown,
+  AlertCircle,
+  Zap,
+  GraduationCap,
+  Globe,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import { useDebounce } from '@/hooks/use-debounce';
+import { COUNTRY_CURRENCIES } from '@/hooks/useCurrency';
 
 // Haversine distance in km
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -119,6 +125,7 @@ const SPECIALTIES = [
   { value: 'Medicina General', labelKey: 'doctors.specGeneralMedicine' },
   { value: 'Medicina Interna', labelKey: 'doctors.specInternalMedicine' },
   { value: 'Neurología', labelKey: 'doctors.specNeurology' },
+  { value: 'Nutriología', labelKey: 'doctors.specNutriology' },
   { value: 'Oftalmología', labelKey: 'doctors.specOphthalmology' },
   { value: 'Oncología', labelKey: 'doctors.specOncology' },
   { value: 'Ortopedia', labelKey: 'doctors.specOrthopedics' },
@@ -126,6 +133,13 @@ const SPECIALTIES = [
   { value: 'Psiquiatría', labelKey: 'doctors.specPsychiatry' },
   { value: 'Urología', labelKey: 'doctors.specUrology' },
 ];
+
+// Continent → Country mapping for geo filters
+const CONTINENTS: Record<string, string[]> = {
+  americas: ['MX', 'US', 'CA', 'CO', 'AR', 'CL', 'PE', 'BR', 'EC', 'UY', 'PY', 'BO', 'VE', 'CR', 'PA', 'GT', 'HN', 'SV', 'NI', 'DO', 'CU'],
+  europe: ['ES', 'GB'],
+  asia: [],
+};
 
 const DOCTORS_PER_PAGE = 20;
 
@@ -162,10 +176,29 @@ export default function Doctors() {
   const [minRating, setMinRating] = useState(0);
   const [selectedLevel, setSelectedLevel] = useState('');
   const [minConsultations, setMinConsultations] = useState(0);
+  const [selectedContinent, setSelectedContinent] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedUniversity, setSelectedUniversity] = useState('');
+  const [universities, setUniversities] = useState<string[]>([]);
   const [, setTick] = useState(0);
 
   const fetchDoctorsStableRef = useRef<() => void>(() => {});
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Fetch universities for filter
+  useEffect(() => {
+    const fetchUniversities = async () => {
+      const { data } = await supabase
+        .from('doctor_education')
+        .select('institution')
+        .eq('status', 'approved');
+      if (data) {
+        const unique = [...new Set(data.map(d => d.institution).filter(Boolean))].sort();
+        setUniversities(unique);
+      }
+    };
+    fetchUniversities();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60_000);
@@ -342,90 +375,208 @@ export default function Doctors() {
           <CollapsibleTrigger asChild>
             <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2 px-1">
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              Más filtros
+              {t('doctors.moreFilters')}
               <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
-              {(minRating > 0 || selectedLevel || minConsultations > 0) && (
+              {(minRating > 0 || selectedLevel || minConsultations > 0 || selectedContinent || selectedCountry || selectedUniversity) && (
                 <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
-                  {[minRating > 0 && '⭐', selectedLevel && '🏷', minConsultations > 0 && '📊'].filter(Boolean).length}
+                  {[minRating > 0, selectedLevel, minConsultations > 0, selectedContinent, selectedCountry, selectedUniversity].filter(Boolean).length}
                 </Badge>
               )}
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="mb-3">
-            <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted/30 border">
-              {/* Min Rating */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-muted-foreground whitespace-nowrap">Rating mín.</span>
-                <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map(star => (
-                    <button
-                      key={star}
-                      onClick={() => setMinRating(minRating === star ? 0 : star)}
-                      className="p-0.5"
-                    >
-                      <Star className={`w-3.5 h-3.5 transition-colors ${
-                        star <= minRating ? 'text-warning fill-warning' : 'text-muted-foreground/30'
-                      }`} />
-                    </button>
-                  ))}
+            <div className="space-y-3 p-3 rounded-lg bg-muted/30 border">
+              {/* Row 1: Rating, Level, Consultations */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Min Rating */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('doctors.minRating')}</span>
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        onClick={() => setMinRating(minRating === star ? 0 : star)}
+                        className="p-0.5"
+                      >
+                        <Star className={`w-3.5 h-3.5 transition-colors ${
+                          star <= minRating ? 'text-warning fill-warning' : 'text-muted-foreground/30'
+                        }`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="w-px h-6 bg-border hidden sm:block" />
+
+                {/* Level */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('doctors.level')}</span>
+                  <div className="flex gap-1">
+                    {[
+                      { value: 'new', label: t('doctors.levelNew') },
+                      { value: 'active', label: t('doctors.levelActive') },
+                      { value: 'elite', label: t('doctors.levelElite') },
+                    ].map(level => (
+                      <button
+                        key={level.value}
+                        onClick={() => setSelectedLevel(selectedLevel === level.value ? '' : level.value)}
+                        className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all border ${
+                          selectedLevel === level.value
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-card text-muted-foreground border-border hover:border-primary/40'
+                        }`}
+                      >
+                        {level.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="w-px h-6 bg-border hidden sm:block" />
+
+                {/* Min consultations */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('doctors.minConsultations')}</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={minConsultations || ''}
+                    onChange={(e) => setMinConsultations(Number(e.target.value) || 0)}
+                    className="h-7 w-16 text-xs"
+                  />
                 </div>
               </div>
 
-              <div className="w-px h-6 bg-border hidden sm:block" />
-
-              {/* Level */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-muted-foreground whitespace-nowrap">Nivel</span>
-                <div className="flex gap-1">
-                  {[
-                    { value: 'new', label: 'Nuevo' },
-                    { value: 'active', label: 'Activo' },
-                    { value: 'elite', label: 'Elite' },
-                  ].map(level => (
-                    <button
-                      key={level.value}
-                      onClick={() => setSelectedLevel(selectedLevel === level.value ? '' : level.value)}
-                      className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all border ${
-                        selectedLevel === level.value
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-card text-muted-foreground border-border hover:border-primary/40'
-                      }`}
-                    >
-                      {level.label}
-                    </button>
-                  ))}
+              {/* Row 2: Continent, Country, University */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Continent */}
+                <div className="flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('doctors.continent')}</span>
+                  <div className="flex gap-1">
+                    {[
+                      { value: '', label: t('doctors.allContinents') },
+                      { value: 'americas', label: t('doctors.americas') },
+                      { value: 'europe', label: t('doctors.europe') },
+                    ].map(c => (
+                      <button
+                        key={c.value}
+                        onClick={() => { setSelectedContinent(selectedContinent === c.value ? '' : c.value); setSelectedCountry(''); }}
+                        className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all border ${
+                          selectedContinent === c.value
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-card text-muted-foreground border-border hover:border-primary/40'
+                        }`}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="w-px h-6 bg-border hidden sm:block" />
+                <div className="w-px h-6 bg-border hidden sm:block" />
 
-              {/* Min consultations */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-muted-foreground whitespace-nowrap">Consultas mín.</span>
-                <Input
-                  type="number"
-                  min={0}
-                  placeholder="0"
-                  value={minConsultations || ''}
-                  onChange={(e) => setMinConsultations(Number(e.target.value) || 0)}
-                  className="h-7 w-16 text-xs"
-                />
+                {/* Country (filtered by continent) */}
+                {selectedContinent && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('doctors.country')}</span>
+                    <select
+                      value={selectedCountry}
+                      onChange={(e) => setSelectedCountry(e.target.value)}
+                      className="h-7 text-xs rounded-md border bg-card px-2 py-1"
+                    >
+                      <option value="">{t('doctors.allCountries')}</option>
+                      {(CONTINENTS[selectedContinent] || []).map(code => {
+                        const info = COUNTRY_CURRENCIES[code];
+                        return info ? (
+                          <option key={code} value={code}>{info.flag} {info.name}</option>
+                        ) : null;
+                      })}
+                    </select>
+                  </div>
+                )}
+
+                <div className="w-px h-6 bg-border hidden sm:block" />
+
+                {/* University/Hospital */}
+                {universities.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <GraduationCap className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('doctors.university')}</span>
+                    <select
+                      value={selectedUniversity}
+                      onChange={(e) => setSelectedUniversity(e.target.value)}
+                      className="h-7 text-xs rounded-md border bg-card px-2 py-1 max-w-[180px]"
+                    >
+                      <option value="">{t('doctors.allUniversities')}</option>
+                      {universities.map(uni => (
+                        <option key={uni} value={uni}>{uni}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               {/* Reset */}
-              {(minRating > 0 || selectedLevel || minConsultations > 0) && (
+              {(minRating > 0 || selectedLevel || minConsultations > 0 || selectedContinent || selectedCountry || selectedUniversity) && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 text-[10px] px-2 text-muted-foreground"
-                  onClick={() => { setMinRating(0); setSelectedLevel(''); setMinConsultations(0); }}
+                  onClick={() => { setMinRating(0); setSelectedLevel(''); setMinConsultations(0); setSelectedContinent(''); setSelectedCountry(''); setSelectedUniversity(''); }}
                 >
-                  Limpiar
+                  {t('doctors.clearFilters')}
                 </Button>
               )}
             </div>
           </CollapsibleContent>
         </Collapsible>
+
+        {/* Emergency / Available Now Banner */}
+        {!isLoading && (() => {
+          const availableDoctors = doctors.filter(isDoctorAvailableNow);
+          if (availableDoctors.length === 0) return null;
+          return (
+            <div className="mb-4 p-3 sm:p-4 rounded-xl border-2 border-success/30 bg-success/5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="relative">
+                  <Zap className="w-5 h-5 text-success" />
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-success animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">{t('doctors.emergencyTitle')}</h3>
+                  <p className="text-[10px] text-muted-foreground">{t('doctors.emergencySubtitle')}</p>
+                </div>
+                <Badge variant="secondary" className="ml-auto text-[10px] gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  {availableDoctors.length}
+                </Badge>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
+                {availableDoctors.slice(0, 6).map(doc => (
+                  <button
+                    key={doc.id}
+                    onClick={() => navigate(`/doctor/${doc.user_id}`)}
+                    className="flex-shrink-0 snap-start flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-success/20 hover:border-success/50 transition-colors min-w-[200px]"
+                  >
+                    <Avatar className="w-8 h-8 border border-success/30">
+                      <AvatarImage src={doc.avatar_url || undefined} />
+                      <AvatarFallback className="bg-success/10 text-success text-xs font-bold">
+                        {getInitials(doc.name || 'Dr')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-xs font-medium truncate">{doc.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{doc.specialty}</p>
+                    </div>
+                    <PriceDisplay amount={doc.consultation_fee} size="sm" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Results count */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
@@ -529,9 +680,9 @@ export default function Doctors() {
                             </div>
                           </div>
 
-                          {/* Fee */}
                           <div className="flex-shrink-0 text-right">
-                            <span className="text-lg font-bold text-foreground">${doctor.consultation_fee}</span>
+                            <PriceDisplay amount={doctor.consultation_fee} size="lg" />
+                            <p className="text-[10px] text-muted-foreground -mt-0.5">{t('doctors.perConsult') || 'consulta'}</p>
                             <p className="text-[10px] text-muted-foreground -mt-0.5">{t('doctors.perConsult') || 'consulta'}</p>
                           </div>
                         </div>

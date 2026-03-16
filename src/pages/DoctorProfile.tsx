@@ -17,6 +17,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard, Clock, Shield } from 'lucide-react';
+import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import { BlockUserButton } from '@/components/blocks/BlockUserButton';
@@ -494,7 +495,7 @@ export default function DoctorProfile() {
                 {isFreeConsultation ? (
                   <p className="text-lg sm:text-xl font-bold text-success">{t('doctorProfile.free')}</p>
                 ) : (
-                  <p className="text-lg sm:text-xl font-bold text-premium">${doctor.consultationFee}</p>
+                  <p className="text-lg sm:text-xl font-bold text-premium"><PriceDisplay amount={doctor.consultationFee} size="lg" /></p>
                 )}
                 <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.consultation')}</p>
               </div>
@@ -602,7 +603,11 @@ export default function DoctorProfile() {
                     ? t('doctorProfile.freeConsultation')
                     : canChatDirectly 
                       ? t('doctorProfile.startConsultation')
-                      : `${t('doctorProfile.consultation')} ($${doctor.consultationFee})`
+                      : (
+                        <>
+                          {t('doctorProfile.consultation')} (<PriceDisplay amount={doctor.consultationFee} size="sm" />)
+                        </>
+                      )
                 }
               </Button>
 
