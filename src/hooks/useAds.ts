@@ -48,7 +48,6 @@ const DEFAULT_CONFIG: AdConfig = {
   allowed_formats: ['image', 'gif', 'video'],
 };
 
-// Cache config globally so all hooks share it
 let cachedConfig: AdConfig | null = null;
 let configFetchPromise: Promise<AdConfig> | null = null;
 
@@ -116,22 +115,26 @@ export function useAdPlacements() {
   return { placements, isLoading, refetch: fetchPlacements };
 }
 
+const ROTATION_INTERVAL_MS = 8000;
+
 export function useAdCreative(placementName: string) {
   const { user, role } = useAuth();
   const { language } = useLanguage();
   const [creative, setCreative] = useState<AdCreativeWithFormat | null>(null);
   const [isActive, setIsActive] = useState(false);
+  const allCreativesRef = useRef<AdCreativeWithFormat[]>([]);
+  const currentIndexRef = useRef(0);
   const impressionTracked = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const load = async () => {
       const config = await fetchAdConfig();
       if (!config.is_active || cancelled) { setIsActive(false); return; }
       setIsActive(true);
 
-      // Get placement
       const { data: placement } = await supabase
         .from('ad_placements' as any)
         .select('id, format, name')
@@ -142,7 +145,6 @@ export function useAdCreative(placementName: string) {
       if (!placement || cancelled) return;
       const p = placement as any;
 
-      // Get active creative for this placement
       const { data: creatives } = await supabase
         .from('ad_creatives' as any)
         .select('id, campaign_id, placement_id, media_url, media_type, click_url, alt_text')
@@ -151,7 +153,6 @@ export function useAdCreative(placementName: string) {
 
       if (!creatives || creatives.length === 0 || cancelled) return;
 
-      // Filter by user role/language from the campaign
       const campaignIds = [...new Set((creatives as any[]).map((c: any) => c.campaign_id))];
       const { data: campaigns } = await supabase
         .from('ad_campaigns' as any)
@@ -171,20 +172,36 @@ export function useAdCreative(placementName: string) {
           .map((c: any) => c.id)
       );
 
-      const validCreatives = (creatives as any[]).filter((c: any) => validCampaignIds.has(c.campaign_id));
-      if (validCreatives.length === 0) return;
+      const validCreatives: AdCreativeWithFormat[] = (creatives as any[])
+        .filter((c: any) => validCampaignIds.has(c.campaign_id))
+        .map((c: any) => ({
+          ...c,
+          placement_format: p.format,
+          placement_name: p.name,
+        }));
 
-      // Random pick
-      const picked = validCreatives[Math.floor(Math.random() * validCreatives.length)];
-      setCreative({
-        ...picked,
-        placement_format: p.format,
-        placement_name: p.name,
-      });
+      if (validCreatives.length === 0 || cancelled) return;
+
+      allCreativesRef.current = validCreatives;
+      const startIndex = Math.floor(Math.random() * validCreatives.length);
+      currentIndexRef.current = startIndex;
+      setCreative(validCreatives[startIndex]);
+
+      // Set up rotation if multiple creatives
+      if (validCreatives.length > 1) {
+        intervalId = setInterval(() => {
+          if (cancelled) return;
+          currentIndexRef.current = (currentIndexRef.current + 1) % allCreativesRef.current.length;
+          setCreative(allCreativesRef.current[currentIndexRef.current]);
+        }, ROTATION_INTERVAL_MS);
+      }
     };
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [placementName, role, language]);
 
   const trackImpression = useCallback(async () => {

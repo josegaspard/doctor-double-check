@@ -12,13 +12,22 @@ interface AdBannerProps {
 export function AdBanner({ placementName, className, disableAutoSticky }: AdBannerProps) {
   const { creative, isActive, trackImpression, trackClick } = useAdCreative(placementName);
   const { t } = useLanguage();
-  const impressionSent = useRef(false);
+  const prevCreativeId = useRef<string | null>(null);
   const [imgError, setImgError] = useState(false);
+  const [fading, setFading] = useState(false);
 
+  // Track impression on each creative change
   useEffect(() => {
-    if (creative && !impressionSent.current) {
-      impressionSent.current = true;
-      trackImpression();
+    if (creative && creative.id !== prevCreativeId.current) {
+      // Fade transition
+      setFading(true);
+      const fadeTimer = setTimeout(() => {
+        prevCreativeId.current = creative.id;
+        setImgError(false);
+        trackImpression();
+        setFading(false);
+      }, 200);
+      return () => clearTimeout(fadeTimer);
     }
   }, [creative, trackImpression]);
 
@@ -36,7 +45,6 @@ export function AdBanner({ placementName, className, disableAutoSticky }: AdBann
   const isVertical = format === 'vertical' || format === 'sidebar';
   const isInline = creative.placement_name?.includes('inline');
 
-  // Responsive classes based on placement format
   const mediaClasses = cn(
     'w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02]',
     isVertical
@@ -50,7 +58,8 @@ export function AdBanner({ placementName, className, disableAutoSticky }: AdBann
     <div
       className={cn(
         'relative rounded-xl overflow-hidden cursor-pointer group border border-border/50 bg-muted/30',
-        'w-full',
+        'w-full transition-opacity duration-300',
+        fading ? 'opacity-0' : 'opacity-100',
         isVertical && !disableAutoSticky && 'lg:sticky lg:top-4',
         className
       )}
@@ -84,7 +93,6 @@ export function AdBanner({ placementName, className, disableAutoSticky }: AdBann
         />
       )}
 
-      {/* App Store compliance label */}
       <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-background/70 text-[10px] font-medium text-muted-foreground backdrop-blur-sm">
         {t('ads.adLabel')}
       </span>
