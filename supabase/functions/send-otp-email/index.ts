@@ -73,6 +73,27 @@ async function sendSms(phone: string, message: string): Promise<boolean> {
   return sendSmsVonage(phone, message);
 }
 
+async function sendSmsTextbelt(to: string, message: string): Promise<boolean> {
+  try {
+    const resp = await fetch("https://textbelt.com/text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: to.replace(/\D/g, ''),
+        message,
+        key: SMS_API_KEY,
+      }),
+    });
+    const data = await resp.json();
+    const success = data?.success === true;
+    logStep("Textbelt SMS result", { success, quotaRemaining: data?.quotaRemaining });
+    return success;
+  } catch (e) {
+    logStep("Textbelt SMS error", { error: String(e) });
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
