@@ -20,8 +20,9 @@ import {
   Megaphone, Settings, LayoutGrid, BarChart3, Loader2,
   CheckCircle, XCircle, Pause, Play, Eye, MousePointerClick,
   DollarSign, TrendingUp, ArrowLeft, Users, Calendar,
-  FileDown, ExternalLink, Image as ImageIcon, Trash2,
+  FileDown, ExternalLink, Image as ImageIcon, Trash2, Wallet,
 } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { format, subDays } from 'date-fns';
 
 interface Campaign {
