@@ -50,8 +50,7 @@ export function AdBanner({ placementName, className, disableAutoSticky }: AdBann
     <div
       className={cn(
         'relative rounded-xl overflow-hidden cursor-pointer group border border-border/50 bg-muted/30',
-        'w-full transition-opacity duration-300',
-        fading ? 'opacity-0' : 'opacity-100',
+        'w-full',
         isVertical && !disableAutoSticky && 'lg:sticky lg:top-4',
         className
       )}
