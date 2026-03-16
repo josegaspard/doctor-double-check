@@ -311,6 +311,11 @@ export default function ContentGallery() {
     }
   }, []);
 
+  // Force scroll to top on mount (fixes mobile scroll issue)
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     fetchContents();
   }, [fetchContents]);
