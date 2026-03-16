@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard, Clock, Shield } from 'lucide-react';
+import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard, Clock, Shield, CheckCircle } from 'lucide-react';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
@@ -44,6 +44,7 @@ interface DoctorData {
   officeHoursEnd?: string;
   officeDays?: string[];
   countryFlag?: string;
+  isIdentityVerified?: boolean;
 }
 
 interface LiveData {
@@ -118,6 +119,7 @@ export default function DoctorProfile() {
           officeHoursEnd: doctorProfile.office_hours_end || undefined,
           officeDays: doctorProfile.office_days || undefined,
           countryFlag: doctorProfile.country_flag || undefined,
+          isIdentityVerified: (doctorProfile as any).is_identity_verified || false,
         });
 
         const { data: liveData } = await supabase
@@ -456,10 +458,12 @@ export default function DoctorProfile() {
                 {/* Badges — minimal on mobile */}
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
                   <DoctorBadge type={getDoctorBadgeType(doctor.totalConsultations, doctor.rating, (doctor as any).badgeOverride)} size="sm" />
-                  <Badge variant="verified" className="gap-1 text-xs">
-                    <Award className="w-3 h-3" />
-                    {t('doctorProfile.verified')}
-                  </Badge>
+                  {doctor.isIdentityVerified && (
+                    <Badge variant="verified" className="gap-1 text-xs">
+                      <CheckCircle className="w-3 h-3" />
+                      {t('doctorProfile.verified')}
+                    </Badge>
+                  )}
                   {/* Followers — hidden on mobile to reduce clutter */}
                   <Badge variant="secondary" className="gap-1 text-xs overflow-hidden hidden sm:inline-flex">
                     <Users className="w-3 h-3" />
