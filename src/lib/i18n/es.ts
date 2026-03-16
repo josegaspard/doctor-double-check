@@ -904,6 +904,10 @@ export const es = {
     noStudiesToExport: 'No hay estudios para exportar',
     privacyTitle: 'Tu historial es privado',
     privacyDescription: 'Solo tú puedes ver estos archivos. Cuando tengas una orientación médica, puedes compartir archivos específicos con tu médico desde la sección Vault.',
+    newestFirst: 'Más recientes primero',
+    oldestFirst: 'Más antiguos primero',
+    uploaded: 'Subido',
+    noCategoryStudies: 'No hay estudios en esta categoría',
   },
   // Clinical Sessions
   clinicalSessions: {
