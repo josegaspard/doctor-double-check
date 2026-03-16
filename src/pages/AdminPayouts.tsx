@@ -237,6 +237,102 @@ export default function AdminPayouts() {
     }
   };
 
+  // Load all wallet transactions for admin
+  const loadAllTransactions = async () => {
+    setTxLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      if (error) { console.error('Error loading transactions:', error); return; }
+      if (!data) return;
+
+      setAllTransactions(data);
+
+      // Fetch profile names
+      const userIds = [...new Set(data.map((t: any) => t.user_id))];
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds);
+        setTxProfileMap(new Map(profiles?.map(p => [p.id, { name: p.name, avatar_url: p.avatar_url }]) || []));
+      }
+    } catch (err) {
+      console.error('Unexpected error loading transactions:', err);
+    } finally {
+      setTxLoading(false);
+    }
+  };
+
+  // Load transactions when tab switches
+  useEffect(() => {
+    if (activeTab === 'transactions' && allTransactions.length === 0) {
+      loadAllTransactions();
+    }
+  }, [activeTab]);
+
+  const filteredTransactions = allTransactions.filter(tx => {
+    const matchesType = txTypeFilter === 'all' || tx.type === txTypeFilter;
+    const userName = txProfileMap.get(tx.user_id)?.name || '';
+    const matchesSearch = !txSearch || userName.toLowerCase().includes(txSearch.toLowerCase()) || tx.description?.toLowerCase().includes(txSearch.toLowerCase());
+    return matchesType && matchesSearch;
+  });
+
+  const txTotals = filteredTransactions.reduce((acc, tx) => {
+    acc[tx.type] = (acc[tx.type] || 0) + Number(tx.amount);
+    return acc;
+  }, {} as Record<string, number>);
+
+  const exportTransactionsCSV = () => {
+    const rows = filteredTransactions.map(tx => ({
+      Fecha: format(new Date(tx.created_at), 'yyyy-MM-dd HH:mm'),
+      Usuario: txProfileMap.get(tx.user_id)?.name || tx.user_id,
+      Tipo: tx.type,
+      Monto: tx.amount,
+      Descripción: tx.description,
+      Estado: tx.status,
+    }));
+    if (!rows.length) return;
+    const headers = Object.keys(rows[0]);
+    const csvRows = [
+      headers.join(','),
+      ...rows.map(row => headers.map(h => {
+        const val = String((row as any)[h] ?? '');
+        return val.includes(',') || val.includes('"') ? `"${val.replace(/"/g, '""')}"` : val;
+      }).join(','))
+    ];
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transacciones_${format(new Date(), 'yyyyMMdd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const getTxTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      topup: language === 'es' ? 'Recarga' : 'Top-up',
+      purchase: language === 'es' ? 'Compra' : 'Purchase',
+      refund: language === 'es' ? 'Reembolso' : 'Refund',
+      subscription: language === 'es' ? 'Suscripción' : 'Subscription',
+      earning: language === 'es' ? 'Ganancia' : 'Earning',
+    };
+    return labels[type] || type;
+  };
+
+  const getTxTypeBadgeVariant = (type: string) => {
+    switch (type) {
+      case 'topup': return 'info' as const;
+      case 'purchase': return 'default' as const;
+      case 'refund': return 'destructive' as const;
+      case 'subscription': return 'verified' as const;
+      case 'earning': return 'success' as const;
+      default: return 'outline' as const;
+    }
+  };
+
   const getNetAmount = (gross: number) => {
     const commission = gross * (settings.commission_percentage / 100);
     return gross - commission;
