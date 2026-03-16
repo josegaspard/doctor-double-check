@@ -112,6 +112,8 @@ const AdminRanks = React.lazy(() => import("./pages/AdminRanks"));
 const AdminAds = React.lazy(() => import("./pages/AdminAds"));
 const Advertising = React.lazy(() => import("./pages/Advertising"));
 const AdvertiserDashboard = React.lazy(() => import("./pages/AdvertiserDashboard"));
+const PsychologyDirectory = React.lazy(() => import("./pages/PsychologyDirectory"));
+const NutritionDirectory = React.lazy(() => import("./pages/NutritionDirectory"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
