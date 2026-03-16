@@ -1,26 +1,20 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Doctor Profile Action Buttons — Single Row + MXN Color Fix
 
-## Solucion
+## Changes
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+### 1. `src/pages/DoctorProfile.tsx` (lines 615-637)
+- Change the secondary actions from `grid-cols-2` + separate block row → **single row with all 3 buttons**: Subscribe, Ver Lives, Bloquear
+- Use `flex` with `gap-2` and equal sizing so all 3 fit in one row
+- Remove the separate "Tertiary" block section — move BlockUserButton inline
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+### 2. `src/components/currency/PriceDisplay.tsx` (line 29)
+- The currency label uses `text-muted-foreground` which is invisible on the dark primary button background
+- Add an `inheritColor` prop (or just use `inherit` when inside a button context)
+- Simpler fix: change line 29 to use `text-current opacity-70` instead of `text-muted-foreground`, so it inherits the parent's text color (white on primary buttons, dark on light backgrounds)
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+## Files
+1. `src/pages/DoctorProfile.tsx` — Flatten 3 buttons into 1 row
+2. `src/components/currency/PriceDisplay.tsx` — Fix currency label to inherit parent color
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
-
-## Archivos a modificar
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
