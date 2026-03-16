@@ -142,6 +142,60 @@ serve(async (req) => {
       } catch (emailErr) {
         console.warn("Email notification failed:", emailErr);
       }
+
+      // Send push notification for final statuses
+      if (dbStatus === "verified" || dbStatus === "failed") {
+        try {
+          const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
+          const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
+
+          if (vapidPublicKey && vapidPrivateKey) {
+            webpush.setVapidDetails("mailto:push@docseek.app", vapidPublicKey, vapidPrivateKey);
+
+            const { data: pushSubs } = await supabase
+              .from("push_subscriptions")
+              .select("id, endpoint, p256dh, auth")
+              .eq("user_id", existingRecord.user_id);
+
+            if (pushSubs && pushSubs.length > 0) {
+              const pushTitle = dbStatus === "verified"
+                ? "✅ Identidad verificada"
+                : "❌ Verificación fallida";
+              const pushBody = dbStatus === "verified"
+                ? "Tu identidad ha sido verificada exitosamente"
+                : "Tu verificación de identidad no fue aprobada. Puedes intentarlo de nuevo.";
+
+              const payload = JSON.stringify({
+                title: pushTitle,
+                body: pushBody,
+                data: { url: "/verify-identity" },
+                tag: "identity-verification",
+              });
+
+              for (const sub of pushSubs) {
+                try {
+                  await webpush.sendNotification(
+                    { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+                    payload
+                  );
+                } catch (pushErr: any) {
+                  if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
+                    await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+                    console.log(`Removed expired push subscription: ${sub.id}`);
+                  } else {
+                    console.warn(`Push error for ${sub.id}:`, pushErr.message);
+                  }
+                }
+              }
+              console.log(`Sent identity verification push to ${pushSubs.length} subscriptions`);
+            }
+          } else {
+            console.warn("VAPID keys not configured, skipping push notification");
+          }
+        } catch (pushErr) {
+          console.warn("Push notification failed:", pushErr);
+        }
+      }
     } else {
       console.warn("No verification record found for session:", sessionId);
     }
