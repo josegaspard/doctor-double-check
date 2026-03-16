@@ -365,8 +365,6 @@ export default function AdvertiserDashboard() {
               <p className="text-[10px] text-muted-foreground">CTR</p>
             </CardContent></Card>
           </div>
-            </CardContent></Card>
-          </div>
 
           {/* Performance Chart */}
           {dailyEvents.length > 0 && (
