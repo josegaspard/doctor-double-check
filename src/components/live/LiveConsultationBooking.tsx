@@ -294,7 +294,7 @@ export function LiveConsultationBooking({
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  {t('ads.payAndBook')} ${consultationFee} MXN
+                  {t('ads.payAndBook')} <PriceDisplay amount={consultationFee} size="sm" />
                 </>
               )}
             </Button>
