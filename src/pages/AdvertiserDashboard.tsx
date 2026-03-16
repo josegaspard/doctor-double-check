@@ -19,7 +19,7 @@ import {
   Megaphone, Plus, Eye, MousePointerClick, DollarSign,
   Loader2, BarChart3, ArrowLeft, Calendar, Users,
   Upload, Image as ImageIcon, TrendingUp, FileDown, CreditCard,
-  Trash2, ExternalLink,
+  Trash2, ExternalLink, Wallet, Lightbulb, Target,
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 
@@ -259,6 +259,38 @@ export default function AdvertiserDashboard() {
   if (selectedCampaign && campaign) {
     const stats = campaignStats[campaign.id] || { impressions: 0, clicks: 0 };
     const ctr = stats.impressions > 0 ? ((stats.clicks / stats.impressions) * 100).toFixed(2) : '0.00';
+    const calculatedSpent = (stats.impressions / 1000 * config.cpm_rate) + (stats.clicks * config.cpc_rate);
+    const remaining = Math.max(0, Number(campaign.budget) - calculatedSpent);
+    const budgetUsedPct = Number(campaign.budget) > 0 ? Math.min(100, (calculatedSpent / Number(campaign.budget)) * 100) : 0;
+
+    // Insights: best performing placement
+    const placementStats: Record<string, { imp: number; clicks: number }> = {};
+    creatives.forEach(cr => {
+      if (!placementStats[cr.placement_id]) placementStats[cr.placement_id] = { imp: 0, clicks: 0 };
+    });
+
+    // Role-based insights (from daily events user_role if available)
+    const roleStats: Record<string, number> = {};
+    dailyEvents.forEach(d => { roleStats['all'] = (roleStats['all'] || 0) + d.clicks; });
+
+    const exportCampaignPDF = () => {
+      const tableHTML = `
+        <div class="summary">
+          <p>Campaña: <span>${campaign.name}</span></p>
+          <p>Estado: <span>${statusLabels[campaign.status] || campaign.status}</span></p>
+          <p>Presupuesto: <span>$${Number(campaign.budget).toLocaleString()} MXN</span></p>
+          <p>Gastado: <span>$${calculatedSpent.toFixed(2)} MXN</span></p>
+          <p>Saldo restante: <span>$${remaining.toFixed(2)} MXN</span></p>
+        </div>
+        <table><thead><tr><th>Métrica</th><th>Valor</th></tr></thead><tbody>
+          <tr><td>Impresiones</td><td>${stats.impressions.toLocaleString()}</td></tr>
+          <tr><td>Clics</td><td>${stats.clicks}</td></tr>
+          <tr><td>CTR</td><td>${ctr}%</td></tr>
+          <tr><td>CPM efectivo</td><td>$${stats.impressions > 0 ? ((calculatedSpent / stats.impressions) * 1000).toFixed(2) : '0'}</td></tr>
+          <tr><td>CPC efectivo</td><td>$${stats.clicks > 0 ? (calculatedSpent / stats.clicks).toFixed(2) : '0'}</td></tr>
+        </tbody></table>`;
+      exportToPDF(`Reporte - ${campaign.name}`, tableHTML);
+    };
 
     return (
       <MainLayout>
@@ -273,14 +305,47 @@ export default function AdvertiserDashboard() {
                 {statusLabels[campaign.status] || campaign.status}
               </Badge>
             </div>
-            {campaign.status === 'draft' && (
-              <Button size="sm" className="gap-1.5" disabled={isPaying || creatives.length === 0}
-                onClick={() => payCampaign(campaign.id, campaign.budget)}>
-                {isPaying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                {t('ads.payActivate')}
+            <div className="flex items-center gap-1.5">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={exportCampaignPDF} title="PDF">
+                <FileDown className="w-4 h-4" />
               </Button>
-            )}
+              {campaign.status === 'draft' && (
+                <Button size="sm" className="gap-1.5" disabled={isPaying || creatives.length === 0}
+                  onClick={() => payCampaign(campaign.id, campaign.budget)}>
+                  {isPaying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                  {t('ads.payActivate')}
+                </Button>
+              )}
+            </div>
           </div>
+
+          {/* Budget & Balance */}
+          <Card className="mb-4 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold">{es ? 'Balance de Campaña' : 'Campaign Balance'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">${Number(campaign.budget).toLocaleString()}</p>
+                  <p className="text-[10px] text-muted-foreground">{es ? 'Presupuesto' : 'Budget'}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-warning">${calculatedSpent.toFixed(0)}</p>
+                  <p className="text-[10px] text-muted-foreground">{es ? 'Gastado' : 'Spent'}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-success">${remaining.toFixed(0)}</p>
+                  <p className="text-[10px] text-muted-foreground">{es ? 'Restante' : 'Remaining'}</p>
+                </div>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${budgetUsedPct}%` }} />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1 text-right">{budgetUsedPct.toFixed(1)}% {es ? 'usado' : 'used'}</p>
+            </CardContent>
+          </Card>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3 mb-6">
@@ -391,6 +456,51 @@ export default function AdvertiserDashboard() {
               })}
             </CardContent>
           </Card>
+
+          {/* Recommendations & Insights */}
+          <Card className="mb-6 border-primary/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-warning" />
+                {es ? 'Recomendaciones' : 'Recommendations'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {stats.impressions > 0 && stats.clicks === 0 && (
+                <p className="text-xs text-muted-foreground">💡 {es ? 'Tu campaña tiene impresiones pero ningún clic. Considera mejorar el diseño del creativo o el call-to-action.' : 'Your campaign has impressions but no clicks. Consider improving your creative design or call-to-action.'}</p>
+              )}
+              {stats.impressions > 0 && Number(ctr) < 1 && stats.clicks > 0 && (
+                <p className="text-xs text-muted-foreground">📊 {es ? 'Tu CTR está por debajo del 1%. Prueba diferentes ubicaciones o audiencias para mejorar el rendimiento.' : 'Your CTR is below 1%. Try different placements or audiences to improve performance.'}</p>
+              )}
+              {Number(ctr) >= 1 && (
+                <p className="text-xs text-muted-foreground">🎯 {es ? '¡Buen CTR! Tu campaña está funcionando bien. Considera aumentar el presupuesto para maximizar el alcance.' : 'Good CTR! Your campaign is performing well. Consider increasing the budget to maximize reach.'}</p>
+              )}
+              {remaining < Number(campaign.budget) * 0.2 && remaining > 0 && (
+                <p className="text-xs text-muted-foreground">⚠️ {es ? 'Tu presupuesto se está agotando. Considera recargar para mantener la campaña activa.' : 'Your budget is running low. Consider topping up to keep the campaign active.'}</p>
+              )}
+              {creatives.length === 0 && (
+                <p className="text-xs text-muted-foreground">🖼️ {es ? 'Sube creativos para que tu campaña empiece a mostrar anuncios.' : 'Upload creatives so your campaign can start showing ads.'}</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {campaign.status === 'completed' && (
+            <Card className="border-success/20 bg-success/5">
+              <CardContent className="p-4 text-center">
+                <Target className="w-8 h-8 text-success mx-auto mb-2" />
+                <h3 className="font-semibold mb-1">{es ? '¡Campaña Finalizada!' : 'Campaign Completed!'}</h3>
+                <p className="text-xs text-muted-foreground mb-3">{es ? 'Exporta los resultados y crea una nueva campaña.' : 'Export the results and create a new campaign.'}</p>
+                <div className="flex gap-2 justify-center">
+                  <Button variant="outline" size="sm" onClick={exportCampaignPDF} className="gap-1.5">
+                    <FileDown className="w-3.5 h-3.5" /> PDF
+                  </Button>
+                  <Button size="sm" onClick={() => { setSelectedCampaign(null); setShowCreate(true); }} className="gap-1.5">
+                    <Plus className="w-3.5 h-3.5" /> {es ? 'Nueva Campaña' : 'New Campaign'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </MainLayout>
     );
@@ -523,6 +633,8 @@ export default function AdvertiserDashboard() {
             {campaigns.map(campaign => {
               const stats = campaignStats[campaign.id] || { impressions: 0, clicks: 0 };
               const ctr = stats.impressions > 0 ? ((stats.clicks / stats.impressions) * 100).toFixed(2) : '0.00';
+              const calcSpent = (stats.impressions / 1000 * config.cpm_rate) + (stats.clicks * config.cpc_rate);
+              const rem = Math.max(0, Number(campaign.budget) - calcSpent);
               return (
                 <Card key={campaign.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCampaign(campaign.id)}>
                   <CardContent className="p-4">
@@ -535,7 +647,7 @@ export default function AdvertiserDashboard() {
                       </div>
                       <span className="text-sm font-bold text-primary">${Number(campaign.budget).toLocaleString()}</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 mt-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
                       <div className="rounded-lg bg-muted/50 p-2 text-center">
                         <p className="text-sm font-bold text-info">{stats.impressions.toLocaleString()}</p>
                         <p className="text-[10px] text-muted-foreground">{t('ads.impressions').substring(0,3)}</p>
@@ -544,9 +656,13 @@ export default function AdvertiserDashboard() {
                         <p className="text-sm font-bold text-warning">{stats.clicks}</p>
                         <p className="text-[10px] text-muted-foreground">{t('ads.clicks')}</p>
                       </div>
-                      <div className="rounded-lg bg-muted/50 p-2 text-center">
-                        <p className="text-sm font-bold text-success">{ctr}%</p>
-                        <p className="text-[10px] text-muted-foreground">CTR</p>
+                      <div className="rounded-lg bg-warning/10 p-2 text-center">
+                        <p className="text-sm font-bold text-warning">${calcSpent.toFixed(0)}</p>
+                        <p className="text-[10px] text-muted-foreground">{es ? 'Gastado' : 'Spent'}</p>
+                      </div>
+                      <div className="rounded-lg bg-success/10 p-2 text-center">
+                        <p className="text-sm font-bold text-success">${rem.toFixed(0)}</p>
+                        <p className="text-[10px] text-muted-foreground">{es ? 'Restante' : 'Left'}</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-2 text-[10px] text-muted-foreground">

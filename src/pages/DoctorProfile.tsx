@@ -486,32 +486,32 @@ export default function DoctorProfile() {
         <Card className="mt-3">
           <CardContent className="p-5 sm:p-6 space-y-5">
             {/* Stats grid — with icons and color tints */}
-            <div className="grid grid-cols-3 gap-2.5">
-              <div className="text-center p-3 bg-success/5 rounded-lg border border-success/10">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="text-center p-2 sm:p-3 bg-success/5 rounded-lg border border-success/10">
                 <Stethoscope className="w-4 h-4 mx-auto mb-1 text-success" />
-                <p className="text-lg sm:text-xl font-bold text-foreground">{doctor.totalConsultations}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.consultations')}</p>
+                <p className="text-base sm:text-xl font-bold text-foreground">{doctor.totalConsultations}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">{t('doctorProfile.consultations')}</p>
               </div>
-              <div className="text-center p-3 bg-premium/5 rounded-lg border border-premium/10">
+              <div className="text-center p-2 sm:p-3 bg-premium/5 rounded-lg border border-premium/10">
                 <Wallet className="w-4 h-4 mx-auto mb-1 text-premium" />
                 {isFreeConsultation ? (
-                  <p className="text-lg sm:text-xl font-bold text-success">{t('doctorProfile.free')}</p>
+                  <p className="text-base sm:text-xl font-bold text-success">{t('doctorProfile.free')}</p>
                 ) : (
-                  <p className="text-lg sm:text-xl font-bold text-premium"><PriceDisplay amount={doctor.consultationFee} size="lg" /></p>
+                  <p className="text-sm sm:text-xl font-bold text-premium"><PriceDisplay amount={doctor.consultationFee} size="sm" /></p>
                 )}
-                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.consultation')}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">{t('doctorProfile.consultation')}</p>
               </div>
-              <div className="flex flex-col items-center justify-center text-center p-3 bg-info/5 rounded-lg border border-info/10">
+              <div className="flex flex-col items-center justify-center text-center p-2 sm:p-3 bg-info/5 rounded-lg border border-info/10 col-span-2 sm:col-span-1">
                 {doctor.location ? (
                   <>
                     <MapPin className="w-4 h-4 mb-1 text-info" />
-                    <p className="text-xs sm:text-sm font-medium text-foreground truncate max-w-full">{doctor.countryFlag ? `${doctor.countryFlag} ` : ''}{doctor.location}</p>
+                    <p className="text-xs sm:text-sm font-medium text-foreground line-clamp-1 max-w-full">{doctor.location}</p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.locationLabel')}</p>
                   </>
                 ) : (
                   <>
                     <Users className="w-4 h-4 mb-1 text-info" />
-                    <p className="text-lg sm:text-xl font-bold text-foreground">{doctor.followersCount}</p>
+                    <p className="text-base sm:text-xl font-bold text-foreground">{doctor.followersCount}</p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.followers')}</p>
                   </>
                 )}

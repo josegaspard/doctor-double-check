@@ -20,8 +20,9 @@ import {
   Megaphone, Settings, LayoutGrid, BarChart3, Loader2,
   CheckCircle, XCircle, Pause, Play, Eye, MousePointerClick,
   DollarSign, TrendingUp, ArrowLeft, Users, Calendar,
-  FileDown, ExternalLink, Image as ImageIcon, Trash2,
+  FileDown, ExternalLink, Image as ImageIcon, Trash2, Wallet,
 } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { format, subDays } from 'date-fns';
 
 interface Campaign {
@@ -42,6 +43,7 @@ interface Campaign {
 interface CampaignStats { impressions: number; clicks: number; }
 interface DailyEvent { date: string; impressions: number; clicks: number; }
 interface Creative { id: string; campaign_id: string; placement_id: string; media_url: string; media_type: string; click_url: string; alt_text: string | null; is_active: boolean; }
+interface AdvertiserProfile { id: string; name: string; email: string; avatar_url: string | null; }
 
 const statusColors: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground', pending_payment: 'bg-warning/20 text-warning',
@@ -73,7 +75,7 @@ export default function AdminAds() {
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; revenue: number }[]>([]);
   const [expandedCampaign, setExpandedCampaign] = useState<string | null>(null);
   const [campaignCreatives, setCampaignCreatives] = useState<Creative[]>([]);
-
+  const [advertiserProfiles, setAdvertiserProfiles] = useState<Record<string, AdvertiserProfile>>({});
   const [configForm, setConfigForm] = useState({ is_active: false, cpm_rate: 50, cpc_rate: 5, min_budget: 500, max_file_size_kb: 2048 });
   const [newPlacement, setNewPlacement] = useState({ name: '', display_name: '', description: '', width: 728, height: 90, format: 'banner' });
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -92,7 +94,13 @@ export default function AdminAds() {
 
     if (data && data.length > 0) {
       const ids = data.map((c: any) => c.id);
-      const { data: events } = await supabase.from('ad_events' as any).select('campaign_id, event_type').in('campaign_id', ids);
+      const advertiserIds = [...new Set(data.map((c: any) => c.advertiser_id))];
+      
+      const [{ data: events }, { data: profiles }] = await Promise.all([
+        supabase.from('ad_events' as any).select('campaign_id, event_type').in('campaign_id', ids),
+        supabase.from('profiles_public').select('id, name, avatar_url').in('id', advertiserIds),
+      ]);
+      
       const stats: Record<string, CampaignStats> = {};
       (events as any[] || []).forEach((e: any) => {
         if (!stats[e.campaign_id]) stats[e.campaign_id] = { impressions: 0, clicks: 0 };
@@ -100,6 +108,10 @@ export default function AdminAds() {
         else if (e.event_type === 'click') stats[e.campaign_id].clicks++;
       });
       setCampaignStats(stats);
+      
+      const profileMap: Record<string, AdvertiserProfile> = {};
+      (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
+      setAdvertiserProfiles(profileMap);
     }
 
     const { data: payments } = await supabase.from('ad_payments' as any).select('amount, created_at').eq('status', 'paid');
@@ -322,10 +334,25 @@ export default function AdminAds() {
                   const stats = campaignStats[campaign.id] || { impressions: 0, clicks: 0 };
                   const ctr = stats.impressions > 0 ? ((stats.clicks / stats.impressions) * 100).toFixed(2) : '0.00';
                   const isExpanded = expandedCampaign === campaign.id;
+                  const advertiser = advertiserProfiles[campaign.advertiser_id];
+                  const calculatedSpent = (stats.impressions / 1000 * config.cpm_rate) + (stats.clicks * config.cpc_rate);
+                  const remaining = Math.max(0, Number(campaign.budget) - calculatedSpent);
 
                   return (
                     <Card key={campaign.id}>
                       <CardContent className="p-4">
+                        {/* Advertiser profile */}
+                        {advertiser && (
+                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+                            <Avatar className="w-7 h-7">
+                              <AvatarImage src={advertiser.avatar_url || undefined} />
+                              <AvatarFallback className="text-[10px]">{advertiser.name?.charAt(0) || '?'}</AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium truncate">{advertiser.name}</p>
+                            </div>
+                          </div>
+                        )}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedCampaign(isExpanded ? null : campaign.id)}>
                             <div className="flex items-center gap-2 mb-1">
@@ -336,9 +363,10 @@ export default function AdminAds() {
                             </div>
                             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />${Number(campaign.budget).toLocaleString()}</span>
+                              <span className="flex items-center gap-1 text-warning"><Wallet className="w-3 h-3" />${calculatedSpent.toFixed(0)} {es ? 'gastado' : 'spent'}</span>
+                              <span className="flex items-center gap-1 text-success"><DollarSign className="w-3 h-3" />${remaining.toFixed(0)} {es ? 'restante' : 'remaining'}</span>
                               <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{stats.impressions.toLocaleString()} imp</span>
                               <span className="flex items-center gap-1"><MousePointerClick className="w-3 h-3" />{stats.clicks} clics ({ctr}%)</span>
-                              <span className="flex items-center gap-1"><Users className="w-3 h-3" />{(campaign.target_roles || []).join(', ')}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">

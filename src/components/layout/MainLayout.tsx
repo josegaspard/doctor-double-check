@@ -54,6 +54,7 @@ import {
   Mail,
   HelpCircle,
   Shield,
+  Megaphone,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -674,6 +675,16 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     >
                       <Settings className="w-5 h-5" />
                       <span className="text-sm font-medium">{t('nav.settings')}</span>
+                    </Link>
+                    <Link
+                      to="/advertiser/dashboard"
+                      onClick={() => setMoreSheetOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                        location.pathname === '/advertiser/dashboard' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <Megaphone className="w-5 h-5" />
+                      <span className="text-sm font-medium">{t('nav.advertising') || 'Publicidad'}</span>
                     </Link>
                   </div>
                   <div className="border-t border-border my-3" />
