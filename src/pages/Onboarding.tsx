@@ -600,9 +600,13 @@ export default function Onboarding() {
         }
       }
 
-      // Mark onboarding as completed and save avatar
-      const updateData: { onboarding_completed: boolean; avatar_url?: string; username?: string } = { 
-        onboarding_completed: true 
+      // Mark onboarding as completed and save avatar + country
+      const countryInfo = COUNTRY_CURRENCIES[selectedCountry] || COUNTRY_CURRENCIES['MX'];
+      const updateData: Record<string, any> = { 
+        onboarding_completed: true,
+        country_code: selectedCountry,
+        currency_code: countryInfo.currency,
+        country_flag: countryInfo.flag,
       };
       
       if (avatarUrl) {
