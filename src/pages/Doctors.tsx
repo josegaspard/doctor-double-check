@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import {
   Search,
   Star,
@@ -27,11 +28,16 @@ import {
   Clock,
   SlidersHorizontal,
   ChevronDown,
+  AlertCircle,
+  Zap,
+  GraduationCap,
+  Globe,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import { useDebounce } from '@/hooks/use-debounce';
+import { COUNTRY_CURRENCIES } from '@/hooks/useCurrency';
 
 // Haversine distance in km
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
