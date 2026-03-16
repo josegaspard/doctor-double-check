@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
+import { useHasAdCampaigns } from '@/hooks/useHasAdCampaigns';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useSocialLinks } from '@/hooks/useSiteSettings';
 import { useChat } from '@/contexts/ChatContext';
