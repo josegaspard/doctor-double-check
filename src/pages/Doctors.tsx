@@ -112,6 +112,8 @@ interface DoctorRow {
   avatar_url: string | null;
   is_identity_verified: boolean;
   total_count: number;
+  country_code: string | null;
+  country_flag: string | null;
 }
 
 const SPECIALTIES = [
