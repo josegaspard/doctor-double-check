@@ -124,7 +124,7 @@ export function UnifiedFooter({ variant }: Props) {
           </div>
 
           {/* Platform */}
-          <FooterLinkColumn title={t('landingFooter.platform')} links={footerLinks.platform} />
+          <FooterLinkColumn title={t('landingFooter.platform')} links={platformLinks} />
           <FooterLinkColumn title={t('landingFooter.resources')} links={resourcesLinks} />
           <FooterLinkColumn title={t('landingFooter.legal')} links={footerLinks.legal} />
         </div>

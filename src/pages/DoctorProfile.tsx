@@ -633,7 +633,7 @@ export default function DoctorProfile() {
 
               {/* Tertiary — block as subtle link */}
               <div className="flex justify-center pt-1">
-                <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} size="sm" variant="ghost" />
+                <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} size="sm" />
               </div>
             </div>
             )}
