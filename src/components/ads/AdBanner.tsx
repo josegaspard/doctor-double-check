@@ -51,7 +51,7 @@ export function AdBanner({ placementName, className, disableAutoSticky }: AdBann
       className={cn(
         'relative rounded-xl overflow-hidden cursor-pointer group border border-border/50 bg-muted/30',
         'w-full',
-        isVertical && 'lg:sticky lg:top-4',
+        isVertical && !disableAutoSticky && 'lg:sticky lg:top-4',
         className
       )}
       onClick={handleClick}
