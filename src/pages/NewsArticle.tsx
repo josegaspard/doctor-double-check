@@ -398,8 +398,8 @@ export default function NewsArticle() {
         {/* 3-column layout: sidebar | article | sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_180px] gap-6">
           {/* Left sidebar ad — desktop only */}
-          <aside className="hidden lg:block">
-            <div className="sticky top-24">
+          <aside className="hidden lg:block self-start">
+            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-hidden">
               <AdBanner placementName="news_sidebar_left" className="w-full" />
             </div>
           </aside>
@@ -743,8 +743,8 @@ export default function NewsArticle() {
       </article>
 
           {/* Right sidebar ad — desktop only */}
-          <aside className="hidden lg:block">
-            <div className="sticky top-24">
+          <aside className="hidden lg:block self-start">
+            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-hidden">
               <AdBanner placementName="news_sidebar_right" className="w-full" />
             </div>
           </aside>

@@ -95,6 +95,20 @@ export function LiveStreamView({
         style={{ height: '100dvh' }}
         onClick={handleTapVideo}
       >
+        {/* Persistent stats badges — always visible for doctor */}
+        <div
+          className="absolute top-0 right-0 z-40 flex items-center gap-1.5 px-2 py-1"
+          style={{ paddingTop: 'max(0.25rem, env(safe-area-inset-top))' }}
+        >
+          <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
+            <Heart className="w-3 h-3 text-red-400" />
+            {likesCount || liveData.likesCount}
+          </span>
+          <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
+            <AnimatedViewerCount count={viewerCount || liveData.viewerCount} variant="inline" />
+          </span>
+        </div>
+
         {/* Compact top overlay — auto-hides */}
         <div
           className={`absolute top-0 left-0 right-0 z-30 px-3 py-2 bg-gradient-to-b from-black/70 to-transparent transition-opacity duration-300 ${
@@ -114,11 +128,6 @@ export function LiveStreamView({
               <span className="flex items-center gap-0.5">
                 <Clock className="w-3 h-3" />
                 {formatTime(elapsedTime)}
-              </span>
-              <AnimatedViewerCount count={viewerCount || liveData.viewerCount} variant="inline" />
-              <span className="flex items-center gap-0.5">
-                <Heart className="w-3 h-3" />
-                {likesCount || liveData.likesCount}
               </span>
             </div>
           </div>

@@ -123,6 +123,13 @@ export default function AdminPayouts() {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [stripeError, setStripeError] = useState(false);
 
+  // All transactions tab
+  const [allTransactions, setAllTransactions] = useState<any[]>([]);
+  const [txLoading, setTxLoading] = useState(false);
+  const [txTypeFilter, setTxTypeFilter] = useState<string>('all');
+  const [txSearch, setTxSearch] = useState('');
+  const [txProfileMap, setTxProfileMap] = useState<Map<string, { name: string; avatar_url: string | null }>>(new Map());
+
   useEffect(() => {
     if (role !== 'admin') { navigate('/'); return; }
     loadData();
@@ -227,6 +234,102 @@ export default function AdminPayouts() {
       console.error('Error loading data:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Load all wallet transactions for admin
+  const loadAllTransactions = async () => {
+    setTxLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      if (error) { console.error('Error loading transactions:', error); return; }
+      if (!data) return;
+
+      setAllTransactions(data);
+
+      // Fetch profile names
+      const userIds = [...new Set(data.map((t: any) => t.user_id))];
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds);
+        setTxProfileMap(new Map(profiles?.map(p => [p.id, { name: p.name, avatar_url: p.avatar_url }]) || []));
+      }
+    } catch (err) {
+      console.error('Unexpected error loading transactions:', err);
+    } finally {
+      setTxLoading(false);
+    }
+  };
+
+  // Load transactions when tab switches
+  useEffect(() => {
+    if (activeTab === 'transactions' && allTransactions.length === 0) {
+      loadAllTransactions();
+    }
+  }, [activeTab]);
+
+  const filteredTransactions = allTransactions.filter(tx => {
+    const matchesType = txTypeFilter === 'all' || tx.type === txTypeFilter;
+    const userName = txProfileMap.get(tx.user_id)?.name || '';
+    const matchesSearch = !txSearch || userName.toLowerCase().includes(txSearch.toLowerCase()) || tx.description?.toLowerCase().includes(txSearch.toLowerCase());
+    return matchesType && matchesSearch;
+  });
+
+  const txTotals = filteredTransactions.reduce((acc, tx) => {
+    acc[tx.type] = (acc[tx.type] || 0) + Number(tx.amount);
+    return acc;
+  }, {} as Record<string, number>);
+
+  const exportTransactionsCSV = () => {
+    const rows = filteredTransactions.map(tx => ({
+      Fecha: format(new Date(tx.created_at), 'yyyy-MM-dd HH:mm'),
+      Usuario: txProfileMap.get(tx.user_id)?.name || tx.user_id,
+      Tipo: tx.type,
+      Monto: tx.amount,
+      Descripción: tx.description,
+      Estado: tx.status,
+    }));
+    if (!rows.length) return;
+    const headers = Object.keys(rows[0]);
+    const csvRows = [
+      headers.join(','),
+      ...rows.map(row => headers.map(h => {
+        const val = String((row as any)[h] ?? '');
+        return val.includes(',') || val.includes('"') ? `"${val.replace(/"/g, '""')}"` : val;
+      }).join(','))
+    ];
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transacciones_${format(new Date(), 'yyyyMMdd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const getTxTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      topup: language === 'es' ? 'Recarga' : 'Top-up',
+      purchase: language === 'es' ? 'Compra' : 'Purchase',
+      refund: language === 'es' ? 'Reembolso' : 'Refund',
+      subscription: language === 'es' ? 'Suscripción' : 'Subscription',
+      earning: language === 'es' ? 'Ganancia' : 'Earning',
+    };
+    return labels[type] || type;
+  };
+
+  const getTxTypeBadgeVariant = (type: string) => {
+    switch (type) {
+      case 'topup': return 'info' as const;
+      case 'purchase': return 'default' as const;
+      case 'refund': return 'destructive' as const;
+      case 'subscription': return 'verified' as const;
+      case 'earning': return 'success' as const;
+      default: return 'outline' as const;
     }
   };
 
@@ -711,6 +814,10 @@ export default function AdminPayouts() {
                   <History className="w-4 h-4" />
                   {language === 'es' ? 'Historial' : 'History'}
                 </TabsTrigger>
+                <TabsTrigger value="transactions" className="gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  {language === 'es' ? 'Todas las Transacciones' : 'All Transactions'}
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="pending">
@@ -912,6 +1019,116 @@ export default function AdminPayouts() {
                         </CardContent>
                       </Card>
                     ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="transactions">
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder={language === 'es' ? 'Buscar por usuario o descripción...' : 'Search by user or description...'}
+                      value={txSearch}
+                      onChange={(e) => setTxSearch(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select value={txTypeFilter} onValueChange={setTxTypeFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder={language === 'es' ? 'Tipo' : 'Type'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                      <SelectItem value="topup">{language === 'es' ? 'Recargas' : 'Top-ups'}</SelectItem>
+                      <SelectItem value="purchase">{language === 'es' ? 'Compras' : 'Purchases'}</SelectItem>
+                      <SelectItem value="earning">{language === 'es' ? 'Ganancias' : 'Earnings'}</SelectItem>
+                      <SelectItem value="subscription">{language === 'es' ? 'Suscripciones' : 'Subscriptions'}</SelectItem>
+                      <SelectItem value="refund">{language === 'es' ? 'Reembolsos' : 'Refunds'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm" onClick={exportTransactionsCSV} className="gap-1.5">
+                    <Banknote className="w-4 h-4" />
+                    {language === 'es' ? 'Exportar CSV' : 'Export CSV'}
+                  </Button>
+                </div>
+
+                {/* Totals summary */}
+                {Object.keys(txTotals).length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
+                    {Object.entries(txTotals).map(([type, total]) => (
+                      <div key={type} className="p-3 rounded-lg bg-muted/50 border border-border/50">
+                        <p className="text-xs text-muted-foreground">{getTxTypeLabel(type)}</p>
+                        <p className="font-bold text-sm">{formatCurrency(total as number)}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {txLoading ? (
+                  <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+                ) : filteredTransactions.length === 0 ? (
+                  <Card><CardContent className="text-center py-12 text-muted-foreground">
+                    {language === 'es' ? 'No hay transacciones registradas' : 'No transactions recorded'}
+                  </CardContent></Card>
+                ) : (
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-muted/50">
+                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Fecha' : 'Date'}</th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Usuario' : 'User'}</th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Tipo' : 'Type'}</th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Descripción' : 'Description'}</th>
+                            <th className="text-right p-3 font-medium text-muted-foreground">{language === 'es' ? 'Monto' : 'Amount'}</th>
+                            <th className="text-center p-3 font-medium text-muted-foreground">{language === 'es' ? 'Estado' : 'Status'}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredTransactions.map(tx => {
+                            const profile = txProfileMap.get(tx.user_id);
+                            return (
+                              <tr key={tx.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                                <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
+                                  {format(new Date(tx.created_at), 'dd MMM yyyy, HH:mm', { locale })}
+                                </td>
+                                <td className="p-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                                      {profile?.avatar_url ? (
+                                        <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                                      ) : (
+                                        <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                                      )}
+                                    </div>
+                                    <span className="text-sm truncate max-w-[150px]">{profile?.name || tx.user_id.slice(0, 8)}</span>
+                                  </div>
+                                </td>
+                                <td className="p-3">
+                                  <Badge variant={getTxTypeBadgeVariant(tx.type)} className="text-xs">
+                                    {getTxTypeLabel(tx.type)}
+                                  </Badge>
+                                </td>
+                                <td className="p-3 text-sm text-muted-foreground truncate max-w-[200px]">{tx.description}</td>
+                                <td className="p-3 text-right font-semibold whitespace-nowrap">
+                                  <span className={tx.type === 'refund' ? 'text-destructive' : tx.type === 'earning' || tx.type === 'topup' ? 'text-success' : ''}>
+                                    {tx.type === 'refund' ? '-' : ''}{formatCurrency(Math.abs(tx.amount))}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-center">
+                                  {getStatusBadge(tx.status)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="p-3 bg-muted/30 border-t text-xs text-muted-foreground text-right">
+                      {language === 'es' ? `Mostrando ${filteredTransactions.length} transacciones` : `Showing ${filteredTransactions.length} transactions`}
+                    </div>
                   </div>
                 )}
               </TabsContent>
