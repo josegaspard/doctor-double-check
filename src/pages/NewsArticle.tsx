@@ -43,6 +43,7 @@ export default function NewsArticle() {
   const { user, role, isAuthenticated } = useAuth();
   const { t, language } = useLanguage();
   const dateLocale = language === 'es' ? es : enUS;
+  const isMobile = useIsMobile();
   const [article, setArticle] = useState<any>(null);
   const [authorProfile, setAuthorProfile] = useState<any>(null);
   const [authorDoctorProfile, setAuthorDoctorProfile] = useState<any>(null);
