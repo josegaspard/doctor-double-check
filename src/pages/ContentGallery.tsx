@@ -346,6 +346,58 @@ export default function ContentGallery() {
     return matchesSearch && matchesType && matchesCategory;
   });
 
+  // Helper to insert inline ads between content cards
+  const renderContentGrid = () => {
+    if (filteredContents.length === 0) {
+      return (
+        <Card className="p-12 text-center">
+          <Library className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">{t('content.noContent')}</h3>
+          <p className="text-muted-foreground">
+            {searchQuery || typeFilter !== 'all' || categoryFilter !== 'all'
+              ? t('content.noContentFilters')
+              : t('content.noContentUploaded')}
+          </p>
+        </Card>
+      );
+    }
+
+    const items: React.ReactNode[] = [];
+    filteredContents.forEach((content, index) => {
+      const locked = !canViewSubscriberContent(content);
+      const thumbUrl = signedThumbs[content.id] || content.thumbnail_url || null;
+
+      items.push(
+        <Card
+          key={content.id}
+          className={`group overflow-hidden hover:shadow-lg transition-all cursor-pointer border-border/60 ${locked ? 'opacity-75' : ''}`}
+          onClick={() => {
+            if (locked) return;
+            setPreviewContent(content);
+          }}
+        >
+          <ContentCardThumbnail content={content} thumbUrl={thumbUrl} locked={locked} showInsufficientHint={content.price > 0 && balance < content.price && !locked} t={t} />
+          <ContentCardBody content={content} locale={locale} />
+        </Card>
+      );
+
+      // Insert inline ad every 4 items (after 4th, 8th, etc.)
+      if ((index + 1) % 4 === 0 && index < filteredContents.length - 1) {
+        items.push(
+          <div key={`ad-inline-${index}`} className="col-span-full">
+            <AdBanner placementName="content_mid_inline" className="w-full" />
+          </div>
+        );
+      }
+    });
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        {items}
+      </div>
+    );
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
@@ -449,46 +501,39 @@ export default function ContentGallery() {
           </div>
         )}
 
-        {/* Ad Banner */}
-        <AdBanner placementName="content_inline" className="mb-4" />
+        {/* Top horizontal banner */}
+        <AdBanner placementName="content_inline" className="mb-4 [&_img]:max-h-[140px] [&_img]:sm:max-h-[160px] [&_img]:lg:max-h-[180px]" />
 
-        {/* Grid */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        ) : filteredContents.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-            {filteredContents.map(content => {
-              const locked = !canViewSubscriberContent(content);
-              const thumbUrl = signedThumbs[content.id] || content.thumbnail_url || null;
+        {/* 3-column layout: sidebar | content | sidebar (desktop only) */}
+        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_180px] gap-6">
+          {/* Left sidebar ad — desktop only */}
+          <aside className="hidden lg:block self-start">
+            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-hidden">
+              <AdBanner placementName="content_sidebar_left" className="w-full" />
+            </div>
+          </aside>
 
-              return (
-                <Card
-                  key={content.id}
-                  className={`group overflow-hidden hover:shadow-lg transition-all cursor-pointer border-border/60 ${locked ? 'opacity-75' : ''}`}
-                  onClick={() => {
-                    if (locked) return;
-                    setPreviewContent(content);
-                  }}
-                >
-                  <ContentCardThumbnail content={content} thumbUrl={thumbUrl} locked={locked} showInsufficientHint={content.price > 0 && balance < content.price && !locked} t={t} />
-                  <ContentCardBody content={content} locale={locale} />
-                </Card>
-              );
-            })}
+          {/* Main content */}
+          <div className="min-w-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              renderContentGrid()
+            )}
           </div>
-        ) : (
-          <Card className="p-12 text-center">
-            <Library className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">{t('content.noContent')}</h3>
-            <p className="text-muted-foreground">
-              {searchQuery || typeFilter !== 'all' || categoryFilter !== 'all'
-                ? t('content.noContentFilters')
-                : t('content.noContentUploaded')}
-            </p>
-          </Card>
-        )}
+
+          {/* Right sidebar ad — desktop only */}
+          <aside className="hidden lg:block self-start">
+            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-hidden">
+              <AdBanner placementName="content_sidebar_right" className="w-full" />
+            </div>
+          </aside>
+        </div>
+
+        {/* Bottom banner */}
+        <AdBanner placementName="content_bottom_banner" className="mt-6 [&_img]:max-h-[140px] [&_img]:sm:max-h-[160px]" />
       </div>
 
       <ContentPreviewModal

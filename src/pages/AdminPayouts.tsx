@@ -711,6 +711,10 @@ export default function AdminPayouts() {
                   <History className="w-4 h-4" />
                   {language === 'es' ? 'Historial' : 'History'}
                 </TabsTrigger>
+                <TabsTrigger value="transactions" className="gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  {language === 'es' ? 'Todas las Transacciones' : 'All Transactions'}
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="pending">
