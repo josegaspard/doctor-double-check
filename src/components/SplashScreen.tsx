@@ -3,33 +3,88 @@ import logo from '@/assets/logo-medical-masters-white.png';
 
 export function SplashScreen({ onFinish }: { onFinish: () => void }) {
   const [fadeOut, setFadeOut] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const timer = setTimeout(() => setFadeOut(true), 1800);
+    // Animate progress bar
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) { clearInterval(interval); return 100; }
+        return prev + 2;
+      });
+    }, 30);
+
+    const fadeTimer = setTimeout(() => setFadeOut(true), 1800);
     const finishTimer = setTimeout(onFinish, 2300);
     return () => {
-      clearTimeout(timer);
+      clearInterval(interval);
+      clearTimeout(fadeTimer);
       clearTimeout(finishTimer);
     };
   }, [onFinish]);
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[hsl(var(--background))] transition-opacity duration-500 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-opacity duration-500 ${fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+      style={{ background: 'linear-gradient(135deg, #0b1d45 0%, #163a83 45%, #00768b 100%)' }}
     >
-      <img
-        src={logo}
-        alt="Medical Masters"
-        className="w-32 h-32 object-contain animate-pulse mb-6"
-      />
-      <h1 className="text-2xl font-heading font-bold text-primary">
-        Medical Masters
-      </h1>
-      <p className="text-sm text-muted-foreground mt-2">
-        Tu salud, nuestra prioridad
-      </p>
-      <div className="mt-8 w-12 h-1 rounded-full bg-primary/30 overflow-hidden">
-        <div className="h-full bg-primary rounded-full animate-[loading_1.5s_ease-in-out_infinite]" />
+      {/* Floating background blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-white/[0.03] blur-3xl animate-pulse" />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-[#00768b]/20 blur-3xl" style={{ animation: 'pulse 3s ease-in-out infinite' }} />
+        <div className="absolute top-1/4 right-1/4 w-48 h-48 rounded-full bg-[#163a83]/30 blur-2xl" style={{ animation: 'pulse 4s ease-in-out infinite 1s' }} />
+        
+        {/* Dot pattern overlay */}
+        <div 
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+        />
+      </div>
+
+      {/* Logo with scale-in animation */}
+      <div className="relative z-10 flex flex-col items-center">
+        <div
+          className="mb-6"
+          style={{
+            animation: 'splash-scale-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          }}
+        >
+          <img
+            src={logo}
+            alt="Medical Masters"
+            className="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-2xl"
+          />
+        </div>
+
+        <h1 
+          className="text-2xl sm:text-3xl font-heading font-bold text-white tracking-tight mb-1"
+          style={{ animation: 'splash-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both' }}
+        >
+          Medical Masters
+        </h1>
+        <p 
+          className="text-sm text-slate-300/80 mb-8"
+          style={{ animation: 'splash-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both' }}
+        >
+          Tu salud, nuestra prioridad
+        </p>
+
+        {/* Progress bar */}
+        <div 
+          className="w-48 h-1 rounded-full bg-white/10 overflow-hidden backdrop-blur-sm"
+          style={{ animation: 'splash-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both' }}
+        >
+          <div
+            className="h-full rounded-full transition-all duration-100 ease-out"
+            style={{
+              width: `${progress}%`,
+              background: 'linear-gradient(90deg, #aed3d9, #00768b)',
+            }}
+          />
+        </div>
       </div>
     </div>
   );

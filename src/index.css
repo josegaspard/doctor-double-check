@@ -599,3 +599,13 @@
 .animate-fade-in {
   animation: landing-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Splash Screen Animations */
+@keyframes splash-scale-in {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes splash-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}

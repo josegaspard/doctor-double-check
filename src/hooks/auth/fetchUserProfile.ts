@@ -24,6 +24,9 @@ export async function fetchUserProfile(userId: string): Promise<ExtendedUser | n
       avatarUrl: profile.avatar_url || undefined,
       createdAt: new Date(profile.created_at),
       onboardingCompleted: profile.onboarding_completed ?? false,
+      countryCode: profile.country_code || 'MX',
+      currencyCode: profile.currency_code || 'MXN',
+      countryFlag: profile.country_flag || '🇲🇽',
     };
 
     // Fetch role-specific data (only one branch needed)

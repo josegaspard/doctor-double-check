@@ -11,6 +11,9 @@ export interface ExtendedUser {
   avatarUrl?: string;
   createdAt: Date;
   onboardingCompleted?: boolean;
+  countryCode?: string;
+  currencyCode?: string;
+  countryFlag?: string;
   // Doctor-specific
   doctorProfile?: {
     id: string;

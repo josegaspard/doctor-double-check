@@ -1250,6 +1250,30 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rates: {
+        Row: {
+          base_currency: string
+          id: string
+          rate: number
+          target_currency: string
+          updated_at: string
+        }
+        Insert: {
+          base_currency?: string
+          id?: string
+          rate: number
+          target_currency: string
+          updated_at?: string
+        }
+        Update: {
+          base_currency?: string
+          id?: string
+          rate?: number
+          target_currency?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expediente_otp: {
         Row: {
           created_at: string
@@ -2072,7 +2096,10 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          country_code: string | null
+          country_flag: string | null
           created_at: string
+          currency_code: string | null
           email: string
           id: string
           is_identity_verified: boolean
@@ -2086,7 +2113,10 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          country_code?: string | null
+          country_flag?: string | null
           created_at?: string
+          currency_code?: string | null
           email: string
           id: string
           is_identity_verified?: boolean
@@ -2100,7 +2130,10 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          country_code?: string | null
+          country_flag?: string | null
           created_at?: string
+          currency_code?: string | null
           email?: string
           id?: string
           is_identity_verified?: boolean

@@ -498,6 +498,9 @@ export default function UserProfile() {
                           <Button size="sm" onClick={handleSaveName} disabled={isSavingName}>
                             {isSavingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                           </Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setIsEditingName(false); setEditedName(user.name); }}>
+                            <X className="w-4 h-4" />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => {
                             setIsEditingName(false);
                             setEditedName(user.name);
@@ -530,6 +533,12 @@ export default function UserProfile() {
                     {user.email}
                   </p>
                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-3 flex-wrap">
+                    {user.countryFlag && (
+                      <Badge variant="outline" className="gap-1 text-xs">
+                        <span>{user.countryFlag}</span>
+                        {user.countryCode || 'MX'}
+                      </Badge>
+                    )}
                     <Badge variant={roleBadge.variant} className="gap-1.5">
                       <RoleIcon className="w-3.5 h-3.5" />
                       {roleBadge.label}

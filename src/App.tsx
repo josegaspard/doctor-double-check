@@ -13,8 +13,9 @@ import { VaultProvider } from "@/contexts/VaultContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { PostConsultationRatingProvider } from "@/components/ratings/PostConsultationRatingProvider";
 import { IncomingCallProvider } from "@/components/videocall/IncomingCallProvider";
-import React, { Suspense } from "react";
+import React, { Suspense, useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
+import { SplashScreen } from "@/components/SplashScreen";
 
 // Wrapper that only mounts heavy providers when the user is authenticated
 function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
@@ -131,7 +132,13 @@ function PageLoader() {
   );
 }
 
-const App = () => (
+const App = () => {
+  const [showSplash, setShowSplash] = useState(true);
+  const handleSplashFinish = useCallback(() => setShowSplash(false), []);
+
+  return (
+    <>
+      {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" storageKey="theme" enableSystem={false}>
       <AuthProvider>
@@ -227,6 +234,8 @@ const App = () => (
       </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
-);
+    </>
+  );
+};
 
 export default App;

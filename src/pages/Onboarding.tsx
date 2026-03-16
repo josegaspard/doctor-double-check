@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle, MapPin, Navigation } from 'lucide-react';
+import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle, MapPin, Navigation, Globe } from 'lucide-react';
+import { COUNTRY_CURRENCIES, detectCountry } from '@/hooks/useCurrency';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import { toast } from 'sonner';
 import { AppRole as UserRole } from '@/types/database';
@@ -236,6 +237,7 @@ export default function Onboarding() {
   const [doctorLocation, setDoctorLocation] = useState('');
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [username, setUsername] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState(() => detectCountry());
   // Clinical History State
   const [clinicalHistory, setClinicalHistory] = useState<ClinicalHistoryData>({
     bloodType: '',
@@ -598,9 +600,13 @@ export default function Onboarding() {
         }
       }
 
-      // Mark onboarding as completed and save avatar
-      const updateData: { onboarding_completed: boolean; avatar_url?: string; username?: string } = { 
-        onboarding_completed: true 
+      // Mark onboarding as completed and save avatar + country
+      const countryInfo = COUNTRY_CURRENCIES[selectedCountry] || COUNTRY_CURRENCIES['MX'];
+      const updateData: Record<string, any> = { 
+        onboarding_completed: true,
+        country_code: selectedCountry,
+        currency_code: countryInfo.currency,
+        country_flag: countryInfo.flag,
       };
       
       if (avatarUrl) {
@@ -998,6 +1004,33 @@ export default function Onboarding() {
                         />
                         <p className="text-[11px] text-muted-foreground">
                           Este será tu identificador único en la plataforma. Solo letras, números, puntos, guiones.
+                        </p>
+                      </motion.div>
+
+                      {/* Country Selector */}
+                      <motion.div className="space-y-2" variants={itemVariants}>
+                        <Label htmlFor="country" className="text-sm font-medium flex items-center gap-1.5">
+                          <Globe className="w-4 h-4" />
+                          País
+                        </Label>
+                        <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                          <SelectTrigger id="country">
+                            <SelectValue placeholder="Selecciona tu país" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {Object.entries(COUNTRY_CURRENCIES).map(([code, info]) => (
+                              <SelectItem key={code} value={code}>
+                                <span className="flex items-center gap-2">
+                                  <span>{info.flag}</span>
+                                  <span>{info.name}</span>
+                                  <span className="text-muted-foreground text-xs">({info.currency})</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[11px] text-muted-foreground">
+                          Los precios se mostrarán en tu moneda local como referencia. Los pagos se procesan en MXN.
                         </p>
                       </motion.div>
 
