@@ -136,6 +136,16 @@ export default function PsychologyDirectory() {
                       </span>
                       <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{doctor.followers_count}</span>
                       <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" />{doctor.total_consultations}</span>
+                      {(doctor.location || doctor.country_flag) && (
+                        <span className="flex items-center gap-1 ml-auto truncate max-w-[120px]">
+                          {doctor.country_flag ? (
+                            <span className="flex-shrink-0">{doctor.country_flag}</span>
+                          ) : (
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                          )}
+                          <span className="truncate">{doctor.location || ''}</span>
+                        </span>
+                      )}
                     </div>
 
                     {doctor.bio && <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{doctor.bio}</p>}
