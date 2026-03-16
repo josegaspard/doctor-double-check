@@ -40,6 +40,7 @@ export function SubscribeButton({
   variant = 'default',
   size = 'default',
   showUpgrade = true,
+  className,
   onSubscriptionChange,
 }: SubscribeButtonProps) {
   const { user, isAuthenticated } = useAuth();
