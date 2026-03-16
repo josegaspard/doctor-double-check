@@ -75,10 +75,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Fallback for cases where context is not yet available (e.g. HMR, lazy loading race)
+const fallbackLanguage: LanguageContextType = {
+  language: (typeof window !== 'undefined' && localStorage.getItem('preferred_language') === 'en' ? 'en' : 'es') as SupportedLanguage,
+  setLanguage: async () => {},
+  t: (path: string) => translate(
+    (typeof window !== 'undefined' && localStorage.getItem('preferred_language') === 'en' ? 'en' : 'es') as SupportedLanguage,
+    path
+  ),
+  translations: getTranslations(
+    (typeof window !== 'undefined' && localStorage.getItem('preferred_language') === 'en' ? 'en' : 'es') as SupportedLanguage
+  ),
+};
+
 export function useLanguage() {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-  return context;
+  return context ?? fallbackLanguage;
 }
