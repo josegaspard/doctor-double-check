@@ -597,6 +597,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
+      recordingsLoadedRef.current = true;
       await Promise.all([fetchLives(true), fetchRecordings()]);
       return { success: true };
     } catch (error: any) {
