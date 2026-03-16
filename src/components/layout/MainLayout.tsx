@@ -334,6 +334,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                             {t('nav.wallet')} (<AnimatedBalance balance={balance} />)
                           </Link>
                         )}
+                        {(role === 'patient' || role === 'resident') && hasCampaigns && (
+                          <Link to="/advertiser/dashboard" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/advertiser/dashboard' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                            <Megaphone className="w-5 h-5" />
+                            {t('nav.advertising') || 'Publicidad'}
+                          </Link>
+                        )}
                         <Link to="/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/settings' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                           <Settings className="w-5 h-5" />
                           {t('nav.settings')}
