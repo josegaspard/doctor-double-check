@@ -399,7 +399,7 @@ export default function NewsArticle() {
         <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_180px] gap-6">
           {/* Left sidebar ad — desktop only */}
           <aside className="hidden lg:block self-start">
-            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-hidden">
+            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide">
               <AdBanner placementName="news_sidebar_left" className="w-full" />
             </div>
           </aside>
