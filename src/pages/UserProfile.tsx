@@ -54,6 +54,7 @@ import {
   X,
 } from 'lucide-react';
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
+import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
 
 type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired' | null;
 
