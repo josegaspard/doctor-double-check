@@ -533,6 +533,12 @@ export default function UserProfile() {
                     {user.email}
                   </p>
                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-3 flex-wrap">
+                    {user.countryFlag && (
+                      <Badge variant="outline" className="gap-1 text-xs">
+                        <span>{user.countryFlag}</span>
+                        {user.countryCode || 'MX'}
+                      </Badge>
+                    )}
                     <Badge variant={roleBadge.variant} className="gap-1.5">
                       <RoleIcon className="w-3.5 h-3.5" />
                       {roleBadge.label}
