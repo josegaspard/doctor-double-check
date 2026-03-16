@@ -14,8 +14,8 @@ export function SplashScreen({ onFinish }: { onFinish: () => void }) {
       });
     }, 30);
 
-    const fadeTimer = setTimeout(() => setFadeOut(true), 1800);
-    const finishTimer = setTimeout(onFinish, 2300);
+    const fadeTimer = setTimeout(() => setFadeOut(true), 800);
+    const finishTimer = setTimeout(onFinish, 1100);
     return () => {
       clearInterval(interval);
       clearTimeout(fadeTimer);

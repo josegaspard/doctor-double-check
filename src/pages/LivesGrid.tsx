@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { Suspense, useRef, useEffect, useState } from 'react';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { Link } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UpcomingAvailabilities } from '@/components/availability/UpcomingAvailabilities';
 import { NewsFeed } from '@/components/news/NewsFeed';
-import LivePreviewPlayer from '@/components/live/LivePreviewPlayer';
+const LivePreviewPlayer = React.lazy(() => import('@/components/live/LivePreviewPlayer'));
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Video, 
@@ -41,10 +41,12 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
     <Link to={`/live/${live.id}`}>
       <Card className="card-live group cursor-pointer overflow-hidden hover:shadow-lg transition-all relative ring-2 ring-live animate-pulse-ring">
         <div className="relative">
-          <LivePreviewPlayer
-            dailyRoomName={live.dailyRoomName || live.daily_room_name}
-            thumbnailUrl={undefined}
-          />
+          <Suspense fallback={<div className="aspect-video bg-gradient-to-br from-primary/20 to-info/20 animate-pulse" />}>
+            <LivePreviewPlayer
+              dailyRoomName={live.dailyRoomName || live.daily_room_name}
+              thumbnailUrl={undefined}
+            />
+          </Suspense>
           
           <div className="absolute top-2 left-2 flex items-center gap-1.5">
             <Badge variant="live" className="gap-1">

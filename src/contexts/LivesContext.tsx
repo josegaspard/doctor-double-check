@@ -60,6 +60,7 @@ interface LivesContextType {
   endLive: (liveId: string, saveAsRecording?: boolean) => Promise<{ success: boolean; recordingId?: string; error?: string }>;
   refreshLives: () => Promise<void>;
   refreshRecordings: () => Promise<void>;
+  ensureRecordingsLoaded: () => Promise<void>;
 }
 
 const LivesContext = createContext<LivesContextType | undefined>(undefined);
@@ -93,6 +94,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [likedLives, setLikedLives] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const recordingsLoadedRef = useRef(false);
   
   // Track last fetch time to prevent rapid re-fetches
   const lastFetchTime = useRef<number>(0);
@@ -297,7 +299,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     const loadData = async () => {
       if (!isMounted) return;
       setIsLoading(true);
-      await Promise.all([fetchLives(true), fetchRecordings(), fetchLikedLives()]);
+      await Promise.all([fetchLives(true), fetchLikedLives()]);
       if (isMounted) {
         setIsLoading(false);
       }
@@ -454,8 +456,10 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'recordings' },
         () => {
-          // Refresh recordings when there are changes
-          fetchRecordings();
+          // Only refresh if recordings were already loaded
+          if (recordingsLoadedRef.current) {
+            fetchRecordings();
+          }
         }
       )
       .subscribe();
@@ -593,6 +597,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
+      recordingsLoadedRef.current = true;
       await Promise.all([fetchLives(true), fetchRecordings()]);
       return { success: true };
     } catch (error: any) {
@@ -605,6 +610,15 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   }, [fetchLives]);
 
   const refreshRecordings = useCallback(async () => {
+    recordingsLoadedRef.current = false;
+    await fetchRecordings();
+    recordingsLoadedRef.current = true;
+  }, [fetchRecordings]);
+
+  // Lazy-load recordings: only fetch on first access
+  const ensureRecordingsLoaded = useCallback(async () => {
+    if (recordingsLoadedRef.current) return;
+    recordingsLoadedRef.current = true;
     await fetchRecordings();
   }, [fetchRecordings]);
 
@@ -624,7 +638,8 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     endLive,
     refreshLives,
     refreshRecordings,
-  }), [lives, recordings, isLoading, getLive, getRecording, getLivesByDoctor, getRecordingsByDoctor, hasLiked, refreshLives, refreshRecordings]);
+    ensureRecordingsLoaded,
+  }), [lives, recordings, isLoading, getLive, getRecording, getLivesByDoctor, getRecordingsByDoctor, hasLiked, refreshLives, refreshRecordings, ensureRecordingsLoaded]);
 
   return (
     <LivesContext.Provider value={contextValue}>
@@ -649,6 +664,7 @@ const LIVES_DEFAULTS: LivesContextType = {
   endLive: async () => ({ success: false, error: 'Context not ready' }),
   refreshLives: async () => {},
   refreshRecordings: async () => {},
+  ensureRecordingsLoaded: async () => {},
 };
 
 export function useLives() {

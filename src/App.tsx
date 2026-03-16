@@ -127,6 +127,21 @@ const queryClient = new QueryClient({
   },
 });
 
+// Prefetch popular route chunks during browser idle time
+if (typeof window !== 'undefined') {
+  const prefetch = () => {
+    import("./pages/Doctors");
+    import("./pages/RecordingsGrid");
+    import("./pages/LivesGrid");
+    import("./pages/DoctorProfile");
+  };
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(prefetch, { timeout: 4000 });
+  } else {
+    setTimeout(prefetch, 3000);
+  }
+}
+
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center">
