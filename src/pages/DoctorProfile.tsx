@@ -603,9 +603,11 @@ export default function DoctorProfile() {
                     ? t('doctorProfile.freeConsultation')
                     : canChatDirectly 
                       ? t('doctorProfile.startConsultation')
-                      : `${t('doctorProfile.consultation')} (`}
-                {!isStartingChat && !isFreeConsultation && !canChatDirectly && <PriceDisplay amount={doctor.consultationFee} size="sm" />}
-                {!isStartingChat && !isFreeConsultation && !canChatDirectly && ')'}
+                      : (
+                        <>
+                          {t('doctorProfile.consultation')} (<PriceDisplay amount={doctor.consultationFee} size="sm" />)
+                        </>
+                      )
                 }
               </Button>
 
