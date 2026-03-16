@@ -1,26 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Fix route mismatches in Veriff identity verification flow
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Issue found
-The route registered in `App.tsx` is `/verify-identity`, but two places reference the wrong path `/identity-verification`:
+## Solucion
 
-1. **`src/pages/IdentityVerification.tsx` line 113** — `callback_url` sent to `create-veriff-session` uses `/identity-verification`
-2. **`src/pages/Onboarding.tsx` line 1281** — button opens `/identity-verification` in new tab
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-Both will 404 when users try to use them.
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-## Fix
-Update both references from `/identity-verification` to `/verify-identity`:
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-### File 1: `src/pages/IdentityVerification.tsx`
-- Line 113: Change `'/identity-verification'` to `'/verify-identity'`
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-### File 2: `src/pages/Onboarding.tsx`
-- Line 1281: Change `'/identity-verification'` to `'/verify-identity'`
+## Archivos a modificar
 
-Two-line fix across two files. No other changes needed.
-
-## Note on browser testing
-The verification page requires authentication. To fully test the Veriff flow end-to-end, you'll need to log in through the preview first, then navigate to `/verify-identity`. The browser automation tool shares the preview's session, so I cannot test the authenticated flow without you logging in first.
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
