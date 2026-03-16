@@ -76,12 +76,18 @@ export default function DoctorDashboard() {
         {!isApproved && <DoctorStatusAlert isPending={isPending} />}
 
         <Tabs defaultValue="overview" className="mb-4 sm:mb-6">
-          <TabsList className="mb-3 sm:mb-5 w-full sm:w-auto grid grid-cols-2 sm:flex">
+          <TabsList className="mb-3 sm:mb-5 w-full sm:w-auto grid grid-cols-2 sm:flex" style={hasCampaigns ? { gridTemplateColumns: 'repeat(3, 1fr)' } : undefined}>
             <TabsTrigger value="overview" className="px-3 sm:px-6 text-xs sm:text-sm">General</TabsTrigger>
             <TabsTrigger value="analytics" className="gap-1.5 px-3 sm:px-6 text-xs sm:text-sm">
               <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Analytics
             </TabsTrigger>
+            {hasCampaigns && (
+              <TabsTrigger value="advertising" className="gap-1.5 px-3 sm:px-6 text-xs sm:text-sm" onClick={() => navigate('/advertiser/dashboard')}>
+                <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                Publicidad
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-3 sm:space-y-5">
