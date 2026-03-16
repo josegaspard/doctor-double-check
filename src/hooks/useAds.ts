@@ -34,6 +34,11 @@ interface AdCreative {
   alt_text: string | null;
 }
 
+export interface AdCreativeWithFormat extends AdCreative {
+  placement_format: string;
+  placement_name: string;
+}
+
 const DEFAULT_CONFIG: AdConfig = {
   is_active: false,
   cpm_rate: 50,
@@ -114,7 +119,7 @@ export function useAdPlacements() {
 export function useAdCreative(placementName: string) {
   const { user, role } = useAuth();
   const { language } = useLanguage();
-  const [creative, setCreative] = useState<AdCreative | null>(null);
+  const [creative, setCreative] = useState<AdCreativeWithFormat | null>(null);
   const [isActive, setIsActive] = useState(false);
   const impressionTracked = useRef<Set<string>>(new Set());
 
@@ -129,18 +134,19 @@ export function useAdCreative(placementName: string) {
       // Get placement
       const { data: placement } = await supabase
         .from('ad_placements' as any)
-        .select('id')
+        .select('id, format, name')
         .eq('name', placementName)
         .eq('is_active', true)
         .maybeSingle();
 
       if (!placement || cancelled) return;
+      const p = placement as any;
 
       // Get active creative for this placement
       const { data: creatives } = await supabase
         .from('ad_creatives' as any)
         .select('id, campaign_id, placement_id, media_url, media_type, click_url, alt_text')
-        .eq('placement_id', (placement as any).id)
+        .eq('placement_id', p.id)
         .eq('is_active', true);
 
       if (!creatives || creatives.length === 0 || cancelled) return;
@@ -170,7 +176,11 @@ export function useAdCreative(placementName: string) {
 
       // Random pick
       const picked = validCreatives[Math.floor(Math.random() * validCreatives.length)];
-      setCreative(picked);
+      setCreative({
+        ...picked,
+        placement_format: p.format,
+        placement_name: p.name,
+      });
     };
 
     load();
