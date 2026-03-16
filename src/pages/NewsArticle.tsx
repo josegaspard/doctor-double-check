@@ -391,7 +391,21 @@ export default function NewsArticle() {
 
   return (
     <MainLayout>
-      <article className="container mx-auto px-4 py-6 max-w-3xl">
+      <div className="container mx-auto px-3 sm:px-4 py-6 max-w-7xl">
+        {/* Top banner ad */}
+        <AdBanner placementName="news_top_banner" className="mb-4" />
+
+        {/* 3-column layout: sidebar | article | sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_180px] gap-6">
+          {/* Left sidebar ad — desktop only */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <AdBanner placementName="news_sidebar_left" className="w-full" />
+            </div>
+          </aside>
+
+          {/* Main article content */}
+          <article className="max-w-3xl mx-auto w-full">
         <div className="flex items-center justify-between mb-4">
           <Link to="/news" className="hidden sm:inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-4 h-4" /> {t('ads.backToNews')}
