@@ -69,6 +69,7 @@ async function sendSms(phone: string, message: string): Promise<boolean> {
     logStep("SMS skipped: no SMS_API_KEY configured");
     return false;
   }
+  if (SMS_PROVIDER === "textbelt") return sendSmsTextbelt(phone, message);
   if (SMS_PROVIDER === "telnyx") return sendSmsTelnyx(phone, message);
   return sendSmsVonage(phone, message);
 }
