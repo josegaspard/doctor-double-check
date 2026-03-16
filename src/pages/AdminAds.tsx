@@ -334,10 +334,25 @@ export default function AdminAds() {
                   const stats = campaignStats[campaign.id] || { impressions: 0, clicks: 0 };
                   const ctr = stats.impressions > 0 ? ((stats.clicks / stats.impressions) * 100).toFixed(2) : '0.00';
                   const isExpanded = expandedCampaign === campaign.id;
+                  const advertiser = advertiserProfiles[campaign.advertiser_id];
+                  const calculatedSpent = (stats.impressions / 1000 * config.cpm_rate) + (stats.clicks * config.cpc_rate);
+                  const remaining = Math.max(0, Number(campaign.budget) - calculatedSpent);
 
                   return (
                     <Card key={campaign.id}>
                       <CardContent className="p-4">
+                        {/* Advertiser profile */}
+                        {advertiser && (
+                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+                            <Avatar className="w-7 h-7">
+                              <AvatarImage src={advertiser.avatar_url || undefined} />
+                              <AvatarFallback className="text-[10px]">{advertiser.name?.charAt(0) || '?'}</AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium truncate">{advertiser.name}</p>
+                            </div>
+                          </div>
+                        )}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedCampaign(isExpanded ? null : campaign.id)}>
                             <div className="flex items-center gap-2 mb-1">
@@ -348,9 +363,10 @@ export default function AdminAds() {
                             </div>
                             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />${Number(campaign.budget).toLocaleString()}</span>
+                              <span className="flex items-center gap-1 text-warning"><Wallet className="w-3 h-3" />${calculatedSpent.toFixed(0)} {es ? 'gastado' : 'spent'}</span>
+                              <span className="flex items-center gap-1 text-success"><DollarSign className="w-3 h-3" />${remaining.toFixed(0)} {es ? 'restante' : 'remaining'}</span>
                               <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{stats.impressions.toLocaleString()} imp</span>
                               <span className="flex items-center gap-1"><MousePointerClick className="w-3 h-3" />{stats.clicks} clics ({ctr}%)</span>
-                              <span className="flex items-center gap-1"><Users className="w-3 h-3" />{(campaign.target_roles || []).join(', ')}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
