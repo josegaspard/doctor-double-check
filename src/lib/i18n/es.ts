@@ -1095,6 +1095,39 @@ export const es = {
     specOther: 'Otra',
     // Lives/Recordings filter
     allSpecialties: 'Todas las especialidades',
+    // Nutrition specialty
+    specNutrition: 'Nutriología',
+    // Advanced filters
+    moreFilters: 'Más filtros',
+    minRating: 'Rating mín.',
+    level: 'Nivel',
+    levelNew: 'Nuevo',
+    levelActive: 'Activo',
+    levelElite: 'Élite',
+    minConsultations: 'Consultas mín.',
+    clearFilters: 'Limpiar',
+    continent: 'Continente',
+    country: 'País',
+    university: 'Universidad / Hospital',
+    allContinents: 'Todos',
+    allCountries: 'Todos los países',
+    allUniversities: 'Todas',
+    americas: 'Américas',
+    europe: 'Europa',
+    asia: 'Asia',
+    // Emergency / Available Now
+    emergencyTitle: 'Doctores Disponibles Ahora',
+    emergencySubtitle: 'Estos especialistas están atendiendo en este momento',
+    consultNow: 'Consultar Ahora',
+    noAvailableNow: 'No hay doctores disponibles en este momento',
+    // Specialized directories
+    psychologyTitle: 'Directorio de Psicología',
+    psychologySubtitle: 'Encuentra especialistas en salud mental y bienestar emocional',
+    psychologyHero: 'Tu salud mental importa. Conecta con profesionales certificados.',
+    nutritionTitle: 'Directorio de Nutrición',
+    nutritionSubtitle: 'Encuentra especialistas en nutrición y bienestar',
+    nutritionHero: 'Transforma tu salud con orientación nutricional personalizada.',
+    specNutriology: 'Nutriología',
   },
   // Report
   report: {
