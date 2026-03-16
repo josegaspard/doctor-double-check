@@ -1,38 +1,26 @@
 
-
-# Plan: Añadir "Publicidad" al menú dropdown de desktop para residentes y pacientes
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
 ## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-El enlace "Publicidad" ya está en:
-- ✅ Sidebar de tablet (línea 337-342)
-- ✅ Sheet móvil "Más" (línea 662-673)
-- ❌ **Dropdown de desktop** (líneas 446-459) — **FALTA**
+## Solucion
 
-La captura de pantalla del usuario muestra exactamente esto: el dropdown de desktop para `residente1@medicalmasters.test` no tiene la opción "Publicidad".
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-## Solución
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-### Archivo: `src/components/layout/MainLayout.tsx`
-
-En el dropdown menu de desktop (línea 454-455, entre el item de Wallet y el de Settings), añadir:
-
-```tsx
-{(role === 'patient' || role === 'resident') && hasCampaigns && (
-  <DropdownMenuItem onClick={() => navigate('/advertiser/dashboard')} className="py-3 text-sm">
-    <Megaphone className="w-4 h-4 mr-2" />
-    {t('nav.advertising') || 'Publicidad'}
-  </DropdownMenuItem>
-)}
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-Esto lo inserta justo debajo de "Mi Wallet" y antes de "Configuración", exactamente como pidió el usuario.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
 ## Archivos a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/components/layout/MainLayout.tsx` | Línea ~455: añadir DropdownMenuItem de "Publicidad" condicional en el menú dropdown de desktop |
-
-Un solo cambio, 5 líneas de código.
-
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |

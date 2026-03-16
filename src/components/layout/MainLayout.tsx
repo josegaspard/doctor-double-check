@@ -453,6 +453,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         {t('nav.wallet')}
                       </DropdownMenuItem>
                     )}
+                    {(role === 'patient' || role === 'resident') && hasCampaigns && (
+                      <DropdownMenuItem onClick={() => navigate('/advertiser/dashboard')} className="py-3 text-sm">
+                        <Megaphone className="w-4 h-4 mr-2" />
+                        {t('nav.advertising') || 'Publicidad'}
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => navigate('/settings')} className="py-3 text-sm">
                       <Settings className="w-4 h-4 mr-2" />
                       {t('nav.settings')}
