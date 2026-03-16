@@ -654,6 +654,11 @@ export default function NewsArticle() {
 
         <Separator className="my-8" />
 
+        {/* Mobile inline ad */}
+        {isMobile && (
+          <AdBanner placementName="news_inline_mobile" className="mb-6" />
+        )}
+
         {/* Comments */}
         <section>
           <h2 className="text-lg font-bold text-foreground mb-1 flex items-center gap-2">
