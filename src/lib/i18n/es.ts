@@ -23,6 +23,7 @@ export const es = {
     logout: 'Cerrar Sesión',
     login: 'Iniciar Sesión',
     doctors: 'Doctores',
+    more: 'Más',
   },
   // Common
   search: {

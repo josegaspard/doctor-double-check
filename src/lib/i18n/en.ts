@@ -23,6 +23,7 @@ export const en = {
     logout: 'Log Out',
     login: 'Log In',
     doctors: 'Doctors',
+    more: 'More',
   },
   // Common
   search: {
