@@ -606,6 +606,15 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   }, [fetchLives]);
 
   const refreshRecordings = useCallback(async () => {
+    recordingsLoadedRef.current = false;
+    await fetchRecordings();
+    recordingsLoadedRef.current = true;
+  }, [fetchRecordings]);
+
+  // Lazy-load recordings: only fetch on first access
+  const ensureRecordingsLoaded = useCallback(async () => {
+    if (recordingsLoadedRef.current) return;
+    recordingsLoadedRef.current = true;
     await fetchRecordings();
   }, [fetchRecordings]);
 
