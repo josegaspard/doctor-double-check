@@ -161,7 +161,7 @@ export function SubscribeButton({
 
   return (
     <>
-      <div className={`flex items-center gap-2 ${className || ''}`}>
+      <div className={`flex flex-wrap items-center gap-2 ${className || ''}`}>
         {/* Following button with settings popover */}
         <Popover>
           <PopoverTrigger asChild>
