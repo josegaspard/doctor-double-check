@@ -30,6 +30,7 @@ interface SubscribeButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   showUpgrade?: boolean;
+  className?: string;
   onSubscriptionChange?: () => void;
 }
 

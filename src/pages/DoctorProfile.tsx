@@ -613,19 +613,17 @@ export default function DoctorProfile() {
               </Button>
 
               {/* Secondary actions — single row */}
-              <div className="flex gap-2">
-                <div className="flex-1 min-w-0">
-                  <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} size="sm" variant="outline" onSubscriptionChange={async () => {
-                    await new Promise(r => setTimeout(r, 1000));
-                    const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
-                    const profile = Array.isArray(data) ? data[0] : data;
-                    if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
-                  }} />
-                </div>
+              <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} size="sm" variant="outline" className="w-full" onSubscriptionChange={async () => {
+                  await new Promise(r => setTimeout(r, 1000));
+                  const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
+                  const profile = Array.isArray(data) ? data[0] : data;
+                  if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
+                }} />
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 min-w-0 gap-1.5"
+                  className="w-full gap-1.5"
                   onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}
                 >
                   <Video className="w-3.5 h-3.5 text-primary" />
