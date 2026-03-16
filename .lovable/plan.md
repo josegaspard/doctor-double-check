@@ -1,56 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Alternativa SMS para OTP (sin Twilio)
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Contexto
-Los cambios de país en tarjetas y traducciones `nearMe` ya están implementados en los mensajes anteriores. Lo pendiente es habilitar SMS para OTP.
+## Solucion
 
-El sistema ya envía OTP por **email** (Resend funciona). Para SMS, el código soporta Vonage/Telnyx pero ninguno tiene credenciales configuradas. Twilio fue rechazado.
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-## Alternativas simples para SMS
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-| Proveedor | Costo | Verificación | Dificultad |
-|-----------|-------|-------------|------------|
-| **Textbelt** | $0.05/SMS, 1 gratis/día | Solo API key, sin verificar identidad | Muy fácil |
-| **Brevo** (ex-Sendinblue) | Tier gratis con SMS incluidos | Registro simple | Fácil |
-| **Vonage** (ya soportado en código) | Trial gratis con créditos | Registro con verificación básica | Medio |
-
-### Recomendación: **Textbelt**
-- No requiere verificar identidad ni comprar número
-- API extremadamente simple: 1 endpoint POST
-- Solo necesitas una API key de [textbelt.com](https://textbelt.com)
-- Funciona internacionalmente
-
-## Cambios técnicos
-
-### 1. `supabase/functions/send-otp-email/index.ts`
-Agregar función `sendSmsTextbelt()`:
-```ts
-async function sendSmsTextbelt(to: string, message: string): Promise<boolean> {
-  const resp = await fetch("https://textbelt.com/text", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      phone: to.replace(/\D/g, ''),
-      message,
-      key: SMS_API_KEY,
-    }),
-  });
-  const data = await resp.json();
-  return data.success === true;
-}
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-Actualizar `sendSms()` para incluir `textbelt` como opción de `SMS_PROVIDER`.
-
-### 2. Secreto necesario
-- `SMS_API_KEY` — La API key de Textbelt (se obtiene en textbelt.com, plan de pago o `textbelt` para 1 SMS gratis/día de prueba)
-- `SMS_PROVIDER` — Configurar como `textbelt`
-
-### 3. Sin cambios en frontend
-El `OtpVerificationDialog` ya soporta la opción SMS y detecta `smsAvailable` dinámicamente.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
 ## Archivos a modificar
-1. `supabase/functions/send-otp-email/index.ts` — Agregar provider Textbelt
-2. Configurar secretos `SMS_API_KEY` y `SMS_PROVIDER`
 
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
