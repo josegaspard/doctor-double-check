@@ -19,7 +19,7 @@ import {
   Megaphone, Plus, Eye, MousePointerClick, DollarSign,
   Loader2, BarChart3, ArrowLeft, Calendar, Users,
   Upload, Image as ImageIcon, TrendingUp, FileDown, CreditCard,
-  Trash2, ExternalLink,
+  Trash2, ExternalLink, Wallet, Lightbulb, Target,
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 
