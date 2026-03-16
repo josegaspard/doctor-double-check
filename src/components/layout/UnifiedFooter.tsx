@@ -66,6 +66,11 @@ export function UnifiedFooter({ variant }: Props) {
   const { t } = useLanguage();
   const { config: adConfig } = useAdConfig();
 
+  // Ensure "Para Residentes" always appears in platform links
+  const platformLinks = footerLinks.platform.some(l => l.href === '/for-residents')
+    ? footerLinks.platform
+    : [...footerLinks.platform, { label: 'Para Residentes', href: '/for-residents' }];
+
   // Inject "Publicidad" link into resources when ads are active
   const resourcesLinks = adConfig.is_active
     ? [...footerLinks.resources, { label: t('ads.advertising'), href: '/advertising' }]
@@ -85,7 +90,7 @@ export function UnifiedFooter({ variant }: Props) {
               <SocialIcons socialLinks={socialLinks} />
             </div>
 
-            <FooterLinkColumn title={t('landingFooter.platform')} links={footerLinks.platform} />
+            <FooterLinkColumn title={t('landingFooter.platform')} links={platformLinks} />
             <FooterLinkColumn title={t('landingFooter.resources')} links={resourcesLinks} />
             <FooterLinkColumn title={t('landingFooter.legal')} links={footerLinks.legal} />
           </div>
@@ -119,7 +124,7 @@ export function UnifiedFooter({ variant }: Props) {
           </div>
 
           {/* Platform */}
-          <FooterLinkColumn title={t('landingFooter.platform')} links={footerLinks.platform} />
+          <FooterLinkColumn title={t('landingFooter.platform')} links={platformLinks} />
           <FooterLinkColumn title={t('landingFooter.resources')} links={resourcesLinks} />
           <FooterLinkColumn title={t('landingFooter.legal')} links={footerLinks.legal} />
         </div>

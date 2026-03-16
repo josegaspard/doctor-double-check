@@ -507,6 +507,7 @@ export const es = {
     doctorManagement: 'Gestión de Médicos',
     residentManagement: 'Gestión de Residentes',
     userManagement: 'Gestión de Usuarios',
+    manage: 'Gestionar',
     pendingRequests: 'solicitudes pendientes de revisión',
     registeredUsers: 'usuarios registrados',
     searchByNameEmailSpecialty: 'Buscar por nombre, especialidad o email...',

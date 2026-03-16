@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
+import { AdBanner } from '@/components/ads/AdBanner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -256,7 +257,10 @@ export default function MedicalNews() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-6 max-w-5xl">
+      <div className="container mx-auto px-3 sm:px-4 py-6 max-w-7xl">
+        {/* Top banner */}
+        <AdBanner placementName="news_top_banner" className="mb-4" />
+
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
@@ -280,7 +284,7 @@ export default function MedicalNews() {
           <Input placeholder={t('medicalNews.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
 
-        {/* Sort filters with arrows */}
+        {/* Sort filters */}
         <ScrollableFilterRow className="mb-3">
           {sortOptions.map(opt => (
             <Button key={opt.key} variant={sortBy === opt.key ? 'default' : 'outline'} size="sm" onClick={() => setSortBy(opt.key)} className="text-xs gap-1.5 shrink-0">
@@ -289,7 +293,7 @@ export default function MedicalNews() {
           ))}
         </ScrollableFilterRow>
 
-        {/* Category filters with arrows */}
+        {/* Category filters */}
         <ScrollableFilterRow className="mb-6">
           {CATEGORIES.map(cat => (
             <Button key={cat} variant={selectedCategory === cat ? 'secondary' : 'ghost'} size="sm" onClick={() => setSelectedCategory(cat)} className={`text-xs shrink-0 ${selectedCategory === cat ? 'font-semibold' : ''}`}>
@@ -298,26 +302,50 @@ export default function MedicalNews() {
           ))}
         </ScrollableFilterRow>
 
-        {/* Content */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
-          </div>
-        ) : news.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {heroItem && <NewsCard item={heroItem} isHero dateLocale={dateLocale} language={language} t={t} />}
-              {gridItems.map(item => <NewsCard key={item.id} item={item} dateLocale={dateLocale} language={language} t={t} />)}
+        {/* 3-column layout: sidebar | content | sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_180px] gap-6">
+          {/* Left sidebar ad — desktop only */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <AdBanner placementName="news_sidebar_left" className="w-full" />
             </div>
-            {renderPagination()}
-          </>
-        ) : (
-          <Card className="p-12 text-center">
-            <Newspaper className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">{t('medicalNews.noNews')}</h3>
-            <p className="text-muted-foreground">{t('medicalNews.noNewsSubtitle')}</p>
-          </Card>
-        )}
+          </aside>
+
+          {/* Main content */}
+          <div>
+            {/* Mobile inline ad */}
+            {isMobile && (
+              <AdBanner placementName="news_inline_mobile" className="mb-4" />
+            )}
+
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : news.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {heroItem && <NewsCard item={heroItem} isHero dateLocale={dateLocale} language={language} t={t} />}
+                  {gridItems.map(item => <NewsCard key={item.id} item={item} dateLocale={dateLocale} language={language} t={t} />)}
+                </div>
+                {renderPagination()}
+              </>
+            ) : (
+              <Card className="p-12 text-center">
+                <Newspaper className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">{t('medicalNews.noNews')}</h3>
+                <p className="text-muted-foreground">{t('medicalNews.noNewsSubtitle')}</p>
+              </Card>
+            )}
+          </div>
+
+          {/* Right sidebar ad — desktop only */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <AdBanner placementName="news_sidebar_right" className="w-full" />
+            </div>
+          </aside>
+        </div>
       </div>
     </MainLayout>
   );

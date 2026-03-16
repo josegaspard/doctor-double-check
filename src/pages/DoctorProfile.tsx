@@ -583,9 +583,10 @@ export default function DoctorProfile() {
               </div>
             )}
 
-            {/* CTA buttons — primary full-width, secondary as card grid */}
+            {/* Action panel — clear hierarchy */}
             {!isSelf && (
-            <div className="space-y-3">
+            <div className="bg-muted/30 rounded-xl p-3 space-y-2.5">
+              {/* Primary CTA */}
               <Button 
                 className="gap-2 w-full" 
                 size="lg"
@@ -611,16 +612,14 @@ export default function DoctorProfile() {
                 }
               </Button>
 
-              <div className="w-full">
+              {/* Secondary actions — 2-col grid */}
+              <div className="grid grid-cols-2 gap-2">
                 <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} size="default" variant="outline" onSubscriptionChange={async () => {
                   await new Promise(r => setTimeout(r, 1000));
                   const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
                   const profile = Array.isArray(data) ? data[0] : data;
                   if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
                 }} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   size="default"
@@ -630,7 +629,11 @@ export default function DoctorProfile() {
                   <Video className="w-4 h-4 text-primary" />
                   {t('doctorProfile.viewLives')}
                 </Button>
-                <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} size="default" />
+              </div>
+
+              {/* Tertiary — block as subtle link */}
+              <div className="flex justify-center pt-1">
+                <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} size="sm" />
               </div>
             </div>
             )}
