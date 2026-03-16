@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLives } from '@/contexts/LivesContext';
 import { useVault } from '@/contexts/VaultContext';
+import { useHasAdCampaigns } from '@/hooks/useHasAdCampaigns';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Folder, BarChart3, Settings, ChevronDown } from 'lucide-react';
+import { Folder, BarChart3, Settings, ChevronDown, Megaphone } from 'lucide-react';
 import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
 import { SignatureUpload } from '@/components/doctor/SignatureUpload';
 import { EmailStatsCard } from '@/components/doctor/EmailStatsCard';
@@ -31,6 +32,7 @@ export default function DoctorDashboard() {
   const { t } = useLanguage();
   const { getLivesByDoctor } = useLives();
   const { getAccessibleFiles } = useVault();
+  const { hasCampaigns } = useHasAdCampaigns();
   const [recordingsCount, setRecordingsCount] = useState(0);
   const [canPublishNews, setCanPublishNews] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
@@ -74,12 +76,18 @@ export default function DoctorDashboard() {
         {!isApproved && <DoctorStatusAlert isPending={isPending} />}
 
         <Tabs defaultValue="overview" className="mb-4 sm:mb-6">
-          <TabsList className="mb-3 sm:mb-5 w-full sm:w-auto grid grid-cols-2 sm:flex">
+          <TabsList className="mb-3 sm:mb-5 w-full sm:w-auto grid grid-cols-2 sm:flex" style={hasCampaigns ? { gridTemplateColumns: 'repeat(3, 1fr)' } : undefined}>
             <TabsTrigger value="overview" className="px-3 sm:px-6 text-xs sm:text-sm">General</TabsTrigger>
             <TabsTrigger value="analytics" className="gap-1.5 px-3 sm:px-6 text-xs sm:text-sm">
               <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Analytics
             </TabsTrigger>
+            {hasCampaigns && (
+              <TabsTrigger value="advertising" className="gap-1.5 px-3 sm:px-6 text-xs sm:text-sm" onClick={() => navigate('/advertiser/dashboard')}>
+                <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                Publicidad
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-3 sm:space-y-5">

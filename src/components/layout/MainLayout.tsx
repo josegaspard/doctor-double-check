@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
+import { useHasAdCampaigns } from '@/hooks/useHasAdCampaigns';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useSocialLinks } from '@/hooks/useSiteSettings';
 import { useChat } from '@/contexts/ChatContext';
@@ -177,6 +178,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const { unreadCount: notifUnread } = useNotifications();
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [pendingEarnings, setPendingEarnings] = useState<number>(0);
+  const { hasCampaigns } = useHasAdCampaigns();
 
   // Fetch pending_earnings for doctors
   useEffect(() => {
@@ -330,6 +332,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                           <Link to="/wallet" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/wallet' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                             <Wallet className="w-5 h-5" />
                             {t('nav.wallet')} (<AnimatedBalance balance={balance} />)
+                          </Link>
+                        )}
+                        {(role === 'patient' || role === 'resident') && hasCampaigns && (
+                          <Link to="/advertiser/dashboard" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/advertiser/dashboard' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                            <Megaphone className="w-5 h-5" />
+                            {t('nav.advertising') || 'Publicidad'}
                           </Link>
                         )}
                         <Link to="/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/settings' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
@@ -651,6 +659,18 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         <span className="ml-auto text-xs font-semibold text-muted-foreground">${balance.toLocaleString()}</span>
                       </Link>
                     )}
+                    {(role === 'patient' || role === 'resident') && hasCampaigns && (
+                      <Link
+                        to="/advertiser/dashboard"
+                        onClick={() => setMoreSheetOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                          location.pathname === '/advertiser/dashboard' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <Megaphone className="w-5 h-5" />
+                        <span className="text-sm font-medium">{t('nav.advertising') || 'Publicidad'}</span>
+                      </Link>
+                    )}
                     <Link
                       to="/notifications"
                       onClick={() => setMoreSheetOpen(false)}
@@ -675,16 +695,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     >
                       <Settings className="w-5 h-5" />
                       <span className="text-sm font-medium">{t('nav.settings')}</span>
-                    </Link>
-                    <Link
-                      to="/advertiser/dashboard"
-                      onClick={() => setMoreSheetOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
-                        location.pathname === '/advertiser/dashboard' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <Megaphone className="w-5 h-5" />
-                      <span className="text-sm font-medium">{t('nav.advertising') || 'Publicidad'}</span>
                     </Link>
                   </div>
                   <div className="border-t border-border my-3" />
