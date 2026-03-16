@@ -1060,7 +1060,7 @@ export default function AdminPayouts() {
                     {Object.entries(txTotals).map(([type, total]) => (
                       <div key={type} className="p-3 rounded-lg bg-muted/50 border border-border/50">
                         <p className="text-xs text-muted-foreground">{getTxTypeLabel(type)}</p>
-                        <p className="font-bold text-sm">{formatCurrency(total)}</p>
+                        <p className="font-bold text-sm">{formatCurrency(total as number)}</p>
                       </div>
                     ))}
                   </div>
