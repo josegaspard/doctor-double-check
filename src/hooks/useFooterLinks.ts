@@ -18,6 +18,7 @@ const DEFAULT_FOOTER: FooterLinksData = {
   platform: [
     { label: 'Para Doctores', href: '/for-doctors' },
     { label: 'Para Pacientes', href: '/for-patients' },
+    { label: 'Para Residentes', href: '/for-residents' },
     { label: 'Empresas', href: '/enterprise' },
   ],
   resources: [

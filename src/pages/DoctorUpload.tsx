@@ -28,7 +28,9 @@ import { useToast } from '@/hooks/use-toast';
 
 const CONTENT_CATEGORIES = [
   'Cardiología', 'Medicina Interna', 'Pediatría', 'Neurología', 'Dermatología',
-  'Oftalmología', 'Neumología', 'Endocrinología', 'Psiquiatría', 'Otro',
+  'Oftalmología', 'Neumología', 'Endocrinología', 'Psiquiatría',
+  'Cirugías', 'Casos Clínicos', 'Explicaciones', 'Procedimientos', 'Conferencias',
+  'Otro',
 ];
 
 interface UploadedContent {
