@@ -521,8 +521,12 @@ export default function Doctors() {
                                 <CheckCircle className="w-3.5 h-3.5 text-success flex-shrink-0" />
                               )}
                             </div>
-                            <p className="text-xs text-primary/80 font-medium mb-1 truncate">{doctor.specialty}</p>
-                            <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
+                            <p className="text-xs text-primary/80 font-medium mb-1 truncate">
+                              {doctor.specialty}
+                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
+                            </div>
                           </div>
 
                           {/* Fee */}
