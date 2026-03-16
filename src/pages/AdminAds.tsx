@@ -93,7 +93,13 @@ export default function AdminAds() {
 
     if (data && data.length > 0) {
       const ids = data.map((c: any) => c.id);
-      const { data: events } = await supabase.from('ad_events' as any).select('campaign_id, event_type').in('campaign_id', ids);
+      const advertiserIds = [...new Set(data.map((c: any) => c.advertiser_id))];
+      
+      const [{ data: events }, { data: profiles }] = await Promise.all([
+        supabase.from('ad_events' as any).select('campaign_id, event_type').in('campaign_id', ids),
+        supabase.from('profiles_public').select('id, name, avatar_url').in('id', advertiserIds),
+      ]);
+      
       const stats: Record<string, CampaignStats> = {};
       (events as any[] || []).forEach((e: any) => {
         if (!stats[e.campaign_id]) stats[e.campaign_id] = { impressions: 0, clicks: 0 };
@@ -101,6 +107,10 @@ export default function AdminAds() {
         else if (e.event_type === 'click') stats[e.campaign_id].clicks++;
       });
       setCampaignStats(stats);
+      
+      const profileMap: Record<string, AdvertiserProfile> = {};
+      (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
+      setAdvertiserProfiles(profileMap);
     }
 
     const { data: payments } = await supabase.from('ad_payments' as any).select('amount, created_at').eq('status', 'paid');
