@@ -54,6 +54,7 @@ import {
   Mail,
   HelpCircle,
   Shield,
+  Megaphone,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';

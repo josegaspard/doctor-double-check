@@ -633,6 +633,8 @@ export default function AdvertiserDashboard() {
             {campaigns.map(campaign => {
               const stats = campaignStats[campaign.id] || { impressions: 0, clicks: 0 };
               const ctr = stats.impressions > 0 ? ((stats.clicks / stats.impressions) * 100).toFixed(2) : '0.00';
+              const calcSpent = (stats.impressions / 1000 * config.cpm_rate) + (stats.clicks * config.cpc_rate);
+              const rem = Math.max(0, Number(campaign.budget) - calcSpent);
               return (
                 <Card key={campaign.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCampaign(campaign.id)}>
                   <CardContent className="p-4">
@@ -645,7 +647,7 @@ export default function AdvertiserDashboard() {
                       </div>
                       <span className="text-sm font-bold text-primary">${Number(campaign.budget).toLocaleString()}</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 mt-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
                       <div className="rounded-lg bg-muted/50 p-2 text-center">
                         <p className="text-sm font-bold text-info">{stats.impressions.toLocaleString()}</p>
                         <p className="text-[10px] text-muted-foreground">{t('ads.impressions').substring(0,3)}</p>
@@ -654,9 +656,13 @@ export default function AdvertiserDashboard() {
                         <p className="text-sm font-bold text-warning">{stats.clicks}</p>
                         <p className="text-[10px] text-muted-foreground">{t('ads.clicks')}</p>
                       </div>
-                      <div className="rounded-lg bg-muted/50 p-2 text-center">
-                        <p className="text-sm font-bold text-success">{ctr}%</p>
-                        <p className="text-[10px] text-muted-foreground">CTR</p>
+                      <div className="rounded-lg bg-warning/10 p-2 text-center">
+                        <p className="text-sm font-bold text-warning">${calcSpent.toFixed(0)}</p>
+                        <p className="text-[10px] text-muted-foreground">{es ? 'Gastado' : 'Spent'}</p>
+                      </div>
+                      <div className="rounded-lg bg-success/10 p-2 text-center">
+                        <p className="text-sm font-bold text-success">${rem.toFixed(0)}</p>
+                        <p className="text-[10px] text-muted-foreground">{es ? 'Restante' : 'Left'}</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-2 text-[10px] text-muted-foreground">
