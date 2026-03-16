@@ -1007,6 +1007,33 @@ export default function Onboarding() {
                         </p>
                       </motion.div>
 
+                      {/* Country Selector */}
+                      <motion.div className="space-y-2" variants={itemVariants}>
+                        <Label htmlFor="country" className="text-sm font-medium flex items-center gap-1.5">
+                          <Globe className="w-4 h-4" />
+                          País
+                        </Label>
+                        <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                          <SelectTrigger id="country">
+                            <SelectValue placeholder="Selecciona tu país" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {Object.entries(COUNTRY_CURRENCIES).map(([code, info]) => (
+                              <SelectItem key={code} value={code}>
+                                <span className="flex items-center gap-2">
+                                  <span>{info.flag}</span>
+                                  <span>{info.name}</span>
+                                  <span className="text-muted-foreground text-xs">({info.currency})</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[11px] text-muted-foreground">
+                          Los precios se mostrarán en tu moneda local como referencia. Los pagos se procesan en MXN.
+                        </p>
+                      </motion.div>
+
                       <motion.div className="space-y-3" variants={itemVariants}>
                         <Label className="text-base font-medium">{t('onboarding.selectRole')}</Label>
                         <RadioGroup 
