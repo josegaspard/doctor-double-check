@@ -589,7 +589,7 @@ export default function Doctors() {
           {nearbyMode && (
             <Badge variant="secondary" className="gap-1 text-[10px]">
               <MapPin className="w-3 h-3" />
-              {t('doctors.nearMe') || 'Cerca de mí'}
+              {t('doctors.nearMe')}
             </Badge>
           )}
         </div>
