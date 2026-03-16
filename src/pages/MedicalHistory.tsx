@@ -49,6 +49,8 @@ export default function MedicalHistory() {
   const { medicalHistory, uploadMedicalHistory, isLoading } = useVault();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
