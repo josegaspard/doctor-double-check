@@ -24,6 +24,7 @@ export const es = {
     login: 'Iniciar Sesión',
     doctors: 'Doctores',
     more: 'Más',
+    advertising: 'Publicidad',
   },
   // Common
   search: {

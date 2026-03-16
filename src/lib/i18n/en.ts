@@ -24,6 +24,7 @@ export const en = {
     login: 'Log In',
     doctors: 'Doctors',
     more: 'More',
+    advertising: 'Advertising',
   },
   // Common
   search: {
