@@ -176,10 +176,29 @@ export default function Doctors() {
   const [minRating, setMinRating] = useState(0);
   const [selectedLevel, setSelectedLevel] = useState('');
   const [minConsultations, setMinConsultations] = useState(0);
+  const [selectedContinent, setSelectedContinent] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedUniversity, setSelectedUniversity] = useState('');
+  const [universities, setUniversities] = useState<string[]>([]);
   const [, setTick] = useState(0);
 
   const fetchDoctorsStableRef = useRef<() => void>(() => {});
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Fetch universities for filter
+  useEffect(() => {
+    const fetchUniversities = async () => {
+      const { data } = await supabase
+        .from('doctor_education')
+        .select('institution')
+        .eq('status', 'approved');
+      if (data) {
+        const unique = [...new Set(data.map(d => d.institution).filter(Boolean))].sort();
+        setUniversities(unique);
+      }
+    };
+    fetchUniversities();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60_000);
