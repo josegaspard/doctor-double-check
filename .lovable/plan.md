@@ -1,26 +1,26 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
+
+# Fix: "nav.advertising" mostrándose como texto en lugar de "Publicidad"
 
 ## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Solucion
+La función `t()` en `src/lib/i18n.ts` retorna el path (`"nav.advertising"`) cuando no encuentra la traducción, en lugar de retornar algo falsy. Por eso el fallback `|| 'Publicidad'` nunca se ejecuta y se muestra el texto técnico "nav.advertising".
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+La clave `advertising` existe en `ads.advertising` pero no en `nav.advertising`.
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+## Solución
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+Dos cambios mínimos:
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+### 1. `src/lib/i18n/es.ts` — Añadir la clave al objeto `nav`
+Línea 26, antes de `more`: añadir `advertising: 'Publicidad',`
+
+### 2. `src/lib/i18n/en.ts` — Igual para inglés
+Añadir `advertising: 'Advertising',` en el objeto `nav`.
+
+Con esto, `t('nav.advertising')` retornará correctamente "Publicidad" en español y "Advertising" en inglés, y no se mostrará ningún término técnico.
 
 ## Archivos a modificar
+- `src/lib/i18n/es.ts` — 1 línea
+- `src/lib/i18n/en.ts` — 1 línea
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
