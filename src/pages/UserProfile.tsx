@@ -54,6 +54,7 @@ import {
   X,
 } from 'lucide-react';
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
+import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
 
 type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired' | null;
 
@@ -555,6 +556,9 @@ export default function UserProfile() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Clinical History Card - Patient Only */}
+        {role === 'patient' && <PatientClinicalHistoryCard />}
 
         {/* Professional Profile Card - Doctor */}
         {role === 'doctor' && doctorProfile && (

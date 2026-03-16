@@ -49,6 +49,8 @@ export default function MedicalHistory() {
   const { medicalHistory, uploadMedicalHistory, isLoading } = useVault();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -293,13 +295,60 @@ export default function MedicalHistory() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Category filter chips */}
+              {medicalHistory.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <button
+                    onClick={() => setCategoryFilter('all')}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${categoryFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                  >
+                    {t('content.allCategories') || 'Todas'}
+                  </button>
+                  {CATEGORIES.map(cat => {
+                    const count = medicalHistory.filter(i => i.category === cat).length;
+                    if (count === 0) return null;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setCategoryFilter(cat)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${categoryFilter === cat ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                      >
+                        {cat} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Sort toggle */}
+              {medicalHistory.length > 1 && (
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                  <button
+                    onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {sortOrder === 'newest' ? (t('medicalHistory.newestFirst') || 'Más recientes primero') : (t('medicalHistory.oldestFirst') || 'Más antiguos primero')}
+                  </button>
+                </div>
+              )}
+
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
-              ) : medicalHistory.length > 0 ? (
+              ) : (() => {
+                const filtered = medicalHistory
+                  .filter(i => categoryFilter === 'all' || i.category === categoryFilter)
+                  .sort((a, b) => {
+                    const dateA = a.dateOfStudy ? new Date(a.dateOfStudy).getTime() : new Date(a.createdAt).getTime();
+                    const dateB = b.dateOfStudy ? new Date(b.dateOfStudy).getTime() : new Date(b.createdAt).getTime();
+                    return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+                  });
+                
+                return filtered.length > 0 ? (
                 <div className="space-y-3">
-                  {medicalHistory.map((item) => (
+                  {filtered.map((item) => (
                     <div
                       key={item.id}
                       className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted active:scale-[0.98] transition-all"
@@ -310,6 +359,9 @@ export default function MedicalHistory() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{item.title}</p>
+                        {item.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.description}</p>
+                        )}
                         <div className="flex flex-wrap items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">
                             {item.category}
@@ -321,9 +373,15 @@ export default function MedicalHistory() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatSize(item.fileSize)}
-                        </p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <p className="text-xs text-muted-foreground">
+                            {formatSize(item.fileSize)}
+                          </p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {t('medicalHistory.uploaded') || 'Subido'}: {formatDate(item.createdAt)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -332,10 +390,14 @@ export default function MedicalHistory() {
                 <div className="text-center py-8">
                   <FileText className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
                   <p className="text-sm text-muted-foreground">
-                    {t('medicalHistory.noStudies')}
+                    {categoryFilter !== 'all'
+                      ? (t('medicalHistory.noCategoryStudies') || 'No hay estudios en esta categoría')
+                      : (t('medicalHistory.noStudies'))
+                    }
                   </p>
                 </div>
-              )}
+              );
+              })()}
             </CardContent>
           </Card>
         </div>

@@ -92,7 +92,8 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
       title: es ? '📰 Contenido' : '📰 Content',
       modules: [
         { id: 'news', icon: Newspaper, href: '/admin/news', color: 'text-primary', borderColor: 'border-l-primary', title: es ? 'Noticias y Blog Médico' : 'Medical News & Blog', desc: es ? 'Crea y publica artículos' : 'Create and publish articles' },
-        { id: 'ads', icon: MessageSquare, href: '/admin/ads', color: 'text-warning', borderColor: 'border-l-warning', title: es ? 'Publicidad' : 'Advertising', desc: es ? 'Campañas, placements y métricas' : 'Campaigns, placements and metrics' },
+        { id: 'ranks', icon: ShieldCheck, href: '/admin/ranks', color: 'text-warning', borderColor: 'border-l-warning', title: es ? 'Rangos de Doctores' : 'Doctor Ranks', desc: es ? 'Administra rangos y sus requisitos' : 'Manage ranks and requirements' },
+        { id: 'ads', icon: MessageSquare, href: '/admin/ads', color: 'text-accent', borderColor: 'border-l-accent', title: es ? 'Publicidad' : 'Advertising', desc: es ? 'Campañas, placements y métricas' : 'Campaigns, placements and metrics' },
         { id: 'site-settings', icon: Settings, href: '/admin/site-settings', color: 'text-info', borderColor: 'border-l-info', title: es ? 'Config. del Sitio' : 'Site Settings', desc: es ? 'Redes sociales, términos y privacidad' : 'Social media, terms and privacy' },
       ],
     },

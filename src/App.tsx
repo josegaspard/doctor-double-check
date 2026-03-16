@@ -114,6 +114,7 @@ const Advertising = React.lazy(() => import("./pages/Advertising"));
 const AdvertiserDashboard = React.lazy(() => import("./pages/AdvertiserDashboard"));
 const PsychologyDirectory = React.lazy(() => import("./pages/PsychologyDirectory"));
 const NutritionDirectory = React.lazy(() => import("./pages/NutritionDirectory"));
+const ForResidents = React.lazy(() => import("./pages/ForResidents"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -227,6 +228,7 @@ const App = () => {
                       <Route path="/admin/ads" element={<AdminAds />} />
                       <Route path="/psychology" element={<PsychologyDirectory />} />
                       <Route path="/nutrition" element={<NutritionDirectory />} />
+                      <Route path="/for-residents" element={<ForResidents />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>
