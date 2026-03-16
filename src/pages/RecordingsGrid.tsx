@@ -35,7 +35,7 @@ export default function RecordingsGrid() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const doctorFilter = searchParams.get('doctor');
-  const { recordings } = useLives();
+  const { recordings, ensureRecordingsLoaded } = useLives();
   const { user, role, isAuthenticated } = useAuth();
   const { t, language } = useLanguage();
   const { balance } = useWallet();
