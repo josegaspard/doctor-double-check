@@ -246,11 +246,6 @@
     @apply bg-gradient-to-br from-premium/5 to-premium/10 border border-premium/20;
   }
   
-  /* Watermark */
-  .watermark {
-    @apply fixed pointer-events-none select-none text-foreground/10 text-xs font-mono;
-    transform: rotate(-30deg);
-  }
   
   /* Paywall overlay */
   .paywall-overlay {

@@ -455,7 +455,7 @@ export default function LivePlayer() {
                     </div>
                   </div>
                 )}
-                <Watermark />
+                
                 <div className="absolute top-4 left-4 z-10">
                   <Badge variant="live" className="gap-1">
                     <span className="w-2 h-2 rounded-full bg-white animate-pulse" />

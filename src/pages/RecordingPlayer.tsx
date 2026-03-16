@@ -225,7 +225,7 @@ export default function RecordingPlayer() {
                   </div>
                 </div>
               )}
-              <Watermark />
+              
             </div>
 
             <div>
