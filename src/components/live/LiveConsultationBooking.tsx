@@ -207,7 +207,7 @@ export function LiveConsultationBooking({
                 <p className="text-xs text-muted-foreground">{specialty}</p>
               </div>
               <Badge variant="secondary" className="text-sm font-bold">
-                ${consultationFee} MXN
+                <PriceDisplay amount={consultationFee} size="sm" />
               </Badge>
             </div>
 
