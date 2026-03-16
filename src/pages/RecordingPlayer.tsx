@@ -195,23 +195,6 @@ export default function RecordingPlayer() {
     );
   }
 
-  const Watermark = () => {
-    if (!user) return null;
-    
-    return (
-      <>
-        <div className="watermark top-4 left-4">
-          {user.email} • {new Date().toISOString().slice(0, 10)}
-        </div>
-        <div className="watermark bottom-20 right-4">
-          ID: {user.id}
-        </div>
-        <div className="watermark top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg opacity-5">
-          {user.email}
-        </div>
-      </>
-    );
-  };
 
   return (
     <MainLayout>
@@ -242,7 +225,7 @@ export default function RecordingPlayer() {
                   </div>
                 </div>
               )}
-              <Watermark />
+              
             </div>
 
             <div>

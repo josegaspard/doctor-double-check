@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -309,6 +309,11 @@ export default function ContentGallery() {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  // Force scroll to top on mount (fixes mobile scroll issue)
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
