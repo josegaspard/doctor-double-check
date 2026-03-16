@@ -458,10 +458,12 @@ export default function DoctorProfile() {
                 {/* Badges — minimal on mobile */}
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
                   <DoctorBadge type={getDoctorBadgeType(doctor.totalConsultations, doctor.rating, (doctor as any).badgeOverride)} size="sm" />
-                  <Badge variant="verified" className="gap-1 text-xs">
-                    <Award className="w-3 h-3" />
-                    {t('doctorProfile.verified')}
-                  </Badge>
+                  {doctor.isIdentityVerified && (
+                    <Badge variant="verified" className="gap-1 text-xs">
+                      <CheckCircle className="w-3 h-3" />
+                      {t('doctorProfile.verified')}
+                    </Badge>
+                  )}
                   {/* Followers — hidden on mobile to reduce clutter */}
                   <Badge variant="secondary" className="gap-1 text-xs overflow-hidden hidden sm:inline-flex">
                     <Users className="w-3 h-3" />
