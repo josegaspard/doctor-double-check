@@ -494,7 +494,7 @@ export default function DoctorProfile() {
                 {isFreeConsultation ? (
                   <p className="text-lg sm:text-xl font-bold text-success">{t('doctorProfile.free')}</p>
                 ) : (
-                  <p className="text-lg sm:text-xl font-bold text-premium">${doctor.consultationFee}</p>
+                  <p className="text-lg sm:text-xl font-bold text-premium"><PriceDisplay amount={doctor.consultationFee} size="lg" /></p>
                 )}
                 <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorProfile.consultation')}</p>
               </div>
