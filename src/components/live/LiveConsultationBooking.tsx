@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { PriceDisplay } from '@/components/currency/PriceDisplay';
 
 interface LiveConsultationBookingProps {
   open: boolean;
