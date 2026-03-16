@@ -504,32 +504,15 @@ export default function ContentGallery() {
         {/* Top horizontal banner */}
         <AdBanner placementName="content_inline" className="mb-4 [&_img]:max-h-[140px] [&_img]:sm:max-h-[160px] [&_img]:lg:max-h-[180px]" />
 
-        {/* 3-column layout: sidebar | content | sidebar (desktop only) */}
-        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_180px] gap-6">
-          {/* Left sidebar ad — desktop only */}
-          <aside className="hidden lg:block self-start">
-            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-hidden">
-              <AdBanner placementName="content_sidebar_left" className="w-full" />
+        {/* Main content */}
+        <div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          </aside>
-
-          {/* Main content */}
-          <div className="min-w-0">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              renderContentGrid()
-            )}
-          </div>
-
-          {/* Right sidebar ad — desktop only */}
-          <aside className="hidden lg:block self-start">
-            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-hidden">
-              <AdBanner placementName="content_sidebar_right" className="w-full" />
-            </div>
-          </aside>
+          ) : (
+            renderContentGrid()
+          )}
         </div>
 
         {/* Bottom banner */}
