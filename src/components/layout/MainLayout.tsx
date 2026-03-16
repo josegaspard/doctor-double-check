@@ -532,7 +532,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               }`}
             >
               <MoreHorizontal className="w-5 h-5" />
-              <span className="text-[10px] font-medium leading-tight">Más</span>
+              <span className="text-[10px] font-medium leading-tight">{t('nav.more')}</span>
             </button>
           </div>
         </nav>

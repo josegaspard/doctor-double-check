@@ -218,7 +218,7 @@ export default function Wallet() {
                   key={amount}
                   variant={selectedAmount === amount ? "default" : "outline"}
                   onClick={() => { setSelectedAmount(amount); setCustomAmount(''); }}
-                  className="h-11 min-w-[90px] flex-shrink-0 snap-start text-sm font-semibold"
+                  className="h-11 min-h-[44px] min-w-[90px] flex-shrink-0 snap-start text-sm font-semibold"
                 >
                   ${amount}
                 </Button>

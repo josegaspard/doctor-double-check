@@ -50,7 +50,7 @@ export function DoctorStatsGrid({ recordingsCount, vaultFilesCount, rating }: Pr
   return (
     <>
       {/* Mobile: horizontal scroll, Desktop: grid */}
-      <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:grid-cols-3 sm:gap-3 lg:grid-cols-6 lg:gap-4 sm:overflow-visible scrollbar-hide">
+      <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 lg:gap-4 sm:overflow-visible scrollbar-hide">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
