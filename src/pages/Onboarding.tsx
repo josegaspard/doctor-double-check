@@ -237,6 +237,7 @@ export default function Onboarding() {
   const [doctorLocation, setDoctorLocation] = useState('');
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [username, setUsername] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState(() => detectCountry());
   // Clinical History State
   const [clinicalHistory, setClinicalHistory] = useState<ClinicalHistoryData>({
     bloodType: '',
