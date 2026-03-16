@@ -741,6 +741,15 @@ export default function NewsArticle() {
           )}
         </section>
       </article>
+
+          {/* Right sidebar ad — desktop only */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <AdBanner placementName="news_sidebar_right" className="w-full" />
+            </div>
+          </aside>
+        </div>
+      </div>
     </MainLayout>
   );
 }

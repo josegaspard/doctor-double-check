@@ -302,50 +302,26 @@ export default function MedicalNews() {
           ))}
         </ScrollableFilterRow>
 
-        {/* 3-column layout: sidebar | content | sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_180px] gap-6">
-          {/* Left sidebar ad — desktop only */}
-          <aside className="hidden lg:block">
-            <div className="sticky top-24">
-              <AdBanner placementName="news_sidebar_left" className="w-full" />
-            </div>
-          </aside>
-
-          {/* Main content */}
-          <div>
-            {/* Mobile inline ad */}
-            {isMobile && (
-              <AdBanner placementName="news_inline_mobile" className="mb-4" />
-            )}
-
-            {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
-              </div>
-            ) : news.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {heroItem && <NewsCard item={heroItem} isHero dateLocale={dateLocale} language={language} t={t} />}
-                  {gridItems.map(item => <NewsCard key={item.id} item={item} dateLocale={dateLocale} language={language} t={t} />)}
-                </div>
-                {renderPagination()}
-              </>
-            ) : (
-              <Card className="p-12 text-center">
-                <Newspaper className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">{t('medicalNews.noNews')}</h3>
-                <p className="text-muted-foreground">{t('medicalNews.noNewsSubtitle')}</p>
-              </Card>
-            )}
+        {/* Main content */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
-
-          {/* Right sidebar ad — desktop only */}
-          <aside className="hidden lg:block">
-            <div className="sticky top-24">
-              <AdBanner placementName="news_sidebar_right" className="w-full" />
+        ) : news.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {heroItem && <NewsCard item={heroItem} isHero dateLocale={dateLocale} language={language} t={t} />}
+              {gridItems.map(item => <NewsCard key={item.id} item={item} dateLocale={dateLocale} language={language} t={t} />)}
             </div>
-          </aside>
-        </div>
+            {renderPagination()}
+          </>
+        ) : (
+          <Card className="p-12 text-center">
+            <Newspaper className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t('medicalNews.noNews')}</h3>
+            <p className="text-muted-foreground">{t('medicalNews.noNewsSubtitle')}</p>
+          </Card>
+        )}
       </div>
     </MainLayout>
   );
