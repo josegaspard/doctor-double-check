@@ -612,28 +612,26 @@ export default function DoctorProfile() {
                 }
               </Button>
 
-              {/* Secondary actions — 2-col grid */}
-              <div className="grid grid-cols-2 gap-2">
-                <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} size="default" variant="outline" onSubscriptionChange={async () => {
-                  await new Promise(r => setTimeout(r, 1000));
-                  const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
-                  const profile = Array.isArray(data) ? data[0] : data;
-                  if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
-                }} />
+              {/* Secondary actions — single row */}
+              <div className="flex gap-2">
+                <div className="flex-1 min-w-0">
+                  <SubscribeButton doctorId={doctor.id} doctorName={doctor.name} size="sm" variant="outline" onSubscriptionChange={async () => {
+                    await new Promise(r => setTimeout(r, 1000));
+                    const { data } = await supabase.rpc('get_doctor_public_profile', { p_user_id: doctor.id });
+                    const profile = Array.isArray(data) ? data[0] : data;
+                    if (profile) setDoctor(prev => prev ? { ...prev, followersCount: profile.followers_count } : prev);
+                  }} />
+                </div>
                 <Button
                   variant="outline"
-                  size="default"
-                  className="w-full gap-2"
+                  size="sm"
+                  className="flex-1 min-w-0 gap-1.5"
                   onClick={() => navigate(`/recordings?doctor=${doctor.id}`)}
                 >
-                  <Video className="w-4 h-4 text-primary" />
-                  {t('doctorProfile.viewLives')}
+                  <Video className="w-3.5 h-3.5 text-primary" />
+                  <span className="truncate">{t('doctorProfile.viewLives')}</span>
                 </Button>
-              </div>
-
-              {/* Tertiary — block as subtle link */}
-              <div className="flex justify-center pt-1">
-                <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} size="sm" />
+                <BlockUserButton targetUserId={doctor.id} targetUserName={doctor.name} size="icon" />
               </div>
             </div>
             )}
