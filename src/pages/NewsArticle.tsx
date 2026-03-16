@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/layout/MainLayout';
+import { AdBanner } from '@/components/ads/AdBanner';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,6 +43,7 @@ export default function NewsArticle() {
   const { user, role, isAuthenticated } = useAuth();
   const { t, language } = useLanguage();
   const dateLocale = language === 'es' ? es : enUS;
+  const isMobile = useIsMobile();
   const [article, setArticle] = useState<any>(null);
   const [authorProfile, setAuthorProfile] = useState<any>(null);
   const [authorDoctorProfile, setAuthorDoctorProfile] = useState<any>(null);
@@ -388,7 +391,21 @@ export default function NewsArticle() {
 
   return (
     <MainLayout>
-      <article className="container mx-auto px-4 py-6 max-w-3xl">
+      <div className="container mx-auto px-3 sm:px-4 py-6 max-w-7xl">
+        {/* Top banner ad */}
+        <AdBanner placementName="news_top_banner" className="mb-4" />
+
+        {/* 3-column layout: sidebar | article | sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_180px] gap-6">
+          {/* Left sidebar ad — desktop only */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <AdBanner placementName="news_sidebar_left" className="w-full" />
+            </div>
+          </aside>
+
+          {/* Main article content */}
+          <article className="max-w-3xl mx-auto w-full">
         <div className="flex items-center justify-between mb-4">
           <Link to="/news" className="hidden sm:inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-4 h-4" /> {t('ads.backToNews')}
@@ -637,6 +654,11 @@ export default function NewsArticle() {
 
         <Separator className="my-8" />
 
+        {/* Mobile inline ad */}
+        {isMobile && (
+          <AdBanner placementName="news_inline_mobile" className="mb-6" />
+        )}
+
         {/* Comments */}
         <section>
           <h2 className="text-lg font-bold text-foreground mb-1 flex items-center gap-2">
@@ -719,6 +741,15 @@ export default function NewsArticle() {
           )}
         </section>
       </article>
+
+          {/* Right sidebar ad — desktop only */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <AdBanner placementName="news_sidebar_right" className="w-full" />
+            </div>
+          </aside>
+        </div>
+      </div>
     </MainLayout>
   );
 }
