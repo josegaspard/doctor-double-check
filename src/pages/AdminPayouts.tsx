@@ -123,6 +123,13 @@ export default function AdminPayouts() {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [stripeError, setStripeError] = useState(false);
 
+  // All transactions tab
+  const [allTransactions, setAllTransactions] = useState<any[]>([]);
+  const [txLoading, setTxLoading] = useState(false);
+  const [txTypeFilter, setTxTypeFilter] = useState<string>('all');
+  const [txSearch, setTxSearch] = useState('');
+  const [txProfileMap, setTxProfileMap] = useState<Map<string, { name: string; avatar_url: string | null }>>(new Map());
+
   useEffect(() => {
     if (role !== 'admin') { navigate('/'); return; }
     loadData();
