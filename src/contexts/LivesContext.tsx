@@ -635,7 +635,8 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     endLive,
     refreshLives,
     refreshRecordings,
-  }), [lives, recordings, isLoading, getLive, getRecording, getLivesByDoctor, getRecordingsByDoctor, hasLiked, refreshLives, refreshRecordings]);
+    ensureRecordingsLoaded,
+  }), [lives, recordings, isLoading, getLive, getRecording, getLivesByDoctor, getRecordingsByDoctor, hasLiked, refreshLives, refreshRecordings, ensureRecordingsLoaded]);
 
   return (
     <LivesContext.Provider value={contextValue}>
