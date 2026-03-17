@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
         user_name: userName || "Usuario",
         message_content: messageContent.substring(0, 450),
         highlight_seconds: String(highlightSeconds),
+        amount: String(amount),
       },
       success_url: `${originUrl}/live/${liveId}?chat_paid=success`,
       cancel_url: `${originUrl}/live/${liveId}?chat_paid=cancel`,
