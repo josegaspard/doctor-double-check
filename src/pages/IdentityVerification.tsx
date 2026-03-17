@@ -461,7 +461,7 @@ export default function IdentityVerification() {
 
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full min-h-[44px]"
                 onClick={() => setShowManualUpload(true)}
               >
                 <Upload className="w-4 h-4 mr-2" />
