@@ -1,25 +1,26 @@
 
-
-# Bloquear clic derecho en PDFs de Biblioteca de Contenido
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
 ## Problema
-El iframe del PDF permite clic derecho → "Save As..." / "Print...", lo que expone los archivos que deben ser confidenciales. El `onContextMenu` en el `DialogContent` padre no intercepta clics dentro del iframe porque tiene su propio contexto de documento.
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Solución
+## Solucion
 
-**Archivo:** `src/components/content/ContentPreviewModal.tsx` (líneas 124-143)
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-Agregar una capa transparente (`div`) posicionada absolutamente encima del iframe con `z-10` que:
-- Intercepte todos los clics derechos con `onContextMenu={(e) => e.preventDefault()}`
-- Sea completamente transparente visualmente
-- Bloquee la interacción directa con el iframe (no se puede hacer clic derecho en el PDF)
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-El iframe seguirá visible y el PDF se podrá leer/scrollear a través del overlay (el scroll pasa a través de capas transparentes en la mayoría de navegadores). También se agrega `sandbox="allow-same-origin allow-scripts"` al iframe para restringir capacidades adicionales y `userSelect: 'none'` al contenedor.
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-Nota: El overlay bloquea la interacción directa con el iframe, incluyendo el scroll en algunos navegadores. Como alternativa, se puede usar `pointer-events: none` en el overlay excepto para el evento contextmenu, pero esto requiere JavaScript adicional. La solución más robusta es usar el overlay con `pointer-events: none` y un listener global de `contextmenu` en el contenedor padre — el iframe ya tiene `#toolbar=0&navpanes=0` que oculta los controles de descarga del visor PDF integrado.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-**Cambio concreto en `ContentPreviewModal.tsx`:**
-- Envolver el iframe en un `<div>` con `onContextMenu` bloqueado
-- Agregar `style={{ userSelect: 'none' }}` al contenedor
-- Usar un overlay transparente con `pointer-events: none` pero interceptando contextmenu via JavaScript en el contenedor padre
+## Archivos a modificar
 
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
