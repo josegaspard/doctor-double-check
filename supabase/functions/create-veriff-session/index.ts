@@ -93,6 +93,14 @@ serve(async (req) => {
     const sessionId = veriffData.verification.id;
     const sessionUrl = veriffData.verification.url;
 
+    // Delete any previous pending veriff sessions for this user
+    await supabase
+      .from("identity_verifications")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("provider", "veriff")
+      .eq("status", "pending");
+
     // Store verification record in DB
     const { error: insertError } = await supabase
       .from("identity_verifications")
