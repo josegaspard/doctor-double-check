@@ -151,6 +151,12 @@ export function OtpProvider({ children }: { children: React.ReactNode }) {
       toast.success('Verificación exitosa. Acceso al expediente concedido.');
       // Redirect to vault with patient filter
       navigate(`/doctor/vault?patient=${verifiedPatientId}`);
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      toast.error('Error al verificar código');
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const showBanner = otpRequestedAt !== null && !otpDialogOpen && otpPatient !== null && secondsLeft !== null && secondsLeft > 0;
