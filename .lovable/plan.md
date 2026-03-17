@@ -1,26 +1,64 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Fix: Mobile audio button + fullscreen on iOS/Android
 
-## Solucion
+## Bugs found
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+1. **CSS fullscreen cannot exit on iOS** — `toggleFullscreen` has no path to undo the CSS fallback. Clicking minimize on iOS does nothing.
+2. **Controls invisible on mobile** — `opacity-0 group-hover:opacity-100` requires hover; touch devices never trigger this, so buttons are hidden outside fullscreen.
+3. **Audio icon state mismatch** — `viewerAudioMuted` starts `false` (showing Volume2 icon) but elements start `muted = true`. Misleading UI.
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+## Changes (single file: `DailyVideoPlayer.tsx`)
 
+### 1. Fix CSS fullscreen exit
+Add an early check in `toggleFullscreen`: if `isFullscreen` is true but no native fullscreen element exists, it's a CSS fullscreen — toggle it off:
+
+```tsx
+const toggleFullscreen = useCallback(() => {
+  const el = wrapperRef.current;
+  if (!el) return;
+
+  // Exit native fullscreen
+  if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
+    (document.exitFullscreen?.() || (document as any).webkitExitFullscreen?.());
+    return;
+  }
+
+  // Exit CSS fallback fullscreen (iOS)
+  if (isFullscreen) {
+    setIsFullscreen(false);
+    document.body.style.overflow = '';
+    return;
+  }
+
+  // Enter native fullscreen, fallback to CSS
+  const requestFs = el.requestFullscreen?.bind(el) || (el as any).webkitRequestFullscreen?.bind(el);
+  if (requestFs) {
+    requestFs().catch(() => {
+      setIsFullscreen(true);
+      document.body.style.overflow = 'hidden';
+    });
+  } else {
+    setIsFullscreen(true);
+    document.body.style.overflow = 'hidden';
+  }
+}, [isFullscreen]);
 ```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
+
+### 2. Fix controls visibility on mobile
+Change the controls bar from hover-only to always visible on touch/mobile. Replace the opacity logic:
+- Non-fullscreen: `opacity-0 group-hover:opacity-100` → add `sm:opacity-0 sm:group-hover:opacity-100` (always visible on mobile, hover-reveal on desktop)
+- Or simpler: detect touch and keep `opacity-100`
+
+### 3. Fix audio icon initial state
+Change `viewerAudioMuted` initial value to `true` since elements start muted:
+```tsx
+const [viewerAudioMuted, setViewerAudioMuted] = useState(true);
 ```
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+## Result
+- iOS: CSS fullscreen enters and exits correctly
+- Android: native fullscreen works as before
+- Audio button visible and correctly reflects muted state on all devices
+- Controls always visible on mobile screens
 
-## Archivos a modificar
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
