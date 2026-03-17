@@ -22,8 +22,10 @@ export interface DailyVideoPlayerHandle {
   toggleMute: () => void;
   toggleVideo: () => void;
   leaveCall: () => void;
+  toggleFullscreen: () => void;
   isMuted: boolean;
   isVideoOff: boolean;
+  isFullscreen: boolean;
 }
 
 interface DailyVideoPlayerProps {
