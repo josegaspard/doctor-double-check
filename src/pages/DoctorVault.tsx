@@ -17,12 +17,14 @@ import { VaultFile } from '@/contexts/VaultContext';
 
 export default function DoctorVault() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, role } = useAuth();
   const { t } = useLanguage();
   const { getAccessibleFiles } = useVault();
   const { openOtpForPatient, isPatientVerified } = useOtp();
   const [selectedFile, setSelectedFile] = useState<VaultFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [autoOpenHandled, setAutoOpenHandled] = useState(false);
 
   if (role !== 'doctor') {
     navigate('/lives');
