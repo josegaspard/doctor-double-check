@@ -66,6 +66,7 @@ interface AvailableDoctor {
 
 export default function Vault() {
   const { files, uploadFile, deleteFile, grantAccess, revokeAccess, uploadProgress, isLoading, refreshVault } = useVault();
+  const [isDragging, setIsDragging] = useState(false);
   const { role, supabaseUser } = useAuth();
   const { t, language } = useLanguage();
   const { balance, canAfford, getEffectivePrice } = useWallet();
