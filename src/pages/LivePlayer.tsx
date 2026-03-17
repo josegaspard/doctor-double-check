@@ -598,7 +598,7 @@ export default function LivePlayer() {
                 <div className="flex items-center gap-3 mt-3">
                   <Badge variant="outline" className="gap-1 text-xs font-normal">
                     <Heart className="w-3 h-3 fill-destructive text-destructive" />
-                    {realtimeLikesCount || live.likesCount} {t('livePlayer.likes')}
+                    {realtimeLikesCount ?? live.likesCount} {t('livePlayer.likes')}
                   </Badge>
                   <Badge variant="outline" className="gap-1 text-xs font-normal">
                     <Star className="w-3 h-3 fill-premium text-premium" />
