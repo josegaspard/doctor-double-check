@@ -31,6 +31,7 @@ export const useOtp = () => useContext(OtpContext);
 
 export function OtpProvider({ children }: { children: React.ReactNode }) {
   const { user, role } = useAuth();
+  const navigate = useNavigate();
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
   const [otpPatient, setOtpPatient] = useState<OtpPatient | null>(null);
   const [otpCode, setOtpCode] = useState('');
