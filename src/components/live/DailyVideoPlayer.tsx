@@ -348,7 +348,18 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     get isFullscreen() { return isFullscreen; },
   }), [toggleMute, toggleVideo, leaveCall, toggleFullscreen, isMuted, isVideoOff, isFullscreen]);
 
-  // Cleanup body overflow on unmount
+  const handleUnmute = useCallback(() => {
+    const containers = [videoContainerRef.current, screenShareRef.current];
+    containers.forEach(container => {
+      if (!container) return;
+      container.querySelectorAll('video, audio').forEach((el) => {
+        (el as HTMLMediaElement).muted = false;
+        (el as HTMLMediaElement).play().catch(() => {});
+      });
+    });
+    setShowUnmutePrompt(false);
+  }, []);
+
   useEffect(() => {
     return () => { document.body.style.overflow = ''; };
   }, []);
