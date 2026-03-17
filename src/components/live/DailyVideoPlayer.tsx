@@ -475,6 +475,17 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     );
   }
 
+  // On mobile, if parent controls fullscreen, delegate to parent
+  const handleFullscreenClick = useCallback(() => {
+    if (onMobileFullscreenToggle) {
+      onMobileFullscreenToggle();
+    } else {
+      toggleFullscreen();
+    }
+  }, [onMobileFullscreenToggle, toggleFullscreen]);
+
+  const resolvedFullscreen = isMobileFullscreen || isFullscreen;
+
   return (
     <div
       ref={wrapperRef}
