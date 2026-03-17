@@ -43,7 +43,7 @@ export default function Login() {
   const [registerInstitution, setRegisterInstitution] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [appleLoading, setAppleLoading] = useState(false);
+  
 
   const resolvePostLoginRoute = async (userId: string) => {
     const [profileResult, roleResult] = await Promise.all([
@@ -109,37 +109,6 @@ export default function Login() {
     }
   };
 
-  const handleAppleLogin = async () => {
-    setAppleLoading(true);
-    try {
-      const result = await lovable.auth.signInWithOAuth('apple', {
-        redirect_uri: `${window.location.origin}/login`,
-      });
-
-      if (result.error) {
-        const message = result.error.message?.toLowerCase() || '';
-        const isFalseCancellation = message.includes('cancelled') || message.includes('canceled');
-
-        if (isFalseCancellation) {
-          const recovered = await recoverGoogleSession();
-          if (recovered) return;
-        }
-
-        toast.error(t('authErrors.appleLoginError') || 'Error al iniciar sesión con Apple');
-        console.error('Apple login error:', result.error);
-        return;
-      }
-
-      if (!result.redirected) {
-        await recoverGoogleSession();
-      }
-    } catch (error) {
-      toast.error(t('authErrors.appleConnectError') || 'No se pudo conectar con Apple');
-      console.error('Apple login error:', error);
-    } finally {
-      setAppleLoading(false);
-    }
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -325,21 +294,6 @@ export default function Login() {
                     {t('login.continueWithGoogle')}
                   </Button>
                   
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-2" 
-                    onClick={handleAppleLogin}
-                    disabled={appleLoading}
-                  >
-                    {appleLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : (
-                      <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                      </svg>
-                    )}
-                    {t('login.continueWithApple')}
-                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -514,21 +468,6 @@ export default function Login() {
                       {t('login.continueWithGoogle')}
                     </Button>
                     
-                    <Button 
-                      variant="outline" 
-                      className="w-full mt-2" 
-                      onClick={handleAppleLogin}
-                      disabled={appleLoading}
-                    >
-                      {appleLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      ) : (
-                        <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                        </svg>
-                      )}
-                      {t('login.continueWithApple')}
-                    </Button>
                   </CardContent>
                 </Card>
               )}
