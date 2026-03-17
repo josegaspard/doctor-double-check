@@ -70,6 +70,9 @@ Deno.serve(async (req) => {
       if (session.metadata?.type === "storage_upgrade" && session.payment_status === "paid") {
         await handleStorageUpgrade(db, session);
       }
+      if (session.metadata?.type === "live_chat_highlight" && session.payment_status === "paid") {
+        await handleLiveChatHighlight(db, session);
+      }
     }
 
     if (event.type === "invoice.payment_succeeded") {
