@@ -258,40 +258,57 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
         videoEl.srcObject = stream;
         videoContainerRef.current?.appendChild(videoEl);
 
-        videoEl.play().then(() => {
-          if (!participant.local) {
-            videoEl.muted = false;
-            setTimeout(() => {
-              if (videoEl.paused) {
-                videoEl.muted = true;
-                videoEl.play().catch(() => {});
-                setShowUnmutePrompt(true);
-              }
-            }, 150);
-          }
-        }).catch(() => {
-          if (!participant.local) {
-            setShowUnmutePrompt(true);
-          }
-        });
+        if (userHasUnmutedRef.current && !participant.local) {
+          // User already unmuted — play with sound directly, no prompt
+          videoEl.muted = false;
+          videoEl.play().catch(() => {
+            // If unmuted play fails, try muted
+            videoEl.muted = true;
+            videoEl.play().catch(() => {});
+          });
+        } else {
+          videoEl.play().then(() => {
+            if (!participant.local) {
+              videoEl.muted = false;
+              setTimeout(() => {
+                if (videoEl.paused) {
+                  videoEl.muted = true;
+                  videoEl.play().catch(() => {});
+                  if (!userHasUnmutedRef.current) setShowUnmutePrompt(true);
+                }
+              }, 150);
+            }
+          }).catch(() => {
+            if (!participant.local && !userHasUnmutedRef.current) {
+              setShowUnmutePrompt(true);
+            }
+          });
+        }
       } else if (!participant.local && participant.audioTrack && !participant.video) {
         const audioEl = document.createElement('audio');
         audioEl.autoplay = true;
-        audioEl.muted = true;
+        audioEl.muted = !userHasUnmutedRef.current;
         const audioStream = new MediaStream([participant.audioTrack]);
         audioEl.srcObject = audioStream;
         videoContainerRef.current?.appendChild(audioEl);
 
-        audioEl.play().then(() => {
-          audioEl.muted = false;
-          setTimeout(() => {
-            if (audioEl.paused) {
-              audioEl.muted = true;
-              audioEl.play().catch(() => {});
-              setShowUnmutePrompt(true);
-            }
-          }, 150);
-        }).catch(() => { setShowUnmutePrompt(true); });
+        if (userHasUnmutedRef.current) {
+          audioEl.play().catch(() => {
+            audioEl.muted = true;
+            audioEl.play().catch(() => {});
+          });
+        } else {
+          audioEl.play().then(() => {
+            audioEl.muted = false;
+            setTimeout(() => {
+              if (audioEl.paused) {
+                audioEl.muted = true;
+                audioEl.play().catch(() => {});
+                if (!userHasUnmutedRef.current) setShowUnmutePrompt(true);
+              }
+            }, 150);
+          }).catch(() => { if (!userHasUnmutedRef.current) setShowUnmutePrompt(true); });
+        }
       }
     });
   };
