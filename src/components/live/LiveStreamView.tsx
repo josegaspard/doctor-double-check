@@ -53,6 +53,7 @@ export function LiveStreamView({
   const [showOverlay, setShowOverlay] = useState(true);
   const playerRef = useRef<DailyVideoPlayerHandle>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [mobileFullscreen, setMobileFullscreen] = useState(false);
 
   // Force re-render to read ref state after toggles
   const [, forceUpdate] = useState(0);
