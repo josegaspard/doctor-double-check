@@ -11,6 +11,7 @@ import { WalletProvider } from "@/contexts/WalletContext";
 import { LivesProvider } from "@/contexts/LivesContext";
 import { VaultProvider } from "@/contexts/VaultContext";
 import { ChatProvider } from "@/contexts/ChatContext";
+import { OtpProvider } from "@/contexts/OtpContext";
 import { PostConsultationRatingProvider } from "@/components/ratings/PostConsultationRatingProvider";
 import { IncomingCallProvider } from "@/components/videocall/IncomingCallProvider";
 import React, { Suspense, useState, useCallback } from "react";
@@ -25,11 +26,13 @@ function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
     <WalletProvider>
       <VaultProvider>
         <ChatProvider>
-          <PostConsultationRatingProvider>
-            <IncomingCallProvider>
-              {children}
-            </IncomingCallProvider>
-          </PostConsultationRatingProvider>
+          <OtpProvider>
+            <PostConsultationRatingProvider>
+              <IncomingCallProvider>
+                {children}
+              </IncomingCallProvider>
+            </PostConsultationRatingProvider>
+          </OtpProvider>
         </ChatProvider>
       </VaultProvider>
     </WalletProvider>

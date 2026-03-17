@@ -79,3 +79,7 @@ project_id = "jbthjpnxiwnegzgfzfth"
     verify_jwt = false
   [functions.veriff-webhook]
     verify_jwt = false
+  [functions.verify-phone-otp]
+    verify_jwt = false
+  [functions.send-otp-email]
+    verify_jwt = false
