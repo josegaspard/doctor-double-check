@@ -364,6 +364,28 @@ export default function LivePlayer() {
     }
   };
 
+  const handleToggleMobileFullscreen = useCallback(() => {
+    setMobileFullscreen(prev => {
+      const next = !prev;
+      if (next) {
+        document.body.style.overflow = 'hidden';
+        screen.orientation?.lock?.('landscape').catch(() => {});
+      } else {
+        document.body.style.overflow = '';
+        screen.orientation?.unlock?.();
+      }
+      return next;
+    });
+  }, []);
+
+  // Cleanup mobile fullscreen on unmount
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = '';
+      screen.orientation?.unlock?.();
+    };
+  }, []);
+
   const handleStartPrivateChat = async () => {
     if (!user || !live) return;
     
