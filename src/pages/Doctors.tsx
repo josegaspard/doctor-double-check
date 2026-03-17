@@ -311,15 +311,80 @@ export default function Doctors() {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const totalPages = Math.ceil(totalCount / DOCTORS_PER_PAGE);
 
+  const CITIES = ['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'];
+
   return (
     <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {/* Header */}
         <div className="mb-4 sm:mb-6">
           <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-1">{t('doctors.exploreTitle')}</h1>
           <p className="text-sm text-muted-foreground">{t('doctors.exploreSubtitle')}</p>
         </div>
 
+        <div className="flex gap-6">
+          {/* Desktop Sidebar (P6) */}
+          {!isMobile && (
+            <aside className="hidden lg:block w-56 flex-shrink-0 space-y-5 sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto">
+              {/* Specialties */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  {t('doctors.specAll') === 'All' ? 'Specialties' : 'Especialidades'}
+                </h4>
+                <div className="space-y-0.5">
+                  {SPECIALTIES.map(spec => (
+                    <button
+                      key={spec.value}
+                      onClick={() => setSelectedSpecialty(spec.value)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                        selectedSpecialty === spec.value
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {t(spec.labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cities */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  Ciudades
+                </h4>
+                <div className="space-y-0.5">
+                  <button
+                    onClick={() => setLocationFilter('')}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                      !locationFilter
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    Todas
+                  </button>
+                  {CITIES.map(city => (
+                    <button
+                      key={city}
+                      onClick={() => setLocationFilter(locationFilter === city ? '' : city)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        locationFilter === city
+                          ? 'bg-accent text-accent-foreground'
+                          : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                      {city}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </aside>
+          )}
+
+          {/* Main content */}
+          <div className="flex-1 min-w-0">
         {/* Search bar */}
         <div className="flex gap-2 mb-3">
           <div className="relative flex-1">
@@ -337,8 +402,8 @@ export default function Doctors() {
           </Button>
         </div>
 
-        {/* Specialty filter chips — clean, no emojis */}
-        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2">
+        {/* Mobile: Specialty filter chips (hidden on lg+ because sidebar handles it) */}
+        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 lg:hidden">
           {SPECIALTIES.map(spec => (
             <button
               key={spec.value}
@@ -354,9 +419,9 @@ export default function Doctors() {
           ))}
         </div>
 
-        {/* City filter chips */}
-        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2">
-          {['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'].map(city => (
+        {/* Mobile: City filter chips (hidden on lg+ because sidebar handles it) */}
+        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 lg:hidden">
+          {CITIES.map(city => (
             <button
               key={city}
               onClick={() => setLocationFilter(locationFilter === city ? '' : city)}
@@ -832,6 +897,8 @@ export default function Doctors() {
             )}
           </>
         )}
+          </div>
+        </div>
       </div>
     </MainLayout>
   );

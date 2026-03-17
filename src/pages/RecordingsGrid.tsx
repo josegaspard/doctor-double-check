@@ -75,19 +75,24 @@ export default function RecordingsGrid() {
     return hasPurchased(recording.id);
   };
 
+  // Collect all unique tags for category filter
+  const allTags = [...new Set(recordings.flatMap(r => r.tags || []))].filter(Boolean).sort();
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
   const filteredRecordings = recordings.filter(rec => {
     const matchesSearch = rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          rec.doctorName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSpecialty = !selectedSpecialty || rec.specialty === selectedSpecialty;
     const matchesDoctor = !doctorFilter || rec.doctorId === doctorFilter;
+    const matchesTag = !selectedTag || (rec.tags || []).includes(selectedTag);
     
-    if (!matchesSearch || !matchesSpecialty || !matchesDoctor) return false;
+    if (!matchesSearch || !matchesSpecialty || !matchesDoctor || !matchesTag) return false;
     
     const owned = ownsRecording(rec);
     switch (contentFilter) {
       case 'free': return rec.price === 0;
       case 'paid': return rec.price > 0;
-      case 'purchased': return owned;
+      case 'purchased': return owned && rec.price > 0;
       case 'not_purchased': return !owned && rec.price > 0;
       default: return true;
     }
@@ -212,6 +217,35 @@ export default function RecordingsGrid() {
                 }`}
               >
                 {spec}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Tag/Category filter chips (P13) */}
+        {allTags.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
+            <button
+              onClick={() => setSelectedTag(null)}
+              className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                !selectedTag
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
+              }`}
+            >
+              Todas las categorías
+            </button>
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                  selectedTag === tag
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
+                }`}
+              >
+                {tag}
               </button>
             ))}
           </div>

@@ -25,6 +25,8 @@ import { DoctorDashboardHeader } from '@/components/doctor/DoctorDashboardHeader
 import { DoctorStatsGrid } from '@/components/doctor/DoctorStatsGrid';
 import { DoctorQuickActions } from '@/components/doctor/DoctorQuickActions';
 import { DoctorStatusAlert } from '@/components/doctor/DoctorStatusAlert';
+import { DoctorProfileCard } from '@/components/doctor/DoctorProfileCard';
+import { DoctorPatientsList } from '@/components/doctor/DoctorPatientsList';
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
@@ -91,12 +93,18 @@ export default function DoctorDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-3 sm:space-y-5">
+            {/* Section 0: Profile Card (P11) */}
+            <DoctorProfileCard />
+
             {/* Section 1: Stats */}
             <DoctorStatsGrid
               recordingsCount={recordingsCount}
               vaultFilesCount={accessibleVaultFiles.length}
               rating={doctorProfile?.rating || 0}
             />
+
+            {/* Section 1.5: Patients List (P12) */}
+            <DoctorPatientsList />
 
             {/* Section 2: Quick Actions */}
             <DoctorQuickActions isApproved={isApproved} userId={user?.id} canPublishNews={canPublishNews} />
