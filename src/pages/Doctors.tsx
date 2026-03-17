@@ -405,7 +405,7 @@ export default function Doctors() {
         </div>
 
         {/* Mobile: Specialty filter chips (hidden on lg+ because sidebar handles it) */}
-        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 lg:hidden">
+        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 md:hidden">
           {SPECIALTIES.map(spec => (
             <button
               key={spec.value}
