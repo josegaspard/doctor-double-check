@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +11,7 @@ import { useViewerCount } from '@/hooks/useViewerCount';
 import { useWallet } from '@/contexts/WalletContext';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useDaily } from '@/hooks/useDaily';
+import { useIsMobile } from '@/hooks/use-mobile';
 import MainLayout from '@/components/layout/MainLayout';
 import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
 import { LiveChat } from '@/components/live/LiveChat';
