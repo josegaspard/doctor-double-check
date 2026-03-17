@@ -21,6 +21,8 @@ import { CedulaVerificationStatus, useCedulaStatus } from '@/components/onboardi
 import { CedulaAutoVerify } from '@/components/onboarding/CedulaAutoVerify';
 import { ClinicalHistoryForm, ClinicalHistoryData } from '@/components/onboarding/ClinicalHistoryForm';
 import { DocumentSignature } from '@/components/onboarding/DocumentSignature';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { Badge } from '@/components/ui/badge';
 
 // Known Mexican city coordinates for geocoding
 const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
