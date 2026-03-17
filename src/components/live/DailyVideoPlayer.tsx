@@ -51,6 +51,8 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   hideControls = false,
   onLeave,
   onParticipantCountChange,
+  onMobileFullscreenToggle,
+  isMobileFullscreen = false,
   className: externalClassName,
   children,
 }, ref) {
