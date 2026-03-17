@@ -240,6 +240,16 @@ export default function Onboarding() {
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [username, setUsername] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(() => detectCountry());
+  
+  // Phone verification state
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+52');
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [phoneSendingOtp, setPhoneSendingOtp] = useState(false);
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [phoneOtpCode, setPhoneOtpCode] = useState('');
+  const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
+  const [phoneRateLimited, setPhoneRateLimited] = useState(false);
   // Clinical History State
   const [clinicalHistory, setClinicalHistory] = useState<ClinicalHistoryData>({
     bloodType: '',
