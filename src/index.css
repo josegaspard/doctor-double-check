@@ -613,13 +613,16 @@
 /* YouTube-style landscape fullscreen fallback for iOS (when orientation lock API unavailable) */
 @media (orientation: portrait) {
   .landscape-fs {
-    transform: rotate(90deg);
-    transform-origin: center center;
+    transform: rotate(90deg) !important;
+    transform-origin: center center !important;
     width: 100dvh !important;
     height: 100vw !important;
     position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    translate: -50% -50%;
+    inset: unset !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: unset !important;
+    bottom: unset !important;
+    margin: auto !important;
   }
 }

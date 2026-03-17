@@ -478,9 +478,9 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     <div
       ref={wrapperRef}
       className={externalClassName || `relative bg-black overflow-hidden group ${
-        isFullscreen ? 'fixed inset-0 z-[9999] w-screen h-[100dvh] rounded-none landscape-fs' : 'aspect-video rounded-xl'
+        isFullscreen ? 'fixed z-[9999] rounded-none landscape-fs' : 'aspect-video rounded-xl'
       }`}
-      style={isFullscreen && !externalClassName ? { width: '100vw', height: '100dvh' } : undefined}
+      style={isFullscreen && !externalClassName ? { inset: 0, width: '100vw', height: '100dvh' } : undefined}
     >
       {/* Connection quality indicator for viewers */}
       {!isOwner && isConnected && (
