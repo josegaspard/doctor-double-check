@@ -1,43 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Optimizar perfil móvil + corregir "Gastado" en Mis Campañas
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## 1. Perfil de usuario - optimizar sección de contacto en móvil
+## Solucion
 
-**Archivo:** `src/pages/UserProfile.tsx`
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-**Problema:** En móvil, la fila de email con badge "Verificado" y botón de edición se ve apretada y desborda. Lo mismo con la fila de teléfono.
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-**Cambios:**
-- Líneas 691-698 (email display): Cambiar de layout horizontal a vertical en móvil. Email en una línea, badge + botón en la siguiente. Usar `flex-wrap` y en móvil apilar con `flex-col` para que el badge "Verificado" no quede encimado con el email largo.
-- Líneas 782-805 (phone display): Mismo tratamiento responsive. Botón "Agregar teléfono" con ancho completo en móvil.
-- Reducir el badge "Verificado" para que use `shrink-0` y no se deforme.
-
-## 2. "Gastado" total muestra $0 - lógica incorrecta
-
-**Archivo:** `src/pages/AdvertiserDashboard.tsx`
-
-**Problema:** Línea 249 calcula `totalSpent` sumando `c.spent` del DB, que es 0 porque nunca se actualiza. Pero en las tarjetas individuales (línea 636) sí se calcula correctamente con `(impressions/1000 * CPM) + (clicks * CPC)`.
-
-**Solución:** Reemplazar línea 249 para calcular el total gastado igual que en las tarjetas individuales:
-
-```typescript
-// Antes (mal):
-const totalSpent = campaigns.reduce((sum, c) => sum + Number(c.spent), 0);
-
-// Después (correcto):
-const totalSpent = campaigns.reduce((sum, c) => {
-  const s = campaignStats[c.id] || { impressions: 0, clicks: 0 };
-  return sum + (s.impressions / 1000 * config.cpm_rate) + (s.clicks * config.cpc_rate);
-}, 0);
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-Esto hará que el summary card "Gastado" en la vista principal muestre el monto real (ej: $6) en vez de $0.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
 ## Archivos a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/UserProfile.tsx` | Layout responsive para email/phone en móvil |
-| `src/pages/AdvertiserDashboard.tsx` | Calcular totalSpent desde eventos, no desde DB |
-
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
