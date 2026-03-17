@@ -52,6 +52,8 @@ import {
   Building,
   Award,
   X,
+  Phone,
+  Lock,
 } from 'lucide-react';
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
