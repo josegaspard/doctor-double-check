@@ -43,6 +43,7 @@ export default function Login() {
   const [registerInstitution, setRegisterInstitution] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
 
   const resolvePostLoginRoute = async (userId: string) => {
     const [profileResult, roleResult] = await Promise.all([
