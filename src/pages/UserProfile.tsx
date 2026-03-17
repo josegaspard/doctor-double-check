@@ -52,6 +52,8 @@ import {
   Building,
   Award,
   X,
+  Phone,
+  Lock,
 } from 'lucide-react';
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
@@ -150,31 +152,44 @@ export default function UserProfile() {
   const [editedLocation, setEditedLocation] = useState('');
   const [isSavingLocation, setIsSavingLocation] = useState(false);
 
-  // Fetch verification status
+  // Phone
+  const [userPhone, setUserPhone] = useState<string | null>(null);
+  const [isLoadingPhone, setIsLoadingPhone] = useState(true);
+
+  // Fetch verification status and phone
   useEffect(() => {
-    const fetchVerificationStatus = async () => {
+    const fetchUserData = async () => {
       if (!user?.id) return;
       
       try {
-        const { data } = await supabase
-          .from('identity_verifications')
-          .select('status')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const [verRes, phoneRes] = await Promise.all([
+          supabase
+            .from('identity_verifications')
+            .select('status')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('profiles')
+            .select('phone')
+            .eq('id', user.id)
+            .single()
+        ]);
 
-        if (data) {
-          setVerificationStatus(data.status as VerificationStatus);
+        if (verRes.data) {
+          setVerificationStatus(verRes.data.status as VerificationStatus);
         }
+        setUserPhone(phoneRes.data?.phone || null);
       } catch (error) {
         // No verification found
       } finally {
         setIsLoadingVerification(false);
+        setIsLoadingPhone(false);
       }
     };
 
-    fetchVerificationStatus();
+    fetchUserData();
   }, [user?.id]);
 
   // Fetch professional profile
@@ -532,6 +547,23 @@ export default function UserProfile() {
                   <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2 text-sm sm:text-base break-all sm:break-normal">
                     <Mail className="w-4 h-4" />
                     {user.email}
+                  </p>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+                    <Phone className="w-4 h-4 text-muted-foreground" />
+                    {!isLoadingPhone && (
+                      userPhone ? (
+                        <span className="text-sm text-muted-foreground">
+                          {userPhone.replace(/(\d{2})(\d+)(\d{4})/, '$1****$3')}
+                          <Badge className="ml-2 bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px]">Verificado</Badge>
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">Sin verificar</span>
+                      )
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1 justify-center sm:justify-start">
+                    <Lock className="w-3 h-3" />
+                    Datos privados — solo tú puedes ver esta información
                   </p>
                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-3 flex-wrap">
                     {user.countryFlag && (

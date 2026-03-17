@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle, MapPin, Navigation, Globe } from 'lucide-react';
+import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle, MapPin, Navigation, Globe, Phone, MessageSquare } from 'lucide-react';
 import { COUNTRY_CURRENCIES, detectCountry } from '@/hooks/useCurrency';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import { toast } from 'sonner';
@@ -21,6 +21,8 @@ import { CedulaVerificationStatus, useCedulaStatus } from '@/components/onboardi
 import { CedulaAutoVerify } from '@/components/onboarding/CedulaAutoVerify';
 import { ClinicalHistoryForm, ClinicalHistoryData } from '@/components/onboarding/ClinicalHistoryForm';
 import { DocumentSignature } from '@/components/onboarding/DocumentSignature';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { Badge } from '@/components/ui/badge';
 
 // Known Mexican city coordinates for geocoding
 const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
@@ -238,6 +240,16 @@ export default function Onboarding() {
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [username, setUsername] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(() => detectCountry());
+  
+  // Phone verification state
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+52');
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [phoneSendingOtp, setPhoneSendingOtp] = useState(false);
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [phoneOtpCode, setPhoneOtpCode] = useState('');
+  const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
+  const [phoneRateLimited, setPhoneRateLimited] = useState(false);
   // Clinical History State
   const [clinicalHistory, setClinicalHistory] = useState<ClinicalHistoryData>({
     bloodType: '',
@@ -332,7 +344,7 @@ export default function Onboarding() {
     
     setIsSavingProgress(true);
     try {
-      const progressData = {
+      const progressData: any = {
         user_id: supabaseUser.id,
         step,
         selected_role: selectedRole,
@@ -341,6 +353,7 @@ export default function Onboarding() {
         institution: institution || null,
         year,
         avatar_url: avatarUrl,
+        phone: phoneNumber ? `${phoneCountryCode}${phoneNumber}` : null,
         updated_at: new Date().toISOString()
       };
 
@@ -615,6 +628,11 @@ export default function Onboarding() {
 
       if (username.trim()) {
         updateData.username = username.trim();
+      }
+
+      // Save verified phone
+      if (phoneVerified && phoneNumber) {
+        updateData.phone = `${phoneCountryCode}${phoneNumber}`;
       }
 
       const { error: profileError } = await supabase
@@ -1031,6 +1049,141 @@ export default function Onboarding() {
                         </Select>
                         <p className="text-[11px] text-muted-foreground">
                           Los precios se mostrarán en tu moneda local como referencia. Los pagos se procesan en MXN.
+                        </p>
+                      </motion.div>
+
+                      {/* Phone Verification (Optional) */}
+                      <motion.div className="space-y-3" variants={itemVariants}>
+                        <Label className="text-sm font-medium flex items-center gap-1.5">
+                          <Phone className="w-4 h-4" />
+                          Teléfono celular <span className="text-muted-foreground font-normal text-xs">(opcional)</span>
+                        </Label>
+                        <div className="flex gap-2">
+                          <Select value={phoneCountryCode} onValueChange={setPhoneCountryCode}>
+                            <SelectTrigger className="w-[100px] flex-shrink-0">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="+52">🇲🇽 +52</SelectItem>
+                              <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                              <SelectItem value="+57">🇨🇴 +57</SelectItem>
+                              <SelectItem value="+56">🇨🇱 +56</SelectItem>
+                              <SelectItem value="+54">🇦🇷 +54</SelectItem>
+                              <SelectItem value="+34">🇪🇸 +34</SelectItem>
+                              <SelectItem value="+51">🇵🇪 +51</SelectItem>
+                              <SelectItem value="+593">🇪🇨 +593</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            placeholder="Ej: 5512345678"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 15))}
+                            disabled={phoneVerified}
+                            className="flex-1"
+                            type="tel"
+                            inputMode="numeric"
+                          />
+                          {phoneVerified ? (
+                            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 flex items-center gap-1 whitespace-nowrap self-center">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Verificado
+                            </Badge>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={phoneSendingOtp || phoneNumber.length < 10 || phoneOtpSent || phoneRateLimited}
+                              className="whitespace-nowrap self-center"
+                              onClick={async () => {
+                                setPhoneSendingOtp(true);
+                                try {
+                                  const fullPhone = `${phoneCountryCode}${phoneNumber}`;
+                                  const { data, error } = await supabase.functions.invoke('verify-phone-otp', {
+                                    body: { phone: fullPhone, action: 'send' },
+                                  });
+                                  if (error) throw new Error(error.message);
+                                  if (data?.rateLimited) {
+                                    setPhoneRateLimited(true);
+                                    toast.error('Solo puedes verificar tu teléfono 1 vez al día.');
+                                    return;
+                                  }
+                                  if (data?.alreadyVerified) {
+                                    setPhoneVerified(true);
+                                    toast.success('¡Teléfono ya verificado!');
+                                    return;
+                                  }
+                                  setPhoneOtpSent(true);
+                                  toast.success(data?.smsSent ? 'Código enviado por SMS' : 'Código enviado a notificaciones');
+                                } catch (err: any) {
+                                  toast.error(err.message || 'Error al enviar código');
+                                } finally {
+                                  setPhoneSendingOtp(false);
+                                }
+                              }}
+                            >
+                              {phoneSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enviar código'}
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* OTP Input when sent */}
+                        {phoneOtpSent && !phoneVerified && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="space-y-3 p-3 rounded-lg border border-border bg-muted/30"
+                          >
+                            <p className="text-sm text-muted-foreground">
+                              Ingresa el código de 6 dígitos:
+                            </p>
+                            <div className="flex items-center gap-3">
+                              <InputOTP
+                                maxLength={6}
+                                value={phoneOtpCode}
+                                onChange={setPhoneOtpCode}
+                              >
+                                <InputOTPGroup>
+                                  {[0, 1, 2, 3, 4, 5].map(i => (
+                                    <InputOTPSlot key={i} index={i} />
+                                  ))}
+                                </InputOTPGroup>
+                              </InputOTP>
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={phoneOtpCode.length !== 6 || isVerifyingPhone}
+                                onClick={async () => {
+                                  setIsVerifyingPhone(true);
+                                  try {
+                                    const fullPhone = `${phoneCountryCode}${phoneNumber}`;
+                                    const { data, error } = await supabase.functions.invoke('verify-phone-otp', {
+                                      body: { phone: fullPhone, action: 'verify', otp_code: phoneOtpCode },
+                                    });
+                                    if (error) throw new Error(error.message);
+                                    if (data?.verified) {
+                                      setPhoneVerified(true);
+                                      setPhoneOtpSent(false);
+                                      toast.success('✅ Teléfono verificado correctamente');
+                                    } else {
+                                      toast.error(data?.error || 'Código inválido o expirado');
+                                    }
+                                  } catch (err: any) {
+                                    toast.error(err.message || 'Error al verificar');
+                                  } finally {
+                                    setIsVerifyingPhone(false);
+                                  }
+                                }}
+                              >
+                                {isVerifyingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verificar'}
+                              </Button>
+                            </div>
+                          </motion.div>
+                        )}
+
+                        <p className="text-[11px] text-muted-foreground flex items-start gap-1">
+                          <MessageSquare className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                          Tu número se usa para confirmar códigos de seguridad (OTP) cuando los doctores necesiten acceder a tu expediente. También puedes usar correo electrónico.
                         </p>
                       </motion.div>
 
