@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useVault } from '@/contexts/VaultContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useOtp } from '@/contexts/OtpContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { VaultFilePreviewModal } from '@/components/vault/VaultFilePreviewModal';
-import { OtpFloatingBanner } from '@/components/vault/OtpFloatingBanner';
-import { OtpVerificationDialog, OtpDeliveryMethod } from '@/components/vault/OtpVerificationDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,55 +14,15 @@ import {
   Calendar, Eye, KeyRound, ShieldCheck,
 } from 'lucide-react';
 import { VaultFile } from '@/contexts/VaultContext';
-import { toast } from 'sonner';
-
-const OTP_DURATION_SECONDS = 120;
 
 export default function DoctorVault() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { t } = useLanguage();
   const { getAccessibleFiles } = useVault();
+  const { openOtpForPatient, isPatientVerified } = useOtp();
   const [selectedFile, setSelectedFile] = useState<VaultFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-
-  // OTP state
-  const [otpDialogOpen, setOtpDialogOpen] = useState(false);
-  const [otpPatient, setOtpPatient] = useState<{ id: string; name: string } | null>(null);
-  const [otpCode, setOtpCode] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isRequesting, setIsRequesting] = useState(false);
-  const [verifiedPatients, setVerifiedPatients] = useState<Set<string>>(new Set());
-  const [deliveryMethod, setDeliveryMethod] = useState<OtpDeliveryMethod>('email');
-  const [smsAvailable, setSmsAvailable] = useState(false);
-
-  // Timer state
-  const [otpRequestedAt, setOtpRequestedAt] = useState<number | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (otpRequestedAt === null) {
-      setSecondsLeft(null);
-      if (timerRef.current) clearInterval(timerRef.current);
-      return;
-    }
-    const tick = () => {
-      const elapsed = Math.floor((Date.now() - otpRequestedAt) / 1000);
-      const remaining = Math.max(0, OTP_DURATION_SECONDS - elapsed);
-      setSecondsLeft(remaining);
-      if (remaining <= 0) {
-        setOtpRequestedAt(null);
-        setOtpPatient(null);
-        setOtpCode('');
-        toast.info('Código OTP expirado. Solicita uno nuevo.');
-        if (timerRef.current) clearInterval(timerRef.current);
-      }
-    };
-    tick();
-    timerRef.current = setInterval(tick, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [otpRequestedAt]);
 
   if (role !== 'doctor') {
     navigate('/lives');
@@ -85,95 +43,13 @@ export default function DoctorVault() {
   };
 
   const handleViewFile = (file: VaultFile) => {
-    if (!verifiedPatients.has(file.patientId)) {
-      setOtpPatient({ id: file.patientId, name: file.patientName || 'Paciente' });
+    if (!isPatientVerified(file.patientId)) {
+      openOtpForPatient(file.patientId, file.patientName || 'Paciente');
       setSelectedFile(file);
-      setOtpDialogOpen(true);
       return;
     }
     setSelectedFile(file);
     setIsPreviewOpen(true);
-  };
-
-  const handleRequestOtp = async () => {
-    if (!user?.id || !otpPatient) return;
-    setIsRequesting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('send-otp-email', {
-        body: { patientId: otpPatient.id, deliveryMethod },
-      });
-      if (error) throw new Error(error.message || 'Error al solicitar código');
-      if (data && !data.success) throw new Error(data.error || 'Error del servidor');
-
-      // Update SMS availability from server response
-      if (data?.smsAvailable !== undefined) {
-        setSmsAvailable(data.smsAvailable);
-      }
-
-      setOtpRequestedAt(Date.now());
-      const methodText = deliveryMethod === 'email' ? 'email' : deliveryMethod === 'sms' ? 'SMS' : 'email y SMS';
-      toast.success(`Código OTP enviado por ${methodText}. Expira en 2 minutos.`);
-    } catch (error: any) {
-      console.error('Error requesting OTP:', error);
-      toast.error(error.message || 'Error al solicitar código');
-    } finally {
-      setIsRequesting(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!user?.id || !otpPatient) return;
-    setIsVerifying(true);
-    try {
-      const { data, error } = await supabase
-        .from('expediente_otp')
-        .select('*')
-        .eq('patient_id', otpPatient.id)
-        .eq('doctor_id', user.id)
-        .eq('otp_code', otpCode.trim())
-        .is('used_at', null)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!data) {
-        toast.error('Código inválido o expirado. Solicita uno nuevo.');
-        return;
-      }
-
-      await supabase
-        .from('expediente_otp')
-        .update({ used_at: new Date().toISOString() })
-        .eq('id', data.id);
-
-      setVerifiedPatients(prev => new Set([...prev, otpPatient.id]));
-      setOtpDialogOpen(false);
-      setOtpRequestedAt(null);
-      setOtpPatient(null);
-      setOtpCode('');
-      toast.success('Verificación exitosa. Acceso al expediente concedido.');
-
-      if (selectedFile) {
-        setIsPreviewOpen(true);
-      }
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      toast.error('Error al verificar código');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleOpenOtpForPatient = (patientId: string, patientName: string) => {
-    setOtpPatient({ id: patientId, name: patientName });
-    setOtpCode('');
-    setOtpDialogOpen(true);
-  };
-
-  const handleReopenBanner = () => {
-    setOtpDialogOpen(true);
   };
 
   // Group files by patient
@@ -187,8 +63,6 @@ export default function DoctorVault() {
     }
     filesByPatient[file.patientId].files.push(file);
   });
-
-  const showBanner = otpRequestedAt !== null && !otpDialogOpen && otpPatient !== null && secondsLeft !== null && secondsLeft > 0;
 
   return (
     <MainLayout>
@@ -232,7 +106,7 @@ export default function DoctorVault() {
                     <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <span className="truncate">{patientName}</span>
                     <Badge variant="outline" className="ml-auto text-[10px]">{files.length} exp.</Badge>
-                    {verifiedPatients.has(patientId) && (
+                    {isPatientVerified(patientId) && (
                       <Badge variant="success" className="gap-1 text-[10px]">
                         <ShieldCheck className="w-3 h-3" />
                         Verificado
@@ -241,7 +115,7 @@ export default function DoctorVault() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-6">
-                  {!verifiedPatients.has(patientId) && (
+                  {!isPatientVerified(patientId) && (
                     <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 mb-3 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <KeyRound className="w-4 h-4 text-warning flex-shrink-0" />
@@ -250,7 +124,7 @@ export default function DoctorVault() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleOpenOtpForPatient(patientId, patientName)}
+                        onClick={() => openOtpForPatient(patientId, patientName)}
                         className="h-8 text-xs gap-1 flex-shrink-0"
                       >
                         <KeyRound className="w-3 h-3" />
@@ -263,7 +137,7 @@ export default function DoctorVault() {
                       <div 
                         key={file.id} 
                         className={`flex items-center gap-3 p-3 bg-muted/50 rounded-lg transition-colors min-w-0 ${
-                          verifiedPatients.has(patientId) ? 'cursor-pointer hover:bg-muted active:scale-[0.98]' : 'opacity-60'
+                          isPatientVerified(patientId) ? 'cursor-pointer hover:bg-muted active:scale-[0.98]' : 'opacity-60'
                         }`}
                         onClick={() => handleViewFile(file)}
                       >
@@ -283,7 +157,7 @@ export default function DoctorVault() {
                             <Calendar className="w-3 h-3" />
                             {new Date(file.uploadedAt).toLocaleDateString('es-MX')}
                           </span>
-                          {verifiedPatients.has(patientId) ? (
+                          {isPatientVerified(patientId) ? (
                             <Button 
                               variant="ghost" 
                               size="icon" 
@@ -319,29 +193,6 @@ export default function DoctorVault() {
           </Card>
         )}
       </div>
-
-      <OtpVerificationDialog
-        open={otpDialogOpen}
-        onOpenChange={setOtpDialogOpen}
-        patientName={otpPatient?.name || ''}
-        otpCode={otpCode}
-        onOtpChange={setOtpCode}
-        onRequestOtp={handleRequestOtp}
-        onVerifyOtp={handleVerifyOtp}
-        isRequesting={isRequesting}
-        isVerifying={isVerifying}
-        secondsLeft={secondsLeft}
-        deliveryMethod={deliveryMethod}
-        onDeliveryMethodChange={setDeliveryMethod}
-        smsAvailable={smsAvailable}
-      />
-
-      <OtpFloatingBanner
-        isVisible={showBanner}
-        patientName={otpPatient?.name || ''}
-        secondsLeft={secondsLeft || 0}
-        onReopen={handleReopenBanner}
-      />
 
       <VaultFilePreviewModal
         isOpen={isPreviewOpen}
