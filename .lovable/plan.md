@@ -1,45 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Fix: Veriff session creation marks verification as "in progress" before user completes it
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Problem
+## Solucion
 
-When the user clicks "Start biometric verification", the `create-veriff-session` edge function immediately inserts a record with `status: 'pending'` into `identity_verifications`. The user is then redirected to Veriff. If they abandon the flow and return, the page sees the `pending` record and shows "Verification in progress", blocking them from retrying. The biometric flow was never completed.
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-## Root cause
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-Line 304 in `IdentityVerification.tsx`:
-```tsx
-const canSubmitNew = !verification || verification.status === 'failed' || verification.status === 'expired';
 ```
-Status `pending` is NOT included, so any created-but-abandoned session blocks new attempts.
-
-## Solution — 2 changes
-
-### 1. `create-veriff-session/index.ts` — Delete stale pending Veriff sessions before creating new one
-
-Before inserting a new record, delete any existing `pending` Veriff sessions for this user. This prevents accumulation of abandoned sessions and ensures only one active session exists.
-
-```ts
-// Delete any previous pending veriff sessions for this user
-await supabase
-  .from("identity_verifications")
-  .delete()
-  .eq("user_id", user.id)
-  .eq("provider", "veriff")
-  .eq("status", "pending");
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-### 2. `src/pages/IdentityVerification.tsx` — Allow re-verification when status is `pending`
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-Update `canSubmitNew` to also allow submission when the existing verification is `pending` (meaning a session was created but never completed):
+## Archivos a modificar
 
-```tsx
-const canSubmitNew = !verification || ['failed', 'expired', 'pending'].includes(verification.status);
-```
-
-This way:
-- User starts Veriff → `pending` record created → user abandons → returns → can start again
-- Webhook fires with real status (`in_progress`, `verified`, `failed`) → those are respected
-- `in_progress` still blocks new submissions (Veriff is actively processing)
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |

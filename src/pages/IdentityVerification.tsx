@@ -301,7 +301,7 @@ export default function IdentityVerification() {
     );
   }
 
-  const canSubmitNew = !verification || verification.status === 'failed' || verification.status === 'expired';
+  const canSubmitNew = !verification || ['failed', 'expired', 'pending'].includes(verification.status);
   const statusConfig = verification ? getStatusConfig(verification.status) : null;
 
   return (
