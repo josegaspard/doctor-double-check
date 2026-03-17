@@ -897,6 +897,8 @@ export default function Doctors() {
             )}
           </>
         )}
+          </div>
+        </div>
       </div>
     </MainLayout>
   );
