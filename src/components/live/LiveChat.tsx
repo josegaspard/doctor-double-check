@@ -244,9 +244,8 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       });
       if (error) throw error;
       if (data?.url) {
-        window.open(data.url, '_blank');
-        toast.info('Completa el pago en la ventana abierta');
-        return false; // Don't send message now — webhook handles it
+        window.location.href = data.url;
+        return false; // Redirect to Stripe — webhook handles message creation
       }
       throw new Error('No checkout URL');
     } catch (err: any) {

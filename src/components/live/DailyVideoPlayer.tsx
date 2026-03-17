@@ -349,19 +349,17 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   }, []);
 
   const toggleFullscreen = () => {
-    if (!wrapperRef.current) return;
-    if (!isFullscreen) {
-      wrapperRef.current.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
-    }
-    setIsFullscreen(!isFullscreen);
+    setIsFullscreen(prev => {
+      const next = !prev;
+      // Lock body scroll when fullscreen, restore when exiting
+      document.body.style.overflow = next ? 'hidden' : '';
+      return next;
+    });
   };
 
+  // Cleanup body overflow on unmount
   useEffect(() => {
-    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', onFsChange);
-    return () => document.removeEventListener('fullscreenchange', onFsChange);
+    return () => { document.body.style.overflow = ''; };
   }, []);
 
   const showingScreenShare = isScreenSharing || hasRemoteScreenShare;

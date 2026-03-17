@@ -166,9 +166,22 @@ export default function LivePlayer() {
   const isLiked = live ? hasLiked(live.id) : false;
   const [liveEnded, setLiveEnded] = useState(false);
 
-  // Scroll to top on mount / live change
+  // Scroll to top on mount / live change + detect chat_paid return
   useEffect(() => {
     window.scrollTo(0, 0);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('chat_paid') === 'success') {
+      toast.success('¡Pago completado! Tu mensaje destacado será publicado.');
+      // Clean URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('chat_paid');
+      window.history.replaceState({}, '', url.pathname);
+    } else if (params.get('chat_paid') === 'cancel') {
+      toast.info('Pago cancelado');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('chat_paid');
+      window.history.replaceState({}, '', url.pathname);
+    }
   }, [id]);
 
   // Direct realtime subscription on this specific live to detect ending reliably
@@ -320,7 +333,14 @@ export default function LivePlayer() {
     if (role === 'visitor' || !user || isLiking) return;
     setIsLiking(true);
     try {
-      if (isLiked) { await unlikeLive(live.id); } else { await likeLive(live.id); }
+      if (isLiked) {
+        await unlikeLive(live.id);
+        // Update directLive if loaded via fallback
+        if (directLive) setDirectLive((prev: any) => prev ? { ...prev, likesCount: Math.max(0, prev.likesCount - 1) } : prev);
+      } else {
+        await likeLive(live.id);
+        if (directLive) setDirectLive((prev: any) => prev ? { ...prev, likesCount: prev.likesCount + 1 } : prev);
+      }
     } finally { setIsLiking(false); }
   };
 
@@ -402,7 +422,7 @@ export default function LivePlayer() {
                 doctorName={live.doctorName}
                 doctorAvatar={live.doctorAvatar}
                 specialty={live.specialty}
-                likesCount={realtimeLikesCount || live.likesCount}
+                likesCount={realtimeLikesCount ?? live.likesCount}
                 peakViewers={live.viewerCount}
                 duration={formatDuration(live.startedAt)}
               />
@@ -463,7 +483,7 @@ export default function LivePlayer() {
                   </Badge>
                 </div>
                 <div className="absolute top-4 right-4 z-10">
-                  <AnimatedViewerCount count={viewerCount || live.viewerCount} />
+                  <AnimatedViewerCount count={viewerCount ?? live.viewerCount} />
                 </div>
                 <div className="absolute bottom-4 left-4 z-10">
                   <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
@@ -501,7 +521,7 @@ export default function LivePlayer() {
                   className="gap-1.5 h-9 sm:h-8 text-xs sm:text-sm min-w-[44px]"
                 >
                   <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                  <span>{realtimeLikesCount || live.likesCount}</span>
+                  <span>{realtimeLikesCount ?? live.likesCount}</span>
                   <span className="hidden xs:inline">{t('livePlayer.like')}</span>
                 </Button>
                 <Button 
@@ -591,7 +611,7 @@ export default function LivePlayer() {
                 <div className="flex items-center gap-3 mt-3">
                   <Badge variant="outline" className="gap-1 text-xs font-normal">
                     <Heart className="w-3 h-3 fill-destructive text-destructive" />
-                    {realtimeLikesCount || live.likesCount} {t('livePlayer.likes')}
+                    {realtimeLikesCount ?? live.likesCount} {t('livePlayer.likes')}
                   </Badge>
                   <Badge variant="outline" className="gap-1 text-xs font-normal">
                     <Star className="w-3 h-3 fill-premium text-premium" />
