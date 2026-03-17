@@ -104,7 +104,7 @@ export function OtpVerificationDialog({
                   <div className="min-w-0">
                     <p className="text-sm font-medium">SMS + Notificación</p>
                     <p className="text-[11px] text-muted-foreground">
-                      {smsAvailable ? 'Envío por mensaje de texto' : 'Requiere configurar proveedor SMS'}
+                      {smsAvailable ? 'Envío por mensaje de texto' : 'El paciente no tiene teléfono verificado'}
                     </p>
                   </div>
                 </Label>
