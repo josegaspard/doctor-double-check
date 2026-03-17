@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { createHmac } from "node:crypto";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,12 +51,29 @@ Deno.serve(async (req) => {
   try {
     logStep("Webhook received");
 
+    // Verify Daily.co webhook HMAC signature
+    const dailyWebhookSecret = Deno.env.get("DAILY_WEBHOOK_SECRET");
+    const dailySignature = req.headers.get("x-webhook-signature");
+    const rawBody = await req.text();
+
+    if (dailyWebhookSecret) {
+      const expectedSignature = createHmac("sha256", dailyWebhookSecret)
+        .update(rawBody)
+        .digest("hex");
+      if (!dailySignature || dailySignature !== expectedSignature) {
+        logStep("Unauthorized: invalid or missing Daily webhook signature");
+        return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+      }
+    } else {
+      logStep("WARNING: DAILY_WEBHOOK_SECRET not set, skipping signature verification");
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const payload = await req.json();
+    const payload = JSON.parse(rawBody);
     const eventType = payload.event;
     logStep("Event type", { eventType });
 

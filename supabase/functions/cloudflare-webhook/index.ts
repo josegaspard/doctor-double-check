@@ -18,6 +18,14 @@ Deno.serve(async (req) => {
   try {
     logStep("Webhook received");
 
+    // Verify Cloudflare webhook signature
+    const webhookSecret = Deno.env.get("CLOUDFLARE_WEBHOOK_SECRET");
+    const signature = req.headers.get("cf-webhook-auth");
+    if (!webhookSecret || !signature || signature !== webhookSecret) {
+      logStep("Unauthorized: invalid or missing webhook signature");
+      return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
