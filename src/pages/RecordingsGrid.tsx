@@ -222,6 +222,35 @@ export default function RecordingsGrid() {
           </div>
         )}
 
+        {/* Tag/Category filter chips (P13) */}
+        {allTags.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
+            <button
+              onClick={() => setSelectedTag(null)}
+              className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                !selectedTag
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
+              }`}
+            >
+              Todas las categorías
+            </button>
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                  selectedTag === tag
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
