@@ -569,6 +569,18 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
                   })()}
                 </>
               )}
+
+              {/* Viewer audio toggle */}
+              {!isOwner && (
+                <Button
+                  size="icon"
+                  variant={viewerAudioMuted ? "destructive" : "secondary"}
+                  onClick={toggleViewerAudio}
+                  className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
+                >
+                  {viewerAudioMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                </Button>
+              )}
               
               <Button
                 size="icon"
