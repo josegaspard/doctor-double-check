@@ -38,6 +38,8 @@ interface DailyVideoPlayerProps {
   hideControls?: boolean;
   onLeave?: () => void;
   onParticipantCountChange?: (count: number) => void;
+  onMobileFullscreenToggle?: () => void;
+  isMobileFullscreen?: boolean;
   className?: string;
   children?: React.ReactNode;
 }
