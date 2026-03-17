@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { DailyVideoPlayer, DailyVideoPlayerHandle } from './DailyVideoPlayer';
 import { LiveChat } from './LiveChat';
 import { AnimatedViewerCount } from './AnimatedViewerCount';
-import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Clock,
   Heart,
@@ -35,6 +34,7 @@ interface LiveStreamViewProps {
   onEndClick: () => void;
   roomUrl: string;
   ownerToken: string;
+  isMobile: boolean;
 }
 
 export function LiveStreamView({
@@ -47,8 +47,8 @@ export function LiveStreamView({
   onEndClick,
   roomUrl,
   ownerToken,
+  isMobile,
 }: LiveStreamViewProps) {
-  const isMobile = useIsMobile();
   const [mobileChatOpen, setMobileChatOpen] = useState(true);
   const [showOverlay, setShowOverlay] = useState(true);
   const [mobileFullscreen, setMobileFullscreen] = useState(false);
