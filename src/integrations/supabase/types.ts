@@ -1885,6 +1885,7 @@ export type Database = {
           id: string
           institution: string | null
           license: string | null
+          phone: string | null
           selected_role: string | null
           specialty: string | null
           step: number
@@ -1898,6 +1899,7 @@ export type Database = {
           id?: string
           institution?: string | null
           license?: string | null
+          phone?: string | null
           selected_role?: string | null
           specialty?: string | null
           step?: number
@@ -1911,6 +1913,7 @@ export type Database = {
           id?: string
           institution?: string | null
           license?: string | null
+          phone?: string | null
           selected_role?: string | null
           specialty?: string | null
           step?: number

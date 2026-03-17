@@ -1,0 +1,1 @@
+ALTER TABLE public.onboarding_progress ADD COLUMN IF NOT EXISTS phone text;
