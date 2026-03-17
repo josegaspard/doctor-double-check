@@ -109,6 +109,38 @@ export default function Login() {
     }
   };
 
+  const handleAppleLogin = async () => {
+    setAppleLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth('apple', {
+        redirect_uri: `${window.location.origin}/login`,
+      });
+
+      if (result.error) {
+        const message = result.error.message?.toLowerCase() || '';
+        const isFalseCancellation = message.includes('cancelled') || message.includes('canceled');
+
+        if (isFalseCancellation) {
+          const recovered = await recoverGoogleSession();
+          if (recovered) return;
+        }
+
+        toast.error(t('authErrors.appleLoginError') || 'Error al iniciar sesión con Apple');
+        console.error('Apple login error:', result.error);
+        return;
+      }
+
+      if (!result.redirected) {
+        await recoverGoogleSession();
+      }
+    } catch (error) {
+      toast.error(t('authErrors.appleConnectError') || 'No se pudo conectar con Apple');
+      console.error('Apple login error:', error);
+    } finally {
+      setAppleLoading(false);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
