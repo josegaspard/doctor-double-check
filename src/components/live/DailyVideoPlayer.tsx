@@ -67,7 +67,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const [participantCount, setParticipantCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [showUnmutePrompt, setShowUnmutePrompt] = useState(false);
-  const [viewerAudioMuted, setViewerAudioMuted] = useState(false);
+  const [viewerAudioMuted, setViewerAudioMuted] = useState(true);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -353,29 +353,31 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     const el = wrapperRef.current;
     if (!el) return;
 
-    // Check if native fullscreen is active
+    // Exit native fullscreen
     if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
       (document.exitFullscreen?.() || (document as any).webkitExitFullscreen?.());
       return;
     }
 
-    // Try native fullscreen first (works on Android, desktop)
+    // Exit CSS fallback fullscreen (iOS)
+    if (isFullscreen) {
+      setIsFullscreen(false);
+      document.body.style.overflow = '';
+      return;
+    }
+
+    // Enter native fullscreen, fallback to CSS
     const requestFs = el.requestFullscreen?.bind(el) || (el as any).webkitRequestFullscreen?.bind(el);
     if (requestFs) {
       requestFs().catch(() => {
-        // Fallback CSS fullscreen (iOS Safari)
         setIsFullscreen(true);
         document.body.style.overflow = 'hidden';
       });
     } else {
-      // No API at all — CSS fallback
-      setIsFullscreen(prev => {
-        const next = !prev;
-        document.body.style.overflow = next ? 'hidden' : '';
-        return next;
-      });
+      setIsFullscreen(true);
+      document.body.style.overflow = 'hidden';
     }
-  }, []);
+  }, [isFullscreen]);
 
   // Expose controls to parent via ref
   useImperativeHandle(ref, () => ({
@@ -528,7 +530,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
 
           {/* Controls */}
           <div className={`absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/80 to-transparent z-20 transition-opacity ${
-            isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            isFullscreen ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
           }`}
             style={{ paddingBottom: isFullscreen ? 'max(0.75rem, env(safe-area-inset-bottom))' : undefined }}
           >
