@@ -117,14 +117,13 @@ export default function IdentityVerification() {
       if (error) throw error;
       if (!data?.session_url) throw new Error('No session URL returned');
 
-      // Open Veriff in a new window
-      window.open(data.session_url, '_blank', 'noopener,noreferrer');
-
-      toast.success(
+      // Navigate directly to Veriff (avoids popup blockers on mobile/WebView)
+      toast.info(
         language === 'es'
-          ? 'Verificación iniciada. Completa el proceso en la nueva ventana.'
-          : 'Verification started. Complete the process in the new window.'
+          ? 'Redirigiendo a la verificación biométrica...'
+          : 'Redirecting to biometric verification...'
       );
+      window.location.href = data.session_url;
 
       // Refresh after a short delay
       setTimeout(fetchVerification, 3000);
@@ -328,15 +327,15 @@ export default function IdentityVerification() {
         {/* Current Status */}
         {verification && statusConfig && (
           <Card className={`mb-6 border-2 ${statusConfig.bg}`}>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-full ${statusConfig.bg} flex items-center justify-center`}>
-                  <statusConfig.icon className={`w-6 h-6 ${statusConfig.color}`} />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${statusConfig.bg} flex items-center justify-center flex-shrink-0`}>
+                  <statusConfig.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${statusConfig.color}`} />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold">{statusConfig.title}</h3>
-                    <Badge variant={statusConfig.badge}>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm sm:text-base">{statusConfig.title}</h3>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1 mb-2">
+                    <Badge variant={statusConfig.badge} className="text-[10px] sm:text-xs">
                       {verification.status === 'pending' && (language === 'es' ? 'Pendiente' : 'Pending')}
                       {verification.status === 'in_progress' && (language === 'es' ? 'En proceso' : 'In Progress')}
                       {verification.status === 'verified' && (language === 'es' ? 'Verificado' : 'Verified')}
@@ -344,13 +343,13 @@ export default function IdentityVerification() {
                       {verification.status === 'expired' && (language === 'es' ? 'Expirado' : 'Expired')}
                     </Badge>
                     {verification.provider === 'veriff' && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-[10px] sm:text-xs">
                         <Fingerprint className="w-3 h-3 mr-1" />
                         Veriff
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">{statusConfig.description}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{statusConfig.description}</p>
                   {verification.verified_at && (
                     <p className="text-xs text-muted-foreground mt-2">
                       {language === 'es' ? 'Verificado el: ' : 'Verified on: '}
@@ -431,7 +430,7 @@ export default function IdentityVerification() {
               </div>
 
               <Button
-                className="w-full"
+                className="w-full min-h-[44px]"
                 size="lg"
                 onClick={handleStartVeriff}
                 disabled={isStartingVeriff}
@@ -462,7 +461,7 @@ export default function IdentityVerification() {
 
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full min-h-[44px]"
                 onClick={() => setShowManualUpload(true)}
               >
                 <Upload className="w-4 h-4 mr-2" />

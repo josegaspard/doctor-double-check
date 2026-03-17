@@ -40,6 +40,7 @@ export function calculateDoctorRank(
     totalEarnings: number;
     monthsActive: number;
     rating: number;
+    isIdentityVerified?: boolean;
   },
   rankOverrideId?: string | null,
 ): DoctorRank | null {
@@ -51,14 +52,18 @@ export function calculateDoctorRank(
     if (override) return override;
   }
 
+  // Identity verification bonus: counts as +10 consultations and +0.1 rating towards rank thresholds
+  const consultationBonus = stats.isIdentityVerified ? 10 : 0;
+  const ratingBonus = stats.isIdentityVerified ? 0.1 : 0;
+
   // Find highest matching rank (sorted desc by sort_order)
   const sorted = [...ranks].sort((a, b) => b.sort_order - a.sort_order);
   for (const rank of sorted) {
     if (
-      stats.totalConsultations >= rank.min_consultations &&
+      (stats.totalConsultations + consultationBonus) >= rank.min_consultations &&
       stats.totalEarnings >= rank.min_earnings &&
       stats.monthsActive >= rank.min_months_active &&
-      stats.rating >= rank.min_rating
+      Math.min(5, stats.rating + ratingBonus) >= rank.min_rating
     ) {
       return rank;
     }
