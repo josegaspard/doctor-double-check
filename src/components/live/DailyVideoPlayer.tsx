@@ -55,6 +55,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const callRef = useRef<DailyCall | null>(null);
   const cleaningUpRef = useRef(false);
   const isLeavingRef = useRef(false);
+  const userHasUnmutedRef = useRef(false);
   
   const [isJoining, setIsJoining] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
