@@ -1,26 +1,28 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+## Plan: Badges "Disponible en App Store / Google Play" en el Footer
 
-## Solucion
+### Qué se hará
+Agregar badges oficiales de App Store y Google Play en ambas variantes del footer (landing y app), completamente responsive.
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+### Cambios
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+**1. Crear componente `AppStoreBadges` dentro de `UnifiedFooter.tsx`**
+- Dos badges SVG inline (Apple App Store + Google Play) con enlaces `#` (placeholder hasta tener URLs reales).
+- En mobile: badges apilados o lado a lado centrados.
+- En desktop: badges en línea horizontal.
+- Estilo: badges con fondo semitransparente blanco, bordes redondeados, hover sutil.
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+**2. Insertar en ambas variantes del footer**
+- **Landing variant**: Debajo de los social icons en la columna de marca (línea ~123), antes del grid de links.
+- **App variant**: Debajo de los social icons en la columna de marca (línea ~90).
+- También se mostrará en la barra inferior (junto al copyright y status badge) en ambas variantes para máxima visibilidad.
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+**3. Archivos a editar**
+- `src/components/layout/UnifiedFooter.tsx` — único archivo.
 
-## Archivos a modificar
+### Diseño responsive
+- Mobile (`< sm`): Badges lado a lado, tamaño compacto (h-9).
+- Tablet/Desktop (`sm+`): Badges en línea, tamaño estándar (h-10).
+- Los badges usarán SVG inline para evitar dependencias externas y carga rápida.
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
