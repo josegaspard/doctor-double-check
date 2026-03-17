@@ -389,6 +389,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   }), [toggleMute, toggleVideo, leaveCall, toggleFullscreen, isMuted, isVideoOff, isFullscreen]);
 
   const handleUnmute = useCallback(() => {
+    userHasUnmutedRef.current = true;
     const containers = [videoContainerRef.current, screenShareRef.current];
     containers.forEach(container => {
       if (!container) return;
@@ -398,7 +399,22 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
       });
     });
     setShowUnmutePrompt(false);
+    setViewerAudioMuted(false);
   }, []);
+
+  const toggleViewerAudio = useCallback(() => {
+    const containers = [videoContainerRef.current, screenShareRef.current];
+    const newMuted = !viewerAudioMuted;
+    containers.forEach(container => {
+      if (!container) return;
+      container.querySelectorAll('video, audio').forEach((el) => {
+        (el as HTMLMediaElement).muted = newMuted;
+        if (!newMuted) (el as HTMLMediaElement).play().catch(() => {});
+      });
+    });
+    setViewerAudioMuted(newMuted);
+    if (!newMuted) userHasUnmutedRef.current = true;
+  }, [viewerAudioMuted]);
 
   // Sync fullscreen state with native Fullscreen API
   useEffect(() => {
