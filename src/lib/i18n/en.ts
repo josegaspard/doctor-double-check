@@ -122,6 +122,7 @@ export const en = {
     register: 'Sign up',
     orContinueWith: 'Or continue with',
     continueWithGoogle: 'Continue with Google',
+    continueWithApple: 'Continue with Apple',
     loginTab: 'Log In',
     registerTab: 'Sign Up',
     name: 'Full name',
