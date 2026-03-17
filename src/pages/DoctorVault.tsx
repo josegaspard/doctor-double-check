@@ -33,6 +33,21 @@ export default function DoctorVault() {
 
   const accessibleFiles = getAccessibleFiles(user?.id || '');
 
+  // Auto-open patient content when redirected from OTP verification
+  const targetPatientId = searchParams.get('patient');
+  useEffect(() => {
+    if (!targetPatientId || autoOpenHandled) return;
+    if (!isPatientVerified(targetPatientId)) return;
+    const patientFiles = accessibleFiles.filter(f => f.patientId === targetPatientId);
+    if (patientFiles.length > 0) {
+      setSelectedFile(patientFiles[0]);
+      setIsPreviewOpen(true);
+    }
+    setAutoOpenHandled(true);
+    // Clean up the query param
+    setSearchParams({}, { replace: true });
+  }, [targetPatientId, autoOpenHandled, accessibleFiles, isPatientVerified, setSearchParams]);
+
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
