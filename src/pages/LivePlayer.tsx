@@ -508,7 +508,7 @@ export default function LivePlayer() {
                   className="gap-1.5 h-9 sm:h-8 text-xs sm:text-sm min-w-[44px]"
                 >
                   <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                  <span>{realtimeLikesCount || live.likesCount}</span>
+                  <span>{realtimeLikesCount ?? live.likesCount}</span>
                   <span className="hidden xs:inline">{t('livePlayer.like')}</span>
                 </Button>
                 <Button 
