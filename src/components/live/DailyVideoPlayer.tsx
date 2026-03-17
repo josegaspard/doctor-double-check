@@ -16,6 +16,7 @@ import {
   Monitor,
   MonitorOff,
   Volume2,
+  VolumeX,
 } from 'lucide-react';
 
 export interface DailyVideoPlayerHandle {
