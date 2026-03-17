@@ -520,6 +520,41 @@ export default function Vault() {
             <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleUpload} />
 
             {/* Drop zone style upload button */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (description.trim() && !isStorageFull) setIsDragging(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+                if (!description.trim()) {
+                  toast.error(t('ads.addDescFirst'));
+                  return;
+                }
+                if (isStorageFull) {
+                  setShowUpgradeDialog(true);
+                  return;
+                }
+                const file = e.dataTransfer.files?.[0];
+                if (file) {
+                  // Simulate file input change
+                  const dt = new DataTransfer();
+                  dt.items.add(file);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.files = dt.files;
+                    fileInputRef.current.dispatchEvent(new Event('change', { bubbles: true }));
+                  }
+                }
+              }}
+            >
             <button
               onClick={() => {
               if (!description.trim()) {
@@ -534,11 +569,13 @@ export default function Vault() {
               }}
               disabled={isLoading}
               className={`w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-2 transition-all ${
-                !description.trim()
-                  ? 'border-muted-foreground/20 opacity-50 cursor-not-allowed'
-                  : isStorageFull
-                    ? 'border-destructive/30 hover:border-destructive/50 cursor-pointer'
-                    : 'border-primary/30 hover:border-primary/60 hover:bg-primary/5 cursor-pointer'
+                isDragging
+                  ? 'border-primary bg-primary/10 scale-[1.02]'
+                  : !description.trim()
+                    ? 'border-muted-foreground/20 opacity-50 cursor-not-allowed'
+                    : isStorageFull
+                      ? 'border-destructive/30 hover:border-destructive/50 cursor-pointer'
+                      : 'border-primary/30 hover:border-primary/60 hover:bg-primary/5 cursor-pointer'
               }`}
             >
               {isLoading ? (
