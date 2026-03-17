@@ -21,10 +21,8 @@ import {
   UserRound,
   Dna,
   Hospital,
-  Linkedin,
-  Twitter,
-  Instagram,
 } from 'lucide-react';
+import { LandingFooter } from '@/components/landing/LandingFooter';
 
 export default function Landing() {
   const navigate = useNavigate();
