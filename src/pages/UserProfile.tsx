@@ -156,31 +156,40 @@ export default function UserProfile() {
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [isLoadingPhone, setIsLoadingPhone] = useState(true);
 
-  // Fetch verification status
+  // Fetch verification status and phone
   useEffect(() => {
-    const fetchVerificationStatus = async () => {
+    const fetchUserData = async () => {
       if (!user?.id) return;
       
       try {
-        const { data } = await supabase
-          .from('identity_verifications')
-          .select('status')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const [verRes, phoneRes] = await Promise.all([
+          supabase
+            .from('identity_verifications')
+            .select('status')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('profiles')
+            .select('phone')
+            .eq('id', user.id)
+            .single()
+        ]);
 
-        if (data) {
-          setVerificationStatus(data.status as VerificationStatus);
+        if (verRes.data) {
+          setVerificationStatus(verRes.data.status as VerificationStatus);
         }
+        setUserPhone(phoneRes.data?.phone || null);
       } catch (error) {
         // No verification found
       } finally {
         setIsLoadingVerification(false);
+        setIsLoadingPhone(false);
       }
     };
 
-    fetchVerificationStatus();
+    fetchUserData();
   }, [user?.id]);
 
   // Fetch professional profile
