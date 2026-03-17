@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +11,7 @@ import { useViewerCount } from '@/hooks/useViewerCount';
 import { useWallet } from '@/contexts/WalletContext';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useDaily } from '@/hooks/useDaily';
+import { useIsMobile } from '@/hooks/use-mobile';
 import MainLayout from '@/components/layout/MainLayout';
 import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
 import { LiveChat } from '@/components/live/LiveChat';
@@ -66,6 +67,8 @@ export default function LivePlayer() {
   const [consultationFee, setConsultationFee] = useState(0);
   const [liveInteraction, setLiveInteraction] = useState<{ chat_enabled: boolean; max_paid_chats: number | null; paid_chats_count: number }>({ chat_enabled: true, max_paid_chats: null, paid_chats_count: 0 });
   const [showShareModal, setShowShareModal] = useState(false);
+  const [mobileFullscreen, setMobileFullscreen] = useState(false);
+  const isMobile = useIsMobile();
   
   // Daily viewer state
   const [viewerToken, setViewerToken] = useState<string | null>(null);
@@ -361,6 +364,28 @@ export default function LivePlayer() {
     }
   };
 
+  const handleToggleMobileFullscreen = useCallback(() => {
+    setMobileFullscreen(prev => {
+      const next = !prev;
+      if (next) {
+        document.body.style.overflow = 'hidden';
+        screen.orientation?.lock?.('landscape').catch(() => {});
+      } else {
+        document.body.style.overflow = '';
+        screen.orientation?.unlock?.();
+      }
+      return next;
+    });
+  }, []);
+
+  // Cleanup mobile fullscreen on unmount
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = '';
+      screen.orientation?.unlock?.();
+    };
+  }, []);
+
   const handleStartPrivateChat = async () => {
     if (!user || !live) return;
     
@@ -427,13 +452,18 @@ export default function LivePlayer() {
                 duration={formatDuration(live.startedAt)}
               />
             ) : roomUrl && viewerToken ? (
-              <DailyVideoPlayer
-                roomUrl={roomUrl}
-                token={viewerToken}
-                isOwner={isOwner}
-                onLeave={isOwner && isLiveActive ? () => setShowEndDialog(true) : () => navigate('/lives')}
-                onParticipantCountChange={() => {}}
-              />
+              <div className={mobileFullscreen ? 'mobile-live-fullscreen' : 'contents'}>
+                <DailyVideoPlayer
+                  roomUrl={roomUrl}
+                  token={viewerToken}
+                  isOwner={isOwner}
+                  onLeave={isOwner && isLiveActive ? () => setShowEndDialog(true) : () => navigate('/lives')}
+                  onParticipantCountChange={() => {}}
+                  onMobileFullscreenToggle={isMobile ? handleToggleMobileFullscreen : undefined}
+                  isMobileFullscreen={mobileFullscreen}
+                  className={mobileFullscreen ? 'relative bg-black overflow-hidden group w-full h-full' : undefined}
+                />
+              </div>
             ) : (
               <div className="relative aspect-video bg-black rounded-xl overflow-hidden no-context-menu">
                 {isJoiningStream ? (

@@ -38,6 +38,8 @@ interface DailyVideoPlayerProps {
   hideControls?: boolean;
   onLeave?: () => void;
   onParticipantCountChange?: (count: number) => void;
+  onMobileFullscreenToggle?: () => void;
+  isMobileFullscreen?: boolean;
   className?: string;
   children?: React.ReactNode;
 }
@@ -49,6 +51,8 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   hideControls = false,
   onLeave,
   onParticipantCountChange,
+  onMobileFullscreenToggle,
+  isMobileFullscreen = false,
   className: externalClassName,
   children,
 }, ref) {
@@ -244,14 +248,11 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
         videoEl.setAttribute('webkit-playsinline', 'true');
         videoEl.muted = true;
 
-        const isMobileDevice = window.innerWidth < 768;
         videoEl.className = participant.local && hasAnyScreenShare
           ? 'absolute bottom-2 right-2 w-24 h-18 sm:w-32 sm:h-24 rounded-lg object-cover z-10 border-2 border-primary shadow-lg'
           : hasAnyScreenShare && !participant.local
             ? 'absolute bottom-2 left-2 w-24 h-18 sm:w-32 sm:h-24 rounded-lg object-cover z-10 border-2 border-muted shadow-lg'
-            : isMobileDevice
-              ? 'w-full h-full object-cover absolute inset-0'
-              : 'w-full h-full object-cover';
+            : 'w-full h-full object-contain absolute inset-0';
         
         const tracks: MediaStreamTrack[] = [participant.videoTrack];
         if (!participant.local && participant.audioTrack) {
@@ -474,6 +475,17 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     );
   }
 
+  // On mobile, if parent controls fullscreen, delegate to parent
+  const handleFullscreenClick = useCallback(() => {
+    if (onMobileFullscreenToggle) {
+      onMobileFullscreenToggle();
+    } else {
+      toggleFullscreen();
+    }
+  }, [onMobileFullscreenToggle, toggleFullscreen]);
+
+  const resolvedFullscreen = isMobileFullscreen || isFullscreen;
+
   return (
     <div
       ref={wrapperRef}
@@ -547,9 +559,9 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
 
           {/* Controls */}
           <div className={`absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/80 to-transparent z-20 transition-opacity ${
-            isFullscreen ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+            resolvedFullscreen ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
           }`}
-            style={{ paddingBottom: isFullscreen ? 'max(0.75rem, env(safe-area-inset-bottom))' : undefined }}
+            style={{ paddingBottom: resolvedFullscreen ? 'max(0.75rem, env(safe-area-inset-bottom))' : undefined }}
           >
             <div className="flex items-center justify-center gap-2 sm:gap-3">
               {isOwner && (
@@ -604,10 +616,10 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
               <Button
                 size="icon"
                 variant="secondary"
-                onClick={toggleFullscreen}
+                onClick={handleFullscreenClick}
                 className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
               >
-                {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                {resolvedFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
               </Button>
               
               {isOwner && (
