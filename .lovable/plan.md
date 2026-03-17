@@ -1,47 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-# Plan: Editar y verificar teléfono y correo en el perfil de usuario
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Problema actual
-- El perfil muestra email y teléfono como datos estáticos sin opción de editar
-- Cuentas existentes que no verificaron teléfono en onboarding no tienen forma de hacerlo después
-- No hay forma de cambiar el correo electrónico
+## Solucion
 
-## Cambios en `src/pages/UserProfile.tsx`
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-### Sección de teléfono (líneas 551-563)
-Reemplazar la visualización estática del teléfono con un bloque editable:
-- **Si tiene teléfono verificado**: Mostrar número enmascarado + badge "Verificado" + botón "Cambiar"
-- **Si no tiene teléfono**: Mostrar "Sin verificar" + botón "Agregar teléfono"
-- **Al editar**: Expandir inline con selector de código de país (+52, +1, +57...) + input + botón "Enviar código SMS"
-- **Tras enviar**: Mostrar input de 6 dígitos + botón "Verificar" + timer de 5 min
-- **Al verificar**: Actualizar `profiles.phone` vía el edge function `verify-phone-otp` (ya existe con rate limit 1/día)
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-### Sección de email (líneas 547-549 y 914-922)
-Agregar opción de editar email en ambos lugares donde se muestra:
-- **Display**: Email actual + badge "Verificado" (ya que están logueados con ese email) + botón "Cambiar"
-- **Al editar**: Input de nuevo email + botón "Enviar verificación"
-- Llamar `supabase.auth.updateUser({ email: newEmail })` que envía un email de confirmación al nuevo correo
-- Mostrar toast explicativo: "Se envió un enlace de verificación a tu nuevo correo. Tu email cambiará cuando confirmes el enlace."
-- No se cambia inmediatamente — Supabase requiere confirmación del nuevo email
-
-### Estados nuevos en el componente
 ```
-isEditingPhone, editedPhone, phoneCountryCode, phoneOtpSent, phoneOtpCode, isVerifyingPhone, phoneSendingOtp
-isEditingEmail, editedEmail, isSavingEmail
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-### UX móvil
-- Todos los inputs inline expandibles con animación (AnimatePresence como ya se usa para nombre/bio)
-- Botones de acción con min-height 44px para touch
-- Inputs full-width en móvil
-- Selector de código de país compacto (dropdown)
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
 ## Archivos a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/UserProfile.tsx` | Agregar edición inline de teléfono con verificación SMS + edición de email con verificación |
-
-No se necesitan cambios en edge functions ni DB — `verify-phone-otp` ya maneja todo el flujo SMS y `supabase.auth.updateUser` maneja el cambio de email nativamente.
-
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
