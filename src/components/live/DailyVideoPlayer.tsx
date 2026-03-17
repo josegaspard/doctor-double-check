@@ -330,11 +330,20 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   }, [onLeave]);
 
   const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => {
-      const next = !prev;
-      document.body.style.overflow = next ? 'hidden' : '';
-      return next;
-    });
+    const el = wrapperRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.().catch(() => {
+        // Fallback for browsers that don't support fullscreen API
+        setIsFullscreen(prev => {
+          const next = !prev;
+          document.body.style.overflow = next ? 'hidden' : '';
+          return next;
+        });
+      });
+    } else {
+      document.exitFullscreen?.();
+    }
   }, []);
 
   // Expose controls to parent via ref
