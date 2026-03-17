@@ -473,6 +473,11 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
       }`}
       style={isFullscreen && !externalClassName ? { width: '100vw', height: '100dvh' } : undefined}
     >
+      {/* Connection quality indicator for viewers */}
+      {!isOwner && isConnected && (
+        <ConnectionQualityIndicator stats={connectionStats} />
+      )}
+
       {/* Screen share layer */}
       <div
         ref={screenShareRef}
