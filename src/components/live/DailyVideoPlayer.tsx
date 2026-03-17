@@ -359,6 +359,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     // Exit native fullscreen
     if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
       (document.exitFullscreen?.() || (document as any).webkitExitFullscreen?.());
+      screen.orientation?.unlock?.();
       return;
     }
 
@@ -366,19 +367,24 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     if (isFullscreen) {
       setIsFullscreen(false);
       document.body.style.overflow = '';
+      screen.orientation?.unlock?.();
       return;
     }
 
-    // Enter native fullscreen, fallback to CSS
+    // Enter native fullscreen, fallback to CSS — lock landscape like YouTube
     const requestFs = el.requestFullscreen?.bind(el) || (el as any).webkitRequestFullscreen?.bind(el);
     if (requestFs) {
-      requestFs().catch(() => {
+      requestFs().then(() => {
+        screen.orientation?.lock?.('landscape').catch(() => {});
+      }).catch(() => {
         setIsFullscreen(true);
         document.body.style.overflow = 'hidden';
+        screen.orientation?.lock?.('landscape').catch(() => {});
       });
     } else {
       setIsFullscreen(true);
       document.body.style.overflow = 'hidden';
+      screen.orientation?.lock?.('landscape').catch(() => {});
     }
   }, [isFullscreen]);
 
@@ -427,6 +433,9 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
       const isFull = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
       setIsFullscreen(isFull);
       document.body.style.overflow = isFull ? 'hidden' : '';
+      if (!isFull) {
+        screen.orientation?.unlock?.();
+      }
     };
     document.addEventListener('fullscreenchange', handleFsChange);
     document.addEventListener('webkitfullscreenchange', handleFsChange);
@@ -469,7 +478,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     <div
       ref={wrapperRef}
       className={externalClassName || `relative bg-black overflow-hidden group ${
-        isFullscreen ? 'fixed inset-0 z-[9999] w-screen h-[100dvh] rounded-none' : 'aspect-video rounded-xl'
+        isFullscreen ? 'fixed inset-0 z-[9999] w-screen h-[100dvh] rounded-none landscape-fs' : 'aspect-video rounded-xl'
       }`}
       style={isFullscreen && !externalClassName ? { width: '100vw', height: '100dvh' } : undefined}
     >

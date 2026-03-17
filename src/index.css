@@ -609,3 +609,17 @@
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* YouTube-style landscape fullscreen fallback for iOS (when orientation lock API unavailable) */
+@media (orientation: portrait) {
+  .landscape-fs {
+    transform: rotate(90deg);
+    transform-origin: center center;
+    width: 100dvh !important;
+    height: 100vw !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    translate: -50% -50%;
+  }
+}
