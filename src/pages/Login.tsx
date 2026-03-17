@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { PasswordStrength, getPasswordStrength } from '@/components/ui/password-strength';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
+import { LandingFooter } from '@/components/landing/LandingFooter';
 
 export default function Login() {
   const navigate = useNavigate();
