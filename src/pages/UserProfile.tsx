@@ -164,9 +164,22 @@ export default function UserProfile() {
   const [editedLocation, setEditedLocation] = useState('');
   const [isSavingLocation, setIsSavingLocation] = useState(false);
 
-  // Phone
+  // Phone editing
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [isLoadingPhone, setIsLoadingPhone] = useState(true);
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [editedPhone, setEditedPhone] = useState('');
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+52');
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [phoneOtpCode, setPhoneOtpCode] = useState('');
+  const [phoneSendingOtp, setPhoneSendingOtp] = useState(false);
+  const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
+  const [phoneRateLimited, setPhoneRateLimited] = useState(false);
+
+  // Email editing
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [editedEmail, setEditedEmail] = useState('');
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
 
   // Fetch verification status and phone
   useEffect(() => {
