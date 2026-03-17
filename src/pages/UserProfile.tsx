@@ -152,6 +152,10 @@ export default function UserProfile() {
   const [editedLocation, setEditedLocation] = useState('');
   const [isSavingLocation, setIsSavingLocation] = useState(false);
 
+  // Phone
+  const [userPhone, setUserPhone] = useState<string | null>(null);
+  const [isLoadingPhone, setIsLoadingPhone] = useState(true);
+
   // Fetch verification status
   useEffect(() => {
     const fetchVerificationStatus = async () => {
