@@ -1,26 +1,24 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Connection quality indicator for live stream viewers
 
-## Solucion
+## Approach
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+Reuse the existing `useConnectionQuality` hook and `ConnectionQualityIndicator` component (already working in VideoCall) inside `DailyVideoPlayer.tsx`. This makes the indicator available to all viewers automatically.
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+## Changes — single file: `src/components/live/DailyVideoPlayer.tsx`
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+1. **Import** `useConnectionQuality` and `ConnectionQualityIndicator`
+2. **Call the hook** passing `callRef.current` and `isConnected`:
+   ```tsx
+   const connectionStats = useConnectionQuality(callRef.current, isConnected);
+   ```
+3. **Render the indicator** inside the wrapper div, visible only for non-owner viewers when connected:
+   ```tsx
+   {!isOwner && isConnected && (
+     <ConnectionQualityIndicator stats={connectionStats} />
+   )}
+   ```
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+The `ConnectionQualityIndicator` already has absolute positioning (`absolute top-3 left-3 z-30`), expandable stats panel, and mobile-friendly styling — no additional work needed.
 
-## Archivos a modificar
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
