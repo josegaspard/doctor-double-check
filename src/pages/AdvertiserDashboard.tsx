@@ -240,7 +240,10 @@ export default function AdvertiserDashboard() {
       const s = campaignStats[c.id] || { impressions: 0, clicks: 0 };
       return { name: c.name, status: statusLabels[c.status] || c.status, budget: c.budget, impressions: s.impressions, clicks: s.clicks, ctr: s.impressions > 0 ? ((s.clicks / s.impressions) * 100).toFixed(2) : '0.00' };
     });
-    const totalSpent = campaigns.reduce((sum, c) => sum + Number(c.spent), 0);
+    const totalSpent = campaigns.reduce((sum, c) => {
+      const s = campaignStats[c.id] || { impressions: 0, clicks: 0 };
+      return sum + (s.impressions / 1000 * config.cpm_rate) + (s.clicks * config.cpc_rate);
+    }, 0);
     exportToPDF('Reporte de Campañas Publicitarias', campaignsToTableHTML(rows, totalSpent));
   };
 
