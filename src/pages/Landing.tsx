@@ -536,64 +536,7 @@ export default function Landing() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-[#0b1d45] pt-20 pb-10 text-slate-300 border-t border-white/5 font-light text-sm">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 mb-16">
-            <div className="col-span-2 lg:col-span-2">
-              <img src={logoWhite} alt="Medical Logo" className="h-8 mb-6 opacity-90" />
-              <p className="mb-6 max-w-sm text-slate-400">
-                Revolucionando la atención médica a través de la tecnología. Comprometidos con la ética, la seguridad y la excelencia clínica.
-              </p>
-              <div className="flex space-x-4">
-                <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/20 transition-colors"><Linkedin className="w-4 h-4" /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/20 transition-colors"><Twitter className="w-4 h-4" /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/20 transition-colors"><Instagram className="w-4 h-4" /></a>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-white font-bold mb-6">Plataforma</h4>
-              <ul className="space-y-4">
-                <li><Link to="/for-doctors" className="hover:text-[#aed3d9] transition-colors">Para Médicos</Link></li>
-                <li><Link to="/for-patients" className="hover:text-[#aed3d9] transition-colors">Para Pacientes</Link></li>
-                <li><Link to="/enterprise" className="hover:text-[#aed3d9] transition-colors">Enterprise</Link></li>
-                <li><a href="#pricing" className="hover:text-[#aed3d9] transition-colors">Precios</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-white font-bold mb-6">Recursos</h4>
-              <ul className="space-y-4">
-                <li><Link to="/success-stories" className="hover:text-[#aed3d9] transition-colors">Casos de Éxito</Link></li>
-                <li><Link to="/help" className="hover:text-[#aed3d9] transition-colors">Ayuda</Link></li>
-                <li><Link to="/contact" className="hover:text-[#aed3d9] transition-colors">Contacto</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-white font-bold mb-6">Legal</h4>
-              <ul className="space-y-4">
-                <li><Link to="/privacy" className="hover:text-[#aed3d9] transition-colors">Privacidad</Link></li>
-                <li><Link to="/terms" className="hover:text-[#aed3d9] transition-colors">Términos</Link></li>
-                <li><Link to="/security" className="hover:text-[#aed3d9] transition-colors">Seguridad</Link></li>
-                <li><Link to="/compliance" className="hover:text-[#aed3d9] transition-colors">Compliance</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p>&copy; 2026 Medical Platform Inc. All rights reserved.</p>
-            <div className="flex items-center gap-4 mt-4 md:mt-0">
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-green-500 font-bold text-xs">All Systems Operational</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
-
+      <LandingFooter />
     </div>
   );
 }
