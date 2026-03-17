@@ -51,9 +51,9 @@ export function LiveStreamView({
   const isMobile = useIsMobile();
   const [mobileChatOpen, setMobileChatOpen] = useState(true);
   const [showOverlay, setShowOverlay] = useState(true);
+  const [mobileFullscreen, setMobileFullscreen] = useState(false);
   const playerRef = useRef<DailyVideoPlayerHandle>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [mobileFullscreen, setMobileFullscreen] = useState(false);
 
   // Force re-render to read ref state after toggles
   const [, forceUpdate] = useState(0);
@@ -121,21 +121,62 @@ export function LiveStreamView({
         style={{ height: '100dvh' }}
         onClick={handleTapVideo}
       >
-        {/* Mobile fullscreen overlay — rendered as sibling so it truly covers everything */}
-        {mobileFullscreen && (
-          <div className="mobile-live-fullscreen flex items-center justify-center" onClick={handleTapVideo}>
-            {/* Fullscreen video */}
-            <DailyVideoPlayer
-              ref={playerRef}
-              roomUrl={roomUrl}
-              token={ownerToken}
-              isOwner={true}
-              hideControls={true}
-              onLeave={onEndClick}
-              onParticipantCountChange={() => {}}
-              className="relative bg-black overflow-hidden w-full h-full"
-            >
-              {/* Minimal stats in fullscreen */}
+        {/* Persistent stats badges (hidden when fullscreen — shown inside player instead) */}
+        {!mobileFullscreen && (
+          <div
+            className="absolute top-0 right-0 z-40 flex items-center gap-1.5 px-2 py-1"
+            style={{ paddingTop: 'max(0.25rem, env(safe-area-inset-top))' }}
+          >
+            <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
+              <Heart className="w-3 h-3 text-red-400" />
+              {resolvedLikesCount}
+            </span>
+            <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
+              <AnimatedViewerCount count={resolvedViewerCount} variant="inline" />
+            </span>
+          </div>
+        )}
+
+        {/* Compact top overlay — auto-hides */}
+        {!mobileFullscreen && (
+          <div
+            className={`absolute top-0 left-0 right-0 z-30 px-3 py-2 bg-gradient-to-b from-black/70 to-transparent transition-opacity duration-300 ${
+              showOverlay ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+            style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                  EN VIVO
+                </span>
+                <p className="text-white text-xs font-medium truncate">{liveData.title}</p>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-white/80 shrink-0">
+                <span className="flex items-center gap-0.5">
+                  <Clock className="w-3 h-3" />
+                  {formatTime(elapsedTime)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Video area — single player, wrapped in fullscreen container when active */}
+        <div className={mobileFullscreen ? 'mobile-live-fullscreen' : 'contents'}>
+          <DailyVideoPlayer
+            ref={playerRef}
+            roomUrl={roomUrl}
+            token={ownerToken}
+            isOwner={true}
+            hideControls={true}
+            onLeave={onEndClick}
+            onParticipantCountChange={() => {}}
+            className={`relative bg-black overflow-hidden group ${mobileFullscreen ? 'w-full h-full' : 'h-[40dvh]'}`}
+          >
+            {/* Stats overlay inside player when fullscreen */}
+            {mobileFullscreen && (
               <div className="absolute top-2 right-2 z-40 flex items-center gap-1.5">
                 <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
                   <Heart className="w-3 h-3 text-red-400" />
@@ -145,161 +186,58 @@ export function LiveStreamView({
                   <AnimatedViewerCount count={resolvedViewerCount} variant="inline" />
                 </span>
               </div>
-              {/* Fullscreen controls */}
-              <div className="absolute bottom-4 left-0 right-0 z-30 flex items-center justify-center gap-3 px-4">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={(e) => { e.stopPropagation(); playerRef.current?.toggleMute(); forceUpdate(n => n + 1); }}
-                  className={`h-11 w-11 rounded-full border-white/20 text-white ${(playerRef.current?.isMuted) ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
-                >
-                  {(playerRef.current?.isMuted) ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={(e) => { e.stopPropagation(); playerRef.current?.toggleVideo(); forceUpdate(n => n + 1); }}
-                  className={`h-11 w-11 rounded-full border-white/20 text-white ${(playerRef.current?.isVideoOff) ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
-                >
-                  {(playerRef.current?.isVideoOff) ? <VideoOff className="w-5 h-5" /> : <VideoIcon className="w-5 h-5" />}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={(e) => { e.stopPropagation(); handleToggleMobileFullscreen(); }}
-                  className="h-11 w-11 rounded-full border-white/20 text-white bg-primary/70 hover:bg-primary/90"
-                >
-                  <Minimize className="w-5 h-5" />
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={(e) => { e.stopPropagation(); onEndClick(); }}
-                  className="h-11 gap-1.5 rounded-full px-5"
-                >
-                  <StopCircle className="w-5 h-5" />
-                  Finalizar
-                </Button>
-              </div>
-            </DailyVideoPlayer>
-          </div>
-        )}
+            )}
 
-        {/* Persistent stats badges — always visible for doctor */}
-        <div
-          className="absolute top-0 right-0 z-40 flex items-center gap-1.5 px-2 py-1"
-          style={{ paddingTop: 'max(0.25rem, env(safe-area-inset-top))' }}
-        >
-          <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
-            <Heart className="w-3 h-3 text-red-400" />
-            {resolvedLikesCount}
-          </span>
-          <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
-            <AnimatedViewerCount count={resolvedViewerCount} variant="inline" />
-          </span>
-        </div>
-
-        {/* Compact top overlay — auto-hides */}
-        <div
-          className={`absolute top-0 left-0 right-0 z-30 px-3 py-2 bg-gradient-to-b from-black/70 to-transparent transition-opacity duration-300 ${
-            showOverlay ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-          style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                EN VIVO
-              </span>
-              <p className="text-white text-xs font-medium truncate">{liveData.title}</p>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] text-white/80 shrink-0">
-              <span className="flex items-center gap-0.5">
-                <Clock className="w-3 h-3" />
-                {formatTime(elapsedTime)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Video area — normal size, no fullscreen logic here */}
-        <DailyVideoPlayer
-          ref={mobileFullscreen ? undefined : playerRef}
-          roomUrl={roomUrl}
-          token={ownerToken}
-          isOwner={true}
-          hideControls={true}
-          onLeave={onEndClick}
-          onParticipantCountChange={() => {}}
-          className="relative bg-black overflow-hidden group h-[40dvh]"
-        >
-          {/* Control bar */}
-          <div className="absolute bottom-2 left-0 right-0 z-30 flex items-center justify-center gap-3 px-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                playerRef.current?.toggleMute();
-                forceUpdate(n => n + 1);
-              }}
-              className={`h-11 w-11 rounded-full border-white/20 text-white ${isMuted ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
-            >
-              {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                playerRef.current?.toggleVideo();
-                forceUpdate(n => n + 1);
-              }}
-              className={`h-11 w-11 rounded-full border-white/20 text-white ${isVideoOff ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
-            >
-              {isVideoOff ? <VideoOff className="w-5 h-5" /> : <VideoIcon className="w-5 h-5" />}
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleMobileFullscreen();
-              }}
-              className="h-11 w-11 rounded-full border-white/20 text-white bg-white/10 hover:bg-white/20"
-            >
-              <Maximize className="w-5 h-5" />
-            </Button>
-            {!mobileFullscreen && (
+            {/* Control bar */}
+            <div className={`absolute ${mobileFullscreen ? 'bottom-4' : 'bottom-2'} left-0 right-0 z-30 flex items-center justify-center gap-3 px-4`}>
               <Button
                 variant="outline"
                 size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMobileChatOpen(!mobileChatOpen);
-                }}
-                className={`h-11 w-11 rounded-full border-white/20 text-white ${mobileChatOpen ? 'bg-primary/70 hover:bg-primary/90' : 'bg-white/10 hover:bg-white/20'}`}
+                onClick={(e) => { e.stopPropagation(); playerRef.current?.toggleMute(); forceUpdate(n => n + 1); }}
+                className={`h-11 w-11 rounded-full border-white/20 text-white ${isMuted ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
               >
-                <MessageSquare className="w-5 h-5" />
+                {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </Button>
-            )}
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEndClick();
-              }}
-              className="h-11 gap-1.5 rounded-full px-5"
-            >
-              <StopCircle className="w-5 h-5" />
-              Finalizar
-            </Button>
-          </div>
-        </DailyVideoPlayer>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={(e) => { e.stopPropagation(); playerRef.current?.toggleVideo(); forceUpdate(n => n + 1); }}
+                className={`h-11 w-11 rounded-full border-white/20 text-white ${isVideoOff ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
+              >
+                {isVideoOff ? <VideoOff className="w-5 h-5" /> : <VideoIcon className="w-5 h-5" />}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={(e) => { e.stopPropagation(); handleToggleMobileFullscreen(); }}
+                className={`h-11 w-11 rounded-full border-white/20 text-white ${mobileFullscreen ? 'bg-primary/70 hover:bg-primary/90' : 'bg-white/10 hover:bg-white/20'}`}
+              >
+                {mobileFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+              </Button>
+              {!mobileFullscreen && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={(e) => { e.stopPropagation(); setMobileChatOpen(!mobileChatOpen); }}
+                  className={`h-11 w-11 rounded-full border-white/20 text-white ${mobileChatOpen ? 'bg-primary/70 hover:bg-primary/90' : 'bg-white/10 hover:bg-white/20'}`}
+                >
+                  <MessageSquare className="w-5 h-5" />
+                </Button>
+              )}
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={(e) => { e.stopPropagation(); onEndClick(); }}
+                className="h-11 gap-1.5 rounded-full px-5"
+              >
+                <StopCircle className="w-5 h-5" />
+                Finalizar
+              </Button>
+            </div>
+          </DailyVideoPlayer>
+        </div>
 
-        {/* Chat below video — flex child, only when not fullscreen */}
+        {/* Chat below video — only when not fullscreen */}
         {!mobileFullscreen && mobileChatOpen && (
           <div
             className="flex-1 bg-background flex flex-col min-h-0"
