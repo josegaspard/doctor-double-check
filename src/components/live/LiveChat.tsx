@@ -65,6 +65,15 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     }, 4500);
   }, []);
 
+  // Restore draft from sessionStorage (after Stripe redirect)
+  useEffect(() => {
+    const draft = sessionStorage.getItem(`chat_draft_${liveId}`);
+    if (draft) {
+      setNewMessage(draft);
+      sessionStorage.removeItem(`chat_draft_${liveId}`);
+    }
+  }, [liveId]);
+
   // Fetch live interaction settings
   useEffect(() => {
     const fetchSettings = async () => {
