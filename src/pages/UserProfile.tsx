@@ -633,12 +633,6 @@ export default function UserProfile() {
                           <Button size="sm" variant="ghost" onClick={() => { setIsEditingName(false); setEditedName(user.name); }}>
                             <X className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => {
-                            setIsEditingName(false);
-                            setEditedName(user.name);
-                          }}>
-                            <X className="w-4 h-4" />
-                          </Button>
                         </motion.div>
                       ) : (
                         <motion.div 
