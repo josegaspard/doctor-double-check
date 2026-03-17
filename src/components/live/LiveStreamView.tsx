@@ -89,12 +89,27 @@ export function LiveStreamView({
     if (isMobile) resetHideTimer();
   }, [isMobile, resetHideTimer]);
 
-  const handleToggleFullscreen = useCallback(() => {
-    playerRef.current?.toggleFullscreen();
-    forceUpdate(n => n + 1);
+  const handleToggleMobileFullscreen = useCallback(() => {
+    setMobileFullscreen(prev => {
+      const next = !prev;
+      if (next) {
+        document.body.style.overflow = 'hidden';
+        screen.orientation?.lock?.('landscape').catch(() => {});
+      } else {
+        document.body.style.overflow = '';
+        screen.orientation?.unlock?.();
+      }
+      return next;
+    });
   }, []);
 
-  const isFullscreen = playerRef.current?.isFullscreen ?? false;
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = '';
+      screen.orientation?.unlock?.();
+    };
+  }, []);
 
   if (isMobile) {
     const isMuted = playerRef.current?.isMuted ?? false;
