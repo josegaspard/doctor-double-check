@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import {
   User,
@@ -54,7 +55,18 @@ import {
   X,
   Phone,
   Lock,
+  Send,
 } from 'lucide-react';
+
+const COUNTRY_CODES = [
+  { code: '+52', flag: '🇲🇽', label: 'MX' },
+  { code: '+1', flag: '🇺🇸', label: 'US' },
+  { code: '+57', flag: '🇨🇴', label: 'CO' },
+  { code: '+54', flag: '🇦🇷', label: 'AR' },
+  { code: '+56', flag: '🇨🇱', label: 'CL' },
+  { code: '+51', flag: '🇵🇪', label: 'PE' },
+  { code: '+34', flag: '🇪🇸', label: 'ES' },
+];
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
 
