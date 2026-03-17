@@ -69,7 +69,18 @@ export function OtpProvider({ children }: { children: React.ReactNode }) {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [otpRequestedAt]);
 
-  const openOtpForPatient = useCallback((patientId: string, patientName: string) => {
+  const openOtpForPatient = useCallback(async (patientId: string, patientName: string) => {
+    // Pre-check if patient has a verified phone
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('id', patientId)
+        .single();
+      setSmsAvailable(!!data?.phone);
+    } catch {
+      setSmsAvailable(false);
+    }
     setOtpPatient({ id: patientId, name: patientName });
     setOtpCode('');
     setOtpDialogOpen(true);
