@@ -353,29 +353,31 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     const el = wrapperRef.current;
     if (!el) return;
 
-    // Check if native fullscreen is active
+    // Exit native fullscreen
     if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
       (document.exitFullscreen?.() || (document as any).webkitExitFullscreen?.());
       return;
     }
 
-    // Try native fullscreen first (works on Android, desktop)
+    // Exit CSS fallback fullscreen (iOS)
+    if (isFullscreen) {
+      setIsFullscreen(false);
+      document.body.style.overflow = '';
+      return;
+    }
+
+    // Enter native fullscreen, fallback to CSS
     const requestFs = el.requestFullscreen?.bind(el) || (el as any).webkitRequestFullscreen?.bind(el);
     if (requestFs) {
       requestFs().catch(() => {
-        // Fallback CSS fullscreen (iOS Safari)
         setIsFullscreen(true);
         document.body.style.overflow = 'hidden';
       });
     } else {
-      // No API at all — CSS fallback
-      setIsFullscreen(prev => {
-        const next = !prev;
-        document.body.style.overflow = next ? 'hidden' : '';
-        return next;
-      });
+      setIsFullscreen(true);
+      document.body.style.overflow = 'hidden';
     }
-  }, []);
+  }, [isFullscreen]);
 
   // Expose controls to parent via ref
   useImperativeHandle(ref, () => ({
