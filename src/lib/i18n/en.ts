@@ -3,8 +3,8 @@ export const en = {
   nav: {
     lives: 'Lives',
     recordings: 'Recordings',
-    content: 'Medical Records',
-    contentShort: 'Records',
+    content: 'Medical Content',
+    contentShort: 'Med. Content',
     chat: 'Chat',
     prescriptions: 'Prescriptions',
     vault: 'My Vault',
