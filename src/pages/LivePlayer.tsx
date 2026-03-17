@@ -166,9 +166,22 @@ export default function LivePlayer() {
   const isLiked = live ? hasLiked(live.id) : false;
   const [liveEnded, setLiveEnded] = useState(false);
 
-  // Scroll to top on mount / live change
+  // Scroll to top on mount / live change + detect chat_paid return
   useEffect(() => {
     window.scrollTo(0, 0);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('chat_paid') === 'success') {
+      toast.success('¡Pago completado! Tu mensaje destacado será publicado.');
+      // Clean URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('chat_paid');
+      window.history.replaceState({}, '', url.pathname);
+    } else if (params.get('chat_paid') === 'cancel') {
+      toast.info('Pago cancelado');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('chat_paid');
+      window.history.replaceState({}, '', url.pathname);
+    }
   }, [id]);
 
   // Direct realtime subscription on this specific live to detect ending reliably
