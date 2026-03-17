@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { DailyVideoPlayer, DailyVideoPlayerHandle } from './DailyVideoPlayer';
 import { LiveChat } from './LiveChat';
 import { AnimatedViewerCount } from './AnimatedViewerCount';
-import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Clock,
   Heart,
