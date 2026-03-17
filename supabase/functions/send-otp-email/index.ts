@@ -133,26 +133,27 @@ Deno.serve(async (req) => {
     if (dpError || !doctorProfile) throw new Error("Only approved doctors can request OTP");
     logStep("Doctor verified");
 
-    // Verify vault access
-    const { data: accessCheck } = await supabaseAdmin
-      .from("vault_access")
-      .select("id, file_id")
+    // Verify doctor-patient relationship (consultation or chat session)
+    const { data: relationCheck } = await supabaseAdmin
+      .from("consultations")
+      .select("id")
       .eq("doctor_id", doctorId)
+      .eq("patient_id", patientId)
       .limit(1);
 
-    if (accessCheck && accessCheck.length > 0) {
-      const fileIds = accessCheck.map((a: any) => a.file_id);
-      const { data: fileCheck } = await supabaseAdmin
-        .from("vault_files")
+    if (!relationCheck || relationCheck.length === 0) {
+      // Fallback: check chat sessions
+      const { data: chatCheck } = await supabaseAdmin
+        .from("chat_sessions")
         .select("id")
-        .in("id", fileIds)
-        .eq("patient_id", patientId)
+        .or(`and(participant1_id.eq.${doctorId},participant2_id.eq.${patientId}),and(participant1_id.eq.${patientId},participant2_id.eq.${doctorId})`)
         .limit(1);
-      if (!fileCheck || fileCheck.length === 0) throw new Error("No vault access to this patient");
-    } else {
-      throw new Error("No vault access found for doctor");
+
+      if (!chatCheck || chatCheck.length === 0) {
+        throw new Error("No relationship found with this patient");
+      }
     }
-    logStep("Vault access verified");
+    logStep("Doctor-patient relationship verified");
 
     // Generate OTP
     const otpCode = String(Math.floor(100000 + Math.random() * 900000));
