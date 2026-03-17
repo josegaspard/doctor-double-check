@@ -416,16 +416,18 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     if (!newMuted) userHasUnmutedRef.current = true;
   }, [viewerAudioMuted]);
 
-  // Sync fullscreen state with native Fullscreen API
+  // Sync fullscreen state with native Fullscreen API (including webkit prefix for iOS)
   useEffect(() => {
     const handleFsChange = () => {
-      const isFull = !!document.fullscreenElement;
+      const isFull = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
       setIsFullscreen(isFull);
       document.body.style.overflow = isFull ? 'hidden' : '';
     };
     document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
     return () => {
       document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
       document.body.style.overflow = '';
     };
   }, []);
