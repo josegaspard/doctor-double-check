@@ -449,6 +449,17 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
 
   const showingScreenShare = isScreenSharing || hasRemoteScreenShare;
 
+  // MUST be before early returns to keep hook count stable
+  const handleFullscreenClick = useCallback(() => {
+    if (onMobileFullscreenToggle) {
+      onMobileFullscreenToggle();
+    } else {
+      toggleFullscreen();
+    }
+  }, [onMobileFullscreenToggle, toggleFullscreen]);
+
+  const resolvedFullscreen = isMobileFullscreen || isFullscreen;
+
   if (error) {
     return (
       <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
@@ -474,17 +485,6 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
       </div>
     );
   }
-
-  // On mobile, if parent controls fullscreen, delegate to parent
-  const handleFullscreenClick = useCallback(() => {
-    if (onMobileFullscreenToggle) {
-      onMobileFullscreenToggle();
-    } else {
-      toggleFullscreen();
-    }
-  }, [onMobileFullscreenToggle, toggleFullscreen]);
-
-  const resolvedFullscreen = isMobileFullscreen || isFullscreen;
 
   return (
     <div
