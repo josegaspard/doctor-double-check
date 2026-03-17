@@ -1,39 +1,26 @@
 
-
-# Plan: Corregir disponibilidad de SMS en diálogo OTP
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
 ## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-`smsAvailable` empieza en `false` en el `OtpContext` y solo se actualiza después de la primera llamada a `send-otp-email`. Esto causa que el diálogo muestre "Requiere configurar proveedor SMS" antes de hacer cualquier petición, aunque el proveedor SMS ya está configurado y el paciente tiene teléfono verificado.
+## Solucion
 
-## Solución
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-### 1. OtpContext.tsx — Pre-check SMS al abrir el diálogo
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-Cuando se llama `openOtpForPatient`, hacer una consulta rápida a la tabla `profiles` para verificar si el **paciente** tiene un teléfono registrado (`phone` no nulo). Si lo tiene, setear `smsAvailable = true` inmediatamente.
-
-```tsx
-const openOtpForPatient = useCallback(async (patientId, patientName) => {
-  // Check if patient has phone
-  const { data } = await supabase
-    .from('profiles')
-    .select('phone')
-    .eq('id', patientId)
-    .single();
-  setSmsAvailable(!!data?.phone);
-  // ...rest
-}, []);
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
 ```
 
-### 2. OtpVerificationDialog.tsx — Cambiar texto cuando SMS no disponible
-
-Cambiar el texto de "Requiere configurar proveedor SMS" a algo más preciso:
-- Si `!smsAvailable`: **"El paciente no tiene teléfono verificado"**
-
-Esto refleja la realidad: el proveedor SMS sí está configurado, pero el paciente no tiene teléfono.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
 ## Archivos a modificar
 
-1. **`src/contexts/OtpContext.tsx`** — Añadir consulta a `profiles.phone` en `openOtpForPatient`
-2. **`src/components/vault/OtpVerificationDialog.tsx`** — Cambiar texto línea 107
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |

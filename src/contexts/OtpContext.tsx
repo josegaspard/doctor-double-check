@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { OtpFloatingBanner } from '@/components/vault/OtpFloatingBanner';
@@ -30,6 +31,7 @@ export const useOtp = () => useContext(OtpContext);
 
 export function OtpProvider({ children }: { children: React.ReactNode }) {
   const { user, role } = useAuth();
+  const navigate = useNavigate();
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
   const [otpPatient, setOtpPatient] = useState<OtpPatient | null>(null);
   const [otpCode, setOtpCode] = useState('');
@@ -67,7 +69,18 @@ export function OtpProvider({ children }: { children: React.ReactNode }) {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [otpRequestedAt]);
 
-  const openOtpForPatient = useCallback((patientId: string, patientName: string) => {
+  const openOtpForPatient = useCallback(async (patientId: string, patientName: string) => {
+    // Pre-check if patient has a verified phone
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('id', patientId)
+        .single();
+      setSmsAvailable(!!data?.phone);
+    } catch {
+      setSmsAvailable(false);
+    }
     setOtpPatient({ id: patientId, name: patientName });
     setOtpCode('');
     setOtpDialogOpen(true);
@@ -129,12 +142,15 @@ export function OtpProvider({ children }: { children: React.ReactNode }) {
         .update({ used_at: new Date().toISOString() })
         .eq('id', data.id);
 
-      setVerifiedPatients(prev => new Set([...prev, otpPatient.id]));
+      const verifiedPatientId = otpPatient.id;
+      setVerifiedPatients(prev => new Set([...prev, verifiedPatientId]));
       setOtpDialogOpen(false);
       setOtpRequestedAt(null);
       setOtpPatient(null);
       setOtpCode('');
       toast.success('Verificación exitosa. Acceso al expediente concedido.');
+      // Redirect to vault with patient filter
+      navigate(`/doctor/vault?patient=${verifiedPatientId}`);
     } catch (error) {
       console.error('Error verifying OTP:', error);
       toast.error('Error al verificar código');

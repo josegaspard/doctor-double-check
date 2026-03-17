@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useVault } from '@/contexts/VaultContext';
@@ -17,19 +17,35 @@ import { VaultFile } from '@/contexts/VaultContext';
 
 export default function DoctorVault() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, role } = useAuth();
   const { t } = useLanguage();
   const { getAccessibleFiles } = useVault();
   const { openOtpForPatient, isPatientVerified } = useOtp();
   const [selectedFile, setSelectedFile] = useState<VaultFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [autoOpenHandled, setAutoOpenHandled] = useState(false);
+
+  const accessibleFiles = getAccessibleFiles(user?.id || '');
+
+  // Auto-open patient content when redirected from OTP verification
+  const targetPatientId = searchParams.get('patient');
+  useEffect(() => {
+    if (!targetPatientId || autoOpenHandled) return;
+    if (!isPatientVerified(targetPatientId)) return;
+    const patientFiles = accessibleFiles.filter(f => f.patientId === targetPatientId);
+    if (patientFiles.length > 0) {
+      setSelectedFile(patientFiles[0]);
+      setIsPreviewOpen(true);
+    }
+    setAutoOpenHandled(true);
+    setSearchParams({}, { replace: true });
+  }, [targetPatientId, autoOpenHandled, accessibleFiles, isPatientVerified, setSearchParams]);
 
   if (role !== 'doctor') {
     navigate('/lives');
     return null;
   }
-
-  const accessibleFiles = getAccessibleFiles(user?.id || '');
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
