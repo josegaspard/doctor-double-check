@@ -688,13 +688,17 @@ export default function UserProfile() {
                           </p>
                         </motion.div>
                       ) : (
-                        <motion.div key="display-email" className="flex items-center justify-center sm:justify-start gap-2 text-sm sm:text-base">
-                          <Mail className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground break-all sm:break-normal">{user.email}</span>
-                          <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px]">Verificado</Badge>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setIsEditingEmail(true); setEditedEmail(''); }}>
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
+                        <motion.div key="display-email" className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-2 text-sm sm:text-base">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                            <span className="text-muted-foreground break-all sm:break-normal truncate max-w-[200px] sm:max-w-none">{user.email}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px] shrink-0">Verificado</Badge>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => { setIsEditingEmail(true); setEditedEmail(''); }}>
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
