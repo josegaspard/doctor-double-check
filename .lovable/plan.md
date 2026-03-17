@@ -1,26 +1,29 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Mejorar UX/UI del sidebar de filtros en Doctores (desktop/tablet)
 
-## Solucion
+## Problema actual
+El sidebar ya tiene `sticky` y `overflow-y-auto`, pero visualmente se ve plano y sin separación clara del contenido. Falta:
+- Fondo sutil y borde para separar visualmente del contenido
+- Scrollbar estilizada (actualmente usa la nativa del browser)
+- Padding y bordes redondeados para verse como un panel real
+- Soporte para tablet (actualmente solo `lg:block`, tablets medianas no lo ven)
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+## Cambios en `src/pages/Doctors.tsx`
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+### Sidebar (`aside`, línea 328)
+1. Cambiar breakpoint de `lg:block` a `md:block` para que tablets también lo vean
+2. Agregar fondo `bg-card`, borde `border rounded-xl`, y padding `p-4`
+3. Usar `scrollbar-hide` o estilizar con CSS slim scrollbar para que el scroll sea discreto
+4. Ajustar `top` y `max-h` para alinearse mejor con el layout
+5. Agregar separador visual (`border-t` o `Separator`) entre la sección de Especialidades y Ciudades
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+### Chips móviles
+- Ajustar breakpoint correspondiente de `lg:hidden` a `md:hidden` para coincidir
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+### Resultado visual
+Panel lateral con fondo card, bordes redondeados, scroll interno discreto, visible desde tablets (768px+), separación clara entre secciones.
 
 ## Archivos a modificar
+1. `src/pages/Doctors.tsx` — clases del sidebar y breakpoints
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
