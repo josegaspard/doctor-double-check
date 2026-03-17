@@ -627,7 +627,19 @@
   }
 }
 
-/* Mobile-only fullscreen overlay — rotates to landscape in portrait mode */
+/* Doctor mobile fullscreen — portrait (no rotation), call-style layout */
+.mobile-doctor-fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  background: black !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Viewer mobile fullscreen overlay — rotates to landscape in portrait mode */
 .mobile-live-fullscreen {
   position: fixed !important;
   z-index: 9999 !important;

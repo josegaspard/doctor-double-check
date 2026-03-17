@@ -1,30 +1,26 @@
 
+# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Plan: Doctor Mobile Fullscreen en Vertical + Grabación Adaptativa
+## Problema
+En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-### Problema actual
-Cuando el doctor pone pantalla completa en celular, se usa `.mobile-live-fullscreen` que **rota a landscape**. Pero el doctor debe ver pantalla completa **vertical** (alto completo), estilo videollamada, con botones abajo.
+## Solucion
 
-### Cambios
+**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
 
-**1. `src/index.css` — Nueva clase para doctor fullscreen vertical**
-- Crear `.mobile-doctor-fullscreen`: `fixed inset-0, z-9999, 100dvh height, bg-black` — SIN rotación landscape.
-- Mantener `.mobile-live-fullscreen` con rotación landscape solo para viewers.
+Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
 
-**2. `src/components/live/LiveStreamView.tsx` — Usar clase vertical para doctor**
-- Cambiar el wrapper de `mobile-live-fullscreen` a `mobile-doctor-fullscreen` en la línea 167.
-- En fullscreen, el video ocupará alto completo en portrait, los botones se posicionan abajo como videollamada.
-- La vista será: video centrado con `object-contain`, fondo negro, botones flotantes abajo.
+```
+const filteredNavItems = useMemo(() => {
+  const effectiveRole = role || 'visitor';
+  return navItems.filter(item => item.roles.includes(effectiveRole));
+}, [role]);
+```
 
-**3. `src/components/live/DailyVideoPlayer.tsx` — Sin cambios necesarios**
-- Ya usa `object-contain` que es correcto para portrait.
+Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
 
-**4. Grabaciones — Ya funciona correctamente**
-- `useLocalRecording.ts` captura las dimensiones reales del video (`videoWidth`/`videoHeight`). Si el doctor transmite sin fullscreen, la cámara da 1280x720 (horizontal). Si activa fullscreen portrait, el canvas captura el tamaño real del track de la cámara frontal, que en portrait es vertical.
-- El reproductor de grabaciones ya usa pillarboxing con `object-contain`.
+## Archivos a modificar
 
-### Resultado
-- Doctor fullscreen en celular: alto completo, vertical, estilo videollamada.
-- Viewer fullscreen: sigue siendo landscape horizontal (sin cambios).
-- Grabaciones: reflejan la orientación real del stream capturado.
-
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
