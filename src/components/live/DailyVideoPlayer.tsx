@@ -334,9 +334,11 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     toggleMute,
     toggleVideo,
     leaveCall,
+    toggleFullscreen,
     get isMuted() { return isMuted; },
     get isVideoOff() { return isVideoOff; },
-  }), [toggleMute, toggleVideo, leaveCall, isMuted, isVideoOff]);
+    get isFullscreen() { return isFullscreen; },
+  }), [toggleMute, toggleVideo, leaveCall, toggleFullscreen, isMuted, isVideoOff, isFullscreen]);
 
   const handleUnmute = useCallback(() => {
     const containers = [videoContainerRef.current, screenShareRef.current];

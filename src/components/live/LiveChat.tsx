@@ -234,6 +234,9 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const processStripePayment = async (): Promise<boolean> => {
     if (!user) return false;
     try {
+      // Save draft so it's visible when the user returns from Stripe
+      sessionStorage.setItem(`chat_draft_${liveId}`, newMessage.trim());
+
       const { data, error } = await supabase.functions.invoke('create-chat-checkout', {
         body: {
           liveId,
@@ -249,6 +252,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       }
       throw new Error('No checkout URL');
     } catch (err: any) {
+      sessionStorage.removeItem(`chat_draft_${liveId}`);
       toast.error(err.message || 'Error al crear el pago');
       return false;
     }
