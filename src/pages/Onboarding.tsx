@@ -344,7 +344,7 @@ export default function Onboarding() {
     
     setIsSavingProgress(true);
     try {
-      const progressData = {
+      const progressData: any = {
         user_id: supabaseUser.id,
         step,
         selected_role: selectedRole,
@@ -353,6 +353,7 @@ export default function Onboarding() {
         institution: institution || null,
         year,
         avatar_url: avatarUrl,
+        phone: phoneNumber ? `${phoneCountryCode}${phoneNumber}` : null,
         updated_at: new Date().toISOString()
       };
 
