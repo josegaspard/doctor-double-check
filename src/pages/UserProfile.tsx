@@ -268,6 +268,97 @@ export default function UserProfile() {
     return null;
   }
 
+  const handleSendPhoneOtp = async () => {
+    const fullPhone = phoneCountryCode.replace('+', '') + editedPhone.replace(/\D/g, '');
+    if (editedPhone.replace(/\D/g, '').length < 10) {
+      toast.error('Ingresa un número de teléfono válido (mínimo 10 dígitos)');
+      return;
+    }
+    setPhoneSendingOtp(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('verify-phone-otp', {
+        body: { phone: fullPhone, action: 'send' },
+      });
+      if (res.error) throw new Error(res.error.message);
+      const result = res.data;
+      if (result.rateLimited) {
+        setPhoneRateLimited(true);
+        toast.error(result.error || 'Solo puedes verificar tu teléfono 1 vez al día.');
+        return;
+      }
+      if (result.alreadyVerified) {
+        toast.success('Este teléfono ya está verificado');
+        setUserPhone(fullPhone);
+        setIsEditingPhone(false);
+        return;
+      }
+      setPhoneOtpSent(true);
+      toast.success(result.smsSent ? 'Código enviado por SMS' : 'Código enviado (revisa tus notificaciones)');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al enviar código');
+    } finally {
+      setPhoneSendingOtp(false);
+    }
+  };
+
+  const handleVerifyPhoneOtp = async () => {
+    if (phoneOtpCode.length !== 6) return;
+    const fullPhone = phoneCountryCode.replace('+', '') + editedPhone.replace(/\D/g, '');
+    setIsVerifyingPhone(true);
+    try {
+      const res = await supabase.functions.invoke('verify-phone-otp', {
+        body: { phone: fullPhone, action: 'verify', otp_code: phoneOtpCode },
+      });
+      if (res.error) throw new Error(res.error.message);
+      const result = res.data;
+      if (!result.success) {
+        toast.error(result.error || 'Código inválido o expirado');
+        return;
+      }
+      toast.success('¡Teléfono verificado exitosamente!');
+      setUserPhone(fullPhone);
+      setIsEditingPhone(false);
+      setPhoneOtpSent(false);
+      setPhoneOtpCode('');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al verificar');
+    } finally {
+      setIsVerifyingPhone(false);
+    }
+  };
+
+  const handleChangeEmail = async () => {
+    if (!editedEmail.trim() || !editedEmail.includes('@')) {
+      toast.error('Ingresa un correo electrónico válido');
+      return;
+    }
+    if (editedEmail.trim() === user.email) {
+      toast.error('Ingresa un correo diferente al actual');
+      return;
+    }
+    setIsSavingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: editedEmail.trim() });
+      if (error) throw error;
+      toast.success('Se envió un enlace de verificación a tu nuevo correo. Tu email cambiará cuando confirmes el enlace.');
+      setIsEditingEmail(false);
+      setEditedEmail('');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar correo');
+    } finally {
+      setIsSavingEmail(false);
+    }
+  };
+
+  const resetPhoneEdit = () => {
+    setIsEditingPhone(false);
+    setPhoneOtpSent(false);
+    setPhoneOtpCode('');
+    setEditedPhone('');
+    setPhoneRateLimited(false);
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
