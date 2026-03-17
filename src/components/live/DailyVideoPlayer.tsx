@@ -18,6 +18,8 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
+import { useConnectionQuality } from '@/hooks/useConnectionQuality';
+import { ConnectionQualityIndicator } from '@/components/videocall/ConnectionQualityIndicator';
 
 export interface DailyVideoPlayerHandle {
   toggleMute: () => void;
@@ -70,6 +72,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const [viewerAudioMuted, setViewerAudioMuted] = useState(true);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const connectionStats = useConnectionQuality(callRef.current, isConnected);
 
   useEffect(() => {
     if (!roomUrl || !token) return;
@@ -470,6 +473,11 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
       }`}
       style={isFullscreen && !externalClassName ? { width: '100vw', height: '100dvh' } : undefined}
     >
+      {/* Connection quality indicator for viewers */}
+      {!isOwner && isConnected && (
+        <ConnectionQualityIndicator stats={connectionStats} />
+      )}
+
       {/* Screen share layer */}
       <div
         ref={screenShareRef}
