@@ -320,7 +320,14 @@ export default function LivePlayer() {
     if (role === 'visitor' || !user || isLiking) return;
     setIsLiking(true);
     try {
-      if (isLiked) { await unlikeLive(live.id); } else { await likeLive(live.id); }
+      if (isLiked) {
+        await unlikeLive(live.id);
+        // Update directLive if loaded via fallback
+        if (directLive) setDirectLive((prev: any) => prev ? { ...prev, likesCount: Math.max(0, prev.likesCount - 1) } : prev);
+      } else {
+        await likeLive(live.id);
+        if (directLive) setDirectLive((prev: any) => prev ? { ...prev, likesCount: prev.likesCount + 1 } : prev);
+      }
     } finally { setIsLiking(false); }
   };
 
