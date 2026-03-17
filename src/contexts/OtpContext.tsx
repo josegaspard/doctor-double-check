@@ -87,8 +87,12 @@ export function OtpProvider({ children }: { children: React.ReactNode }) {
       if (error) throw new Error(error.message || 'Error al solicitar código');
       if (data && !data.success) throw new Error(data.error || 'Error del servidor');
       if (data?.smsAvailable !== undefined) setSmsAvailable(data.smsAvailable);
+      if (data?.smsLimitReached) {
+        toast.warning('Límite de SMS alcanzado (2/día). Se envió por email.');
+      }
       setOtpRequestedAt(Date.now());
-      const methodText = deliveryMethod === 'email' ? 'email' : deliveryMethod === 'sms' ? 'SMS' : 'email y SMS';
+      const actualMethod = data?.smsLimitReached ? 'email' : deliveryMethod;
+      const methodText = actualMethod === 'email' ? 'email' : actualMethod === 'sms' ? 'SMS' : 'email y SMS';
       toast.success(`Código OTP enviado por ${methodText}. Expira en 2 minutos.`);
     } catch (error: any) {
       console.error('Error requesting OTP:', error);

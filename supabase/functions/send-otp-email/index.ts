@@ -64,16 +64,6 @@ async function sendSmsTelnyx(to: string, message: string): Promise<boolean> {
   }
 }
 
-async function sendSms(phone: string, message: string): Promise<boolean> {
-  if (!SMS_API_KEY) {
-    logStep("SMS skipped: no SMS_API_KEY configured");
-    return false;
-  }
-  if (SMS_PROVIDER === "textbelt") return sendSmsTextbelt(phone, message);
-  if (SMS_PROVIDER === "telnyx") return sendSmsTelnyx(phone, message);
-  return sendSmsVonage(phone, message);
-}
-
 async function sendSmsTextbelt(to: string, message: string): Promise<boolean> {
   try {
     const resp = await fetch("https://textbelt.com/text", {
@@ -93,6 +83,16 @@ async function sendSmsTextbelt(to: string, message: string): Promise<boolean> {
     logStep("Textbelt SMS error", { error: String(e) });
     return false;
   }
+}
+
+async function sendSms(phone: string, message: string): Promise<boolean> {
+  if (!SMS_API_KEY) {
+    logStep("SMS skipped: no SMS_API_KEY configured");
+    return false;
+  }
+  if (SMS_PROVIDER === "textbelt") return sendSmsTextbelt(phone, message);
+  if (SMS_PROVIDER === "telnyx") return sendSmsTelnyx(phone, message);
+  return sendSmsVonage(phone, message);
 }
 
 Deno.serve(async (req) => {
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     const doctorId = userData.user.id;
     logStep("Doctor authenticated", { doctorId });
 
-    const { patientId, deliveryMethod = "email" } = await req.json();
+    let { patientId, deliveryMethod = "email" } = await req.json();
     if (!patientId) throw new Error("patientId is required");
     logStep("Request params", { patientId, deliveryMethod });
 
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
     if (dpError || !doctorProfile) throw new Error("Only approved doctors can request OTP");
     logStep("Doctor verified");
 
-    // Verify doctor-patient relationship (consultation or chat session)
+    // Verify doctor-patient relationship
     const { data: relationCheck } = await supabaseAdmin
       .from("consultations")
       .select("id")
@@ -142,7 +142,6 @@ Deno.serve(async (req) => {
       .limit(1);
 
     if (!relationCheck || relationCheck.length === 0) {
-      // Fallback: check chat sessions
       const { data: chatCheck } = await supabaseAdmin
         .from("chat_sessions")
         .select("id")
@@ -154,6 +153,29 @@ Deno.serve(async (req) => {
       }
     }
     logStep("Doctor-patient relationship verified");
+
+    // ── SMS Rate limit: max 2 SMS per doctor per day ──
+    let smsLimitReached = false;
+    const wantsSms = deliveryMethod === "sms" || deliveryMethod === "both";
+
+    if (wantsSms) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { count } = await supabaseAdmin
+        .from("expediente_otp")
+        .select("*", { count: "exact", head: true })
+        .eq("doctor_id", doctorId)
+        .gte("created_at", today.toISOString());
+
+      // We count all OTPs today as proxy for SMS sends (since we can't track delivery method in the table)
+      // Max 2 SMS per day
+      if ((count ?? 0) >= 2) {
+        logStep("SMS rate limited", { otpCountToday: count });
+        smsLimitReached = true;
+        // Downgrade to email only
+        deliveryMethod = "email";
+      }
+    }
 
     // Generate OTP
     const otpCode = String(Math.floor(100000 + Math.random() * 900000));
@@ -244,7 +266,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, smsAvailable: !!SMS_API_KEY, smsSent }),
+      JSON.stringify({ success: true, smsAvailable: !!SMS_API_KEY, smsSent, smsLimitReached }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {

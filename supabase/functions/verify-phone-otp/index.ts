@@ -66,26 +66,53 @@ Deno.serve(async (req) => {
     if (!phone) throw new Error("phone is required");
     if (!action || !["send", "verify"].includes(action)) throw new Error("action must be 'send' or 'verify'");
 
-    // Normalize phone
     const normalizedPhone = phone.replace(/\D/g, '');
     if (normalizedPhone.length < 10) throw new Error("Invalid phone number");
 
     logStep("Request", { userId, action, phone: `***${normalizedPhone.slice(-4)}` });
 
     if (action === "send") {
+      // ── Rate limit: max 1 send per day ──
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { count } = await supabaseAdmin
+        .from("phone_verifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", today.toISOString());
+
+      if ((count ?? 0) >= 1) {
+        logStep("Rate limited", { attemptsToday: count });
+        return new Response(
+          JSON.stringify({ success: false, error: "Solo puedes verificar tu teléfono 1 vez al día. Intenta mañana.", rateLimited: true }),
+          { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Check if already verified for this phone
+      const { data: alreadyVerified } = await supabaseAdmin
+        .from("phone_verifications")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("phone", normalizedPhone)
+        .not("verified_at", "is", null)
+        .limit(1)
+        .maybeSingle();
+
+      if (alreadyVerified) {
+        return new Response(
+          JSON.stringify({ success: true, alreadyVerified: true }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
       // Generate OTP
       const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 min
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-      // Save to phone_verifications
       const { error: insertError } = await supabaseAdmin
         .from("phone_verifications")
-        .insert({
-          user_id: userId,
-          phone: normalizedPhone,
-          otp_code: otpCode,
-          expires_at: expiresAt,
-        });
+        .insert({ user_id: userId, phone: normalizedPhone, otp_code: otpCode, expires_at: expiresAt });
 
       if (insertError) throw new Error("Failed to create verification record");
       logStep("OTP created", { expiresAt });
@@ -93,11 +120,6 @@ Deno.serve(async (req) => {
       // Send SMS
       const message = `Medical Masters - Tu código de verificación es: ${otpCode}. Expira en 5 minutos.`;
       const smsSent = await sendSmsVonage(normalizedPhone, message);
-
-      if (!smsSent) {
-        logStep("SMS failed to send");
-        // Still return success since OTP was created - user can check in-app notification
-      }
 
       // Also send in-app notification
       await supabaseAdmin.from("notifications").insert({
