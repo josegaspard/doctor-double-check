@@ -152,7 +152,7 @@ export function LiveStreamView({
           hideControls={true}
           onLeave={onEndClick}
           onParticipantCountChange={() => {}}
-          className={`relative bg-black overflow-hidden group ${isFullscreen ? 'fixed inset-0 z-[60] w-screen h-[100dvh]' : 'h-[40dvh]'}`}
+          className={`relative bg-black overflow-hidden group ${isFullscreen ? 'fixed inset-0 z-[60] w-screen h-[100dvh] landscape-fs' : 'h-[40dvh]'}`}
         >
           {/* Control bar — rendered inside DailyVideoPlayer's wrapper */}
           <div className="absolute bottom-2 left-0 right-0 z-30 flex items-center justify-center gap-3 px-4">

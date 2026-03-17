@@ -478,7 +478,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     <div
       ref={wrapperRef}
       className={externalClassName || `relative bg-black overflow-hidden group ${
-        isFullscreen ? 'fixed inset-0 z-[9999] w-screen h-[100dvh] rounded-none' : 'aspect-video rounded-xl'
+        isFullscreen ? 'fixed inset-0 z-[9999] w-screen h-[100dvh] rounded-none landscape-fs' : 'aspect-video rounded-xl'
       }`}
       style={isFullscreen && !externalClassName ? { width: '100vw', height: '100dvh' } : undefined}
     >
