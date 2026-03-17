@@ -1162,14 +1162,155 @@ export default function UserProfile() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between py-2">
-                  <div className="flex items-center gap-3">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      {t('profile.email')}
-                    </span>
+                {/* Email */}
+                <div className="py-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{t('profile.email')}</span>
+                    </div>
+                    {!isEditingEmail && (
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setIsEditingEmail(true); setEditedEmail(''); }}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
-                  <span className="font-medium">{user.email}</span>
+                  <AnimatePresence mode="wait">
+                    {isEditingEmail ? (
+                      <motion.div
+                        key="edit-email-acct"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-2 space-y-2"
+                      >
+                        <p className="text-sm font-medium ml-7 mb-2">{user.email} <Badge className="ml-1 bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px]">Actual</Badge></p>
+                        <div className="flex items-center gap-2 ml-7 flex-wrap">
+                          <Input
+                            type="email"
+                            value={editedEmail}
+                            onChange={(e) => setEditedEmail(e.target.value)}
+                            placeholder="nuevo@correo.com"
+                            className="flex-1 min-w-[180px] h-9"
+                            autoFocus
+                            onKeyDown={(e) => e.key === 'Enter' && handleChangeEmail()}
+                          />
+                          <Button size="sm" onClick={handleChangeEmail} disabled={isSavingEmail} className="min-h-[44px] sm:min-h-0">
+                            {isSavingEmail ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                            Enviar verificación
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setIsEditingEmail(false); setEditedEmail(''); }}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground ml-7">
+                          Se enviará un enlace de verificación al nuevo correo. Tu email cambiará cuando confirmes el enlace.
+                        </p>
+                      </motion.div>
+                    ) : (
+                      <p className="mt-1 text-sm font-medium ml-7 flex items-center gap-2">
+                        {user.email}
+                        <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px]">Verificado</Badge>
+                      </p>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <Separator />
+
+                {/* Phone */}
+                <div className="py-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Teléfono</span>
+                    </div>
+                    {!isEditingPhone && (
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setIsEditingPhone(true)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <AnimatePresence mode="wait">
+                    {isEditingPhone ? (
+                      <motion.div
+                        key="edit-phone-acct"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-2 ml-7 space-y-3"
+                      >
+                        {!phoneOtpSent ? (
+                          <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Select value={phoneCountryCode} onValueChange={setPhoneCountryCode}>
+                                <SelectTrigger className="w-[90px] h-9 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {COUNTRY_CODES.map(c => (
+                                    <SelectItem key={c.code} value={c.code}>
+                                      {c.flag} {c.code}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                type="tel"
+                                inputMode="numeric"
+                                value={editedPhone}
+                                onChange={(e) => setEditedPhone(e.target.value.replace(/[^\d]/g, ''))}
+                                placeholder="10 dígitos"
+                                className="flex-1 min-w-[130px] h-9"
+                                maxLength={15}
+                                autoFocus
+                              />
+                              <Button size="sm" onClick={handleSendPhoneOtp} disabled={phoneSendingOtp || phoneRateLimited} className="min-h-[44px] sm:min-h-0">
+                                {phoneSendingOtp ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                                Enviar SMS
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={resetPhoneEdit}>
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            {phoneRateLimited && (
+                              <p className="text-[11px] text-destructive flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" /> Límite alcanzado (1/día). Intenta mañana.
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <div className="space-y-3">
+                            <p className="text-sm text-muted-foreground">Código enviado a {phoneCountryCode} {editedPhone}</p>
+                            <InputOTP maxLength={6} value={phoneOtpCode} onChange={setPhoneOtpCode}>
+                              <InputOTPGroup>
+                                {[0,1,2,3,4,5].map(i => <InputOTPSlot key={i} index={i} />)}
+                              </InputOTPGroup>
+                            </InputOTP>
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={handleVerifyPhoneOtp} disabled={isVerifyingPhone || phoneOtpCode.length !== 6} className="min-h-[44px] sm:min-h-0">
+                                {isVerifyingPhone ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
+                                Verificar
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={resetPhoneEdit}>Cancelar</Button>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    ) : (
+                      <p className="mt-1 text-sm font-medium ml-7 flex items-center gap-2">
+                        {!isLoadingPhone && (
+                          userPhone ? (
+                            <>
+                              {userPhone.replace(/(\d{2})(\d+)(\d{4})/, '$1****$3')}
+                              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px]">Verificado</Badge>
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground italic">Sin verificar</span>
+                          )
+                        )}
+                      </p>
+                    )}
+                  </AnimatePresence>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between py-2">
