@@ -18,6 +18,8 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
+import { useConnectionQuality } from '@/hooks/useConnectionQuality';
+import { ConnectionQualityIndicator } from '@/components/videocall/ConnectionQualityIndicator';
 
 export interface DailyVideoPlayerHandle {
   toggleMute: () => void;
