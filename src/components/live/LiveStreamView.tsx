@@ -47,8 +47,8 @@ export function LiveStreamView({
   onEndClick,
   roomUrl,
   ownerToken,
+  isMobile,
 }: LiveStreamViewProps) {
-  const isMobile = useIsMobile();
   const [mobileChatOpen, setMobileChatOpen] = useState(true);
   const [showOverlay, setShowOverlay] = useState(true);
   const [mobileFullscreen, setMobileFullscreen] = useState(false);
