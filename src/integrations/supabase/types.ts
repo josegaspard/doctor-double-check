@@ -2022,6 +2022,36 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_verifications: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          otp_code: string
+          phone: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          otp_code: string
+          phone: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          otp_code?: string
+          phone?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       prescriptions: {
         Row: {
           consultation_id: string | null
@@ -2105,6 +2135,7 @@ export type Database = {
           is_identity_verified: boolean
           name: string
           onboarding_completed: boolean
+          phone: string | null
           preferred_language: Database["public"]["Enums"]["supported_language"]
           storage_limit_bytes: number
           storage_used_bytes: number
@@ -2122,6 +2153,7 @@ export type Database = {
           is_identity_verified?: boolean
           name: string
           onboarding_completed?: boolean
+          phone?: string | null
           preferred_language?: Database["public"]["Enums"]["supported_language"]
           storage_limit_bytes?: number
           storage_used_bytes?: number
@@ -2139,6 +2171,7 @@ export type Database = {
           is_identity_verified?: boolean
           name?: string
           onboarding_completed?: boolean
+          phone?: string | null
           preferred_language?: Database["public"]["Enums"]["supported_language"]
           storage_limit_bytes?: number
           storage_used_bytes?: number
