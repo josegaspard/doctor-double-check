@@ -359,6 +359,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     // Exit native fullscreen
     if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
       (document.exitFullscreen?.() || (document as any).webkitExitFullscreen?.());
+      screen.orientation?.unlock?.();
       return;
     }
 
@@ -366,19 +367,24 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     if (isFullscreen) {
       setIsFullscreen(false);
       document.body.style.overflow = '';
+      screen.orientation?.unlock?.();
       return;
     }
 
-    // Enter native fullscreen, fallback to CSS
+    // Enter native fullscreen, fallback to CSS — lock landscape like YouTube
     const requestFs = el.requestFullscreen?.bind(el) || (el as any).webkitRequestFullscreen?.bind(el);
     if (requestFs) {
-      requestFs().catch(() => {
+      requestFs().then(() => {
+        screen.orientation?.lock?.('landscape').catch(() => {});
+      }).catch(() => {
         setIsFullscreen(true);
         document.body.style.overflow = 'hidden';
+        screen.orientation?.lock?.('landscape').catch(() => {});
       });
     } else {
       setIsFullscreen(true);
       document.body.style.overflow = 'hidden';
+      screen.orientation?.lock?.('landscape').catch(() => {});
     }
   }, [isFullscreen]);
 
