@@ -329,6 +329,14 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     onLeave?.();
   }, [onLeave]);
 
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => {
+      const next = !prev;
+      document.body.style.overflow = next ? 'hidden' : '';
+      return next;
+    });
+  }, []);
+
   // Expose controls to parent via ref
   useImperativeHandle(ref, () => ({
     toggleMute,
@@ -339,27 +347,6 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     get isVideoOff() { return isVideoOff; },
     get isFullscreen() { return isFullscreen; },
   }), [toggleMute, toggleVideo, leaveCall, toggleFullscreen, isMuted, isVideoOff, isFullscreen]);
-
-  const handleUnmute = useCallback(() => {
-    const containers = [videoContainerRef.current, screenShareRef.current];
-    containers.forEach(container => {
-      if (!container) return;
-      container.querySelectorAll('video, audio').forEach((el) => {
-        (el as HTMLMediaElement).muted = false;
-        (el as HTMLMediaElement).play().catch(() => {});
-      });
-    });
-    setShowUnmutePrompt(false);
-  }, []);
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(prev => {
-      const next = !prev;
-      // Lock body scroll when fullscreen, restore when exiting
-      document.body.style.overflow = next ? 'hidden' : '';
-      return next;
-    });
-  };
 
   // Cleanup body overflow on unmount
   useEffect(() => {
