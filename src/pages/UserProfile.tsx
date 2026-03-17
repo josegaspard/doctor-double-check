@@ -548,6 +548,23 @@ export default function UserProfile() {
                     <Mail className="w-4 h-4" />
                     {user.email}
                   </p>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+                    <Phone className="w-4 h-4 text-muted-foreground" />
+                    {!isLoadingPhone && (
+                      userPhone ? (
+                        <span className="text-sm text-muted-foreground">
+                          {userPhone.replace(/(\d{2})(\d+)(\d{4})/, '$1****$3')}
+                          <Badge className="ml-2 bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px]">Verificado</Badge>
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">Sin verificar</span>
+                      )
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1 justify-center sm:justify-start">
+                    <Lock className="w-3 h-3" />
+                    Datos privados — solo tú puedes ver esta información
+                  </p>
                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-3 flex-wrap">
                     {user.countryFlag && (
                       <Badge variant="outline" className="gap-1 text-xs">
