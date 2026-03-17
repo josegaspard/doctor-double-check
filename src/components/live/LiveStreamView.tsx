@@ -164,7 +164,7 @@ export function LiveStreamView({
         )}
 
         {/* Video area — single player, wrapped in fullscreen container when active */}
-        <div className={mobileFullscreen ? 'mobile-live-fullscreen' : 'contents'}>
+        <div className={mobileFullscreen ? 'mobile-doctor-fullscreen' : 'contents'}>
           <DailyVideoPlayer
             ref={playerRef}
             roomUrl={roomUrl}
