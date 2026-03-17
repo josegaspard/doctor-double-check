@@ -25,6 +25,8 @@ import { DoctorDashboardHeader } from '@/components/doctor/DoctorDashboardHeader
 import { DoctorStatsGrid } from '@/components/doctor/DoctorStatsGrid';
 import { DoctorQuickActions } from '@/components/doctor/DoctorQuickActions';
 import { DoctorStatusAlert } from '@/components/doctor/DoctorStatusAlert';
+import { DoctorProfileCard } from '@/components/doctor/DoctorProfileCard';
+import { DoctorPatientsList } from '@/components/doctor/DoctorPatientsList';
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
