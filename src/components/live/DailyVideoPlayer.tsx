@@ -16,6 +16,7 @@ import {
   Monitor,
   MonitorOff,
   Volume2,
+  VolumeX,
 } from 'lucide-react';
 
 export interface DailyVideoPlayerHandle {
@@ -54,6 +55,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const callRef = useRef<DailyCall | null>(null);
   const cleaningUpRef = useRef(false);
   const isLeavingRef = useRef(false);
+  const userHasUnmutedRef = useRef(false);
   
   const [isJoining, setIsJoining] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
@@ -65,6 +67,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const [participantCount, setParticipantCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [showUnmutePrompt, setShowUnmutePrompt] = useState(false);
+  const [viewerAudioMuted, setViewerAudioMuted] = useState(false);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -255,40 +258,57 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
         videoEl.srcObject = stream;
         videoContainerRef.current?.appendChild(videoEl);
 
-        videoEl.play().then(() => {
-          if (!participant.local) {
-            videoEl.muted = false;
-            setTimeout(() => {
-              if (videoEl.paused) {
-                videoEl.muted = true;
-                videoEl.play().catch(() => {});
-                setShowUnmutePrompt(true);
-              }
-            }, 150);
-          }
-        }).catch(() => {
-          if (!participant.local) {
-            setShowUnmutePrompt(true);
-          }
-        });
+        if (userHasUnmutedRef.current && !participant.local) {
+          // User already unmuted — play with sound directly, no prompt
+          videoEl.muted = false;
+          videoEl.play().catch(() => {
+            // If unmuted play fails, try muted
+            videoEl.muted = true;
+            videoEl.play().catch(() => {});
+          });
+        } else {
+          videoEl.play().then(() => {
+            if (!participant.local) {
+              videoEl.muted = false;
+              setTimeout(() => {
+                if (videoEl.paused) {
+                  videoEl.muted = true;
+                  videoEl.play().catch(() => {});
+                  if (!userHasUnmutedRef.current) setShowUnmutePrompt(true);
+                }
+              }, 150);
+            }
+          }).catch(() => {
+            if (!participant.local && !userHasUnmutedRef.current) {
+              setShowUnmutePrompt(true);
+            }
+          });
+        }
       } else if (!participant.local && participant.audioTrack && !participant.video) {
         const audioEl = document.createElement('audio');
         audioEl.autoplay = true;
-        audioEl.muted = true;
+        audioEl.muted = !userHasUnmutedRef.current;
         const audioStream = new MediaStream([participant.audioTrack]);
         audioEl.srcObject = audioStream;
         videoContainerRef.current?.appendChild(audioEl);
 
-        audioEl.play().then(() => {
-          audioEl.muted = false;
-          setTimeout(() => {
-            if (audioEl.paused) {
-              audioEl.muted = true;
-              audioEl.play().catch(() => {});
-              setShowUnmutePrompt(true);
-            }
-          }, 150);
-        }).catch(() => { setShowUnmutePrompt(true); });
+        if (userHasUnmutedRef.current) {
+          audioEl.play().catch(() => {
+            audioEl.muted = true;
+            audioEl.play().catch(() => {});
+          });
+        } else {
+          audioEl.play().then(() => {
+            audioEl.muted = false;
+            setTimeout(() => {
+              if (audioEl.paused) {
+                audioEl.muted = true;
+                audioEl.play().catch(() => {});
+                if (!userHasUnmutedRef.current) setShowUnmutePrompt(true);
+              }
+            }, 150);
+          }).catch(() => { if (!userHasUnmutedRef.current) setShowUnmutePrompt(true); });
+        }
       }
     });
   };
@@ -332,17 +352,28 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const toggleFullscreen = useCallback(() => {
     const el = wrapperRef.current;
     if (!el) return;
-    if (!document.fullscreenElement) {
-      el.requestFullscreen?.().catch(() => {
-        // Fallback for browsers that don't support fullscreen API
-        setIsFullscreen(prev => {
-          const next = !prev;
-          document.body.style.overflow = next ? 'hidden' : '';
-          return next;
-        });
+
+    // Check if native fullscreen is active
+    if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
+      (document.exitFullscreen?.() || (document as any).webkitExitFullscreen?.());
+      return;
+    }
+
+    // Try native fullscreen first (works on Android, desktop)
+    const requestFs = el.requestFullscreen?.bind(el) || (el as any).webkitRequestFullscreen?.bind(el);
+    if (requestFs) {
+      requestFs().catch(() => {
+        // Fallback CSS fullscreen (iOS Safari)
+        setIsFullscreen(true);
+        document.body.style.overflow = 'hidden';
       });
     } else {
-      document.exitFullscreen?.();
+      // No API at all — CSS fallback
+      setIsFullscreen(prev => {
+        const next = !prev;
+        document.body.style.overflow = next ? 'hidden' : '';
+        return next;
+      });
     }
   }, []);
 
@@ -358,6 +389,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   }), [toggleMute, toggleVideo, leaveCall, toggleFullscreen, isMuted, isVideoOff, isFullscreen]);
 
   const handleUnmute = useCallback(() => {
+    userHasUnmutedRef.current = true;
     const containers = [videoContainerRef.current, screenShareRef.current];
     containers.forEach(container => {
       if (!container) return;
@@ -367,18 +399,35 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
       });
     });
     setShowUnmutePrompt(false);
+    setViewerAudioMuted(false);
   }, []);
 
-  // Sync fullscreen state with native Fullscreen API
+  const toggleViewerAudio = useCallback(() => {
+    const containers = [videoContainerRef.current, screenShareRef.current];
+    const newMuted = !viewerAudioMuted;
+    containers.forEach(container => {
+      if (!container) return;
+      container.querySelectorAll('video, audio').forEach((el) => {
+        (el as HTMLMediaElement).muted = newMuted;
+        if (!newMuted) (el as HTMLMediaElement).play().catch(() => {});
+      });
+    });
+    setViewerAudioMuted(newMuted);
+    if (!newMuted) userHasUnmutedRef.current = true;
+  }, [viewerAudioMuted]);
+
+  // Sync fullscreen state with native Fullscreen API (including webkit prefix for iOS)
   useEffect(() => {
     const handleFsChange = () => {
-      const isFull = !!document.fullscreenElement;
+      const isFull = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
       setIsFullscreen(isFull);
       document.body.style.overflow = isFull ? 'hidden' : '';
     };
     document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
     return () => {
       document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
       document.body.style.overflow = '';
     };
   }, []);
@@ -519,6 +568,18 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
                     );
                   })()}
                 </>
+              )}
+
+              {/* Viewer audio toggle */}
+              {!isOwner && (
+                <Button
+                  size="icon"
+                  variant={viewerAudioMuted ? "destructive" : "secondary"}
+                  onClick={toggleViewerAudio}
+                  className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
+                >
+                  {viewerAudioMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                </Button>
               )}
               
               <Button
