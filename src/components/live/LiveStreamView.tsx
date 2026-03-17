@@ -34,6 +34,7 @@ interface LiveStreamViewProps {
   onEndClick: () => void;
   roomUrl: string;
   ownerToken: string;
+  isMobile: boolean;
 }
 
 export function LiveStreamView({
