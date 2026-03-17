@@ -117,14 +117,13 @@ export default function IdentityVerification() {
       if (error) throw error;
       if (!data?.session_url) throw new Error('No session URL returned');
 
-      // Open Veriff in a new window
-      window.open(data.session_url, '_blank', 'noopener,noreferrer');
-
-      toast.success(
+      // Navigate directly to Veriff (avoids popup blockers on mobile/WebView)
+      toast.info(
         language === 'es'
-          ? 'Verificación iniciada. Completa el proceso en la nueva ventana.'
-          : 'Verification started. Complete the process in the new window.'
+          ? 'Redirigiendo a la verificación biométrica...'
+          : 'Redirecting to biometric verification...'
       );
+      window.location.href = data.session_url;
 
       // Refresh after a short delay
       setTimeout(fetchVerification, 3000);
