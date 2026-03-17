@@ -131,10 +131,10 @@ function PreviewContent({
           <div className="relative w-full h-[50vh] sm:h-[60vh] rounded-xl overflow-hidden border border-border/50 bg-muted/20">
             {blobUrl ? (
                 <iframe
-                  src={`${blobUrl}#toolbar=0&navpanes=0`}
+                  src={`${blobUrl}#toolbar=0&navpanes=0&view=FitH`}
                   className="w-full h-full"
                   title={content.title}
-                  sandbox="allow-same-origin allow-scripts"
+                  allow="fullscreen"
                 />
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-3">

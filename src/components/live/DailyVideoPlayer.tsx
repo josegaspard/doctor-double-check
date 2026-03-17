@@ -330,11 +330,20 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   }, [onLeave]);
 
   const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => {
-      const next = !prev;
-      document.body.style.overflow = next ? 'hidden' : '';
-      return next;
-    });
+    const el = wrapperRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.().catch(() => {
+        // Fallback for browsers that don't support fullscreen API
+        setIsFullscreen(prev => {
+          const next = !prev;
+          document.body.style.overflow = next ? 'hidden' : '';
+          return next;
+        });
+      });
+    } else {
+      document.exitFullscreen?.();
+    }
   }, []);
 
   // Expose controls to parent via ref
@@ -360,8 +369,18 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     setShowUnmutePrompt(false);
   }, []);
 
+  // Sync fullscreen state with native Fullscreen API
   useEffect(() => {
-    return () => { document.body.style.overflow = ''; };
+    const handleFsChange = () => {
+      const isFull = !!document.fullscreenElement;
+      setIsFullscreen(isFull);
+      document.body.style.overflow = isFull ? 'hidden' : '';
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.body.style.overflow = '';
+    };
   }, []);
 
   const showingScreenShare = isScreenSharing || hasRemoteScreenShare;
@@ -398,6 +417,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
       className={externalClassName || `relative bg-black overflow-hidden group ${
         isFullscreen ? 'fixed inset-0 z-[9999] w-screen h-[100dvh] rounded-none' : 'aspect-video rounded-xl'
       }`}
+      style={isFullscreen && !externalClassName ? { width: '100vw', height: '100dvh' } : undefined}
     >
       {/* Screen share layer */}
       <div
