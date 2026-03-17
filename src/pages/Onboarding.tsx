@@ -1052,6 +1052,141 @@ export default function Onboarding() {
                         </p>
                       </motion.div>
 
+                      {/* Phone Verification (Optional) */}
+                      <motion.div className="space-y-3" variants={itemVariants}>
+                        <Label className="text-sm font-medium flex items-center gap-1.5">
+                          <Phone className="w-4 h-4" />
+                          Teléfono celular <span className="text-muted-foreground font-normal text-xs">(opcional)</span>
+                        </Label>
+                        <div className="flex gap-2">
+                          <Select value={phoneCountryCode} onValueChange={setPhoneCountryCode}>
+                            <SelectTrigger className="w-[100px] flex-shrink-0">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="+52">🇲🇽 +52</SelectItem>
+                              <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                              <SelectItem value="+57">🇨🇴 +57</SelectItem>
+                              <SelectItem value="+56">🇨🇱 +56</SelectItem>
+                              <SelectItem value="+54">🇦🇷 +54</SelectItem>
+                              <SelectItem value="+34">🇪🇸 +34</SelectItem>
+                              <SelectItem value="+51">🇵🇪 +51</SelectItem>
+                              <SelectItem value="+593">🇪🇨 +593</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            placeholder="Ej: 5512345678"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 15))}
+                            disabled={phoneVerified}
+                            className="flex-1"
+                            type="tel"
+                            inputMode="numeric"
+                          />
+                          {phoneVerified ? (
+                            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 flex items-center gap-1 whitespace-nowrap self-center">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Verificado
+                            </Badge>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={phoneSendingOtp || phoneNumber.length < 10 || phoneOtpSent || phoneRateLimited}
+                              className="whitespace-nowrap self-center"
+                              onClick={async () => {
+                                setPhoneSendingOtp(true);
+                                try {
+                                  const fullPhone = `${phoneCountryCode}${phoneNumber}`;
+                                  const { data, error } = await supabase.functions.invoke('verify-phone-otp', {
+                                    body: { phone: fullPhone, action: 'send' },
+                                  });
+                                  if (error) throw new Error(error.message);
+                                  if (data?.rateLimited) {
+                                    setPhoneRateLimited(true);
+                                    toast.error('Solo puedes verificar tu teléfono 1 vez al día.');
+                                    return;
+                                  }
+                                  if (data?.alreadyVerified) {
+                                    setPhoneVerified(true);
+                                    toast.success('¡Teléfono ya verificado!');
+                                    return;
+                                  }
+                                  setPhoneOtpSent(true);
+                                  toast.success(data?.smsSent ? 'Código enviado por SMS' : 'Código enviado a notificaciones');
+                                } catch (err: any) {
+                                  toast.error(err.message || 'Error al enviar código');
+                                } finally {
+                                  setPhoneSendingOtp(false);
+                                }
+                              }}
+                            >
+                              {phoneSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enviar código'}
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* OTP Input when sent */}
+                        {phoneOtpSent && !phoneVerified && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="space-y-3 p-3 rounded-lg border border-border bg-muted/30"
+                          >
+                            <p className="text-sm text-muted-foreground">
+                              Ingresa el código de 6 dígitos:
+                            </p>
+                            <div className="flex items-center gap-3">
+                              <InputOTP
+                                maxLength={6}
+                                value={phoneOtpCode}
+                                onChange={setPhoneOtpCode}
+                              >
+                                <InputOTPGroup>
+                                  {[0, 1, 2, 3, 4, 5].map(i => (
+                                    <InputOTPSlot key={i} index={i} />
+                                  ))}
+                                </InputOTPGroup>
+                              </InputOTP>
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={phoneOtpCode.length !== 6 || isVerifyingPhone}
+                                onClick={async () => {
+                                  setIsVerifyingPhone(true);
+                                  try {
+                                    const fullPhone = `${phoneCountryCode}${phoneNumber}`;
+                                    const { data, error } = await supabase.functions.invoke('verify-phone-otp', {
+                                      body: { phone: fullPhone, action: 'verify', otp_code: phoneOtpCode },
+                                    });
+                                    if (error) throw new Error(error.message);
+                                    if (data?.verified) {
+                                      setPhoneVerified(true);
+                                      setPhoneOtpSent(false);
+                                      toast.success('✅ Teléfono verificado correctamente');
+                                    } else {
+                                      toast.error(data?.error || 'Código inválido o expirado');
+                                    }
+                                  } catch (err: any) {
+                                    toast.error(err.message || 'Error al verificar');
+                                  } finally {
+                                    setIsVerifyingPhone(false);
+                                  }
+                                }}
+                              >
+                                {isVerifyingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verificar'}
+                              </Button>
+                            </div>
+                          </motion.div>
+                        )}
+
+                        <p className="text-[11px] text-muted-foreground flex items-start gap-1">
+                          <MessageSquare className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                          Tu número se usa para confirmar códigos de seguridad (OTP) cuando los doctores necesiten acceder a tu expediente. También puedes usar correo electrónico.
+                        </p>
+                      </motion.div>
+
                       <motion.div className="space-y-3" variants={itemVariants}>
                         <Label className="text-base font-medium">{t('onboarding.selectRole')}</Label>
                         <RadioGroup 
