@@ -369,8 +369,18 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     setShowUnmutePrompt(false);
   }, []);
 
+  // Sync fullscreen state with native Fullscreen API
   useEffect(() => {
-    return () => { document.body.style.overflow = ''; };
+    const handleFsChange = () => {
+      const isFull = !!document.fullscreenElement;
+      setIsFullscreen(isFull);
+      document.body.style.overflow = isFull ? 'hidden' : '';
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.body.style.overflow = '';
+    };
   }, []);
 
   const showingScreenShare = isScreenSharing || hasRemoteScreenShare;
