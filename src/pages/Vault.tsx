@@ -596,6 +596,7 @@ export default function Vault() {
                 </>
               )}
             </button>
+            </div>
 
             {uploadProgress !== null && (
               <div className="space-y-2">
