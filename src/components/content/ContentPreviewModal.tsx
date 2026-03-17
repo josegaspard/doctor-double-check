@@ -123,14 +123,26 @@ function PreviewContent({
       );
     case 'pdf': {
       return (
-        <div className="space-y-2">
+        <div
+          className="space-y-2"
+          onContextMenu={(e) => e.preventDefault()}
+          style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+        >
           <div className="relative w-full h-[50vh] sm:h-[60vh] rounded-xl overflow-hidden border border-border/50 bg-muted/20">
             {blobUrl ? (
-              <iframe
-                src={`${blobUrl}#toolbar=0&navpanes=0`}
-                className="w-full h-full"
-                title={content.title}
-              />
+              <>
+                <iframe
+                  src={`${blobUrl}#toolbar=0&navpanes=0`}
+                  className="w-full h-full"
+                  title={content.title}
+                  sandbox="allow-same-origin allow-scripts"
+                />
+                {/* Transparent overlay to block right-click/save on the iframe */}
+                <div
+                  className="absolute inset-0 z-10"
+                  onContextMenu={(e) => e.preventDefault()}
+                />
+              </>
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-3">
                 <FileText className="w-12 h-12 text-muted-foreground" />
