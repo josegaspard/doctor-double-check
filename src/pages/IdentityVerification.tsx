@@ -430,7 +430,7 @@ export default function IdentityVerification() {
               </div>
 
               <Button
-                className="w-full"
+                className="w-full min-h-[44px]"
                 size="lg"
                 onClick={handleStartVeriff}
                 disabled={isStartingVeriff}
