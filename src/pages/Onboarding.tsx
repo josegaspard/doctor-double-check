@@ -630,6 +630,11 @@ export default function Onboarding() {
         updateData.username = username.trim();
       }
 
+      // Save verified phone
+      if (phoneVerified && phoneNumber) {
+        updateData.phone = `${phoneCountryCode}${phoneNumber}`;
+      }
+
       const { error: profileError } = await supabase
         .from('profiles')
         .update(updateData)
