@@ -530,7 +530,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
 
           {/* Controls */}
           <div className={`absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/80 to-transparent z-20 transition-opacity ${
-            isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            isFullscreen ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
           }`}
             style={{ paddingBottom: isFullscreen ? 'max(0.75rem, env(safe-area-inset-bottom))' : undefined }}
           >
