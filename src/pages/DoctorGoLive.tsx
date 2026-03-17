@@ -337,6 +337,9 @@ export default function DoctorGoLive() {
     );
   }
 
+  // Stable synchronous mobile detection — computed once, no re-render flicker
+  const isMobileStable = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+
   if (isLive && liveData) {
     const liveContent = (
       <>
@@ -350,6 +353,7 @@ export default function DoctorGoLive() {
           onEndClick={() => setShowEndDialog(true)}
           roomUrl={dailyRoomUrl || ''}
           ownerToken={dailyOwnerToken || ''}
+          isMobile={isMobileStable}
         />
         <LiveDialogs
           showEndDialog={showEndDialog}
@@ -368,8 +372,7 @@ export default function DoctorGoLive() {
       </>
     );
 
-    const isMobileCheck = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-    if (isMobileCheck) return liveContent;
+    if (isMobileStable) return liveContent;
 
     return <MainLayout>{liveContent}</MainLayout>;
   }
