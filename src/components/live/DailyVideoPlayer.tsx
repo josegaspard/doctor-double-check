@@ -352,17 +352,28 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const toggleFullscreen = useCallback(() => {
     const el = wrapperRef.current;
     if (!el) return;
-    if (!document.fullscreenElement) {
-      el.requestFullscreen?.().catch(() => {
-        // Fallback for browsers that don't support fullscreen API
-        setIsFullscreen(prev => {
-          const next = !prev;
-          document.body.style.overflow = next ? 'hidden' : '';
-          return next;
-        });
+
+    // Check if native fullscreen is active
+    if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
+      (document.exitFullscreen?.() || (document as any).webkitExitFullscreen?.());
+      return;
+    }
+
+    // Try native fullscreen first (works on Android, desktop)
+    const requestFs = el.requestFullscreen?.bind(el) || (el as any).webkitRequestFullscreen?.bind(el);
+    if (requestFs) {
+      requestFs().catch(() => {
+        // Fallback CSS fullscreen (iOS Safari)
+        setIsFullscreen(true);
+        document.body.style.overflow = 'hidden';
       });
     } else {
-      document.exitFullscreen?.();
+      // No API at all — CSS fallback
+      setIsFullscreen(prev => {
+        const next = !prev;
+        document.body.style.overflow = next ? 'hidden' : '';
+        return next;
+      });
     }
   }, []);
 
