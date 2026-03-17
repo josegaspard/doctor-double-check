@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { PasswordStrength, getPasswordStrength } from '@/components/ui/password-strength';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
+import { LandingFooter } from '@/components/landing/LandingFooter';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -476,24 +477,7 @@ export default function Login() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-dark py-4">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <nav className="flex items-center gap-6">
-              <Link to="/terms" className="text-sm text-dark-foreground/70 hover:text-dark-foreground transition-colors">
-                {t('footer.termsOfService')}
-              </Link>
-              <Link to="/privacy" className="text-sm text-dark-foreground/70 hover:text-dark-foreground transition-colors">
-                {t('footer.privacyPolicy')}
-              </Link>
-            </nav>
-            <p className="text-sm text-dark-foreground/70">
-              {t('footer.copyright')}
-            </p>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }
