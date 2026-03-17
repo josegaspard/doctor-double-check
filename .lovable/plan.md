@@ -1,26 +1,35 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
+
+# Plan: Cambiar el logo de Google OAuth a Medical Masters
 
 ## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
 
-## Solucion
+La pantalla de "Selecciona una cuenta" de Google muestra el logo de Lovable porque el proyecto usa las credenciales OAuth gestionadas por Lovable Cloud. Ese logo se configura en la consola de Google Cloud, no en el código.
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+## Sobre el flujo de onboarding con Google
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+El código actual en `Login.tsx` ya maneja esto correctamente:
+- `resolvePostLoginRoute()` verifica `onboarding_completed` en la tabla `profiles`
+- Si es `false` (usuario nuevo), redirige a `/onboarding`
+- El onboarding incluye el flujo biométrico de Veriff para roles que lo requieren
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+No se necesitan cambios de código para esto.
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+## Solución para el logo
 
-## Archivos a modificar
+Para mostrar el logo de Medical Masters en la pantalla de Google, necesitas usar **tus propias credenciales de Google OAuth** (en lugar de las gestionadas por Lovable). Pasos:
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+### 1. Crear credenciales en Google Cloud Console
+1. Ir a [Google Cloud Console](https://console.cloud.google.com)
+2. Crear o seleccionar un proyecto
+3. En **Pantalla de consentimiento OAuth**: subir el logo de Medical Masters, configurar el nombre de la app como "Medical Masters"
+4. En **Credenciales**: crear un "ID de cliente OAuth 2.0" tipo "Aplicación web"
+5. En **URLs de redirección autorizadas**, agregar la URL de callback del backend
+6. Copiar el Client ID y Client Secret
+
+### 2. Configurar en Lovable Cloud
+Abrir el backend y en Usuarios → Configuración de Autenticación → Métodos de Inicio de Sesión → Google, ingresar el Client ID y Client Secret propios.
+
+### Archivos a modificar
+Ninguno. Es configuración externa (Google Cloud Console + backend de Lovable Cloud).
+
