@@ -470,7 +470,7 @@ export default function LivePlayer() {
                   </Badge>
                 </div>
                 <div className="absolute top-4 right-4 z-10">
-                  <AnimatedViewerCount count={viewerCount || live.viewerCount} />
+                  <AnimatedViewerCount count={viewerCount ?? live.viewerCount} />
                 </div>
                 <div className="absolute bottom-4 left-4 z-10">
                   <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
