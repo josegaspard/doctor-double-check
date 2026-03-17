@@ -452,13 +452,18 @@ export default function LivePlayer() {
                 duration={formatDuration(live.startedAt)}
               />
             ) : roomUrl && viewerToken ? (
-              <DailyVideoPlayer
-                roomUrl={roomUrl}
-                token={viewerToken}
-                isOwner={isOwner}
-                onLeave={isOwner && isLiveActive ? () => setShowEndDialog(true) : () => navigate('/lives')}
-                onParticipantCountChange={() => {}}
-              />
+              <div className={mobileFullscreen ? 'mobile-live-fullscreen' : 'contents'}>
+                <DailyVideoPlayer
+                  roomUrl={roomUrl}
+                  token={viewerToken}
+                  isOwner={isOwner}
+                  onLeave={isOwner && isLiveActive ? () => setShowEndDialog(true) : () => navigate('/lives')}
+                  onParticipantCountChange={() => {}}
+                  onMobileFullscreenToggle={isMobile ? handleToggleMobileFullscreen : undefined}
+                  isMobileFullscreen={mobileFullscreen}
+                  className={mobileFullscreen ? 'relative bg-black overflow-hidden group w-full h-full' : undefined}
+                />
+              </div>
             ) : (
               <div className="relative aspect-video bg-black rounded-xl overflow-hidden no-context-menu">
                 {isJoiningStream ? (

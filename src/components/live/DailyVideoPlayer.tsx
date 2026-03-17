@@ -616,10 +616,10 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
               <Button
                 size="icon"
                 variant="secondary"
-                onClick={toggleFullscreen}
+                onClick={handleFullscreenClick}
                 className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
               >
-                {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                {resolvedFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
               </Button>
               
               {isOwner && (

@@ -173,6 +173,8 @@ export function LiveStreamView({
             hideControls={true}
             onLeave={onEndClick}
             onParticipantCountChange={() => {}}
+            onMobileFullscreenToggle={handleToggleMobileFullscreen}
+            isMobileFullscreen={mobileFullscreen}
             className={`relative bg-black overflow-hidden group ${mobileFullscreen ? 'w-full h-full' : 'h-[40dvh]'}`}
           >
             {/* Stats overlay inside player when fullscreen */}
