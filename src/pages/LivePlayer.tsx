@@ -409,7 +409,7 @@ export default function LivePlayer() {
                 doctorName={live.doctorName}
                 doctorAvatar={live.doctorAvatar}
                 specialty={live.specialty}
-                likesCount={realtimeLikesCount || live.likesCount}
+                likesCount={realtimeLikesCount ?? live.likesCount}
                 peakViewers={live.viewerCount}
                 duration={formatDuration(live.startedAt)}
               />
