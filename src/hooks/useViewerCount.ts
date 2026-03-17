@@ -9,8 +9,8 @@ interface UseViewerCountOptions {
 
 export function useViewerCount({ liveId, autoJoin = true }: UseViewerCountOptions) {
   const { user } = useAuth();
-  const [viewerCount, setViewerCount] = useState(0);
-  const [likesCount, setLikesCount] = useState(0);
+  const [viewerCount, setViewerCount] = useState<number | null>(null);
+  const [likesCount, setLikesCount] = useState<number | null>(null);
   const [isJoined, setIsJoined] = useState(false);
   const hasJoinedRef = useRef(false);
 
@@ -93,6 +93,26 @@ export function useViewerCount({ liveId, autoJoin = true }: UseViewerCountOption
           setLikesCount(newData.likes_count);
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'live_likes',
+          filter: `live_id=eq.${liveId}`,
+        },
+        () => {
+          // Re-fetch the actual count from lives table to stay in sync
+          supabase
+            .from('lives')
+            .select('likes_count')
+            .eq('id', liveId)
+            .maybeSingle()
+            .then(({ data }) => {
+              if (data) setLikesCount(data.likes_count);
+            });
+        }
+      )
       .subscribe();
 
     return () => {
@@ -109,7 +129,6 @@ export function useViewerCount({ liveId, autoJoin = true }: UseViewerCountOption
     // Cleanup: decrement properly on unmount
     return () => {
       if (hasJoinedRef.current && liveId) {
-        // Fire and forget - use RPC to decrement by 1
         (async () => {
           try {
             await supabase.rpc('decrement_viewer_count', { p_live_id: liveId });

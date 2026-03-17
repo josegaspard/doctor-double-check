@@ -50,13 +50,16 @@ export function LiveStreamView({
 }: LiveStreamViewProps) {
   const isMobile = useIsMobile();
   const [mobileChatOpen, setMobileChatOpen] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
   const playerRef = useRef<DailyVideoPlayerHandle>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Force re-render to read ref state after toggles
   const [, forceUpdate] = useState(0);
+
+  // Resolved counts: prefer realtime (non-null) over liveData initial
+  const resolvedViewerCount = viewerCount ?? liveData.viewerCount;
+  const resolvedLikesCount = likesCount ?? liveData.likesCount;
 
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
@@ -85,6 +88,13 @@ export function LiveStreamView({
     if (isMobile) resetHideTimer();
   }, [isMobile, resetHideTimer]);
 
+  const handleToggleFullscreen = useCallback(() => {
+    playerRef.current?.toggleFullscreen();
+    forceUpdate(n => n + 1);
+  }, []);
+
+  const isFullscreen = playerRef.current?.isFullscreen ?? false;
+
   if (isMobile) {
     const isMuted = playerRef.current?.isMuted ?? false;
     const isVideoOff = playerRef.current?.isVideoOff ?? false;
@@ -102,10 +112,10 @@ export function LiveStreamView({
         >
           <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
             <Heart className="w-3 h-3 text-red-400" />
-            {likesCount || liveData.likesCount}
+            {resolvedLikesCount}
           </span>
           <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
-            <AnimatedViewerCount count={viewerCount || liveData.viewerCount} variant="inline" />
+            <AnimatedViewerCount count={resolvedViewerCount} variant="inline" />
           </span>
         </div>
 
@@ -133,7 +143,7 @@ export function LiveStreamView({
           </div>
         </div>
 
-        {/* Video area — flex child */}
+        {/* Video area — uses DailyVideoPlayer's own fullscreen */}
         <DailyVideoPlayer
           ref={playerRef}
           roomUrl={roomUrl}
@@ -142,7 +152,7 @@ export function LiveStreamView({
           hideControls={true}
           onLeave={onEndClick}
           onParticipantCountChange={() => {}}
-          className={`relative bg-black overflow-hidden group ${isFullscreen ? 'flex-1' : 'h-[40dvh]'}`}
+          className={`relative bg-black overflow-hidden group ${isFullscreen ? 'fixed inset-0 z-[60] w-screen h-[100dvh]' : 'h-[40dvh]'}`}
         >
           {/* Control bar — rendered inside DailyVideoPlayer's wrapper */}
           <div className="absolute bottom-2 left-0 right-0 z-30 flex items-center justify-center gap-3 px-4">
@@ -175,7 +185,7 @@ export function LiveStreamView({
               size="icon"
               onClick={(e) => {
                 e.stopPropagation();
-                setIsFullscreen(!isFullscreen);
+                handleToggleFullscreen();
               }}
               className={`h-11 w-11 rounded-full border-white/20 text-white ${isFullscreen ? 'bg-primary/70 hover:bg-primary/90' : 'bg-white/10 hover:bg-white/20'}`}
             >
@@ -247,10 +257,10 @@ export function LiveStreamView({
               <Clock className="w-4 h-4" />
               {formatTime(elapsedTime)}
             </span>
-            <AnimatedViewerCount count={viewerCount || liveData.viewerCount} variant="inline" />
+            <AnimatedViewerCount count={resolvedViewerCount} variant="inline" />
             <span className="flex items-center gap-1">
               <Heart className="w-4 h-4" />
-              {likesCount || liveData.likesCount}
+              {resolvedLikesCount}
             </span>
           </div>
 

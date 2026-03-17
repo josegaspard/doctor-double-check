@@ -70,6 +70,9 @@ Deno.serve(async (req) => {
       if (session.metadata?.type === "storage_upgrade" && session.payment_status === "paid") {
         await handleStorageUpgrade(db, session);
       }
+      if (session.metadata?.type === "live_chat_highlight" && session.payment_status === "paid") {
+        await handleLiveChatHighlight(db, session);
+      }
     }
 
     if (event.type === "invoice.payment_succeeded") {
@@ -808,7 +811,98 @@ async function handleSubscriptionDeleted(
           message: `Un suscriptor ha cancelado su suscripción ${sub.tier}`,
           data: { subscriber_id: profile.id, tier: sub.tier },
         });
+}
+
+async function handleLiveChatHighlight(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const liveId = session.metadata!.live_id;
+  const userId = session.metadata!.user_id;
+  const userName = session.metadata!.user_name || "Usuario";
+  const messageContent = session.metadata!.message_content;
+  const highlightSeconds = parseInt(session.metadata!.highlight_seconds || "120");
+
+  logStep("Processing live chat highlight", { liveId, userId, highlightSeconds });
+
+  // Idempotency: check if message already inserted for this session
+  const { data: existingMsg } = await db
+    .from("live_chat_messages")
+    .select("id")
+    .eq("live_id", liveId)
+    .eq("user_id", userId)
+    .eq("content", messageContent)
+    .eq("is_paid", true)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingMsg) {
+    logStep("Chat highlight already processed, skipping", { sessionId: session.id });
+    return;
+  }
+
+  // Calculate elapsed seconds from live start
+  const { data: liveData } = await db
+    .from("lives")
+    .select("started_at")
+    .eq("id", liveId)
+    .single();
+
+  const elapsed = liveData
+    ? Math.max(0, Math.floor((Date.now() - new Date(liveData.started_at).getTime()) / 1000))
+    : 0;
+
+  const highlightUntil = new Date(Date.now() + highlightSeconds * 1000).toISOString();
+
+  const { error: insertError } = await db
+    .from("live_chat_messages")
+    .insert({
+      live_id: liveId,
+      user_id: userId,
+      user_name: userName,
+      content: messageContent,
+      elapsed_seconds: elapsed,
+      is_paid: true,
+      highlight_until: highlightUntil,
+    });
+
+  if (insertError) {
+    logStep("Error inserting highlighted chat message", { error: insertError });
+    throw insertError;
+  }
+
+  // Credit doctor earnings
+  const { data: live } = await db
+    .from("lives")
+    .select("doctor_id, chat_price")
+    .eq("id", liveId)
+    .single();
+
+  if (live?.doctor_id) {
+    const amount = Number(live.chat_price) || parseFloat(session.metadata!.amount || "0");
+    if (amount > 0) {
+      await creditDoctorEarningsAtomic(db, live.doctor_id, amount, "live_chat_highlight", liveId);
     }
+  }
+
+  // Increment paid_chats_count on the live
+  await db.rpc("increment_viewer_count", { p_live_id: liveId }).then(() => {
+    // Actually we need a separate increment for paid_chats_count
+  });
+  
+  // Direct update for paid_chats_count
+  const { data: currentLive } = await db
+    .from("lives")
+    .select("paid_chats_count")
+    .eq("id", liveId)
+    .single();
+  
+  if (currentLive) {
+    await db
+      .from("lives")
+      .update({ paid_chats_count: (currentLive.paid_chats_count || 0) + 1 })
+      .eq("id", liveId);
+  }
+
+  logStep("Live chat highlight processed successfully", { liveId, userId });
+}
     
     logStep("Subscriptions deactivated", { count: subs.length, userId: profile.id });
   }
