@@ -67,7 +67,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const [participantCount, setParticipantCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [showUnmutePrompt, setShowUnmutePrompt] = useState(false);
-  const [viewerAudioMuted, setViewerAudioMuted] = useState(false);
+  const [viewerAudioMuted, setViewerAudioMuted] = useState(true);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
 
