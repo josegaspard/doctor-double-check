@@ -93,12 +93,18 @@ export default function DoctorDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-3 sm:space-y-5">
+            {/* Section 0: Profile Card (P11) */}
+            <DoctorProfileCard />
+
             {/* Section 1: Stats */}
             <DoctorStatsGrid
               recordingsCount={recordingsCount}
               vaultFilesCount={accessibleVaultFiles.length}
               rating={doctorProfile?.rating || 0}
             />
+
+            {/* Section 1.5: Patients List (P12) */}
+            <DoctorPatientsList />
 
             {/* Section 2: Quick Actions */}
             <DoctorQuickActions isApproved={isApproved} userId={user?.id} canPublishNews={canPublishNews} />
