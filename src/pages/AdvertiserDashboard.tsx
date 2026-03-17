@@ -249,7 +249,10 @@ export default function AdvertiserDashboard() {
 
   const totalImpressions = Object.values(campaignStats).reduce((sum, s) => sum + s.impressions, 0);
   const totalClicks = Object.values(campaignStats).reduce((sum, s) => sum + s.clicks, 0);
-  const totalSpent = campaigns.reduce((sum, c) => sum + Number(c.spent), 0);
+  const totalSpent = campaigns.reduce((sum, c) => {
+    const s = campaignStats[c.id] || { impressions: 0, clicks: 0 };
+    return sum + (s.impressions / 1000 * config.cpm_rate) + (s.clicks * config.cpc_rate);
+  }, 0);
 
   const campaign = selectedCampaign ? campaigns.find(c => c.id === selectedCampaign) : null;
 
