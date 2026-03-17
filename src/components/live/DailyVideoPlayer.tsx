@@ -72,6 +72,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const [viewerAudioMuted, setViewerAudioMuted] = useState(true);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const connectionStats = useConnectionQuality(callRef.current, isConnected);
 
   useEffect(() => {
     if (!roomUrl || !token) return;
