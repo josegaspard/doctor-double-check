@@ -26,11 +26,6 @@ export default function DoctorVault() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [autoOpenHandled, setAutoOpenHandled] = useState(false);
 
-  if (role !== 'doctor') {
-    navigate('/lives');
-    return null;
-  }
-
   const accessibleFiles = getAccessibleFiles(user?.id || '');
 
   // Auto-open patient content when redirected from OTP verification
@@ -44,9 +39,13 @@ export default function DoctorVault() {
       setIsPreviewOpen(true);
     }
     setAutoOpenHandled(true);
-    // Clean up the query param
     setSearchParams({}, { replace: true });
   }, [targetPatientId, autoOpenHandled, accessibleFiles, isPatientVerified, setSearchParams]);
+
+  if (role !== 'doctor') {
+    navigate('/lives');
+    return null;
+  }
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
