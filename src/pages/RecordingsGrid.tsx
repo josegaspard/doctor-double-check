@@ -75,19 +75,24 @@ export default function RecordingsGrid() {
     return hasPurchased(recording.id);
   };
 
+  // Collect all unique tags for category filter
+  const allTags = [...new Set(recordings.flatMap(r => r.tags || []))].filter(Boolean).sort();
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
   const filteredRecordings = recordings.filter(rec => {
     const matchesSearch = rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          rec.doctorName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSpecialty = !selectedSpecialty || rec.specialty === selectedSpecialty;
     const matchesDoctor = !doctorFilter || rec.doctorId === doctorFilter;
+    const matchesTag = !selectedTag || (rec.tags || []).includes(selectedTag);
     
-    if (!matchesSearch || !matchesSpecialty || !matchesDoctor) return false;
+    if (!matchesSearch || !matchesSpecialty || !matchesDoctor || !matchesTag) return false;
     
     const owned = ownsRecording(rec);
     switch (contentFilter) {
       case 'free': return rec.price === 0;
       case 'paid': return rec.price > 0;
-      case 'purchased': return owned;
+      case 'purchased': return owned && rec.price > 0;
       case 'not_purchased': return !owned && rec.price > 0;
       default: return true;
     }

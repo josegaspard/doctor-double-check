@@ -22,8 +22,9 @@ interface LiveDialogsProps {
 
   // Ending modal
   showEndingModal: boolean;
-  endingStage: 'ending' | 'saving' | 'uploading' | 'done';
+  endingStage: 'ending' | 'saving' | 'uploading' | 'choose' | 'done';
   uploadProgress: number | null;
+  onKeepDecision?: (keep: boolean) => void;
 
   // Navigation warning
   showNavigationWarning: boolean;
@@ -41,6 +42,7 @@ export function LiveDialogs({
   showEndingModal,
   endingStage,
   uploadProgress,
+  onKeepDecision,
   showNavigationWarning,
   onNavigationWarningChange,
   onConfirmNavigation,
@@ -58,7 +60,7 @@ export function LiveDialogs({
             </AlertDialogTitle>
             <AlertDialogDescription>
               {enableRecording
-                ? 'La grabación se procesará y estará disponible para la venta.'
+                ? 'La grabación se procesará y podrás elegir si quieres guardarla en tu perfil.'
                 : 'Esta acción finalizará la transmisión para todos los espectadores.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -88,6 +90,7 @@ export function LiveDialogs({
         stage={endingStage}
         enableRecording={enableRecording}
         uploadProgress={uploadProgress}
+        onKeepDecision={onKeepDecision}
       />
 
       {/* Navigation warning dialog */}
