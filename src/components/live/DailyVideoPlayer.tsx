@@ -396,7 +396,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     <div
       ref={wrapperRef}
       className={externalClassName || `relative bg-black rounded-xl overflow-hidden group ${
-        isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'aspect-video'
+        isFullscreen ? 'fixed inset-0 z-[60] w-screen h-[100dvh] rounded-none' : 'aspect-video'
       }`}
     >
       {/* Screen share layer */}
