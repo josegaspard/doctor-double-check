@@ -156,36 +156,20 @@ export default function AdminUsers() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-4 mb-4 sm:mb-6">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{userStats.total}</p>
-              <p className="text-sm text-muted-foreground">Total</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-purple-600">{userStats.admins}</p>
-              <p className="text-sm text-muted-foreground">{t('admin.administrators')}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-blue-600">{userStats.doctors}</p>
-              <p className="text-sm text-muted-foreground">{t('admin.doctors')}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-green-600">{userStats.residents}</p>
-              <p className="text-sm text-muted-foreground">{t('admin.residents')}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-gray-600">{userStats.patients}</p>
-              <p className="text-sm text-muted-foreground">{t('admin.patients')}</p>
-            </CardContent>
-          </Card>
+          {[
+            { value: userStats.total, label: 'Total', color: '' },
+            { value: userStats.admins, label: t('admin.administrators'), color: 'text-purple-600' },
+            { value: userStats.doctors, label: t('admin.doctors'), color: 'text-blue-600' },
+            { value: userStats.residents, label: t('admin.residents'), color: 'text-green-600' },
+            { value: userStats.patients, label: t('admin.patients'), color: 'text-gray-600' },
+          ].map((s, i) => (
+            <Card key={i}>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <p className={`text-xl sm:text-2xl font-bold ${s.color}`}>{s.value}</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground truncate">{s.label}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* Filters */}
