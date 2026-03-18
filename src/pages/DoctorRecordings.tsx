@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { exportToCSV } from '@/lib/exportAdData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLives, Recording } from '@/contexts/LivesContext';
@@ -87,6 +88,7 @@ import {
   MessageSquare,
   Sparkles,
   Radio,
+  Download,
 } from 'lucide-react';
 
 interface RecordingStats {
@@ -153,11 +155,18 @@ export default function DoctorRecordings() {
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
 
-  // Bulk Selection
+  // Bulk Selection (Recordings)
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk Selection (Past Lives)
+  const [plSelectionMode, setPlSelectionMode] = useState(false);
+  const [selectedPastLiveIds, setSelectedPastLiveIds] = useState<Set<string>>(new Set());
+  const [plBulkDeleteDialogOpen, setPlBulkDeleteDialogOpen] = useState(false);
+  const [isPlBulkDeleting, setIsPlBulkDeleting] = useState(false);
+  const [plDeleteSingleId, setPlDeleteSingleId] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -580,6 +589,78 @@ export default function DoctorRecordings() {
   const handleViewStats = (recording: Recording) => {
     setSelectedRecording(recording);
     setStatsDialogOpen(true);
+  };
+
+  // ========== Past Lives Handlers ==========
+  const togglePlSelectionMode = () => {
+    if (plSelectionMode) setSelectedPastLiveIds(new Set());
+    setPlSelectionMode(!plSelectionMode);
+  };
+  const togglePlSelect = (id: string) => {
+    setSelectedPastLiveIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectAllPl = () => setSelectedPastLiveIds(new Set(pastLives.map(l => l.id)));
+  const deselectAllPl = () => setSelectedPastLiveIds(new Set());
+
+  const deletePastLive = async (id: string) => {
+    // Delete related chat messages first, then the live
+    await supabase.from('live_chat_messages').delete().eq('live_id', id);
+    await supabase.from('live_likes').delete().eq('live_id', id);
+    const { error } = await supabase.from('lives').delete().eq('id', id).eq('doctor_id', user?.id);
+    if (error) throw error;
+  };
+
+  const handleDeleteSinglePastLive = async () => {
+    if (!plDeleteSingleId) return;
+    setIsPlBulkDeleting(true);
+    try {
+      await deletePastLive(plDeleteSingleId);
+      setPastLives(prev => prev.filter(l => l.id !== plDeleteSingleId));
+      toast.success('Live eliminado');
+      setPlDeleteSingleId(null);
+    } catch (e: any) {
+      toast.error(e.message || 'Error al eliminar');
+    } finally {
+      setIsPlBulkDeleting(false);
+    }
+  };
+
+  const handleBulkDeletePastLives = async () => {
+    if (selectedPastLiveIds.size === 0) return;
+    setIsPlBulkDeleting(true);
+    try {
+      await Promise.all([...selectedPastLiveIds].map(id => deletePastLive(id)));
+      setPastLives(prev => prev.filter(l => !selectedPastLiveIds.has(l.id)));
+      toast.success(`${selectedPastLiveIds.size} live(s) eliminado(s)`);
+      setSelectedPastLiveIds(new Set());
+      setPlSelectionMode(false);
+      setPlBulkDeleteDialogOpen(false);
+    } catch (e: any) {
+      toast.error('Error al eliminar algunos lives');
+    } finally {
+      setIsPlBulkDeleting(false);
+    }
+  };
+
+  const pastLiveToCSVRow = (l: PastLive) => ({
+    Título: l.title,
+    Especialidad: l.specialty,
+    'Fecha inicio': l.startedAt.toISOString(),
+    'Fecha fin': l.endedAt?.toISOString() || '',
+    'Pico espectadores': l.peakViewers,
+    Likes: l.likesCount,
+    'Comentarios totales': l.totalComments,
+    'Comentarios de pago': l.paidComments,
+    'Precio chat': l.chatPrice,
+    'Ingresos chats': l.paidRevenue,
+  });
+
+  const downloadPastLives = (lives: PastLive[]) => {
+    exportToCSV(lives.map(pastLiveToCSVRow), `lives-pasados-${new Date().toISOString().slice(0, 10)}`);
   };
 
   const formatDuration = (seconds: number) => {
@@ -1196,11 +1277,59 @@ export default function DoctorRecordings() {
               </div>
             )}
 
+            {/* Selection mode banner */}
+            {plSelectionMode && (
+              <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between gap-3">
+                <p className="text-sm font-medium text-foreground">
+                  {selectedPastLiveIds.size > 0
+                    ? `${selectedPastLiveIds.size} live(s) seleccionado(s)`
+                    : 'Toca los lives que deseas gestionar'}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={selectedPastLiveIds.size === pastLives.length ? deselectAllPl : selectAllPl}>
+                    {selectedPastLiveIds.size === pastLives.length ? 'Deseleccionar' : 'Todos'}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={togglePlSelectionMode}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Radio className="w-5 h-5" />
-                  Lives pasados
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Radio className="w-5 h-5" />
+                    Lives pasados
+                    {pastLives.length > 0 && (
+                      <Badge variant="secondary">{pastLives.length}</Badge>
+                    )}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {pastLives.length > 0 && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => downloadPastLives(pastLives)}
+                          className="gap-1.5"
+                        >
+                          <Download className="w-4 h-4" />
+                          {!isMobile && 'Descargar todo'}
+                        </Button>
+                        <Button
+                          variant={plSelectionMode ? "default" : "outline"}
+                          size="sm"
+                          onClick={togglePlSelectionMode}
+                          className="gap-1.5"
+                        >
+                          {plSelectionMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                          {plSelectionMode ? 'Cancelar' : 'Seleccionar'}
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1219,14 +1348,49 @@ export default function DoctorRecordings() {
                   </div>
                 ) : isMobile ? (
                   <div className="space-y-3">
-                    {pastLives.map(live => (
-                      <div key={live.id} className="p-4 border rounded-lg bg-card space-y-3">
-                        <div>
-                          <p className="font-semibold text-foreground">{live.title}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="secondary" className="text-[10px] h-5">{live.specialty}</Badge>
-                            <span className="text-xs text-muted-foreground">{formatDate(live.startedAt)}</span>
+                    {pastLives.map(live => {
+                      const isSelected = selectedPastLiveIds.has(live.id);
+                      return (
+                      <div
+                        key={live.id}
+                        className={`p-4 border rounded-lg space-y-3 transition-colors ${
+                          plSelectionMode
+                            ? isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                            : 'border-border bg-card'
+                        }`}
+                        onClick={plSelectionMode ? () => togglePlSelect(live.id) : undefined}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-2 flex-1 min-w-0">
+                            {plSelectionMode && (
+                              <Checkbox checked={isSelected} onCheckedChange={() => togglePlSelect(live.id)} className="mt-0.5" />
+                            )}
+                            <div>
+                              <p className="font-semibold text-foreground">{live.title}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="secondary" className="text-[10px] h-5">{live.specialty}</Badge>
+                                <span className="text-xs text-muted-foreground">{formatDate(live.startedAt)}</span>
+                              </div>
+                            </div>
                           </div>
+                          {!plSelectionMode && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => downloadPastLives([live])}>
+                                  <Download className="w-4 h-4 mr-2" />Descargar CSV
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-destructive" onClick={() => setPlDeleteSingleId(live.id)}>
+                                  <Trash2 className="w-4 h-4 mr-2" />Eliminar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
@@ -1267,13 +1431,15 @@ export default function DoctorRecordings() {
                           </div>
                         )}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          {plSelectionMode && <TableHead className="w-10" />}
                           <TableHead>Live</TableHead>
                           <TableHead>Especialidad</TableHead>
                           <TableHead>Pico</TableHead>
@@ -1282,11 +1448,23 @@ export default function DoctorRecordings() {
                           <TableHead>De pago</TableHead>
                           <TableHead>Ingresos chats</TableHead>
                           <TableHead>Fecha</TableHead>
+                          {!plSelectionMode && <TableHead className="w-10" />}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {pastLives.map(live => (
-                          <TableRow key={live.id}>
+                        {pastLives.map(live => {
+                          const isSelected = selectedPastLiveIds.has(live.id);
+                          return (
+                          <TableRow
+                            key={live.id}
+                            className={`${plSelectionMode ? 'cursor-pointer' : ''} ${isSelected ? 'bg-primary/5' : ''}`}
+                            onClick={plSelectionMode ? () => togglePlSelect(live.id) : undefined}
+                          >
+                            {plSelectionMode && (
+                              <TableCell>
+                                <Checkbox checked={isSelected} onCheckedChange={() => togglePlSelect(live.id)} />
+                              </TableCell>
+                            )}
                             <TableCell>
                               <p className="font-medium line-clamp-1">{live.title}</p>
                             </TableCell>
@@ -1323,17 +1501,69 @@ export default function DoctorRecordings() {
                             <TableCell className="text-muted-foreground text-sm">
                               {formatDate(live.startedAt)}
                             </TableCell>
+                            {!plSelectionMode && (
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreHorizontal className="w-4 h-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => downloadPastLives([live])}>
+                                      <Download className="w-4 h-4 mr-2" />Descargar CSV
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-destructive" onClick={() => setPlDeleteSingleId(live.id)}>
+                                      <Trash2 className="w-4 h-4 mr-2" />Eliminar
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            )}
                           </TableRow>
-                        ))}
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
                 )}
               </CardContent>
             </Card>
+
+            {/* Floating bulk action bar for past lives */}
+            {plSelectionMode && selectedPastLiveIds.size > 0 && (
+              <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-md mx-auto bg-foreground text-background px-4 py-2.5 rounded-xl shadow-2xl flex items-center justify-between animate-slide-in-bottom">
+                <span className="text-xs sm:text-sm font-medium whitespace-nowrap">{selectedPastLiveIds.size} seleccionado(s)</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-lg gap-1.5 text-xs h-8 px-3 shrink-0"
+                    onClick={() => {
+                      const selected = pastLives.filter(l => selectedPastLiveIds.has(l.id));
+                      downloadPastLives(selected);
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Descargar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="rounded-lg gap-1.5 text-xs h-8 px-3 shrink-0"
+                    onClick={() => setPlBulkDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Eliminar
+                  </Button>
+                </div>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
+
 
       {/* Edit Price Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -1523,6 +1753,50 @@ export default function DoctorRecordings() {
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Single Past Live Delete Dialog */}
+      <AlertDialog open={!!plDeleteSingleId} onOpenChange={(open) => { if (!open) setPlDeleteSingleId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este live?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminarán permanentemente el registro del live, sus mensajes de chat y likes. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPlBulkDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSinglePastLive}
+              disabled={isPlBulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isPlBulkDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Eliminando...</>) : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Past Lives Delete Dialog */}
+      <AlertDialog open={plBulkDeleteDialogOpen} onOpenChange={setPlBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar {selectedPastLiveIds.size} live(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminarán permanentemente los registros seleccionados, incluyendo mensajes de chat y likes. Esta acción es irreversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPlBulkDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDeletePastLives}
+              disabled={isPlBulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isPlBulkDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Eliminando...</>) : `Eliminar ${selectedPastLiveIds.size}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }
