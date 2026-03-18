@@ -365,10 +365,13 @@ export default function DoctorGoLive() {
       clearActiveLiveSession();
       navigate('/doctor/dashboard');
     } finally {
-      setIsEnding(false);
-      setShowEndingModal(false);
-      setIsLive(false);
-      setLiveData(null);
+      // Ensure cleanup in case of error path (happy path already cleaned above)
+      if (isEnding) {
+        setIsEnding(false);
+        setShowEndingModal(false);
+        setIsLive(false);
+        setLiveData(null);
+      }
     }
   };
 
