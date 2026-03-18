@@ -388,7 +388,7 @@ export default function Doctors() {
           )}
 
           {/* Main content */}
-          <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="min-w-0">
         {/* Search bar */}
         <div className="flex gap-2 mb-3">
           <div className="relative flex-1">
