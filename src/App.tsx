@@ -255,6 +255,7 @@ const App = () => {
                 </AuthenticatedProviders>
               </BrowserRouter>
             </TooltipProvider>
+            </ActiveLiveProvider>
           </LivesProvider>
         </LanguageProvider>
       </AuthProvider>
