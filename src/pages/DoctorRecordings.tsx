@@ -603,8 +603,13 @@ export default function DoctorRecordings() {
     }).format(amount);
   };
 
-  const getStats = (recordingId: string) => {
-    return recordingStats.get(recordingId) || { purchaseCount: 0, totalRevenue: 0 };
+  const getStats = (recordingId: string): RecordingStats => {
+    return recordingStats.get(recordingId) || { recordingId, purchaseCount: 0, totalRevenue: 0, peakViewers: 0, likesCount: 0, totalComments: 0, paidComments: 0, chatPrice: 0, paidChatRevenue: 0 };
+  };
+
+  const getCombinedRevenue = (recordingId: string) => {
+    const s = getStats(recordingId);
+    return s.totalRevenue + s.paidChatRevenue;
   };
 
   const totalRecordings = myRecordings.length;
