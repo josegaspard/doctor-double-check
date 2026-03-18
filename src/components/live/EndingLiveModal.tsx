@@ -108,8 +108,8 @@ export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress
           <div className="flex justify-center mb-4">
             {content.icon}
           </div>
-          <DialogTitle className="text-center">{content.title}</DialogTitle>
-          <DialogDescription className="text-center">
+          <DialogTitle className="text-center text-xl">{content.title}</DialogTitle>
+          <DialogDescription className="text-center text-base">
             {content.description}
           </DialogDescription>
         </DialogHeader>
