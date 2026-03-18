@@ -663,6 +663,7 @@ export default function DoctorRecordings() {
     exportToCSV(lives.map(pastLiveToCSVRow), `lives-pasados-${new Date().toISOString().slice(0, 10)}`);
   };
 
+  const formatDuration = (seconds: number) => {
     if (seconds <= 0) return 'Procesando...';
     const totalMinutes = Math.floor(seconds / 60);
     if (totalMinutes < 60) return `${totalMinutes} min`;
