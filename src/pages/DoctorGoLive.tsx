@@ -52,8 +52,9 @@ export default function DoctorGoLive() {
   const [dailyRoomUrl, setDailyRoomUrl] = useState<string | null>(null);
   const [dailyOwnerToken, setDailyOwnerToken] = useState<string | null>(null);
 
-  // Promise resolver for the 'choose' stage decision
+  // Promise resolvers for 'choose' and 'done' stages
   const [keepDecisionResolver, setKeepDecisionResolver] = useState<((keep: boolean) => void) | null>(null);
+  const [doneResolver, setDoneResolver] = useState<(() => void) | null>(null);
 
   const { createRoom, endRoom } = useDaily();
   const localRecording = useLocalRecording();
