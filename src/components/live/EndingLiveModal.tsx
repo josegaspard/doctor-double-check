@@ -189,7 +189,7 @@ function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label
     <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50 border">
       <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
       <div className="min-w-0">
-        <p className="text-lg font-bold leading-tight text-foreground">{value.toLocaleString()}</p>
+        <p className="text-xl font-bold leading-tight text-foreground">{value.toLocaleString()}</p>
         <p className="text-[10px] text-muted-foreground truncate">{label}</p>
       </div>
     </div>
