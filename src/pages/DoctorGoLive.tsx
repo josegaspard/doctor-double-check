@@ -11,6 +11,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { LiveSetupForm, LiveConfig } from '@/components/live/LiveSetupForm';
 import { LiveStreamView } from '@/components/live/LiveStreamView';
 import { LiveDialogs } from '@/components/live/LiveDialogs';
+import { EndingLiveModal } from '@/components/live/EndingLiveModal';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Video, Loader2 } from 'lucide-react';
@@ -43,7 +44,7 @@ export default function DoctorGoLive() {
   const [isEnding, setIsEnding] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showEndingModal, setShowEndingModal] = useState(false);
-  const [endingStage, setEndingStage] = useState<'ending' | 'saving' | 'uploading' | 'choose' | 'done'>('ending');
+  const [endingStage, setEndingStage] = useState<'ending' | 'saving' | 'uploading'>('ending');
   const [enableRecording, setEnableRecording] = useState(true);
   const [tags, setTags] = useState<string[]>([]);
   const [recordingPrice, setRecordingPrice] = useState(0);
@@ -51,10 +52,6 @@ export default function DoctorGoLive() {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [dailyRoomUrl, setDailyRoomUrl] = useState<string | null>(null);
   const [dailyOwnerToken, setDailyOwnerToken] = useState<string | null>(null);
-
-  // Promise resolvers for 'choose' and 'done' stages
-  const [keepDecisionResolver, setKeepDecisionResolver] = useState<((keep: boolean) => void) | null>(null);
-  const [doneResolver, setDoneResolver] = useState<(() => void) | null>(null);
 
   const { createRoom, endRoom } = useDaily();
   const localRecording = useLocalRecording();
@@ -109,8 +106,6 @@ export default function DoctorGoLive() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isLive, isEnding]);
-
-  // NOTE: No aggressive destroy on unmount — the context keeps the session alive
 
   const handleStartLive = async (config: LiveConfig) => {
     if (!user?.id) return;
@@ -240,29 +235,11 @@ export default function DoctorGoLive() {
     }
   };
 
-  const handleKeepDecision = useCallback((keep: boolean) => {
-    if (keepDecisionResolver) {
-      keepDecisionResolver(keep);
-      setKeepDecisionResolver(null);
-    }
-  }, [keepDecisionResolver]);
-
-  const handleDismissDone = useCallback(() => {
-    if (doneResolver) {
-      doneResolver();
-      setDoneResolver(null);
-    }
-  }, [doneResolver]);
-
-  const handleEndLive = async () => {
+  const handleEndLive = async (saveAsPremium: boolean) => {
     if (!liveData?.id || !user?.id || isEnding) return;
 
     setIsEnding(true);
     setShowEndDialog(false);
-
-    // Wait for confirmation dialog closing animation before showing ending modal
-    await new Promise(r => setTimeout(r, 300));
-
     setShowEndingModal(true);
     setEndingStage('ending');
 
@@ -293,60 +270,61 @@ export default function DoctorGoLive() {
         status: 'ended', ended_at: new Date().toISOString(),
       }).eq('id', liveData.id);
 
-      let recordingCreated = false;
+      // Background save: upload recording if doctor chose to save
       const localBlob = localRecording.getRecordingBlob();
-      if (localBlob && localBlob.size > 0) {
-        setEndingStage('uploading');
-        const uploadResult = await localRecording.uploadRecording({
-          liveId: liveData.id, doctorId: user.id, title: liveData.title,
-          description: liveData.description, specialty: liveData.specialty,
-          tags, price: enableRecording ? recordingPrice : 0,
-        });
-        if (uploadResult.success) {
-          recordingCreated = true;
-          await supabase.from('recordings')
-            .update({ peak_viewers: viewerCount || 0 })
-            .eq('live_id', liveData.id).eq('doctor_id', user.id);
-        }
+      if (saveAsPremium && localBlob && localBlob.size > 0) {
+        // Start upload in background — don't await, navigate immediately
+        const liveId = liveData.id;
+        const doctorId = user.id;
+        const title = liveData.title;
+        const description = liveData.description;
+        const specialty = liveData.specialty;
+        const currentTags = tags;
+        const price = enableRecording ? recordingPrice : 0;
+        const currentViewerCount = viewerCount;
+
+        // Fire and forget — upload happens in background
+        (async () => {
+          try {
+            const uploadResult = await localRecording.uploadRecording({
+              liveId, doctorId, title, description, specialty,
+              tags: currentTags, price,
+            });
+            if (uploadResult.success) {
+              await supabase.from('recordings')
+                .update({ peak_viewers: currentViewerCount || 0 })
+                .eq('live_id', liveId).eq('doctor_id', doctorId);
+              toast.success('Grabación guardada correctamente');
+            }
+          } catch (err) {
+            console.error('Background upload error:', err);
+            toast.error('Error al guardar la grabación');
+          } finally {
+            localRecording.cleanup();
+          }
+        })();
+      } else {
+        // Not saving — if there was a blob but doctor chose not to save, discard it
+        localRecording.cleanup();
       }
 
       localStream?.getTracks().forEach(t => t.stop());
       setLocalStream(null);
-      localRecording.cleanup();
 
-      // If recording exists, let doctor choose whether to keep it
-      if (enableRecording && recordingCreated) {
-        setEndingStage('choose');
-        const keepRecording = await new Promise<boolean>((resolve) => {
-          setKeepDecisionResolver(() => resolve);
-        });
-
-        if (!keepRecording) {
-          // Delete the recording
-          await supabase.from('recordings').delete()
-            .eq('live_id', liveData.id).eq('doctor_id', user.id);
-          toast.info('Grabación eliminada');
-          recordingCreated = false;
-        }
-      }
-
-      // Show done stage with stats — wait for doctor to click dismiss button
-      setEndingStage('done');
-      await new Promise<void>((resolve) => {
-        setDoneResolver(() => resolve);
-      });
-
-      // Clear state BEFORE navigate to avoid blank screen
+      // Clear state and navigate immediately
       setIsEnding(false);
       setShowEndingModal(false);
       setIsLive(false);
       setLiveData(null);
       clearActiveLiveSession();
-      
-      if (enableRecording && recordingCreated) {
-        navigate('/doctor/recordings');
+
+      // Navigate to recordings with appropriate tab
+      if (saveAsPremium) {
+        navigate('/doctor/recordings?tab=grabaciones');
+        toast.success('Tu grabación se está procesando en segundo plano');
       } else {
-        navigate('/doctor/dashboard');
+        navigate('/doctor/recordings?tab=lives-pasados');
+        toast.info('Live finalizado. Métricas disponibles en Lives pasados');
       }
     } catch (error: any) {
       console.error('Error ending live:', error);
@@ -367,15 +345,11 @@ export default function DoctorGoLive() {
         }).eq('id', liveData.id);
       } catch {}
       clearActiveLiveSession();
+      setIsEnding(false);
+      setShowEndingModal(false);
+      setIsLive(false);
+      setLiveData(null);
       navigate('/doctor/dashboard');
-    } finally {
-      // Ensure cleanup in case of error path (happy path already cleaned above)
-      if (isEnding) {
-        setIsEnding(false);
-        setShowEndingModal(false);
-        setIsLive(false);
-        setLiveData(null);
-      }
     }
   };
 
@@ -432,16 +406,16 @@ export default function DoctorGoLive() {
           onConfirmEnd={handleEndLive}
           isEnding={isEnding}
           enableRecording={enableRecording}
-          showEndingModal={showEndingModal}
-          endingStage={endingStage}
-          uploadProgress={localRecording.uploadProgress}
-          liveId={liveData.id}
-          onKeepDecision={handleKeepDecision}
-          onDismissDone={handleDismissDone}
           showNavigationWarning={false}
           onNavigationWarningChange={() => {}}
           onConfirmNavigation={async () => {}}
           onCancelNavigation={() => {}}
+        />
+        <EndingLiveModal
+          isOpen={showEndingModal}
+          stage={endingStage}
+          enableRecording={enableRecording}
+          uploadProgress={localRecording.uploadProgress}
         />
       </>
     );

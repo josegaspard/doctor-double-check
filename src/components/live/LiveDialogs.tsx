@@ -1,4 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,24 +16,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { EndingLiveModal } from './EndingLiveModal';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, AlertTriangle, Save, Radio } from 'lucide-react';
 
 interface LiveDialogsProps {
-  // End confirmation
+  // End confirmation (unified single dialog)
   showEndDialog: boolean;
   onEndDialogChange: (open: boolean) => void;
-  onConfirmEnd: () => void;
+  onConfirmEnd: (saveAsPremium: boolean) => void;
   isEnding: boolean;
   enableRecording: boolean;
-
-  // Ending modal
-  showEndingModal: boolean;
-  endingStage: 'ending' | 'saving' | 'uploading' | 'choose' | 'done';
-  uploadProgress: number | null;
-  liveId?: string;
-  onKeepDecision?: (keep: boolean) => void;
-  onDismissDone?: () => void;
 
   // Navigation warning
   showNavigationWarning: boolean;
@@ -41,63 +41,86 @@ export function LiveDialogs({
   onConfirmEnd,
   isEnding,
   enableRecording,
-  showEndingModal,
-  endingStage,
-  uploadProgress,
-  liveId,
-  onKeepDecision,
-  onDismissDone,
   showNavigationWarning,
   onNavigationWarningChange,
   onConfirmNavigation,
   onCancelNavigation,
 }: LiveDialogsProps) {
+  const [saveAsPremium, setSaveAsPremium] = useState(true);
+
   return (
     <>
-      {/* End confirmation dialog */}
-      <AlertDialog open={showEndDialog} onOpenChange={onEndDialogChange}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
+      {/* Unified end confirmation dialog — single window, no second modal */}
+      <Dialog open={showEndDialog} onOpenChange={(open) => {
+        if (!isEnding) onEndDialogChange(open);
+      }}>
+        <DialogContent className="sm:max-w-md" hideClose={isEnding}>
+          <DialogHeader className="text-center">
+            <div className="flex justify-center mb-2">
+              <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertTriangle className="w-7 h-7 text-destructive" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">
               ¿Finalizar transmisión?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {enableRecording
-                ? 'La grabación se procesará y podrás elegir si quieres guardarla en tu perfil.'
-                : 'Esta acción finalizará la transmisión para todos los espectadores.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isEnding}>Continuar transmitiendo</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={onConfirmEnd}
+            </DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              Tu transmisión terminará para todos los espectadores.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Save as premium option — only if recording is enabled */}
+          {enableRecording && (
+            <label className="flex items-start gap-3 p-4 rounded-lg border bg-muted/30 cursor-pointer mt-2">
+              <Checkbox
+                checked={saveAsPremium}
+                onCheckedChange={(v) => setSaveAsPremium(!!v)}
+                className="mt-0.5 h-5 w-5"
+                disabled={isEnding}
+              />
+              <div>
+                <p className="text-base font-semibold text-foreground flex items-center gap-2">
+                  <Save className="w-4 h-4" />
+                  Guardar como contenido premium
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {saveAsPremium 
+                    ? 'Se guardará en segundo plano y aparecerá en tus Grabaciones.'
+                    : 'Las métricas del live quedarán en Lives pasados.'}
+                </p>
+              </div>
+            </label>
+          )}
+
+          {/* Two big, always-clickable buttons */}
+          <div className="flex flex-col gap-3 mt-4">
+            <Button
+              variant="outline"
+              className="w-full min-h-[48px] text-base gap-2"
+              onClick={() => onEndDialogChange(false)}
               disabled={isEnding}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Radio className="w-4 h-4" />
+              Continuar transmitiendo
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full min-h-[48px] text-base gap-2"
+              onClick={() => onConfirmEnd(enableRecording ? saveAsPremium : false)}
+              disabled={isEnding}
             >
               {isEnding ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Finalizando...
                 </>
               ) : (
-                'Sí, finalizar'
+                'Finalizar y salir'
               )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Ending modal */}
-      <EndingLiveModal
-        isOpen={showEndingModal}
-        stage={endingStage}
-        enableRecording={enableRecording}
-        uploadProgress={uploadProgress}
-        liveId={liveId}
-        onKeepDecision={onKeepDecision}
-        onDismissDone={onDismissDone}
-      />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Navigation warning dialog */}
       <AlertDialog open={showNavigationWarning} onOpenChange={onNavigationWarningChange}>

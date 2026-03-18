@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLives, Recording } from '@/contexts/LivesContext';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -82,6 +83,10 @@ import {
   CalendarIcon,
   CheckSquare,
   Square,
+  Heart,
+  MessageSquare,
+  Sparkles,
+  Radio,
 } from 'lucide-react';
 
 interface RecordingStats {
@@ -90,18 +95,41 @@ interface RecordingStats {
   totalRevenue: number;
 }
 
+interface PastLive {
+  id: string;
+  title: string;
+  specialty: string;
+  startedAt: Date;
+  endedAt: Date | null;
+  peakViewers: number;
+  likesCount: number;
+  totalComments: number;
+  paidComments: number;
+  chatPrice: number;
+  paidRevenue: number;
+}
+
 export default function DoctorRecordings() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, role } = useAuth();
   const { t } = useLanguage();
   const { refreshRecordings } = useLives();
   const isMobile = useIsMobile();
+
+  // Tab from URL param
+  const initialTab = searchParams.get('tab') === 'lives-pasados' ? 'lives-pasados' : 'grabaciones';
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [isLoadingRecordings, setIsLoadingRecordings] = useState(true);
 
   const [recordingStats, setRecordingStats] = useState<Map<string, RecordingStats>>(new Map());
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+
+  // Past Lives
+  const [pastLives, setPastLives] = useState<PastLive[]>([]);
+  const [isLoadingPastLives, setIsLoadingPastLives] = useState(true);
   
   // Edit Dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -176,9 +204,101 @@ export default function DoctorRecordings() {
     }
   }, [user?.id, user?.name]);
 
+  // Fetch past lives (ended, without recording)
+  const fetchPastLives = useCallback(async () => {
+    if (!user?.id) return;
+    
+    setIsLoadingPastLives(true);
+    try {
+      // Get all ended lives for this doctor
+      const { data: lives, error } = await supabase
+        .from('lives')
+        .select('id, title, specialty, started_at, ended_at, peak_viewers, likes_count, chat_price, paid_chats_count')
+        .eq('doctor_id', user.id)
+        .eq('status', 'ended')
+        .order('ended_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching past lives:', error);
+        return;
+      }
+
+      if (!lives || lives.length === 0) {
+        setPastLives([]);
+        return;
+      }
+
+      // Get recordings to filter out lives that have recordings
+      const { data: recs } = await supabase
+        .from('recordings')
+        .select('live_id')
+        .eq('doctor_id', user.id);
+
+      const recordedLiveIds = new Set((recs || []).map(r => r.live_id).filter(Boolean));
+
+      // Only show lives WITHOUT recordings
+      const unrecordedLives = lives.filter(l => !recordedLiveIds.has(l.id));
+
+      // Get comment counts for these lives
+      const liveIds = unrecordedLives.map(l => l.id);
+      
+      let commentCounts: Record<string, number> = {};
+      let paidCommentCounts: Record<string, number> = {};
+
+      if (liveIds.length > 0) {
+        const { count: _totalCount, data: commentData } = await supabase
+          .from('live_chat_messages')
+          .select('live_id', { count: 'exact' })
+          .in('live_id', liveIds);
+
+        // Count per live_id
+        if (commentData) {
+          commentData.forEach(msg => {
+            commentCounts[msg.live_id] = (commentCounts[msg.live_id] || 0) + 1;
+          });
+        }
+
+        const { data: paidData } = await supabase
+          .from('live_chat_messages')
+          .select('live_id')
+          .in('live_id', liveIds)
+          .eq('is_paid', true);
+
+        if (paidData) {
+          paidData.forEach(msg => {
+            paidCommentCounts[msg.live_id] = (paidCommentCounts[msg.live_id] || 0) + 1;
+          });
+        }
+      }
+
+      setPastLives(unrecordedLives.map(l => {
+        const paidCount = paidCommentCounts[l.id] || 0;
+        const chatPrice = Number(l.chat_price) || 0;
+        return {
+          id: l.id,
+          title: l.title,
+          specialty: l.specialty,
+          startedAt: new Date(l.started_at),
+          endedAt: l.ended_at ? new Date(l.ended_at) : null,
+          peakViewers: l.peak_viewers || 0,
+          likesCount: l.likes_count || 0,
+          totalComments: commentCounts[l.id] || 0,
+          paidComments: paidCount,
+          chatPrice,
+          paidRevenue: paidCount * chatPrice,
+        };
+      }));
+    } catch (error) {
+      console.error('Error fetching past lives:', error);
+    } finally {
+      setIsLoadingPastLives(false);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     fetchMyRecordings();
-  }, [fetchMyRecordings]);
+    fetchPastLives();
+  }, [fetchMyRecordings, fetchPastLives]);
 
   const allRecordings = recordings;
   
@@ -462,397 +582,272 @@ export default function DoctorRecordings() {
               Mis Grabaciones
             </h1>
             <p className="text-muted-foreground">
-              Gestiona tus grabaciones, precios y estadísticas
+              Gestiona tus grabaciones y revisa el historial de lives
             </p>
           </div>
         </div>
 
-        {/* Selection mode banner */}
-        {selectionMode && (
-          <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between gap-3">
-            <p className="text-sm font-medium text-foreground">
-              {selectedIds.size > 0
-                ? `${selectedIds.size} grabación(es) seleccionada(s)`
-                : 'Toca las grabaciones que deseas eliminar'}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={selectedIds.size === myRecordings.length ? deselectAll : selectAll}>
-                {selectedIds.size === myRecordings.length ? 'Deseleccionar' : 'Todas'}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={toggleSelectionMode}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="grabaciones" className="gap-2">
+              <Video className="w-4 h-4" />
+              Grabaciones
+            </TabsTrigger>
+            <TabsTrigger value="lives-pasados" className="gap-2">
+              <Radio className="w-4 h-4" />
+              Lives pasados
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Video className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-lg sm:text-2xl font-bold text-foreground">{totalRecordings}</p>
-                  <p className="text-xs text-muted-foreground">Grabaciones</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-success" />
-                </div>
-                <div>
-                  <p className="text-lg sm:text-2xl font-bold text-foreground">{totalPurchases}</p>
-                  <p className="text-xs text-muted-foreground">Compras</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-premium/10 flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-premium" />
-                </div>
-                <div>
-                  <p className="text-lg sm:text-2xl font-bold text-foreground">{formatCurrency(totalRevenue)}</p>
-                  <p className="text-xs text-muted-foreground">Ingresos</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-info" />
-                </div>
-                <div>
-                  <p className="text-lg sm:text-2xl font-bold text-foreground">{formatDuration(totalDuration)}</p>
-                  <p className="text-xs text-muted-foreground">Duración Total</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search and Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder={t('inputs.searchByTitleTags')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Especialidad" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las especialidades</SelectItem>
-                  {specialties.map(s => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button 
-                variant={showFilters ? "secondary" : "outline"} 
-                onClick={() => setShowFilters(!showFilters)}
-                className="gap-2"
-              >
-                <Filter className="w-4 h-4" />
-                Filtros
-                {hasActiveFilters && (
-                  <Badge variant="default" className="ml-1 h-5 w-5 p-0 justify-center">!</Badge>
-                )}
-              </Button>
-              {hasActiveFilters && (
-                <Button variant="ghost" size="icon" onClick={clearFilters}>
-                  <X className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-            
-            {showFilters && (
-              <div className="mt-4 pt-4 border-t grid md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Desde</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-left font-normal">
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateFrom ? format(dateFrom, 'dd MMM yyyy', { locale: es }) : 'Seleccionar fecha'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-2">
-                  <Label>Hasta</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-left font-normal">
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateTo ? format(dateTo, 'dd MMM yyyy', { locale: es }) : 'Seleccionar fecha'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-2">
-                  <Label>Rango de precio: {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}</Label>
-                  <Slider
-                    value={priceRange}
-                    onValueChange={(value) => setPriceRange(value as [number, number])}
-                    max={maxPrice}
-                    step={10}
-                    className="mt-3"
-                  />
+          {/* ==================== GRABACIONES TAB ==================== */}
+          <TabsContent value="grabaciones" className="space-y-6">
+            {/* Selection mode banner */}
+            {selectionMode && (
+              <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between gap-3">
+                <p className="text-sm font-medium text-foreground">
+                  {selectedIds.size > 0
+                    ? `${selectedIds.size} grabación(es) seleccionada(s)`
+                    : 'Toca las grabaciones que deseas eliminar'}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={selectedIds.size === myRecordings.length ? deselectAll : selectAll}>
+                    {selectedIds.size === myRecordings.length ? 'Deseleccionar' : 'Todas'}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={toggleSelectionMode}>
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
 
-        {/* Recordings Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Video className="w-5 h-5" />
-                Grabaciones
-              </span>
-              <div className="flex items-center gap-2">
-                {hasActiveFilters && (
-                  <Badge variant="secondary">
-                    {myRecordings.length} de {allRecordings.length}
-                  </Badge>
-                )}
-                {myRecordings.length > 0 && (
-                  <Button
-                    variant={selectionMode ? "default" : "outline"}
-                    size="sm"
-                    onClick={toggleSelectionMode}
-                    className="gap-1.5"
-                  >
-                    {selectionMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                    {selectionMode ? 'Cancelar' : 'Seleccionar'}
-                  </Button>
-                )}
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {myRecordings.length === 0 ? (
-              <div className="text-center py-12">
-                <Video className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                <h3 className="font-semibold text-lg mb-2">No tienes grabaciones</h3>
-                <p className="text-muted-foreground mb-4">
-                  Las grabaciones se crean automáticamente al terminar un live
-                </p>
-                <Button onClick={() => navigate('/doctor/dashboard')}>
-                  Ir al Dashboard
-                </Button>
-              </div>
-            ) : isMobile ? (
-              /* Mobile: Card layout */
-              <div className="space-y-3">
-                {myRecordings.map((recording) => {
-                  const stats = getStats(recording.id);
-                  const isSelected = selectedIds.has(recording.id);
-                  return (
-                    <div
-                      key={recording.id}
-                      className={`p-3 border rounded-lg transition-colors ${
-                        selectionMode
-                          ? isSelected
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border bg-card'
-                          : 'border-border bg-card'
-                      }`}
-                      onClick={selectionMode ? () => toggleSelect(recording.id) : undefined}
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-start gap-2 flex-1 min-w-0">
-                          {selectionMode && (
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => toggleSelect(recording.id)}
-                              className="mt-0.5"
-                            />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-foreground line-clamp-1">{recording.title}</p>
-                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                              <Badge variant="secondary" className="text-[10px] h-5">{recording.specialty}</Badge>
-                              {recording.tags.slice(0, 2).map(tag => (
-                                <Badge key={tag} variant="outline" className="text-[10px] h-5">#{tag}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        {!selectionMode && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => navigate(`/recording/${recording.id}`)}>
-                                <Eye className="w-4 h-4 mr-2" />Ver grabación
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleViewStats(recording)}>
-                                <BarChart3 className="w-4 h-4 mr-2" />Estadísticas
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
-                                <Pencil className="w-4 h-4 mr-2" />Editar precio
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
-                                <Trash2 className="w-4 h-4 mr-2" />Eliminar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {recording.videoUrl?.startsWith('pending:') ? 'Procesando…' : !recording.videoUrl ? 'Sin video' : formatDuration(recording.duration)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="w-3 h-3" />
-                          {recording.price === 0 ? 'Gratis' : formatCurrency(recording.price)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          {isLoadingStats ? '…' : stats.purchaseCount}
-                        </span>
-                        {!isLoadingStats && stats.totalRevenue > 0 && (
-                          <span className="text-success font-medium ml-auto">
-                            {formatCurrency(stats.totalRevenue)}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-muted-foreground mt-1.5">{formatDate(recording.createdAt)}</p>
+            {/* Stats Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Video className="w-5 h-5 text-primary" />
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              /* Desktop: Table layout */
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {selectionMode && <TableHead className="w-10"></TableHead>}
-                      <TableHead>Grabación</TableHead>
-                      <TableHead>Especialidad</TableHead>
-                      <TableHead>Duración</TableHead>
-                      <TableHead>Precio</TableHead>
-                      <TableHead>Compras</TableHead>
-                      <TableHead>Ingresos</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      {!selectionMode && <TableHead className="w-12"></TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                    <div>
+                      <p className="text-lg sm:text-2xl font-bold text-foreground">{totalRecordings}</p>
+                      <p className="text-xs text-muted-foreground">Grabaciones</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-success" />
+                    </div>
+                    <div>
+                      <p className="text-lg sm:text-2xl font-bold text-foreground">{totalPurchases}</p>
+                      <p className="text-xs text-muted-foreground">Compras</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-premium/10 flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-premium" />
+                    </div>
+                    <div>
+                      <p className="text-lg sm:text-2xl font-bold text-foreground">{formatCurrency(totalRevenue)}</p>
+                      <p className="text-xs text-muted-foreground">Ingresos</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-info" />
+                    </div>
+                    <div>
+                      <p className="text-lg sm:text-2xl font-bold text-foreground">{formatDuration(totalDuration)}</p>
+                      <p className="text-xs text-muted-foreground">Duración Total</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Search and Filters */}
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder={t('inputs.searchByTitleTags')}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Especialidad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las especialidades</SelectItem>
+                      {specialties.map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    variant={showFilters ? "secondary" : "outline"} 
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="gap-2"
+                  >
+                    <Filter className="w-4 h-4" />
+                    Filtros
+                    {hasActiveFilters && (
+                      <Badge variant="default" className="ml-1 h-5 w-5 p-0 justify-center">!</Badge>
+                    )}
+                  </Button>
+                  {hasActiveFilters && (
+                    <Button variant="ghost" size="icon" onClick={clearFilters}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                
+                {showFilters && (
+                  <div className="mt-4 pt-4 border-t grid md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Desde</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateFrom ? format(dateFrom, 'dd MMM yyyy', { locale: es }) : 'Seleccionar fecha'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Hasta</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateTo ? format(dateTo, 'dd MMM yyyy', { locale: es }) : 'Seleccionar fecha'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Rango de precio: {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}</Label>
+                      <Slider
+                        value={priceRange}
+                        onValueChange={(value) => setPriceRange(value as [number, number])}
+                        max={maxPrice}
+                        step={10}
+                        className="mt-3"
+                      />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Recordings Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Video className="w-5 h-5" />
+                    Grabaciones
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {hasActiveFilters && (
+                      <Badge variant="secondary">
+                        {myRecordings.length} de {allRecordings.length}
+                      </Badge>
+                    )}
+                    {myRecordings.length > 0 && (
+                      <Button
+                        variant={selectionMode ? "default" : "outline"}
+                        size="sm"
+                        onClick={toggleSelectionMode}
+                        className="gap-1.5"
+                      >
+                        {selectionMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                        {selectionMode ? 'Cancelar' : 'Seleccionar'}
+                      </Button>
+                    )}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {myRecordings.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Video className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+                    <h3 className="font-semibold text-lg mb-2">No tienes grabaciones</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Las grabaciones se crean automáticamente al terminar un live
+                    </p>
+                    <Button onClick={() => navigate('/doctor/dashboard')}>
+                      Ir al Dashboard
+                    </Button>
+                  </div>
+                ) : isMobile ? (
+                  /* Mobile: Card layout */
+                  <div className="space-y-3">
                     {myRecordings.map((recording) => {
                       const stats = getStats(recording.id);
                       const isSelected = selectedIds.has(recording.id);
                       return (
-                        <TableRow
+                        <div
                           key={recording.id}
-                          className={`${selectionMode ? 'cursor-pointer' : ''} ${isSelected ? 'bg-primary/5' : ''}`}
+                          className={`p-3 border rounded-lg transition-colors ${
+                            selectionMode
+                              ? isSelected
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border bg-card'
+                              : 'border-border bg-card'
+                          }`}
                           onClick={selectionMode ? () => toggleSelect(recording.id) : undefined}
                         >
-                          {selectionMode && (
-                            <TableCell>
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => toggleSelect(recording.id)}
-                              />
-                            </TableCell>
-                          )}
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="w-12 h-8 rounded bg-muted flex items-center justify-center">
-                                <Play className="w-4 h-4 text-muted-foreground" />
-                              </div>
-                              <div>
-                                <p className="font-medium line-clamp-1">{recording.title}</p>
-                                <div className="flex gap-1 mt-1">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex items-start gap-2 flex-1 min-w-0">
+                              {selectionMode && (
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleSelect(recording.id)}
+                                  className="mt-0.5"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm text-foreground line-clamp-1">{recording.title}</p>
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                  <Badge variant="secondary" className="text-[10px] h-5">{recording.specialty}</Badge>
                                   {recording.tags.slice(0, 2).map(tag => (
-                                    <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+                                    <Badge key={tag} variant="outline" className="text-[10px] h-5">#{tag}</Badge>
                                   ))}
                                 </div>
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell><Badge variant="secondary">{recording.specialty}</Badge></TableCell>
-                          <TableCell>
-                            {recording.videoUrl?.startsWith('pending:') ? (
-                              <Badge variant="pending">Procesando…</Badge>
-                            ) : !recording.videoUrl ? (
-                              <Badge variant="outline">Sin video</Badge>
-                            ) : (
-                              formatDuration(recording.duration)
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {recording.price === 0 ? (
-                              <Badge variant="success">Gratis</Badge>
-                            ) : (
-                              formatCurrency(recording.price)
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {isLoadingStats ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <span className="flex items-center gap-1">
-                                <Users className="w-3 h-3 text-muted-foreground" />
-                                {stats.purchaseCount}
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {isLoadingStats ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <span className="text-success font-medium">
-                                {formatCurrency(stats.totalRevenue)}
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground text-sm">
-                            {formatDate(recording.createdAt)}
-                          </TableCell>
-                          {!selectionMode && (
-                            <TableCell>
+                            {!selectionMode && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
                                     <MoreHorizontal className="w-4 h-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -861,7 +856,7 @@ export default function DoctorRecordings() {
                                     <Eye className="w-4 h-4 mr-2" />Ver grabación
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => handleViewStats(recording)}>
-                                    <BarChart3 className="w-4 h-4 mr-2" />Ver estadísticas
+                                    <BarChart3 className="w-4 h-4 mr-2" />Estadísticas
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
@@ -873,33 +868,378 @@ export default function DoctorRecordings() {
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
-                            </TableCell>
-                          )}
-                        </TableRow>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {recording.videoUrl?.startsWith('pending:') ? 'Procesando…' : !recording.videoUrl ? 'Sin video' : formatDuration(recording.duration)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3" />
+                              {recording.price === 0 ? 'Gratis' : formatCurrency(recording.price)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              {isLoadingStats ? '…' : stats.purchaseCount}
+                            </span>
+                            {!isLoadingStats && stats.totalRevenue > 0 && (
+                              <span className="text-success font-medium ml-auto">
+                                {formatCurrency(stats.totalRevenue)}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1.5">{formatDate(recording.createdAt)}</p>
+                        </div>
                       );
                     })}
-                  </TableBody>
-                </Table>
+                  </div>
+                ) : (
+                  /* Desktop: Table layout */
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {selectionMode && <TableHead className="w-10"></TableHead>}
+                          <TableHead>Grabación</TableHead>
+                          <TableHead>Especialidad</TableHead>
+                          <TableHead>Duración</TableHead>
+                          <TableHead>Precio</TableHead>
+                          <TableHead>Compras</TableHead>
+                          <TableHead>Ingresos</TableHead>
+                          <TableHead>Fecha</TableHead>
+                          {!selectionMode && <TableHead className="w-12"></TableHead>}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {myRecordings.map((recording) => {
+                          const stats = getStats(recording.id);
+                          const isSelected = selectedIds.has(recording.id);
+                          return (
+                            <TableRow
+                              key={recording.id}
+                              className={`${selectionMode ? 'cursor-pointer' : ''} ${isSelected ? 'bg-primary/5' : ''}`}
+                              onClick={selectionMode ? () => toggleSelect(recording.id) : undefined}
+                            >
+                              {selectionMode && (
+                                <TableCell>
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => toggleSelect(recording.id)}
+                                  />
+                                </TableCell>
+                              )}
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-12 h-8 rounded bg-muted flex items-center justify-center">
+                                    <Play className="w-4 h-4 text-muted-foreground" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium line-clamp-1">{recording.title}</p>
+                                    <div className="flex gap-1 mt-1">
+                                      {recording.tags.slice(0, 2).map(tag => (
+                                        <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell><Badge variant="secondary">{recording.specialty}</Badge></TableCell>
+                              <TableCell>
+                                {recording.videoUrl?.startsWith('pending:') ? (
+                                  <Badge variant="pending">Procesando…</Badge>
+                                ) : !recording.videoUrl ? (
+                                  <Badge variant="outline">Sin video</Badge>
+                                ) : (
+                                  formatDuration(recording.duration)
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {recording.price === 0 ? (
+                                  <Badge variant="success">Gratis</Badge>
+                                ) : (
+                                  formatCurrency(recording.price)
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {isLoadingStats ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <span className="flex items-center gap-1">
+                                    <Users className="w-3 h-3 text-muted-foreground" />
+                                    {stats.purchaseCount}
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {isLoadingStats ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <span className="text-success font-medium">
+                                    {formatCurrency(stats.totalRevenue)}
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground text-sm">
+                                {formatDate(recording.createdAt)}
+                              </TableCell>
+                              {!selectionMode && (
+                                <TableCell>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon">
+                                        <MoreHorizontal className="w-4 h-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => navigate(`/recording/${recording.id}`)}>
+                                        <Eye className="w-4 h-4 mr-2" />Ver grabación
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleViewStats(recording)}>
+                                        <BarChart3 className="w-4 h-4 mr-2" />Ver estadísticas
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
+                                        <Pencil className="w-4 h-4 mr-2" />Editar precio
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
+                                        <Trash2 className="w-4 h-4 mr-2" />Eliminar
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Floating bulk delete bar */}
+            {selectionMode && selectedIds.size > 0 && (
+              <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-sm mx-auto bg-destructive text-destructive-foreground px-4 py-2.5 rounded-xl shadow-2xl flex items-center justify-between animate-slide-in-bottom">
+                <span className="text-xs sm:text-sm font-medium whitespace-nowrap">{selectedIds.size} seleccionada(s)</span>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="rounded-lg gap-1.5 text-xs h-8 px-3 shrink-0"
+                  onClick={() => setBulkDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Eliminar
+                </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </TabsContent>
 
-        {/* Floating bulk delete bar */}
-        {selectionMode && selectedIds.size > 0 && (
-          <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-sm mx-auto bg-destructive text-destructive-foreground px-4 py-2.5 rounded-xl shadow-2xl flex items-center justify-between animate-slide-in-bottom">
-            <span className="text-xs sm:text-sm font-medium whitespace-nowrap">{selectedIds.size} seleccionada(s)</span>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="rounded-lg gap-1.5 text-xs h-8 px-3 shrink-0"
-              onClick={() => setBulkDeleteDialogOpen(true)}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Eliminar
-            </Button>
-          </div>
-        )}
+          {/* ==================== LIVES PASADOS TAB ==================== */}
+          <TabsContent value="lives-pasados" className="space-y-6">
+            {/* Past Lives Summary */}
+            {pastLives.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Radio className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold text-foreground">{pastLives.length}</p>
+                        <p className="text-xs text-muted-foreground">Lives</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
+                        <Eye className="w-5 h-5 text-info" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold text-foreground">
+                          {Math.max(...pastLives.map(l => l.peakViewers), 0)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Pico espectadores</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-live/10 flex items-center justify-center">
+                        <MessageSquare className="w-5 h-5 text-live" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold text-foreground">
+                          {pastLives.reduce((s, l) => s + l.totalComments, 0)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Comentarios</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                        <DollarSign className="w-5 h-5 text-success" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold text-foreground">
+                          {formatCurrency(pastLives.reduce((s, l) => s + l.paidRevenue, 0))}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Ingresos chats</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Radio className="w-5 h-5" />
+                  Lives pasados
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingPastLives ? (
+                  <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Cargando...
+                  </div>
+                ) : pastLives.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Radio className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+                    <h3 className="font-semibold text-lg mb-2">No hay lives pasados</h3>
+                    <p className="text-muted-foreground">
+                      Aquí aparecerán los lives que no fueron guardados como grabación
+                    </p>
+                  </div>
+                ) : isMobile ? (
+                  <div className="space-y-3">
+                    {pastLives.map(live => (
+                      <div key={live.id} className="p-4 border rounded-lg bg-card space-y-3">
+                        <div>
+                          <p className="font-semibold text-foreground">{live.title}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-[10px] h-5">{live.specialty}</Badge>
+                            <span className="text-xs text-muted-foreground">{formatDate(live.startedAt)}</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                            <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-bold text-foreground">{live.peakViewers}</p>
+                              <p className="text-[10px] text-muted-foreground">Pico</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                            <Heart className="w-3.5 h-3.5 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-bold text-foreground">{live.likesCount}</p>
+                              <p className="text-[10px] text-muted-foreground">Likes</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                            <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-bold text-foreground">{live.totalComments}</p>
+                              <p className="text-[10px] text-muted-foreground">Comentarios</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                            <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-bold text-foreground">{live.paidComments}</p>
+                              <p className="text-[10px] text-muted-foreground">De pago</p>
+                            </div>
+                          </div>
+                        </div>
+                        {live.paidRevenue > 0 && (
+                          <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-success/10 border border-success/20">
+                            <DollarSign className="w-4 h-4 text-success" />
+                            <span className="text-sm font-semibold text-success">
+                              +{formatCurrency(live.paidRevenue)} en chats de pago
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Live</TableHead>
+                          <TableHead>Especialidad</TableHead>
+                          <TableHead>Pico</TableHead>
+                          <TableHead>Likes</TableHead>
+                          <TableHead>Comentarios</TableHead>
+                          <TableHead>De pago</TableHead>
+                          <TableHead>Ingresos chats</TableHead>
+                          <TableHead>Fecha</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {pastLives.map(live => (
+                          <TableRow key={live.id}>
+                            <TableCell>
+                              <p className="font-medium line-clamp-1">{live.title}</p>
+                            </TableCell>
+                            <TableCell><Badge variant="secondary">{live.specialty}</Badge></TableCell>
+                            <TableCell>
+                              <span className="flex items-center gap-1">
+                                <Eye className="w-3 h-3 text-muted-foreground" />
+                                {live.peakViewers}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="flex items-center gap-1">
+                                <Heart className="w-3 h-3 text-muted-foreground" />
+                                {live.likesCount}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="flex items-center gap-1">
+                                <MessageSquare className="w-3 h-3 text-muted-foreground" />
+                                {live.totalComments}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="flex items-center gap-1">
+                                <Sparkles className="w-3 h-3 text-muted-foreground" />
+                                {live.paidComments}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className={`font-medium ${live.paidRevenue > 0 ? 'text-success' : 'text-muted-foreground'}`}>
+                                {formatCurrency(live.paidRevenue)}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {formatDate(live.startedAt)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Edit Price Dialog */}
