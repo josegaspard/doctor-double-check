@@ -43,6 +43,7 @@ export function LiveDialogs({
   showEndingModal,
   endingStage,
   uploadProgress,
+  liveId,
   onKeepDecision,
   showNavigationWarning,
   onNavigationWarningChange,
