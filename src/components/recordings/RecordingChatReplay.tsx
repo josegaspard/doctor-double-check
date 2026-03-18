@@ -27,7 +27,7 @@ export function RecordingChatReplay({ liveId }: RecordingChatReplayProps) {
     const load = async () => {
       const { data } = await supabase
         .from('live_chat_messages')
-        .select('id, user_name, content, elapsed_seconds')
+        .select('id, user_name, content, elapsed_seconds, is_paid, highlight_until')
         .eq('live_id', liveId)
         .order('elapsed_seconds', { ascending: true });
 
@@ -37,6 +37,8 @@ export function RecordingChatReplay({ liveId }: RecordingChatReplayProps) {
           userName: m.user_name,
           content: m.content,
           elapsedSeconds: m.elapsed_seconds,
+          isPaid: m.is_paid || false,
+          highlightUntil: m.highlight_until,
         })));
       }
       setIsLoading(false);
