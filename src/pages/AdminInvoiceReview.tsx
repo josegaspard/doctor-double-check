@@ -339,7 +339,7 @@ export default function AdminInvoiceReview() {
             { key: 'last_month' as QuickPeriod, label: 'Mes anterior' },
             { key: 'quarter' as QuickPeriod, label: 'Trimestre' },
           ].map(p => (
-            <Button key={p.key} variant={quickPeriod === p.key ? 'default' : 'outline'} size="sm" onClick={() => setQuickPeriod(p.key)}>
+            <Button key={p.key} variant={quickPeriod === p.key ? 'default' : 'outline'} size="sm" className="text-xs h-8 flex-shrink-0" onClick={() => setQuickPeriod(p.key)}>
               {p.label}
             </Button>
           ))}
