@@ -166,6 +166,7 @@ const App = () => {
       <AuthProvider>
         <LanguageProvider>
           <LivesProvider>
+            <ActiveLiveProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
