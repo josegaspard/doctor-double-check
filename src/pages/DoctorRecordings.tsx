@@ -617,10 +617,15 @@ export default function DoctorRecordings() {
     const stats = recordingStats.get(r.id);
     return sum + (stats?.purchaseCount || 0);
   }, 0);
-  const totalRevenue = myRecordings.reduce((sum, r) => {
+  const totalVideoRevenue = myRecordings.reduce((sum, r) => {
     const stats = recordingStats.get(r.id);
     return sum + (stats?.totalRevenue || 0);
   }, 0);
+  const totalChatRevenue = myRecordings.reduce((sum, r) => {
+    const stats = recordingStats.get(r.id);
+    return sum + (stats?.paidChatRevenue || 0);
+  }, 0);
+  const totalRevenue = totalVideoRevenue + totalChatRevenue;
   const totalDuration = myRecordings.reduce((sum, r) => sum + r.duration, 0);
 
   if (role !== 'doctor') return null;
