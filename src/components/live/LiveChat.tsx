@@ -453,6 +453,50 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         </div>
       )}
 
+      {/* Pinned highlighted messages */}
+      {pinnedMessages.length > 0 && (
+        <div className="border-b bg-warning/5 px-2 py-1.5 space-y-1 flex-shrink-0 max-h-32 overflow-y-auto">
+          <div className="flex items-center gap-1 mb-1">
+            <Pin className="w-3 h-3 text-warning rotate-45" />
+            <span className="text-[10px] font-semibold text-warning">
+              {pinnedMessages.length === 1 ? 'Mensaje destacado' : `${pinnedMessages.length} mensajes destacados`}
+            </span>
+          </div>
+          {pinnedMessages.map((msg) => (
+            <Popover key={`pinned-${msg.id}`}>
+              <PopoverTrigger asChild>
+                <button className="w-full text-left p-1.5 rounded-md bg-warning/10 border border-warning/20 hover:bg-warning/15 transition-colors cursor-pointer">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Sparkles className="w-3 h-3 text-warning flex-shrink-0" />
+                      <span className="text-[10px] font-semibold text-foreground truncate">{msg.userName}</span>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Clock className="w-2.5 h-2.5 text-muted-foreground" />
+                      <span className="text-[9px] text-muted-foreground">{getRemainingTime(msg.highlightUntil!)}</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-foreground/80 truncate mt-0.5">{msg.content}</p>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" className="w-72 p-3">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-warning" />
+                    <span className="font-semibold text-sm">{msg.userName}</span>
+                  </div>
+                  <p className="text-sm text-foreground break-words">{msg.content}</p>
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Expira en {getRemainingTime(msg.highlightUntil!)}
+                  </p>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ))}
+        </div>
+      )}
+
       {/* Messages */}
       <ScrollArea className="flex-1 min-h-0 p-2 sm:p-3">
         <div className="space-y-2 sm:space-y-3">
