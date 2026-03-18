@@ -591,7 +591,78 @@ export default function DoctorRecordings() {
     setStatsDialogOpen(true);
   };
 
-  const formatDuration = (seconds: number) => {
+  // ========== Past Lives Handlers ==========
+  const togglePlSelectionMode = () => {
+    if (plSelectionMode) setSelectedPastLiveIds(new Set());
+    setPlSelectionMode(!plSelectionMode);
+  };
+  const togglePlSelect = (id: string) => {
+    setSelectedPastLiveIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectAllPl = () => setSelectedPastLiveIds(new Set(pastLives.map(l => l.id)));
+  const deselectAllPl = () => setSelectedPastLiveIds(new Set());
+
+  const deletePastLive = async (id: string) => {
+    // Delete related chat messages first, then the live
+    await supabase.from('live_chat_messages').delete().eq('live_id', id);
+    await supabase.from('live_likes').delete().eq('live_id', id);
+    const { error } = await supabase.from('lives').delete().eq('id', id).eq('doctor_id', user?.id);
+    if (error) throw error;
+  };
+
+  const handleDeleteSinglePastLive = async () => {
+    if (!plDeleteSingleId) return;
+    setIsPlBulkDeleting(true);
+    try {
+      await deletePastLive(plDeleteSingleId);
+      setPastLives(prev => prev.filter(l => l.id !== plDeleteSingleId));
+      toast.success('Live eliminado');
+      setPlDeleteSingleId(null);
+    } catch (e: any) {
+      toast.error(e.message || 'Error al eliminar');
+    } finally {
+      setIsPlBulkDeleting(false);
+    }
+  };
+
+  const handleBulkDeletePastLives = async () => {
+    if (selectedPastLiveIds.size === 0) return;
+    setIsPlBulkDeleting(true);
+    try {
+      await Promise.all([...selectedPastLiveIds].map(id => deletePastLive(id)));
+      setPastLives(prev => prev.filter(l => !selectedPastLiveIds.has(l.id)));
+      toast.success(`${selectedPastLiveIds.size} live(s) eliminado(s)`);
+      setSelectedPastLiveIds(new Set());
+      setPlSelectionMode(false);
+      setPlBulkDeleteDialogOpen(false);
+    } catch (e: any) {
+      toast.error('Error al eliminar algunos lives');
+    } finally {
+      setIsPlBulkDeleting(false);
+    }
+  };
+
+  const pastLiveToCSVRow = (l: PastLive) => ({
+    Título: l.title,
+    Especialidad: l.specialty,
+    'Fecha inicio': l.startedAt.toISOString(),
+    'Fecha fin': l.endedAt?.toISOString() || '',
+    'Pico espectadores': l.peakViewers,
+    Likes: l.likesCount,
+    'Comentarios totales': l.totalComments,
+    'Comentarios de pago': l.paidComments,
+    'Precio chat': l.chatPrice,
+    'Ingresos chats': l.paidRevenue,
+  });
+
+  const downloadPastLives = (lives: PastLive[]) => {
+    exportToCSV(lives.map(pastLiveToCSVRow), `lives-pasados-${new Date().toISOString().slice(0, 10)}`);
+  };
+
     if (seconds <= 0) return 'Procesando...';
     const totalMinutes = Math.floor(seconds / 60);
     if (totalMinutes < 60) return `${totalMinutes} min`;
