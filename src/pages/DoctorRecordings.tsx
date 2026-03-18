@@ -380,15 +380,59 @@ export default function DoctorRecordings() {
 
         const statsMap = new Map<string, RecordingStats>();
         recordingIds.forEach(id => {
-          statsMap.set(id, { recordingId: id, purchaseCount: 0, totalRevenue: 0 });
+          statsMap.set(id, { recordingId: id, purchaseCount: 0, totalRevenue: 0, peakViewers: 0, likesCount: 0, totalComments: 0, paidComments: 0, chatPrice: 0, paidChatRevenue: 0 });
         });
         purchases?.forEach(purchase => {
-          const existing = statsMap.get(purchase.recording_id);
+          const existing = statsMap.get(purchase.recording_id!);
           if (existing) {
             existing.purchaseCount += 1;
             existing.totalRevenue += Number(purchase.amount);
           }
         });
+
+        // Fetch live data for recordings that have a liveId
+        const liveIds = myRecordings.filter(r => r.liveId).map(r => r.liveId!);
+        if (liveIds.length > 0) {
+          const { data: liveData } = await supabase
+            .from('lives')
+            .select('id, peak_viewers, likes_count, chat_price, paid_chats_count')
+            .in('id', liveIds);
+
+          // Fetch comment counts
+          const { data: allComments } = await supabase
+            .from('live_chat_messages')
+            .select('live_id')
+            .in('live_id', liveIds);
+
+          const { data: paidMsgs } = await supabase
+            .from('live_chat_messages')
+            .select('live_id')
+            .in('live_id', liveIds)
+            .eq('is_paid', true);
+
+          const commentsByLive: Record<string, number> = {};
+          allComments?.forEach(m => { commentsByLive[m.live_id] = (commentsByLive[m.live_id] || 0) + 1; });
+          const paidByLive: Record<string, number> = {};
+          paidMsgs?.forEach(m => { paidByLive[m.live_id] = (paidByLive[m.live_id] || 0) + 1; });
+
+          // Map live data to recording stats
+          const liveMap = new Map(liveData?.map(l => [l.id, l]) || []);
+          myRecordings.forEach(rec => {
+            if (rec.liveId && liveMap.has(rec.liveId)) {
+              const live = liveMap.get(rec.liveId)!;
+              const stat = statsMap.get(rec.id);
+              if (stat) {
+                stat.peakViewers = live.peak_viewers || 0;
+                stat.likesCount = live.likes_count || 0;
+                stat.chatPrice = Number(live.chat_price) || 0;
+                stat.paidComments = paidByLive[rec.liveId] || live.paid_chats_count || 0;
+                stat.totalComments = commentsByLive[rec.liveId] || 0;
+                stat.paidChatRevenue = stat.paidComments * stat.chatPrice;
+              }
+            }
+          });
+        }
+
         setRecordingStats(statsMap);
       } catch (error) {
         console.error('Error fetching recording stats:', error);
