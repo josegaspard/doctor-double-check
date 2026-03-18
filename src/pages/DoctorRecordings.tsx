@@ -155,11 +155,18 @@ export default function DoctorRecordings() {
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
 
-  // Bulk Selection
+  // Bulk Selection (Recordings)
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk Selection (Past Lives)
+  const [plSelectionMode, setPlSelectionMode] = useState(false);
+  const [selectedPastLiveIds, setSelectedPastLiveIds] = useState<Set<string>>(new Set());
+  const [plBulkDeleteDialogOpen, setPlBulkDeleteDialogOpen] = useState(false);
+  const [isPlBulkDeleting, setIsPlBulkDeleting] = useState(false);
+  const [plDeleteSingleId, setPlDeleteSingleId] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
