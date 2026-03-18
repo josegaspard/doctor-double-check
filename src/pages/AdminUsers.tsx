@@ -137,55 +137,39 @@ export default function AdminUsers() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-3 mb-4 sm:mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="hidden sm:flex">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Users className="h-6 w-6 text-primary" />
-              {t('admin.userManagement')}
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2">
+              <Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+              <span className="truncate">{t('admin.userManagement')}</span>
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {users.length} {t('admin.registeredUsers')}
             </p>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{userStats.total}</p>
-              <p className="text-sm text-muted-foreground">Total</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-purple-600">{userStats.admins}</p>
-              <p className="text-sm text-muted-foreground">{t('admin.administrators')}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-blue-600">{userStats.doctors}</p>
-              <p className="text-sm text-muted-foreground">{t('admin.doctors')}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-green-600">{userStats.residents}</p>
-              <p className="text-sm text-muted-foreground">{t('admin.residents')}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-gray-600">{userStats.patients}</p>
-              <p className="text-sm text-muted-foreground">{t('admin.patients')}</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-4 mb-4 sm:mb-6">
+          {[
+            { value: userStats.total, label: 'Total', color: '' },
+            { value: userStats.admins, label: t('admin.administrators'), color: 'text-purple-600' },
+            { value: userStats.doctors, label: t('admin.doctors'), color: 'text-blue-600' },
+            { value: userStats.residents, label: t('admin.residents'), color: 'text-green-600' },
+            { value: userStats.patients, label: t('admin.patients'), color: 'text-gray-600' },
+          ].map((s, i) => (
+            <Card key={i}>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <p className={`text-xl sm:text-2xl font-bold ${s.color}`}>{s.value}</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground truncate">{s.label}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* Filters */}
@@ -235,36 +219,37 @@ export default function AdminUsers() {
             {filteredUsers.map((userData) => (
               <Card key={userData.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={userData.avatar_url || ''} />
-                        <AvatarFallback>{userData.name?.[0] || 'U'}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{userData.name || t('admin.noName')}</h3>
-                          {getRoleBadge(userData.role || 'patient')}
-                          {userData.is_identity_verified && (
-                            <Badge variant="outline" className="bg-green-100 text-green-800">
-                              {t('admin.verified')}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{userData.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
+                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                     <div className="flex items-center gap-3">
+                       <Avatar className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
+                         <AvatarImage src={userData.avatar_url || ''} />
+                         <AvatarFallback className="text-xs">{userData.name?.[0] || 'U'}</AvatarFallback>
+                       </Avatar>
+                       <div className="min-w-0">
+                         <div className="flex items-center gap-1.5 flex-wrap">
+                           <h3 className="font-medium text-sm truncate">{userData.name || t('admin.noName')}</h3>
+                           {getRoleBadge(userData.role || 'patient')}
+                           {userData.is_identity_verified && (
+                             <Badge variant="outline" className="bg-green-100 text-green-800 text-[10px] h-5">
+                               {t('admin.verified')}
+                             </Badge>
+                           )}
+                         </div>
+                         <p className="text-xs text-muted-foreground truncate">{userData.email}</p>
+                       </div>
+                     </div>
+                    <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
                         {new Date(userData.created_at).toLocaleDateString()}
                       </span>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => setSelectedUser(userData)}
+                        className="text-xs h-8"
                       >
-                        <Settings2 className="h-4 w-4 mr-1" />
-                        {t('admin.manage')}
+                        <Settings2 className="h-3.5 w-3.5 sm:mr-1" />
+                        <span className="hidden sm:inline">{t('admin.manage')}</span>
                       </Button>
                     </div>
                   </div>

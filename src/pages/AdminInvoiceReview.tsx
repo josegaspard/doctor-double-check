@@ -297,16 +297,17 @@ export default function AdminInvoiceReview() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-5xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="hidden sm:inline-flex mb-4 -ml-2 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4 mr-1" />Volver al panel
         </Button>
 
-        <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
-            <FileText className="w-6 h-6" />Revisión de Facturas
+        <div className="mb-4 sm:mb-6">
+          <h1 className="font-heading text-lg sm:text-2xl font-bold flex items-center gap-2">
+            <FileText className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+            <span className="truncate">Revisión de Facturas</span>
           </h1>
-          <p className="text-muted-foreground mt-1">Aprueba, rechaza y exporta facturas para contabilidad</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Aprueba, rechaza y exporta facturas</p>
         </div>
 
         {/* Period Summary */}
@@ -330,7 +331,7 @@ export default function AdminInvoiceReview() {
         </div>
 
         {/* Quick Period Filters */}
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide pb-1 mb-4">
           {[
             { key: 'all' as QuickPeriod, label: 'Todas' },
             { key: 'this_week' as QuickPeriod, label: 'Esta semana' },
@@ -338,7 +339,7 @@ export default function AdminInvoiceReview() {
             { key: 'last_month' as QuickPeriod, label: 'Mes anterior' },
             { key: 'quarter' as QuickPeriod, label: 'Trimestre' },
           ].map(p => (
-            <Button key={p.key} variant={quickPeriod === p.key ? 'default' : 'outline'} size="sm" onClick={() => setQuickPeriod(p.key)}>
+            <Button key={p.key} variant={quickPeriod === p.key ? 'default' : 'outline'} size="sm" className="text-xs h-8 flex-shrink-0" onClick={() => setQuickPeriod(p.key)}>
               {p.label}
             </Button>
           ))}
@@ -364,22 +365,22 @@ export default function AdminInvoiceReview() {
               ) : (
                 <div className="space-y-3">
                   {/* Actions bar */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                     <div className="flex items-center gap-2">
                       <Checkbox checked={allFilteredSelected} onCheckedChange={toggleSelectAllFiltered} />
-                      <span className="text-sm text-muted-foreground">{selectedFilteredCount} seleccionada(s)</span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">{selectedFilteredCount} seleccionada(s)</span>
                     </div>
-                    <div className="flex flex-wrap justify-end gap-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {selectedFilteredCount > 0 && (
-                        <Button size="sm" variant="destructive" onClick={handleDeleteSelected} disabled={isProcessing} className="gap-2">
-                          <Trash2 className="w-4 h-4" />Eliminar ({selectedFilteredCount})
+                        <Button size="sm" variant="destructive" onClick={handleDeleteSelected} disabled={isProcessing} className="gap-1 text-xs h-8">
+                          <Trash2 className="w-3.5 h-3.5" />Eliminar ({selectedFilteredCount})
                         </Button>
                       )}
-                      <Button size="sm" variant="outline" onClick={handleExportCSV} disabled={filtered.length === 0} className="gap-2">
-                        <FileSpreadsheet className="w-4 h-4" />Excel
+                      <Button size="sm" variant="outline" onClick={handleExportCSV} disabled={filtered.length === 0} className="gap-1 text-xs h-8">
+                        <FileSpreadsheet className="w-3.5 h-3.5" />Excel
                       </Button>
-                      <Button size="sm" variant="outline" onClick={handleExportPDF} disabled={filtered.length === 0} className="gap-2">
-                        <Download className="w-4 h-4" />PDF Contable
+                      <Button size="sm" variant="outline" onClick={handleExportPDF} disabled={filtered.length === 0} className="gap-1 text-xs h-8">
+                        <Download className="w-3.5 h-3.5" />PDF
                       </Button>
                     </div>
                   </div>

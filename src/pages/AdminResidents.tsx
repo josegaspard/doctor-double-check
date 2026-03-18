@@ -174,18 +174,18 @@ export default function AdminResidents() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="hidden sm:flex">
-            <ArrowLeft className="h-5 w-5" />
+        <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="flex-shrink-0">
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <GraduationCap className="h-6 w-6 text-primary" />
-              {t('admin.residentManagement')}
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-2xl font-bold flex items-center gap-1.5 sm:gap-2">
+              <GraduationCap className="h-4 w-4 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+              <span className="truncate">{t('admin.residentManagement')}</span>
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {pendingCount} {t('admin.pendingRequests')}
             </p>
           </div>
@@ -204,12 +204,13 @@ export default function AdminResidents() {
                   className="pl-10"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide">
                 {(['all', 'pending', 'approved', 'rejected'] as const).map((status) => (
                   <Button
                     key={status}
                     variant={statusFilter === status ? 'default' : 'outline'}
                     size="sm"
+                    className="text-xs h-8 flex-shrink-0"
                     onClick={() => setStatusFilter(status)}
                   >
                     {status === 'all' ? t('admin.all') : t(`admin.${status}`)}
@@ -236,19 +237,19 @@ export default function AdminResidents() {
           <div className="space-y-4">
             {filteredResidents.map((resident) => (
               <Card key={resident.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-12 w-12">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
                         <AvatarImage src={resident.profile?.avatar_url || ''} />
-                        <AvatarFallback>{resident.profile?.name?.[0] || 'R'}</AvatarFallback>
+                        <AvatarFallback className="text-xs">{resident.profile?.name?.[0] || 'R'}</AvatarFallback>
                       </Avatar>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{resident.profile?.name || t('admin.noName')}</h3>
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h3 className="font-semibold text-sm truncate">{resident.profile?.name || t('admin.noName')}</h3>
                           {getStatusBadge(resident.status)}
                         </div>
-                        <p className="text-sm text-muted-foreground">{resident.profile?.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{resident.profile?.email}</p>
                         <div className="flex flex-wrap gap-2 mt-2">
                           <Badge variant="secondary">{resident.specialty}</Badge>
                           <Badge variant="outline">{t('admin.year')} {resident.year}</Badge>
@@ -267,23 +268,24 @@ export default function AdminResidents() {
                       </div>
                     </div>
                     {resident.status === 'pending' && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-shrink-0">
                         <Button
                           size="sm"
                           variant="default"
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 text-xs h-8"
                           onClick={() => setActionDialog({ open: true, resident, action: 'approve' })}
                         >
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          {t('admin.approve')}
+                          <CheckCircle className="w-3.5 h-3.5 sm:mr-1" />
+                          <span className="hidden sm:inline">{t('admin.approve')}</span>
                         </Button>
                         <Button
                           size="sm"
                           variant="destructive"
+                          className="text-xs h-8"
                           onClick={() => setActionDialog({ open: true, resident, action: 'reject' })}
                         >
-                          <XCircle className="w-4 h-4 mr-1" />
-                          {t('admin.reject')}
+                          <XCircle className="w-3.5 h-3.5 sm:mr-1" />
+                          <span className="hidden sm:inline">{t('admin.reject')}</span>
                         </Button>
                       </div>
                     )}

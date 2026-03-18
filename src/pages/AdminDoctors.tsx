@@ -304,16 +304,16 @@ export default function AdminDoctors() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
-        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
-            <ArrowLeft className="h-5 w-5" />
+        <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="flex-shrink-0">
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <Stethoscope className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-              {t('admin.doctorManagement')}
+            <h1 className="text-base sm:text-2xl font-bold flex items-center gap-1.5 sm:gap-2">
+              <Stethoscope className="h-4 w-4 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+              <span className="truncate">{t('admin.doctorManagement')}</span>
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {pendingCount} {t('admin.pendingRequests')}
             </p>
           </div>
@@ -332,12 +332,13 @@ export default function AdminDoctors() {
                   className="pl-10"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide">
                 {(['all', 'pending', 'approved', 'rejected'] as const).map((status) => (
                   <Button
                     key={status}
                     variant={statusFilter === status ? 'default' : 'outline'}
                     size="sm"
+                    className="text-xs h-8 flex-shrink-0"
                     onClick={() => setStatusFilter(status)}
                   >
                     {status === 'all' ? t('admin.all') : t(`admin.${status}`)}
@@ -364,19 +365,19 @@ export default function AdminDoctors() {
           <div className="space-y-4">
             {filteredDoctors.map((doctor) => (
               <Card key={doctor.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-12 w-12">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
                         <AvatarImage src={doctor.profile?.avatar_url || ''} />
-                        <AvatarFallback>{doctor.profile?.name?.[0] || 'D'}</AvatarFallback>
+                        <AvatarFallback className="text-xs">{doctor.profile?.name?.[0] || 'D'}</AvatarFallback>
                       </Avatar>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{doctor.profile?.name || t('admin.noName')}</h3>
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h3 className="font-semibold text-sm truncate">{doctor.profile?.name || t('admin.noName')}</h3>
                           {getStatusBadge(doctor.status)}
                         </div>
-                        <p className="text-sm text-muted-foreground">{doctor.profile?.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{doctor.profile?.email}</p>
                         <div className="flex flex-wrap gap-2 mt-2">
                           <Badge variant="secondary">{doctor.specialty}</Badge>
                           <span className="text-xs text-muted-foreground">

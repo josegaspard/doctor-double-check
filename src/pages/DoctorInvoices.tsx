@@ -274,18 +274,18 @@ export default function DoctorInvoices() {
           <ArrowLeft className="w-4 h-4" />
           {language === 'es' ? 'Volver al panel' : 'Back to dashboard'}
         </Button>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+          <div className="min-w-0">
+            <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground">
               {language === 'es' ? 'Facturas y Pagos' : 'Invoices & Payments'}
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
               {language === 'es' 
                 ? 'Gestiona tus facturas y revisa el historial de pagos' 
                 : 'Manage your invoices and review payment history'}
             </p>
           </div>
-          <Button onClick={() => { prefillWithPendingEarnings(); setIsDialogOpen(true); }} className="gap-2">
+          <Button onClick={() => { prefillWithPendingEarnings(); setIsDialogOpen(true); }} className="gap-2 w-full sm:w-auto" size="sm">
             <Upload className="w-4 h-4" />
             {language === 'es' ? 'Subir Factura' : 'Upload Invoice'}
           </Button>

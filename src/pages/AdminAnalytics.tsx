@@ -261,30 +261,32 @@ export default function AdminAnalytics() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
-              <BarChart3 className="w-6 h-6 text-primary" />
-              Analytics y Reportes
-            </h1>
-            <p className="text-muted-foreground">Estadísticas de la plataforma</p>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
+        <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="flex-shrink-0">
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            </Button>
+            <div className="min-w-0 flex-1">
+              <h1 className="font-heading text-lg sm:text-2xl font-bold flex items-center gap-1.5 sm:gap-2">
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+                <span className="truncate">Analytics y Reportes</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Estadísticas de la plataforma</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-between sm:justify-end">
             <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
-              <TabsList>
-                <TabsTrigger value="week">Semana</TabsTrigger>
-                <TabsTrigger value="month">Mes</TabsTrigger>
-                <TabsTrigger value="year">Año</TabsTrigger>
+              <TabsList className="h-8">
+                <TabsTrigger value="week" className="text-xs h-7 px-2.5">Semana</TabsTrigger>
+                <TabsTrigger value="month" className="text-xs h-7 px-2.5">Mes</TabsTrigger>
+                <TabsTrigger value="year" className="text-xs h-7 px-2.5">Año</TabsTrigger>
               </TabsList>
             </Tabs>
             {analytics && (
-              <Button variant="outline" size="sm" onClick={handlePrintPDF} className="gap-2">
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">PDF</span>
+              <Button variant="outline" size="sm" onClick={handlePrintPDF} className="gap-1 text-xs h-8">
+                <Download className="w-3.5 h-3.5" />
+                PDF
               </Button>
             )}
           </div>
@@ -295,19 +297,19 @@ export default function AdminAnalytics() {
         ) : analytics ? (
           <div ref={printRef}>
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
               {[
                 { value: `$${analytics.totalRevenue.toLocaleString()}`, label: 'Ingresos totales', icon: DollarSign, bg: 'bg-success/10', color: 'text-success' },
                 { value: analytics.totalUsers, label: 'Usuarios', icon: Users, bg: 'bg-info/10', color: 'text-info' },
                 { value: analytics.totalDoctors, label: 'Médicos verificados', icon: Stethoscope, bg: 'bg-primary/10', color: 'text-primary' },
                 { value: analytics.totalLives, label: 'Lives totales', icon: Video, bg: 'bg-live/10', color: 'text-live' },
               ].map((s, i) => (
-                <Card key={i}><CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg ${s.bg} flex items-center justify-center`}><s.icon className={`w-5 h-5 ${s.color}`} /></div>
-                    <div>
-                      <p className="text-2xl font-bold">{s.value}</p>
-                      <p className="text-xs text-muted-foreground">{s.label}</p>
+              <Card key={i}><CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}><s.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${s.color}`} /></div>
+                    <div className="min-w-0">
+                      <p className="text-lg sm:text-2xl font-bold truncate">{s.value}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{s.label}</p>
                     </div>
                   </div>
                 </CardContent></Card>
@@ -315,17 +317,17 @@ export default function AdminAnalytics() {
             </div>
 
             {/* Revenue Breakdown */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
               {[
                 { label: 'Compras de Videos', value: analytics.purchasesRevenue, sub: `${analytics.totalPurchases} compras`, border: 'border-l-premium' },
                 { label: 'Suscripciones Activas', value: analytics.subscriptionsRevenue, border: 'border-l-info' },
                 { label: 'Recargas Wallet', value: analytics.walletTopupsRevenue, border: 'border-l-success' },
                 { label: 'Consultas Médicas', value: analytics.consultationsRevenue, border: 'border-l-primary' },
               ].map((item, i) => (
-                <Card key={i} className={`border-l-4 ${item.border}`}><CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
-                  <p className="text-xl font-bold">${item.value.toLocaleString()}</p>
-                  {item.sub && <p className="text-xs text-muted-foreground">{item.sub}</p>}
+              <Card key={i} className={`border-l-4 ${item.border}`}><CardContent className="p-3 sm:p-4">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 truncate">{item.label}</p>
+                  <p className="text-base sm:text-xl font-bold">${item.value.toLocaleString()}</p>
+                  {item.sub && <p className="text-[10px] sm:text-xs text-muted-foreground">{item.sub}</p>}
                 </CardContent></Card>
               ))}
             </div>
