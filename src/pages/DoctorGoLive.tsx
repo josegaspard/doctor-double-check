@@ -322,15 +322,21 @@ export default function DoctorGoLive() {
           await supabase.from('recordings').delete()
             .eq('live_id', liveData.id).eq('doctor_id', user.id);
           toast.info('Grabación eliminada');
+          recordingCreated = false;
         }
       }
 
-      // Show done stage with stats
+      // Show done stage with stats — wait for doctor to click dismiss button
       setEndingStage('done');
-      // Wait for user to see stats — they'll click a button to dismiss
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      await new Promise<void>((resolve) => {
+        setDoneResolver(() => resolve);
+      });
 
-      // Clear context and navigate
+      // Clear state BEFORE navigate to avoid blank screen
+      setIsEnding(false);
+      setShowEndingModal(false);
+      setIsLive(false);
+      setLiveData(null);
       clearActiveLiveSession();
       
       if (enableRecording && recordingCreated) {
