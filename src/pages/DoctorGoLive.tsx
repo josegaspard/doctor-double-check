@@ -52,8 +52,9 @@ export default function DoctorGoLive() {
   const [dailyRoomUrl, setDailyRoomUrl] = useState<string | null>(null);
   const [dailyOwnerToken, setDailyOwnerToken] = useState<string | null>(null);
 
-  // Promise resolver for the 'choose' stage decision
+  // Promise resolvers for 'choose' and 'done' stages
   const [keepDecisionResolver, setKeepDecisionResolver] = useState<((keep: boolean) => void) | null>(null);
+  const [doneResolver, setDoneResolver] = useState<(() => void) | null>(null);
 
   const { createRoom, endRoom } = useDaily();
   const localRecording = useLocalRecording();
@@ -246,6 +247,13 @@ export default function DoctorGoLive() {
     }
   }, [keepDecisionResolver]);
 
+  const handleDismissDone = useCallback(() => {
+    if (doneResolver) {
+      doneResolver();
+      setDoneResolver(null);
+    }
+  }, [doneResolver]);
+
   const handleEndLive = async () => {
     if (!liveData?.id || !user?.id || isEnding) return;
 
@@ -314,15 +322,21 @@ export default function DoctorGoLive() {
           await supabase.from('recordings').delete()
             .eq('live_id', liveData.id).eq('doctor_id', user.id);
           toast.info('Grabación eliminada');
+          recordingCreated = false;
         }
       }
 
-      // Show done stage with stats
+      // Show done stage with stats — wait for doctor to click dismiss button
       setEndingStage('done');
-      // Wait for user to see stats — they'll click a button to dismiss
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      await new Promise<void>((resolve) => {
+        setDoneResolver(() => resolve);
+      });
 
-      // Clear context and navigate
+      // Clear state BEFORE navigate to avoid blank screen
+      setIsEnding(false);
+      setShowEndingModal(false);
+      setIsLive(false);
+      setLiveData(null);
       clearActiveLiveSession();
       
       if (enableRecording && recordingCreated) {
@@ -351,10 +365,13 @@ export default function DoctorGoLive() {
       clearActiveLiveSession();
       navigate('/doctor/dashboard');
     } finally {
-      setIsEnding(false);
-      setShowEndingModal(false);
-      setIsLive(false);
-      setLiveData(null);
+      // Ensure cleanup in case of error path (happy path already cleaned above)
+      if (isEnding) {
+        setIsEnding(false);
+        setShowEndingModal(false);
+        setIsLive(false);
+        setLiveData(null);
+      }
     }
   };
 
@@ -416,6 +433,7 @@ export default function DoctorGoLive() {
           uploadProgress={localRecording.uploadProgress}
           liveId={liveData.id}
           onKeepDecision={handleKeepDecision}
+          onDismissDone={handleDismissDone}
           showNavigationWarning={false}
           onNavigationWarningChange={() => {}}
           onConfirmNavigation={async () => {}}

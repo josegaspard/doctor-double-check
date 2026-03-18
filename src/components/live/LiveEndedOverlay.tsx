@@ -31,7 +31,7 @@ export function LiveEndedOverlay({
   duration,
 }: LiveEndedOverlayProps) {
   const navigate = useNavigate();
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(6);
 
   useEffect(() => {
     if (countdown <= 0) {

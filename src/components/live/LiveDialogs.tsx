@@ -26,6 +26,7 @@ interface LiveDialogsProps {
   uploadProgress: number | null;
   liveId?: string;
   onKeepDecision?: (keep: boolean) => void;
+  onDismissDone?: () => void;
 
   // Navigation warning
   showNavigationWarning: boolean;
@@ -45,6 +46,7 @@ export function LiveDialogs({
   uploadProgress,
   liveId,
   onKeepDecision,
+  onDismissDone,
   showNavigationWarning,
   onNavigationWarningChange,
   onConfirmNavigation,
@@ -94,6 +96,7 @@ export function LiveDialogs({
         uploadProgress={uploadProgress}
         liveId={liveId}
         onKeepDecision={onKeepDecision}
+        onDismissDone={onDismissDone}
       />
 
       {/* Navigation warning dialog */}

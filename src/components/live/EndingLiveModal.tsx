@@ -7,7 +7,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, Save, Trash2, Eye, Heart, MessageSquare, Sparkles, DollarSign } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, CheckCircle, Save, Eye, Heart, MessageSquare, Sparkles, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface LiveStats {
@@ -25,14 +26,16 @@ interface EndingLiveModalProps {
   uploadProgress?: number;
   liveId?: string;
   onKeepDecision?: (keep: boolean) => void;
+  onDismissDone?: () => void;
 }
 
-export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress = 0, liveId, onKeepDecision }: EndingLiveModalProps) {
+export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress = 0, liveId, onKeepDecision, onDismissDone }: EndingLiveModalProps) {
   const [stats, setStats] = useState<LiveStats | null>(null);
+  const [saveAsContent, setSaveAsContent] = useState(true);
 
-  // Fetch stats when entering 'done' stage
+  // Fetch stats when entering 'done' or 'choose' stage
   useEffect(() => {
-    if (stage !== 'done' || !liveId) return;
+    if ((stage !== 'done' && stage !== 'choose') || !liveId) return;
     const fetchStats = async () => {
       const [liveRes, msgRes, paidRes] = await Promise.all([
         supabase.from('lives').select('peak_viewers, likes_count, chat_price').eq('id', liveId).single(),
@@ -51,6 +54,11 @@ export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress
     };
     fetchStats();
   }, [stage, liveId]);
+
+  // Reset checkbox when entering choose stage
+  useEffect(() => {
+    if (stage === 'choose') setSaveAsContent(true);
+  }, [stage]);
 
   const getContent = () => {
     switch (stage) {
@@ -76,16 +84,16 @@ export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress
         };
       case 'choose':
         return {
-          title: '¿Guardar grabación en tu perfil?',
-          description: 'Elige si quieres que esta grabación esté disponible para la venta en tu perfil o si prefieres eliminarla.',
+          title: '¿Guardar como contenido premium?',
+          description: 'Elige si esta grabación estará disponible para la venta en tu perfil.',
           icon: <Save className="w-8 h-8 text-primary" />,
         };
       case 'done':
         return {
           title: '¡Transmisión finalizada!',
           description: enableRecording 
-            ? 'Tu grabación está disponible en Mis Grabaciones'
-            : 'La transmisión ha finalizado correctamente',
+            ? 'Tu grabación se está procesando y estará disponible en tus grabaciones.'
+            : 'La transmisión ha finalizado correctamente.',
           icon: <CheckCircle className="w-8 h-8 text-success" />,
         };
     }
@@ -106,47 +114,69 @@ export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress
           </DialogDescription>
         </DialogHeader>
 
-        {stage === 'choose' && (
-          <div className="flex flex-col gap-3 mt-2">
-            <Button
-              onClick={() => onKeepDecision?.(true)}
-              className="gap-2"
-            >
-              <Save className="w-4 h-4" />
-              Guardar en mi perfil
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => onKeepDecision?.(false)}
-              className="gap-2 text-destructive hover:text-destructive"
-            >
-              <Trash2 className="w-4 h-4" />
-              No guardar
-            </Button>
-          </div>
-        )}
-
-        {stage === 'done' && stats && (
-          <div className="mt-3 space-y-3">
+        {/* Stats shown in both choose and done stages */}
+        {(stage === 'choose' || stage === 'done') && stats && (
+          <div className="mt-2 space-y-3">
             <div className="grid grid-cols-2 gap-2">
               <StatCard icon={Eye} label="Pico espectadores" value={stats.peakViewers} />
               <StatCard icon={Heart} label="Likes" value={stats.totalLikes} />
               <StatCard icon={MessageSquare} label="Comentarios" value={stats.totalComments} />
               <StatCard icon={Sparkles} label="Destacados" value={stats.paidComments} />
             </div>
-            {stats.paidRevenue > 0 && (
-              <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-success/10 border border-success/20">
-                <DollarSign className="w-4 h-4 text-success" />
-                <span className="text-sm font-semibold text-success">
-                  +${stats.paidRevenue.toLocaleString()} MXN en chats de pago
-                </span>
+            <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-success/10 border border-success/20">
+              <DollarSign className="w-4 h-4 text-success" />
+              <span className="text-sm font-semibold text-success">
+                +${stats.paidRevenue.toLocaleString()} MXN en chats de pago
+              </span>
+            </div>
+          </div>
+        )}
+
+        {stage === 'choose' && (
+          <div className="flex flex-col gap-4 mt-2">
+            <label className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30 cursor-pointer">
+              <Checkbox
+                checked={saveAsContent}
+                onCheckedChange={(v) => setSaveAsContent(!!v)}
+                className="mt-0.5"
+              />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Guardar como contenido premium</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  La grabación estará disponible para la venta en tu perfil de doctor.
+                </p>
               </div>
-            )}
+            </label>
+            <Button
+              onClick={() => onKeepDecision?.(saveAsContent)}
+              className="w-full gap-2"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Confirmar
+            </Button>
+          </div>
+        )}
+
+        {stage === 'done' && (
+          <div className="mt-2 space-y-3">
             {enableRecording && (
               <p className="text-xs text-muted-foreground text-center">
                 Las compras de tu grabación se mostrarán en tu panel de ganancias.
               </p>
             )}
+            <Button
+              onClick={() => onDismissDone?.()}
+              className="w-full gap-2"
+            >
+              {enableRecording ? (
+                <>
+                  <Eye className="w-4 h-4" />
+                  Ver mis grabaciones
+                </>
+              ) : (
+                'Ir al panel'
+              )}
+            </Button>
           </div>
         )}
       </DialogContent>
