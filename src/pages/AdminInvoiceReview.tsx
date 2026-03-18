@@ -365,22 +365,22 @@ export default function AdminInvoiceReview() {
               ) : (
                 <div className="space-y-3">
                   {/* Actions bar */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                     <div className="flex items-center gap-2">
                       <Checkbox checked={allFilteredSelected} onCheckedChange={toggleSelectAllFiltered} />
-                      <span className="text-sm text-muted-foreground">{selectedFilteredCount} seleccionada(s)</span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">{selectedFilteredCount} seleccionada(s)</span>
                     </div>
-                    <div className="flex flex-wrap justify-end gap-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {selectedFilteredCount > 0 && (
-                        <Button size="sm" variant="destructive" onClick={handleDeleteSelected} disabled={isProcessing} className="gap-2">
-                          <Trash2 className="w-4 h-4" />Eliminar ({selectedFilteredCount})
+                        <Button size="sm" variant="destructive" onClick={handleDeleteSelected} disabled={isProcessing} className="gap-1 text-xs h-8">
+                          <Trash2 className="w-3.5 h-3.5" />Eliminar ({selectedFilteredCount})
                         </Button>
                       )}
-                      <Button size="sm" variant="outline" onClick={handleExportCSV} disabled={filtered.length === 0} className="gap-2">
-                        <FileSpreadsheet className="w-4 h-4" />Excel
+                      <Button size="sm" variant="outline" onClick={handleExportCSV} disabled={filtered.length === 0} className="gap-1 text-xs h-8">
+                        <FileSpreadsheet className="w-3.5 h-3.5" />Excel
                       </Button>
-                      <Button size="sm" variant="outline" onClick={handleExportPDF} disabled={filtered.length === 0} className="gap-2">
-                        <Download className="w-4 h-4" />PDF Contable
+                      <Button size="sm" variant="outline" onClick={handleExportPDF} disabled={filtered.length === 0} className="gap-1 text-xs h-8">
+                        <Download className="w-3.5 h-3.5" />PDF
                       </Button>
                     </div>
                   </div>

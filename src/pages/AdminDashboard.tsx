@@ -145,8 +145,8 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
         </div>
 
         {/* Pending Review */}
-        <h2 className="font-heading text-lg font-semibold mb-3">{t('adminDashboard.pendingReview')}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-8">
+        <h2 className="font-heading text-base sm:text-lg font-semibold mb-2 sm:mb-3">{t('adminDashboard.pendingReview')}</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
           {[
             { value: stats.pendingVerifications, label: t('adminDashboard.verifications'), icon: UserCheck, color: 'text-info', href: '/admin/verifications' },
             { value: stats.pendingDoctors, label: t('adminDashboard.pendingDoctors'), icon: Stethoscope, color: 'text-success', href: '/admin/doctors' },

@@ -268,23 +268,24 @@ export default function AdminResidents() {
                       </div>
                     </div>
                     {resident.status === 'pending' && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-shrink-0">
                         <Button
                           size="sm"
                           variant="default"
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 text-xs h-8"
                           onClick={() => setActionDialog({ open: true, resident, action: 'approve' })}
                         >
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          {t('admin.approve')}
+                          <CheckCircle className="w-3.5 h-3.5 sm:mr-1" />
+                          <span className="hidden sm:inline">{t('admin.approve')}</span>
                         </Button>
                         <Button
                           size="sm"
                           variant="destructive"
+                          className="text-xs h-8"
                           onClick={() => setActionDialog({ open: true, resident, action: 'reject' })}
                         >
-                          <XCircle className="w-4 h-4 mr-1" />
-                          {t('admin.reject')}
+                          <XCircle className="w-3.5 h-3.5 sm:mr-1" />
+                          <span className="hidden sm:inline">{t('admin.reject')}</span>
                         </Button>
                       </div>
                     )}

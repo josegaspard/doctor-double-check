@@ -365,19 +365,19 @@ export default function AdminDoctors() {
           <div className="space-y-4">
             {filteredDoctors.map((doctor) => (
               <Card key={doctor.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-12 w-12">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
                         <AvatarImage src={doctor.profile?.avatar_url || ''} />
-                        <AvatarFallback>{doctor.profile?.name?.[0] || 'D'}</AvatarFallback>
+                        <AvatarFallback className="text-xs">{doctor.profile?.name?.[0] || 'D'}</AvatarFallback>
                       </Avatar>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{doctor.profile?.name || t('admin.noName')}</h3>
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h3 className="font-semibold text-sm truncate">{doctor.profile?.name || t('admin.noName')}</h3>
                           {getStatusBadge(doctor.status)}
                         </div>
-                        <p className="text-sm text-muted-foreground">{doctor.profile?.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{doctor.profile?.email}</p>
                         <div className="flex flex-wrap gap-2 mt-2">
                           <Badge variant="secondary">{doctor.specialty}</Badge>
                           <span className="text-xs text-muted-foreground">

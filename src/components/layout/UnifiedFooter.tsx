@@ -119,13 +119,13 @@ export function UnifiedFooter({ variant }: Props) {
       <footer className="bg-[#0b1d45] text-slate-300 pt-8 sm:pt-10 pb-24 sm:pb-6 mt-auto">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-6">
-            <div className="col-span-2 md:col-span-1">
-              <img src={logoWhite} alt="Medical Masters" className="h-7 opacity-90 mb-3" />
-              <p className="text-xs text-slate-400 mb-3 max-w-xs leading-relaxed">
+            <div className="col-span-2 md:col-span-1 flex flex-col items-center md:items-start">
+              <img src={logoWhite} alt="Medical Masters" className="h-6 sm:h-7 opacity-90 mb-3" />
+              <p className="text-[11px] sm:text-xs text-slate-400 mb-3 max-w-xs leading-relaxed text-center md:text-left">
                 {t('landingFooter.brandDescription')}
               </p>
               <SocialIcons socialLinks={socialLinks} />
-              <AppStoreBadges className="mt-4 justify-center md:justify-start" />
+              <AppStoreBadges className="mt-3" />
             </div>
 
             <FooterLinkColumn title={t('landingFooter.platform')} links={platformLinks} />

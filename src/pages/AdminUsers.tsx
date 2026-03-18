@@ -219,25 +219,25 @@ export default function AdminUsers() {
             {filteredUsers.map((userData) => (
               <Card key={userData.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={userData.avatar_url || ''} />
-                        <AvatarFallback>{userData.name?.[0] || 'U'}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{userData.name || t('admin.noName')}</h3>
-                          {getRoleBadge(userData.role || 'patient')}
-                          {userData.is_identity_verified && (
-                            <Badge variant="outline" className="bg-green-100 text-green-800">
-                              {t('admin.verified')}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{userData.email}</p>
-                      </div>
-                    </div>
+                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                     <div className="flex items-center gap-3">
+                       <Avatar className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
+                         <AvatarImage src={userData.avatar_url || ''} />
+                         <AvatarFallback className="text-xs">{userData.name?.[0] || 'U'}</AvatarFallback>
+                       </Avatar>
+                       <div className="min-w-0">
+                         <div className="flex items-center gap-1.5 flex-wrap">
+                           <h3 className="font-medium text-sm truncate">{userData.name || t('admin.noName')}</h3>
+                           {getRoleBadge(userData.role || 'patient')}
+                           {userData.is_identity_verified && (
+                             <Badge variant="outline" className="bg-green-100 text-green-800 text-[10px] h-5">
+                               {t('admin.verified')}
+                             </Badge>
+                           )}
+                         </div>
+                         <p className="text-xs text-muted-foreground truncate">{userData.email}</p>
+                       </div>
+                     </div>
                     <div className="flex items-center gap-2 mt-2 sm:mt-0">
                       <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
                         {new Date(userData.created_at).toLocaleDateString()}

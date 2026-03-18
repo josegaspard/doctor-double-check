@@ -624,26 +624,50 @@ export default function Doctors() {
                   {availableDoctors.length}
                 </Badge>
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
-                {availableDoctors.slice(0, 6).map(doc => (
-                  <button
-                    key={doc.id}
-                    onClick={() => navigate(`/doctor/${doc.user_id}`)}
-                    className="flex-shrink-0 snap-start flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-success/20 hover:border-success/50 transition-colors min-w-[200px]"
-                  >
-                    <Avatar className="w-8 h-8 border border-success/30">
-                      <AvatarImage src={doc.avatar_url || undefined} />
-                      <AvatarFallback className="bg-success/10 text-success text-xs font-bold">
-                        {getInitials(doc.name || 'Dr')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0 text-left">
-                      <p className="text-xs font-medium truncate">{doc.name}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{doc.specialty}</p>
-                    </div>
-                    <PriceDisplay amount={doc.consultation_fee} size="sm" />
-                  </button>
-                ))}
+              <div className="relative group/avail">
+                {/* Left arrow (desktop/tablet) */}
+                <button
+                  className="hidden md:flex absolute -left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-card border border-border shadow-md items-center justify-center hover:bg-muted transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const container = (e.currentTarget as HTMLElement).parentElement?.querySelector('[data-avail-scroll]');
+                    container?.scrollBy({ left: -240, behavior: 'smooth' });
+                  }}
+                >
+                  <ArrowLeft className="w-4 h-4 text-foreground" />
+                </button>
+                <div data-avail-scroll className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
+                  {availableDoctors.slice(0, 10).map(doc => (
+                    <button
+                      key={doc.id}
+                      onClick={() => navigate(`/doctor/${doc.user_id}`)}
+                      className="flex-shrink-0 snap-start flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-success/20 hover:border-success/50 transition-colors min-w-[200px]"
+                    >
+                      <Avatar className="w-8 h-8 border border-success/30">
+                        <AvatarImage src={doc.avatar_url || undefined} />
+                        <AvatarFallback className="bg-success/10 text-success text-xs font-bold">
+                          {getInitials(doc.name || 'Dr')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="text-xs font-medium truncate">{doc.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{doc.specialty}</p>
+                      </div>
+                      <PriceDisplay amount={doc.consultation_fee} size="sm" />
+                    </button>
+                  ))}
+                </div>
+                {/* Right arrow (desktop/tablet) */}
+                <button
+                  className="hidden md:flex absolute -right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-card border border-border shadow-md items-center justify-center hover:bg-muted transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const container = (e.currentTarget as HTMLElement).parentElement?.querySelector('[data-avail-scroll]');
+                    container?.scrollBy({ left: 240, behavior: 'smooth' });
+                  }}
+                >
+                  <ArrowRight className="w-4 h-4 text-foreground" />
+                </button>
               </div>
             </div>
           );

@@ -189,23 +189,23 @@ export default function AdminReports() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         {/* Header */}
-        <div className="mb-6">
-          <Button variant="ghost" onClick={() => navigate('/admin')} className="mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+        <div className="mb-4 sm:mb-6">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-3 hidden sm:inline-flex">
+            <ArrowLeft className="w-4 h-4 mr-1" />
             Volver al Admin
           </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center">
-              <Flag className="w-6 h-6 text-destructive" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-destructive/10 flex items-center justify-center flex-shrink-0">
+              <Flag className="w-5 h-5 sm:w-6 sm:h-6 text-destructive" />
             </div>
-            <div>
-              <h1 className="font-heading text-2xl font-bold text-foreground">
+            <div className="min-w-0">
+              <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground truncate">
                 Gestión de Reportes
               </h1>
-              <p className="text-muted-foreground text-sm">
-                Revisa y gestiona reportes de contenido y plataforma
+              <p className="text-muted-foreground text-xs sm:text-sm">
+                Revisa y gestiona reportes
               </p>
             </div>
           </div>

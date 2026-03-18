@@ -324,10 +324,10 @@ export default function AdminAnalytics() {
                 { label: 'Recargas Wallet', value: analytics.walletTopupsRevenue, border: 'border-l-success' },
                 { label: 'Consultas Médicas', value: analytics.consultationsRevenue, border: 'border-l-primary' },
               ].map((item, i) => (
-                <Card key={i} className={`border-l-4 ${item.border}`}><CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
-                  <p className="text-xl font-bold">${item.value.toLocaleString()}</p>
-                  {item.sub && <p className="text-xs text-muted-foreground">{item.sub}</p>}
+              <Card key={i} className={`border-l-4 ${item.border}`}><CardContent className="p-3 sm:p-4">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 truncate">{item.label}</p>
+                  <p className="text-base sm:text-xl font-bold">${item.value.toLocaleString()}</p>
+                  {item.sub && <p className="text-[10px] sm:text-xs text-muted-foreground">{item.sub}</p>}
                 </CardContent></Card>
               ))}
             </div>
