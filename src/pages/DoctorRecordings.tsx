@@ -93,6 +93,13 @@ interface RecordingStats {
   recordingId: string;
   purchaseCount: number;
   totalRevenue: number;
+  // Live data (if recording came from a live)
+  peakViewers: number;
+  likesCount: number;
+  totalComments: number;
+  paidComments: number;
+  chatPrice: number;
+  paidChatRevenue: number;
 }
 
 interface PastLive {
