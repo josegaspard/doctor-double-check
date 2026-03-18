@@ -331,7 +331,7 @@ export default function AdminInvoiceReview() {
         </div>
 
         {/* Quick Period Filters */}
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide pb-1 mb-4">
           {[
             { key: 'all' as QuickPeriod, label: 'Todas' },
             { key: 'this_week' as QuickPeriod, label: 'Esta semana' },
