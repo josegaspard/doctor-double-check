@@ -433,6 +433,7 @@ export default function DoctorGoLive() {
           uploadProgress={localRecording.uploadProgress}
           liveId={liveData.id}
           onKeepDecision={handleKeepDecision}
+          onDismissDone={handleDismissDone}
           showNavigationWarning={false}
           onNavigationWarningChange={() => {}}
           onConfirmNavigation={async () => {}}
