@@ -138,11 +138,11 @@ export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress
               <Checkbox
                 checked={saveAsContent}
                 onCheckedChange={(v) => setSaveAsContent(!!v)}
-                className="mt-0.5"
+                className="mt-0.5 h-5 w-5"
               />
               <div>
-                <p className="text-sm font-semibold text-foreground">Guardar como contenido premium</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-base font-semibold text-foreground">Guardar como contenido premium</p>
+                <p className="text-sm text-muted-foreground mt-0.5">
                   La grabación estará disponible para la venta en tu perfil de doctor.
                 </p>
               </div>
