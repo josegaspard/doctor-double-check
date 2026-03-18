@@ -949,12 +949,26 @@ export default function DoctorRecordings() {
                               <Users className="w-3 h-3" />
                               {isLoadingStats ? '…' : stats.purchaseCount}
                             </span>
-                            {!isLoadingStats && stats.totalRevenue > 0 && (
+                            {!isLoadingStats && getCombinedRevenue(recording.id) > 0 && (
                               <span className="text-success font-medium ml-auto">
-                                {formatCurrency(stats.totalRevenue)}
+                                {formatCurrency(getCombinedRevenue(recording.id))}
                               </span>
                             )}
                           </div>
+                          {!isLoadingStats && (stats.likesCount > 0 || stats.paidComments > 0) && (
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                              {stats.likesCount > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <Heart className="w-3 h-3" /> {stats.likesCount}
+                                </span>
+                              )}
+                              {stats.paidComments > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3" /> {stats.paidComments} de pago
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <p className="text-[10px] text-muted-foreground mt-1.5">{formatDate(recording.createdAt)}</p>
                         </div>
                       );
