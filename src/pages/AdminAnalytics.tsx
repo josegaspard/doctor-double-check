@@ -297,7 +297,7 @@ export default function AdminAnalytics() {
         ) : analytics ? (
           <div ref={printRef}>
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
               {[
                 { value: `$${analytics.totalRevenue.toLocaleString()}`, label: 'Ingresos totales', icon: DollarSign, bg: 'bg-success/10', color: 'text-success' },
                 { value: analytics.totalUsers, label: 'Usuarios', icon: Users, bg: 'bg-info/10', color: 'text-info' },
