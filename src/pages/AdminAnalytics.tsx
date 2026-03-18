@@ -317,7 +317,7 @@ export default function AdminAnalytics() {
             </div>
 
             {/* Revenue Breakdown */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
               {[
                 { label: 'Compras de Videos', value: analytics.purchasesRevenue, sub: `${analytics.totalPurchases} compras`, border: 'border-l-premium' },
                 { label: 'Suscripciones Activas', value: analytics.subscriptionsRevenue, border: 'border-l-info' },
