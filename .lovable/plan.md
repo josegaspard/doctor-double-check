@@ -1,26 +1,19 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Show real verification status in Settings
 
-## Solucion
+The Settings page currently hardcodes a "Pendiente" badge and doesn't query the actual verification status from the database. The `/profile` page already does this correctly — we just need to replicate the same logic in Settings.
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+## Changes to `src/pages/Settings.tsx`
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+1. **Add state and effect** to fetch verification status from `identity_verifications` table (same pattern as UserProfile)
+2. **Show dynamic badge** based on actual status: Verified (green), Pending (yellow), Failed (red), or "No verificado" if no record exists
+3. **Update button text** — if already verified, show "Ver verificación" instead of "Iniciar verificación"
+4. The button already navigates to `/identity-verification` which is correct
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+### Specific edits:
+- Add `useEffect` import and state: `verificationStatus` 
+- Add `useEffect` that queries `identity_verifications` for current user
+- Replace hardcoded `Badge` with dynamic status badge
+- Adjust button label based on status
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
-
-## Archivos a modificar
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
