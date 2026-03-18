@@ -149,7 +149,7 @@ export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress
             </label>
             <Button
               onClick={() => onKeepDecision?.(saveAsContent)}
-              className="w-full gap-2"
+              className="w-full gap-2 min-h-[48px] text-base"
             >
               <CheckCircle className="w-4 h-4" />
               Confirmar
