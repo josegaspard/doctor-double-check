@@ -393,8 +393,8 @@ export default function AdminDoctors() {
                         {/* SEP Verification Details */}
                         {doctor.cedula_verification && doctor.cedula_verification.is_verified && (
                           <div className="mt-2 p-2 rounded-md bg-success/10 border border-success/20">
-                            <div className="flex items-center gap-1 mb-1">
-                              <ShieldCheck className="w-3.5 h-3.5 text-success" />
+                            <div className="flex items-center gap-1 mb-1 flex-wrap">
+                              <ShieldCheck className="w-3.5 h-3.5 text-success flex-shrink-0" />
                               <span className="text-xs font-semibold text-success">Verificado por SEP</span>
                               {doctor.cedula_verification.verified_at && (
                                 <span className="text-[10px] text-muted-foreground ml-auto">
@@ -402,21 +402,21 @@ export default function AdminDoctors() {
                                 </span>
                               )}
                             </div>
-                            <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <User className="w-3 h-3" />
-                                {doctor.cedula_verification.nombre} {doctor.cedula_verification.paterno} {doctor.cedula_verification.materno}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1 truncate">
+                                <User className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">{doctor.cedula_verification.nombre} {doctor.cedula_verification.paterno} {doctor.cedula_verification.materno}</span>
+                              </span>
+                              <span className="flex items-center gap-1 truncate">
+                                <GraduationCap className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">{doctor.cedula_verification.titulo}</span>
+                              </span>
+                              <span className="flex items-center gap-1 truncate">
+                                <Building className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">{doctor.cedula_verification.institucion}</span>
                               </span>
                               <span className="flex items-center gap-1">
-                                <GraduationCap className="w-3 h-3" />
-                                {doctor.cedula_verification.titulo}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Building className="w-3 h-3" />
-                                {doctor.cedula_verification.institucion}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
+                                <Calendar className="w-3 h-3 flex-shrink-0" />
                                 Año: {doctor.cedula_verification.anio_registro}
                               </span>
                             </div>
