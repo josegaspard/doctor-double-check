@@ -447,7 +447,7 @@ export const es = {
     chatEmailDescription: 'Respuestas de doctores en consultas',
     pushDescription: 'Recibe notificaciones push en tu dispositivo',
     inAppDescription: 'Muestra notificaciones dentro de la app',
-    verificationComingSoon: 'La verificación de identidad está disponible próximamente. Te notificaremos cuando esté lista.',
+    verificationComingSoon: 'Verifica tu licencia SEP y tu identidad biométrica para mayor seguridad.',
     managePayments: 'Membresías y Pagos',
     managePaymentsDescription: 'Administra tus membresías activas, cancela renovaciones o actualiza tu método de pago',
     openPaymentPortal: 'Administrar mis membresías',
