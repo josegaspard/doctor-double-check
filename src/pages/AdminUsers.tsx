@@ -238,17 +238,18 @@ export default function AdminUsers() {
                         <p className="text-sm text-muted-foreground">{userData.email}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
                         {new Date(userData.created_at).toLocaleDateString()}
                       </span>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => setSelectedUser(userData)}
+                        className="text-xs h-8"
                       >
-                        <Settings2 className="h-4 w-4 mr-1" />
-                        {t('admin.manage')}
+                        <Settings2 className="h-3.5 w-3.5 sm:mr-1" />
+                        <span className="hidden sm:inline">{t('admin.manage')}</span>
                       </Button>
                     </div>
                   </div>
