@@ -22,6 +22,14 @@ export function usePushNotifications() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [permission, setPermission] = useState<NotificationPermission>('default');
+  const vapidKeyRef = useRef<string>(VAPID_FALLBACK);
+
+  // Fetch real VAPID key from backend
+  useEffect(() => {
+    supabase.functions.invoke('get-vapid-key').then(({ data }) => {
+      if (data?.vapidPublicKey) vapidKeyRef.current = data.vapidPublicKey;
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
