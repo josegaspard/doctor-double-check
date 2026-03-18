@@ -25,6 +25,35 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { preferences, updatePreferences } = useNotifications();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchVerification = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from('identity_verifications')
+        .select('status')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) setVerificationStatus(data.status);
+    };
+    fetchVerification();
+  }, [user?.id]);
+
+  const getVerificationBadge = () => {
+    switch (verificationStatus) {
+      case 'verified':
+        return <Badge variant="success" className="text-xs"><CheckCircle className="h-3 w-3 mr-1" />{language === 'es' ? 'Verificado' : 'Verified'}</Badge>;
+      case 'pending':
+        return <Badge variant="warning" className="text-xs"><CheckCircle className="h-3 w-3 mr-1" />{t('verification.pending')}</Badge>;
+      case 'failed':
+        return <Badge variant="destructive" className="text-xs">{language === 'es' ? 'Fallida' : 'Failed'}</Badge>;
+      default:
+        return <Badge variant="secondary" className="text-xs">{language === 'es' ? 'No verificado' : 'Not verified'}</Badge>;
+    }
+  };
 
   const handleManageSubscriptions = async () => {
     setIsLoadingPortal(true);
