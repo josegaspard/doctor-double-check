@@ -24,6 +24,7 @@ interface LiveDialogsProps {
   showEndingModal: boolean;
   endingStage: 'ending' | 'saving' | 'uploading' | 'choose' | 'done';
   uploadProgress: number | null;
+  liveId?: string;
   onKeepDecision?: (keep: boolean) => void;
 
   // Navigation warning
