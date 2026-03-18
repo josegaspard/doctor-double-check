@@ -9,6 +9,8 @@ interface ChatMessage {
   userName: string;
   content: string;
   elapsedSeconds: number;
+  isPaid: boolean;
+  highlightUntil: string | null;
 }
 
 interface RecordingChatReplayProps {
