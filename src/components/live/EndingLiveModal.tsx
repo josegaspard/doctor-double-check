@@ -166,7 +166,7 @@ export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress
             )}
             <Button
               onClick={() => onDismissDone?.()}
-              className="w-full gap-2"
+              className="w-full gap-2 min-h-[48px] text-base"
             >
               {enableRecording ? (
                 <>
