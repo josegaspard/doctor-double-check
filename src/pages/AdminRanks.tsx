@@ -6,7 +6,7 @@ import { useDoctorRanks, DoctorRank } from '@/hooks/useDoctorRanks';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -134,20 +134,21 @@ export default function AdminRanks() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
-        <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
-            <ArrowLeft className="h-5 w-5" />
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="flex-shrink-0 h-9 w-9">
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-primary" />
-              Rangos de Doctores
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base sm:text-2xl font-bold flex items-center gap-1.5 sm:gap-2">
+              <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+              <span className="truncate">Rangos de Doctores</span>
             </h1>
-            <p className="text-sm text-muted-foreground">Administra los rangos y sus requisitos</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Administra los rangos y sus requisitos</p>
           </div>
-          <Button onClick={openCreate} className="gap-1.5">
+          <Button onClick={openCreate} className="gap-1.5 h-9 text-xs sm:text-sm">
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Nuevo Rango</span>
+            <span className="sm:hidden">Nuevo</span>
           </Button>
         </div>
 
@@ -157,22 +158,28 @@ export default function AdminRanks() {
           <div className="space-y-3">
             {ranks.map(rank => (
               <Card key={rank.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 min-w-0">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-start gap-3">
+                    {/* Badge + actions */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <DoctorBadge rank={rank} size="lg" />
-                      <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">
-                          Consultas ≥ {rank.min_consultations} · Ganancias ≥ ${rank.min_earnings} · Meses ≥ {rank.min_months_active} · Rating ≥ {rank.min_rating}
-                        </p>
+                    </div>
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
+                        <span>Consultas ≥ {rank.min_consultations}</span>
+                        <span>Ganancias ≥ ${rank.min_earnings}</span>
+                        <span>Meses ≥ {rank.min_months_active}</span>
+                        <span>Rating ≥ {rank.min_rating}</span>
                       </div>
                     </div>
+                    {/* Actions */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEdit(rank)}>
-                        <Pencil className="w-4 h-4" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(rank)}>
+                        <Pencil className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => handleDelete(rank)}>
-                        <Trash2 className="w-4 h-4" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(rank)}>
+                        <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                   </div>

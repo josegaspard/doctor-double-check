@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -75,7 +75,6 @@ export default function AdminVerifications() {
   const [documentUrls, setDocumentUrls] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('pending');
 
-  // Redirect non-admins
   useEffect(() => {
     if (role && role !== 'admin') {
       navigate('/');
@@ -93,7 +92,6 @@ export default function AdminVerifications() {
 
       if (error) throw error;
 
-      // Fetch user profiles for each verification
       const verificationsWithUsers: VerificationWithUser[] = [];
       
       for (const v of data || []) {
@@ -167,7 +165,6 @@ export default function AdminVerifications() {
         };
       }
 
-      // Update verification status
       const { error } = await supabase
         .from('identity_verifications')
         .update(updateData)
@@ -175,7 +172,6 @@ export default function AdminVerifications() {
 
       if (error) throw error;
 
-      // Update user profile is_identity_verified flag
       if (actionType === 'approve') {
         await supabase
           .from('profiles')
@@ -183,7 +179,6 @@ export default function AdminVerifications() {
           .eq('id', selectedVerification.user_id);
       }
 
-      // Send email notification
       try {
         await supabase.functions.invoke('send-verification-email', {
           body: {
@@ -223,7 +218,7 @@ export default function AdminVerifications() {
     const config = configs[status];
     const Icon = config.icon;
     return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
+      <Badge variant={config.variant} className="flex items-center gap-1 text-[10px] sm:text-xs">
         <Icon className="w-3 h-3" />
         {config.label}
       </Badge>
@@ -237,62 +232,58 @@ export default function AdminVerifications() {
     return true;
   });
 
-  if (role !== 'admin') {
-    return null;
-  }
+  if (role !== 'admin') return null;
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="hidden sm:flex">
-            <ArrowLeft className="w-5 h-5" />
+        <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="flex-shrink-0 h-9 w-9">
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
-          <div className="flex-1">
-            <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-              <Shield className="w-6 h-6 text-primary" />
-              {language === 'es' ? 'Verificaciones de Identidad' : 'Identity Verifications'}
+          <div className="flex-1 min-w-0">
+            <h1 className="font-heading text-base sm:text-2xl font-bold text-foreground flex items-center gap-1.5 sm:gap-2">
+              <Shield className="w-4 h-4 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+              <span className="truncate">{language === 'es' ? 'Verificaciones de Identidad' : 'Identity Verifications'}</span>
             </h1>
-            <p className="text-muted-foreground">
-              {language === 'es' 
-                ? 'Gestiona las solicitudes de verificación de usuarios' 
-                : 'Manage user verification requests'}
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              {language === 'es' ? 'Gestiona las solicitudes' : 'Manage requests'}
             </p>
           </div>
-          <Button variant="outline" size="icon" onClick={fetchVerifications} disabled={isLoading}>
+          <Button variant="outline" size="icon" onClick={fetchVerifications} disabled={isLoading} className="h-9 w-9">
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
           <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-warning">
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-lg sm:text-2xl font-bold text-warning">
                 {verifications.filter(v => v.status === 'pending' || v.status === 'in_progress').length}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-[10px] sm:text-sm text-muted-foreground">
                 {language === 'es' ? 'Pendientes' : 'Pending'}
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-success">
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-lg sm:text-2xl font-bold text-success">
                 {verifications.filter(v => v.status === 'verified').length}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-[10px] sm:text-sm text-muted-foreground">
                 {language === 'es' ? 'Verificados' : 'Verified'}
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-destructive">
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-lg sm:text-2xl font-bold text-destructive">
                 {verifications.filter(v => v.status === 'failed').length}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-[10px] sm:text-sm text-muted-foreground">
                 {language === 'es' ? 'Rechazados' : 'Rejected'}
               </div>
             </CardContent>
@@ -301,32 +292,32 @@ export default function AdminVerifications() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 mb-4">
-            <TabsTrigger value="pending" className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-4 mb-4 h-9">
+            <TabsTrigger value="pending" className="text-[10px] sm:text-xs gap-1 px-1 sm:px-3">
+              <Clock className="w-3 h-3 hidden sm:block" />
               {language === 'es' ? 'Pendientes' : 'Pending'}
             </TabsTrigger>
-            <TabsTrigger value="verified" className="flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" />
+            <TabsTrigger value="verified" className="text-[10px] sm:text-xs gap-1 px-1 sm:px-3">
+              <CheckCircle className="w-3 h-3 hidden sm:block" />
               {language === 'es' ? 'Verificados' : 'Verified'}
             </TabsTrigger>
-            <TabsTrigger value="rejected" className="flex items-center gap-1">
-              <XCircle className="w-4 h-4" />
+            <TabsTrigger value="rejected" className="text-[10px] sm:text-xs gap-1 px-1 sm:px-3">
+              <XCircle className="w-3 h-3 hidden sm:block" />
               {language === 'es' ? 'Rechazados' : 'Rejected'}
             </TabsTrigger>
-            <TabsTrigger value="all">
+            <TabsTrigger value="all" className="text-[10px] sm:text-xs px-1 sm:px-3">
               {language === 'es' ? 'Todos' : 'All'}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab}>
             {isLoading ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[1, 2, 3].map(i => (
                   <Card key={i}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <Skeleton className="w-12 h-12 rounded-full" />
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="w-10 h-10 rounded-full" />
                         <div className="flex-1 space-y-2">
                           <Skeleton className="h-4 w-1/3" />
                           <Skeleton className="h-3 w-1/2" />
@@ -338,69 +329,66 @@ export default function AdminVerifications() {
               </div>
             ) : filteredVerifications.length === 0 ? (
               <Card>
-                <CardContent className="p-12 text-center">
-                  <FileCheck className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    {language === 'es' 
-                      ? 'No hay verificaciones en esta categoría' 
-                      : 'No verifications in this category'}
+                <CardContent className="p-8 sm:p-12 text-center">
+                  <FileCheck className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'es' ? 'No hay verificaciones en esta categoría' : 'No verifications in this category'}
                   </p>
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {filteredVerifications.map(verification => (
                   <Card key={verification.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={verification.user?.avatar_url || ''} />
-                          <AvatarFallback>
-                            <User className="w-5 h-5" />
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium truncate">
-                              {verification.user?.name || 'Usuario'}
-                            </span>
-                            {getStatusBadge(verification.status)}
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-                            <span className="flex items-center gap-1">
-                              <Mail className="w-3 h-3" />
-                              {verification.user?.email}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {new Date(verification.created_at).toLocaleDateString()}
-                            </span>
-                            <Badge variant="outline" className="text-[10px]">
-                              {verification.provider === 'veriff' ? '🔐 Veriff' : '📄 Manual'}
-                            </Badge>
+                    <CardContent className="p-3 sm:p-4">
+                      {/* Mobile: stacked layout */}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        {/* Avatar + Info */}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Avatar className="w-10 h-10 flex-shrink-0">
+                            <AvatarImage src={verification.user?.avatar_url || ''} />
+                            <AvatarFallback>
+                              <User className="w-4 h-4" />
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                              <span className="font-medium text-sm truncate">
+                                {verification.user?.name || 'Usuario'}
+                              </span>
+                              {getStatusBadge(verification.status)}
+                            </div>
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1 truncate">
+                                <Mail className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">{verification.user?.email}</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(verification.created_at).toLocaleDateString()}
+                              </span>
+                              <Badge variant="outline" className="text-[9px] h-4 px-1">
+                                {verification.provider === 'veriff' ? '🔐 Veriff' : '📄 Manual'}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 sm:flex-shrink-0 sm:ml-auto">
                           <Button
                             variant="outline"
                             size="sm"
+                            className="h-8 text-xs flex-1 sm:flex-none"
                             onClick={async () => {
                               setSelectedVerification(verification);
-                              // Preload document URLs
-                              if (verification.metadata?.front_url) {
-                                getDocumentUrl(verification.metadata.front_url);
-                              }
-                              if (verification.metadata?.back_url) {
-                                getDocumentUrl(verification.metadata.back_url);
-                              }
-                              if (verification.metadata?.selfie_url) {
-                                getDocumentUrl(verification.metadata.selfie_url);
-                              }
+                              if (verification.metadata?.front_url) getDocumentUrl(verification.metadata.front_url);
+                              if (verification.metadata?.back_url) getDocumentUrl(verification.metadata.back_url);
+                              if (verification.metadata?.selfie_url) getDocumentUrl(verification.metadata.selfie_url);
                             }}
                           >
-                            <Eye className="w-4 h-4 mr-1" />
+                            <Eye className="w-3.5 h-3.5 mr-1" />
                             {language === 'es' ? 'Ver' : 'View'}
                           </Button>
 
@@ -409,18 +397,20 @@ export default function AdminVerifications() {
                               <Button
                                 size="sm"
                                 variant="success"
+                                className="h-8 text-xs flex-1 sm:flex-none"
                                 onClick={() => openActionDialog(verification, 'approve')}
                               >
-                                <CheckCircle className="w-4 h-4 mr-1" />
-                                {language === 'es' ? 'Aprobar' : 'Approve'}
+                                <CheckCircle className="w-3.5 h-3.5 sm:mr-1" />
+                                <span className="hidden sm:inline">{language === 'es' ? 'Aprobar' : 'Approve'}</span>
                               </Button>
                               <Button
                                 size="sm"
                                 variant="destructive"
+                                className="h-8 text-xs flex-1 sm:flex-none"
                                 onClick={() => openActionDialog(verification, 'reject')}
                               >
-                                <XCircle className="w-4 h-4 mr-1" />
-                                {language === 'es' ? 'Rechazar' : 'Reject'}
+                                <XCircle className="w-3.5 h-3.5 sm:mr-1" />
+                                <span className="hidden sm:inline">{language === 'es' ? 'Rechazar' : 'Reject'}</span>
                               </Button>
                             </>
                           )}
@@ -449,114 +439,99 @@ export default function AdminVerifications() {
               </DialogHeader>
 
               <div className="space-y-6">
-                {/* Document Type */}
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">
-                    {selectedVerification.metadata?.document_type || (language === 'es' ? 'ID oficial' : 'Official ID')}
+                    {selectedVerification.metadata?.document_type || 'ID'}
                   </Badge>
                   {getStatusBadge(selectedVerification.status)}
                 </div>
 
-                {/* Front Document */}
                 {selectedVerification.metadata?.front_url && (
                   <div>
-                    <h4 className="font-medium mb-2">
-                      {language === 'es' ? 'Frente del documento' : 'Document Front'}
-                    </h4>
-                    <div className="border rounded-lg overflow-hidden bg-muted p-2">
-                      {documentUrls[selectedVerification.metadata.front_url] ? (
-                        <img
-                          src={documentUrls[selectedVerification.metadata.front_url]}
-                          alt="Front"
-                          className="max-h-64 mx-auto object-contain rounded"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-32 text-muted-foreground">
-                          <Loader2 className="w-6 h-6 animate-spin" />
-                        </div>
-                      )}
-                    </div>
+                    <p className="text-sm font-medium mb-2">
+                      {language === 'es' ? 'Frente del documento' : 'Document front'}
+                    </p>
+                    {documentUrls[selectedVerification.metadata.front_url] ? (
+                      <img
+                        src={documentUrls[selectedVerification.metadata.front_url]}
+                        alt="Document front"
+                        className="rounded-lg border max-h-64 object-contain"
+                      />
+                    ) : (
+                      <Skeleton className="h-48 w-full rounded-lg" />
+                    )}
                   </div>
                 )}
 
-                {/* Back Document */}
                 {selectedVerification.metadata?.back_url && (
                   <div>
-                    <h4 className="font-medium mb-2">
-                      {language === 'es' ? 'Reverso del documento' : 'Document Back'}
-                    </h4>
-                    <div className="border rounded-lg overflow-hidden bg-muted p-2">
-                      {documentUrls[selectedVerification.metadata.back_url] ? (
-                        <img
-                          src={documentUrls[selectedVerification.metadata.back_url]}
-                          alt="Back"
-                          className="max-h-64 mx-auto object-contain rounded"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-32 text-muted-foreground">
-                          <Loader2 className="w-6 h-6 animate-spin" />
-                        </div>
-                      )}
-                    </div>
+                    <p className="text-sm font-medium mb-2">
+                      {language === 'es' ? 'Reverso del documento' : 'Document back'}
+                    </p>
+                    {documentUrls[selectedVerification.metadata.back_url] ? (
+                      <img
+                        src={documentUrls[selectedVerification.metadata.back_url]}
+                        alt="Document back"
+                        className="rounded-lg border max-h-64 object-contain"
+                      />
+                    ) : (
+                      <Skeleton className="h-48 w-full rounded-lg" />
+                    )}
                   </div>
                 )}
 
-                {/* Selfie */}
                 {selectedVerification.metadata?.selfie_url && (
                   <div>
-                    <h4 className="font-medium mb-2">
-                      {language === 'es' ? 'Selfie con documento' : 'Selfie with document'}
-                    </h4>
-                    <div className="border rounded-lg overflow-hidden bg-muted p-2">
-                      {documentUrls[selectedVerification.metadata.selfie_url] ? (
-                        <img
-                          src={documentUrls[selectedVerification.metadata.selfie_url]}
-                          alt="Selfie"
-                          className="max-h-64 mx-auto object-contain rounded"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-32 text-muted-foreground">
-                          <Loader2 className="w-6 h-6 animate-spin" />
-                        </div>
-                      )}
-                    </div>
+                    <p className="text-sm font-medium mb-2">
+                      {language === 'es' ? 'Selfie de verificación' : 'Verification selfie'}
+                    </p>
+                    {documentUrls[selectedVerification.metadata.selfie_url] ? (
+                      <img
+                        src={documentUrls[selectedVerification.metadata.selfie_url]}
+                        alt="Selfie"
+                        className="rounded-lg border max-h-64 object-contain"
+                      />
+                    ) : (
+                      <Skeleton className="h-48 w-full rounded-lg" />
+                    )}
                   </div>
                 )}
 
-                {/* Rejection Reason if exists */}
                 {selectedVerification.metadata?.rejection_reason && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                    <h4 className="font-medium text-destructive mb-1">
-                      {language === 'es' ? 'Razón del rechazo' : 'Rejection Reason'}
-                    </h4>
-                    <p className="text-sm">{selectedVerification.metadata.rejection_reason}</p>
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <p className="text-sm font-medium text-destructive mb-1">
+                      {language === 'es' ? 'Motivo de rechazo' : 'Rejection reason'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedVerification.metadata.rejection_reason}
+                    </p>
                   </div>
                 )}
               </div>
 
               <DialogFooter>
                 {(selectedVerification.status === 'pending' || selectedVerification.status === 'in_progress') && (
-                  <div className="flex gap-2 w-full">
+                  <div className="flex gap-2 w-full sm:w-auto">
                     <Button
-                      className="flex-1"
                       variant="success"
+                      className="flex-1 sm:flex-none"
                       onClick={() => {
                         setSelectedVerification(null);
-                        setTimeout(() => openActionDialog(selectedVerification, 'approve'), 100);
+                        openActionDialog(selectedVerification, 'approve');
                       }}
                     >
-                      <CheckCircle className="w-4 h-4 mr-2" />
+                      <CheckCircle className="w-4 h-4 mr-1" />
                       {language === 'es' ? 'Aprobar' : 'Approve'}
                     </Button>
                     <Button
-                      className="flex-1"
                       variant="destructive"
+                      className="flex-1 sm:flex-none"
                       onClick={() => {
                         setSelectedVerification(null);
-                        setTimeout(() => openActionDialog(selectedVerification, 'reject'), 100);
+                        openActionDialog(selectedVerification, 'reject');
                       }}
                     >
-                      <XCircle className="w-4 h-4 mr-2" />
+                      <XCircle className="w-4 h-4 mr-1" />
                       {language === 'es' ? 'Rechazar' : 'Reject'}
                     </Button>
                   </div>
@@ -576,29 +551,26 @@ export default function AdminVerifications() {
                   : (language === 'es' ? '¿Rechazar verificación?' : 'Reject verification?')}
               </DialogTitle>
               <DialogDescription>
-                {actionType === 'approve'
-                  ? (language === 'es' 
-                      ? 'El usuario recibirá un email confirmando que su identidad ha sido verificada.' 
-                      : 'The user will receive an email confirming their identity has been verified.')
-                  : (language === 'es' 
-                      ? 'Por favor, proporciona una razón para el rechazo.' 
-                      : 'Please provide a reason for rejection.')}
+                {selectedVerification?.user?.name} - {selectedVerification?.user?.email}
               </DialogDescription>
             </DialogHeader>
 
             {actionType === 'reject' && (
-              <Textarea
-                placeholder={language === 'es' 
-                  ? 'Razón del rechazo (ej: documento ilegible, información no coincide, etc.)' 
-                  : 'Rejection reason (e.g., illegible document, information mismatch, etc.)'}
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                rows={4}
-              />
+              <div>
+                <label className="text-sm font-medium">
+                  {language === 'es' ? 'Motivo del rechazo' : 'Rejection reason'}
+                </label>
+                <Textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder={language === 'es' ? 'Explica el motivo...' : 'Explain the reason...'}
+                  className="mt-2"
+                />
+              </div>
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsActionDialogOpen(false)} disabled={isProcessing}>
+              <Button variant="outline" onClick={() => setIsActionDialogOpen(false)}>
                 {language === 'es' ? 'Cancelar' : 'Cancel'}
               </Button>
               <Button
@@ -608,8 +580,8 @@ export default function AdminVerifications() {
               >
                 {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {actionType === 'approve'
-                  ? (language === 'es' ? 'Confirmar aprobación' : 'Confirm approval')
-                  : (language === 'es' ? 'Confirmar rechazo' : 'Confirm rejection')}
+                  ? (language === 'es' ? 'Aprobar' : 'Approve')
+                  : (language === 'es' ? 'Rechazar' : 'Reject')}
               </Button>
             </DialogFooter>
           </DialogContent>
