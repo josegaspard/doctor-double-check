@@ -1426,39 +1426,84 @@ export default function DoctorRecordings() {
             </DialogTitle>
             <DialogDescription>{selectedRecording?.title}</DialogDescription>
           </DialogHeader>
-          {selectedRecording && (
+          {selectedRecording && (() => {
+            const recStats = getStats(selectedRecording.id);
+            const combined = getCombinedRevenue(selectedRecording.id);
+            const hasLiveData = recStats.peakViewers > 0 || recStats.totalComments > 0 || recStats.likesCount > 0;
+            return (
             <div className="py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <Card>
-                  <CardContent className="p-4 text-center">
-                    <Users className="w-8 h-8 mx-auto text-primary mb-2" />
-                    <p className="text-2xl font-bold">{getStats(selectedRecording.id).purchaseCount}</p>
-                    <p className="text-xs text-muted-foreground">Compras totales</p>
+                  <CardContent className="p-3 text-center">
+                    <Users className="w-6 h-6 mx-auto text-primary mb-1" />
+                    <p className="text-xl font-bold">{recStats.purchaseCount}</p>
+                    <p className="text-[10px] text-muted-foreground">Compras video</p>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-4 text-center">
-                    <TrendingUp className="w-8 h-8 mx-auto text-success mb-2" />
-                    <p className="text-2xl font-bold">{formatCurrency(getStats(selectedRecording.id).totalRevenue)}</p>
-                    <p className="text-xs text-muted-foreground">Ingresos totales</p>
+                  <CardContent className="p-3 text-center">
+                    <TrendingUp className="w-6 h-6 mx-auto text-success mb-1" />
+                    <p className="text-xl font-bold">{formatCurrency(combined)}</p>
+                    <p className="text-[10px] text-muted-foreground">Ingresos totales</p>
                   </CardContent>
                 </Card>
               </div>
-              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-                <div className="flex justify-between">
+
+              {/* Revenue breakdown */}
+              {(recStats.totalRevenue > 0 || recStats.paidChatRevenue > 0) && (
+                <div className="p-3 bg-success/5 border border-success/20 rounded-lg space-y-2">
+                  <p className="text-xs font-semibold text-foreground">Desglose de ingresos</p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Ventas de video:</span>
+                    <span className="font-medium">{formatCurrency(recStats.totalRevenue)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Chats de pago:</span>
+                    <span className="font-medium">{formatCurrency(recStats.paidChatRevenue)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Live metrics */}
+              {hasLiveData && (
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
+                  <p className="text-xs font-semibold text-foreground">Métricas del live</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground flex items-center gap-1"><Eye className="w-3 h-3" /> Pico:</span>
+                      <span className="font-medium">{recStats.peakViewers}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground flex items-center gap-1"><Heart className="w-3 h-3" /> Likes:</span>
+                      <span className="font-medium">{recStats.likesCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Comentarios:</span>
+                      <span className="font-medium">{recStats.totalComments}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground flex items-center gap-1"><Sparkles className="w-3 h-3" /> De pago:</span>
+                      <span className="font-medium">{recStats.paidComments}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Precio actual:</span>
                   <span className="font-medium">{selectedRecording.price === 0 ? 'Gratis' : formatCurrency(selectedRecording.price)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Duración:</span>
                   <span className="font-medium">{formatDuration(selectedRecording.duration)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Especialidad:</span>
                   <span className="font-medium">{selectedRecording.specialty}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fecha de creación:</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Fecha:</span>
                   <span className="font-medium">{formatDate(selectedRecording.createdAt)}</span>
                 </div>
               </div>
@@ -1474,7 +1519,8 @@ export default function DoctorRecordings() {
                 Editar precio
               </Button>
             </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </MainLayout>
