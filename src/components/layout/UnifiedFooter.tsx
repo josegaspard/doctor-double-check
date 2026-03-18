@@ -80,7 +80,7 @@ function SocialIcons({ socialLinks, className = '' }: { socialLinks: any; classN
 
 function FooterLinkColumn({ title, links }: { title: string; links: { label: string; href: string }[] }) {
   return (
-    <div className="text-center sm:text-left">
+    <div className="text-left">
       <h4 className="text-white font-bold mb-3 sm:mb-4 text-xs uppercase tracking-wider">{title}</h4>
       <ul className="space-y-2 sm:space-y-3">
         {links.map((link, i) => (
