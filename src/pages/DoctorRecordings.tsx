@@ -93,6 +93,13 @@ interface RecordingStats {
   recordingId: string;
   purchaseCount: number;
   totalRevenue: number;
+  // Live data (if recording came from a live)
+  peakViewers: number;
+  likesCount: number;
+  totalComments: number;
+  paidComments: number;
+  chatPrice: number;
+  paidChatRevenue: number;
 }
 
 interface PastLive {
@@ -373,15 +380,59 @@ export default function DoctorRecordings() {
 
         const statsMap = new Map<string, RecordingStats>();
         recordingIds.forEach(id => {
-          statsMap.set(id, { recordingId: id, purchaseCount: 0, totalRevenue: 0 });
+          statsMap.set(id, { recordingId: id, purchaseCount: 0, totalRevenue: 0, peakViewers: 0, likesCount: 0, totalComments: 0, paidComments: 0, chatPrice: 0, paidChatRevenue: 0 });
         });
         purchases?.forEach(purchase => {
-          const existing = statsMap.get(purchase.recording_id);
+          const existing = statsMap.get(purchase.recording_id!);
           if (existing) {
             existing.purchaseCount += 1;
             existing.totalRevenue += Number(purchase.amount);
           }
         });
+
+        // Fetch live data for recordings that have a liveId
+        const liveIds = myRecordings.filter(r => r.liveId).map(r => r.liveId!);
+        if (liveIds.length > 0) {
+          const { data: liveData } = await supabase
+            .from('lives')
+            .select('id, peak_viewers, likes_count, chat_price, paid_chats_count')
+            .in('id', liveIds);
+
+          // Fetch comment counts
+          const { data: allComments } = await supabase
+            .from('live_chat_messages')
+            .select('live_id')
+            .in('live_id', liveIds);
+
+          const { data: paidMsgs } = await supabase
+            .from('live_chat_messages')
+            .select('live_id')
+            .in('live_id', liveIds)
+            .eq('is_paid', true);
+
+          const commentsByLive: Record<string, number> = {};
+          allComments?.forEach(m => { commentsByLive[m.live_id] = (commentsByLive[m.live_id] || 0) + 1; });
+          const paidByLive: Record<string, number> = {};
+          paidMsgs?.forEach(m => { paidByLive[m.live_id] = (paidByLive[m.live_id] || 0) + 1; });
+
+          // Map live data to recording stats
+          const liveMap = new Map(liveData?.map(l => [l.id, l]) || []);
+          myRecordings.forEach(rec => {
+            if (rec.liveId && liveMap.has(rec.liveId)) {
+              const live = liveMap.get(rec.liveId)!;
+              const stat = statsMap.get(rec.id);
+              if (stat) {
+                stat.peakViewers = live.peak_viewers || 0;
+                stat.likesCount = live.likes_count || 0;
+                stat.chatPrice = Number(live.chat_price) || 0;
+                stat.paidComments = paidByLive[rec.liveId] || live.paid_chats_count || 0;
+                stat.totalComments = commentsByLive[rec.liveId] || 0;
+                stat.paidChatRevenue = stat.paidComments * stat.chatPrice;
+              }
+            }
+          });
+        }
+
         setRecordingStats(statsMap);
       } catch (error) {
         console.error('Error fetching recording stats:', error);
@@ -552,8 +603,13 @@ export default function DoctorRecordings() {
     }).format(amount);
   };
 
-  const getStats = (recordingId: string) => {
-    return recordingStats.get(recordingId) || { purchaseCount: 0, totalRevenue: 0 };
+  const getStats = (recordingId: string): RecordingStats => {
+    return recordingStats.get(recordingId) || { recordingId, purchaseCount: 0, totalRevenue: 0, peakViewers: 0, likesCount: 0, totalComments: 0, paidComments: 0, chatPrice: 0, paidChatRevenue: 0 };
+  };
+
+  const getCombinedRevenue = (recordingId: string) => {
+    const s = getStats(recordingId);
+    return s.totalRevenue + s.paidChatRevenue;
   };
 
   const totalRecordings = myRecordings.length;
@@ -561,10 +617,15 @@ export default function DoctorRecordings() {
     const stats = recordingStats.get(r.id);
     return sum + (stats?.purchaseCount || 0);
   }, 0);
-  const totalRevenue = myRecordings.reduce((sum, r) => {
+  const totalVideoRevenue = myRecordings.reduce((sum, r) => {
     const stats = recordingStats.get(r.id);
     return sum + (stats?.totalRevenue || 0);
   }, 0);
+  const totalChatRevenue = myRecordings.reduce((sum, r) => {
+    const stats = recordingStats.get(r.id);
+    return sum + (stats?.paidChatRevenue || 0);
+  }, 0);
+  const totalRevenue = totalVideoRevenue + totalChatRevenue;
   const totalDuration = myRecordings.reduce((sum, r) => sum + r.duration, 0);
 
   if (role !== 'doctor') return null;
@@ -659,7 +720,12 @@ export default function DoctorRecordings() {
                     </div>
                     <div>
                       <p className="text-lg sm:text-2xl font-bold text-foreground">{formatCurrency(totalRevenue)}</p>
-                      <p className="text-xs text-muted-foreground">Ingresos</p>
+                      <p className="text-xs text-muted-foreground">Ingresos totales</p>
+                      {(totalVideoRevenue > 0 || totalChatRevenue > 0) && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          Video: {formatCurrency(totalVideoRevenue)} · Chats: {formatCurrency(totalChatRevenue)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -883,12 +949,26 @@ export default function DoctorRecordings() {
                               <Users className="w-3 h-3" />
                               {isLoadingStats ? '…' : stats.purchaseCount}
                             </span>
-                            {!isLoadingStats && stats.totalRevenue > 0 && (
+                            {!isLoadingStats && getCombinedRevenue(recording.id) > 0 && (
                               <span className="text-success font-medium ml-auto">
-                                {formatCurrency(stats.totalRevenue)}
+                                {formatCurrency(getCombinedRevenue(recording.id))}
                               </span>
                             )}
                           </div>
+                          {!isLoadingStats && (stats.likesCount > 0 || stats.paidComments > 0) && (
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                              {stats.likesCount > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <Heart className="w-3 h-3" /> {stats.likesCount}
+                                </span>
+                              )}
+                              {stats.paidComments > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3" /> {stats.paidComments} de pago
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <p className="text-[10px] text-muted-foreground mt-1.5">{formatDate(recording.createdAt)}</p>
                         </div>
                       );
@@ -906,6 +986,7 @@ export default function DoctorRecordings() {
                           <TableHead>Duración</TableHead>
                           <TableHead>Precio</TableHead>
                           <TableHead>Compras</TableHead>
+                          <TableHead>Chats pago</TableHead>
                           <TableHead>Ingresos</TableHead>
                           <TableHead>Fecha</TableHead>
                           {!selectionMode && <TableHead className="w-12"></TableHead>}
@@ -974,9 +1055,21 @@ export default function DoctorRecordings() {
                               <TableCell>
                                 {isLoadingStats ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : stats.paidComments > 0 ? (
+                                  <span className="flex items-center gap-1">
+                                    <Sparkles className="w-3 h-3 text-muted-foreground" />
+                                    {stats.paidComments}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {isLoadingStats ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
                                   <span className="text-success font-medium">
-                                    {formatCurrency(stats.totalRevenue)}
+                                    {formatCurrency(getCombinedRevenue(recording.id))}
                                   </span>
                                 )}
                               </TableCell>
@@ -1333,39 +1426,84 @@ export default function DoctorRecordings() {
             </DialogTitle>
             <DialogDescription>{selectedRecording?.title}</DialogDescription>
           </DialogHeader>
-          {selectedRecording && (
+          {selectedRecording && (() => {
+            const recStats = getStats(selectedRecording.id);
+            const combined = getCombinedRevenue(selectedRecording.id);
+            const hasLiveData = recStats.peakViewers > 0 || recStats.totalComments > 0 || recStats.likesCount > 0;
+            return (
             <div className="py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <Card>
-                  <CardContent className="p-4 text-center">
-                    <Users className="w-8 h-8 mx-auto text-primary mb-2" />
-                    <p className="text-2xl font-bold">{getStats(selectedRecording.id).purchaseCount}</p>
-                    <p className="text-xs text-muted-foreground">Compras totales</p>
+                  <CardContent className="p-3 text-center">
+                    <Users className="w-6 h-6 mx-auto text-primary mb-1" />
+                    <p className="text-xl font-bold">{recStats.purchaseCount}</p>
+                    <p className="text-[10px] text-muted-foreground">Compras video</p>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-4 text-center">
-                    <TrendingUp className="w-8 h-8 mx-auto text-success mb-2" />
-                    <p className="text-2xl font-bold">{formatCurrency(getStats(selectedRecording.id).totalRevenue)}</p>
-                    <p className="text-xs text-muted-foreground">Ingresos totales</p>
+                  <CardContent className="p-3 text-center">
+                    <TrendingUp className="w-6 h-6 mx-auto text-success mb-1" />
+                    <p className="text-xl font-bold">{formatCurrency(combined)}</p>
+                    <p className="text-[10px] text-muted-foreground">Ingresos totales</p>
                   </CardContent>
                 </Card>
               </div>
-              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-                <div className="flex justify-between">
+
+              {/* Revenue breakdown */}
+              {(recStats.totalRevenue > 0 || recStats.paidChatRevenue > 0) && (
+                <div className="p-3 bg-success/5 border border-success/20 rounded-lg space-y-2">
+                  <p className="text-xs font-semibold text-foreground">Desglose de ingresos</p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Ventas de video:</span>
+                    <span className="font-medium">{formatCurrency(recStats.totalRevenue)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Chats de pago:</span>
+                    <span className="font-medium">{formatCurrency(recStats.paidChatRevenue)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Live metrics */}
+              {hasLiveData && (
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
+                  <p className="text-xs font-semibold text-foreground">Métricas del live</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground flex items-center gap-1"><Eye className="w-3 h-3" /> Pico:</span>
+                      <span className="font-medium">{recStats.peakViewers}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground flex items-center gap-1"><Heart className="w-3 h-3" /> Likes:</span>
+                      <span className="font-medium">{recStats.likesCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Comentarios:</span>
+                      <span className="font-medium">{recStats.totalComments}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground flex items-center gap-1"><Sparkles className="w-3 h-3" /> De pago:</span>
+                      <span className="font-medium">{recStats.paidComments}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Precio actual:</span>
                   <span className="font-medium">{selectedRecording.price === 0 ? 'Gratis' : formatCurrency(selectedRecording.price)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Duración:</span>
                   <span className="font-medium">{formatDuration(selectedRecording.duration)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Especialidad:</span>
                   <span className="font-medium">{selectedRecording.specialty}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fecha de creación:</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Fecha:</span>
                   <span className="font-medium">{formatDate(selectedRecording.createdAt)}</span>
                 </div>
               </div>
@@ -1381,7 +1519,8 @@ export default function DoctorRecordings() {
                 Editar precio
               </Button>
             </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </MainLayout>
