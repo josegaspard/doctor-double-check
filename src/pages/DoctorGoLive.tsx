@@ -247,6 +247,13 @@ export default function DoctorGoLive() {
     }
   }, [keepDecisionResolver]);
 
+  const handleDismissDone = useCallback(() => {
+    if (doneResolver) {
+      doneResolver();
+      setDoneResolver(null);
+    }
+  }, [doneResolver]);
+
   const handleEndLive = async () => {
     if (!liveData?.id || !user?.id || isEnding) return;
 
