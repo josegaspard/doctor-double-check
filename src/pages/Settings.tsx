@@ -306,13 +306,10 @@ export default function Settings() {
                     </div>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full sm:w-auto flex-shrink-0">
+                <Button variant="outline" className="w-full sm:w-auto flex-shrink-0" onClick={() => navigate('/identity-verification')}>
                   {t('verification.startVerification')}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-4">
-                {t('settings.verificationComingSoon')}
-              </p>
             </CardContent>
           </Card>
 

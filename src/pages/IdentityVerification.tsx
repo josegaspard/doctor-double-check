@@ -372,8 +372,8 @@ export default function IdentityVerification() {
               </CardTitle>
               <CardDescription>
                 {language === 'es'
-                  ? 'Verifica tu identidad de forma rápida y segura con reconocimiento biométrico.'
-                  : 'Verify your identity quickly and securely with biometric recognition.'}
+                  ? 'Primero verificamos tu cédula profesional con el SEP, luego confirmas tu identidad con reconocimiento facial (INE o pasaporte) para asegurar que coincida.'
+                  : 'First we verify your professional license with SEP, then you confirm your identity with facial recognition (ID or passport) to ensure it matches.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

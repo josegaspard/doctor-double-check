@@ -95,7 +95,7 @@ export function usePushNotifications() {
         const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
+          applicationServerKey,
         });
       } catch (pushError: any) {
         console.error('PushManager.subscribe failed:', pushError);
