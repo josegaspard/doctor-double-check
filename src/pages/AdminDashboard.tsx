@@ -109,7 +109,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
 
   return (
     <MainLayout>
-      <div ref={ref} className="container mx-auto px-4 py-6 max-w-5xl">
+      <div ref={ref} className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
         {/* Header */}
         <div className="mb-6 sm:mb-8 rounded-2xl bg-gradient-to-r from-primary/5 via-primary/10 to-transparent p-4 sm:p-6">
           <div className="flex items-center gap-2.5 sm:gap-3">
