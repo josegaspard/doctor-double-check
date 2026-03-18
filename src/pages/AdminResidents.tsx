@@ -237,19 +237,19 @@ export default function AdminResidents() {
           <div className="space-y-4">
             {filteredResidents.map((resident) => (
               <Card key={resident.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-12 w-12">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
                         <AvatarImage src={resident.profile?.avatar_url || ''} />
-                        <AvatarFallback>{resident.profile?.name?.[0] || 'R'}</AvatarFallback>
+                        <AvatarFallback className="text-xs">{resident.profile?.name?.[0] || 'R'}</AvatarFallback>
                       </Avatar>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{resident.profile?.name || t('admin.noName')}</h3>
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h3 className="font-semibold text-sm truncate">{resident.profile?.name || t('admin.noName')}</h3>
                           {getStatusBadge(resident.status)}
                         </div>
-                        <p className="text-sm text-muted-foreground">{resident.profile?.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{resident.profile?.email}</p>
                         <div className="flex flex-wrap gap-2 mt-2">
                           <Badge variant="secondary">{resident.specialty}</Badge>
                           <Badge variant="outline">{t('admin.year')} {resident.year}</Badge>
