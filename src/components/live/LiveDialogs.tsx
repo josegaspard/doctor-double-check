@@ -92,6 +92,7 @@ export function LiveDialogs({
         stage={endingStage}
         enableRecording={enableRecording}
         uploadProgress={uploadProgress}
+        liveId={liveId}
         onKeepDecision={onKeepDecision}
       />
 
