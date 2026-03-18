@@ -125,7 +125,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
 
         {/* Platform Totals */}
         <h2 className="font-heading text-lg font-semibold mb-3">{t('adminDashboard.platformTotals')}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
           {[
             { value: stats.totalDoctors, label: t('adminDashboard.activeDoctors'), icon: Stethoscope, color: 'text-secondary', bgGrad: 'from-secondary/10 to-secondary/5' },
             { value: stats.totalPatients, label: t('adminDashboard.patients'), icon: Users, color: 'text-primary', bgGrad: 'from-primary/10 to-primary/5' },
@@ -133,12 +133,12 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
             { value: stats.totalUsers, label: t('adminDashboard.totalUsers'), icon: Users, color: 'text-warning', bgGrad: 'from-warning/10 to-warning/5' },
           ].map((item, i) => (
             <Card key={i} className={`cursor-pointer hover:shadow-md transition-all rounded-xl overflow-hidden bg-gradient-to-br ${item.bgGrad}`} onClick={() => navigate('/admin/users')}>
-              <CardContent className="p-4 sm:p-5 text-center">
-                <div className={`w-10 h-10 rounded-xl bg-background/80 flex items-center justify-center mx-auto mb-2.5 shadow-sm`}>
-                  <item.icon className={`w-5 h-5 ${item.color}`} />
+              <CardContent className="p-3 sm:p-5 text-center">
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-background/80 flex items-center justify-center mx-auto mb-2 shadow-sm`}>
+                  <item.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${item.color}`} />
                 </div>
-                {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className={`text-2xl sm:text-3xl font-bold ${item.color} mb-1`}>{item.value}</p>}
-                <div className="text-xs text-muted-foreground font-medium">{item.label}</div>
+                {isLoading ? <Loader2 className="w-5 h-5 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className={`text-xl sm:text-3xl font-bold ${item.color} mb-0.5`}>{item.value}</p>}
+                <div className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate">{item.label}</div>
               </CardContent>
             </Card>
           ))}
