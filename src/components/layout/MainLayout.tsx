@@ -62,6 +62,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
+import { ActiveLiveBanner } from '@/components/live/ActiveLiveBanner';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
@@ -720,6 +721,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Active live banner */}
+      <ActiveLiveBanner />
 
       {/* Unified Footer - hidden on mobile (bottom nav takes its place) */}
       <UnifiedFooter variant="app" />

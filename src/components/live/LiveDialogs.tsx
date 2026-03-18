@@ -24,6 +24,7 @@ interface LiveDialogsProps {
   showEndingModal: boolean;
   endingStage: 'ending' | 'saving' | 'uploading' | 'choose' | 'done';
   uploadProgress: number | null;
+  liveId?: string;
   onKeepDecision?: (keep: boolean) => void;
 
   // Navigation warning
@@ -42,6 +43,7 @@ export function LiveDialogs({
   showEndingModal,
   endingStage,
   uploadProgress,
+  liveId,
   onKeepDecision,
   showNavigationWarning,
   onNavigationWarningChange,
@@ -90,6 +92,7 @@ export function LiveDialogs({
         stage={endingStage}
         enableRecording={enableRecording}
         uploadProgress={uploadProgress}
+        liveId={liveId}
         onKeepDecision={onKeepDecision}
       />
 

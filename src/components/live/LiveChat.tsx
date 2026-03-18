@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Send, MessageSquare, User, LogIn, Stethoscope, AlertCircle, Sparkles, Loader2, Wallet, CreditCard, Coins } from 'lucide-react';
+import { Send, MessageSquare, User, LogIn, Stethoscope, AlertCircle, Sparkles, Loader2, Wallet, CreditCard, Coins, Pin, Clock } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface PaidNotification {
@@ -368,6 +369,25 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     return true;
   };
 
+  // Re-evaluate pinned messages every 5 seconds
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const pinnedMessages = useMemo(() => {
+    const now = new Date();
+    return messages.filter(m => m.isPaid && m.highlightUntil && m.highlightUntil > now);
+  }, [messages, /* tick forces recompute */]);
+
+  const getRemainingTime = (until: Date) => {
+    const secs = Math.max(0, Math.floor((until.getTime() - Date.now()) / 1000));
+    const mins = Math.floor(secs / 60);
+    const s = secs % 60;
+    return mins > 0 ? `${mins}m ${s}s` : `${s}s`;
+  };
+
   const highlightDurationLabel = chatHighlightSeconds >= 60
     ? `${Math.round(chatHighlightSeconds / 60)} min`
     : `${chatHighlightSeconds}s`;
@@ -430,6 +450,50 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
               ? `Chat de pago: $${chatPrice} MXN · Destacado ${highlightDurationLabel}`
               : `Destaca tu mensaje por $${chatPrice} MXN · ${highlightDurationLabel}`}
           </span>
+        </div>
+      )}
+
+      {/* Pinned highlighted messages */}
+      {pinnedMessages.length > 0 && (
+        <div className="border-b bg-warning/5 px-2 py-1.5 space-y-1 flex-shrink-0 max-h-32 overflow-y-auto">
+          <div className="flex items-center gap-1 mb-1">
+            <Pin className="w-3 h-3 text-warning rotate-45" />
+            <span className="text-[10px] font-semibold text-warning">
+              {pinnedMessages.length === 1 ? 'Mensaje destacado' : `${pinnedMessages.length} mensajes destacados`}
+            </span>
+          </div>
+          {pinnedMessages.map((msg) => (
+            <Popover key={`pinned-${msg.id}`}>
+              <PopoverTrigger asChild>
+                <button className="w-full text-left p-1.5 rounded-md bg-warning/10 border border-warning/20 hover:bg-warning/15 transition-colors cursor-pointer">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Sparkles className="w-3 h-3 text-warning flex-shrink-0" />
+                      <span className="text-[10px] font-semibold text-foreground truncate">{msg.userName}</span>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Clock className="w-2.5 h-2.5 text-muted-foreground" />
+                      <span className="text-[9px] text-muted-foreground">{getRemainingTime(msg.highlightUntil!)}</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-foreground/80 truncate mt-0.5">{msg.content}</p>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" className="w-72 p-3">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-warning" />
+                    <span className="font-semibold text-sm">{msg.userName}</span>
+                  </div>
+                  <p className="text-sm text-foreground break-words">{msg.content}</p>
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Expira en {getRemainingTime(msg.highlightUntil!)}
+                  </p>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ))}
         </div>
       )}
 

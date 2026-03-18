@@ -14,6 +14,7 @@ import { ChatProvider } from "@/contexts/ChatContext";
 import { OtpProvider } from "@/contexts/OtpContext";
 import { PostConsultationRatingProvider } from "@/components/ratings/PostConsultationRatingProvider";
 import { IncomingCallProvider } from "@/components/videocall/IncomingCallProvider";
+import { ActiveLiveProvider } from "@/contexts/ActiveLiveContext";
 import React, { Suspense, useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -165,6 +166,7 @@ const App = () => {
       <AuthProvider>
         <LanguageProvider>
           <LivesProvider>
+            <ActiveLiveProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -253,6 +255,7 @@ const App = () => {
                 </AuthenticatedProviders>
               </BrowserRouter>
             </TooltipProvider>
+            </ActiveLiveProvider>
           </LivesProvider>
         </LanguageProvider>
       </AuthProvider>
