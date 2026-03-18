@@ -299,15 +299,14 @@ export default function Settings() {
                   <div className="min-w-0">
                     <p className="font-medium truncate">{user?.name}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="text-xs">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        {t('verification.pending')}
-                      </Badge>
+                      {getVerificationBadge()}
                     </div>
                   </div>
                 </div>
                 <Button variant="outline" className="w-full sm:w-auto flex-shrink-0" onClick={() => navigate('/identity-verification')}>
-                  {t('verification.startVerification')}
+                  {verificationStatus === 'verified'
+                    ? (language === 'es' ? 'Ver verificación' : 'View verification')
+                    : t('verification.startVerification')}
                 </Button>
               </div>
             </CardContent>
