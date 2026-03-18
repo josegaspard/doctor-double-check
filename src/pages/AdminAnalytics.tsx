@@ -261,30 +261,32 @@ export default function AdminAnalytics() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
-              <BarChart3 className="w-6 h-6 text-primary" />
-              Analytics y Reportes
-            </h1>
-            <p className="text-muted-foreground">Estadísticas de la plataforma</p>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
+        <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="flex-shrink-0">
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            </Button>
+            <div className="min-w-0 flex-1">
+              <h1 className="font-heading text-lg sm:text-2xl font-bold flex items-center gap-1.5 sm:gap-2">
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+                <span className="truncate">Analytics y Reportes</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Estadísticas de la plataforma</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-between sm:justify-end">
             <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
-              <TabsList>
-                <TabsTrigger value="week">Semana</TabsTrigger>
-                <TabsTrigger value="month">Mes</TabsTrigger>
-                <TabsTrigger value="year">Año</TabsTrigger>
+              <TabsList className="h-8">
+                <TabsTrigger value="week" className="text-xs h-7 px-2.5">Semana</TabsTrigger>
+                <TabsTrigger value="month" className="text-xs h-7 px-2.5">Mes</TabsTrigger>
+                <TabsTrigger value="year" className="text-xs h-7 px-2.5">Año</TabsTrigger>
               </TabsList>
             </Tabs>
             {analytics && (
-              <Button variant="outline" size="sm" onClick={handlePrintPDF} className="gap-2">
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">PDF</span>
+              <Button variant="outline" size="sm" onClick={handlePrintPDF} className="gap-1 text-xs h-8">
+                <Download className="w-3.5 h-3.5" />
+                PDF
               </Button>
             )}
           </div>
