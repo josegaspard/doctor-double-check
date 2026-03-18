@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Send, MessageSquare, User, LogIn, Stethoscope, AlertCircle, Sparkles, Loader2, Wallet, CreditCard, Coins } from 'lucide-react';
+import { Send, MessageSquare, User, LogIn, Stethoscope, AlertCircle, Sparkles, Loader2, Wallet, CreditCard, Coins, Pin, Clock } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface PaidNotification {
