@@ -641,7 +641,7 @@ export default function Doctors() {
                     <button
                       key={doc.id}
                       onClick={() => navigate(`/doctor/${doc.user_id}`)}
-                      className="flex-shrink-0 snap-start flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-success/20 hover:border-success/50 transition-colors min-w-[200px]"
+                      className="flex-shrink-0 snap-start flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-card border border-success/20 hover:border-success/50 transition-colors min-w-[230px]"
                     >
                       <Avatar className="w-8 h-8 border border-success/30">
                         <AvatarImage src={doc.avatar_url || undefined} />
