@@ -1,26 +1,34 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Fix overlapping dialogs — sequential UX flow for ending live
 
-## Solucion
+## Problem
+The confirmation dialog ("¿Finalizar transmisión?") and the EndingLiveModal ("¿Guardar como contenido premium?") overlap visually because both render simultaneously. The doctor sees two stacked modals which is confusing, especially for older users.
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+## Root Cause
+In `handleEndLive`, `setShowEndDialog(false)` and `setShowEndingModal(true)` fire in the same render cycle. The AlertDialog closing animation hasn't completed before the EndingLiveModal opens, causing visual overlap.
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+## Solution
+Ensure the confirmation dialog fully closes before the EndingLiveModal appears by adding a small delay (`300ms`) between closing the confirmation and opening the ending modal. This creates a clean sequential flow:
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+1. **Step 1** — Doctor clicks "Finalizar" → Confirmation dialog appears
+2. **Step 2** — Doctor confirms → Dialog closes smoothly
+3. **Step 3** — After 300ms → EndingLiveModal appears with progress stages (ending → saving → uploading)
+4. **Step 4** — Choose stage: "¿Guardar como contenido premium?" with checkbox
+5. **Step 5** — Done stage: Stats summary + "Ver mis grabaciones" button
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+## Changes
 
-## Archivos a modificar
+### `src/pages/DoctorGoLive.tsx`
+- In `handleEndLive`: after `setShowEndDialog(false)`, add `await new Promise(r => setTimeout(r, 300))` before `setShowEndingModal(true)` to let the AlertDialog animation complete
+- This single change prevents the overlap
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+### `src/components/live/EndingLiveModal.tsx`
+- Increase font sizes for readability (older doctors): title `text-xl`, description `text-base`, button text `text-base min-h-[48px]`
+- Make stat cards slightly larger with `text-xl` values
+- Increase checkbox label to `text-base`
+
+## Files to modify
+1. `src/pages/DoctorGoLive.tsx` — Add 300ms delay between dialog close and modal open
+2. `src/components/live/EndingLiveModal.tsx` — Increase touch targets and font sizes for accessibility
+
