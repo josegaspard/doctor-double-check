@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,127 +40,95 @@ export default function RecordingPlayer() {
   const navigate = useNavigate();
   const { user, role, supabaseUser } = useAuth();
   
-  const [hasPurchased, setHasPurchased] = useState(false);
-  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const [recording, setRecording] = useState<Recording | null>(null);
-  const [isLoadingRecording, setIsLoadingRecording] = useState(true);
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
 
-  // Fetch recording directly from database
+  // Fetch recording + check purchase in parallel
   useEffect(() => {
-    const fetchRecording = async () => {
+    const load = async () => {
       if (!id) {
-        setIsLoadingRecording(false);
+        setIsLoading(false);
         return;
       }
 
-      try {
-        const { data, error } = await supabase
-          .from('recordings')
-          .select('*')
-          .eq('id', id)
-          .single();
+      const recordingPromise = supabase
+        .from('recordings')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-        if (error || !data) {
-          console.error('Error fetching recording:', error);
-          setIsLoadingRecording(false);
-          return;
-        }
+      const purchasePromise = supabaseUser?.id && role !== 'admin' && role !== 'doctor'
+        ? supabase
+            .from('purchases')
+            .select('id')
+            .eq('user_id', supabaseUser.id)
+            .eq('recording_id', id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null });
 
-        // Get doctor name
-        const { data: profile } = await supabase
-          .from('profiles_public')
-          .select('name')
-          .eq('id', data.doctor_id)
-          .single();
+      const [recResult, purchResult] = await Promise.all([recordingPromise, purchasePromise]);
 
-        setRecording({
-          id: data.id,
-          title: data.title,
-          description: data.description || undefined,
-          doctorId: data.doctor_id,
-          doctorName: profile?.name || 'Doctor',
-          specialty: data.specialty,
-          duration: data.duration,
-          price: Number(data.price),
-          thumbnailUrl: data.thumbnail_url || undefined,
-          videoUrl: data.video_url || undefined,
-          liveId: data.live_id || undefined,
-          createdAt: new Date(data.created_at),
-          tags: data.tags || [],
-        });
-      } catch (error) {
-        console.error('Error fetching recording:', error);
-      } finally {
-        setIsLoadingRecording(false);
+      if (recResult.error || !recResult.data) {
+        setIsLoading(false);
+        return;
       }
+
+      // Fetch doctor name (cheap, but after the parallel batch)
+      const { data: profile } = await supabase
+        .from('profiles_public')
+        .select('name')
+        .eq('id', recResult.data.doctor_id)
+        .single();
+
+      setRecording({
+        id: recResult.data.id,
+        title: recResult.data.title,
+        description: recResult.data.description || undefined,
+        doctorId: recResult.data.doctor_id,
+        doctorName: profile?.name || 'Doctor',
+        specialty: recResult.data.specialty,
+        duration: recResult.data.duration,
+        price: Number(recResult.data.price),
+        thumbnailUrl: recResult.data.thumbnail_url || undefined,
+        videoUrl: recResult.data.video_url || undefined,
+        liveId: recResult.data.live_id || undefined,
+        createdAt: new Date(recResult.data.created_at),
+        tags: recResult.data.tags || [],
+      });
+
+      if (role === 'admin' || role === 'doctor') {
+        setHasPurchased(true);
+      } else {
+        setHasPurchased(!!purchResult.data);
+      }
+
+      setIsLoading(false);
     };
 
-    fetchRecording();
-  }, [id]);
+    load();
+  }, [id, supabaseUser?.id, role]);
 
-  // Check if user has purchased this recording
-  const checkPurchase = useCallback(async () => {
-    if (!supabaseUser?.id || !id) {
-      setIsCheckingAccess(false);
-      return;
-    }
-
-    // Admins and doctors have automatic access
-    if (role === 'admin' || role === 'doctor') {
-      setHasPurchased(true);
-      setIsCheckingAccess(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('purchases')
-        .select('id')
-        .eq('user_id', supabaseUser.id)
-        .eq('recording_id', id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking purchase:', error);
-      }
-      
-      setHasPurchased(!!data);
-    } catch (error) {
-      console.error('Error checking access:', error);
-    } finally {
-      setIsCheckingAccess(false);
-    }
-  }, [supabaseUser?.id, id, role]);
-
-  useEffect(() => {
-    checkPurchase();
-  }, [checkPurchase]);
-
-  // Check access - uses real purchase verification
   const hasAccess = (): boolean => {
     if (!user) return false;
     if (role === 'admin' || role === 'doctor') return true;
-    // Check if recording is free
     if (recording && recording.price === 0) return true;
     return hasPurchased;
   };
 
-  // Handle duration update from player
   const handleDurationUpdate = (newDuration: number) => {
     if (recording && recording.duration !== newDuration) {
       setRecording(prev => prev ? { ...prev, duration: newDuration } : null);
     }
   };
 
-  if (isLoadingRecording || isCheckingAccess) {
+  if (isLoading) {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-12 text-center">
           <Loader2 className="w-16 h-16 mx-auto animate-spin text-primary mb-4" />
-          <h2 className="text-xl font-semibold mb-2">
-            {isLoadingRecording ? 'Cargando grabación...' : 'Verificando acceso...'}
-          </h2>
+          <h2 className="text-xl font-semibold mb-2">Cargando...</h2>
         </div>
       </MainLayout>
     );
@@ -195,7 +163,6 @@ export default function RecordingPlayer() {
     );
   }
 
-
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 max-w-6xl">
@@ -225,7 +192,6 @@ export default function RecordingPlayer() {
                   </div>
                 </div>
               )}
-              
             </div>
 
             <div>
@@ -250,7 +216,6 @@ export default function RecordingPlayer() {
           </div>
 
           <div className="space-y-3 sm:space-y-4">
-            {/* Chat replay synced with video */}
             {recording.liveId && (
               <RecordingChatReplay liveId={recording.liveId} />
             )}

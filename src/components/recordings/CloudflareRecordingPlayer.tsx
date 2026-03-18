@@ -43,9 +43,18 @@ export function CloudflareRecordingPlayer({
   const [isProcessing, setIsProcessing] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
+  const isPending = videoUrl.startsWith('pending:');
+
   const fetchPlaybackUrl = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+
+    // For ready UIDs, construct URL directly — skip edge function entirely
+    if (!isPending) {
+      setIsProcessing(false);
+      setIsLoading(false);
+      return `https://customer-3afz9zesalmyroc9.cloudflarestream.com/${videoUrl}/manifest/video.m3u8`;
+    }
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('get-cloudflare-playback', {
@@ -59,7 +68,6 @@ export function CloudflareRecordingPlayer({
       if (fnError) throw fnError;
 
        if (!data.success) {
-         // Any non-ready status should be treated as processing (Cloudflare uses multiple states)
          if (data.status && data.status !== 'error') {
           setIsProcessing(true);
           setError('La grabación aún se está procesando. Esto puede tomar unos minutos.');
@@ -70,7 +78,6 @@ export function CloudflareRecordingPlayer({
 
       setIsProcessing(false);
       
-      // If duration was updated, notify parent
       if (data.duration && onDurationUpdate) {
         onDurationUpdate(Math.floor(data.duration));
       }
@@ -83,7 +90,7 @@ export function CloudflareRecordingPlayer({
     } finally {
       setIsLoading(false);
     }
-  }, [videoUrl, recordingId, onDurationUpdate]);
+  }, [videoUrl, recordingId, onDurationUpdate, isPending]);
 
   const initPlayer = useCallback(async () => {
     const playbackUrl = await fetchPlaybackUrl();
