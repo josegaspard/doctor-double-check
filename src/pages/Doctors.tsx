@@ -32,6 +32,8 @@ import {
   Zap,
   GraduationCap,
   Globe,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
