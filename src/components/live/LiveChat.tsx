@@ -369,6 +369,25 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     return true;
   };
 
+  // Re-evaluate pinned messages every 5 seconds
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const pinnedMessages = useMemo(() => {
+    const now = new Date();
+    return messages.filter(m => m.isPaid && m.highlightUntil && m.highlightUntil > now);
+  }, [messages, /* tick forces recompute */]);
+
+  const getRemainingTime = (until: Date) => {
+    const secs = Math.max(0, Math.floor((until.getTime() - Date.now()) / 1000));
+    const mins = Math.floor(secs / 60);
+    const s = secs % 60;
+    return mins > 0 ? `${mins}m ${s}s` : `${s}s`;
+  };
+
   const highlightDurationLabel = chatHighlightSeconds >= 60
     ? `${Math.round(chatHighlightSeconds / 60)} min`
     : `${chatHighlightSeconds}s`;
