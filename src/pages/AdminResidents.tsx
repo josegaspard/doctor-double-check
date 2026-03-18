@@ -204,12 +204,13 @@ export default function AdminResidents() {
                   className="pl-10"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide">
                 {(['all', 'pending', 'approved', 'rejected'] as const).map((status) => (
                   <Button
                     key={status}
                     variant={statusFilter === status ? 'default' : 'outline'}
                     size="sm"
+                    className="text-xs h-8 flex-shrink-0"
                     onClick={() => setStatusFilter(status)}
                   >
                     {status === 'all' ? t('admin.all') : t(`admin.${status}`)}
