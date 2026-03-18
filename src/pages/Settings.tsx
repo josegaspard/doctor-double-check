@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import MainLayout from '@/components/layout/MainLayout';
@@ -25,6 +25,35 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { preferences, updatePreferences } = useNotifications();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchVerification = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from('identity_verifications')
+        .select('status')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) setVerificationStatus(data.status);
+    };
+    fetchVerification();
+  }, [user?.id]);
+
+  const getVerificationBadge = () => {
+    switch (verificationStatus) {
+      case 'verified':
+        return <Badge variant="success" className="text-xs"><CheckCircle className="h-3 w-3 mr-1" />{language === 'es' ? 'Verificado' : 'Verified'}</Badge>;
+      case 'pending':
+        return <Badge variant="warning" className="text-xs"><CheckCircle className="h-3 w-3 mr-1" />{t('verification.pending')}</Badge>;
+      case 'failed':
+        return <Badge variant="destructive" className="text-xs">{language === 'es' ? 'Fallida' : 'Failed'}</Badge>;
+      default:
+        return <Badge variant="secondary" className="text-xs">{language === 'es' ? 'No verificado' : 'Not verified'}</Badge>;
+    }
+  };
 
   const handleManageSubscriptions = async () => {
     setIsLoadingPortal(true);
@@ -299,15 +328,14 @@ export default function Settings() {
                   <div className="min-w-0">
                     <p className="font-medium truncate">{user?.name}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="text-xs">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        {t('verification.pending')}
-                      </Badge>
+                      {getVerificationBadge()}
                     </div>
                   </div>
                 </div>
                 <Button variant="outline" className="w-full sm:w-auto flex-shrink-0" onClick={() => navigate('/identity-verification')}>
-                  {t('verification.startVerification')}
+                  {verificationStatus === 'verified'
+                    ? (language === 'es' ? 'Ver verificación' : 'View verification')
+                    : t('verification.startVerification')}
                 </Button>
               </div>
             </CardContent>
