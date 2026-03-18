@@ -297,16 +297,17 @@ export default function AdminInvoiceReview() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-5xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="hidden sm:inline-flex mb-4 -ml-2 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4 mr-1" />Volver al panel
         </Button>
 
-        <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
-            <FileText className="w-6 h-6" />Revisión de Facturas
+        <div className="mb-4 sm:mb-6">
+          <h1 className="font-heading text-lg sm:text-2xl font-bold flex items-center gap-2">
+            <FileText className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+            <span className="truncate">Revisión de Facturas</span>
           </h1>
-          <p className="text-muted-foreground mt-1">Aprueba, rechaza y exporta facturas para contabilidad</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Aprueba, rechaza y exporta facturas</p>
         </div>
 
         {/* Period Summary */}
