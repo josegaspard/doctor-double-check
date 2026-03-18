@@ -530,11 +530,11 @@ export default function AdminDoctors() {
                       </div>
                     </div>
                     {doctor.status === 'pending' && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 mt-2 sm:mt-0">
                         <Button
                           size="sm"
                           variant="default"
-                          className="bg-success hover:bg-success/90 text-success-foreground"
+                          className="bg-success hover:bg-success/90 text-success-foreground flex-1 sm:flex-none"
                           onClick={() => setActionDialog({ open: true, doctor, action: 'approve' })}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
@@ -543,6 +543,7 @@ export default function AdminDoctors() {
                         <Button
                           size="sm"
                           variant="destructive"
+                          className="flex-1 sm:flex-none"
                           onClick={() => setActionDialog({ open: true, doctor, action: 'reject' })}
                         >
                           <XCircle className="w-4 h-4 mr-1" />
