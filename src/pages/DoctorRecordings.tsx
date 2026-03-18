@@ -1753,6 +1753,50 @@ export default function DoctorRecordings() {
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Single Past Live Delete Dialog */}
+      <AlertDialog open={!!plDeleteSingleId} onOpenChange={(open) => { if (!open) setPlDeleteSingleId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este live?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminarán permanentemente el registro del live, sus mensajes de chat y likes. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPlBulkDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSinglePastLive}
+              disabled={isPlBulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isPlBulkDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Eliminando...</>) : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Past Lives Delete Dialog */}
+      <AlertDialog open={plBulkDeleteDialogOpen} onOpenChange={setPlBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar {selectedPastLiveIds.size} live(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminarán permanentemente los registros seleccionados, incluyendo mensajes de chat y likes. Esta acción es irreversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPlBulkDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDeletePastLives}
+              disabled={isPlBulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isPlBulkDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Eliminando...</>) : `Eliminar ${selectedPastLiveIds.size}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }
