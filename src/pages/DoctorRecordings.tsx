@@ -986,6 +986,7 @@ export default function DoctorRecordings() {
                           <TableHead>Duración</TableHead>
                           <TableHead>Precio</TableHead>
                           <TableHead>Compras</TableHead>
+                          <TableHead>Chats pago</TableHead>
                           <TableHead>Ingresos</TableHead>
                           <TableHead>Fecha</TableHead>
                           {!selectionMode && <TableHead className="w-12"></TableHead>}
