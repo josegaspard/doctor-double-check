@@ -259,6 +259,10 @@ export default function DoctorGoLive() {
 
     setIsEnding(true);
     setShowEndDialog(false);
+
+    // Wait for confirmation dialog closing animation before showing ending modal
+    await new Promise(r => setTimeout(r, 300));
+
     setShowEndingModal(true);
     setEndingStage('ending');
 

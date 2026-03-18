@@ -108,8 +108,8 @@ export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress
           <div className="flex justify-center mb-4">
             {content.icon}
           </div>
-          <DialogTitle className="text-center">{content.title}</DialogTitle>
-          <DialogDescription className="text-center">
+          <DialogTitle className="text-center text-xl">{content.title}</DialogTitle>
+          <DialogDescription className="text-center text-base">
             {content.description}
           </DialogDescription>
         </DialogHeader>
@@ -138,18 +138,18 @@ export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress
               <Checkbox
                 checked={saveAsContent}
                 onCheckedChange={(v) => setSaveAsContent(!!v)}
-                className="mt-0.5"
+                className="mt-0.5 h-5 w-5"
               />
               <div>
-                <p className="text-sm font-semibold text-foreground">Guardar como contenido premium</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-base font-semibold text-foreground">Guardar como contenido premium</p>
+                <p className="text-sm text-muted-foreground mt-0.5">
                   La grabación estará disponible para la venta en tu perfil de doctor.
                 </p>
               </div>
             </label>
             <Button
               onClick={() => onKeepDecision?.(saveAsContent)}
-              className="w-full gap-2"
+              className="w-full gap-2 min-h-[48px] text-base"
             >
               <CheckCircle className="w-4 h-4" />
               Confirmar
@@ -166,7 +166,7 @@ export function EndingLiveModal({ isOpen, stage, enableRecording, uploadProgress
             )}
             <Button
               onClick={() => onDismissDone?.()}
-              className="w-full gap-2"
+              className="w-full gap-2 min-h-[48px] text-base"
             >
               {enableRecording ? (
                 <>
@@ -189,7 +189,7 @@ function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label
     <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50 border">
       <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
       <div className="min-w-0">
-        <p className="text-lg font-bold leading-tight text-foreground">{value.toLocaleString()}</p>
+        <p className="text-xl font-bold leading-tight text-foreground">{value.toLocaleString()}</p>
         <p className="text-[10px] text-muted-foreground truncate">{label}</p>
       </div>
     </div>
