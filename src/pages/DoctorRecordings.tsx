@@ -1055,9 +1055,21 @@ export default function DoctorRecordings() {
                               <TableCell>
                                 {isLoadingStats ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : stats.paidComments > 0 ? (
+                                  <span className="flex items-center gap-1">
+                                    <Sparkles className="w-3 h-3 text-muted-foreground" />
+                                    {stats.paidComments}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {isLoadingStats ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
                                   <span className="text-success font-medium">
-                                    {formatCurrency(stats.totalRevenue)}
+                                    {formatCurrency(getCombinedRevenue(recording.id))}
                                   </span>
                                 )}
                               </TableCell>
