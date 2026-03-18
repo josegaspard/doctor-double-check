@@ -304,12 +304,12 @@ export default function AdminAnalytics() {
                 { value: analytics.totalDoctors, label: 'Médicos verificados', icon: Stethoscope, bg: 'bg-primary/10', color: 'text-primary' },
                 { value: analytics.totalLives, label: 'Lives totales', icon: Video, bg: 'bg-live/10', color: 'text-live' },
               ].map((s, i) => (
-                <Card key={i}><CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg ${s.bg} flex items-center justify-center`}><s.icon className={`w-5 h-5 ${s.color}`} /></div>
-                    <div>
-                      <p className="text-2xl font-bold">{s.value}</p>
-                      <p className="text-xs text-muted-foreground">{s.label}</p>
+              <Card key={i}><CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}><s.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${s.color}`} /></div>
+                    <div className="min-w-0">
+                      <p className="text-lg sm:text-2xl font-bold truncate">{s.value}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{s.label}</p>
                     </div>
                   </div>
                 </CardContent></Card>
