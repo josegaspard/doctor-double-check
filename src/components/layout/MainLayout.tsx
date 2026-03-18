@@ -62,6 +62,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
+import { ActiveLiveBanner } from '@/components/live/ActiveLiveBanner';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
