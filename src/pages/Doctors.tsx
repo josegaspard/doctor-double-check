@@ -324,10 +324,10 @@ export default function Doctors() {
           <p className="text-sm text-muted-foreground">{t('doctors.exploreSubtitle')}</p>
         </div>
 
-        <div className="flex gap-6 items-start">
+        <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start">
           {/* Desktop Sidebar (P6) */}
           {!isMobile && (
-          <aside className="hidden md:block w-56 flex-shrink-0 self-start sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide bg-card border border-border rounded-xl p-4 space-y-1">
+          <aside className="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide bg-card border border-border rounded-xl p-4 space-y-1">
               {/* Specialties */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
