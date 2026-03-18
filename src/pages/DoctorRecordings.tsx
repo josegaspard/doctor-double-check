@@ -88,6 +88,7 @@ import {
   MessageSquare,
   Sparkles,
   Radio,
+  Download,
 } from 'lucide-react';
 
 interface RecordingStats {
