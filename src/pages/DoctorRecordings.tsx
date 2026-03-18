@@ -720,7 +720,12 @@ export default function DoctorRecordings() {
                     </div>
                     <div>
                       <p className="text-lg sm:text-2xl font-bold text-foreground">{formatCurrency(totalRevenue)}</p>
-                      <p className="text-xs text-muted-foreground">Ingresos</p>
+                      <p className="text-xs text-muted-foreground">Ingresos totales</p>
+                      {(totalVideoRevenue > 0 || totalChatRevenue > 0) && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          Video: {formatCurrency(totalVideoRevenue)} · Chats: {formatCurrency(totalChatRevenue)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
