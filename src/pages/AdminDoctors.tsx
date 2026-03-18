@@ -304,16 +304,16 @@ export default function AdminDoctors() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
-        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
-            <ArrowLeft className="h-5 w-5" />
+        <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="flex-shrink-0">
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <Stethoscope className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-              {t('admin.doctorManagement')}
+            <h1 className="text-base sm:text-2xl font-bold flex items-center gap-1.5 sm:gap-2">
+              <Stethoscope className="h-4 w-4 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+              <span className="truncate">{t('admin.doctorManagement')}</span>
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {pendingCount} {t('admin.pendingRequests')}
             </p>
           </div>
