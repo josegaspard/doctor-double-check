@@ -1,26 +1,25 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Fix Language Icon Visibility on Login & Fix Settings Verification Route
 
-## Solucion
+## Issue 1: Language switcher invisible on Login/Register header
+The `LanguageSwitcher` component uses `variant="ghost"` with default text color. On the dark header background, the icon is invisible until hovered. Need to add light text styling.
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+### Fix in `src/pages/Login.tsx` (line 197)
+- Wrap `LanguageSwitcher` or modify the component call to pass a className for light-colored icon
+- Since `LanguageSwitcher` renders a `Button variant="ghost"`, the simplest fix is to wrap it in a div with `text-dark-foreground` class, or add a className prop to LanguageSwitcher's button
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+### Fix in `src/components/settings/LanguageSwitcher.tsx`
+- Accept an optional `className` prop and pass it to the Button so the Login page can style it for dark backgrounds
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+## Issue 2: Settings navigates to wrong route
+The Settings page navigates to `/identity-verification` but the actual route is `/verify-identity`.
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+### Fix in `src/pages/Settings.tsx` (line 335)
+- Change `navigate('/identity-verification')` → `navigate('/verify-identity')`
 
-## Archivos a modificar
+## Files to Modify
+1. `src/components/settings/LanguageSwitcher.tsx` — accept className prop
+2. `src/pages/Login.tsx` — pass `className="text-dark-foreground"` to LanguageSwitcher
+3. `src/pages/Settings.tsx` — fix route path
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
