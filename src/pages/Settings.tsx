@@ -332,7 +332,7 @@ export default function Settings() {
                     </div>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full sm:w-auto flex-shrink-0" onClick={() => <Button variant="outline" className="w-full sm:w-auto flex-shrink-0" onClick={() => navigate('/verify-identity')}>}>
+                <Button variant="outline" className="w-full sm:w-auto flex-shrink-0" onClick={() => navigate('/verify-identity')}>
                   {verificationStatus === 'verified'
                     ? (language === 'es' ? 'Ver verificación' : 'View verification')
                     : t('verification.startVerification')}
