@@ -108,7 +108,7 @@ export default function RoleSelector() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-10 w-auto" />
-            <LanguageSwitcher />
+            <LanguageSwitcher className="text-white hover:text-white hover:bg-white/20" />
           </div>
         </div>
       </header>

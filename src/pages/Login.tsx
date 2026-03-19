@@ -194,7 +194,7 @@ export default function Login() {
               </Button>
               <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
             </div>
-            <LanguageSwitcher className="text-dark-foreground" />
+            <LanguageSwitcher className="text-white hover:text-white hover:bg-white/20" />
           </div>
         </div>
       </header>
