@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/popover';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ className }: { className?: string }) {
   const { language, setLanguage, t } = useLanguage();
   const [open, setOpen] = useState(false);
 
