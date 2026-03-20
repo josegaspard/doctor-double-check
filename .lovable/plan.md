@@ -1,25 +1,42 @@
 
 
-# No hay problema en /lives — ya funciona correctamente
+# Plan: Mejorar UX/UI del dialog "Editar portada" con drag & drop + i18n
 
-## Lo que encontré
+## Cambios
 
-El código de `/lives` (`LivesGrid.tsx`) **ya pasa `thumbnailUrl={undefined}`** al componente `LivePreviewPlayer` (línea 47). Esto significa que:
+### 1. `src/pages/DoctorRecordings.tsx` — Rediseñar el dialog de thumbnail (líneas 1856-1898)
+- Reemplazar el `<Input type="file">` por una zona de drag & drop con:
+  - Borde punteado, icono de upload, texto "Arrastra una imagen aquí o haz clic para seleccionar"
+  - Soporte `onDragOver/onDrop` + click para abrir file picker
+  - Preview de la imagen seleccionada con botón para cambiar/quitar
+- Botón "Guardar portada" más visible (full-width en mobile)
+- Usar traducciones `t()` en todos los textos del dialog
+- Los textos de los menús "Editar portada" también deben usar `t()`
 
-- En `/lives` **nunca se muestra un thumbnail** — siempre se conecta al Daily room y muestra el video en vivo
-- El componente `LivePreviewPlayer` solo muestra thumbnail como fallback cuando no hay conexión de video Y se le pasa una URL de thumbnail, lo cual no pasa porque se envía `undefined`
+### 2. `src/lib/i18n/es.ts` — Agregar keys de traducción
+- Dentro de `recordings` o nuevo bloque `thumbnail`:
+  - `editCover`: "Editar portada"
+  - `editCoverDesc`: "Sube una imagen de portada para"
+  - `noCover`: "Sin portada"
+  - `selectImage`: "Seleccionar imagen"
+  - `dragOrClick`: "Arrastra una imagen aquí o haz clic para seleccionar"
+  - `saveCover`: "Guardar portada"
+  - `savingCover`: "Guardando..."
+  - `coverUpdated`: "Portada actualizada"
+  - `coverError`: "Error al actualizar portada"
+  - `cancel`: ya existe
 
-## Lo que se hizo correctamente en el cambio anterior
+### 3. `src/lib/i18n/en.ts` — Traducciones en inglés
+- Mismas keys:
+  - `editCover`: "Edit cover"
+  - `editCoverDesc`: "Upload a cover image for"
+  - `dragOrClick`: "Drag an image here or click to select"
+  - `saveCover`: "Save cover"
+  - `savingCover`: "Saving..."
+  - etc.
 
-- La auto-captura de thumbnail se implementó **solo** en `DoctorGoLive.tsx` (captura frame al iniciar live)
-- La edición de thumbnail se implementó **solo** en `DoctorRecordings.tsx`
-- **No se tocó** `LivesGrid.tsx` ni `LivePreviewPlayer.tsx`
-
-## Conclusión
-
-No hay cambios necesarios. El comportamiento actual es el correcto:
-- `/lives` → muestra el video en vivo via Daily (sin thumbnails)
-- `/doctor/recordings` → muestra thumbnails (auto-capturados o editados)
-
-Si estás viendo algo diferente en la preview, puede ser un tema de caché del navegador. Prueba refrescar la página con Ctrl+Shift+R.
+## Archivos a modificar
+1. `src/pages/DoctorRecordings.tsx` — dialog con drag & drop + i18n
+2. `src/lib/i18n/es.ts` — nuevas keys
+3. `src/lib/i18n/en.ts` — nuevas keys
 
