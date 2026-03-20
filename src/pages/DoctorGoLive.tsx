@@ -327,12 +327,17 @@ export default function DoctorGoLive() {
         const price = enableRecording ? recordingPrice : 0;
         const currentViewerCount = viewerCount;
 
+        // Fetch live's thumbnail_url to copy to recording
+        const { data: liveRow } = await supabase.from('lives').select('thumbnail_url').eq('id', liveId).single();
+        const liveThumbnailUrl = liveRow?.thumbnail_url || undefined;
+
         // Fire and forget — upload happens in background
         (async () => {
           try {
             const uploadResult = await localRecording.uploadRecording({
               liveId, doctorId, title, description, specialty,
               tags: currentTags, price,
+              thumbnailUrl: liveThumbnailUrl,
             });
             if (uploadResult.success) {
               await supabase.from('recordings')
