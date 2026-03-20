@@ -198,6 +198,18 @@ export const es = {
     watchNow: 'Ver ahora',
     recordingsOf: 'Grabaciones de',
     viewAll: 'Ver todas',
+    editCover: 'Editar portada',
+    editCoverDesc: 'Sube una imagen de portada para',
+    noCover: 'Sin portada',
+    dragOrClick: 'Arrastra una imagen aquí o haz clic para seleccionar',
+    dragActive: 'Suelta la imagen aquí',
+    maxSize: 'JPG, PNG — máx 5MB',
+    changeImage: 'Cambiar imagen',
+    removeImage: 'Quitar',
+    saveCover: 'Guardar portada',
+    savingCover: 'Guardando...',
+    coverUpdated: 'Portada actualizada',
+    coverError: 'Error al actualizar portada',
   },
   // Dashboard
   dashboard: {
