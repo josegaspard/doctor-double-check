@@ -33,7 +33,7 @@ function AppStoreBadges({ className = '' }: { className?: string }) {
         href="#"
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-black border border-white/20 hover:bg-black/80 transition-colors"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-black border border-white/20 hover:bg-black/80 transition-colors min-w-[110px]"
       >
         <svg viewBox="0 0 512 512" className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0">
           <path fill="#4285F4" d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1z"/>
