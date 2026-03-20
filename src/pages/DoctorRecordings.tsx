@@ -1142,9 +1142,13 @@ export default function DoctorRecordings() {
                               )}
                               <TableCell>
                                 <div className="flex items-center gap-3">
-                                  <div className="w-12 h-8 rounded bg-muted flex items-center justify-center">
-                                    <Play className="w-4 h-4 text-muted-foreground" />
-                                  </div>
+                                  {recording.thumbnailUrl ? (
+                                    <img src={recording.thumbnailUrl} alt="" className="w-12 h-8 rounded object-cover" />
+                                  ) : (
+                                    <div className="w-12 h-8 rounded bg-muted flex items-center justify-center">
+                                      <Play className="w-4 h-4 text-muted-foreground" />
+                                    </div>
+                                  )}
                                   <div>
                                     <p className="font-medium line-clamp-1">{recording.title}</p>
                                     <div className="flex gap-1 mt-1">
