@@ -1107,7 +1107,7 @@ export default function DoctorRecordings() {
                 ) : (
                   /* Desktop: Table layout */
                   <div className="overflow-x-auto">
-                    <Table>
+                    <Table className="min-w-[800px]">
                       <TableHeader>
                         <TableRow>
                           {selectionMode && <TableHead className="w-10"></TableHead>}
