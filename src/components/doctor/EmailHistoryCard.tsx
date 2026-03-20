@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -73,6 +74,7 @@ const getEmailTypeLabel = (type: string) => {
 
 export function EmailHistoryCard() {
   const { supabaseUser } = useAuth();
+  const navigate = useNavigate();
   const [emails, setEmails] = useState<EmailHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -468,61 +470,65 @@ export function EmailHistoryCard() {
           </div>
         ) : (
           <>
-            <ScrollArea className={isExpanded ? 'h-[400px]' : ''}>
-              <div className="space-y-3">
-                {displayedEmails.map(email => (
-                  <div
-                    key={email.id}
-                    className={`flex items-start gap-3 p-3 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer ${selectedIds.has(email.id) ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-muted/50'}`}
-                    onClick={() => toggleSelect(email.id)}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(email.id)}
-                      onChange={() => toggleSelect(email.id)}
-                      className="mt-2 accent-primary flex-shrink-0"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <div className="w-8 h-8 rounded-full bg-background flex items-center justify-center flex-shrink-0">
-                      {getEmailTypeIcon(email.emailType)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm truncate">
-                          {email.recipientName || email.recipientEmail}
-                        </span>
-                        <Badge variant="outline" className="text-xs">
-                          {getEmailTypeLabel(email.emailType)}
-                        </Badge>
-                        {email.status === 'sent' ? (
-                          <CheckCircle className="w-3 h-3 text-success" />
-                        ) : (
-                          <XCircle className="w-3 h-3 text-destructive" />
-                        )}
-                      </div>
-                      {email.contentTitle && (
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {email.contentTitle}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {format(email.createdAt, "d MMM yyyy, HH:mm", { locale: es })}
-                      </p>
-                      {email.status === 'failed' && email.errorMessage && (
-                        <p className="text-xs text-destructive mt-1">{email.errorMessage}</p>
-                      )}
-                    </div>
+            <div className="space-y-3">
+              {displayedEmails.map(email => (
+                <div
+                  key={email.id}
+                  className={`flex items-start gap-3 p-3 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer ${selectedIds.has(email.id) ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-muted/50'}`}
+                  onClick={() => toggleSelect(email.id)}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(email.id)}
+                    onChange={() => toggleSelect(email.id)}
+                    className="mt-2 accent-primary flex-shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <div className="w-8 h-8 rounded-full bg-background flex items-center justify-center flex-shrink-0">
+                    {getEmailTypeIcon(email.emailType)}
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm truncate">
+                        {email.recipientName || email.recipientEmail}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {getEmailTypeLabel(email.emailType)}
+                      </Badge>
+                      {email.status === 'sent' ? (
+                        <CheckCircle className="w-3 h-3 text-success" />
+                      ) : (
+                        <XCircle className="w-3 h-3 text-destructive" />
+                      )}
+                    </div>
+                    {email.contentTitle && (
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {email.contentTitle}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {format(email.createdAt, "d MMM yyyy, HH:mm", { locale: es })}
+                    </p>
+                    {email.status === 'failed' && email.errorMessage && (
+                      <p className="text-xs text-destructive mt-1">{email.errorMessage}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
 
             {filteredEmails.length > 5 && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="w-full mt-3"
-                onClick={() => setIsExpanded(!isExpanded)}
+                onClick={() => {
+                  if (filteredEmails.length > 15) {
+                    navigate('/doctor/email-history');
+                  } else {
+                    setIsExpanded(!isExpanded);
+                  }
+                }}
               >
                 {isExpanded ? (
                   <>

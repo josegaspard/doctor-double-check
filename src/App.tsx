@@ -93,6 +93,7 @@ const DoctorInvoices = React.lazy(() => import("./pages/DoctorInvoices"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const DoctorContentLibrary = React.lazy(() => import("./pages/DoctorContentLibrary"));
 const DoctorEarnings = React.lazy(() => import("./pages/DoctorEarnings"));
+const DoctorEmailHistory = React.lazy(() => import("./pages/DoctorEmailHistory"));
 const SuccessStories = React.lazy(() => import("./pages/SuccessStories"));
 const Help = React.lazy(() => import("./pages/Help"));
 const Security = React.lazy(() => import("./pages/Security"));
@@ -223,6 +224,7 @@ const App = () => {
                       <Route path="/doctor/bank-account" element={<DoctorBankAccount />} />
                       <Route path="/doctor/invoices" element={<DoctorInvoices />} />
                       <Route path="/doctor/earnings" element={<DoctorEarnings />} />
+                      <Route path="/doctor/email-history" element={<DoctorEmailHistory />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/contact" element={<Contact />} />
