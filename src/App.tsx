@@ -93,6 +93,7 @@ const DoctorInvoices = React.lazy(() => import("./pages/DoctorInvoices"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const DoctorContentLibrary = React.lazy(() => import("./pages/DoctorContentLibrary"));
 const DoctorEarnings = React.lazy(() => import("./pages/DoctorEarnings"));
+const DoctorEmailHistory = React.lazy(() => import("./pages/DoctorEmailHistory"));
 const SuccessStories = React.lazy(() => import("./pages/SuccessStories"));
 const Help = React.lazy(() => import("./pages/Help"));
 const Security = React.lazy(() => import("./pages/Security"));
