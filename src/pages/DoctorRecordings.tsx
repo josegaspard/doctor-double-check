@@ -599,6 +599,44 @@ export default function DoctorRecordings() {
     setStatsDialogOpen(true);
   };
 
+  // Thumbnail edit handlers
+  const handleEditThumbnail = (recording: Recording) => {
+    setThumbnailRecording(recording);
+    setThumbnailPreview(recording.thumbnailUrl || null);
+    setThumbnailFile(null);
+    setThumbnailDialogOpen(true);
+  };
+
+  const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      setThumbnailPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSaveThumbnail = async () => {
+    if (!thumbnailRecording || !thumbnailFile || !user?.id) return;
+    setIsSavingThumbnail(true);
+    try {
+      const ext = thumbnailFile.name.split('.').pop() || 'jpg';
+      const path = `${user.id}/${thumbnailRecording.id}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('thumbnails').upload(path, thumbnailFile, { contentType: thumbnailFile.type, upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from('thumbnails').getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+      const { error: dbErr } = await supabase.from('recordings').update({ thumbnail_url: publicUrl }).eq('id', thumbnailRecording.id);
+      if (dbErr) throw dbErr;
+      setRecordings(prev => prev.map(r => r.id === thumbnailRecording.id ? { ...r, thumbnailUrl: publicUrl } : r));
+      toast.success('Portada actualizada');
+      setThumbnailDialogOpen(false);
+    } catch (err: any) {
+      toast.error('Error al actualizar portada: ' + (err.message || 'Error'));
+    } finally {
+      setIsSavingThumbnail(false);
+    }
+  };
+
   // ========== Past Lives Handlers ==========
   const togglePlSelectionMode = () => {
     if (plSelectionMode) setSelectedPastLiveIds(new Set());
