@@ -74,6 +74,7 @@ const getEmailTypeLabel = (type: string) => {
 
 export function EmailHistoryCard() {
   const { supabaseUser } = useAuth();
+  const navigate = useNavigate();
   const [emails, setEmails] = useState<EmailHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
