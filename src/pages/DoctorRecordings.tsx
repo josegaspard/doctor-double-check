@@ -1225,6 +1225,9 @@ export default function DoctorRecordings() {
                                       <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
                                         <Pencil className="w-4 h-4 mr-2" />Editar precio
                                       </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleEditThumbnail(recording)}>
+                                        <ImageIcon className="w-4 h-4 mr-2" />Editar portada
+                                      </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
                                         <Trash2 className="w-4 h-4 mr-2" />Eliminar
