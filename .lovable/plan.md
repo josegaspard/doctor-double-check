@@ -1,26 +1,42 @@
 
-# Plan: Agregar Lives y Noticias al header de desktop/tablet para visitantes
 
-## Problema
-En PC y tablet, cuando no estas logueado, el header de navegacion aparece vacio porque `filteredNavItems` usa `role && ...` que retorna vacio cuando `role` es `undefined` (no logueado).
+# Plan: Fix Email History — Show count, expand/navigate, permanent delete
 
-## Solucion
+## Problem
+- "Ver todos (X)" button doesn't show the correct count and errors when clicked
+- The expand logic uses `isExpanded` toggle with a ScrollArea of fixed height that breaks
+- No dedicated page for full email history when there are many emails
+- Need permanent deletion from database
 
-**Archivo**: `src/components/layout/MainLayout.tsx` (linea 210-212)
+## Solution
 
-Cambiar la logica de filtrado para que cuando `role` sea falsy, lo trate como `'visitor'`:
+### Logic change in `EmailHistoryCard.tsx`
+- Show first 5 emails by default (current behavior)
+- If total filtered emails ≤ 15: clicking "Ver todos (N)" expands inline WITHOUT ScrollArea height restriction — just show all items in a normal list
+- If total filtered emails > 15: clicking "Ver todos (N)" navigates to `/doctor/email-history` dedicated page
+- Fix: the `(N)` must show `filteredEmails.length` (already does, but the expand/ScrollArea is broken — remove the fixed `h-[400px]` and just render all when expanded for ≤15 case)
+- Remove the `ScrollArea` wrapper when expanded — just render the full list directly
 
-```
-const filteredNavItems = useMemo(() => {
-  const effectiveRole = role || 'visitor';
-  return navItems.filter(item => item.roles.includes(effectiveRole));
-}, [role]);
-```
+### New page: `src/pages/DoctorEmailHistory.tsx`
+- Full-page email history with back arrow (like Notifications page)
+- Fetch ALL emails from `email_history` for the doctor (no limit, or limit 500)
+- Selection mode: select one, multiple, or all
+- Delete selected — permanent delete from database with confirmation dialog
+- Delete individual via swipe or button per row
+- Filters: same type + date filters as the card
+- Export CSV button
+- Uses `MainLayout` + `MobileBackHeader` pattern like Notifications
 
-Esto hara que en desktop/tablet aparezcan "Lives" y "Noticias" en el header cuando el usuario no esta logueado, ya que ambos items tienen `'visitor'` en sus roles.
+### Route in `src/App.tsx`
+- Add `/doctor/email-history` route pointing to the new page
 
-## Archivos a modificar
+### Delete behavior
+- Uses `supabase.from('email_history').delete().in('id', ids)` — already works in the card
+- Confirmation dialog before bulk delete
+- After delete, update local state to remove deleted items
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/layout/MainLayout.tsx` | Linea 210-212: usar `role \|\| 'visitor'` en filteredNavItems |
+## Files to modify
+1. `src/components/doctor/EmailHistoryCard.tsx` — fix expand logic, navigate when >15
+2. `src/pages/DoctorEmailHistory.tsx` — new full page
+3. `src/App.tsx` — add route
+
