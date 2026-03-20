@@ -89,6 +89,7 @@ import {
   Sparkles,
   Radio,
   Download,
+  ImageIcon,
 } from 'lucide-react';
 
 interface RecordingStats {
@@ -154,6 +155,13 @@ export default function DoctorRecordings() {
   // Stats Dialog
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
+
+  // Thumbnail Edit Dialog
+  const [thumbnailDialogOpen, setThumbnailDialogOpen] = useState(false);
+  const [thumbnailRecording, setThumbnailRecording] = useState<Recording | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [isSavingThumbnail, setIsSavingThumbnail] = useState(false);
 
   // Bulk Selection (Recordings)
   const [selectionMode, setSelectionMode] = useState(false);
@@ -591,6 +599,44 @@ export default function DoctorRecordings() {
     setStatsDialogOpen(true);
   };
 
+  // Thumbnail edit handlers
+  const handleEditThumbnail = (recording: Recording) => {
+    setThumbnailRecording(recording);
+    setThumbnailPreview(recording.thumbnailUrl || null);
+    setThumbnailFile(null);
+    setThumbnailDialogOpen(true);
+  };
+
+  const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      setThumbnailPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSaveThumbnail = async () => {
+    if (!thumbnailRecording || !thumbnailFile || !user?.id) return;
+    setIsSavingThumbnail(true);
+    try {
+      const ext = thumbnailFile.name.split('.').pop() || 'jpg';
+      const path = `${user.id}/${thumbnailRecording.id}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('thumbnails').upload(path, thumbnailFile, { contentType: thumbnailFile.type, upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from('thumbnails').getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+      const { error: dbErr } = await supabase.from('recordings').update({ thumbnail_url: publicUrl }).eq('id', thumbnailRecording.id);
+      if (dbErr) throw dbErr;
+      setRecordings(prev => prev.map(r => r.id === thumbnailRecording.id ? { ...r, thumbnailUrl: publicUrl } : r));
+      toast.success('Portada actualizada');
+      setThumbnailDialogOpen(false);
+    } catch (err: any) {
+      toast.error('Error al actualizar portada: ' + (err.message || 'Error'));
+    } finally {
+      setIsSavingThumbnail(false);
+    }
+  };
+
   // ========== Past Lives Handlers ==========
   const togglePlSelectionMode = () => {
     if (plSelectionMode) setSelectedPastLiveIds(new Set());
@@ -1009,6 +1055,9 @@ export default function DoctorRecordings() {
                                   <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
                                     <Pencil className="w-4 h-4 mr-2" />Editar precio
                                   </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleEditThumbnail(recording)}>
+                                    <ImageIcon className="w-4 h-4 mr-2" />Editar portada
+                                  </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
                                     <Trash2 className="w-4 h-4 mr-2" />Eliminar
@@ -1058,7 +1107,7 @@ export default function DoctorRecordings() {
                 ) : (
                   /* Desktop: Table layout */
                   <div className="overflow-x-auto">
-                    <Table>
+                    <Table className="min-w-[800px]">
                       <TableHeader>
                         <TableRow>
                           {selectionMode && <TableHead className="w-10"></TableHead>}
@@ -1093,9 +1142,13 @@ export default function DoctorRecordings() {
                               )}
                               <TableCell>
                                 <div className="flex items-center gap-3">
-                                  <div className="w-12 h-8 rounded bg-muted flex items-center justify-center">
-                                    <Play className="w-4 h-4 text-muted-foreground" />
-                                  </div>
+                                  {recording.thumbnailUrl ? (
+                                    <img src={recording.thumbnailUrl} alt="" className="w-12 h-8 rounded object-cover" />
+                                  ) : (
+                                    <div className="w-12 h-8 rounded bg-muted flex items-center justify-center">
+                                      <Play className="w-4 h-4 text-muted-foreground" />
+                                    </div>
+                                  )}
                                   <div>
                                     <p className="font-medium line-clamp-1">{recording.title}</p>
                                     <div className="flex gap-1 mt-1">
@@ -1175,6 +1228,9 @@ export default function DoctorRecordings() {
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
                                         <Pencil className="w-4 h-4 mr-2" />Editar precio
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleEditThumbnail(recording)}>
+                                        <ImageIcon className="w-4 h-4 mr-2" />Editar portada
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
@@ -1436,7 +1492,7 @@ export default function DoctorRecordings() {
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <Table>
+                    <Table className="min-w-[800px]">
                       <TableHeader>
                         <TableRow>
                           {plSelectionMode && <TableHead className="w-10" />}
@@ -1797,6 +1853,49 @@ export default function DoctorRecordings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Thumbnail Edit Dialog */}
+      <Dialog open={thumbnailDialogOpen} onOpenChange={setThumbnailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar portada</DialogTitle>
+            <DialogDescription>
+              Sube una imagen de portada para "{thumbnailRecording?.title}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {thumbnailPreview ? (
+              <img src={thumbnailPreview} alt="Preview" className="w-full aspect-video object-cover rounded-lg border" />
+            ) : (
+              <div className="w-full aspect-video rounded-lg border border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/50">
+                <div className="text-center text-muted-foreground">
+                  <ImageIcon className="w-8 h-8 mx-auto mb-2" />
+                  <p className="text-sm">Sin portada</p>
+                </div>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="thumbnail-upload">Seleccionar imagen</Label>
+              <Input
+                id="thumbnail-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailFileChange}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setThumbnailDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={handleSaveThumbnail}
+              disabled={!thumbnailFile || isSavingThumbnail}
+            >
+              {isSavingThumbnail ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Guardando...</>) : 'Guardar portada'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

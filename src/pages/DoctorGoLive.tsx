@@ -183,6 +183,50 @@ export default function DoctorGoLive() {
 
       localRecording.startRecording(stream);
 
+      // Auto-capture thumbnail from stream if no custom thumbnail was provided
+      if (!config.thumbnailFile) {
+        setTimeout(async () => {
+          try {
+            const videoTracks = stream.getVideoTracks();
+            if (videoTracks.length === 0) return;
+            const autoVideo = document.createElement('video');
+            autoVideo.srcObject = stream;
+            autoVideo.muted = true;
+            autoVideo.playsInline = true;
+            autoVideo.style.cssText = 'position:fixed;top:-9999px;opacity:0;pointer-events:none;';
+            document.body.appendChild(autoVideo);
+            await autoVideo.play();
+            // Wait for video to have valid dimensions
+            await new Promise<void>((resolve) => {
+              if (autoVideo.videoWidth > 0) return resolve();
+              autoVideo.onloadedmetadata = () => resolve();
+              setTimeout(resolve, 2000);
+            });
+            const w = autoVideo.videoWidth || 640;
+            const h = autoVideo.videoHeight || 480;
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { autoVideo.remove(); return; }
+            ctx.drawImage(autoVideo, 0, 0, w, h);
+            autoVideo.remove();
+            canvas.toBlob(async (blob) => {
+              if (!blob || !user?.id) return;
+              const thumbPath = `${user.id}/${live.id}-auto.jpg`;
+              const { error: thumbErr } = await supabase.storage.from('thumbnails').upload(thumbPath, blob, { contentType: 'image/jpeg', upsert: true });
+              if (!thumbErr) {
+                const { data: thumbUrl } = supabase.storage.from('thumbnails').getPublicUrl(thumbPath);
+                await supabase.from('lives').update({ thumbnail_url: thumbUrl.publicUrl }).eq('id', live.id);
+                console.log('[GoLive] Auto-thumbnail captured and uploaded');
+              }
+            }, 'image/jpeg', 0.8);
+          } catch (err) {
+            console.warn('[GoLive] Auto-thumbnail capture failed:', err);
+          }
+        }, 3000);
+      }
+
       const liveDataObj: LiveData = {
         id: live.id, title: live.title, description: live.description || '',
         specialty: live.specialty, viewerCount: 0, likesCount: 0,
@@ -283,12 +327,17 @@ export default function DoctorGoLive() {
         const price = enableRecording ? recordingPrice : 0;
         const currentViewerCount = viewerCount;
 
+        // Fetch live's thumbnail_url to copy to recording
+        const { data: liveRow } = await supabase.from('lives').select('thumbnail_url').eq('id', liveId).single();
+        const liveThumbnailUrl = liveRow?.thumbnail_url || undefined;
+
         // Fire and forget — upload happens in background
         (async () => {
           try {
             const uploadResult = await localRecording.uploadRecording({
               liveId, doctorId, title, description, specialty,
               tags: currentTags, price,
+              thumbnailUrl: liveThumbnailUrl,
             });
             if (uploadResult.success) {
               await supabase.from('recordings')
