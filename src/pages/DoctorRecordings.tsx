@@ -89,6 +89,7 @@ import {
   Sparkles,
   Radio,
   Download,
+  Upload,
   ImageIcon,
 } from 'lucide-react';
 
