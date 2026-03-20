@@ -631,10 +631,10 @@ export default function DoctorRecordings() {
       const { error: dbErr } = await supabase.from('recordings').update({ thumbnail_url: publicUrl }).eq('id', thumbnailRecording.id);
       if (dbErr) throw dbErr;
       setRecordings(prev => prev.map(r => r.id === thumbnailRecording.id ? { ...r, thumbnailUrl: publicUrl } : r));
-      toast.success('Portada actualizada');
+      toast.success(t('recordings.coverUpdated'));
       setThumbnailDialogOpen(false);
     } catch (err: any) {
-      toast.error('Error al actualizar portada: ' + (err.message || 'Error'));
+      toast.error(t('recordings.coverError') + ': ' + (err.message || 'Error'));
     } finally {
       setIsSavingThumbnail(false);
     }
