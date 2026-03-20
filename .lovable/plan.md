@@ -1,58 +1,59 @@
 
 
-# Plan: Reorganizar y mejorar UX/UI del Panel de Médico + reducir tamaños en mobile
+# Plan: Auto-thumbnail from live, editable thumbnails in Recordings, tablet layout fixes
 
-## Problemas actuales
-- En mobile, la pestaña "General" muestra todo apilado sin agrupación lógica: perfil, stats, pacientes, acciones rápidas, finanzas, emails, configuración, historial, fondos retenidos, vault — demasiadas secciones sueltas, abrumador
-- Los títulos/números como "$126,749" usan `text-2xl` en mobile — demasiado grandes para pantallas de 390px
-- La pestaña "Analytics" también tiene `text-2xl font-bold` en las stats cards y el header "Analytics Dashboard" se rompe en mobile (como muestra el screenshot)
-- No hay agrupación visual clara entre secciones relacionadas
+## 1. Auto-capture thumbnail from live start
 
-## Cambios
+When the live starts and the doctor did NOT provide a custom thumbnail, capture a frame from the video stream after ~3 seconds and upload it as the thumbnail.
 
-### 1. `src/pages/DoctorDashboard.tsx` — Reorganizar Overview en secciones agrupadas
-- Agrupar el contenido en bloques lógicos con headers de sección claros:
-  - **Mi Práctica**: ProfileCard + StatsGrid (juntos, son sobre "quién soy y mis números")
-  - **Acciones Rápidas**: QuickActions (ya separado)
-  - **Pacientes**: PatientsList (ya separado)
-  - **Finanzas**: EarningsCard + FundHoldsCard (agrupados bajo un header "Finanzas")
-  - **Comunicaciones**: EmailStatsCard + EmailHistoryCard (agrupados bajo un header "Comunicaciones")
-  - **Configuración**: collapsible como está (ya funciona bien)
-  - **Vault**: como está (condicional)
-- Cada grupo tendrá un pequeño header de sección (`text-xs uppercase tracking-wide text-muted-foreground`) para que el usuario sepa dónde está
+### `src/pages/DoctorGoLive.tsx`
+- After `localRecording.startRecording(stream)` (line 184), if `!config.thumbnailFile`, set a 3-second timeout that:
+  - Creates a hidden `<video>` element from `stream`
+  - Draws a frame onto a `<canvas>`
+  - Converts to blob via `canvas.toBlob('image/jpeg', 0.8)`
+  - Uploads to `thumbnails` bucket at `{userId}/{liveId}-auto.jpg`
+  - Updates `lives.thumbnail_url` with the public URL
+  - Also updates `recordings.thumbnail_url` later when the recording is saved
+- When saving the recording (background upload around line 287-298), copy the live's `thumbnail_url` to the recording's `thumbnail_url`
 
-### 2. `src/components/doctor/DoctorAnalytics.tsx` — Fix mobile layout + reducir tamaños
-- Header "Analytics Dashboard": cambiar de `text-xl` a `text-base sm:text-xl`, y poner el period selector debajo del título en mobile (stack vertical) en vez de `justify-between` que causa el quiebre
-- Stats grid: reducir `text-2xl` → `text-lg sm:text-2xl` en los valores numéricos
-- Cards de stats: reducir padding `p-4` → `p-3 sm:p-4`
-- Icon containers: reducir `w-10 h-10` → `w-8 h-8 sm:w-10 sm:h-10`
-- Charts: mantener como están (ya funcionan con ResponsiveContainer)
-- Bottom stats (rating dist + content + consultas): en mobile `grid-cols-1` en vez de intentar meter 3 columnas
+### `src/hooks/cloudflare/useLocalRecording.ts`
+- In `uploadRecording`, accept optional `thumbnailUrl` param and include it in the insert/update payload instead of `null`
 
-### 3. `src/components/doctor/DoctorStatsGrid.tsx` — Reducir tamaños mobile
-- Valores: `text-xl sm:text-2xl` → `text-lg sm:text-2xl`
-- Padding: ya está bien con `p-3 sm:p-4`
+## 2. Edit thumbnail from Recordings page
 
-### 4. `src/components/doctor/EarningsCard.tsx` — Reducir tamaños mobile
-- Valores de dinero: `text-lg sm:text-xl` → `text-base sm:text-xl`
+### `src/pages/DoctorRecordings.tsx`
+- Add "Editar portada" option to the dropdown menu (both mobile and desktop)
+- Add a new dialog `thumbnailDialogOpen` with:
+  - Current thumbnail preview (if exists)
+  - File input to upload a new image
+  - Save button that uploads to `thumbnails` bucket and updates `recordings.thumbnail_url`
+- The thumbnail should also show in the table/card: replace the gray play icon placeholder (line 1096) with the actual thumbnail image if available
+- In the stats dialog, show the current thumbnail
 
-### 5. `src/components/doctor/EmailStatsCard.tsx` — Reducir tamaños mobile
-- Valores `text-2xl` → `text-lg sm:text-2xl`
-- Valores `text-xl` → `text-base sm:text-xl`
+## 3. Fix tablet layout issues
 
-### 6. `src/components/doctor/FundHoldsCard.tsx` — Reducir tamaños mobile (minor)
-- Ya está bastante compacto, solo ajustar si hay `text-2xl` sueltos
+### `src/pages/Doctors.tsx` — Sidebar sticky + tablet doctor cards
+- The sidebar sticky IS correctly configured (`sticky top-24 self-start`). The issue is likely `MainLayout` or the parent container having `overflow: hidden`. 
+- Check `MainLayout` for overflow constraints. Add `overflow-visible` to the grid container on line 327.
+- Doctor cards at tablet width (769px): the grid currently uses `sm:grid-cols-2` which shows 2 columns at tablet. The cards have dense content with truncated text ("Disponib le ahora", "Ciudad ..."). Fix:
+  - Ensure `PriceDisplay` doesn't wrap oddly at tablet
+  - The "Doctores Disponibles Ahora" banner cards at tablet need min-width adjusted so content doesn't squeeze
 
-## Archivos a modificar
-1. `src/pages/DoctorDashboard.tsx` — reagrupar secciones con headers
-2. `src/components/doctor/DoctorAnalytics.tsx` — fix mobile layout + reducir tamaños
-3. `src/components/doctor/DoctorStatsGrid.tsx` — reducir font mobile
-4. `src/components/doctor/EarningsCard.tsx` — reducir font mobile
-5. `src/components/doctor/EmailStatsCard.tsx` — reducir font mobile
+### `src/pages/DoctorRecordings.tsx` — Tablet table
+- The recordings table (screenshot 3) shows squeezed columns at tablet because it keeps the full desktop table at `md` breakpoint but viewport is only 769px wide
+- Add `min-w-[800px]` to the Table so it scrolls horizontally on tight tablets instead of squeezing all columns
+- Apply same fix to Past Lives table
 
-## Resultado
-- El dashboard se sentirá organizado por categorías claras en vez de una lista interminable
-- Los números no serán gigantes en celular
-- Analytics no se romperá en mobile
-- No se quita nada, solo se ordena y reduce proporcionalmente
+### `src/pages/RecordingsGrid.tsx` — Content cards at tablet
+- The content gallery cards look fine at tablet (4-column grid) based on screenshots. Minor adjustments if needed.
+
+### `src/components/layout/UnifiedFooter.tsx` — Tablet footer
+- Footer badge rendering at tablet width shows squeezed text in App Store/Google Play badges. Add `min-w-[120px]` to store badges and ensure they don't wrap text internally.
+
+## Files to modify
+1. `src/pages/DoctorGoLive.tsx` — auto-capture thumbnail from stream
+2. `src/hooks/cloudflare/useLocalRecording.ts` — accept thumbnailUrl param
+3. `src/pages/DoctorRecordings.tsx` — edit thumbnail dialog + show thumbnails in table + tablet table fix
+4. `src/pages/Doctors.tsx` — overflow fix for sticky sidebar + tablet card adjustments
+5. `src/components/layout/UnifiedFooter.tsx` — tablet badge sizing
 
