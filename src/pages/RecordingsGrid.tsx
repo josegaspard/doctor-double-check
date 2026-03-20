@@ -35,7 +35,7 @@ export default function RecordingsGrid() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const doctorFilter = searchParams.get('doctor');
-  const { recordings, ensureRecordingsLoaded } = useLives();
+  const { recordings, refreshRecordings } = useLives();
   const { user, role, isAuthenticated } = useAuth();
   const { t, language } = useLanguage();
   const { balance } = useWallet();
@@ -48,10 +48,10 @@ export default function RecordingsGrid() {
   const [doctorName, setDoctorName] = useState<string | null>(null);
   const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
 
-  // Ensure recordings are loaded when this page mounts
+  // Always refresh recordings when this page mounts to get latest thumbnails
   useEffect(() => {
-    ensureRecordingsLoaded();
-  }, [ensureRecordingsLoaded]);
+    refreshRecordings();
+  }, [refreshRecordings]);
 
   useEffect(() => {
     if (!doctorFilter) { setDoctorName(null); return; }
