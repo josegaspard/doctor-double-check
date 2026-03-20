@@ -155,6 +155,13 @@ export default function DoctorRecordings() {
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
 
+  // Thumbnail Edit Dialog
+  const [thumbnailDialogOpen, setThumbnailDialogOpen] = useState(false);
+  const [thumbnailRecording, setThumbnailRecording] = useState<Recording | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [isSavingThumbnail, setIsSavingThumbnail] = useState(false);
+
   // Bulk Selection (Recordings)
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
