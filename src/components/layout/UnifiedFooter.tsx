@@ -150,7 +150,7 @@ export function UnifiedFooter({ variant }: Props) {
   return (
     <footer className="bg-[#0b1d45] pt-12 sm:pt-20 pb-8 sm:pb-10 text-slate-300 border-t border-white/5 font-light text-sm">
       <div className="container mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-10 mb-10 sm:mb-16">
+        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 sm:gap-10 mb-10 sm:mb-16">
           <div className="col-span-2">
             <img src={logoWhite} alt="Medical Logo" className="h-8 mb-4 sm:mb-6 opacity-90" />
             <p className="mb-4 sm:mb-6 max-w-sm text-slate-400 text-xs sm:text-sm">
