@@ -163,6 +163,8 @@ export default function DoctorRecordings() {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [isSavingThumbnail, setIsSavingThumbnail] = useState(false);
+  const [isDraggingThumbnail, setIsDraggingThumbnail] = useState(false);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   // Bulk Selection (Recordings)
   const [selectionMode, setSelectionMode] = useState(false);
