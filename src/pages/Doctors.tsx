@@ -324,7 +324,7 @@ export default function Doctors() {
           <p className="text-sm text-muted-foreground">{t('doctors.exploreSubtitle')}</p>
         </div>
 
-        <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start">
+        <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
           {/* Desktop Sidebar (P6) */}
           {!isMobile && (
           <aside className="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide bg-card border border-border rounded-xl p-4 space-y-1">

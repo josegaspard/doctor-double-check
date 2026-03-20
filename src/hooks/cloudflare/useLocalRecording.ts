@@ -252,6 +252,7 @@ export function useLocalRecording() {
     tags?: string[];
     price: number;
     recordingId?: string;
+    thumbnailUrl?: string;
   }): Promise<{ success: boolean; recordingId?: string }> => {
     const blob = getRecordingBlob();
     
@@ -302,7 +303,7 @@ export function useLocalRecording() {
         price: params.price,
         duration,
         video_url: videoRef,
-        thumbnail_url: null as string | null,
+        thumbnail_url: params.thumbnailUrl || null as string | null,
       };
 
       const query = params.recordingId
