@@ -224,6 +224,7 @@ const App = () => {
                       <Route path="/doctor/bank-account" element={<DoctorBankAccount />} />
                       <Route path="/doctor/invoices" element={<DoctorInvoices />} />
                       <Route path="/doctor/earnings" element={<DoctorEarnings />} />
+                      <Route path="/doctor/email-history" element={<DoctorEmailHistory />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/contact" element={<Contact />} />
