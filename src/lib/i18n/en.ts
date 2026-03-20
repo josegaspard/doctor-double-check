@@ -198,6 +198,18 @@ export const en = {
     watchNow: 'Watch now',
     recordingsOf: 'Recordings of',
     viewAll: 'View all',
+    editCover: 'Edit cover',
+    editCoverDesc: 'Upload a cover image for',
+    noCover: 'No cover',
+    dragOrClick: 'Drag an image here or click to select',
+    dragActive: 'Drop the image here',
+    maxSize: 'JPG, PNG — max 5MB',
+    changeImage: 'Change image',
+    removeImage: 'Remove',
+    saveCover: 'Save cover',
+    savingCover: 'Saving...',
+    coverUpdated: 'Cover updated',
+    coverError: 'Error updating cover',
   },
   // Dashboard
   dashboard: {

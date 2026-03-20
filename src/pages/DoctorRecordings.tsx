@@ -89,6 +89,7 @@ import {
   Sparkles,
   Radio,
   Download,
+  Upload,
   ImageIcon,
 } from 'lucide-react';
 
@@ -162,6 +163,8 @@ export default function DoctorRecordings() {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [isSavingThumbnail, setIsSavingThumbnail] = useState(false);
+  const [isDraggingThumbnail, setIsDraggingThumbnail] = useState(false);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   // Bulk Selection (Recordings)
   const [selectionMode, setSelectionMode] = useState(false);
@@ -628,10 +631,10 @@ export default function DoctorRecordings() {
       const { error: dbErr } = await supabase.from('recordings').update({ thumbnail_url: publicUrl }).eq('id', thumbnailRecording.id);
       if (dbErr) throw dbErr;
       setRecordings(prev => prev.map(r => r.id === thumbnailRecording.id ? { ...r, thumbnailUrl: publicUrl } : r));
-      toast.success('Portada actualizada');
+      toast.success(t('recordings.coverUpdated'));
       setThumbnailDialogOpen(false);
     } catch (err: any) {
-      toast.error('Error al actualizar portada: ' + (err.message || 'Error'));
+      toast.error(t('recordings.coverError') + ': ' + (err.message || 'Error'));
     } finally {
       setIsSavingThumbnail(false);
     }
@@ -1054,10 +1057,10 @@ export default function DoctorRecordings() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
                                     <Pencil className="w-4 h-4 mr-2" />Editar precio
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleEditThumbnail(recording)}>
-                                    <ImageIcon className="w-4 h-4 mr-2" />Editar portada
-                                  </DropdownMenuItem>
+                                   </DropdownMenuItem>
+                                   <DropdownMenuItem onClick={() => handleEditThumbnail(recording)}>
+                                     <ImageIcon className="w-4 h-4 mr-2" />{t('recordings.editCover')}
+                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
                                     <Trash2 className="w-4 h-4 mr-2" />Eliminar
@@ -1228,10 +1231,10 @@ export default function DoctorRecordings() {
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
                                         <Pencil className="w-4 h-4 mr-2" />Editar precio
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleEditThumbnail(recording)}>
-                                        <ImageIcon className="w-4 h-4 mr-2" />Editar portada
-                                      </DropdownMenuItem>
+                                       </DropdownMenuItem>
+                                       <DropdownMenuItem onClick={() => handleEditThumbnail(recording)}>
+                                         <ImageIcon className="w-4 h-4 mr-2" />{t('recordings.editCover')}
+                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
                                         <Trash2 className="w-4 h-4 mr-2" />Eliminar
@@ -1858,40 +1861,74 @@ export default function DoctorRecordings() {
       <Dialog open={thumbnailDialogOpen} onOpenChange={setThumbnailDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Editar portada</DialogTitle>
+            <DialogTitle>{t('recordings.editCover')}</DialogTitle>
             <DialogDescription>
-              Sube una imagen de portada para "{thumbnailRecording?.title}"
+              {t('recordings.editCoverDesc')} "{thumbnailRecording?.title}"
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {thumbnailPreview ? (
-              <img src={thumbnailPreview} alt="Preview" className="w-full aspect-video object-cover rounded-lg border" />
+              <div className="relative group">
+                <img src={thumbnailPreview} alt="Preview" className="w-full aspect-video object-cover rounded-lg border" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                  <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => thumbnailInputRef.current?.click()}>
+                    <Upload className="w-3.5 h-3.5" />
+                    {t('recordings.changeImage')}
+                  </Button>
+                  <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => { setThumbnailPreview(null); setThumbnailFile(null); }}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {t('recordings.removeImage')}
+                  </Button>
+                </div>
+              </div>
             ) : (
-              <div className="w-full aspect-video rounded-lg border border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/50">
-                <div className="text-center text-muted-foreground">
-                  <ImageIcon className="w-8 h-8 mx-auto mb-2" />
-                  <p className="text-sm">Sin portada</p>
+              <div
+                className={`w-full aspect-video rounded-lg border-2 border-dashed flex items-center justify-center cursor-pointer transition-all ${
+                  isDraggingThumbnail
+                    ? 'border-primary bg-primary/10 scale-[1.02]'
+                    : 'border-muted-foreground/30 bg-muted/30 hover:border-primary/50 hover:bg-primary/5'
+                }`}
+                onClick={() => thumbnailInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingThumbnail(true); }}
+                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingThumbnail(false); }}
+                onDrop={(e) => {
+                  e.preventDefault(); e.stopPropagation(); setIsDraggingThumbnail(false);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file && file.type.startsWith('image/')) {
+                    setThumbnailFile(file);
+                    setThumbnailPreview(URL.createObjectURL(file));
+                  }
+                }}
+              >
+                <div className="text-center text-muted-foreground p-4">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-primary" />
+                  </div>
+                  <p className="text-sm font-medium">
+                    {isDraggingThumbnail ? t('recordings.dragActive') : t('recordings.dragOrClick')}
+                  </p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">{t('recordings.maxSize')}</p>
                 </div>
               </div>
             )}
-            <div>
-              <Label htmlFor="thumbnail-upload">Seleccionar imagen</Label>
-              <Input
-                id="thumbnail-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleThumbnailFileChange}
-                className="mt-1"
-              />
-            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setThumbnailDialogOpen(false)}>Cancelar</Button>
+          <input
+            ref={thumbnailInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleThumbnailFileChange}
+          />
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setThumbnailDialogOpen(false)} className="w-full sm:w-auto">
+              {t('common.cancel')}
+            </Button>
             <Button
               onClick={handleSaveThumbnail}
               disabled={!thumbnailFile || isSavingThumbnail}
+              className="w-full sm:w-auto"
             >
-              {isSavingThumbnail ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Guardando...</>) : 'Guardar portada'}
+              {isSavingThumbnail ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('recordings.savingCover')}</>) : t('recordings.saveCover')}
             </Button>
           </DialogFooter>
         </DialogContent>
