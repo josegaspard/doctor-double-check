@@ -37,6 +37,7 @@ const PAGE_TITLE_KEYS: Record<string, string> = {
   '/doctor/recordings': 'backHeader.doctorRecordings',
   '/doctor/content': 'backHeader.doctorContent',
   '/doctor/invoices': 'backHeader.invoices',
+  '/doctor/email-history': 'Historial de Emails',
   '/doctor/bank-account': 'backHeader.bankAccount',
   '/doctor/go-live': 'backHeader.goLive',
   '/doctor/profile': 'backHeader.doctorProfile',
