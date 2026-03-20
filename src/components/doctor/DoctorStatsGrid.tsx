@@ -64,7 +64,7 @@ export function DoctorStatsGrid({ recordingsCount, vaultFilesCount, rating }: Pr
                 <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-${stat.color}/10 flex items-center justify-center mb-2`}>
                   <Icon className={`w-4.5 h-4.5 sm:w-5 sm:h-5 text-${stat.color}`} />
                 </div>
-                <p className="text-xl sm:text-2xl font-bold text-foreground leading-none">{stat.value}</p>
+                <p className="text-lg sm:text-2xl font-bold text-foreground leading-none">{stat.value}</p>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 leading-tight line-clamp-2">{stat.label}</p>
               </CardContent>
             </Card>

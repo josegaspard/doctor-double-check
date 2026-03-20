@@ -213,15 +213,15 @@ export function EmailStatsCard() {
           
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
-              <p className="text-xl font-bold text-foreground">{currentMonth.total}</p>
+              <p className="text-base sm:text-xl font-bold text-foreground">{currentMonth.total}</p>
               <p className="text-xs text-muted-foreground">Total</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-success">{currentMonth.sent}</p>
+              <p className="text-base sm:text-xl font-bold text-success">{currentMonth.sent}</p>
               <p className="text-xs text-muted-foreground">Enviados</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-destructive">{currentMonth.failed}</p>
+              <p className="text-base sm:text-xl font-bold text-destructive">{currentMonth.failed}</p>
               <p className="text-xs text-muted-foreground">Fallidos</p>
             </div>
           </div>
@@ -237,21 +237,21 @@ export function EmailStatsCard() {
 
         {/* Overall Summary Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <p className="text-2xl font-bold text-foreground">{totalEmails}</p>
+          <div className="text-center p-2.5 sm:p-3 bg-muted/50 rounded-lg">
+            <p className="text-lg sm:text-2xl font-bold text-foreground">{totalEmails}</p>
             <p className="text-xs text-muted-foreground">Total</p>
           </div>
-          <div className="text-center p-3 bg-success/10 rounded-lg">
+          <div className="text-center p-2.5 sm:p-3 bg-success/10 rounded-lg">
             <div className="flex items-center justify-center gap-1">
-              <CheckCircle className="w-4 h-4 text-success" />
-              <p className="text-2xl font-bold text-success">{totalSent}</p>
+              <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success" />
+              <p className="text-lg sm:text-2xl font-bold text-success">{totalSent}</p>
             </div>
             <p className="text-xs text-muted-foreground">Enviados</p>
           </div>
-          <div className="text-center p-3 bg-destructive/10 rounded-lg">
+          <div className="text-center p-2.5 sm:p-3 bg-destructive/10 rounded-lg">
             <div className="flex items-center justify-center gap-1">
-              <XCircle className="w-4 h-4 text-destructive" />
-              <p className="text-2xl font-bold text-destructive">{totalFailed}</p>
+              <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-destructive" />
+              <p className="text-lg sm:text-2xl font-bold text-destructive">{totalFailed}</p>
             </div>
             <p className="text-xs text-muted-foreground">Fallidos</p>
           </div>

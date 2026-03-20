@@ -135,7 +135,7 @@ export function EarningsCard() {
                 {language === 'es' ? 'Pendiente' : 'Pending'}
               </span>
             </div>
-            <p className="text-lg sm:text-xl font-bold text-success">
+            <p className="text-base sm:text-xl font-bold text-success">
               {formatCurrency(earnings?.pending_earnings || 0)}
             </p>
           </div>
@@ -146,7 +146,7 @@ export function EarningsCard() {
                 {language === 'es' ? 'Total' : 'Total'}
               </span>
             </div>
-            <p className="text-lg sm:text-xl font-bold text-primary">
+            <p className="text-base sm:text-xl font-bold text-primary">
               {formatCurrency(earnings?.total_earnings || 0)}
             </p>
           </div>

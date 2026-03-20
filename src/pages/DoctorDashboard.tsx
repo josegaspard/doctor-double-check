@@ -28,6 +28,14 @@ import { DoctorStatusAlert } from '@/components/doctor/DoctorStatusAlert';
 import { DoctorProfileCard } from '@/components/doctor/DoctorProfileCard';
 import { DoctorPatientsList } from '@/components/doctor/DoctorPatientsList';
 
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-[11px] sm:text-xs uppercase tracking-widest font-semibold text-muted-foreground/70 pl-1">
+      {children}
+    </h3>
+  );
+}
+
 export default function DoctorDashboard() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
@@ -92,95 +100,116 @@ export default function DoctorDashboard() {
             )}
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-3 sm:space-y-5">
-            {/* Section 0: Profile Card (P11) */}
-            <DoctorProfileCard />
+          <TabsContent value="overview" className="space-y-5 sm:space-y-6">
+            {/* ── MI PRÁCTICA ── */}
+            <section className="space-y-3">
+              <SectionHeader>Mi Práctica</SectionHeader>
+              <DoctorProfileCard />
+              <DoctorStatsGrid
+                recordingsCount={recordingsCount}
+                vaultFilesCount={accessibleVaultFiles.length}
+                rating={doctorProfile?.rating || 0}
+              />
+            </section>
 
-            {/* Section 1: Stats */}
-            <DoctorStatsGrid
-              recordingsCount={recordingsCount}
-              vaultFilesCount={accessibleVaultFiles.length}
-              rating={doctorProfile?.rating || 0}
-            />
+            {/* ── ACCIONES RÁPIDAS ── */}
+            <section className="space-y-3">
+              <SectionHeader>Acciones Rápidas</SectionHeader>
+              <DoctorQuickActions isApproved={isApproved} userId={user?.id} canPublishNews={canPublishNews} />
+            </section>
 
-            {/* Section 1.5: Patients List (P12) */}
-            <DoctorPatientsList />
+            {/* ── PACIENTES ── */}
+            <section className="space-y-3">
+              <SectionHeader>Pacientes</SectionHeader>
+              <DoctorPatientsList />
+            </section>
 
-            {/* Section 2: Quick Actions */}
-            <DoctorQuickActions isApproved={isApproved} userId={user?.id} canPublishNews={canPublishNews} />
+            {/* ── FINANZAS ── */}
+            <section className="space-y-3">
+              <SectionHeader>Finanzas</SectionHeader>
+              <div className="grid gap-3 lg:grid-cols-2">
+                <EarningsCard />
+                <FundHoldsCard />
+              </div>
+            </section>
 
-            {/* Section 3: Finance & Communications - side by side on desktop */}
-            <div className="grid gap-3 lg:grid-cols-2">
-              <EarningsCard />
-              <EmailStatsCard />
-            </div>
+            {/* ── COMUNICACIONES ── */}
+            <section className="space-y-3">
+              <SectionHeader>Comunicaciones</SectionHeader>
+              <div className="grid gap-3 lg:grid-cols-2">
+                <EmailStatsCard />
+                <EmailHistoryCard />
+              </div>
+            </section>
 
-            {/* Section 4: Configuration - collapsible */}
-            <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
-              <CollapsibleTrigger asChild>
-                <Card className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-primary/40">
-                  <CardContent className="p-4 sm:p-5 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Settings className="w-5 h-5 text-primary" />
+            {/* ── CONFIGURACIÓN ── */}
+            <section className="space-y-3">
+              <SectionHeader>Configuración</SectionHeader>
+              <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
+                <CollapsibleTrigger asChild>
+                  <Card className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-primary/40">
+                    <CardContent className="p-3.5 sm:p-5 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Settings className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-sm sm:text-base text-foreground">Configuración</h3>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">Horarios, firma y tendencias de email</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-sm sm:text-base text-foreground">Configuración</h3>
-                        <p className="text-xs text-muted-foreground">Horarios, firma y tendencias de email</p>
-                      </div>
+                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${configOpen ? 'rotate-180' : ''}`} />
+                    </CardContent>
+                  </Card>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 sm:space-y-4 mt-3">
+                  <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+                    <OfficeHoursConfig />
+                    <SignatureUpload />
+                  </div>
+                  <EmailTrendsChart />
+                </CollapsibleContent>
+              </Collapsible>
+            </section>
+
+            {/* ── ARCHIVOS ── */}
+            {accessibleVaultFiles.length > 0 && (
+              <section className="space-y-3">
+                <SectionHeader>Archivos de Pacientes</SectionHeader>
+                <Card>
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                      <Folder className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                      {t('dashboard.patientFiles')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {accessibleVaultFiles.slice(0, 5).map(file => (
+                        <div
+                          key={file.id}
+                          className="flex items-center gap-3 p-2.5 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
+                          onClick={() => navigate('/doctor/vault')}
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
+                            <Folder className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">{file.category}</p>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] flex-shrink-0">{t('roles.patient')}</Badge>
+                        </div>
+                      ))}
                     </div>
-                    <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${configOpen ? 'rotate-180' : ''}`} />
+                    {accessibleVaultFiles.length > 5 && (
+                      <Button variant="ghost" className="w-full mt-2 text-sm" onClick={() => navigate('/doctor/vault')}>
+                        Ver todos ({accessibleVaultFiles.length})
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-3 sm:space-y-4 mt-3">
-                <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
-                  <OfficeHoursConfig />
-                  <SignatureUpload />
-                </div>
-                <EmailTrendsChart />
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Section 5: History */}
-            <EmailHistoryCard />
-            <FundHoldsCard />
-
-            {/* Vault Files */}
-            {accessibleVaultFiles.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2 sm:pb-3">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                    <Folder className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                    {t('dashboard.patientFiles')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {accessibleVaultFiles.slice(0, 5).map(file => (
-                      <div
-                        key={file.id}
-                        className="flex items-center gap-3 p-2.5 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
-                        onClick={() => navigate('/doctor/vault')}
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
-                          <Folder className="w-4 h-4 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">{file.category}</p>
-                        </div>
-                        <Badge variant="outline" className="text-[10px] flex-shrink-0">{t('roles.patient')}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                  {accessibleVaultFiles.length > 5 && (
-                    <Button variant="ghost" className="w-full mt-2 text-sm" onClick={() => navigate('/doctor/vault')}>
-                      Ver todos ({accessibleVaultFiles.length})
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+              </section>
             )}
           </TabsContent>
 
