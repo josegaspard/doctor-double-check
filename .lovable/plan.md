@@ -1,42 +1,58 @@
 
 
-# Plan: Fix Email History — Show count, expand/navigate, permanent delete
+# Plan: Reorganizar y mejorar UX/UI del Panel de Médico + reducir tamaños en mobile
 
-## Problem
-- "Ver todos (X)" button doesn't show the correct count and errors when clicked
-- The expand logic uses `isExpanded` toggle with a ScrollArea of fixed height that breaks
-- No dedicated page for full email history when there are many emails
-- Need permanent deletion from database
+## Problemas actuales
+- En mobile, la pestaña "General" muestra todo apilado sin agrupación lógica: perfil, stats, pacientes, acciones rápidas, finanzas, emails, configuración, historial, fondos retenidos, vault — demasiadas secciones sueltas, abrumador
+- Los títulos/números como "$126,749" usan `text-2xl` en mobile — demasiado grandes para pantallas de 390px
+- La pestaña "Analytics" también tiene `text-2xl font-bold` en las stats cards y el header "Analytics Dashboard" se rompe en mobile (como muestra el screenshot)
+- No hay agrupación visual clara entre secciones relacionadas
 
-## Solution
+## Cambios
 
-### Logic change in `EmailHistoryCard.tsx`
-- Show first 5 emails by default (current behavior)
-- If total filtered emails ≤ 15: clicking "Ver todos (N)" expands inline WITHOUT ScrollArea height restriction — just show all items in a normal list
-- If total filtered emails > 15: clicking "Ver todos (N)" navigates to `/doctor/email-history` dedicated page
-- Fix: the `(N)` must show `filteredEmails.length` (already does, but the expand/ScrollArea is broken — remove the fixed `h-[400px]` and just render all when expanded for ≤15 case)
-- Remove the `ScrollArea` wrapper when expanded — just render the full list directly
+### 1. `src/pages/DoctorDashboard.tsx` — Reorganizar Overview en secciones agrupadas
+- Agrupar el contenido en bloques lógicos con headers de sección claros:
+  - **Mi Práctica**: ProfileCard + StatsGrid (juntos, son sobre "quién soy y mis números")
+  - **Acciones Rápidas**: QuickActions (ya separado)
+  - **Pacientes**: PatientsList (ya separado)
+  - **Finanzas**: EarningsCard + FundHoldsCard (agrupados bajo un header "Finanzas")
+  - **Comunicaciones**: EmailStatsCard + EmailHistoryCard (agrupados bajo un header "Comunicaciones")
+  - **Configuración**: collapsible como está (ya funciona bien)
+  - **Vault**: como está (condicional)
+- Cada grupo tendrá un pequeño header de sección (`text-xs uppercase tracking-wide text-muted-foreground`) para que el usuario sepa dónde está
 
-### New page: `src/pages/DoctorEmailHistory.tsx`
-- Full-page email history with back arrow (like Notifications page)
-- Fetch ALL emails from `email_history` for the doctor (no limit, or limit 500)
-- Selection mode: select one, multiple, or all
-- Delete selected — permanent delete from database with confirmation dialog
-- Delete individual via swipe or button per row
-- Filters: same type + date filters as the card
-- Export CSV button
-- Uses `MainLayout` + `MobileBackHeader` pattern like Notifications
+### 2. `src/components/doctor/DoctorAnalytics.tsx` — Fix mobile layout + reducir tamaños
+- Header "Analytics Dashboard": cambiar de `text-xl` a `text-base sm:text-xl`, y poner el period selector debajo del título en mobile (stack vertical) en vez de `justify-between` que causa el quiebre
+- Stats grid: reducir `text-2xl` → `text-lg sm:text-2xl` en los valores numéricos
+- Cards de stats: reducir padding `p-4` → `p-3 sm:p-4`
+- Icon containers: reducir `w-10 h-10` → `w-8 h-8 sm:w-10 sm:h-10`
+- Charts: mantener como están (ya funcionan con ResponsiveContainer)
+- Bottom stats (rating dist + content + consultas): en mobile `grid-cols-1` en vez de intentar meter 3 columnas
 
-### Route in `src/App.tsx`
-- Add `/doctor/email-history` route pointing to the new page
+### 3. `src/components/doctor/DoctorStatsGrid.tsx` — Reducir tamaños mobile
+- Valores: `text-xl sm:text-2xl` → `text-lg sm:text-2xl`
+- Padding: ya está bien con `p-3 sm:p-4`
 
-### Delete behavior
-- Uses `supabase.from('email_history').delete().in('id', ids)` — already works in the card
-- Confirmation dialog before bulk delete
-- After delete, update local state to remove deleted items
+### 4. `src/components/doctor/EarningsCard.tsx` — Reducir tamaños mobile
+- Valores de dinero: `text-lg sm:text-xl` → `text-base sm:text-xl`
 
-## Files to modify
-1. `src/components/doctor/EmailHistoryCard.tsx` — fix expand logic, navigate when >15
-2. `src/pages/DoctorEmailHistory.tsx` — new full page
-3. `src/App.tsx` — add route
+### 5. `src/components/doctor/EmailStatsCard.tsx` — Reducir tamaños mobile
+- Valores `text-2xl` → `text-lg sm:text-2xl`
+- Valores `text-xl` → `text-base sm:text-xl`
+
+### 6. `src/components/doctor/FundHoldsCard.tsx` — Reducir tamaños mobile (minor)
+- Ya está bastante compacto, solo ajustar si hay `text-2xl` sueltos
+
+## Archivos a modificar
+1. `src/pages/DoctorDashboard.tsx` — reagrupar secciones con headers
+2. `src/components/doctor/DoctorAnalytics.tsx` — fix mobile layout + reducir tamaños
+3. `src/components/doctor/DoctorStatsGrid.tsx` — reducir font mobile
+4. `src/components/doctor/EarningsCard.tsx` — reducir font mobile
+5. `src/components/doctor/EmailStatsCard.tsx` — reducir font mobile
+
+## Resultado
+- El dashboard se sentirá organizado por categorías claras en vez de una lista interminable
+- Los números no serán gigantes en celular
+- Analytics no se romperá en mobile
+- No se quita nada, solo se ordena y reduce proporcionalmente
 
