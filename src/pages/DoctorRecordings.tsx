@@ -1853,6 +1853,49 @@ export default function DoctorRecordings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Thumbnail Edit Dialog */}
+      <Dialog open={thumbnailDialogOpen} onOpenChange={setThumbnailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar portada</DialogTitle>
+            <DialogDescription>
+              Sube una imagen de portada para "{thumbnailRecording?.title}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {thumbnailPreview ? (
+              <img src={thumbnailPreview} alt="Preview" className="w-full aspect-video object-cover rounded-lg border" />
+            ) : (
+              <div className="w-full aspect-video rounded-lg border border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/50">
+                <div className="text-center text-muted-foreground">
+                  <ImageIcon className="w-8 h-8 mx-auto mb-2" />
+                  <p className="text-sm">Sin portada</p>
+                </div>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="thumbnail-upload">Seleccionar imagen</Label>
+              <Input
+                id="thumbnail-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailFileChange}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setThumbnailDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={handleSaveThumbnail}
+              disabled={!thumbnailFile || isSavingThumbnail}
+            >
+              {isSavingThumbnail ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Guardando...</>) : 'Guardar portada'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }
