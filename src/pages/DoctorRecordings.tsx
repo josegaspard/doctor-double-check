@@ -89,6 +89,7 @@ import {
   Sparkles,
   Radio,
   Download,
+  ImageIcon,
 } from 'lucide-react';
 
 interface RecordingStats {
