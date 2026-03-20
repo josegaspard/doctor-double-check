@@ -1492,7 +1492,7 @@ export default function DoctorRecordings() {
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <Table>
+                    <Table className="min-w-[800px]">
                       <TableHeader>
                         <TableRow>
                           {plSelectionMode && <TableHead className="w-10" />}
