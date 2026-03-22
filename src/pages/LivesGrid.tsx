@@ -1,5 +1,6 @@
 import React, { Suspense, useRef, useEffect, useState } from 'react';
 import { AdBanner } from '@/components/ads/AdBanner';
+import { AdInterstitial } from '@/components/ads/AdInterstitial';
 import { Link } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -152,6 +153,7 @@ export default function LivesGrid() {
 
   return (
     <MainLayout>
+      <AdInterstitial />
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Ad Banner */}
         <AdBanner placementName="lives_top_banner" className="mb-4" />

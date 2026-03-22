@@ -1409,6 +1409,10 @@ export const es = {
     needAccount: 'Necesitas una cuenta registrada para comenzar',
     adLabel: 'Publicidad',
     advertising: 'Publicidad',
+    skipAd: 'Saltar',
+    adCountdown: 'Publicidad · {seconds}s',
+    adEndsIn: 'El anuncio termina en {seconds}s',
+    closeAd: 'Cerrar',
     // Recordings filter additions
     filterAll: 'Todo',
     filterFree: 'Gratis',

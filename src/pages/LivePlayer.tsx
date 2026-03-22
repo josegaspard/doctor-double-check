@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LiveEndedOverlay } from '@/components/live/LiveEndedOverlay';
 import { LiveConsultationBooking } from '@/components/live/LiveConsultationBooking';
+import { AdPreroll } from '@/components/ads/AdPreroll';
 
 import { useViewerCount } from '@/hooks/useViewerCount';
 import { useWallet } from '@/contexts/WalletContext';
@@ -75,6 +76,7 @@ export default function LivePlayer() {
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
   const [isJoiningStream, setIsJoiningStream] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
+  const [prerollDone, setPrerollDone] = useState(false);
 
   // Direct DB fallback state
   const [directLive, setDirectLive] = useState<any>(null);
@@ -452,7 +454,10 @@ export default function LivePlayer() {
                 duration={formatDuration(live.startedAt)}
               />
             ) : roomUrl && viewerToken ? (
-              <div className={mobileFullscreen ? 'mobile-live-fullscreen' : 'contents'}>
+              <div className={mobileFullscreen ? 'mobile-live-fullscreen' : 'relative'}>
+                {!prerollDone && !isOwner && (
+                  <AdPreroll onComplete={() => setPrerollDone(true)} />
+                )}
                 <DailyVideoPlayer
                   roomUrl={roomUrl}
                   token={viewerToken}
