@@ -200,12 +200,12 @@ export default function AdvertiserDashboard() {
     const { error: insErr } = await supabase.from('ad_creatives' as any).insert({
       campaign_id: selectedCampaign, placement_id: placementId,
       media_url: publicUrl, media_type: mediaType,
-      click_url: clickUrl || '#', alt_text: file.name,
+      click_url: clickUrls[placementId] || '#', alt_text: file.name,
     } as any);
     setIsUploading(false);
     if (insErr) { toast.error(t('ads.creativeSaveError')); return; }
     toast.success(t('ads.creativeUploaded'));
-    setClickUrl('');
+    setClickUrls(prev => ({ ...prev, [placementId]: '' }));
     // Refresh creatives
     const { data: crs } = await supabase.from('ad_creatives' as any).select('*').eq('campaign_id', selectedCampaign);
     setCreatives((crs as any[]) || []);
