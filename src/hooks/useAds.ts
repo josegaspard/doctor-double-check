@@ -120,70 +120,100 @@ export function useAdCreative(placementName: string) {
   const { language } = useLanguage();
   const [creative, setCreative] = useState<AdCreativeWithFormat | null>(null);
   const [isActive, setIsActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const impressionTracked = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
-      const config = await fetchAdConfig();
-      if (!config.is_active || cancelled) { setIsActive(false); return; }
-      setIsActive(true);
+      setIsLoading(true);
+      setCreative(null);
 
-      const { data: placement } = await supabase
-        .from('ad_placements' as any)
-        .select('id, format, name')
-        .eq('name', placementName)
-        .eq('is_active', true)
-        .maybeSingle();
+      try {
+        const config = await fetchAdConfig();
+        if (!config.is_active || cancelled) {
+          setIsActive(false);
+          setIsLoading(false);
+          return;
+        }
+        setIsActive(true);
 
-      if (!placement || cancelled) return;
-      const p = placement as any;
+        const { data: placement } = await supabase
+          .from('ad_placements' as any)
+          .select('id, format, name')
+          .eq('name', placementName)
+          .eq('is_active', true)
+          .maybeSingle();
 
-      const { data: creatives } = await supabase
-        .from('ad_creatives' as any)
-        .select('id, campaign_id, placement_id, media_url, media_type, click_url, alt_text')
-        .eq('placement_id', p.id)
-        .eq('is_active', true);
+        if (!placement || cancelled) {
+          setIsLoading(false);
+          return;
+        }
+        const p = placement as any;
 
-      if (!creatives || creatives.length === 0 || cancelled) return;
+        const { data: creatives } = await supabase
+          .from('ad_creatives' as any)
+          .select('id, campaign_id, placement_id, media_url, media_type, click_url, alt_text')
+          .eq('placement_id', p.id)
+          .eq('is_active', true);
 
-      const campaignIds = [...new Set((creatives as any[]).map((c: any) => c.campaign_id))];
-      const { data: campaigns } = await supabase
-        .from('ad_campaigns' as any)
-        .select('id, target_roles, target_language')
-        .in('id', campaignIds)
-        .eq('status', 'active');
+        if (!creatives || creatives.length === 0 || cancelled) {
+          setIsLoading(false);
+          return;
+        }
 
-      if (!campaigns || campaigns.length === 0 || cancelled) return;
+        const campaignIds = [...new Set((creatives as any[]).map((c: any) => c.campaign_id))];
+        const { data: campaigns } = await supabase
+          .from('ad_campaigns' as any)
+          .select('id, target_roles, target_language')
+          .in('id', campaignIds)
+          .eq('status', 'active');
 
-      const validCampaignIds = new Set(
-        (campaigns as any[])
-          .filter((c: any) => {
-            if (role && c.target_roles && !(c.target_roles as string[]).includes(role)) return false;
-            if (c.target_language && c.target_language !== language) return false;
-            return true;
-          })
-          .map((c: any) => c.id)
-      );
+        if (!campaigns || campaigns.length === 0 || cancelled) {
+          setIsLoading(false);
+          return;
+        }
 
-      const validCreatives: AdCreativeWithFormat[] = (creatives as any[])
-        .filter((c: any) => validCampaignIds.has(c.campaign_id))
-        .map((c: any) => ({
-          ...c,
-          placement_format: p.format,
-          placement_name: p.name,
-        }));
+        const validCampaignIds = new Set(
+          (campaigns as any[])
+            .filter((c: any) => {
+              if (role && c.target_roles && !(c.target_roles as string[]).includes(role)) return false;
+              if (c.target_language && c.target_language !== language) return false;
+              return true;
+            })
+            .map((c: any) => c.id)
+        );
 
-      if (validCreatives.length === 0 || cancelled) return;
+        const validCreatives: AdCreativeWithFormat[] = (creatives as any[])
+          .filter((c: any) => validCampaignIds.has(c.campaign_id))
+          .map((c: any) => ({
+            ...c,
+            placement_format: p.format,
+            placement_name: p.name,
+          }));
 
-      // Random selection on mount — rotates on page navigation/refresh
-      const randomIndex = Math.floor(Math.random() * validCreatives.length);
-      setCreative(validCreatives[randomIndex]);
+        if (validCreatives.length === 0 || cancelled) {
+          setIsLoading(false);
+          return;
+        }
+
+        const randomIndex = Math.floor(Math.random() * validCreatives.length);
+        setCreative(validCreatives[randomIndex]);
+      } catch (error) {
+        console.error('[useAdCreative] Failed to load creative', error);
+        setIsActive(false);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
     };
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [placementName, role, language]);
 
   const trackImpression = useCallback(async () => {
@@ -212,5 +242,5 @@ export function useAdCreative(placementName: string) {
     });
   }, [creative, user, role, language]);
 
-  return { creative, isActive, trackImpression, trackClick };
+  return { creative, isActive, isLoading, trackImpression, trackClick };
 }
