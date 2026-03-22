@@ -573,6 +573,7 @@ export default function AdvertiserDashboard() {
                         isUploading={uploadingPlacement === pl.id}
                         existingCreative={creatives.find(c => c.placement_id === pl.id) || null}
                         onDelete={deleteCreative}
+                        onUpdateClickUrl={updateCreativeClickUrl}
                         t={t} es={es}
                       />
                     ))}
