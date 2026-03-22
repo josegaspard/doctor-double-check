@@ -45,6 +45,11 @@ export default function RecordingPlayer() {
   const [hasPurchased, setHasPurchased] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+  const [prerollDone, setPrerollDone] = useState(false);
+
+  const handlePrerollComplete = useCallback(() => {
+    setPrerollDone(true);
+  }, []);
 
   // Fetch recording + check purchase in parallel
   useEffect(() => {
