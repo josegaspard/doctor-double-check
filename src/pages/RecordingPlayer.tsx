@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { RecordingVideoPlayer } from '@/components/recordings/RecordingVideoPlayer';
+import { AdPreroll } from '@/components/ads/AdPreroll';
 import { RecordingChatReplay } from '@/components/recordings/RecordingChatReplay';
 import {
   PlayCircle,
@@ -44,6 +45,11 @@ export default function RecordingPlayer() {
   const [hasPurchased, setHasPurchased] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+  const [prerollDone, setPrerollDone] = useState(false);
+
+  const handlePrerollComplete = useCallback(() => {
+    setPrerollDone(true);
+  }, []);
 
   // Fetch recording + check purchase in parallel
   useEffect(() => {
@@ -173,16 +179,21 @@ export default function RecordingPlayer() {
 
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-            <div className="relative no-context-menu">
+            <div className="relative no-context-menu aspect-video rounded-xl overflow-hidden bg-black">
+              {!prerollDone && recording.videoUrl && (
+                <AdPreroll onComplete={handlePrerollComplete} placementName="recording_preroll" />
+              )}
               {recording.videoUrl ? (
-                <RecordingVideoPlayer
-                  videoUrl={recording.videoUrl}
-                  recordingId={recording.id}
-                  onDurationUpdate={handleDurationUpdate}
-                  onTimeUpdate={setVideoCurrentTime}
-                />
+                <div className={!prerollDone ? 'opacity-0 pointer-events-none absolute inset-0' : 'w-full h-full'}>
+                  <RecordingVideoPlayer
+                    videoUrl={recording.videoUrl}
+                    recordingId={recording.id}
+                    onDurationUpdate={handleDurationUpdate}
+                    onTimeUpdate={setVideoCurrentTime}
+                  />
+                </div>
               ) : (
-                <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
+                <div className="w-full h-full flex items-center justify-center bg-muted">
                   <div className="text-center p-6">
                     <Clock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Video no disponible</h3>
