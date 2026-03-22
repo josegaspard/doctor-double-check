@@ -12,7 +12,7 @@ interface AdPrerollProps {
 }
 
 export function AdPreroll({ onComplete, placementName = 'live_preroll' }: AdPrerollProps) {
-  const { creative, isActive, trackImpression, trackClick } = useAdCreative(placementName);
+  const { creative, isActive, isLoading, trackImpression, trackClick } = useAdCreative(placementName);
   const { t } = useLanguage();
   const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -22,14 +22,12 @@ export function AdPreroll({ onComplete, placementName = 'live_preroll' }: AdPrer
   const trackedRef = useRef(false);
   const startedRef = useRef(false);
 
-  // If no preroll creative, complete immediately
   useEffect(() => {
-    if (!isActive || !creative) {
+    if (!isLoading && (!isActive || !creative)) {
       onComplete();
     }
-  }, [isActive, creative, onComplete]);
+  }, [isLoading, isActive, creative, onComplete]);
 
-  // Track impression on mount
   useEffect(() => {
     if (creative && !trackedRef.current) {
       trackedRef.current = true;
@@ -37,13 +35,12 @@ export function AdPreroll({ onComplete, placementName = 'live_preroll' }: AdPrer
     }
   }, [creative, trackImpression]);
 
-  // Countdown for skip
   useEffect(() => {
     if (!creative || !loaded) return;
     startedRef.current = true;
 
     const interval = setInterval(() => {
-      setElapsed(prev => {
+      setElapsed((prev) => {
         const next = prev + 1;
         if (next >= SKIP_AFTER_SECONDS) setCanSkip(true);
         return next;
@@ -67,25 +64,49 @@ export function AdPreroll({ onComplete, placementName = 'live_preroll' }: AdPrer
     window.open(creative.click_url, '_blank', 'noopener,noreferrer');
   }, [creative, trackClick]);
 
+  const attemptAutoplayWithAudio = useCallback(async () => {
+    if (!videoRef.current) return;
+
+    try {
+      videoRef.current.muted = false;
+      videoRef.current.volume = 1;
+      await videoRef.current.play();
+    } catch (error) {
+      console.warn('[AdPreroll] autoplay with audio blocked', error);
+    }
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="absolute inset-0 z-20 flex items-center justify-center bg-background">
+        <span className="text-sm font-medium text-foreground">{t('ads.adLabel')}</span>
+      </div>
+    );
+  }
+
   if (!isActive || !creative) return null;
 
   const remainingSkip = Math.max(0, SKIP_AFTER_SECONDS - elapsed);
   const progressPct = duration > 0 ? Math.min((elapsed / duration) * 100, 100) : 0;
 
   return (
-    <div className="absolute inset-0 z-20 bg-black flex items-center justify-center">
-      {/* Video ad */}
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-background">
       {creative.media_type === 'video' ? (
         <video
           ref={videoRef}
           src={creative.media_url}
-          className="w-full h-full object-contain cursor-pointer"
+          className="h-full w-full cursor-pointer object-contain"
           autoPlay
           playsInline
+          preload="auto"
           onClick={handleClick}
           onLoadedMetadata={(e) => {
             setDuration(Math.ceil(e.currentTarget.duration));
             setLoaded(true);
+            void attemptAutoplayWithAudio();
+          }}
+          onCanPlay={() => {
+            void attemptAutoplayWithAudio();
           }}
           onEnded={handleVideoEnd}
         />
@@ -93,7 +114,7 @@ export function AdPreroll({ onComplete, placementName = 'live_preroll' }: AdPrer
         <img
           src={creative.media_url}
           alt={creative.alt_text || t('ads.adLabel')}
-          className="w-full h-full object-contain cursor-pointer"
+          className="h-full w-full cursor-pointer object-contain"
           onClick={handleClick}
           onLoad={() => {
             setDuration(15);
@@ -102,41 +123,38 @@ export function AdPreroll({ onComplete, placementName = 'live_preroll' }: AdPrer
         />
       )}
 
-      {/* Top left: Ad badge + countdown */}
-      <div className="absolute top-3 left-3 flex items-center gap-2">
-        <span className="px-3 py-1 rounded bg-yellow-500/90 text-black text-xs font-bold">
+      <div className="absolute left-3 top-3 flex items-center gap-2">
+        <span className="rounded bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
           {t('ads.adLabel')}
         </span>
         {!canSkip && loaded && (
-          <span className="px-2 py-1 rounded bg-black/60 backdrop-blur-sm text-white text-xs font-medium">
+          <span className="rounded bg-background/80 px-2 py-1 text-xs font-medium text-foreground backdrop-blur-sm">
             {t('ads.adCountdown').replace('{seconds}', String(remainingSkip))}
           </span>
         )}
       </div>
 
-      {/* Bottom right: Skip button */}
       <div className="absolute bottom-4 right-4">
         {canSkip ? (
           <Button
             onClick={handleSkip}
             variant="secondary"
             size="sm"
-            className="gap-2 bg-white/90 text-black hover:bg-white font-semibold shadow-lg"
+            className="gap-2 font-semibold shadow-lg"
           >
             {t('ads.skipAd')}
             <SkipForward className="w-4 h-4" />
           </Button>
         ) : loaded ? (
-          <span className="px-3 py-1.5 rounded bg-black/60 backdrop-blur-sm text-white text-xs font-medium">
+          <span className="rounded bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground backdrop-blur-sm">
             {t('ads.adEndsIn').replace('{seconds}', String(remainingSkip))}
           </span>
         ) : null}
       </div>
 
-      {/* Bottom progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted">
         <div
-          className="h-full bg-yellow-500 transition-all duration-1000 ease-linear"
+          className="h-full bg-primary transition-all duration-1000 ease-linear"
           style={{ width: `${progressPct}%` }}
         />
       </div>
