@@ -1,5 +1,6 @@
 import React, { Suspense, useRef, useEffect, useState } from 'react';
 import { AdBanner } from '@/components/ads/AdBanner';
+import { AdInterstitial } from '@/components/ads/AdInterstitial';
 import { Link } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
