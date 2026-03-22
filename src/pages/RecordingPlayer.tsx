@@ -180,13 +180,18 @@ export default function RecordingPlayer() {
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2 space-y-3 sm:space-y-4">
             <div className="relative no-context-menu">
+              {!prerollDone && recording.videoUrl && (
+                <AdPreroll onComplete={handlePrerollComplete} placementName="recording_preroll" />
+              )}
               {recording.videoUrl ? (
-                <RecordingVideoPlayer
-                  videoUrl={recording.videoUrl}
-                  recordingId={recording.id}
-                  onDurationUpdate={handleDurationUpdate}
-                  onTimeUpdate={setVideoCurrentTime}
-                />
+                <div className={!prerollDone ? 'invisible absolute inset-0' : ''}>
+                  <RecordingVideoPlayer
+                    videoUrl={recording.videoUrl}
+                    recordingId={recording.id}
+                    onDurationUpdate={handleDurationUpdate}
+                    onTimeUpdate={setVideoCurrentTime}
+                  />
+                </div>
               ) : (
                 <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
                   <div className="text-center p-6">
