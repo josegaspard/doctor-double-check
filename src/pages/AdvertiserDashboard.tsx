@@ -108,20 +108,35 @@ function PlacementMockup({ width, height, format: fmt }: { width: number; height
 
 // Drag & drop upload zone per placement
 function PlacementUploadCard({
-  placement, clickUrl, onClickUrlChange, onUpload, isUploading, existingCreative, onDelete, t, es,
+  placement, clickUrl, onClickUrlChange, onUpload, isUploading, existingCreative, onDelete, onUpdateClickUrl, t, es,
 }: {
   placement: PlacementDef; clickUrl: string; onClickUrlChange: (v: string) => void;
   onUpload: (file: File) => void; isUploading: boolean;
   existingCreative: Creative | null; onDelete: (id: string) => void;
+  onUpdateClickUrl: (id: string, url: string) => void;
   t: (p: string) => string; es: boolean;
 }) {
   const [isDragging, setIsDragging] = useState(false);
+  const [editUrl, setEditUrl] = useState(existingCreative?.click_url || '');
+  const [isSavingUrl, setIsSavingUrl] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Sync editUrl when existingCreative changes
+  useEffect(() => {
+    if (existingCreative) setEditUrl(existingCreative.click_url || '');
+  }, [existingCreative?.click_url]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file) onUpload(file);
+  };
+
+  const handleSaveUrl = async () => {
+    if (!existingCreative || !editUrl.trim()) return;
+    setIsSavingUrl(true);
+    onUpdateClickUrl(existingCreative.id, editUrl.trim());
+    setIsSavingUrl(false);
   };
 
   return (
@@ -141,18 +156,40 @@ function PlacementUploadCard({
         </div>
 
         {existingCreative ? (
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-2">
-            {existingCreative.media_type === 'video' ? (
-              <video src={existingCreative.media_url} className="w-16 h-12 object-cover rounded" muted />
-            ) : (
-              <img src={existingCreative.media_url} alt="" className="w-16 h-12 object-cover rounded" />
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-muted-foreground truncate">{existingCreative.click_url}</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-2">
+              {existingCreative.media_type === 'video' ? (
+                <video src={existingCreative.media_url} className="w-20 h-14 object-cover rounded" muted />
+              ) : (
+                <img src={existingCreative.media_url} alt="" className="w-20 h-14 object-cover rounded" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-muted-foreground">{existingCreative.media_type}</p>
+              </div>
+              <Button variant="ghost" size="icon" className="text-destructive h-7 w-7 shrink-0" onClick={() => onDelete(existingCreative.id)}>
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
             </div>
-            <Button variant="ghost" size="icon" className="text-destructive h-7 w-7 shrink-0" onClick={() => onDelete(existingCreative.id)}>
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground mb-1 block">
+                {es ? 'URL de destino' : 'Destination URL'}
+              </label>
+              <div className="flex gap-1.5">
+                <Input
+                  placeholder="https://..."
+                  value={editUrl}
+                  onChange={e => setEditUrl(e.target.value)}
+                  className="text-xs h-8 flex-1"
+                />
+                <Button
+                  size="sm" className="h-8 px-3 text-xs"
+                  disabled={isSavingUrl || editUrl === existingCreative.click_url || !editUrl.trim()}
+                  onClick={handleSaveUrl}
+                >
+                  {isSavingUrl ? <Loader2 className="w-3 h-3 animate-spin" /> : (es ? 'Guardar' : 'Save')}
+                </Button>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-2">
