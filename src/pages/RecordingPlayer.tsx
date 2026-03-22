@@ -179,12 +179,12 @@ export default function RecordingPlayer() {
 
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-            <div className="relative no-context-menu">
+            <div className="relative no-context-menu aspect-video rounded-xl overflow-hidden bg-black">
               {!prerollDone && recording.videoUrl && (
                 <AdPreroll onComplete={handlePrerollComplete} placementName="recording_preroll" />
               )}
               {recording.videoUrl ? (
-                <div className={!prerollDone ? 'invisible absolute inset-0' : ''}>
+                <div className={!prerollDone ? 'opacity-0 pointer-events-none absolute inset-0' : 'w-full h-full'}>
                   <RecordingVideoPlayer
                     videoUrl={recording.videoUrl}
                     recordingId={recording.id}
@@ -193,7 +193,7 @@ export default function RecordingPlayer() {
                   />
                 </div>
               ) : (
-                <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
+                <div className="w-full h-full flex items-center justify-center bg-muted">
                   <div className="text-center p-6">
                     <Clock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Video no disponible</h3>
