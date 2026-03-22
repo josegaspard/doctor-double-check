@@ -115,6 +115,7 @@ export function useAdPlacements() {
   return { placements, isLoading, refetch: fetchPlacements };
 }
 
+/** Fetches a single active creative for the given placement */
 export function useAdCreative(placementName: string) {
   const { user, role } = useAuth();
   const { language } = useLanguage();
