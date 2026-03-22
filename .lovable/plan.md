@@ -1,104 +1,33 @@
 
 
-# Plan: Rediseño completo del Panel de Publicidad (Advertiser Dashboard)
+# Plan: Fix click_url, delete storage files, allow editing creatives
 
-## Problemas actuales
-- Los placements se muestran como checkboxes planos sin contexto visual — el usuario no sabe cómo ni dónde se verá su anuncio
-- La carga de archivos y URL se comparte visualmente (ya corregido en código pero el UX sigue confuso)
-- No hay separación clara entre secciones: métricas, campañas activas, creación
-- La lista de placements es abrumadora (20+ opciones sin categorizar)
-- No hay preview visual de dónde aparecerá cada tipo de anuncio
+## Problems
+1. **click_url shows "#"**: When uploading a creative, if no URL was entered, it saves `'#'` as default. The existing creative view only shows this "#" with no way to edit it afterward.
+2. **Deleting creative doesn't delete the file from storage**: `deleteCreative` only removes the DB row but leaves the video/image file in the `ad-creatives` bucket, wasting storage.
+3. **No way to edit click_url on already-uploaded creatives**.
 
-## Cambios
+## Changes
 
-### 1. `src/pages/AdvertiserDashboard.tsx` — Rediseño completo
+### `src/pages/AdvertiserDashboard.tsx`
 
-**Vista principal (lista de campañas):**
-- Header con gradient como el Admin Dashboard
-- Resumen financiero en cards con iconos: Total invertido, Total gastado, Impresiones totales, Clicks totales, CTR promedio
-- Campañas en cards más ricos: barra de progreso de presupuesto, mini-gráfico sparkline de últimos 7 días, status badge prominente
-- Botón "Nueva Campaña" como CTA principal
+**Fix 1 — Don't default to '#', require URL before upload:**
+- Line 309: Change `click_url: clickUrls[placementId] || '#'` → validate that `clickUrls[placementId]` is not empty before uploading. Show toast error "Ingresa una URL de destino" if empty.
 
-**Formulario de creación — Rediseño con stepper/wizard:**
-- Paso visual (no necesariamente un stepper, pero secciones colapsables claras):
-  1. **Información básica**: Nombre, presupuesto, fechas (como está pero mejor styled)
-  2. **Audiencia**: Checkboxes de roles + idioma con iconos descriptivos
-  3. **Ubicaciones**: Categorizar placements en grupos con preview visual:
-     - **Banners** (728×90): Mostrar un mini-mockup de dónde aparece (rectángulo horizontal)
-     - **Laterales** (160×600, 300×250): Mini-mockup vertical
-     - **Interstitial** (1080×1920 / 1920×1080): Mockup de pantalla completa
-     - **Pre-roll Video** (1280×720): Mockup de reproductor con overlay
-     - **Inline Content** (320×100): Mockup entre cards
-  - Cada grupo tiene un header con icono y descripción breve
-  - Cada placement muestra un mini-esquema SVG/div de cómo se ve (rectángulo proporcional al aspect ratio con label)
+**Fix 2 — Delete storage file when deleting creative:**
+- In `deleteCreative`, extract the storage path from `media_url` (everything after `/ad-creatives/`) and call `supabase.storage.from('ad-creatives').remove([path])` before deleting the DB row.
 
-**Vista de detalle de campaña:**
-- Mantener estructura actual pero mejorar:
-  - Upload de creatives: cada placement seleccionado tiene su propia card independiente con drag & drop zone, input URL propio, preview del archivo subido
-  - Separar visualmente cada placement en una card individual para que no haya confusión de que "se comparte"
+**Fix 3 — Allow editing click_url on existing creatives:**
+- In `PlacementUploadCard`, when `existingCreative` exists, show the click_url in an editable Input field instead of just a truncated text.
+- Add a save button that updates the creative's `click_url` in the database.
+- Show the full URL, not truncated.
 
-### 2. Categorización visual de placements
+**Fix 4 — UX improvements to PlacementUploadCard:**
+- Show the click_url as an editable field with a save/update button when creative exists
+- Add a label "URL de destino" above the URL
+- Show media preview larger (w-20 h-14 instead of w-16 h-12)
+- Better visual separation between media preview and URL edit
 
-Agrupar los placements en categorías dentro del formulario:
-
-```text
-📺 Banners Horizontales
-  ├─ Lives - Banner Superior (728×90)
-  ├─ Grabaciones - Banner Superior (728×90)
-  ├─ Noticias - Banner Superior (728×90)
-  ├─ Content Bottom Banner (728×90)
-  └─ Content Mid Inline (728×90)
-
-📱 Inline & Móvil
-  ├─ Contenido - Inline (728×90)
-  ├─ Noticias - Inline Móvil (320×100)
-
-📐 Barras Laterales
-  ├─ Noticias - Lateral (300×250)
-  ├─ Noticias - Lateral Izquierdo (160×600)
-  ├─ Noticias - Lateral Derecho (160×600)
-  ├─ Content Sidebar Left (160×600)
-  └─ Content Sidebar Right (160×600)
-
-🖥️ Pantalla Completa (Interstitial)
-  ├─ Lives - Interstitial Fullscreen (1080×1920)
-  ├─ Lives - Interstitial Mobile (1080×1920)
-  └─ Lives - Interstitial Desktop (1920×1080)
-
-🎬 Video Pre-roll
-  ├─ Live - Pre-roll Video (1280×720)
-  └─ Recording - Pre-roll Video (1280×720)
-```
-
-Cada categoría tiene un mini-diagrama SVG inline mostrando la proporción del ad (rectángulo azul con label dentro) para que el usuario entienda visualmente dónde aparece.
-
-### 3. Upload de creatives — Card individual por placement
-
-En la vista de detalle de campaña, cada placement tiene su propia card con:
-- Mini preview del formato (rectángulo proporcional)
-- Zona de drag & drop independiente
-- Input URL independiente (ya corregido con `clickUrls[pl.id]`)
-- Preview del archivo subido con botón de eliminar
-- Estado claro: "Sin creative" / "Creative activo"
-
-### 4. i18n — Nuevas keys
-
-**es.ts:**
-- `ads.placementCategories.banners`: "Banners Horizontales"
-- `ads.placementCategories.inline`: "Inline y Móvil"
-- `ads.placementCategories.sidebar`: "Barras Laterales"
-- `ads.placementCategories.interstitial`: "Pantalla Completa"
-- `ads.placementCategories.preroll`: "Video Pre-roll"
-- `ads.placementPreview`: "Vista previa de ubicación"
-- `ads.noCreativeYet`: "Sin creative asignado"
-- `ads.dragOrClickUpload`: "Arrastra un archivo aquí o haz clic"
-- `ads.totalInvested`: "Total invertido"
-- `ads.avgCTR`: "CTR promedio"
-
-**en.ts:** Traducciones correspondientes
-
-## Archivos a modificar
-1. `src/pages/AdvertiserDashboard.tsx` — rediseño completo del dashboard
-2. `src/lib/i18n/es.ts` — nuevas keys
-3. `src/lib/i18n/en.ts` — nuevas keys
+## Files to modify
+1. `src/pages/AdvertiserDashboard.tsx` — all fixes above
 
