@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAdCreative } from '@/hooks/useAds';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,7 +9,9 @@ const DURATION_MS = 3000;
 const SESSION_KEY = 'ad_interstitial_shown';
 
 export function AdInterstitial() {
-  const { creative, isActive, trackImpression, trackClick } = useAdCreative('lives_interstitial');
+  const isMobile = useIsMobile();
+  const placementName = isMobile ? 'lives_interstitial_mobile' : 'lives_interstitial_desktop';
+  const { creative, isActive, trackImpression, trackClick } = useAdCreative(placementName);
   const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);

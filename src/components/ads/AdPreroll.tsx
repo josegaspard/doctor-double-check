@@ -8,10 +8,11 @@ const SKIP_AFTER_SECONDS = 6;
 
 interface AdPrerollProps {
   onComplete: () => void;
+  placementName?: string;
 }
 
-export function AdPreroll({ onComplete }: AdPrerollProps) {
-  const { creative, isActive, trackImpression, trackClick } = useAdCreative('live_preroll');
+export function AdPreroll({ onComplete, placementName = 'live_preroll' }: AdPrerollProps) {
+  const { creative, isActive, trackImpression, trackClick } = useAdCreative(placementName);
   const { t } = useLanguage();
   const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(0);

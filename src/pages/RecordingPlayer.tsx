@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { RecordingVideoPlayer } from '@/components/recordings/RecordingVideoPlayer';
+import { AdPreroll } from '@/components/ads/AdPreroll';
 import { RecordingChatReplay } from '@/components/recordings/RecordingChatReplay';
 import {
   PlayCircle,
