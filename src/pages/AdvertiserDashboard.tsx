@@ -91,7 +91,7 @@ export default function AdvertiserDashboard() {
   const [creatives, setCreatives] = useState<Creative[]>([]);
   const [dailyEvents, setDailyEvents] = useState<DailyEvent[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [clickUrl, setClickUrl] = useState('');
+  const [clickUrls, setClickUrls] = useState<Record<string, string>>({});
   const [isPaying, setIsPaying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
