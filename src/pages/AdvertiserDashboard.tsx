@@ -91,7 +91,7 @@ export default function AdvertiserDashboard() {
   const [creatives, setCreatives] = useState<Creative[]>([]);
   const [dailyEvents, setDailyEvents] = useState<DailyEvent[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [clickUrl, setClickUrl] = useState('');
+  const [clickUrls, setClickUrls] = useState<Record<string, string>>({});
   const [isPaying, setIsPaying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -200,12 +200,12 @@ export default function AdvertiserDashboard() {
     const { error: insErr } = await supabase.from('ad_creatives' as any).insert({
       campaign_id: selectedCampaign, placement_id: placementId,
       media_url: publicUrl, media_type: mediaType,
-      click_url: clickUrl || '#', alt_text: file.name,
+      click_url: clickUrls[placementId] || '#', alt_text: file.name,
     } as any);
     setIsUploading(false);
     if (insErr) { toast.error(t('ads.creativeSaveError')); return; }
     toast.success(t('ads.creativeUploaded'));
-    setClickUrl('');
+    setClickUrls(prev => ({ ...prev, [placementId]: '' }));
     // Refresh creatives
     const { data: crs } = await supabase.from('ad_creatives' as any).select('*').eq('campaign_id', selectedCampaign);
     setCreatives((crs as any[]) || []);
@@ -441,7 +441,7 @@ export default function AdvertiserDashboard() {
                   <div key={pl.id} className="border border-dashed border-border rounded-lg p-3">
                     <p className="text-xs font-medium mb-1">{pl.display_name} <span className="text-muted-foreground">({pl.width}×{pl.height}px)</span></p>
                     <div className="space-y-2">
-                      <Input placeholder={t('ads.clickDestUrl')} value={clickUrl} onChange={e => setClickUrl(e.target.value)} className="text-xs h-8" />
+                      <Input placeholder={t('ads.clickDestUrl')} value={clickUrls[pl.id] || ''} onChange={e => setClickUrls(prev => ({ ...prev, [pl.id]: e.target.value }))} className="text-xs h-8" />
                       <Button variant="outline" size="sm" className="gap-1.5 w-full text-xs" disabled={isUploading}
                         onClick={() => {
                           const input = document.createElement('input');
