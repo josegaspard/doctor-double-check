@@ -153,6 +153,7 @@ export default function LivesGrid() {
 
   return (
     <MainLayout>
+      <AdInterstitial />
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Ad Banner */}
         <AdBanner placementName="lives_top_banner" className="mb-4" />
