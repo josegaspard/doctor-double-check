@@ -1409,6 +1409,10 @@ export const en = {
     needAccount: 'You need a registered account to get started',
     adLabel: 'Ad',
     advertising: 'Advertising',
+    skipAd: 'Skip',
+    adCountdown: 'Ad · {seconds}s',
+    adEndsIn: 'Ad ends in {seconds}s',
+    closeAd: 'Close',
     // Recordings filter additions
     filterAll: 'All',
     filterFree: 'Free',
