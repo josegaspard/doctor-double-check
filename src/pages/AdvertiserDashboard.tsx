@@ -331,6 +331,11 @@ export default function AdvertiserDashboard() {
 
   const uploadCreative = async (file: File, placementId: string) => {
     if (!selectedCampaign || !user?.id) return;
+    const url = clickUrls[placementId]?.trim();
+    if (!url) {
+      toast.error(es ? 'Ingresa una URL de destino antes de subir' : 'Enter a destination URL before uploading');
+      return;
+    }
     const maxSize = config.max_file_size_kb * 1024;
     if (file.size > maxSize) { toast.error(`${t('ads.fileTooLarge')} (${t('ads.maxSize')} ${config.max_file_size_kb}KB)`); return; }
     setUploadingPlacement(placementId);
@@ -343,7 +348,7 @@ export default function AdvertiserDashboard() {
     const { error: insErr } = await supabase.from('ad_creatives' as any).insert({
       campaign_id: selectedCampaign, placement_id: placementId,
       media_url: publicUrl, media_type: mediaType,
-      click_url: clickUrls[placementId] || '#', alt_text: file.name,
+      click_url: url, alt_text: file.name,
     } as any);
     setUploadingPlacement(null);
     if (insErr) { toast.error(t('ads.creativeSaveError')); return; }
@@ -354,9 +359,24 @@ export default function AdvertiserDashboard() {
   };
 
   const deleteCreative = async (id: string) => {
+    const creative = creatives.find(c => c.id === id);
+    if (creative?.media_url) {
+      const match = creative.media_url.match(/\/ad-creatives\/(.+)$/);
+      if (match) {
+        const storagePath = decodeURIComponent(match[1]);
+        await supabase.storage.from('ad-creatives').remove([storagePath]);
+      }
+    }
     await supabase.from('ad_creatives' as any).delete().eq('id', id);
     setCreatives(c => c.filter(cr => cr.id !== id));
     toast.success(t('ads.creativeDeleted'));
+  };
+
+  const updateCreativeClickUrl = async (creativeId: string, newUrl: string) => {
+    const { error } = await supabase.from('ad_creatives' as any).update({ click_url: newUrl } as any).eq('id', creativeId);
+    if (error) { toast.error(es ? 'Error al guardar URL' : 'Error saving URL'); return; }
+    setCreatives(prev => prev.map(c => c.id === creativeId ? { ...c, click_url: newUrl } : c));
+    toast.success(es ? 'URL actualizada' : 'URL updated');
   };
 
   const payCampaign = async (campaignId: string, amount: number) => {
