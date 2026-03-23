@@ -5,7 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const DURATION_MS = 3000;
+const DURATION_MS = 6000;
 const SESSION_KEY = 'ad_interstitial_shown';
 
 export function AdInterstitial() {
