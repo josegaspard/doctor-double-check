@@ -455,9 +455,7 @@ export default function LivePlayer() {
               />
             ) : roomUrl && viewerToken ? (
               <div className={mobileFullscreen ? 'mobile-live-fullscreen' : 'relative'}>
-                {!prerollDone && !isOwner && (
-                  <AdPreroll onComplete={() => setPrerollDone(true)} />
-                )}
+                {/* Pre-roll ads only on recordings, not lives */}
                 <DailyVideoPlayer
                   roomUrl={roomUrl}
                   token={viewerToken}
