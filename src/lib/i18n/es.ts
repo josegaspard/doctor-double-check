@@ -1430,6 +1430,11 @@ export const es = {
     catInterstitialDesc: 'Se muestran al entrar a una sección',
     catPreroll: 'Video Pre-roll',
     catPrerollDesc: 'Video antes del contenido principal',
+    editCampaign: 'Editar',
+    deleteCampaign: 'Eliminar campaña',
+    confirmDeleteCampaign: '¿Eliminar esta campaña y todos sus creativos? Esta acción no se puede deshacer.',
+    campaignUpdated: 'Campaña actualizada',
+    adminCreateCampaign: 'Crear Campaña (Admin)',
     // Recordings filter additions
     filterAll: 'Todo',
     filterFree: 'Gratis',

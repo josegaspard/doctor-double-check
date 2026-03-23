@@ -1430,6 +1430,11 @@ export const en = {
     catInterstitialDesc: 'Shown when entering a section',
     catPreroll: 'Video Pre-roll',
     catPrerollDesc: 'Video before the main content',
+    editCampaign: 'Edit',
+    deleteCampaign: 'Delete campaign',
+    confirmDeleteCampaign: 'Delete this campaign and all its creatives? This action cannot be undone.',
+    campaignUpdated: 'Campaign updated',
+    adminCreateCampaign: 'Create Campaign (Admin)',
     // Recordings filter additions
     filterAll: 'All',
     filterFree: 'Free',
