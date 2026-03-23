@@ -5,7 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const DURATION_MS = 3000;
+const DURATION_MS = 6000;
 const SESSION_KEY = 'ad_interstitial_shown';
 
 export function AdInterstitial() {
@@ -20,7 +20,7 @@ export function AdInterstitial() {
   const trackedRef = useRef(false);
 
   useEffect(() => {
-    if (!isActive || !creative) return;
+    if (!isActive || !creative || creative.media_type === 'video') return;
     if (sessionStorage.getItem(SESSION_KEY)) return;
 
     setVisible(true);
@@ -84,24 +84,14 @@ export function AdInterstitial() {
 
           {/* Content */}
           <div
-            className="relative w-full h-full sm:w-auto sm:h-auto sm:max-w-md sm:max-h-[80vh] cursor-pointer flex items-center justify-center"
+            className="relative w-full h-full sm:w-auto sm:h-auto sm:max-w-2xl lg:max-w-4xl sm:max-h-[85vh] cursor-pointer flex items-center justify-center p-4"
             onClick={handleClick}
           >
-            {creative.media_type === 'video' ? (
-              <video
-                src={creative.media_url}
-                className="w-full h-full object-contain sm:rounded-2xl"
-                autoPlay
-                muted
-                playsInline
-              />
-            ) : (
-              <img
-                src={creative.media_url}
-                alt={creative.alt_text || t('ads.adLabel')}
-                className="w-full h-full object-contain sm:rounded-2xl"
-              />
-            )}
+            <img
+              src={creative.media_url}
+              alt={creative.alt_text || t('ads.adLabel')}
+              className="w-full h-full object-contain sm:rounded-2xl"
+            />
           </div>
 
           {/* Progress bar */}
