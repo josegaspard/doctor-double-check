@@ -76,7 +76,7 @@ export default function LivePlayer() {
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
   const [isJoiningStream, setIsJoiningStream] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
-  const [prerollDone, setPrerollDone] = useState(false);
+  const prerollDone = true;
 
   // Direct DB fallback state
   const [directLive, setDirectLive] = useState<any>(null);
