@@ -1,31 +1,44 @@
 
 
-# Plan: Separar formatos de publicidad — Video solo en contenido premium, Interstitial solo imágenes + 6 segundos
+# Plan: Add Full Campaign Management to Admin Ads Panel
 
-## Problemas
-1. **AdInterstitial** (pantalla de inicio) acepta video — solo debe aceptar imágenes
-2. **AdPreroll** (video pre-roll) se muestra en Lives — solo debe mostrarse en grabaciones premium (`RecordingPlayer`)
-3. **AdInterstitial** dura solo 3 segundos — debe durar 6 segundos
-4. La imagen del interstitial es pequeña (`sm:max-w-md`) — debe ser más grande
+## Problem
+The AdminAds page (`/admin/ads`) only allows the admin to view campaigns, approve/reject/pause them, and toggle creatives on/off. There is no way for the admin to:
+- Create new campaigns
+- Edit campaign details (name, budget, dates, targeting)
+- Upload/replace/delete creative media (images, videos)
+- Edit creative click URLs
+- Delete campaigns
 
-## Cambios
+## Changes
 
-### 1. `src/components/ads/AdInterstitial.tsx`
-- Cambiar `DURATION_MS` de `3000` a `6000` (6 segundos)
-- Eliminar el soporte de video: quitar el bloque `creative.media_type === 'video'` y solo renderizar `<img>`
-- Si el creative cargado es de tipo video, ignorarlo (no mostrar el interstitial)
-- Hacer la imagen más grande: cambiar `sm:max-w-md` → `sm:max-w-2xl lg:max-w-4xl` para que ocupe más pantalla
+### `src/pages/AdminAds.tsx` — Add full campaign CRUD + creative management
 
-### 2. `src/pages/LivePlayer.tsx`
-- **Eliminar** el `AdPreroll` del LivePlayer — los lives NO deben tener pre-roll de video
-- Quitar el import de `AdPreroll`
-- Quitar el estado `prerollDone` o dejarlo siempre en `true`
-- El live debe cargar directamente sin publicidad de video
+**1. Create Campaign functionality:**
+- Add a "New Campaign" button + creation form (same as AdvertiserDashboard) with all fields: name, budget, dates, target roles, target language, placement selection
+- Campaign is created with `advertiser_id = user.id` (admin's own ID)
 
-### 3. `src/pages/RecordingPlayer.tsx`
-- **Mantener** el `AdPreroll` como está — este es el único lugar donde debe aparecer el pre-roll de video
+**2. Edit Campaign:**
+- When expanding a campaign, show editable fields (name, budget, dates, target roles, target language) with a Save button
+- Add `updateCampaign` function that updates the campaign row
 
-## Archivos a modificar
-1. `src/components/ads/AdInterstitial.tsx` — solo imágenes, 6 segundos, imagen más grande
-2. `src/pages/LivePlayer.tsx` — quitar AdPreroll
+**3. Full Creative Management (reuse PlacementUploadCard pattern):**
+- Replace the read-only creative list in expanded view with the `PlacementUploadCard` pattern from AdvertiserDashboard
+- Each placement gets its own upload zone, URL input, and delete button
+- Include storage cleanup on delete (remove file from `ad-creatives` bucket)
+- Include `updateCreativeClickUrl` for editing URLs on existing creatives
+
+**4. Delete Campaign:**
+- Add delete button that removes all creatives (+ storage files) and the campaign itself
+
+**5. Import shared components:**
+- Import `PlacementMockup`, `PlacementUploadCard`, and `categorizePlacements` — since these are defined inside AdvertiserDashboard, I'll duplicate the essential logic inline in AdminAds (or extract to a shared file). Given the file sizes, I'll keep them inline in AdminAds for simplicity.
+
+### `src/lib/i18n/es.ts` + `src/lib/i18n/en.ts`
+- Add keys: `ads.editCampaign`, `ads.deleteCampaign`, `ads.confirmDeleteCampaign`, `ads.campaignUpdated`, `ads.adminCreateCampaign`
+
+## Files to modify
+1. `src/pages/AdminAds.tsx` — major additions (create, edit, delete campaigns + full creative management)
+2. `src/lib/i18n/es.ts` — new keys
+3. `src/lib/i18n/en.ts` — new keys
 
