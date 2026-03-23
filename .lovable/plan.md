@@ -1,33 +1,31 @@
 
 
-# Plan: Fix click_url, delete storage files, allow editing creatives
+# Plan: Separar formatos de publicidad — Video solo en contenido premium, Interstitial solo imágenes + 6 segundos
 
-## Problems
-1. **click_url shows "#"**: When uploading a creative, if no URL was entered, it saves `'#'` as default. The existing creative view only shows this "#" with no way to edit it afterward.
-2. **Deleting creative doesn't delete the file from storage**: `deleteCreative` only removes the DB row but leaves the video/image file in the `ad-creatives` bucket, wasting storage.
-3. **No way to edit click_url on already-uploaded creatives**.
+## Problemas
+1. **AdInterstitial** (pantalla de inicio) acepta video — solo debe aceptar imágenes
+2. **AdPreroll** (video pre-roll) se muestra en Lives — solo debe mostrarse en grabaciones premium (`RecordingPlayer`)
+3. **AdInterstitial** dura solo 3 segundos — debe durar 6 segundos
+4. La imagen del interstitial es pequeña (`sm:max-w-md`) — debe ser más grande
 
-## Changes
+## Cambios
 
-### `src/pages/AdvertiserDashboard.tsx`
+### 1. `src/components/ads/AdInterstitial.tsx`
+- Cambiar `DURATION_MS` de `3000` a `6000` (6 segundos)
+- Eliminar el soporte de video: quitar el bloque `creative.media_type === 'video'` y solo renderizar `<img>`
+- Si el creative cargado es de tipo video, ignorarlo (no mostrar el interstitial)
+- Hacer la imagen más grande: cambiar `sm:max-w-md` → `sm:max-w-2xl lg:max-w-4xl` para que ocupe más pantalla
 
-**Fix 1 — Don't default to '#', require URL before upload:**
-- Line 309: Change `click_url: clickUrls[placementId] || '#'` → validate that `clickUrls[placementId]` is not empty before uploading. Show toast error "Ingresa una URL de destino" if empty.
+### 2. `src/pages/LivePlayer.tsx`
+- **Eliminar** el `AdPreroll` del LivePlayer — los lives NO deben tener pre-roll de video
+- Quitar el import de `AdPreroll`
+- Quitar el estado `prerollDone` o dejarlo siempre en `true`
+- El live debe cargar directamente sin publicidad de video
 
-**Fix 2 — Delete storage file when deleting creative:**
-- In `deleteCreative`, extract the storage path from `media_url` (everything after `/ad-creatives/`) and call `supabase.storage.from('ad-creatives').remove([path])` before deleting the DB row.
+### 3. `src/pages/RecordingPlayer.tsx`
+- **Mantener** el `AdPreroll` como está — este es el único lugar donde debe aparecer el pre-roll de video
 
-**Fix 3 — Allow editing click_url on existing creatives:**
-- In `PlacementUploadCard`, when `existingCreative` exists, show the click_url in an editable Input field instead of just a truncated text.
-- Add a save button that updates the creative's `click_url` in the database.
-- Show the full URL, not truncated.
-
-**Fix 4 — UX improvements to PlacementUploadCard:**
-- Show the click_url as an editable field with a save/update button when creative exists
-- Add a label "URL de destino" above the URL
-- Show media preview larger (w-20 h-14 instead of w-16 h-12)
-- Better visual separation between media preview and URL edit
-
-## Files to modify
-1. `src/pages/AdvertiserDashboard.tsx` — all fixes above
+## Archivos a modificar
+1. `src/components/ads/AdInterstitial.tsx` — solo imágenes, 6 segundos, imagen más grande
+2. `src/pages/LivePlayer.tsx` — quitar AdPreroll
 
