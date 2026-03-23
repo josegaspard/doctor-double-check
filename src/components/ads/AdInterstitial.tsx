@@ -20,7 +20,7 @@ export function AdInterstitial() {
   const trackedRef = useRef(false);
 
   useEffect(() => {
-    if (!isActive || !creative) return;
+    if (!isActive || !creative || creative.media_type === 'video') return;
     if (sessionStorage.getItem(SESSION_KEY)) return;
 
     setVisible(true);
