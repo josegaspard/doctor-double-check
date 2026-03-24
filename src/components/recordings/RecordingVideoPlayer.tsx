@@ -79,7 +79,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
 
   if (!storagePath) {
     return (
-      <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} />
+      <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} autoPlay={autoPlay} />
     );
   }
 
