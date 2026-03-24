@@ -331,11 +331,7 @@ export default function AdvertiserDashboard() {
 
   const uploadCreative = async (file: File, placementId: string) => {
     if (!selectedCampaign || !user?.id) return;
-    const url = clickUrls[placementId]?.trim();
-    if (!url) {
-      toast.error(es ? 'Ingresa una URL de destino antes de subir' : 'Enter a destination URL before uploading');
-      return;
-    }
+    const url = clickUrls[placementId]?.trim() || '';
     const maxSize = config.max_file_size_kb * 1024;
     if (file.size > maxSize) { toast.error(`${t('ads.fileTooLarge')} (${t('ads.maxSize')} ${config.max_file_size_kb}KB)`); return; }
     setUploadingPlacement(placementId);
