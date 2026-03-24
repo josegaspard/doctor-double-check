@@ -400,8 +400,7 @@ export default function AdminAds() {
   // ── Creative Management ──
   const uploadCreative = async (file: File, placementId: string) => {
     if (!expandedCampaign || !user?.id) return;
-    const url = clickUrls[placementId]?.trim();
-    if (!url) { toast.error(es ? 'Ingresa una URL de destino' : 'Enter a destination URL'); return; }
+    const url = clickUrls[placementId]?.trim() || '';
     const maxSize = config.max_file_size_kb * 1024;
     if (file.size > maxSize) { toast.error(`${t('ads.fileTooLarge')} (${t('ads.maxSize')} ${config.max_file_size_kb}KB)`); return; }
     setUploadingPlacement(placementId);
