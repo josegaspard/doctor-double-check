@@ -193,12 +193,6 @@ function PlacementUploadCard({
           </div>
         ) : (
           <div className="space-y-2">
-            <Input
-              placeholder={t('ads.clickDestUrl')}
-              value={clickUrl}
-              onChange={e => onClickUrlChange(e.target.value)}
-              className="text-xs h-8"
-            />
             <div
               className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
                 isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
@@ -222,6 +216,12 @@ function PlacementUploadCard({
                 </>
               )}
             </div>
+            <Input
+              placeholder={es ? 'URL de destino (opcional)' : 'Destination URL (optional)'}
+              value={clickUrl}
+              onChange={e => onClickUrlChange(e.target.value)}
+              className="text-xs h-8"
+            />
           </div>
         )}
       </CardContent>
@@ -331,11 +331,7 @@ export default function AdvertiserDashboard() {
 
   const uploadCreative = async (file: File, placementId: string) => {
     if (!selectedCampaign || !user?.id) return;
-    const url = clickUrls[placementId]?.trim();
-    if (!url) {
-      toast.error(es ? 'Ingresa una URL de destino antes de subir' : 'Enter a destination URL before uploading');
-      return;
-    }
+    const url = clickUrls[placementId]?.trim() || '';
     const maxSize = config.max_file_size_kb * 1024;
     if (file.size > maxSize) { toast.error(`${t('ads.fileTooLarge')} (${t('ads.maxSize')} ${config.max_file_size_kb}KB)`); return; }
     setUploadingPlacement(placementId);
