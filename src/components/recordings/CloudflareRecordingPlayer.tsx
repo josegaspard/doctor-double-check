@@ -20,6 +20,7 @@ interface CloudflareRecordingPlayerProps {
   recordingId: string;
   onDurationUpdate?: (duration: number) => void;
   onTimeUpdate?: (currentTime: number) => void;
+  autoPlay?: boolean;
 }
 
 export function CloudflareRecordingPlayer({

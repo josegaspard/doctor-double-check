@@ -12,6 +12,7 @@ interface RecordingVideoPlayerProps {
   recordingId: string;
   onDurationUpdate?: (duration: number) => void;
   onTimeUpdate?: (currentTime: number) => void;
+  autoPlay?: boolean;
 }
 
 function isStorageRef(url: string) {
