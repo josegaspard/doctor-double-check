@@ -28,7 +28,7 @@ function getStoragePath(url: string) {
  * - Cloudflare (UID / pending:UID) via CloudflareRecordingPlayer
  * - Almacenamiento (storage:path) via signed URL + HTML5 video
  */
-export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, onTimeUpdate }: RecordingVideoPlayerProps) {
+export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, onTimeUpdate, autoPlay }: RecordingVideoPlayerProps) {
   const storagePath = useMemo(() => (isStorageRef(videoUrl) ? getStoragePath(videoUrl) : null), [videoUrl]);
 
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
