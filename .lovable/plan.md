@@ -1,44 +1,29 @@
 
 
-# Plan: Add Full Campaign Management to Admin Ads Panel
+# Plan: Allow uploading creatives without requiring URL first
 
 ## Problem
-The AdminAds page (`/admin/ads`) only allows the admin to view campaigns, approve/reject/pause them, and toggle creatives on/off. There is no way for the admin to:
-- Create new campaigns
-- Edit campaign details (name, budget, dates, targeting)
-- Upload/replace/delete creative media (images, videos)
-- Edit creative click URLs
-- Delete campaigns
+Both `AdminAds.tsx` and `AdvertiserDashboard.tsx` require the user to enter a destination URL **before** uploading a file. The user wants to upload the image/video first and add the URL afterward.
 
 ## Changes
 
-### `src/pages/AdminAds.tsx` — Add full campaign CRUD + creative management
+### 1. `src/pages/AdminAds.tsx` — Remove URL-first requirement
+- In `uploadCreative` (line 403-404): Remove the early return that blocks upload when URL is empty. Use empty string as default `click_url` when no URL is provided.
+- After successful upload, the creative will appear with the editable URL field (the `PlacementUploadCard` already supports editing URL on existing creatives).
 
-**1. Create Campaign functionality:**
-- Add a "New Campaign" button + creation form (same as AdvertiserDashboard) with all fields: name, budget, dates, target roles, target language, placement selection
-- Campaign is created with `advertiser_id = user.id` (admin's own ID)
+### 2. `src/pages/AdvertiserDashboard.tsx` — Same fix
+- In `uploadCreative` (line 334-338): Remove the URL validation that blocks upload. Default `click_url` to empty string `''` instead of requiring it.
 
-**2. Edit Campaign:**
-- When expanding a campaign, show editable fields (name, budget, dates, target roles, target language) with a Save button
-- Add `updateCampaign` function that updates the campaign row
+### 3. `PlacementUploadCard` in both files — Swap URL/upload order
+- In the "no existing creative" section, move the upload drop zone **above** the URL input so the file picker appears first visually.
+- Keep the URL input below as optional before upload.
 
-**3. Full Creative Management (reuse PlacementUploadCard pattern):**
-- Replace the read-only creative list in expanded view with the `PlacementUploadCard` pattern from AdvertiserDashboard
-- Each placement gets its own upload zone, URL input, and delete button
-- Include storage cleanup on delete (remove file from `ad-creatives` bucket)
-- Include `updateCreativeClickUrl` for editing URLs on existing creatives
-
-**4. Delete Campaign:**
-- Add delete button that removes all creatives (+ storage files) and the campaign itself
-
-**5. Import shared components:**
-- Import `PlacementMockup`, `PlacementUploadCard`, and `categorizePlacements` — since these are defined inside AdvertiserDashboard, I'll duplicate the essential logic inline in AdminAds (or extract to a shared file). Given the file sizes, I'll keep them inline in AdminAds for simplicity.
-
-### `src/lib/i18n/es.ts` + `src/lib/i18n/en.ts`
-- Add keys: `ads.editCampaign`, `ads.deleteCampaign`, `ads.confirmDeleteCampaign`, `ads.campaignUpdated`, `ads.adminCreateCampaign`
+This way users can:
+1. Upload image/video first (no URL needed)
+2. See the preview immediately
+3. Add/edit the destination URL afterward using the existing save button
 
 ## Files to modify
-1. `src/pages/AdminAds.tsx` — major additions (create, edit, delete campaigns + full creative management)
-2. `src/lib/i18n/es.ts` — new keys
-3. `src/lib/i18n/en.ts` — new keys
+1. `src/pages/AdminAds.tsx` — remove URL requirement + swap order
+2. `src/pages/AdvertiserDashboard.tsx` — same changes
 
