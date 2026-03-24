@@ -113,6 +113,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
         className="w-full h-full object-contain"
         src={signedUrl || undefined}
         controls
+        autoPlay={autoPlay}
         playsInline
         controlsList="nodownload"
         onLoadedMetadata={handleLoadedMetadata}

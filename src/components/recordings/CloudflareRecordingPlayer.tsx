@@ -28,6 +28,7 @@ export function CloudflareRecordingPlayer({
   recordingId,
   onDurationUpdate,
   onTimeUpdate: onTimeUpdateProp,
+  autoPlay,
 }: CloudflareRecordingPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
