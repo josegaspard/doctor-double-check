@@ -174,6 +174,15 @@ export function CloudflareRecordingPlayer({
     };
   }, [initPlayer]);
 
+  // Autoplay when preroll finishes
+  useEffect(() => {
+    if (autoPlay && !isLoading && !error && !isProcessing && videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Browser may block autoplay; user will see play button
+      });
+    }
+  }, [autoPlay, isLoading, error, isProcessing]);
+
   // Keep duration in sync (prevents UI showing 0:00 when metadata arrives late)
   useEffect(() => {
     const video = videoRef.current;
