@@ -190,6 +190,7 @@ export default function RecordingPlayer() {
                     recordingId={recording.id}
                     onDurationUpdate={handleDurationUpdate}
                     onTimeUpdate={setVideoCurrentTime}
+                    autoPlay={prerollDone}
                   />
                 </div>
               ) : (

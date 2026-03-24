@@ -12,6 +12,7 @@ interface RecordingVideoPlayerProps {
   recordingId: string;
   onDurationUpdate?: (duration: number) => void;
   onTimeUpdate?: (currentTime: number) => void;
+  autoPlay?: boolean;
 }
 
 function isStorageRef(url: string) {
@@ -27,7 +28,7 @@ function getStoragePath(url: string) {
  * - Cloudflare (UID / pending:UID) via CloudflareRecordingPlayer
  * - Almacenamiento (storage:path) via signed URL + HTML5 video
  */
-export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, onTimeUpdate }: RecordingVideoPlayerProps) {
+export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, onTimeUpdate, autoPlay }: RecordingVideoPlayerProps) {
   const storagePath = useMemo(() => (isStorageRef(videoUrl) ? getStoragePath(videoUrl) : null), [videoUrl]);
 
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
@@ -78,7 +79,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
 
   if (!storagePath) {
     return (
-      <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} />
+      <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} autoPlay={autoPlay} />
     );
   }
 
@@ -112,6 +113,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
         className="w-full h-full object-contain"
         src={signedUrl || undefined}
         controls
+        autoPlay={autoPlay}
         playsInline
         controlsList="nodownload"
         onLoadedMetadata={handleLoadedMetadata}
