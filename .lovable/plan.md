@@ -1,29 +1,29 @@
 
 
-# Plan: Allow uploading creatives without requiring URL first
+# Plan: Autoplay del video premium al terminar el preroll
 
-## Problem
-Both `AdminAds.tsx` and `AdvertiserDashboard.tsx` require the user to enter a destination URL **before** uploading a file. The user wants to upload the image/video first and add the URL afterward.
+## Problema
+Cuando termina la publicidad preroll (o el usuario hace skip), el video de contenido premium se queda pausado mostrando el botón de play. El usuario quiere que el video empiece automáticamente.
 
-## Changes
+## Solución
+Pasar una prop `autoPlay` desde `RecordingPlayer` a `RecordingVideoPlayer` y luego a `CloudflareRecordingPlayer` (y al `<video>` de storage). El valor será `true` cuando el preroll haya terminado (`prerollDone === true`).
 
-### 1. `src/pages/AdminAds.tsx` — Remove URL-first requirement
-- In `uploadCreative` (line 403-404): Remove the early return that blocks upload when URL is empty. Use empty string as default `click_url` when no URL is provided.
-- After successful upload, the creative will appear with the editable URL field (the `PlacementUploadCard` already supports editing URL on existing creatives).
+## Cambios
 
-### 2. `src/pages/AdvertiserDashboard.tsx` — Same fix
-- In `uploadCreative` (line 334-338): Remove the URL validation that blocks upload. Default `click_url` to empty string `''` instead of requiring it.
+### 1. `src/pages/RecordingPlayer.tsx`
+- Pasar `autoPlay={prerollDone}` a `<RecordingVideoPlayer>`
 
-### 3. `PlacementUploadCard` in both files — Swap URL/upload order
-- In the "no existing creative" section, move the upload drop zone **above** the URL input so the file picker appears first visually.
-- Keep the URL input below as optional before upload.
+### 2. `src/components/recordings/RecordingVideoPlayer.tsx`
+- Aceptar nueva prop `autoPlay?: boolean`
+- Pasarla a `<CloudflareRecordingPlayer>` y al `<video>` de storage (`autoPlay` attribute)
 
-This way users can:
-1. Upload image/video first (no URL needed)
-2. See the preview immediately
-3. Add/edit the destination URL afterward using the existing save button
+### 3. `src/components/recordings/CloudflareRecordingPlayer.tsx`
+- Aceptar nueva prop `autoPlay?: boolean`
+- Cuando `autoPlay` es `true` y el video termina de cargar (`isLoading` pasa a `false`), llamar `videoRef.current.play()` automáticamente
+- Esto hará que el video arranque sin necesidad de clic del usuario
 
-## Files to modify
-1. `src/pages/AdminAds.tsx` — remove URL requirement + swap order
-2. `src/pages/AdvertiserDashboard.tsx` — same changes
+## Archivos a modificar
+1. `src/pages/RecordingPlayer.tsx` — pasar `autoPlay={prerollDone}`
+2. `src/components/recordings/RecordingVideoPlayer.tsx` — aceptar y propagar `autoPlay`
+3. `src/components/recordings/CloudflareRecordingPlayer.tsx` — implementar autoplay cuando prop es `true`
 
