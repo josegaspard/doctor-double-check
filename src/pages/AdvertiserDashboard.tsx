@@ -193,12 +193,6 @@ function PlacementUploadCard({
           </div>
         ) : (
           <div className="space-y-2">
-            <Input
-              placeholder={t('ads.clickDestUrl')}
-              value={clickUrl}
-              onChange={e => onClickUrlChange(e.target.value)}
-              className="text-xs h-8"
-            />
             <div
               className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
                 isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
@@ -222,6 +216,12 @@ function PlacementUploadCard({
                 </>
               )}
             </div>
+            <Input
+              placeholder={es ? 'URL de destino (opcional)' : 'Destination URL (optional)'}
+              value={clickUrl}
+              onChange={e => onClickUrlChange(e.target.value)}
+              className="text-xs h-8"
+            />
           </div>
         )}
       </CardContent>
