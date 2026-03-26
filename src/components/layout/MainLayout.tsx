@@ -178,6 +178,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const { balance } = useWallet();
   const { t } = useLanguage();
   const { socialLinks } = useSocialLinks();
+  const { toggles } = useSiteToggles();
   const { unreadCount: notifUnread } = useNotifications();
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [pendingEarnings, setPendingEarnings] = useState<number>(0);
@@ -219,8 +220,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
   const filteredNavItems = useMemo(() => {
     const effectiveRole = role || 'visitor';
-    return navItems.filter(item => item.roles.includes(effectiveRole));
-  }, [role]);
+    return navItems.filter(item => {
+      if (!item.roles.includes(effectiveRole)) return false;
+      if (item.toggleKey && !(toggles as any)[item.toggleKey]) return false;
+      return true;
+    });
+  }, [role, toggles]);
 
   const bottomTabs = useMemo(() => getBottomTabs(role, t), [role, t]);
   
