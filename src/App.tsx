@@ -120,6 +120,7 @@ const AdvertiserDashboard = React.lazy(() => import("./pages/AdvertiserDashboard
 const PsychologyDirectory = React.lazy(() => import("./pages/PsychologyDirectory"));
 const NutritionDirectory = React.lazy(() => import("./pages/NutritionDirectory"));
 const ForResidents = React.lazy(() => import("./pages/ForResidents"));
+const MedicalRecord = React.lazy(() => import("./pages/MedicalRecord"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
