@@ -887,13 +887,47 @@ export default function Doctors() {
                           >
                             <Heart className={`w-4 h-4 ${isFollowing ? 'fill-current' : ''}`} />
                           </Button>
-                          <Button
-                            size="sm"
-                            className="h-9 px-4 text-xs font-medium"
-                            onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
-                          >
-                            {t('doctors.viewProfile')}
-                          </Button>
+                          {role === 'resident' ? (
+                            (() => {
+                              const connStatus = residentConnections[doctor.user_id];
+                              if (connStatus === 'accepted') {
+                                return (
+                                  <Badge variant="secondary" className="h-9 px-3 text-xs gap-1">
+                                    <CheckCircle className="w-3 h-3" />
+                                    {t('residents.connected')}
+                                  </Badge>
+                                );
+                              }
+                              if (connStatus === 'pending') {
+                                return (
+                                  <Badge variant="outline" className="h-9 px-3 text-xs gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {t('residents.pending')}
+                                  </Badge>
+                                );
+                              }
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-9 px-3 text-xs font-medium gap-1"
+                                  disabled={connectingTo === doctor.user_id}
+                                  onClick={(e) => { e.stopPropagation(); handleRequestConnection(doctor.user_id); }}
+                                >
+                                  <UserPlus className="w-3.5 h-3.5" />
+                                  {t('residents.requestConnection')}
+                                </Button>
+                              );
+                            })()
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="h-9 px-4 text-xs font-medium"
+                              onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
+                            >
+                              {t('doctors.viewProfile')}
+                            </Button>
+                          )}
                         </div>
                       </div>
 
