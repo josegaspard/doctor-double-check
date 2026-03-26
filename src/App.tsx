@@ -199,6 +199,7 @@ const App = () => {
                       <Route path="/doctor/go-live" element={<DoctorGoLive />} />
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />
+                      <Route path="/medical-record" element={<MedicalRecord />} />
                       <Route path="/clinical-sessions" element={<ClinicalSessions />} />
                       <Route path="/double-check" element={<DoubleCheck />} />
                       <Route path="/settings" element={<Settings />} />
