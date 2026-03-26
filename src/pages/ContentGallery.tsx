@@ -356,7 +356,7 @@ export default function ContentGallery() {
     const matchesSearch =
       content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       content.creator_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = typeFilter === 'all' || content.type === typeFilter;
+    const matchesType = typeFilter === 'all' || content.type === typeFilter || (typeFilter === 'presentation' && content.type === 'pdf' && content.category?.toLowerCase().includes('presentaci'));
     const matchesCategory = categoryFilter === 'all' || content.category === categoryFilter;
     const matchesSpecialty = selectedSpecialty === 'Todas' || content.creator_specialty === selectedSpecialty;
     const isPurchased = purchasedIds.has(content.id);
