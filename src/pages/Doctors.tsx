@@ -34,6 +34,7 @@ import {
   Globe,
   ArrowLeft,
   ArrowRight,
+  UserPlus,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
