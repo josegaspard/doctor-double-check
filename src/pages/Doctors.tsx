@@ -162,7 +162,7 @@ function isDoctorAvailableNow(doctor: DoctorRow) {
 
 export default function Doctors() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { t } = useLanguage();
   const isMobile = useIsMobile();
   const { getSubscription } = useSubscriptions();
@@ -185,6 +185,9 @@ export default function Doctors() {
   const [selectedUniversity, setSelectedUniversity] = useState('');
   const [universities, setUniversities] = useState<string[]>([]);
   const [, setTick] = useState(0);
+  // Resident connection states
+  const [residentConnections, setResidentConnections] = useState<Record<string, string>>({});
+  const [connectingTo, setConnectingTo] = useState<string | null>(null);
 
   const fetchDoctorsStableRef = useRef<() => void>(() => {});
   const debouncedSearch = useDebounce(searchQuery, 300);
@@ -246,6 +249,40 @@ export default function Doctors() {
   useEffect(() => { setCurrentPage(1); }, [debouncedSearch, selectedSpecialty, locationFilter]);
   useEffect(() => { fetchDoctors(); }, [currentPage, debouncedSearch, selectedSpecialty, locationFilter]);
   useEffect(() => { if (user?.id) fetchFollowedDoctors(); }, [user?.id]);
+
+  // Fetch resident connections
+  useEffect(() => {
+    if (!user?.id || role !== 'resident') return;
+    const fetchConnections = async () => {
+      const { data } = await supabase
+        .from('doctor_resident_connections')
+        .select('doctor_id, status')
+        .eq('resident_id', user.id);
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((c: any) => { map[c.doctor_id] = c.status; });
+        setResidentConnections(map);
+      }
+    };
+    fetchConnections();
+  }, [user?.id, role]);
+
+  const handleRequestConnection = async (doctorUserId: string) => {
+    if (!user?.id) return;
+    setConnectingTo(doctorUserId);
+    try {
+      const { error } = await supabase
+        .from('doctor_resident_connections')
+        .insert({ doctor_id: doctorUserId, resident_id: user.id });
+      if (error) throw error;
+      setResidentConnections(prev => ({ ...prev, [doctorUserId]: 'pending' }));
+      toast.success(t('residents.requestSent'));
+    } catch (err: any) {
+      toast.error(err.message || 'Error');
+    } finally {
+      setConnectingTo(null);
+    }
+  };
 
   const fetchDoctors = async () => {
     setIsLoading(true);

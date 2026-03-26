@@ -27,6 +27,7 @@ import { DoctorQuickActions } from '@/components/doctor/DoctorQuickActions';
 import { DoctorStatusAlert } from '@/components/doctor/DoctorStatusAlert';
 import { DoctorProfileCard } from '@/components/doctor/DoctorProfileCard';
 import { DoctorPatientsList } from '@/components/doctor/DoctorPatientsList';
+import { DoctorResidentRequests } from '@/components/doctor/DoctorResidentRequests';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -117,6 +118,9 @@ export default function DoctorDashboard() {
               <SectionHeader>Acciones Rápidas</SectionHeader>
               <DoctorQuickActions isApproved={isApproved} userId={user?.id} canPublishNews={canPublishNews} />
             </section>
+
+            {/* ── SOLICITUDES DE RESIDENTES ── */}
+            <DoctorResidentRequests />
 
             {/* ── PACIENTES ── */}
             <section className="space-y-3">
