@@ -1,122 +1,70 @@
 
 
-# Plan: Reestructuración completa por fases (empezando por Disponibilidad tipo Calendar)
+# Plan: Contenido Premium con layout tipo Directorio de Doctores + Checklist de pendientes
 
-Tu cliente pide ~40 cambios. Para hacerlo bien sin romper nada, lo divido en **6 fases**. Empezamos por tu prioridad: **Disponibilidad tipo Google Calendar**.
+## Cambio principal: Layout de ContentGallery como Doctors
 
-> **Nota importante**: Todo lo que el cliente pide "quitar" se **ocultará** mediante toggles controlables desde el panel de superadministrador (site_settings), no se eliminará código.
+Rediseñar `src/pages/ContentGallery.tsx` para que use el mismo patrón de layout que `src/pages/Doctors.tsx`:
 
----
+### Layout
+- **Desktop**: Grid `md:grid-cols-[14rem_1fr]` con sidebar sticky a la izquierda
+- **Mobile**: Chips horizontales scrollables (ocultar sidebar)
 
-## Fase 1 — Disponibilidad tipo Google Calendar (AHORA)
+### Sidebar izquierdo (desktop)
+1. **Especialidades** — lista vertical con las mismas especialidades del directorio de doctores (Cardiología, Cirugía General, Dermatología, etc.), filtrar contenido por `creator_specialty`
+2. **Separador**
+3. **Tipo de contenido** — Videos, PDFs, Presentaciones, Imágenes (en lugar de ciudades)
+4. **Separador**
+5. **Categorías** — las categorías dinámicas que ya existen
 
-**Archivo**: `src/pages/DoctorAvailability.tsx`
+### Mobile
+- Fila de chips horizontales para especialidades
+- Fila de chips horizontales para tipo de contenido
+- Mantener tabs de All/Purchased/New
 
-Rediseñar la página de disponibilidad para que se vea como Google Calendar:
+### Filtro por especialidad
+- Al cargar contenido, ya se tiene `creator_specialty` del join con `doctor_profiles_public`
+- Filtrar client-side por especialidad seleccionada
+- Agregar "Presentaciones" como tipo de contenido (el tipo `pdf` con categoría "Presentación" o nuevo tipo)
 
-1. **Vista mensual con calendario visual**: Reemplazar la lista actual de tarjetas por una vista de calendario mensual donde cada día muestre las disponibilidades programadas como bloques de color
-2. **Tipos de evento con colores**:
-   - `disponible` (verde) — horario disponible para consultas
-   - `live` (rojo) — transmisión en vivo programada  
-   - `orientacion` (azul) — sesión de orientación médica
-   - Quitar "orientacion" como tipo según lo pide el cliente (ocultarlo vía toggle)
-3. **Vista semanal/diaria**: Agregar tabs para cambiar entre vista mensual, semanal y diaria
-4. **Crear evento**: Click en un día abre el formulario de creación (mantener el dialog existente)
-5. **Drag & visual**: Los eventos aparecen como chips coloreados dentro de las celdas del calendario
-
-**Detalles técnicos**:
-- Usar el componente `Calendar` de shadcn como base pero extenderlo con una grilla personalizada para mostrar eventos dentro de cada celda
-- Reutilizar el hook `useDoctorAvailability` existente
-- Mantener toda la lógica existente de confirmación, notificación y cancelación
-
----
-
-## Fase 2 — Navegación y renombramientos (siguiente)
-
-**Archivos**: `src/components/layout/MainLayout.tsx`, `src/lib/i18n/es.ts`, `src/lib/i18n/en.ts`
-
-**Por rol:**
-
-| Cambio | Doctor | Paciente | Residente |
-|--------|--------|----------|-----------|
-| Quitar Noticias del menú | ✅ (toggle) | ✅ (toggle) | ✅ (toggle) |
-| "Grabaciones" → "Contenido Premium" | ✅ | ✅ | ✅ |
-| "Recetas" → "Reuniones" | ✅ | — | ✅ |
-| Quitar "Contenido Médico" | ✅ (toggle) | — | — |
-| Agregar "Expediente Médico" para paciente | — | ✅ (reemplaza Vault) | — |
-
-**Navegación por rol (bottom tabs mobile):**
-- **Doctor**: Lives, Contenido Premium, Chat, Panel
-- **Paciente**: Lives, Contenido Premium, Doctores, Chat  
-- **Residente**: Lives, Contenido Premium, Chat, Reuniones
+### Archivos a modificar
+1. **`src/pages/ContentGallery.tsx`** — Reestructurar layout completo: agregar sidebar, grid layout, filtro por especialidad, chips mobile
 
 ---
 
-## Fase 3 — Expediente Médico del paciente
+## Checklist de pendientes del cliente
 
-**Archivos nuevos**: `src/pages/MedicalRecord.tsx`, componentes de formulario  
-**Migración DB**: Nueva tabla o extensión de `patient_clinical_history`
-
-Formulario completo con secciones:
-1. **Datos personales** (nombre, fecha nacimiento, etc.)
-2. **Antecedentes familiares** — campos Sí/No con textarea condicional
-3. **Hábitos**: Alcohol (frecuencia), Cigarro/Vape/Arguile (frecuencia)
-4. **Ginecología** — solo visible para mujeres, con campo de resultados
-5. **Vacunas** — cartilla de vacunación con checkboxes marcables
-6. **Subir estudios** — laboratorio, radiografía, gabinete (al final)
-7. **Calculadoras de salud** — IMC, riesgo cardiovascular, Glasgow
-8. **Referencias** — sección para referencias médicas
-
-El Vault actual se redirige a esta sección de Historia Clínica.
-
----
-
-## Fase 4 — Chat: dos ventanas y restricciones por rol
-
-**Archivo**: `src/pages/Chat.tsx`, `src/contexts/ChatContext.tsx`
-
-1. **Dos tabs en el chat**: "Pacientes" y "Doctores" (para doctores)
-2. **Restricciones**: Residentes solo pueden chatear con doctores (no pacientes)
-3. **Chat en Lives gratis** para doctores (quitar cobro de chat en lives)
-4. **Chat para pacientes**: solo visible con suscripción activa
+| Requisito | Estado |
+|-----------|--------|
+| Quitar noticias (toggle) | Done (Fase 2) |
+| Live chat gratis (toggle) | Done (Fase 2) |
+| Lives filtro por especialidad | Done (ya existe en LivesGrid) |
+| Grabaciones → Contenido Premium | Done (Fase 2) |
+| Contenido Premium incluya presentaciones | **Pendiente** — agregar en este cambio |
+| Doctores sin opción de consulta (para doctors/residents) | **Pendiente — Fase 6** |
+| Quitar contenido médico (toggle) | Done (Fase 2) |
+| Chat dos ventanas (pacientes/doctores) | **Pendiente — Fase 4** |
+| Recetas → Reuniones | Done (Fase 2) |
+| Reuniones con Daily.co | Done (Fase 5) |
+| Disponibilidad tipo Calendar | Done (Fase 1) |
+| Expediente Médico | Done (Fase 3) |
+| Calculadoras de salud | Done (mejoradas) |
+| Quitar historial transacciones (toggle) | Done (Fase 2) |
+| Residentes: red de doctores, inscribir→aceptar→reuniones | **Pendiente — Fase 6** |
+| Residentes: cuánto gastaron/vendieron | **Pendiente — Fase 6** |
+| Resumen post-consulta del doctor | **Pendiente — Fase 4/6** |
+| ContentGallery layout como Doctors | **Este cambio** |
 
 ---
 
-## Fase 5 — Reuniones (reemplaza Recetas)
+## Detalle técnico
 
-**Archivos**: `src/pages/Meetings.tsx` (nuevo), reutilizar infraestructura Daily  
-
-1. Reutilizar Daily.co para videollamadas grupales
-2. Reuniones: residentes con doctores, y con pacientes
-3. Agendar, aceptar invitaciones, historial de reuniones
-4. Resumen post-consulta que el doctor debe llenar
-
----
-
-## Fase 6 — Directorio de doctores y contenido premium
-
-1. **Doctores sin opción de consulta** (para doctores y residentes que ven el directorio)
-2. **Contenido Premium**: incluir presentaciones + grabaciones
-3. **Residentes**: pueden comprar presentaciones, subir contenido para vender
-4. **Red de doctores**: para residentes, con inscripción → aceptación → reuniones
-5. **Sección financiera para residentes**: cuánto han gastado y vendido
-
----
-
-## Toggles de Admin (se implementa en Fase 2)
-
-En `site_settings` agregar toggles para cada feature "quitada":
-- `show_news_section` (default: false)
-- `show_content_medical` (default: false)  
-- `show_prescriptions` (default: false)
-- `live_chat_free` (default: true)
-- `show_transaction_history` (default: false)
-
-Esto permite reactivar cualquier feature sin tocar código.
-
----
-
-## Empezamos ahora con Fase 1
-
-Voy a rediseñar `DoctorAvailability.tsx` para que tenga una vista tipo Google Calendar con eventos coloreados por tipo, vista mensual con opción semanal, y el formulario de creación al hacer click en un día.
+En `ContentGallery.tsx`:
+- Importar `useIsMobile` para responsive
+- Agregar estado `selectedSpecialty` con la misma lista de especialidades
+- Agregar filtro en `filteredContents` que compare `content.creator_specialty === selectedSpecialty`
+- Wrappear el contenido en `md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start`
+- Sidebar: `aside` sticky con lista de especialidades + tipos + categorías
+- Mobile: chips horizontales scrollables para especialidades (ocultar sidebar con `hidden md:block`)
+- El grid de tarjetas queda en la columna derecha
 
