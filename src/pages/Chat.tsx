@@ -375,6 +375,40 @@ export default function Chat() {
           </div>
         </div>
 
+        {/* Chat filter tabs for doctor/resident */}
+        {(role === 'doctor' || role === 'resident') && (
+          <div className="flex gap-1.5 mb-2 px-2 sm:px-0 flex-shrink-0">
+            {role === 'doctor' && (
+              <>
+                <Button
+                  variant={chatFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setChatFilter('all')}
+                >
+                  {t('chat.filterAll')}
+                </Button>
+                <Button
+                  variant={chatFilter === 'patients' ? 'default' : 'outline'}
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setChatFilter('patients')}
+                >
+                  {t('chat.filterPatients')}
+                </Button>
+              </>
+            )}
+            <Button
+              variant={chatFilter === 'doctors' ? 'default' : 'outline'}
+              size="sm"
+              className="text-xs h-8"
+              onClick={() => setChatFilter('doctors')}
+            >
+              {t('chat.filterDoctors')}
+            </Button>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-[340px,1fr] gap-2 sm:gap-4 flex-1 min-h-0 overflow-hidden w-full max-w-full">
           <ChatSessionsList
             activeSessions={activeSessions}
@@ -418,6 +452,14 @@ export default function Chat() {
           />
         </div>
       </div>
+
+      {/* Post-consultation summary dialog */}
+      <PostConsultationSummaryDialog
+        open={showSummaryDialog}
+        onOpenChange={setShowSummaryDialog}
+        consultationId={consultationId}
+        onSaved={handleSummaryComplete}
+      />
     </MainLayout>
   );
 }
