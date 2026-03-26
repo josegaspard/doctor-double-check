@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Radio, Upload, UserCircle, Newspaper, MessageSquare } from 'lucide-react';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 
 interface Props {
   isApproved: boolean;
@@ -12,6 +13,7 @@ interface Props {
 
 export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props) {
   const navigate = useNavigate();
+  const { toggles } = useSiteToggles();
 
   const actions = [
     {
@@ -23,7 +25,7 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
       onClick: () => navigate('/doctor/go-live'),
       buttonLabel: 'Iniciar',
     },
-    {
+    ...(toggles.show_content_medical ? [{
       title: 'Subir Contenido',
       description: 'Sube videos, PDFs o imágenes',
       icon: Upload,
@@ -32,7 +34,7 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
       onClick: () => navigate('/doctor/upload'),
       buttonLabel: 'Subir',
       extraButton: { label: 'Biblioteca', onClick: () => navigate('/doctor/content') },
-    },
+    }] : []),
     {
       title: 'Mi Perfil Profesional',
       description: 'Edita tu educación, certificaciones y experiencia',

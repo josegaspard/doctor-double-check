@@ -88,7 +88,7 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient'] },
   { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'] },
-  { labelKey: 'nav.upload', href: '/doctor/upload', icon: Upload, roles: ['doctor'] },
+  { labelKey: 'nav.upload', href: '/doctor/upload', icon: Upload, roles: ['doctor'], toggleKey: 'show_content_medical' },
   { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];

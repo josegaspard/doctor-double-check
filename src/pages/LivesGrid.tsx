@@ -6,6 +6,7 @@ import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -118,6 +119,7 @@ export default function LivesGrid() {
   const { role, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const { getSubscription } = useSubscriptions();
+  const { toggles } = useSiteToggles();
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
@@ -342,7 +344,7 @@ export default function LivesGrid() {
           </Card>
         )}
 
-        <NewsFeed />
+        {toggles.show_news_section && <NewsFeed />}
       </div>
     </MainLayout>
   );
