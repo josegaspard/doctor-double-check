@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Radio, Upload, UserCircle, Newspaper, MessageSquare } from 'lucide-react';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 
 interface Props {
   isApproved: boolean;
