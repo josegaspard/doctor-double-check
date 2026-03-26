@@ -1631,4 +1631,9 @@ export const en = {
     emergencyName: 'Emergency Contact',
     emergencyPhone: 'Emergency Phone',
   },
+  meetings: {
+    title: 'Meetings',
+    subtitle: 'Schedule, invite colleagues and video call',
+    newMeeting: 'New meeting',
+  },
 };

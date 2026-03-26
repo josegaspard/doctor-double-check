@@ -29,6 +29,7 @@ const PAGE_TITLE_KEYS: Record<string, string> = {
   '/vault': 'backHeader.vault',
   '/medical-record': 'backHeader.medicalRecord',
   '/wallet': 'backHeader.wallet',
+  '/meetings': 'Reuniones',
   '/settings': 'backHeader.settings',
   '/doctor/dashboard': 'backHeader.dashboard',
   '/doctor/vault': 'backHeader.doctorVault',
