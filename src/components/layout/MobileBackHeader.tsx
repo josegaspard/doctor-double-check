@@ -22,7 +22,7 @@ const ROOT_ROUTES = [
 
 // Map paths to i18n keys under backHeader.*
 const PAGE_TITLE_KEYS: Record<string, string> = {
-  '/recordings': 'backHeader.recordings',
+  '/recordings': 'backHeader.premiumContent',
   '/content': 'backHeader.content',
   '/news': 'backHeader.news',
   '/prescriptions': 'backHeader.prescriptions',
