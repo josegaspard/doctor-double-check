@@ -418,7 +418,7 @@ export default function AdminSiteSettings() {
           </div>
         ) : (
           <Tabs defaultValue="social" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="social" className="gap-2 text-xs">
                 <Globe className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('admin.socialLinks')}</span>
