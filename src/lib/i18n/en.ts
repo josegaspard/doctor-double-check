@@ -275,6 +275,9 @@ export const en = {
     deleteBulkTitle: 'Delete selected chats?',
     deleteBulkDescription: 'All messages in the selected conversations will be deleted. This action cannot be undone.',
     deleting: 'Deleting...',
+    filterAll: 'All',
+    filterPatients: 'Patients',
+    filterDoctors: 'Doctors',
   },
   // Wallet
   wallet: {

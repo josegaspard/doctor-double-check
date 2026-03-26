@@ -1651,12 +1651,6 @@ export const es = {
     notesSaveError: 'Error al guardar notas',
     searchDoctors: 'Buscar doctor por nombre...',
   },
-  chat: {
-    ...undefined, // merged below
-    filterAll: 'Todos',
-    filterPatients: 'Pacientes',
-    filterDoctors: 'Doctores',
-  },
   postConsultation: {
     title: 'Resumen Post-Consulta',
     description: 'Completa un breve resumen de la orientación médica para el expediente del paciente.',
