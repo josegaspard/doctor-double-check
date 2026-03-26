@@ -69,6 +69,7 @@ const COUNTRY_CODES = [
 ];
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
+import { ResidentBalanceCard } from '@/components/resident/ResidentBalanceCard';
 
 type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired' | null;
 
