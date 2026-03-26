@@ -1,70 +1,98 @@
 
 
-# Plan: Contenido Premium con layout tipo Directorio de Doctores + Checklist de pendientes
+# Auditoría completa: Problemas encontrados y correcciones necesarias
 
-## Cambio principal: Layout de ContentGallery como Doctors
-
-Rediseñar `src/pages/ContentGallery.tsx` para que use el mismo patrón de layout que `src/pages/Doctors.tsx`:
-
-### Layout
-- **Desktop**: Grid `md:grid-cols-[14rem_1fr]` con sidebar sticky a la izquierda
-- **Mobile**: Chips horizontales scrollables (ocultar sidebar)
-
-### Sidebar izquierdo (desktop)
-1. **Especialidades** — lista vertical con las mismas especialidades del directorio de doctores (Cardiología, Cirugía General, Dermatología, etc.), filtrar contenido por `creator_specialty`
-2. **Separador**
-3. **Tipo de contenido** — Videos, PDFs, Presentaciones, Imágenes (en lugar de ciudades)
-4. **Separador**
-5. **Categorías** — las categorías dinámicas que ya existen
-
-### Mobile
-- Fila de chips horizontales para especialidades
-- Fila de chips horizontales para tipo de contenido
-- Mantener tabs de All/Purchased/New
-
-### Filtro por especialidad
-- Al cargar contenido, ya se tiene `creator_specialty` del join con `doctor_profiles_public`
-- Filtrar client-side por especialidad seleccionada
-- Agregar "Presentaciones" como tipo de contenido (el tipo `pdf` con categoría "Presentación" o nuevo tipo)
-
-### Archivos a modificar
-1. **`src/pages/ContentGallery.tsx`** — Reestructurar layout completo: agregar sidebar, grid layout, filtro por especialidad, chips mobile
+He revisado a fondo todo el código implementado en las fases 1-5 más las calculadoras y el ContentGallery. Aquí está el resultado honesto:
 
 ---
 
-## Checklist de pendientes del cliente
+## Problemas encontrados
 
-| Requisito | Estado |
-|-----------|--------|
-| Quitar noticias (toggle) | Done (Fase 2) |
-| Live chat gratis (toggle) | Done (Fase 2) |
-| Lives filtro por especialidad | Done (ya existe en LivesGrid) |
-| Grabaciones → Contenido Premium | Done (Fase 2) |
-| Contenido Premium incluya presentaciones | **Pendiente** — agregar en este cambio |
-| Doctores sin opción de consulta (para doctors/residents) | **Pendiente — Fase 6** |
-| Quitar contenido médico (toggle) | Done (Fase 2) |
-| Chat dos ventanas (pacientes/doctores) | **Pendiente — Fase 4** |
-| Recetas → Reuniones | Done (Fase 2) |
-| Reuniones con Daily.co | Done (Fase 5) |
-| Disponibilidad tipo Calendar | Done (Fase 1) |
-| Expediente Médico | Done (Fase 3) |
-| Calculadoras de salud | Done (mejoradas) |
-| Quitar historial transacciones (toggle) | Done (Fase 2) |
-| Residentes: red de doctores, inscribir→aceptar→reuniones | **Pendiente — Fase 6** |
-| Residentes: cuánto gastaron/vendieron | **Pendiente — Fase 6** |
-| Resumen post-consulta del doctor | **Pendiente — Fase 4/6** |
-| ContentGallery layout como Doctors | **Este cambio** |
+### 1. Error en consola: `DoctorAvailability` — Popover ref warning
+El console log muestra un warning de React: `Function components cannot be given refs` en `DoctorAvailabilityPage`. Esto ocurre porque un `<Popover>` envuelve un componente funcional sin `forwardRef`. No rompe funcionalidad pero genera ruido en consola.
+
+**Fix**: Envolver el componente hijo de Popover con `React.forwardRef` o usar un `<div>` wrapper.
+
+### 2. Chat: NO tiene las dos ventanas (Pacientes / Doctores) — Fase 4 pendiente
+El cliente pidió explícitamente que el chat tenga **dos ventanas**: una pestaña para pacientes y otra para doctores. Actualmente `Chat.tsx` tiene una sola lista con tabs `active/history`. **Esta fase completa está pendiente.**
+
+**Fix (Fase 4)**: Añadir tabs `Pacientes | Doctores` que filtren las sesiones por `participant_type`. Para residentes, restringir que solo puedan chatear con doctores (no con pacientes).
+
+### 3. Meetings: Strings hardcoded en español, no usan i18n
+En `Meetings.tsx`, líneas 145, 248, 250, 271-275, 293 usan strings directos como `"Invitación aceptada"`, `"Próximas"`, `"Historial"`, `"No tienes reuniones próximas"`, `"Agendar reunión"`, `"Sin historial de reuniones"`. No pasan por `t()`.
+
+**Fix**: Reemplazar con claves i18n existentes o nuevas.
+
+### 4. MeetingCreateDialog: Busca en `profiles` sin filtrar por rol
+La búsqueda de invitados (`MeetingCreateDialog.tsx:54-58`) busca en toda la tabla `profiles` sin filtrar por doctor/residente. Un paciente podría aparecer como invitado.
+
+**Fix**: Filtrar buscando solo usuarios que tengan rol `doctor` o `resident` (join con `user_roles` o usar `doctor_profiles`).
+
+### 5. MedicalRecord: Usa `(record as any)` masivamente
+Los campos de la migración (family_diabetes, habit_alcohol, vaccines, etc.) no están en los tipos generados de Supabase (`types.ts`). Se usa `as any` en ~40 líneas. Funcional pero sin type-safety.
+
+**Fix**: Los tipos se regeneran automáticamente. No bloquea, pero los `as any` podrían fallar silenciosamente si un campo se renombra.
+
+### 6. Meetings: `daily_room_url`, `daily_room_name`, `meeting_notes` usan `as any`
+Misma situación — los campos añadidos por migración no están en los tipos generados.
+
+### 7. ContentGallery/RecordingsGrid: No tiene filtro de "Presentaciones"
+El cliente pidió que las presentaciones aparezcan como tipo de contenido. Los `CONTENT_TYPES` tienen `video, pdf, image` pero no `presentation`. Un PDF categorizado como presentación no tiene un filtro dedicado.
+
+**Fix**: Agregar un filtro "Presentaciones" que filtre por `category === 'Presentación'` o un nuevo type.
+
+### 8. Resumen post-consulta del doctor — Pendiente (Fase 6)
+El cliente pidió que después de cada consulta el doctor llene un resumen. No existe formulario ni campo para esto.
+
+### 9. Red de residentes (inscribir → aceptar → reuniones) — Pendiente (Fase 6)
+El flujo de residentes subscribiéndose a doctores, siendo aceptados, y luego accediendo a reuniones no está implementado.
+
+### 10. Resident: cuánto gastaron/vendieron — Pendiente (Fase 6)
+No hay vista de balance de gastos/ventas para residentes.
+
+### 11. Toggle `show_content_medical` oculta ContentGallery pero debería controlar "Contenido Médico" separado
+El toggle `show_content_medical` controla la visibilidad de `/content` (Contenido Premium) en la navegación. Pero el cliente quiso ocultar "Contenido Médico" (una sección diferente), no el Contenido Premium. El nombre del toggle es confuso y podría estar mal aplicado.
+
+**Fix**: Renombrar a algo más claro o verificar que el toggle correcto se aplica a la sección correcta.
+
+### 12. Móvil: Resident bottom tabs no incluyen Contenido Premium
+El bottom nav para residentes tiene `Lives, Recordings, Chat, Meetings`. El cliente pidió que residentes tengan `Lives, Contenido Premium, Chat, Reuniones`.
+
+**Fix**: Cambiar `recordings` por `content` en los tabs de residente en `getBottomTabs()`.
 
 ---
 
-## Detalle técnico
+## Resumen de estado
 
-En `ContentGallery.tsx`:
-- Importar `useIsMobile` para responsive
-- Agregar estado `selectedSpecialty` con la misma lista de especialidades
-- Agregar filtro en `filteredContents` que compare `content.creator_specialty === selectedSpecialty`
-- Wrappear el contenido en `md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start`
-- Sidebar: `aside` sticky con lista de especialidades + tipos + categorías
-- Mobile: chips horizontales scrollables para especialidades (ocultar sidebar con `hidden md:block`)
-- El grid de tarjetas queda en la columna derecha
+| Feature | Estado | Problema |
+|---------|--------|----------|
+| Calendar disponibilidad | ✅ Funcional | Warning de ref en consola |
+| Toggles admin | ✅ Funcional | Nombre de toggle confuso |
+| Expediente Médico | ✅ Funcional | `as any` masivo |
+| Calculadoras salud | ✅ Funcional | OK |
+| Reuniones Daily.co | ✅ Funcional | Strings hardcoded, búsqueda sin filtro de rol |
+| ContentGallery sidebar | ✅ Funcional | Falta filtro "Presentaciones" |
+| RecordingsGrid sidebar | ✅ Funcional | OK |
+| Chat dos ventanas | ❌ Pendiente | Fase 4 completa no implementada |
+| Resumen post-consulta | ❌ Pendiente | Fase 6 |
+| Red de residentes | ❌ Pendiente | Fase 6 |
+| Bottom nav residente | ⚠️ Incorrecto | Muestra recordings en vez de content |
+
+---
+
+## Plan de correcciones inmediatas (este paso)
+
+### Archivos a modificar:
+
+1. **`src/components/layout/MainLayout.tsx`** — Fix tabs de residente: cambiar `recordings` → `content` (Contenido Premium)
+2. **`src/pages/Meetings.tsx`** — Reemplazar ~8 strings hardcoded por claves i18n
+3. **`src/components/meetings/MeetingCreateDialog.tsx`** — Filtrar búsqueda de invitados solo a doctores/residentes
+4. **`src/pages/ContentGallery.tsx`** — Agregar "Presentaciones" como filtro de tipo
+5. **`src/pages/DoctorAvailability.tsx`** — Fix Popover ref warning con div wrapper
+
+### Archivos de i18n:
+6. **`src/lib/i18n/es.ts`** — Agregar claves faltantes de Meetings
+7. **`src/lib/i18n/en.ts`** — Agregar claves faltantes de Meetings
+
+Las fases 4 (Chat dos ventanas) y 6 (Residentes, resumen post-consulta) quedan como siguientes pasos.
 
