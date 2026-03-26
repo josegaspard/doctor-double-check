@@ -70,7 +70,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
         const specMap: Record<string, string> = {};
         docProfiles.forEach(d => { specMap[d.user_id] = d.specialty; });
 
-        setSearchResults(data.map(d => ({
+        setSearchResults((data || []).map(d => ({
           id: d.id,
           name: d.name,
           specialty: specMap[d.id],
