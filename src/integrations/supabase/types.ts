@@ -1930,14 +1930,42 @@ export type Database = {
           chronic_conditions: string | null
           created_at: string
           current_medications: string | null
+          date_of_birth: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          family_cancer: boolean | null
+          family_cancer_detail: string | null
+          family_diabetes: boolean | null
+          family_diabetes_detail: string | null
+          family_heart_disease: boolean | null
+          family_heart_disease_detail: string | null
           family_history: string | null
+          family_hypertension: boolean | null
+          family_hypertension_detail: string | null
+          family_mental_illness: boolean | null
+          family_mental_illness_detail: string | null
+          family_other: string | null
+          gyn_abortions: number | null
+          gyn_births: number | null
+          gyn_cesareans: number | null
+          gyn_contraceptive: string | null
+          gyn_last_period: string | null
+          gyn_pap_result: string | null
+          gyn_pregnancies: number | null
+          habit_alcohol: string | null
+          habit_drugs: string | null
+          habit_exercise: string | null
+          habit_hookah: string | null
+          habit_smoking: string | null
+          habit_vaping: string | null
           height_cm: number | null
           id: string
+          notes: string | null
           patient_id: string
           previous_surgeries: string | null
+          sex: string | null
           updated_at: string
+          vaccines: Json | null
           weight_kg: number | null
         }
         Insert: {
@@ -1946,14 +1974,42 @@ export type Database = {
           chronic_conditions?: string | null
           created_at?: string
           current_medications?: string | null
+          date_of_birth?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          family_cancer?: boolean | null
+          family_cancer_detail?: string | null
+          family_diabetes?: boolean | null
+          family_diabetes_detail?: string | null
+          family_heart_disease?: boolean | null
+          family_heart_disease_detail?: string | null
           family_history?: string | null
+          family_hypertension?: boolean | null
+          family_hypertension_detail?: string | null
+          family_mental_illness?: boolean | null
+          family_mental_illness_detail?: string | null
+          family_other?: string | null
+          gyn_abortions?: number | null
+          gyn_births?: number | null
+          gyn_cesareans?: number | null
+          gyn_contraceptive?: string | null
+          gyn_last_period?: string | null
+          gyn_pap_result?: string | null
+          gyn_pregnancies?: number | null
+          habit_alcohol?: string | null
+          habit_drugs?: string | null
+          habit_exercise?: string | null
+          habit_hookah?: string | null
+          habit_smoking?: string | null
+          habit_vaping?: string | null
           height_cm?: number | null
           id?: string
+          notes?: string | null
           patient_id: string
           previous_surgeries?: string | null
+          sex?: string | null
           updated_at?: string
+          vaccines?: Json | null
           weight_kg?: number | null
         }
         Update: {
@@ -1962,14 +2018,42 @@ export type Database = {
           chronic_conditions?: string | null
           created_at?: string
           current_medications?: string | null
+          date_of_birth?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          family_cancer?: boolean | null
+          family_cancer_detail?: string | null
+          family_diabetes?: boolean | null
+          family_diabetes_detail?: string | null
+          family_heart_disease?: boolean | null
+          family_heart_disease_detail?: string | null
           family_history?: string | null
+          family_hypertension?: boolean | null
+          family_hypertension_detail?: string | null
+          family_mental_illness?: boolean | null
+          family_mental_illness_detail?: string | null
+          family_other?: string | null
+          gyn_abortions?: number | null
+          gyn_births?: number | null
+          gyn_cesareans?: number | null
+          gyn_contraceptive?: string | null
+          gyn_last_period?: string | null
+          gyn_pap_result?: string | null
+          gyn_pregnancies?: number | null
+          habit_alcohol?: string | null
+          habit_drugs?: string | null
+          habit_exercise?: string | null
+          habit_hookah?: string | null
+          habit_smoking?: string | null
+          habit_vaping?: string | null
           height_cm?: number | null
           id?: string
+          notes?: string | null
           patient_id?: string
           previous_surgeries?: string | null
+          sex?: string | null
           updated_at?: string
+          vaccines?: Json | null
           weight_kg?: number | null
         }
         Relationships: []

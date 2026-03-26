@@ -120,6 +120,7 @@ const AdvertiserDashboard = React.lazy(() => import("./pages/AdvertiserDashboard
 const PsychologyDirectory = React.lazy(() => import("./pages/PsychologyDirectory"));
 const NutritionDirectory = React.lazy(() => import("./pages/NutritionDirectory"));
 const ForResidents = React.lazy(() => import("./pages/ForResidents"));
+const MedicalRecord = React.lazy(() => import("./pages/MedicalRecord"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -198,6 +199,7 @@ const App = () => {
                       <Route path="/doctor/go-live" element={<DoctorGoLive />} />
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />
+                      <Route path="/medical-record" element={<MedicalRecord />} />
                       <Route path="/clinical-sessions" element={<ClinicalSessions />} />
                       <Route path="/double-check" element={<DoubleCheck />} />
                       <Route path="/settings" element={<Settings />} />
