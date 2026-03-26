@@ -290,12 +290,13 @@ export default function MedicalRecord() {
         </div>
 
         <Tabs defaultValue="personal" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-3 sm:grid-cols-6 gap-1">
+          <TabsList className="w-full grid grid-cols-4 sm:grid-cols-7 gap-1">
             <TabsTrigger value="personal" className="text-xs gap-1"><User className="w-3 h-3" /> Personal</TabsTrigger>
             <TabsTrigger value="family" className="text-xs gap-1"><Heart className="w-3 h-3" /> Familia</TabsTrigger>
             <TabsTrigger value="habits" className="text-xs gap-1"><Wine className="w-3 h-3" /> Hábitos</TabsTrigger>
             <TabsTrigger value="vaccines" className="text-xs gap-1"><Syringe className="w-3 h-3" /> Vacunas</TabsTrigger>
             <TabsTrigger value="studies" className="text-xs gap-1"><Upload className="w-3 h-3" /> Estudios</TabsTrigger>
+            <TabsTrigger value="summaries" className="text-xs gap-1"><FileText className="w-3 h-3" /> Resúmenes</TabsTrigger>
             <TabsTrigger value="calculators" className="text-xs gap-1"><Calculator className="w-3 h-3" /> Calc.</TabsTrigger>
           </TabsList>
 
@@ -547,6 +548,11 @@ export default function MedicalRecord() {
                 </Button>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ── RESÚMENES MÉDICOS ── */}
+          <TabsContent value="summaries">
+            <ConsultationSummariesSection patientId={user?.id || ''} />
           </TabsContent>
 
           {/* ── CALCULADORAS ── */}
