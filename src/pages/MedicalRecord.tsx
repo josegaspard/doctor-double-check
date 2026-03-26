@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { HealthCalculators } from '@/components/medical/HealthCalculators';
+import { ConsultationSummaryCard } from '@/components/chat/ConsultationSummaryCard';
 import {
   User, Heart, Wine, Syringe, Upload, Calculator,
   Loader2, Save, FileText, Stethoscope,
@@ -113,6 +114,53 @@ const DEFAULT_DATA: ClinicalData = {
   vaccines: {},
   notes: '',
 };
+
+function ConsultationSummariesSection({ patientId }: { patientId: string }) {
+  const [consultationIds, setConsultationIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!patientId) return;
+    const fetchSummaries = async () => {
+      const { data } = await supabase
+        .from('consultations')
+        .select('id')
+        .eq('patient_id', patientId)
+        .not('doctor_summary', 'is', null)
+        .order('completed_at', { ascending: false });
+      setConsultationIds((data || []).map(c => c.id));
+      setIsLoading(false);
+    };
+    fetchSummaries();
+  }, [patientId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (consultationIds.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center text-muted-foreground text-sm">
+          <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
+          No hay resúmenes médicos disponibles aún.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {consultationIds.map(id => (
+        <ConsultationSummaryCard key={id} consultationId={id} />
+      ))}
+    </div>
+  );
+}
 
 export default function MedicalRecord() {
   const { user, role } = useAuth();
