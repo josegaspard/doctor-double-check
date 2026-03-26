@@ -1,110 +1,52 @@
 
 
-# Plan: Fase 4 (Chat dos ventanas) + Fase 6 (Residentes, Resumen post-consulta)
+# Auditoría de Lógica Completa — Problemas Encontrados
+
+## Problemas detectados
+
+### 1. `ConsultationSummaryCard` creado pero NUNCA renderizado
+El componente existe en `src/components/chat/ConsultationSummaryCard.tsx` pero no se usa en ningún lado. Debería mostrarse en:
+- **`ChatMessagesPanel.tsx`**: cuando una sesión está cerrada y tiene `consultationId`, mostrar el resumen del doctor arriba del mensaje "Sesión cerrada"
+- **`MedicalRecord.tsx`**: en el historial clínico del paciente, listar los resúmenes de todas sus consultas completadas
+
+### 2. Meetings: Residentes NO filtran invitados por conexiones aceptadas
+El plan decía que residentes solo pueden crear reuniones con doctores que los aceptaron. Actualmente `MeetingCreateDialog.tsx` busca en TODOS los `doctor_profiles` sin filtrar por `doctor_resident_connections.status = 'accepted'`. Un residente puede invitar a cualquier doctor, incluso sin conexión.
+
+### 3. Chat: El filtro `chatFilter` para residentes fuerza solo "doctors" pero NO hay default correcto
+Para residentes, el código muestra solo el botón "Doctores" (líneas 401-408 de Chat.tsx), pero el estado inicial es `chatFilter = 'all'` (línea 34). Esto significa que al entrar por primera vez, un residente ve TODAS las sesiones (incluyendo cualquier sesión con pacientes si existiera). Debería inicializar `chatFilter` a `'doctors'` para residentes.
+
+### 4. Chat: `getSessionDisplayInfo` asume paciente = participant1, doctor = participant2
+Líneas 267-272: La función siempre retorna `participant2` para pacientes y `participant1` para doctores/residentes. Pero las sesiones podrían tener el orden invertido (participant1 = doctor, participant2 = paciente). No compara por `user.id` para determinar quién es el "otro".
+
+**Fix**: Usar `session.participant1Id === user?.id` para determinar cuál es el "otro" participante, igual que ya se hace en `filterByType` (línea 44).
+
+### 5. PostConsultationSummaryDialog usa `as any` para los campos
+La query `.update({...} as any)` funciona pero no es type-safe. Los campos `doctor_summary`, `doctor_recommendations`, `completed_at` ya están en la tabla de la migración y deberían estar en los tipos generados. Si los tipos ya se regeneraron, el `as any` se puede quitar.
+
+### 6. Meetings: Residentes no restringen creación de reuniones
+Actualmente un residente puede crear reuniones y invitar a cualquiera. El plan requería que solo pudieran invitar doctores con conexión aceptada.
 
 ---
 
-## Fase 4: Chat con dos ventanas (Pacientes / Doctores)
+## Plan de correcciones
 
-### Concepto
-Para doctores y residentes, el chat mostrará dos pestañas superiores de filtrado: **"Pacientes"** y **"Doctores/Residentes"**, que filtran las sesiones por el tipo de participante contrario. Esto reemplaza la vista plana actual.
+### Archivo 1: `src/components/chat/ChatMessagesPanel.tsx`
+- Importar `ConsultationSummaryCard`
+- En la sección de sesión cerrada (línea 201-207), agregar `<ConsultationSummaryCard consultationId={consultationId} />` antes del mensaje de "Sesión cerrada"
 
-Para residentes: solo verán la pestaña "Doctores" (no pueden chatear con pacientes, ya bloqueado en `ChatContext`).
+### Archivo 2: `src/pages/Chat.tsx`
+- Línea 34: Cambiar el estado inicial de `chatFilter` para que si `role === 'resident'`, el default sea `'doctors'`
+- Líneas 267-272: Fix `getSessionDisplayInfo` para usar comparación por `user?.id` en vez de asumir roles fijos
 
-### Cambios
+### Archivo 3: `src/components/meetings/MeetingCreateDialog.tsx`
+- Para residentes: filtrar la búsqueda de invitados cruzando con `doctor_resident_connections` donde `status = 'accepted'`
+- Obtener primero los doctor_ids aceptados, luego filtrar los resultados de búsqueda
 
-**1. `src/pages/Chat.tsx`**
-- Permitir acceso a residentes (actualmente línea 281 bloquea todo excepto `patient` y `doctor`)
-- Agregar estado `chatFilter: 'all' | 'patients' | 'doctors'` 
-- Para doctores: mostrar tabs `Pacientes | Doctores` antes de la lista de sesiones
-- Para residentes: mostrar solo `Doctores` (sin tab de Pacientes)
-- Para pacientes: sin cambio (solo ven doctores)
-- Filtrar `activeSessions` y `closedSessions` según el tipo del otro participante
+### Archivo 4: `src/pages/MedicalRecord.tsx`
+- Agregar una sección o tab "Resúmenes Médicos" que liste todos los `consultations` del paciente que tengan `doctor_summary` rellenado, mostrando `ConsultationSummaryCard` para cada uno
 
-**2. `src/components/chat/ChatSessionsList.tsx`**
-- Recibir nueva prop `chatFilter` para mostrar las tabs de filtro en el header
-- Agregar chips/tabs `Pacientes | Doctores` dentro del CardHeader (solo visible para doctor/resident)
+### Archivos i18n (es.ts, en.ts)
+- Agregar claves para "Resúmenes médicos" / "Medical summaries" para MedicalRecord
 
-**3. i18n (`es.ts`, `en.ts`)**
-- Agregar claves: `chat.filterPatients`, `chat.filterDoctors`, `chat.filterAll`
-
----
-
-## Fase 6: Funciones de Residentes + Resumen Post-consulta
-
-### 6A: Resumen Post-consulta del Doctor
-
-El doctor debe llenar un resumen después de cerrar una consulta/sesión de chat.
-
-**Migración DB:**
-- Agregar columnas a `consultations`: `doctor_summary TEXT`, `doctor_recommendations TEXT`, `completed_at TIMESTAMPTZ`
-
-**Nuevo componente: `src/components/chat/PostConsultationSummaryDialog.tsx`**
-- Dialog modal que aparece cuando el doctor cierra una sesión de chat
-- Campos: Resumen de la consulta, Diagnóstico/Impresión, Recomendaciones
-- Guarda en `consultations` con `doctor_summary`, `diagnosis`, `notes`
-- Se activa en `Chat.tsx` al cerrar sesión (después de `closeSession`)
-
-**Visualización para paciente: `src/components/chat/ConsultationSummaryCard.tsx`**
-- Card que muestra el resumen del doctor al paciente
-- Visible en la sección de historial del chat cerrado
-- También visible en Expediente Médico del paciente
-
-### 6B: Red de Residentes (Inscribirse → Doctor acepta → Reuniones)
-
-**Migración DB:**
-- Crear tabla `doctor_resident_connections`:
-  ```
-  id UUID PK
-  doctor_id UUID NOT NULL REFERENCES auth.users
-  resident_id UUID NOT NULL REFERENCES auth.users  
-  status TEXT DEFAULT 'pending' (pending/accepted/rejected)
-  created_at TIMESTAMPTZ DEFAULT now()
-  responded_at TIMESTAMPTZ
-  UNIQUE(doctor_id, resident_id)
-  ```
-- RLS: residentes pueden insertar (solicitar), doctores pueden actualizar status de sus propias conexiones, ambos pueden leer las suyas
-
-**Nuevo componente: `src/components/doctor/DoctorResidentRequests.tsx`**
-- Panel en el dashboard del doctor que muestra solicitudes pendientes de residentes
-- Botones Aceptar/Rechazar
-
-**Modificar `src/pages/Doctors.tsx`** (vista de residente)
-- Cuando un residente ve el directorio, el botón de acción cambia a "Solicitar conexión" en vez de "Consultar"
-- Si ya está aceptado, muestra "Conectado" y habilita chat/reuniones
-
-**Modificar `src/pages/Meetings.tsx`**
-- Para residentes: solo pueden crear reuniones con doctores que los hayan aceptado (filtrar por `doctor_resident_connections` con status `accepted`)
-
-### 6C: Balance de Residentes (cuánto gastaron/vendieron)
-
-**Nuevo componente: `src/components/resident/ResidentBalanceCard.tsx`**
-- Card con dos métricas: Total Gastado (purchases) y Total Ganado (earnings de contenido vendido)
-- Consulta `wallet_transactions` filtrando por tipo `purchase` vs `earning`
-
-**Modificar `src/pages/UserProfile.tsx`**
-- Si el rol es `resident`, mostrar `ResidentBalanceCard` en su perfil
-
----
-
-## Archivos a crear/modificar
-
-| Archivo | Acción |
-|---------|--------|
-| `src/pages/Chat.tsx` | Modificar: permitir residentes, agregar filtro por tipo |
-| `src/components/chat/ChatSessionsList.tsx` | Modificar: agregar tabs Pacientes/Doctores |
-| `src/components/chat/PostConsultationSummaryDialog.tsx` | **Crear**: dialog de resumen post-consulta |
-| `src/components/chat/ConsultationSummaryCard.tsx` | **Crear**: card de visualización del resumen |
-| `src/components/doctor/DoctorResidentRequests.tsx` | **Crear**: panel de solicitudes de residentes |
-| `src/components/resident/ResidentBalanceCard.tsx` | **Crear**: card de balance gastado/ganado |
-| `src/pages/Doctors.tsx` | Modificar: botón "Solicitar conexión" para residentes |
-| `src/pages/Meetings.tsx` | Modificar: filtrar invitados por conexiones aceptadas |
-| `src/pages/DoctorDashboard.tsx` | Modificar: agregar panel de solicitudes de residentes |
-| `src/pages/UserProfile.tsx` | Modificar: agregar ResidentBalanceCard |
-| `src/lib/i18n/es.ts` | Agregar claves i18n |
-| `src/lib/i18n/en.ts` | Agregar claves i18n |
-
-**Migraciones DB:**
-1. `ALTER TABLE consultations ADD COLUMN doctor_summary TEXT, ADD COLUMN doctor_recommendations TEXT, ADD COLUMN completed_at TIMESTAMPTZ`
-2. `CREATE TABLE doctor_resident_connections (...)` con RLS policies
+No se requieren migraciones de DB.
 
