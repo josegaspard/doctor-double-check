@@ -275,6 +275,9 @@ export const es = {
     deleteBulkTitle: '¿Eliminar chats seleccionados?',
     deleteBulkDescription: 'Se eliminarán todos los mensajes de las conversaciones seleccionadas. Esta acción no se puede deshacer.',
     deleting: 'Eliminando...',
+    filterAll: 'Todos',
+    filterPatients: 'Pacientes',
+    filterDoctors: 'Doctores',
   },
   // Wallet
   wallet: {
