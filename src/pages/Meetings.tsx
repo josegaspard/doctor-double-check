@@ -142,10 +142,10 @@ export default function Meetings() {
         .eq('doctor_id', user.id);
 
       if (error) throw error;
-      toast.success(accept ? 'Invitación aceptada' : 'Invitación rechazada');
+      toast.success(accept ? t('meetings.invitationAccepted') : t('meetings.invitationRejected'));
       await fetchMeetings();
     } catch (error: any) {
-      toast.error(error.message || 'Error al responder');
+      toast.error(error.message || t('meetings.respondError'));
     }
   };
 
@@ -184,7 +184,7 @@ export default function Meetings() {
 
       navigate(`/video-call?room=${data.room.name}&url=${encodeURIComponent(data.room.url)}&meetingId=${meeting.id}&token=${data.room.ownerToken}`);
     } catch (err: any) {
-      toast.error(err.message || 'Error al crear la sala');
+      toast.error(err.message || t('meetings.createRoomError'));
     }
   };
 
@@ -196,10 +196,10 @@ export default function Meetings() {
         .eq('id', meetingId);
 
       if (error) throw error;
-      toast.success('Notas guardadas');
+      toast.success(t('meetings.notesSaved'));
       await fetchMeetings();
     } catch (err: any) {
-      toast.error(err.message || 'Error al guardar notas');
+      toast.error(err.message || t('meetings.notesSaveError'));
     }
   };
 
@@ -242,12 +242,12 @@ export default function Meetings() {
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="upcoming" className="gap-2">
               <CalendarDays className="w-4 h-4" />
-              Próximas
+              {t('meetings.upcoming')}
               {upcomingMeetings.length > 0 && (
                 <Badge variant="secondary" className="ml-1 text-xs">{upcomingMeetings.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="past">Historial</TabsTrigger>
+            <TabsTrigger value="past">{t('meetings.history')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="space-y-3">
@@ -268,10 +268,10 @@ export default function Meetings() {
             ) : (
               <div className="text-center py-12">
                 <CalendarDays className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">No tienes reuniones próximas</p>
+                <p className="text-sm text-muted-foreground">{t('meetings.noUpcoming')}</p>
                 <Button variant="outline" className="mt-4 gap-2" onClick={() => setShowCreate(true)}>
                   <Plus className="w-4 h-4" />
-                  Agendar reunión
+                  {t('meetings.schedule')}
                 </Button>
               </div>
             )}
@@ -291,7 +291,7 @@ export default function Meetings() {
               ))
             ) : (
               <p className="text-center text-sm text-muted-foreground py-12">
-                Sin historial de reuniones
+                {t('meetings.noHistory')}
               </p>
             )}
           </TabsContent>

@@ -51,25 +51,26 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
 
     const timer = setTimeout(async () => {
       setIsSearching(true);
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .neq('id', user?.id || '')
-        .ilike('name', `%${searchQuery}%`)
-        .limit(6);
+      // Only search doctors and residents (via doctor_profiles)
+      const { data: docProfiles } = await supabase
+        .from('doctor_profiles')
+        .select('user_id, specialty')
+        .neq('user_id', user?.id || '')
+        .limit(20);
 
-      // Get doctor specialties
-      if (data && data.length > 0) {
-        const { data: docs } = await supabase
-          .from('doctor_profiles')
-          .select('user_id, specialty')
-          .in('user_id', data.map(d => d.id))
-          .eq('status', 'approved');
+      if (docProfiles && docProfiles.length > 0) {
+        const userIds = docProfiles.map(d => d.user_id);
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', userIds)
+          .ilike('name', `%${searchQuery}%`)
+          .limit(6);
 
         const specMap: Record<string, string> = {};
-        docs?.forEach(d => { specMap[d.user_id] = d.specialty; });
+        docProfiles.forEach(d => { specMap[d.user_id] = d.specialty; });
 
-        setSearchResults(data.map(d => ({
+        setSearchResults((data || []).map(d => ({
           id: d.id,
           name: d.name,
           specialty: specMap[d.id],
