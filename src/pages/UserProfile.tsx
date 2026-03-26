@@ -69,6 +69,7 @@ const COUNTRY_CODES = [
 ];
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
+import { ResidentBalanceCard } from '@/components/resident/ResidentBalanceCard';
 
 type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired' | null;
 
@@ -1115,7 +1116,14 @@ export default function UserProfile() {
           </motion.div>
         )}
 
-        {/* Settings Cards */}
+        {/* Resident Balance Card */}
+        {role === 'resident' && (
+          <motion.div variants={cardVariants} className="mb-6">
+            <ResidentBalanceCard />
+          </motion.div>
+        )}
+
+
         <motion.div className="grid gap-6" variants={containerVariants}>
           {/* Language Preference */}
           <motion.div variants={itemVariants}>

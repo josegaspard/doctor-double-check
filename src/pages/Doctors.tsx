@@ -34,6 +34,7 @@ import {
   Globe,
   ArrowLeft,
   ArrowRight,
+  UserPlus,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -162,7 +163,7 @@ function isDoctorAvailableNow(doctor: DoctorRow) {
 
 export default function Doctors() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { t } = useLanguage();
   const isMobile = useIsMobile();
   const { getSubscription } = useSubscriptions();
@@ -185,6 +186,9 @@ export default function Doctors() {
   const [selectedUniversity, setSelectedUniversity] = useState('');
   const [universities, setUniversities] = useState<string[]>([]);
   const [, setTick] = useState(0);
+  // Resident connection states
+  const [residentConnections, setResidentConnections] = useState<Record<string, string>>({});
+  const [connectingTo, setConnectingTo] = useState<string | null>(null);
 
   const fetchDoctorsStableRef = useRef<() => void>(() => {});
   const debouncedSearch = useDebounce(searchQuery, 300);
@@ -246,6 +250,40 @@ export default function Doctors() {
   useEffect(() => { setCurrentPage(1); }, [debouncedSearch, selectedSpecialty, locationFilter]);
   useEffect(() => { fetchDoctors(); }, [currentPage, debouncedSearch, selectedSpecialty, locationFilter]);
   useEffect(() => { if (user?.id) fetchFollowedDoctors(); }, [user?.id]);
+
+  // Fetch resident connections
+  useEffect(() => {
+    if (!user?.id || role !== 'resident') return;
+    const fetchConnections = async () => {
+      const { data } = await supabase
+        .from('doctor_resident_connections')
+        .select('doctor_id, status')
+        .eq('resident_id', user.id);
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((c: any) => { map[c.doctor_id] = c.status; });
+        setResidentConnections(map);
+      }
+    };
+    fetchConnections();
+  }, [user?.id, role]);
+
+  const handleRequestConnection = async (doctorUserId: string) => {
+    if (!user?.id) return;
+    setConnectingTo(doctorUserId);
+    try {
+      const { error } = await supabase
+        .from('doctor_resident_connections')
+        .insert({ doctor_id: doctorUserId, resident_id: user.id });
+      if (error) throw error;
+      setResidentConnections(prev => ({ ...prev, [doctorUserId]: 'pending' }));
+      toast.success(t('residents.requestSent'));
+    } catch (err: any) {
+      toast.error(err.message || 'Error');
+    } finally {
+      setConnectingTo(null);
+    }
+  };
 
   const fetchDoctors = async () => {
     setIsLoading(true);
@@ -850,13 +888,47 @@ export default function Doctors() {
                           >
                             <Heart className={`w-4 h-4 ${isFollowing ? 'fill-current' : ''}`} />
                           </Button>
-                          <Button
-                            size="sm"
-                            className="h-9 px-4 text-xs font-medium"
-                            onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
-                          >
-                            {t('doctors.viewProfile')}
-                          </Button>
+                          {role === 'resident' ? (
+                            (() => {
+                              const connStatus = residentConnections[doctor.user_id];
+                              if (connStatus === 'accepted') {
+                                return (
+                                  <Badge variant="secondary" className="h-9 px-3 text-xs gap-1">
+                                    <CheckCircle className="w-3 h-3" />
+                                    {t('residents.connected')}
+                                  </Badge>
+                                );
+                              }
+                              if (connStatus === 'pending') {
+                                return (
+                                  <Badge variant="outline" className="h-9 px-3 text-xs gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {t('residents.pending')}
+                                  </Badge>
+                                );
+                              }
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-9 px-3 text-xs font-medium gap-1"
+                                  disabled={connectingTo === doctor.user_id}
+                                  onClick={(e) => { e.stopPropagation(); handleRequestConnection(doctor.user_id); }}
+                                >
+                                  <UserPlus className="w-3.5 h-3.5" />
+                                  {t('residents.requestConnection')}
+                                </Button>
+                              );
+                            })()
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="h-9 px-4 text-xs font-medium"
+                              onClick={(e) => { e.stopPropagation(); navigate(`/doctor/${doctor.user_id}`); }}
+                            >
+                              {t('doctors.viewProfile')}
+                            </Button>
+                          )}
                         </div>
                       </div>
 

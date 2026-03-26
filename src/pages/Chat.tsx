@@ -13,6 +13,7 @@ import { ChatSessionsList } from '@/components/chat/ChatSessionsList';
 import { ChatMessagesPanel } from '@/components/chat/ChatMessagesPanel';
 import { MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -30,10 +31,25 @@ export default function Chat() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
+  const [chatFilter, setChatFilter] = useState<'all' | 'patients' | 'doctors'>('all');
+  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
 
   const allSessions = getSessionsByUser();
-  const activeSessions = allSessions.filter(s => s.status === 'active');
-  const closedSessions = allSessions.filter(s => s.status === 'closed');
+
+  // Filter sessions by chatFilter (for doctors/residents with dual windows)
+  const filterByType = (sessions: typeof allSessions) => {
+    if (chatFilter === 'all') return sessions;
+    return sessions.filter(s => {
+      // Determine the "other" participant type
+      const otherType = s.participant1Id === user?.id ? s.participant2Type : s.participant1Type;
+      if (chatFilter === 'patients') return otherType === 'patient';
+      if (chatFilter === 'doctors') return otherType === 'doctor' || otherType === 'resident';
+      return true;
+    });
+  };
+
+  const activeSessions = filterByType(allSessions.filter(s => s.status === 'active'));
+  const closedSessions = filterByType(allSessions.filter(s => s.status === 'closed'));
   const messages = selectedSession ? getSessionMessages(selectedSession) : [];
   const selectedSessionData = allSessions.find(s => s.id === selectedSession);
   const isSessionClosed = selectedSessionData?.status === 'closed';
@@ -220,12 +236,24 @@ export default function Chat() {
     const result = await closeSession(selectedSession);
     setIsClosingSession(false);
     if (result.success) {
-      toast.success(t('chat.sessionClosed'));
-      setSelectedSession(null);
-      setActiveTab('history');
+      // If doctor, show post-consultation summary dialog
+      if (role === 'doctor' && consultationId) {
+        setShowSummaryDialog(true);
+      } else {
+        toast.success(t('chat.sessionClosed'));
+        setSelectedSession(null);
+        setActiveTab('history');
+      }
     } else {
       toast.error(result.error || t('doctorProfile.chatError'));
     }
+  };
+
+  const handleSummaryComplete = () => {
+    toast.success(t('chat.sessionClosed'));
+    setSelectedSession(null);
+    setActiveTab('history');
+    setShowSummaryDialog(false);
   };
 
   const handleFileUploaded = async (fileUrl: string, fileName: string, fileType: string) => {
@@ -278,7 +306,7 @@ export default function Chat() {
   }
 
   // Block unauthorized
-  if (role !== 'patient' && role !== 'doctor') {
+  if (role !== 'patient' && role !== 'doctor' && role !== 'resident') {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-12">
@@ -288,7 +316,7 @@ export default function Chat() {
             </div>
             <h2 className="font-heading text-xl font-bold text-foreground mb-2">{t('chat.oneOnOne')}</h2>
             <p className="text-muted-foreground mb-6">
-              {role === 'visitor' ? t('chat.chatUnavailable') : t('chat.chatUnavailable')}
+              {t('chat.chatUnavailable')}
             </p>
             <Button onClick={() => navigate(role === 'visitor' ? '/login' : '/lives')}>
               {role === 'visitor' ? t('nav.login') : t('chat.goToLives')}
@@ -300,7 +328,8 @@ export default function Chat() {
   }
 
   // Patient can access chat if they have active sessions, closed history, or are being redirected after payment
-  const hasEntitlement = role === 'doctor' || activeSessions.length > 0 || closedSessions.length > 0 || isCreatingSession;
+  const allSessionsUnfiltered = getSessionsByUser();
+  const hasEntitlement = role === 'doctor' || role === 'resident' || allSessionsUnfiltered.filter(s => s.status === 'active').length > 0 || allSessionsUnfiltered.filter(s => s.status === 'closed').length > 0 || isCreatingSession;
   if (role === 'patient' && !hasEntitlement) {
     return (
       <MainLayout>
@@ -346,6 +375,40 @@ export default function Chat() {
           </div>
         </div>
 
+        {/* Chat filter tabs for doctor/resident */}
+        {(role === 'doctor' || role === 'resident') && (
+          <div className="flex gap-1.5 mb-2 px-2 sm:px-0 flex-shrink-0">
+            {role === 'doctor' && (
+              <>
+                <Button
+                  variant={chatFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setChatFilter('all')}
+                >
+                  {t('chat.filterAll')}
+                </Button>
+                <Button
+                  variant={chatFilter === 'patients' ? 'default' : 'outline'}
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setChatFilter('patients')}
+                >
+                  {t('chat.filterPatients')}
+                </Button>
+              </>
+            )}
+            <Button
+              variant={chatFilter === 'doctors' ? 'default' : 'outline'}
+              size="sm"
+              className="text-xs h-8"
+              onClick={() => setChatFilter('doctors')}
+            >
+              {t('chat.filterDoctors')}
+            </Button>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-[340px,1fr] gap-2 sm:gap-4 flex-1 min-h-0 overflow-hidden w-full max-w-full">
           <ChatSessionsList
             activeSessions={activeSessions}
@@ -389,6 +452,14 @@ export default function Chat() {
           />
         </div>
       </div>
+
+      {/* Post-consultation summary dialog */}
+      <PostConsultationSummaryDialog
+        open={showSummaryDialog}
+        onOpenChange={setShowSummaryDialog}
+        consultationId={consultationId}
+        onSaved={handleSummaryComplete}
+      />
     </MainLayout>
   );
 }
