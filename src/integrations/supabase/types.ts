@@ -428,6 +428,8 @@ export type Database = {
           created_at: string
           doctor_id: string
           id: string
+          invitee_email: string | null
+          invitee_name: string | null
           responded_at: string | null
           session_id: string
           status: Database["public"]["Enums"]["clinical_session_status"]
@@ -436,6 +438,8 @@ export type Database = {
           created_at?: string
           doctor_id: string
           id?: string
+          invitee_email?: string | null
+          invitee_name?: string | null
           responded_at?: string | null
           session_id: string
           status?: Database["public"]["Enums"]["clinical_session_status"]
@@ -444,6 +448,8 @@ export type Database = {
           created_at?: string
           doctor_id?: string
           id?: string
+          invitee_email?: string | null
+          invitee_name?: string | null
           responded_at?: string | null
           session_id?: string
           status?: Database["public"]["Enums"]["clinical_session_status"]
@@ -462,8 +468,13 @@ export type Database = {
         Row: {
           case_summary: string | null
           created_at: string
+          daily_room_name: string | null
+          daily_room_url: string | null
           description: string | null
           id: string
+          max_participants: number | null
+          meeting_notes: string | null
+          meeting_summary: string | null
           organizer_id: string
           scheduled_at: string | null
           specialty: string
@@ -474,8 +485,13 @@ export type Database = {
         Insert: {
           case_summary?: string | null
           created_at?: string
+          daily_room_name?: string | null
+          daily_room_url?: string | null
           description?: string | null
           id?: string
+          max_participants?: number | null
+          meeting_notes?: string | null
+          meeting_summary?: string | null
           organizer_id: string
           scheduled_at?: string | null
           specialty: string
@@ -486,8 +502,13 @@ export type Database = {
         Update: {
           case_summary?: string | null
           created_at?: string
+          daily_room_name?: string | null
+          daily_room_url?: string | null
           description?: string | null
           id?: string
+          max_participants?: number | null
+          meeting_notes?: string | null
+          meeting_summary?: string | null
           organizer_id?: string
           scheduled_at?: string | null
           specialty?: string

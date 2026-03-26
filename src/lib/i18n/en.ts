@@ -7,6 +7,7 @@ export const en = {
     contentShort: 'Med. Content',
     chat: 'Chat',
     prescriptions: 'Meetings',
+    meetings: 'Meetings',
     vault: 'My Vault',
     medicalRecord: 'Medical Record',
     doctorVault: 'Patient Vault',
@@ -1629,5 +1630,10 @@ export const en = {
     familyHistory: 'Family History',
     emergencyName: 'Emergency Contact',
     emergencyPhone: 'Emergency Phone',
+  },
+  meetings: {
+    title: 'Meetings',
+    subtitle: 'Schedule, invite colleagues and video call',
+    newMeeting: 'New meeting',
   },
 };

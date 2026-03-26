@@ -7,6 +7,7 @@ export const es = {
     contentShort: 'Contenido Med.',
     chat: 'Chat',
     prescriptions: 'Reuniones',
+    meetings: 'Reuniones',
     vault: 'Mi Vault',
     medicalRecord: 'Expediente Médico',
     doctorVault: 'Vault Pacientes',
@@ -1629,5 +1630,10 @@ export const es = {
     familyHistory: 'Antecedentes Familiares',
     emergencyName: 'Contacto de Emergencia',
     emergencyPhone: 'Teléfono de Emergencia',
+  },
+  meetings: {
+    title: 'Reuniones',
+    subtitle: 'Agenda, invita colegas y realiza videollamadas',
+    newMeeting: 'Nueva reunión',
   },
 };
