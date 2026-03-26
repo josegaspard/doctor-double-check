@@ -236,12 +236,24 @@ export default function Chat() {
     const result = await closeSession(selectedSession);
     setIsClosingSession(false);
     if (result.success) {
-      toast.success(t('chat.sessionClosed'));
-      setSelectedSession(null);
-      setActiveTab('history');
+      // If doctor, show post-consultation summary dialog
+      if (role === 'doctor' && consultationId) {
+        setShowSummaryDialog(true);
+      } else {
+        toast.success(t('chat.sessionClosed'));
+        setSelectedSession(null);
+        setActiveTab('history');
+      }
     } else {
       toast.error(result.error || t('doctorProfile.chatError'));
     }
+  };
+
+  const handleSummaryComplete = () => {
+    toast.success(t('chat.sessionClosed'));
+    setSelectedSession(null);
+    setActiveTab('history');
+    setShowSummaryDialog(false);
   };
 
   const handleFileUploaded = async (fileUrl: string, fileName: string, fileType: string) => {
@@ -316,7 +328,8 @@ export default function Chat() {
   }
 
   // Patient can access chat if they have active sessions, closed history, or are being redirected after payment
-  const hasEntitlement = role === 'doctor' || activeSessions.length > 0 || closedSessions.length > 0 || isCreatingSession;
+  const allSessionsUnfiltered = getSessionsByUser();
+  const hasEntitlement = role === 'doctor' || role === 'resident' || allSessionsUnfiltered.filter(s => s.status === 'active').length > 0 || allSessionsUnfiltered.filter(s => s.status === 'closed').length > 0 || isCreatingSession;
   if (role === 'patient' && !hasEntitlement) {
     return (
       <MainLayout>
