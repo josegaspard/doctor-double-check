@@ -10,6 +10,7 @@ import { ChatHeader } from '@/components/chat/ChatHeader';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { CallWaitingBanner } from '@/components/videocall/CallWaitingBanner';
+import { ConsultationSummaryCard } from '@/components/chat/ConsultationSummaryCard';
 import { ChatSession } from '@/contexts/ChatContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -199,7 +200,8 @@ export function ChatMessagesPanel({
             </ScrollArea>
 
             {isClosed ? (
-              <div className="p-3 sm:p-4 border-t bg-muted/30 flex-shrink-0" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+              <div className="p-3 sm:p-4 border-t bg-muted/30 flex-shrink-0 space-y-3" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+                {consultationId && <ConsultationSummaryCard consultationId={consultationId} />}
                 <div className="flex items-center justify-center gap-2 text-muted-foreground">
                   <Lock className="w-4 h-4" />
                   <p className="text-sm">{t('chat.sessionClosed')}</p>

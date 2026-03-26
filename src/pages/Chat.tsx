@@ -31,7 +31,7 @@ export default function Chat() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
-  const [chatFilter, setChatFilter] = useState<'all' | 'patients' | 'doctors'>('all');
+  const [chatFilter, setChatFilter] = useState<'all' | 'patients' | 'doctors'>(role === 'resident' ? 'doctors' : 'all');
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
 
   const allSessions = getSessionsByUser();
@@ -265,7 +265,9 @@ export default function Chat() {
   };
 
   const getSessionDisplayInfo = (session: ChatSession) => {
-    if (role === 'patient') {
+    // Determine the "other" participant based on current user id
+    const isParticipant1 = session.participant1Id === user?.id;
+    if (isParticipant1) {
       return { name: session.participant2Name || t('chat.doctor'), specialty: session.participant2Specialty, avatar: session.participant2Avatar, type: session.participant2Type };
     }
     return { name: session.participant1Name || t('chat.patient'), specialty: session.participant1Specialty, avatar: session.participant1Avatar, type: session.participant1Type };

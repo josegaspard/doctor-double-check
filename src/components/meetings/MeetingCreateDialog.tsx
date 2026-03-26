@@ -34,7 +34,7 @@ interface InviteeDoc {
 }
 
 export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState({
     title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
@@ -51,12 +51,35 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
 
     const timer = setTimeout(async () => {
       setIsSearching(true);
-      // Only search doctors and residents (via doctor_profiles)
-      const { data: docProfiles } = await supabase
+
+      // For residents, only allow inviting doctors with accepted connections
+      let allowedDoctorIds: string[] | null = null;
+      if (role === 'resident' && user?.id) {
+        const { data: connections } = await supabase
+          .from('doctor_resident_connections')
+          .select('doctor_id')
+          .eq('resident_id', user.id)
+          .eq('status', 'accepted');
+        allowedDoctorIds = (connections || []).map(c => c.doctor_id);
+        if (allowedDoctorIds.length === 0) {
+          setSearchResults([]);
+          setIsSearching(false);
+          return;
+        }
+      }
+
+      // Search doctors and residents (via doctor_profiles)
+      let query = supabase
         .from('doctor_profiles')
         .select('user_id, specialty')
-        .neq('user_id', user?.id || '')
-        .limit(20);
+        .neq('user_id', user?.id || '');
+
+      // If resident, restrict to accepted connections only
+      if (allowedDoctorIds) {
+        query = query.in('user_id', allowedDoctorIds);
+      }
+
+      const { data: docProfiles } = await query.limit(20);
 
       if (docProfiles && docProfiles.length > 0) {
         const userIds = docProfiles.map(d => d.user_id);
