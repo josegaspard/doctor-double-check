@@ -559,8 +559,11 @@ export type Database = {
       consultations: {
         Row: {
           chat_session_id: string | null
+          completed_at: string | null
           diagnosis: string | null
           doctor_id: string
+          doctor_recommendations: string | null
+          doctor_summary: string | null
           ended_at: string | null
           id: string
           notes: string | null
@@ -572,8 +575,11 @@ export type Database = {
         }
         Insert: {
           chat_session_id?: string | null
+          completed_at?: string | null
           diagnosis?: string | null
           doctor_id: string
+          doctor_recommendations?: string | null
+          doctor_summary?: string | null
           ended_at?: string | null
           id?: string
           notes?: string | null
@@ -585,8 +591,11 @@ export type Database = {
         }
         Update: {
           chat_session_id?: string | null
+          completed_at?: string | null
           diagnosis?: string | null
           doctor_id?: string
+          doctor_recommendations?: string | null
+          doctor_summary?: string | null
           ended_at?: string | null
           id?: string
           notes?: string | null
@@ -1169,6 +1178,33 @@ export type Database = {
           min_rating?: number
           name?: string
           sort_order?: number
+        }
+        Relationships: []
+      }
+      doctor_resident_connections: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          id: string
+          resident_id: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          id?: string
+          resident_id: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          resident_id?: string
+          responded_at?: string | null
+          status?: string
         }
         Relationships: []
       }
