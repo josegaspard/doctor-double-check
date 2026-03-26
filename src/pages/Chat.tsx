@@ -13,6 +13,7 @@ import { ChatSessionsList } from '@/components/chat/ChatSessionsList';
 import { ChatMessagesPanel } from '@/components/chat/ChatMessagesPanel';
 import { MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -30,10 +31,25 @@ export default function Chat() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
+  const [chatFilter, setChatFilter] = useState<'all' | 'patients' | 'doctors'>('all');
+  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
 
   const allSessions = getSessionsByUser();
-  const activeSessions = allSessions.filter(s => s.status === 'active');
-  const closedSessions = allSessions.filter(s => s.status === 'closed');
+
+  // Filter sessions by chatFilter (for doctors/residents with dual windows)
+  const filterByType = (sessions: typeof allSessions) => {
+    if (chatFilter === 'all') return sessions;
+    return sessions.filter(s => {
+      // Determine the "other" participant type
+      const otherType = s.participant1Id === user?.id ? s.participant2Type : s.participant1Type;
+      if (chatFilter === 'patients') return otherType === 'patient';
+      if (chatFilter === 'doctors') return otherType === 'doctor' || otherType === 'resident';
+      return true;
+    });
+  };
+
+  const activeSessions = filterByType(allSessions.filter(s => s.status === 'active'));
+  const closedSessions = filterByType(allSessions.filter(s => s.status === 'closed'));
   const messages = selectedSession ? getSessionMessages(selectedSession) : [];
   const selectedSessionData = allSessions.find(s => s.id === selectedSession);
   const isSessionClosed = selectedSessionData?.status === 'closed';
