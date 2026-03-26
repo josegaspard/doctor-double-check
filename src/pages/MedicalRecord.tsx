@@ -122,8 +122,6 @@ export default function MedicalRecord() {
   const [isSaving, setIsSaving] = useState(false);
   const [hasRecord, setHasRecord] = useState(false);
 
-  if (role !== 'patient') return <Navigate to="/lives" replace />;
-
   useEffect(() => {
     if (!user?.id) return;
     const fetch = async () => {
