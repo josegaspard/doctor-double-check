@@ -217,6 +217,17 @@ export default function AdminSiteSettings() {
         if (footerData?.value) {
           setFooterLinks({ ...footerLinks, ...(footerData.value as unknown as FooterLinksData) });
         }
+
+        // Fetch feature toggles
+        const { data: togglesData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'feature_toggles')
+          .single();
+
+        if (togglesData?.value) {
+          setFeatureToggles(prev => ({ ...prev, ...(togglesData.value as unknown as SiteToggles) }));
+        }
       } catch (error) {
         console.error('Error fetching settings:', error);
       } finally {
