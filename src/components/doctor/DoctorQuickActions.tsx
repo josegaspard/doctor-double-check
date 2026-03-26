@@ -25,7 +25,7 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
       onClick: () => navigate('/doctor/go-live'),
       buttonLabel: 'Iniciar',
     },
-    {
+    ...(toggles.show_content_medical ? [{
       title: 'Subir Contenido',
       description: 'Sube videos, PDFs o imágenes',
       icon: Upload,
@@ -34,7 +34,7 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
       onClick: () => navigate('/doctor/upload'),
       buttonLabel: 'Subir',
       extraButton: { label: 'Biblioteca', onClick: () => navigate('/doctor/content') },
-    },
+    }] : []),
     {
       title: 'Mi Perfil Profesional',
       description: 'Edita tu educación, certificaciones y experiencia',
