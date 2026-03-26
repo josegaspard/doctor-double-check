@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useWallet } from '@/contexts/WalletContext';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -14,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
   PlayCircle, 
   Clock, 
@@ -27,9 +29,30 @@ import {
   Sparkles,
   Library,
   Gift,
+  Globe,
 } from 'lucide-react';
 
 type ContentFilter = 'all' | 'free' | 'paid' | 'purchased' | 'not_purchased';
+
+const SPECIALTIES = [
+  { value: 'Todas', labelKey: 'doctors.specAll' },
+  { value: 'Cardiología', labelKey: 'doctors.specCardiology' },
+  { value: 'Cirugía General', labelKey: 'doctors.specGeneralSurgery' },
+  { value: 'Dermatología', labelKey: 'doctors.specDermatology' },
+  { value: 'Endocrinología', labelKey: 'doctors.specEndocrinology' },
+  { value: 'Gastroenterología', labelKey: 'doctors.specGastroenterology' },
+  { value: 'Ginecología', labelKey: 'doctors.specGynecology' },
+  { value: 'Medicina General', labelKey: 'doctors.specGeneralMedicine' },
+  { value: 'Medicina Interna', labelKey: 'doctors.specInternalMedicine' },
+  { value: 'Neurología', labelKey: 'doctors.specNeurology' },
+  { value: 'Nutriología', labelKey: 'doctors.specNutriology' },
+  { value: 'Oftalmología', labelKey: 'doctors.specOphthalmology' },
+  { value: 'Oncología', labelKey: 'doctors.specOncology' },
+  { value: 'Ortopedia', labelKey: 'doctors.specOrthopedics' },
+  { value: 'Pediatría', labelKey: 'doctors.specPediatrics' },
+  { value: 'Psiquiatría', labelKey: 'doctors.specPsychiatry' },
+  { value: 'Urología', labelKey: 'doctors.specUrology' },
+];
 
 export default function RecordingsGrid() {
   const navigate = useNavigate();
@@ -38,35 +61,30 @@ export default function RecordingsGrid() {
   const { recordings, refreshRecordings } = useLives();
   const { user, role, isAuthenticated } = useAuth();
   const { t, language } = useLanguage();
+  const isMobile = useIsMobile();
   const { balance } = useWallet();
   const { hasPurchased, purchaseWithWallet, isPurchasing } = usePurchases();
   const { getEffectiveRecordingPrice, hasPremiumTo } = useSubscriptions();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
+  const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [doctorName, setDoctorName] = useState<string | null>(null);
   const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-  // Always refresh recordings when this page mounts to get latest thumbnails
-  useEffect(() => {
-    refreshRecordings();
-  }, [refreshRecordings]);
+  useEffect(() => { refreshRecordings(); }, [refreshRecordings]);
 
   useEffect(() => {
     if (!doctorFilter) { setDoctorName(null); return; }
     const fetchName = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', doctorFilter)
-        .single();
+      const { data } = await supabase.from('profiles').select('name').eq('id', doctorFilter).single();
       setDoctorName(data?.name || null);
     };
     fetchName();
   }, [doctorFilter]);
 
-  const specialties = [...new Set(recordings.map(r => r.specialty))];
+  const allTags = [...new Set(recordings.flatMap(r => r.tags || []))].filter(Boolean).sort();
 
   const ownsRecording = (recording: Recording): boolean => {
     if (!user) return false;
@@ -75,14 +93,10 @@ export default function RecordingsGrid() {
     return hasPurchased(recording.id);
   };
 
-  // Collect all unique tags for category filter
-  const allTags = [...new Set(recordings.flatMap(r => r.tags || []))].filter(Boolean).sort();
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-
   const filteredRecordings = recordings.filter(rec => {
     const matchesSearch = rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          rec.doctorName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialty = !selectedSpecialty || rec.specialty === selectedSpecialty;
+    const matchesSpecialty = selectedSpecialty === 'Todas' || rec.specialty === selectedSpecialty;
     const matchesDoctor = !doctorFilter || rec.doctorId === doctorFilter;
     const matchesTag = !selectedTag || (rec.tags || []).includes(selectedTag);
     
@@ -99,10 +113,7 @@ export default function RecordingsGrid() {
   });
 
   const handleRecordingClick = (recording: Recording) => {
-    if (!isAuthenticated || role === 'visitor') {
-      navigate('/login');
-      return;
-    }
+    if (!isAuthenticated || role === 'visitor') { navigate('/login'); return; }
     if (ownsRecording(recording)) {
       navigate(`/recording/${recording.id}`);
     } else {
@@ -144,7 +155,7 @@ export default function RecordingsGrid() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {/* Ad Banner */}
         <AdBanner placementName="recordings_top_banner" className="mb-4" />
 
@@ -175,250 +186,328 @@ export default function RecordingsGrid() {
           )}
         </div>
 
-        {/* Content filter chips */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
-          {filterOptions.map(opt => (
-            <button
-              key={opt.key}
-              onClick={() => setContentFilter(opt.key)}
-              className={`flex-shrink-0 snap-start flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                contentFilter === opt.key
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-foreground border-border hover:border-primary/50'
-              }`}
-            >
-              {opt.icon}
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Specialty filter chips */}
-        {specialties.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
-            <button
-              onClick={() => setSelectedSpecialty(null)}
-              className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                !selectedSpecialty
-                  ? 'bg-accent text-accent-foreground border-accent'
-                  : 'bg-muted/50 text-muted-foreground border-border hover:border-accent/50'
-              }`}
-            >
-              {t('recordings.allSpecialties')}
-            </button>
-            {specialties.map(spec => (
-              <button
-                key={spec}
-                onClick={() => setSelectedSpecialty(selectedSpecialty === spec ? null : spec)}
-                className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                  selectedSpecialty === spec
-                    ? 'bg-accent text-accent-foreground border-accent'
-                    : 'bg-muted/50 text-muted-foreground border-border hover:border-accent/50'
-                }`}
-              >
-                {spec}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Tag/Category filter chips (P13) */}
-        {allTags.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3">
-            <button
-              onClick={() => setSelectedTag(null)}
-              className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                !selectedTag
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-              }`}
-            >
-              Todas las categorías
-            </button>
-            {allTags.map(tag => (
-              <button
-                key={tag}
-                onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                  selectedTag === tag
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder={t('common.search')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        {/* No balance CTA */}
-        {isAuthenticated && (role === 'patient' || role === 'resident') && balance === 0 && (
-          <div className="mb-4 p-4 rounded-xl bg-muted border border-border">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Wallet className="w-5 h-5 text-primary" />
+        <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
+          {/* ===== Desktop Sidebar ===== */}
+          {!isMobile && (
+            <aside className="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide bg-card border border-border rounded-xl p-4 space-y-1">
+              {/* Specialties */}
+              <div>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  {language === 'es' ? 'Especialidades' : 'Specialties'}
+                </h4>
+                <div className="space-y-0.5">
+                  {SPECIALTIES.map(spec => (
+                    <button
+                      key={spec.value}
+                      onClick={() => setSelectedSpecialty(spec.value)}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        selectedSpecialty === spec.value
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {t(spec.labelKey)}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">Para comprar contenido premium necesitas saldo en tu billetera</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Recarga tu billetera y compra al instante sin ingresar tu tarjeta cada vez.</p>
+
+              <div className="border-t border-border my-3" />
+
+              {/* Content filter */}
+              <div>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  {language === 'es' ? 'Acceso' : 'Access'}
+                </h4>
+                <div className="space-y-0.5">
+                  {filterOptions.map(opt => (
+                    <button
+                      key={opt.key}
+                      onClick={() => setContentFilter(opt.key)}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        contentFilter === opt.key
+                          ? 'bg-accent text-accent-foreground shadow-sm'
+                          : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {opt.icon}
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-            <Link to="/wallet" className="block mt-3">
-              <Button className="w-full sm:w-auto gap-2">
-                <Wallet className="w-4 h-4" />
-                Recargar ahora
-              </Button>
-            </Link>
-          </div>
-        )}
 
-        {/* Recordings Grid */}
-        {filteredRecordings.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-            {filteredRecordings.map((recording) => {
-              const owned = ownsRecording(recording);
-              const isFree = recording.price === 0;
-              
-              return (
-                <Card
-                  key={recording.id}
-                  className={`group cursor-pointer overflow-hidden hover:shadow-lg transition-all ${
-                    owned ? 'border-success/30' : 'card-premium'
-                  }`}
-                  onClick={() => handleRecordingClick(recording)}
-                >
-                  <div className="relative aspect-video bg-gradient-to-br from-premium/10 to-primary/10">
-                    {recording.thumbnailUrl ? (
-                      <img
-                        src={recording.thumbnailUrl}
-                        alt={recording.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                      />
-                    ) : null}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      {!recording.thumbnailUrl && <PlayCircle className="w-12 h-12 text-premium/40" />}
-                    </div>
-                    
-                    {/* Status Badge */}
-                    <div className="absolute top-2 left-2">
-                      {owned ? (
-                        <Badge className="gap-1 bg-success/90 text-white border-0">
-                          <CheckCircle className="w-3 h-3" />
-                          {isFree ? t('ads.filterFree') : t('ads.filterPurchased')}
-                        </Badge>
-                      ) : isFree ? (
-                        <Badge className="gap-1 bg-success/90 text-white border-0">
-                          <Gift className="w-3 h-3" />
-                          {t('ads.filterFree')}
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="gap-1">
-                          <Lock className="w-3 h-3" />
-                          {t('ads.filterPaid')}
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="absolute bottom-2 right-2">
-                      <Badge variant="secondary" className="gap-1 bg-black/50 text-white border-0">
-                        <Clock className="w-3 h-3" />
-                        {formatDuration(recording.duration)}
-                      </Badge>
-                    </div>
-                    
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-white/0 group-hover:bg-white/90 flex items-center justify-center transition-colors">
-                        <PlayCircle className="w-6 h-6 text-premium opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
+              {/* Tags */}
+              {allTags.length > 0 && (
+                <>
+                  <div className="border-t border-border my-3" />
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                      {language === 'es' ? 'Categorías' : 'Categories'}
+                    </h4>
+                    <div className="space-y-0.5">
+                      <button
+                        onClick={() => setSelectedTag(null)}
+                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          !selectedTag
+                            ? 'bg-accent text-accent-foreground shadow-sm'
+                            : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {language === 'es' ? 'Todas' : 'All'}
+                      </button>
+                      {allTags.map(tag => (
+                        <button
+                          key={tag}
+                          onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                            selectedTag === tag
+                              ? 'bg-accent text-accent-foreground shadow-sm'
+                              : 'text-foreground hover:bg-muted'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
                     </div>
                   </div>
+                </>
+              )}
+            </aside>
+          )}
+
+          {/* ===== Main Content ===== */}
+          <div className="min-w-0">
+            {/* Search */}
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder={t('common.search')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Mobile: Specialty chips */}
+            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 md:hidden">
+              {SPECIALTIES.map(spec => (
+                <button
+                  key={spec.value}
+                  onClick={() => setSelectedSpecialty(spec.value)}
+                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
+                    selectedSpecialty === spec.value
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
+                  }`}
+                >
+                  {t(spec.labelKey)}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile: Content filter chips */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3 md:hidden">
+              {filterOptions.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => setContentFilter(opt.key)}
+                  className={`flex-shrink-0 snap-start flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                    contentFilter === opt.key
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background text-foreground border-border hover:border-primary/50'
+                  }`}
+                >
+                  {opt.icon}
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile: Tag chips */}
+            {allTags.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3 md:hidden">
+                <button
+                  onClick={() => setSelectedTag(null)}
+                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                    !selectedTag
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
+                  }`}
+                >
+                  {language === 'es' ? 'Todas' : 'All'}
+                </button>
+                {allTags.map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                    className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                      selectedTag === tag
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* No balance CTA */}
+            {isAuthenticated && (role === 'patient' || role === 'resident') && balance === 0 && (
+              <div className="mb-4 p-4 rounded-xl bg-muted border border-border">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Wallet className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Para comprar contenido premium necesitas saldo en tu billetera</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Recarga tu billetera y compra al instante sin ingresar tu tarjeta cada vez.</p>
+                  </div>
+                </div>
+                <Link to="/wallet" className="block mt-3">
+                  <Button className="w-full sm:w-auto gap-2">
+                    <Wallet className="w-4 h-4" />
+                    Recargar ahora
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {/* Recordings Grid */}
+            {filteredRecordings.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {filteredRecordings.map((recording) => {
+                  const owned = ownsRecording(recording);
+                  const isFree = recording.price === 0;
                   
-                  <CardContent className="p-3 sm:p-4">
-                    <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors text-sm sm:text-base">
-                      {recording.title}
-                    </h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-xs font-semibold text-primary">
-                          {recording.doctorName.charAt(0)}
-                        </span>
-                      </div>
-                      <span className="truncate">{recording.doctorName}</span>
-                    </div>
-                    {recording.peakViewers != null && recording.peakViewers > 0 && (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>{recording.peakViewers.toLocaleString()} {t('ads.viewers')}</span>
-                      </div>
-                    )}
-                    {(!recording.peakViewers || recording.peakViewers === 0) && <div className="mb-3" />}
-                    
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="text-xs">
-                        {recording.specialty}
-                      </Badge>
-                      {!owned && !isFree && (
-                        <div className="text-right">
-                          {hasPremiumTo(recording.doctorId) ? (
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs text-muted-foreground line-through">
-                                ${recording.price}
-                              </span>
-                              <span className="font-bold text-success">
-                                ${getEffectiveRecordingPrice(recording.price, recording.doctorId).toFixed(0)}
-                              </span>
-                              <Crown className="w-3 h-3 text-yellow-500" />
-                            </div>
+                  return (
+                    <Card
+                      key={recording.id}
+                      className={`group cursor-pointer overflow-hidden hover:shadow-lg transition-all ${
+                        owned ? 'border-success/30' : 'card-premium'
+                      }`}
+                      onClick={() => handleRecordingClick(recording)}
+                    >
+                      <div className="relative aspect-video bg-gradient-to-br from-premium/10 to-primary/10">
+                        {recording.thumbnailUrl ? (
+                          <img
+                            src={recording.thumbnailUrl}
+                            alt={recording.title}
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : null}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          {!recording.thumbnailUrl && <PlayCircle className="w-12 h-12 text-premium/40" />}
+                        </div>
+                        
+                        <div className="absolute top-2 left-2">
+                          {owned ? (
+                            <Badge className="gap-1 bg-success/90 text-white border-0">
+                              <CheckCircle className="w-3 h-3" />
+                              {isFree ? t('ads.filterFree') : t('ads.filterPurchased')}
+                            </Badge>
+                          ) : isFree ? (
+                            <Badge className="gap-1 bg-success/90 text-white border-0">
+                              <Gift className="w-3 h-3" />
+                              {t('ads.filterFree')}
+                            </Badge>
                           ) : (
-                            <span className="font-bold text-premium">
-                              ${recording.price}
-                            </span>
+                            <Badge variant="secondary" className="gap-1">
+                              <Lock className="w-3 h-3" />
+                              {t('ads.filterPaid')}
+                            </Badge>
                           )}
                         </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        ) : (
-          <Card className="p-8 sm:p-12 text-center">
-            <PlayCircle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-              {contentFilter !== 'all' || selectedSpecialty ? t('ads.noRecordingsFilters') : t('recordings.noRecordings')}
-            </h3>
-            <p className="text-muted-foreground text-sm">
-              {t('common.noResults')}
-            </p>
-            {(contentFilter !== 'all' || selectedSpecialty) && (
-              <Button variant="outline" className="mt-3" onClick={() => { setContentFilter('all'); setSelectedSpecialty(null); }}>
-                {t('ads.removeFilters')}
-              </Button>
+
+                        <div className="absolute bottom-2 right-2">
+                          <Badge variant="secondary" className="gap-1 bg-black/50 text-white border-0">
+                            <Clock className="w-3 h-3" />
+                            {formatDuration(recording.duration)}
+                          </Badge>
+                        </div>
+                        
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-white/0 group-hover:bg-white/90 flex items-center justify-center transition-colors">
+                            <PlayCircle className="w-6 h-6 text-premium opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <CardContent className="p-3 sm:p-4">
+                        <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors text-sm sm:text-base">
+                          {recording.title}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-xs font-semibold text-primary">
+                              {recording.doctorName.charAt(0)}
+                            </span>
+                          </div>
+                          <span className="truncate">{recording.doctorName}</span>
+                        </div>
+                        {recording.peakViewers != null && recording.peakViewers > 0 && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{recording.peakViewers.toLocaleString()} {t('ads.viewers')}</span>
+                          </div>
+                        )}
+                        {(!recording.peakViewers || recording.peakViewers === 0) && <div className="mb-3" />}
+                        
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-xs">
+                            {recording.specialty}
+                          </Badge>
+                          {!owned && !isFree && (
+                            <div className="text-right">
+                              {hasPremiumTo(recording.doctorId) ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-muted-foreground line-through">
+                                    ${recording.price}
+                                  </span>
+                                  <span className="font-bold text-success">
+                                    ${getEffectiveRecordingPrice(recording.price, recording.doctorId).toFixed(0)}
+                                  </span>
+                                  <Crown className="w-3 h-3 text-yellow-500" />
+                                </div>
+                              ) : (
+                                <span className="font-bold text-premium">
+                                  ${recording.price}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <Card className="p-8 sm:p-12 text-center">
+                <PlayCircle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
+                  {contentFilter !== 'all' || selectedSpecialty !== 'Todas' ? t('ads.noRecordingsFilters') : t('recordings.noRecordings')}
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  {t('common.noResults')}
+                </p>
+                {(contentFilter !== 'all' || selectedSpecialty !== 'Todas') && (
+                  <Button variant="outline" className="mt-3" onClick={() => { setContentFilter('all'); setSelectedSpecialty('Todas'); }}>
+                    {t('ads.removeFilters')}
+                  </Button>
+                )}
+              </Card>
             )}
-          </Card>
-        )}
+          </div>
+        </div>
       </div>
 
       <PaywallModal
         open={showPaywall}
-        onClose={() => {
-          setShowPaywall(false);
-          setSelectedRecording(null);
-        }}
+        onClose={() => { setShowPaywall(false); setSelectedRecording(null); }}
         recording={selectedRecording as any}
         onPurchase={handlePurchase}
         isPurchasing={isPurchasing}

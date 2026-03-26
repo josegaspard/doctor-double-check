@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useLayoutEffect } from 'react'
 import { AdBanner } from '@/components/ads/AdBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,13 +32,13 @@ import {
   DollarSign,
   Wallet,
   AlertCircle,
+  Presentation,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useWallet } from '@/contexts/WalletContext';
 import { usePurchases } from '@/hooks/usePurchases';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
-
 
 interface DoctorContent {
   id: string;
@@ -56,6 +57,33 @@ interface DoctorContent {
   creator_avatar?: string;
   creator_specialty?: string;
 }
+
+const SPECIALTIES = [
+  { value: 'Todas', labelKey: 'doctors.specAll' },
+  { value: 'Cardiología', labelKey: 'doctors.specCardiology' },
+  { value: 'Cirugía General', labelKey: 'doctors.specGeneralSurgery' },
+  { value: 'Dermatología', labelKey: 'doctors.specDermatology' },
+  { value: 'Endocrinología', labelKey: 'doctors.specEndocrinology' },
+  { value: 'Gastroenterología', labelKey: 'doctors.specGastroenterology' },
+  { value: 'Ginecología', labelKey: 'doctors.specGynecology' },
+  { value: 'Medicina General', labelKey: 'doctors.specGeneralMedicine' },
+  { value: 'Medicina Interna', labelKey: 'doctors.specInternalMedicine' },
+  { value: 'Neurología', labelKey: 'doctors.specNeurology' },
+  { value: 'Nutriología', labelKey: 'doctors.specNutriology' },
+  { value: 'Oftalmología', labelKey: 'doctors.specOphthalmology' },
+  { value: 'Oncología', labelKey: 'doctors.specOncology' },
+  { value: 'Ortopedia', labelKey: 'doctors.specOrthopedics' },
+  { value: 'Pediatría', labelKey: 'doctors.specPediatrics' },
+  { value: 'Psiquiatría', labelKey: 'doctors.specPsychiatry' },
+  { value: 'Urología', labelKey: 'doctors.specUrology' },
+];
+
+const CONTENT_TYPES = [
+  { value: 'all', label: 'Todos', icon: Globe },
+  { value: 'video', label: 'Videos', icon: Video },
+  { value: 'pdf', label: 'Documentos', icon: FileText },
+  { value: 'image', label: 'Imágenes', icon: ImageIcon },
+];
 
 // --- Extracted sub-components ---
 
@@ -119,7 +147,7 @@ function ContentCardThumbnail({
         </div>
       )}
 
-      {/* Type badge - always green bg with white text */}
+      {/* Type badge */}
       <div className="absolute top-2 left-2">
         <Badge className="gap-1 capitalize text-xs bg-primary text-primary-foreground hover:bg-primary/90 border-0">
           <TypeIcon className="w-3 h-3" />
@@ -127,7 +155,7 @@ function ContentCardThumbnail({
         </Badge>
       </div>
 
-      {/* Price badge with wallet awareness */}
+      {/* Price badge */}
       {content.price > 0 && (
         <div className="absolute bottom-2 left-2 flex gap-1">
           <Badge className="gap-1 text-xs bg-primary text-primary-foreground">
@@ -232,6 +260,7 @@ function ContentCardBody({
 export default function ContentGallery() {
   const { user } = useAuth();
   const { language, t } = useLanguage();
+  const isMobile = useIsMobile();
   const { getSubscription } = useSubscriptions();
   const { balance } = useWallet();
   const { purchases } = usePurchases();
@@ -242,6 +271,7 @@ export default function ContentGallery() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
   const [previewContent, setPreviewContent] = useState<DoctorContent | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [contentTab, setContentTab] = useState('all');
@@ -283,20 +313,14 @@ export default function ContentGallery() {
 
       setContents(mapped);
 
-      // Resolve signed URLs for thumbnails and content (skip PDFs)
+      // Resolve signed URLs for thumbnails (skip PDFs)
       const needThumb = mapped.filter(c => c.type !== 'pdf');
-
       if (needThumb.length > 0) {
         const thumbResults = await Promise.all(
           needThumb.map(async (c) => {
-            // Prefer thumbnail_url, fall back to file_url
             const pathToSign = c.thumbnail_url || c.file_url;
-            if (pathToSign.startsWith('http')) {
-              return { id: c.id, url: pathToSign };
-            }
-            const { data: sd } = await supabase.storage
-              .from('doctor-content')
-              .createSignedUrl(pathToSign, 60 * 60);
+            if (pathToSign.startsWith('http')) return { id: c.id, url: pathToSign };
+            const { data: sd } = await supabase.storage.from('doctor-content').createSignedUrl(pathToSign, 60 * 60);
             return { id: c.id, url: sd?.signedUrl || null };
           })
         );
@@ -311,14 +335,8 @@ export default function ContentGallery() {
     }
   }, []);
 
-  // Force scroll to top on mount (fixes mobile scroll issue)
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  useEffect(() => {
-    fetchContents();
-  }, [fetchContents]);
+  useLayoutEffect(() => { window.scrollTo(0, 0); }, []);
+  useEffect(() => { fetchContents(); }, [fetchContents]);
 
   const canViewSubscriberContent = (content: DoctorContent) => {
     if (content.audience_type !== 'subscribers') return true;
@@ -339,14 +357,16 @@ export default function ContentGallery() {
       content.creator_name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = typeFilter === 'all' || content.type === typeFilter;
     const matchesCategory = categoryFilter === 'all' || content.category === categoryFilter;
+    const matchesSpecialty = selectedSpecialty === 'Todas' || content.creator_specialty === selectedSpecialty;
     const isPurchased = purchasedIds.has(content.id);
 
-    if (contentTab === 'purchased') return matchesSearch && matchesType && matchesCategory && isPurchased;
-    if (contentTab === 'new') return matchesSearch && matchesType && matchesCategory && !isPurchased;
-    return matchesSearch && matchesType && matchesCategory;
+    if (!matchesSearch || !matchesType || !matchesCategory || !matchesSpecialty) return false;
+
+    if (contentTab === 'purchased') return isPurchased;
+    if (contentTab === 'new') return !isPurchased;
+    return true;
   });
 
-  // Helper to insert inline ads between content cards
   const renderContentGrid = () => {
     if (filteredContents.length === 0) {
       return (
@@ -354,7 +374,7 @@ export default function ContentGallery() {
           <Library className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">{t('content.noContent')}</h3>
           <p className="text-muted-foreground">
-            {searchQuery || typeFilter !== 'all' || categoryFilter !== 'all'
+            {searchQuery || typeFilter !== 'all' || categoryFilter !== 'all' || selectedSpecialty !== 'Todas'
               ? t('content.noContentFilters')
               : t('content.noContentUploaded')}
           </p>
@@ -371,17 +391,13 @@ export default function ContentGallery() {
         <Card
           key={content.id}
           className={`group overflow-hidden hover:shadow-lg transition-all cursor-pointer border-border/60 ${locked ? 'opacity-75' : ''}`}
-          onClick={() => {
-            if (locked) return;
-            setPreviewContent(content);
-          }}
+          onClick={() => { if (!locked) setPreviewContent(content); }}
         >
           <ContentCardThumbnail content={content} thumbUrl={thumbUrl} locked={locked} showInsufficientHint={content.price > 0 && balance < content.price && !locked} t={t} />
           <ContentCardBody content={content} locale={locale} />
         </Card>
       );
 
-      // Insert inline ad every 4 items (after 4th, 8th, etc.)
       if ((index + 1) % 4 === 0 && index < filteredContents.length - 1) {
         items.push(
           <div key={`ad-inline-${index}`} className="col-span-full">
@@ -392,7 +408,7 @@ export default function ContentGallery() {
     });
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {items}
       </div>
     );
@@ -402,7 +418,7 @@ export default function ContentGallery() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
             <Library className="w-6 h-6 text-primary" />
             {t('content.library')}
@@ -410,110 +426,216 @@ export default function ContentGallery() {
           <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
         </div>
 
-        {/* Tabs */}
-        <Tabs value={contentTab} onValueChange={setContentTab} className="mb-4">
-          <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
-            <TabsTrigger value="all" className="gap-1.5 text-xs sm:text-sm">
-              <Library className="w-3.5 h-3.5" />
-              {t('ads.contentAll')}
-            </TabsTrigger>
-            <TabsTrigger value="purchased" className="gap-1.5 text-xs sm:text-sm">
-              <ShoppingBag className="w-3.5 h-3.5" />
-              {t('ads.contentPurchased')}
-            </TabsTrigger>
-            <TabsTrigger value="new" className="gap-1.5 text-xs sm:text-sm">
-              <Sparkles className="w-3.5 h-3.5" />
-              {t('ads.contentNew')}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {/* Search */}
-        <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder={t('inputs.searchByTitle')}
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="pl-9 h-10"
-          />
-        </div>
-
-        {/* Type filter chips */}
-        <div className="mb-3">
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-2 pb-1">
-              {[
-                { value: 'all', label: t('ads.contentAll'), icon: Globe },
-                { value: 'video', label: 'Videos', icon: Video },
-                { value: 'pdf', label: 'PDFs', icon: FileText },
-                { value: 'image', label: t('ads.contentImages'), icon: ImageIcon },
-              ].map(chip => {
-                const active = typeFilter === chip.value;
-                return (
-                  <Button
-                    key={chip.value}
-                    variant={active ? 'default' : 'outline'}
-                    size="sm"
-                    className={`gap-1.5 rounded-full shrink-0 text-xs h-8 px-3.5 ${active ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
-                    onClick={() => setTypeFilter(chip.value)}
-                  >
-                    <chip.icon className="w-3.5 h-3.5" />
-                    {chip.label}
-                  </Button>
-                );
-              })}
-            </div>
-            <ScrollBar orientation="horizontal" className="h-0" />
-          </ScrollArea>
-        </div>
-
-        {/* Category filter chips */}
-        {categories.length > 0 && (
-          <div className="mb-5">
-            <ScrollArea className="w-full whitespace-nowrap">
-              <div className="flex gap-2 pb-1">
-                <Button
-                  variant={categoryFilter === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  className={`rounded-full shrink-0 text-xs h-7 px-3 ${categoryFilter === 'all' ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
-                  onClick={() => setCategoryFilter('all')}
-                >
-                  {t('content.allCategories')}
-                </Button>
-                {categories.map(cat => {
-                  const active = categoryFilter === cat;
-                  return (
-                    <Button
-                      key={cat}
-                      variant={active ? 'default' : 'outline'}
-                      size="sm"
-                      className={`rounded-full shrink-0 text-xs h-7 px-3 ${active ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
-                      onClick={() => setCategoryFilter(cat)}
+        <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
+          {/* ===== Desktop Sidebar ===== */}
+          {!isMobile && (
+            <aside className="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide bg-card border border-border rounded-xl p-4 space-y-1">
+              {/* Specialties */}
+              <div>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  {language === 'es' ? 'Especialidades' : 'Specialties'}
+                </h4>
+                <div className="space-y-0.5">
+                  {SPECIALTIES.map(spec => (
+                    <button
+                      key={spec.value}
+                      onClick={() => setSelectedSpecialty(spec.value)}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        selectedSpecialty === spec.value
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-foreground hover:bg-muted'
+                      }`}
                     >
-                      {cat}
-                    </Button>
-                  );
-                })}
+                      {t(spec.labelKey)}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <ScrollBar orientation="horizontal" className="h-0" />
-            </ScrollArea>
-          </div>
-        )}
 
-        {/* Main content */}
-        <div>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            renderContentGrid()
+              <div className="border-t border-border my-3" />
+
+              {/* Content Type */}
+              <div>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  {language === 'es' ? 'Tipo de contenido' : 'Content Type'}
+                </h4>
+                <div className="space-y-0.5">
+                  {CONTENT_TYPES.map(ct => (
+                    <button
+                      key={ct.value}
+                      onClick={() => setTypeFilter(ct.value)}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        typeFilter === ct.value
+                          ? 'bg-accent text-accent-foreground shadow-sm'
+                          : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <ct.icon className="w-3 h-3 flex-shrink-0" />
+                      {ct.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Categories (dynamic) */}
+              {categories.length > 0 && (
+                <>
+                  <div className="border-t border-border my-3" />
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                      {language === 'es' ? 'Categorías' : 'Categories'}
+                    </h4>
+                    <div className="space-y-0.5">
+                      <button
+                        onClick={() => setCategoryFilter('all')}
+                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          categoryFilter === 'all'
+                            ? 'bg-accent text-accent-foreground shadow-sm'
+                            : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {t('content.allCategories')}
+                      </button>
+                      {categories.map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => setCategoryFilter(cat)}
+                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                            categoryFilter === cat
+                              ? 'bg-accent text-accent-foreground shadow-sm'
+                              : 'text-foreground hover:bg-muted'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </aside>
           )}
-        </div>
 
-        {/* Bottom banner */}
-        <AdBanner placementName="content_bottom_banner" className="mt-6 [&_img]:max-h-[140px] [&_img]:sm:max-h-[160px]" />
+          {/* ===== Main Content Column ===== */}
+          <div className="min-w-0">
+            {/* Tabs */}
+            <Tabs value={contentTab} onValueChange={setContentTab} className="mb-4">
+              <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
+                <TabsTrigger value="all" className="gap-1.5 text-xs sm:text-sm">
+                  <Library className="w-3.5 h-3.5" />
+                  {t('ads.contentAll')}
+                </TabsTrigger>
+                <TabsTrigger value="purchased" className="gap-1.5 text-xs sm:text-sm">
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  {t('ads.contentPurchased')}
+                </TabsTrigger>
+                <TabsTrigger value="new" className="gap-1.5 text-xs sm:text-sm">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {t('ads.contentNew')}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {/* Search */}
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder={t('inputs.searchByTitle')}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="pl-9 h-10"
+              />
+            </div>
+
+            {/* Mobile: Specialty chips */}
+            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 md:hidden">
+              {SPECIALTIES.map(spec => (
+                <button
+                  key={spec.value}
+                  onClick={() => setSelectedSpecialty(spec.value)}
+                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
+                    selectedSpecialty === spec.value
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
+                  }`}
+                >
+                  {t(spec.labelKey)}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile: Type filter chips */}
+            <div className="md:hidden mb-3">
+              <ScrollArea className="w-full whitespace-nowrap">
+                <div className="flex gap-2 pb-1">
+                  {CONTENT_TYPES.map(chip => {
+                    const active = typeFilter === chip.value;
+                    return (
+                      <Button
+                        key={chip.value}
+                        variant={active ? 'default' : 'outline'}
+                        size="sm"
+                        className={`gap-1.5 rounded-full shrink-0 text-xs h-8 px-3.5 ${active ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
+                        onClick={() => setTypeFilter(chip.value)}
+                      >
+                        <chip.icon className="w-3.5 h-3.5" />
+                        {chip.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <ScrollBar orientation="horizontal" className="h-0" />
+              </ScrollArea>
+            </div>
+
+            {/* Mobile: Category chips */}
+            {categories.length > 0 && (
+              <div className="md:hidden mb-4">
+                <ScrollArea className="w-full whitespace-nowrap">
+                  <div className="flex gap-2 pb-1">
+                    <Button
+                      variant={categoryFilter === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      className={`rounded-full shrink-0 text-xs h-7 px-3 ${categoryFilter === 'all' ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
+                      onClick={() => setCategoryFilter('all')}
+                    >
+                      {t('content.allCategories')}
+                    </Button>
+                    {categories.map(cat => {
+                      const active = categoryFilter === cat;
+                      return (
+                        <Button
+                          key={cat}
+                          variant={active ? 'default' : 'outline'}
+                          size="sm"
+                          className={`rounded-full shrink-0 text-xs h-7 px-3 ${active ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
+                          onClick={() => setCategoryFilter(cat)}
+                        >
+                          {cat}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <ScrollBar orientation="horizontal" className="h-0" />
+                </ScrollArea>
+              </div>
+            )}
+
+            {/* Content Grid */}
+            <div>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                renderContentGrid()
+              )}
+            </div>
+
+            {/* Bottom banner */}
+            <AdBanner placementName="content_bottom_banner" className="mt-6 [&_img]:max-h-[140px] [&_img]:sm:max-h-[160px]" />
+          </div>
+        </div>
       </div>
 
       <ContentPreviewModal
