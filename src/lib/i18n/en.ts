@@ -7,6 +7,7 @@ export const en = {
     contentShort: 'Med. Content',
     chat: 'Chat',
     prescriptions: 'Meetings',
+    meetings: 'Meetings',
     vault: 'My Vault',
     medicalRecord: 'Medical Record',
     doctorVault: 'Patient Vault',
