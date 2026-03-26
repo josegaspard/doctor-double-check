@@ -294,7 +294,7 @@ export default function Chat() {
   }
 
   // Block unauthorized
-  if (role !== 'patient' && role !== 'doctor') {
+  if (role !== 'patient' && role !== 'doctor' && role !== 'resident') {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-12">
@@ -304,7 +304,7 @@ export default function Chat() {
             </div>
             <h2 className="font-heading text-xl font-bold text-foreground mb-2">{t('chat.oneOnOne')}</h2>
             <p className="text-muted-foreground mb-6">
-              {role === 'visitor' ? t('chat.chatUnavailable') : t('chat.chatUnavailable')}
+              {t('chat.chatUnavailable')}
             </p>
             <Button onClick={() => navigate(role === 'visitor' ? '/login' : '/lives')}>
               {role === 'visitor' ? t('nav.login') : t('chat.goToLives')}
