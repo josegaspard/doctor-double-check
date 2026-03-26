@@ -82,6 +82,7 @@ const CONTENT_TYPES = [
   { value: 'all', label: 'Todos', icon: Globe },
   { value: 'video', label: 'Videos', icon: Video },
   { value: 'pdf', label: 'Documentos', icon: FileText },
+  { value: 'presentation', label: 'Presentaciones', icon: Presentation },
   { value: 'image', label: 'Imágenes', icon: ImageIcon },
 ];
 
