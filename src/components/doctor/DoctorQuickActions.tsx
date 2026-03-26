@@ -13,6 +13,7 @@ interface Props {
 
 export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props) {
   const navigate = useNavigate();
+  const { toggles } = useSiteToggles();
 
   const actions = [
     {
