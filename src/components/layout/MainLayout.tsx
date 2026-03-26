@@ -73,6 +73,7 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   roles: string[];
+  toggleKey?: string;
 }
 
 const navItems: NavItem[] = [
