@@ -8,6 +8,7 @@ export const en = {
     chat: 'Chat',
     prescriptions: 'Meetings',
     vault: 'My Vault',
+    medicalRecord: 'Medical Record',
     doctorVault: 'Patient Vault',
     doctorVaultShort: 'Patients',
     dashboard: 'Dashboard',

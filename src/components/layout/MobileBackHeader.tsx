@@ -27,6 +27,7 @@ const PAGE_TITLE_KEYS: Record<string, string> = {
   '/news': 'backHeader.news',
   '/prescriptions': 'backHeader.prescriptions',
   '/vault': 'backHeader.vault',
+  '/medical-record': 'backHeader.medicalRecord',
   '/wallet': 'backHeader.wallet',
   '/settings': 'backHeader.settings',
   '/doctor/dashboard': 'backHeader.dashboard',
