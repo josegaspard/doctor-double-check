@@ -1116,7 +1116,14 @@ export default function UserProfile() {
           </motion.div>
         )}
 
-        {/* Settings Cards */}
+        {/* Resident Balance Card */}
+        {role === 'resident' && (
+          <motion.div variants={cardVariants} className="mb-6">
+            <ResidentBalanceCard />
+          </motion.div>
+        )}
+
+
         <motion.div className="grid gap-6" variants={containerVariants}>
           {/* Language Preference */}
           <motion.div variants={itemVariants}>
