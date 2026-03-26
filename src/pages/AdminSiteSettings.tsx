@@ -915,6 +915,65 @@ export default function AdminSiteSettings() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Feature Toggles Tab */}
+            <TabsContent value="toggles">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <ToggleLeft className="w-5 h-5" />
+                    Feature Toggles
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Activa o desactiva secciones de la plataforma sin modificar código
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {[
+                    { key: 'show_news_section' as const, label: 'Sección de Noticias', desc: 'Mostrar la pestaña de Noticias en la navegación' },
+                    { key: 'show_content_medical' as const, label: 'Contenido Médico', desc: 'Mostrar la pestaña de Contenido Médico en la navegación' },
+                    { key: 'show_prescriptions' as const, label: 'Recetas / Reuniones', desc: 'Mostrar la pestaña de Recetas (Reuniones) en la navegación' },
+                    { key: 'live_chat_free' as const, label: 'Chat en Lives Gratis', desc: 'Permitir chat gratuito durante transmisiones en vivo' },
+                    { key: 'show_transaction_history' as const, label: 'Historial de Transacciones', desc: 'Mostrar historial de transacciones para pacientes' },
+                  ].map((toggle) => (
+                    <div key={toggle.key} className="flex items-center justify-between p-4 rounded-lg border border-border">
+                      <div>
+                        <p className="font-medium text-sm">{toggle.label}</p>
+                        <p className="text-xs text-muted-foreground">{toggle.desc}</p>
+                      </div>
+                      <Switch
+                        checked={featureToggles[toggle.key]}
+                        onCheckedChange={(checked) =>
+                          setFeatureToggles(prev => ({ ...prev, [toggle.key]: checked }))
+                        }
+                      />
+                    </div>
+                  ))}
+
+                  <Button
+                    onClick={async () => {
+                      setIsSaving(true);
+                      const { error } = await saveSiteToggles(featureToggles, supabaseUser?.id);
+                      setIsSaving(false);
+                      if (error) {
+                        toast.error('Error al guardar toggles');
+                      } else {
+                        toast.success('Toggles actualizados');
+                      }
+                    }}
+                    disabled={isSaving}
+                    className="w-full"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Guardar Toggles
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
         )}
       </div>
