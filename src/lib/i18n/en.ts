@@ -2,11 +2,11 @@ export const en = {
   // Navigation
   nav: {
     lives: 'Lives',
-    recordings: 'Recordings',
+    recordings: 'Premium Content',
     content: 'Medical Content',
     contentShort: 'Med. Content',
     chat: 'Chat',
-    prescriptions: 'Prescriptions',
+    prescriptions: 'Meetings',
     vault: 'My Vault',
     doctorVault: 'Patient Vault',
     doctorVaultShort: 'Patients',

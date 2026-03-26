@@ -8,6 +8,7 @@ import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
 import { useHasAdCampaigns } from '@/hooks/useHasAdCampaigns';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useSocialLinks } from '@/hooks/useSiteSettings';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 import { useChat } from '@/contexts/ChatContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -72,16 +73,17 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   roles: string[];
+  toggleKey?: string;
 }
 
 const navItems: NavItem[] = [
   { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.recordings', href: '/recordings', icon: PlayCircle, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.doctors', href: '/doctors', icon: Stethoscope, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
-  { labelKey: 'nav.content', shortLabelKey: 'nav.contentShort', href: '/content', icon: Folder, roles: ['patient', 'doctor', 'resident', 'admin'] },
-  { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
+  { labelKey: 'nav.content', shortLabelKey: 'nav.contentShort', href: '/content', icon: Folder, roles: ['patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_content_medical' },
+  { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'doctor'] },
-  { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'] },
+  { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'show_prescriptions' },
   { labelKey: 'nav.vault', href: '/vault', icon: Folder, roles: ['patient'] },
   { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'] },
@@ -137,8 +139,8 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   return [
     ...common,
     { label: t('nav.recordings'), href: '/recordings', icon: PlayCircle },
-    { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
-    { label: t('nav.notifications'), href: '/notifications', icon: Bell },
+    { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
+    { label: t('nav.prescriptions'), href: '/prescriptions', icon: FileText },
   ];
 }
 
@@ -176,6 +178,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const { balance } = useWallet();
   const { t } = useLanguage();
   const { socialLinks } = useSocialLinks();
+  const { toggles } = useSiteToggles();
   const { unreadCount: notifUnread } = useNotifications();
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [pendingEarnings, setPendingEarnings] = useState<number>(0);
@@ -217,8 +220,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
   const filteredNavItems = useMemo(() => {
     const effectiveRole = role || 'visitor';
-    return navItems.filter(item => item.roles.includes(effectiveRole));
-  }, [role]);
+    return navItems.filter(item => {
+      if (!item.roles.includes(effectiveRole)) return false;
+      if (item.toggleKey && !(toggles as any)[item.toggleKey]) return false;
+      return true;
+    });
+  }, [role, toggles]);
 
   const bottomTabs = useMemo(() => getBottomTabs(role, t), [role, t]);
   

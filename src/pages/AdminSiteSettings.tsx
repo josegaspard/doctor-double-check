@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
+import { type SiteToggles, saveSiteToggles } from '@/hooks/useSiteToggles';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -33,6 +34,7 @@ import {
   Plus,
   Trash2,
   Link2,
+  ToggleLeft,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -128,6 +130,14 @@ export default function AdminSiteSettings() {
     show_status_badge: true,
   });
 
+  const [featureToggles, setFeatureToggles] = useState<SiteToggles>({
+    show_news_section: false,
+    show_content_medical: false,
+    show_prescriptions: false,
+    live_chat_free: true,
+    show_transaction_history: false,
+  });
+
   useEffect(() => {
     if (role && role !== 'admin') {
       navigate('/');
@@ -206,6 +216,17 @@ export default function AdminSiteSettings() {
 
         if (footerData?.value) {
           setFooterLinks({ ...footerLinks, ...(footerData.value as unknown as FooterLinksData) });
+        }
+
+        // Fetch feature toggles
+        const { data: togglesData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'feature_toggles')
+          .single();
+
+        if (togglesData?.value) {
+          setFeatureToggles(prev => ({ ...prev, ...(togglesData.value as unknown as SiteToggles) }));
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -397,7 +418,7 @@ export default function AdminSiteSettings() {
           </div>
         ) : (
           <Tabs defaultValue="social" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="social" className="gap-2 text-xs">
                 <Globe className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('admin.socialLinks')}</span>
@@ -421,6 +442,10 @@ export default function AdminSiteSettings() {
               <TabsTrigger value="footer" className="gap-2 text-xs">
                 <Link2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Footer</span>
+              </TabsTrigger>
+              <TabsTrigger value="toggles" className="gap-2 text-xs">
+                <ToggleLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Toggles</span>
               </TabsTrigger>
             </TabsList>
 
@@ -886,6 +911,65 @@ export default function AdminSiteSettings() {
                       <Save className="w-4 h-4 mr-2" />
                     )}
                     Guardar Footer
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Feature Toggles Tab */}
+            <TabsContent value="toggles">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <ToggleLeft className="w-5 h-5" />
+                    Feature Toggles
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Activa o desactiva secciones de la plataforma sin modificar código
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {[
+                    { key: 'show_news_section' as const, label: 'Sección de Noticias', desc: 'Mostrar la pestaña de Noticias en la navegación' },
+                    { key: 'show_content_medical' as const, label: 'Contenido Médico', desc: 'Mostrar la pestaña de Contenido Médico en la navegación' },
+                    { key: 'show_prescriptions' as const, label: 'Recetas / Reuniones', desc: 'Mostrar la pestaña de Recetas (Reuniones) en la navegación' },
+                    { key: 'live_chat_free' as const, label: 'Chat en Lives Gratis', desc: 'Permitir chat gratuito durante transmisiones en vivo' },
+                    { key: 'show_transaction_history' as const, label: 'Historial de Transacciones', desc: 'Mostrar historial de transacciones para pacientes' },
+                  ].map((toggle) => (
+                    <div key={toggle.key} className="flex items-center justify-between p-4 rounded-lg border border-border">
+                      <div>
+                        <p className="font-medium text-sm">{toggle.label}</p>
+                        <p className="text-xs text-muted-foreground">{toggle.desc}</p>
+                      </div>
+                      <Switch
+                        checked={featureToggles[toggle.key]}
+                        onCheckedChange={(checked) =>
+                          setFeatureToggles(prev => ({ ...prev, [toggle.key]: checked }))
+                        }
+                      />
+                    </div>
+                  ))}
+
+                  <Button
+                    onClick={async () => {
+                      setIsSaving(true);
+                      const { error } = await saveSiteToggles(featureToggles, supabaseUser?.id);
+                      setIsSaving(false);
+                      if (error) {
+                        toast.error('Error al guardar toggles');
+                      } else {
+                        toast.success('Toggles actualizados');
+                      }
+                    }}
+                    disabled={isSaving}
+                    className="w-full"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Guardar Toggles
                   </Button>
                 </CardContent>
               </Card>
