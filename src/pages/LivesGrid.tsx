@@ -6,6 +6,7 @@ import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
