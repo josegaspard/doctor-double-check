@@ -1651,12 +1651,6 @@ export const en = {
     notesSaveError: 'Error saving notes',
     searchDoctors: 'Search doctor by name...',
   },
-  chat: {
-    ...undefined,
-    filterAll: 'All',
-    filterPatients: 'Patients',
-    filterDoctors: 'Doctors',
-  },
   postConsultation: {
     title: 'Post-Consultation Summary',
     description: 'Complete a brief summary of the medical orientation for the patient\'s record.',
