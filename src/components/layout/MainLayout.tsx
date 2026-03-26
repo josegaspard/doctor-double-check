@@ -139,8 +139,8 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   return [
     ...common,
     { label: t('nav.recordings'), href: '/recordings', icon: PlayCircle },
-    { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
-    { label: t('nav.notifications'), href: '/notifications', icon: Bell },
+    { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
+    { label: t('nav.prescriptions'), href: '/prescriptions', icon: FileText },
   ];
 }
 
