@@ -130,6 +130,14 @@ export default function AdminSiteSettings() {
     show_status_badge: true,
   });
 
+  const [featureToggles, setFeatureToggles] = useState<SiteToggles>({
+    show_news_section: false,
+    show_content_medical: false,
+    show_prescriptions: false,
+    live_chat_free: true,
+    show_transaction_history: false,
+  });
+
   useEffect(() => {
     if (role && role !== 'admin') {
       navigate('/');
