@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
+import { type SiteToggles, saveSiteToggles } from '@/hooks/useSiteToggles';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -33,6 +34,7 @@ import {
   Plus,
   Trash2,
   Link2,
+  ToggleLeft,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
