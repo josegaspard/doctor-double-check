@@ -443,6 +443,10 @@ export default function AdminSiteSettings() {
                 <Link2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Footer</span>
               </TabsTrigger>
+              <TabsTrigger value="toggles" className="gap-2 text-xs">
+                <ToggleLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Toggles</span>
+              </TabsTrigger>
             </TabsList>
 
             {/* Social Links Tab */}
