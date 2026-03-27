@@ -28,8 +28,8 @@ export function ConsultationSummaryCard({ consultationId }: Props) {
         .select('doctor_summary, diagnosis, doctor_recommendations, completed_at')
         .eq('id', consultationId)
         .maybeSingle();
-      if (data && (data.doctor_summary || data.diagnosis || (data as any).doctor_recommendations)) {
-        setSummary(data as any);
+      if (data && (data.doctor_summary || data.diagnosis || data.doctor_recommendations)) {
+        setSummary(data);
       }
     };
     fetch();

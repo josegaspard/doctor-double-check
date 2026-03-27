@@ -36,7 +36,7 @@ export function PostConsultationSummaryDialog({ open, onOpenChange, consultation
           doctor_recommendations: recommendations.trim() || null,
           completed_at: new Date().toISOString(),
           status: 'completed',
-        } as any)
+        })
         .eq('id', consultationId);
 
       if (error) throw error;
