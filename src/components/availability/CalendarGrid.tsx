@@ -18,6 +18,9 @@ interface CalendarGridProps {
   language: 'es' | 'en';
   onDayClick: (date: Date) => void;
   onEventClick: (availability: DoctorAvailability) => void;
+  isManaging?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 const typeConfig = {
@@ -26,21 +29,47 @@ const typeConfig = {
   office_hours: { color: 'bg-emerald-500', text: 'text-white', icon: Clock, label: 'Disponible' },
 };
 
-function EventChip({ availability, onClick }: { availability: DoctorAvailability; onClick: () => void }) {
+function EventChip({ availability, onClick, isManaging, isSelected, onToggleSelect }: {
+  availability: DoctorAvailability;
+  onClick: () => void;
+  isManaging?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
+}) {
   const config = typeConfig[availability.type] || typeConfig.office_hours;
   const Icon = config.icon;
   const isCancelled = availability.status === 'cancelled';
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isManaging && onToggleSelect) {
+      onToggleSelect(availability.id);
+    } else {
+      onClick();
+    }
+  };
+
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onClick={handleClick}
       className={cn(
-        'w-full text-left rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-medium truncate flex items-center gap-1 transition-opacity hover:opacity-80',
+        'w-full text-left rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-medium truncate flex items-center gap-1 transition-all hover:opacity-80',
         config.color, config.text,
         isCancelled && 'opacity-40 line-through',
+        isManaging && 'ring-2 ring-offset-1',
+        isManaging && isSelected && 'ring-primary',
+        isManaging && !isSelected && 'ring-transparent',
       )}
       title={`${availability.title} — ${format(availability.scheduledAt, 'HH:mm')}`}
     >
+      {isManaging && (
+        <span className={cn(
+          'w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center text-[8px]',
+          isSelected ? 'bg-white text-primary border-white' : 'border-white/60',
+        )}>
+          {isSelected && '✓'}
+        </span>
+      )}
       <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />
       <span className="truncate">
         {format(availability.scheduledAt, 'HH:mm')} {availability.title}
