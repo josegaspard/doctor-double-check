@@ -1155,6 +1155,17 @@ export const es = {
     nearMe: 'Cerca de mí',
     locationError: 'No se pudo obtener tu ubicación',
   },
+  emergency: {
+    title: 'Atención Inmediata',
+    subtitle: 'Doctores disponibles ahora mismo para consulta',
+    description: 'Estos especialistas están atendiendo en este momento. Selecciona uno para iniciar tu consulta de inmediato.',
+    availableCount: 'disponibles ahora',
+    refresh: 'Actualizar',
+    consultNow: 'Consultar Ahora',
+    noAvailable: 'No hay doctores disponibles en este momento',
+    noAvailableHint: 'Intenta de nuevo más tarde o explora el directorio completo para agendar una cita.',
+    browseAll: 'Ver todos los doctores',
+  },
   // Report
   report: {
     title: 'Reportar falla o abuso',
