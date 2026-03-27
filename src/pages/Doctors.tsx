@@ -209,6 +209,25 @@ export default function Doctors() {
     fetchUniversities();
   }, []);
 
+  // When university filter changes, fetch matching doctor user_ids
+  useEffect(() => {
+    if (!selectedUniversity) {
+      setUniversityDoctorIds(null);
+      return;
+    }
+    const fetchUniDoctors = async () => {
+      const { data } = await supabase
+        .from('doctor_education')
+        .select('doctor_id')
+        .eq('status', 'approved')
+        .eq('institution', selectedUniversity);
+      if (data) {
+        setUniversityDoctorIds(new Set(data.map(d => d.doctor_id)));
+      }
+    };
+    fetchUniDoctors();
+  }, [selectedUniversity]);
+
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60_000);
     return () => clearInterval(interval);
@@ -761,9 +780,19 @@ export default function Doctors() {
                 if (selectedLevel) {
                   const badge = getDoctorBadgeType(d.total_consultations || 0, d.rating || 0, d.badge_override);
                   if (selectedLevel === 'new' && badge !== 'new') return false;
-                  if (selectedLevel === 'active' && badge === 'new') return false; // active = not new
+                  if (selectedLevel === 'active' && badge === 'new') return false;
                   if (selectedLevel === 'elite' && badge !== 'pro') return false;
                 }
+                // Continent/Country filter
+                if (selectedContinent) {
+                  const allowedCountries = CONTINENTS[selectedContinent] || [];
+                  if (!d.country_code || !allowedCountries.includes(d.country_code)) return false;
+                }
+                if (selectedCountry) {
+                  if (d.country_code !== selectedCountry) return false;
+                }
+                // University filter
+                if (universityDoctorIds && !universityDoctorIds.has(d.user_id)) return false;
                 return true;
               }).map(doctor => {
                 const isAvailable = isDoctorAvailableNow(doctor);

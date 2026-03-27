@@ -122,6 +122,7 @@ const NutritionDirectory = React.lazy(() => import("./pages/NutritionDirectory")
 const ForResidents = React.lazy(() => import("./pages/ForResidents"));
 const MedicalRecord = React.lazy(() => import("./pages/MedicalRecord"));
 const Meetings = React.lazy(() => import("./pages/Meetings"));
+const EmergencyDoctors = React.lazy(() => import("./pages/EmergencyDoctors"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -255,6 +256,7 @@ const App = () => {
                       <Route path="/psychology" element={<PsychologyDirectory />} />
                       <Route path="/nutrition" element={<NutritionDirectory />} />
                       <Route path="/for-residents" element={<ForResidents />} />
+                      <Route path="/emergency" element={<EmergencyDoctors />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>
