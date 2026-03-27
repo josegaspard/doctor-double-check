@@ -18,6 +18,9 @@ interface CalendarGridProps {
   language: 'es' | 'en';
   onDayClick: (date: Date) => void;
   onEventClick: (availability: DoctorAvailability) => void;
+  isManaging?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 const typeConfig = {
@@ -26,21 +29,47 @@ const typeConfig = {
   office_hours: { color: 'bg-emerald-500', text: 'text-white', icon: Clock, label: 'Disponible' },
 };
 
-function EventChip({ availability, onClick }: { availability: DoctorAvailability; onClick: () => void }) {
+function EventChip({ availability, onClick, isManaging, isSelected, onToggleSelect }: {
+  availability: DoctorAvailability;
+  onClick: () => void;
+  isManaging?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
+}) {
   const config = typeConfig[availability.type] || typeConfig.office_hours;
   const Icon = config.icon;
   const isCancelled = availability.status === 'cancelled';
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isManaging && onToggleSelect) {
+      onToggleSelect(availability.id);
+    } else {
+      onClick();
+    }
+  };
+
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onClick={handleClick}
       className={cn(
-        'w-full text-left rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-medium truncate flex items-center gap-1 transition-opacity hover:opacity-80',
+        'w-full text-left rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-medium truncate flex items-center gap-1 transition-all hover:opacity-80',
         config.color, config.text,
         isCancelled && 'opacity-40 line-through',
+        isManaging && 'ring-2 ring-offset-1',
+        isManaging && isSelected && 'ring-primary',
+        isManaging && !isSelected && 'ring-transparent',
       )}
       title={`${availability.title} — ${format(availability.scheduledAt, 'HH:mm')}`}
     >
+      {isManaging && (
+        <span className={cn(
+          'w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center text-[8px]',
+          isSelected ? 'bg-white text-primary border-white' : 'border-white/60',
+        )}>
+          {isSelected && '✓'}
+        </span>
+      )}
       <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />
       <span className="truncate">
         {format(availability.scheduledAt, 'HH:mm')} {availability.title}
@@ -49,7 +78,7 @@ function EventChip({ availability, onClick }: { availability: DoctorAvailability
   );
 }
 
-function MonthView({ currentDate, availabilities, language, onDayClick, onEventClick }: Omit<CalendarGridProps, 'viewMode'>) {
+function MonthView({ currentDate, availabilities, language, onDayClick, onEventClick, isManaging, selectedIds, onToggleSelect }: Omit<CalendarGridProps, 'viewMode'>) {
   const locale = language === 'es' ? es : enUS;
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -110,7 +139,7 @@ function MonthView({ currentDate, availabilities, language, onDayClick, onEventC
               </div>
               <div className="space-y-0.5">
                 {dayEvents.slice(0, 3).map(event => (
-                  <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} />
+                  <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} isManaging={isManaging} isSelected={selectedIds?.has(event.id)} onToggleSelect={onToggleSelect} />
                 ))}
                 {dayEvents.length > 3 && (
                   <p className="text-[10px] text-muted-foreground pl-1.5">+{dayEvents.length - 3} más</p>
@@ -124,7 +153,7 @@ function MonthView({ currentDate, availabilities, language, onDayClick, onEventC
   );
 }
 
-function WeekView({ currentDate, availabilities, language, onDayClick, onEventClick }: Omit<CalendarGridProps, 'viewMode'>) {
+function WeekView({ currentDate, availabilities, language, onDayClick, onEventClick, isManaging, selectedIds, onToggleSelect }: Omit<CalendarGridProps, 'viewMode'>) {
   const locale = language === 'es' ? es : enUS;
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) });
@@ -183,7 +212,7 @@ function WeekView({ currentDate, availabilities, language, onDayClick, onEventCl
                   className="h-12 border-b border-r border-border p-0.5 cursor-pointer hover:bg-accent/20"
                 >
                   {dayEvents.map(event => (
-                    <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} />
+                    <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} isManaging={isManaging} isSelected={selectedIds?.has(event.id)} onToggleSelect={onToggleSelect} />
                   ))}
                 </div>
               );
@@ -195,7 +224,7 @@ function WeekView({ currentDate, availabilities, language, onDayClick, onEventCl
   );
 }
 
-function DayView({ currentDate, availabilities, language, onDayClick, onEventClick }: Omit<CalendarGridProps, 'viewMode'>) {
+function DayView({ currentDate, availabilities, language, onDayClick, onEventClick, isManaging, selectedIds, onToggleSelect }: Omit<CalendarGridProps, 'viewMode'>) {
   const hours = Array.from({ length: 18 }, (_, i) => i + 5); // 5:00-22:00
   const dayKey = format(currentDate, 'yyyy-MM-dd');
   const dayEvents = availabilities.filter(a => format(a.scheduledAt, 'yyyy-MM-dd') === dayKey);
@@ -224,7 +253,7 @@ function DayView({ currentDate, availabilities, language, onDayClick, onEventCli
               onClick={() => onDayClick(currentDate)}
             >
               {hourEvents.map(event => (
-                <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} />
+                <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} isManaging={isManaging} isSelected={selectedIds?.has(event.id)} onToggleSelect={onToggleSelect} />
               ))}
             </div>
           </div>

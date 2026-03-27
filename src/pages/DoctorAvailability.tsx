@@ -342,6 +342,9 @@ export default function DoctorAvailabilityPage() {
             language={language}
             onDayClick={handleDayClick}
             onEventClick={handleEventClick}
+            isManaging={isManaging}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
           />
         )}
 
