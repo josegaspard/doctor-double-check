@@ -78,7 +78,7 @@ function EventChip({ availability, onClick, isManaging, isSelected, onToggleSele
   );
 }
 
-function MonthView({ currentDate, availabilities, language, onDayClick, onEventClick }: Omit<CalendarGridProps, 'viewMode'>) {
+function MonthView({ currentDate, availabilities, language, onDayClick, onEventClick, isManaging, selectedIds, onToggleSelect }: Omit<CalendarGridProps, 'viewMode'>) {
   const locale = language === 'es' ? es : enUS;
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -139,7 +139,7 @@ function MonthView({ currentDate, availabilities, language, onDayClick, onEventC
               </div>
               <div className="space-y-0.5">
                 {dayEvents.slice(0, 3).map(event => (
-                  <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} />
+                  <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} isManaging={isManaging} isSelected={selectedIds?.has(event.id)} onToggleSelect={onToggleSelect} />
                 ))}
                 {dayEvents.length > 3 && (
                   <p className="text-[10px] text-muted-foreground pl-1.5">+{dayEvents.length - 3} más</p>
@@ -153,7 +153,7 @@ function MonthView({ currentDate, availabilities, language, onDayClick, onEventC
   );
 }
 
-function WeekView({ currentDate, availabilities, language, onDayClick, onEventClick }: Omit<CalendarGridProps, 'viewMode'>) {
+function WeekView({ currentDate, availabilities, language, onDayClick, onEventClick, isManaging, selectedIds, onToggleSelect }: Omit<CalendarGridProps, 'viewMode'>) {
   const locale = language === 'es' ? es : enUS;
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) });
@@ -212,7 +212,7 @@ function WeekView({ currentDate, availabilities, language, onDayClick, onEventCl
                   className="h-12 border-b border-r border-border p-0.5 cursor-pointer hover:bg-accent/20"
                 >
                   {dayEvents.map(event => (
-                    <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} />
+                    <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} isManaging={isManaging} isSelected={selectedIds?.has(event.id)} onToggleSelect={onToggleSelect} />
                   ))}
                 </div>
               );
@@ -224,7 +224,7 @@ function WeekView({ currentDate, availabilities, language, onDayClick, onEventCl
   );
 }
 
-function DayView({ currentDate, availabilities, language, onDayClick, onEventClick }: Omit<CalendarGridProps, 'viewMode'>) {
+function DayView({ currentDate, availabilities, language, onDayClick, onEventClick, isManaging, selectedIds, onToggleSelect }: Omit<CalendarGridProps, 'viewMode'>) {
   const hours = Array.from({ length: 18 }, (_, i) => i + 5); // 5:00-22:00
   const dayKey = format(currentDate, 'yyyy-MM-dd');
   const dayEvents = availabilities.filter(a => format(a.scheduledAt, 'yyyy-MM-dd') === dayKey);
@@ -253,7 +253,7 @@ function DayView({ currentDate, availabilities, language, onDayClick, onEventCli
               onClick={() => onDayClick(currentDate)}
             >
               {hourEvents.map(event => (
-                <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} />
+                <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} isManaging={isManaging} isSelected={selectedIds?.has(event.id)} onToggleSelect={onToggleSelect} />
               ))}
             </div>
           </div>
