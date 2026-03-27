@@ -185,6 +185,7 @@ export default function Doctors() {
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedUniversity, setSelectedUniversity] = useState('');
   const [universities, setUniversities] = useState<string[]>([]);
+  const [universityDoctorIds, setUniversityDoctorIds] = useState<Set<string> | null>(null);
   const [, setTick] = useState(0);
   // Resident connection states
   const [residentConnections, setResidentConnections] = useState<Record<string, string>>({});
