@@ -677,10 +677,21 @@ export default function Doctors() {
                   <h3 className="text-sm font-semibold text-foreground">{t('doctors.emergencyTitle')}</h3>
                   <p className="text-[10px] text-muted-foreground">{t('doctors.emergencySubtitle')}</p>
                 </div>
-                <Badge variant="secondary" className="ml-auto text-[10px] gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                  {availableDoctors.length}
-                </Badge>
+                <div className="flex items-center gap-2 ml-auto">
+                  <Badge variant="secondary" className="text-[10px] gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                    {availableDoctors.length}
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-[10px] gap-1"
+                    onClick={(e) => { e.stopPropagation(); navigate('/emergency'); }}
+                  >
+                    <Zap className="w-3 h-3" />
+                    {t('emergency.title')}
+                  </Button>
+                </div>
               </div>
               <div className="relative group/avail">
                 {/* Left arrow (desktop/tablet) */}
