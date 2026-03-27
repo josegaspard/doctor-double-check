@@ -68,19 +68,35 @@ export default function DoctorProfile() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [hasActiveSession, setHasActiveSession] = useState(false);
   const [bioExpanded, setBioExpanded] = useState(false);
+  const [residentConnectionStatus, setResidentConnectionStatus] = useState<string | null>(null);
+  const [isRequestingConnection, setIsRequestingConnection] = useState(false);
 
   // Check if there's an active chat session with this specific doctor
   useEffect(() => {
     const checkActiveSession = async () => {
-      if (!user?.id || !id || role !== 'patient') return;
-      const { data } = await supabase
-        .from('chat_sessions')
-        .select('id')
-        .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${id}),and(participant1_id.eq.${id},participant2_id.eq.${user.id})`)
-        .eq('status', 'active')
-        .eq('is_double_check', false)
-        .maybeSingle();
-      setHasActiveSession(!!data);
+      if (!user?.id || !id) return;
+      
+      if (role === 'patient') {
+        const { data } = await supabase
+          .from('chat_sessions')
+          .select('id')
+          .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${id}),and(participant1_id.eq.${id},participant2_id.eq.${user.id})`)
+          .eq('status', 'active')
+          .eq('is_double_check', false)
+          .maybeSingle();
+        setHasActiveSession(!!data);
+      }
+      
+      // Check resident connection status
+      if (role === 'resident') {
+        const { data } = await supabase
+          .from('doctor_resident_connections')
+          .select('status')
+          .eq('resident_id', user.id)
+          .eq('doctor_id', id)
+          .maybeSingle();
+        setResidentConnectionStatus(data?.status || null);
+      }
     };
     checkActiveSession();
   }, [user?.id, id, role]);
@@ -228,18 +244,56 @@ export default function DoctorProfile() {
     }
   };
 
+  const handleRequestConnection = async () => {
+    if (!user?.id || !doctor) return;
+    setIsRequestingConnection(true);
+    try {
+      const { error } = await supabase.from('doctor_resident_connections').insert({
+        resident_id: user.id,
+        doctor_id: doctor.id,
+        status: 'pending',
+      });
+      if (error) throw error;
+      setResidentConnectionStatus('pending');
+      toast.success(t('doctorProfile.connectionRequested'));
+    } catch (err: any) {
+      toast.error(err.message || t('doctorProfile.connectionError'));
+    } finally {
+      setIsRequestingConnection(false);
+    }
+  };
+
   const handleStartConsultation = async () => {
     if (!isAuthenticated || !user?.id) {
       navigate('/login');
       return;
     }
 
+    if (!doctor) return;
+
+    // Resident flow
+    if (role === 'resident') {
+      if (residentConnectionStatus === 'accepted') {
+        await startChatSession();
+      } else if (residentConnectionStatus === 'pending') {
+        toast.info(t('doctorProfile.connectionPending'));
+      } else {
+        await handleRequestConnection();
+      }
+      return;
+    }
+
+    // Doctor flow — direct chat
+    if (role === 'doctor') {
+      await startChatSession();
+      return;
+    }
+
+    // Patient flow
     if (role !== 'patient') {
       toast.error(t('doctorProfile.onlyPatients'));
       return;
     }
-
-    if (!doctor) return;
 
     if (canChatDirectly) {
       await startChatSession();
@@ -597,15 +651,21 @@ export default function DoctorProfile() {
                 className="gap-2 w-full" 
                 size="lg"
                 onClick={handleStartConsultation}
-                disabled={isStartingChat}
+                disabled={isStartingChat || isRequestingConnection || (role === 'resident' && residentConnectionStatus === 'pending')}
               >
-                {isStartingChat ? (
+                {(isStartingChat || isRequestingConnection) ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <MessageSquare className="w-5 h-5" />
                 )}
                 {isStartingChat 
                   ? t('doctorProfile.starting')
+                  : role === 'resident'
+                    ? residentConnectionStatus === 'accepted'
+                      ? t('doctorProfile.startChat')
+                      : residentConnectionStatus === 'pending'
+                        ? t('doctorProfile.connectionPending')
+                        : t('doctorProfile.requestConnection')
                   : isFreeConsultation 
                     ? t('doctorProfile.freeConsultation')
                     : canChatDirectly 
