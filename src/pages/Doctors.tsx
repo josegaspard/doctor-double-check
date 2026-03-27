@@ -185,6 +185,7 @@ export default function Doctors() {
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedUniversity, setSelectedUniversity] = useState('');
   const [universities, setUniversities] = useState<string[]>([]);
+  const [universityDoctorIds, setUniversityDoctorIds] = useState<Set<string> | null>(null);
   const [, setTick] = useState(0);
   // Resident connection states
   const [residentConnections, setResidentConnections] = useState<Record<string, string>>({});
@@ -207,6 +208,25 @@ export default function Doctors() {
     };
     fetchUniversities();
   }, []);
+
+  // When university filter changes, fetch matching doctor user_ids
+  useEffect(() => {
+    if (!selectedUniversity) {
+      setUniversityDoctorIds(null);
+      return;
+    }
+    const fetchUniDoctors = async () => {
+      const { data } = await supabase
+        .from('doctor_education')
+        .select('doctor_id')
+        .eq('status', 'approved')
+        .eq('institution', selectedUniversity);
+      if (data) {
+        setUniversityDoctorIds(new Set(data.map(d => d.doctor_id)));
+      }
+    };
+    fetchUniDoctors();
+  }, [selectedUniversity]);
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60_000);
@@ -657,10 +677,21 @@ export default function Doctors() {
                   <h3 className="text-sm font-semibold text-foreground">{t('doctors.emergencyTitle')}</h3>
                   <p className="text-[10px] text-muted-foreground">{t('doctors.emergencySubtitle')}</p>
                 </div>
-                <Badge variant="secondary" className="ml-auto text-[10px] gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                  {availableDoctors.length}
-                </Badge>
+                <div className="flex items-center gap-2 ml-auto">
+                  <Badge variant="secondary" className="text-[10px] gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                    {availableDoctors.length}
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-[10px] gap-1"
+                    onClick={(e) => { e.stopPropagation(); navigate('/emergency'); }}
+                  >
+                    <Zap className="w-3 h-3" />
+                    {t('emergency.title')}
+                  </Button>
+                </div>
               </div>
               <div className="relative group/avail">
                 {/* Left arrow (desktop/tablet) */}
@@ -760,9 +791,19 @@ export default function Doctors() {
                 if (selectedLevel) {
                   const badge = getDoctorBadgeType(d.total_consultations || 0, d.rating || 0, d.badge_override);
                   if (selectedLevel === 'new' && badge !== 'new') return false;
-                  if (selectedLevel === 'active' && badge === 'new') return false; // active = not new
+                  if (selectedLevel === 'active' && badge === 'new') return false;
                   if (selectedLevel === 'elite' && badge !== 'pro') return false;
                 }
+                // Continent/Country filter
+                if (selectedContinent) {
+                  const allowedCountries = CONTINENTS[selectedContinent] || [];
+                  if (!d.country_code || !allowedCountries.includes(d.country_code)) return false;
+                }
+                if (selectedCountry) {
+                  if (d.country_code !== selectedCountry) return false;
+                }
+                // University filter
+                if (universityDoctorIds && !universityDoctorIds.has(d.user_id)) return false;
                 return true;
               }).map(doctor => {
                 const isAvailable = isDoctorAvailableNow(doctor);

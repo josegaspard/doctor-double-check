@@ -1155,6 +1155,17 @@ export const en = {
     nearMe: 'Near me',
     locationError: 'Could not get your location',
   },
+  emergency: {
+    title: 'Immediate Care',
+    subtitle: 'Doctors available right now for consultation',
+    description: 'These specialists are attending right now. Select one to start your consultation immediately.',
+    availableCount: 'available now',
+    refresh: 'Refresh',
+    consultNow: 'Consult Now',
+    noAvailable: 'No doctors available right now',
+    noAvailableHint: 'Try again later or browse the full directory to schedule an appointment.',
+    browseAll: 'Browse all doctors',
+  },
   // Report
   report: {
     title: 'Report issue or abuse',
