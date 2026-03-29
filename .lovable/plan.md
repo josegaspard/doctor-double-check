@@ -1,56 +1,104 @@
 
 
-# Auditoría Completa — Gaps Encontrados
+# Auditoría Final Completa — Estado vs Requisitos del Drive
 
-## Estado actual: ~95% completo
-
-La gran mayoría de la lógica está implementada correctamente. Estos son los gaps restantes:
+## Resultado: ~97% implementado. Gaps restantes identificados abajo.
 
 ---
 
-## Gap 1: Residentes NO pueden iniciar chat con doctores aceptados
+## Gaps Funcionales Encontrados
 
-**Problema:** En `DoctorProfile.tsx` línea 237, `handleStartConsultation` bloquea con `if (role !== 'patient')` y muestra error. Un residente con conexión aceptada no tiene forma de abrir un chat con el doctor.
+### Gap 1: Residentes NO tienen acceso al Chat en la navegación
+**Archivo:** `src/components/layout/MainLayout.tsx` línea 85
+- `navItems` para chat tiene `roles: ['patient', 'doctor']` — falta `'resident'`
+- Bottom tabs para resident (líneas 140-145) tampoco incluyen Chat
+- **Impacto:** Residentes no pueden acceder a `/chat` desde la navegación, aunque la lógica del chat (filtro, conexiones) ya está implementada
 
-**Fix:** En `DoctorProfile.tsx`:
-- Agregar lógica para verificar si el residente tiene conexión `accepted` con el doctor
-- Si `role === 'resident'` y conexión aceptada, permitir `startChatSession()` directamente (sin cobro)
-- Cambiar el CTA button para residentes conectados: mostrar "Iniciar Chat" en vez de "Consultar"
-- Si la conexión es `pending`, mostrar badge "Solicitud pendiente" y deshabilitar el botón
-- Si no hay conexión, mostrar "Solicitar conexión" (como en Doctors.tsx)
+**Fix:** Agregar `'resident'` al array de roles del nav item de chat, y agregar Chat en los bottom tabs de resident
 
-## Gap 2: Doctor-to-Doctor chat funciona pero sin `consultation` record
+### Gap 2: Residentes NO tienen "Historia Clínica Propia" en nav
+El requisito dice: *"historia clínica propia → solicitar orientación médica → lista de doctores"*
+- `navItems` línea 88: `medicalRecord` solo tiene `roles: ['patient']`
+- Residentes deberían poder tener su propio expediente médico
 
-**Problema:** Cuando un doctor abre chat con otro doctor (línea 196: `canChatDirectly = role === 'doctor'`), `startChatSession()` crea la sesión correctamente. Sin embargo, en `Chat.tsx` línea 195, `fetchOrCreateConsultation` intenta crear una `consultation` y requiere tanto `doctorId` como `patientId`. En un chat doctor-doctor, NO hay `patientId`, así que `consultationId` queda null.
+**Fix:** Agregar `'resident'` al nav item de `medicalRecord`
 
-Esto significa: no habrá resumen post-consulta, no habrá video call, no habrá registro de la sesión como consulta. **Esto es correcto por diseño** — los chats entre doctores son de networking/colaboración, no consultas médicas. No requiere fix.
+### Gap 3: Terminología "Consulta" → "Orientación Médica"
+El cliente pidió explícitamente: *"Reemplazar palabra 'Consulta' → 'Orientación médica'"*
+- Los archivos i18n (`es.ts`) probablemente siguen usando "Consulta" en muchos lugares
+- Esto es un cambio de i18n, no de lógica
 
-## Gap 3: `PostConsultationSummaryDialog` usa `as any` 
-
-**Problema menor:** Línea 39 de `PostConsultationSummaryDialog.tsx` usa `as any` para el update. Los campos `doctor_summary`, `doctor_recommendations`, `completed_at` ya existen en la tabla (migración aplicada). Si los tipos autogenerados ya incluyen estos campos, se puede quitar el `as any`. Si no, el cast es necesario por ahora.
-
-**Fix:** Verificar `types.ts` y quitar `as any` si los campos ya están tipados. Si no, dejar como está (funcional).
-
-## Gap 4: `ConsultationSummaryCard` también usa `as any`
-
-Línea 31: `(data as any).doctor_recommendations`. Mismo caso — funcional pero no type-safe.
+**Fix:** Revisar y actualizar las claves i18n relevantes en `es.ts` para usar "Orientación médica" en vez de "Consulta"
 
 ---
 
-## Plan de correcciones (solo Gap 1 — el único funcional)
+## Verificación de Items Completados (✅ = OK)
 
-### Archivo: `src/pages/DoctorProfile.tsx`
-1. Agregar estado `residentConnectionStatus: string | null`
-2. En `useEffect`, si `role === 'resident'`, consultar `doctor_resident_connections` para ver el status con este doctor
-3. Modificar `handleStartConsultation`:
-   - Si `role === 'resident'` y `residentConnectionStatus === 'accepted'` → llamar `startChatSession()` directamente
-   - Si `role === 'resident'` y `residentConnectionStatus === 'pending'` → toast info "Solicitud pendiente"
-   - Si `role === 'resident'` y sin conexión → llamar `handleRequestConnection()` para solicitar
-4. Modificar el CTA button para mostrar texto adecuado según el estado de conexión del residente
-5. Agregar función `handleRequestConnection` (insert en `doctor_resident_connections`)
+| Requisito | Estado |
+|-----------|--------|
+| Suscripción pacientes a doctores | ✅ `useSubscriptions`, `SubscribeButton` |
+| Notificaciones de conexión del doctor | ✅ `send-live-notification-email`, `send-availability-reminders` |
+| Idioma inglés/español | ✅ `LanguageContext`, `LanguageSwitcher`, `es.ts`/`en.ts` |
+| Validación identidad facial | ✅ Veriff integration |
+| Clasificación contenido (audiencia) | ✅ `AudienceSelector` |
+| Verificación cédula automática | ✅ `verify-cedula-sep`, `claim-cedula` |
+| Notificación por recargas/pagos | ✅ `send-purchase-email` |
+| Modelo pagos tipo Uber | ✅ Stripe Connect, splits, `process-doctor-payouts` |
+| Onboarding: firma + datos pago | ✅ `DocumentSignature`, `DoctorBankAccount` |
+| Subida facturas doctor | ✅ `DoctorInvoices`, `AdminInvoiceReview` |
+| Lives gratuitos + paywall premium | ✅ `AccessGuard`, `PaywallModal` |
+| Expediente médico renombrado | ✅ Tab "Expediente Médico" |
+| Seguridad expediente (OTP) | ✅ `OtpContext`, `expediente_otp` table |
+| Formulario clínico en registro | ✅ `ClinicalHistoryForm` en onboarding |
+| Almacenamiento tipo iCloud | ✅ `storage_used_bytes`/`storage_limit_bytes` |
+| Directorio "Localiza tu médico" | ✅ `/doctors` con filtros geo/especialidad |
+| Emergencia/911 | ✅ `/emergency` |
+| Notificaciones por suscripción | ✅ Push + email notifications |
+| Métricas de lives | ✅ `viewer_count`, `DoctorAnalytics` |
+| Videollamada paciente-doctor | ✅ Daily integration, `/video-call` |
+| Disponibilidad doctor (toggle) | ✅ `DoctorAvailability`, office hours |
+| Perfil profesional (CV) | ✅ `DoctorCredentials`, education/certifications |
+| Bloqueo de usuarios | ✅ `BlockUserButton` |
+| Categorías documentos | ✅ Radiografías, laboratorios, etc. |
+| Cambio país/moneda | ✅ `useCurrency`, `PriceDisplay` |
+| Split de pagos | ✅ `payout_settings`, comisiones |
+| Facturación | ✅ `DoctorInvoices` |
+| Badges doctores | ✅ `DoctorBadge`, `doctor_ranks` |
+| Residentes: chat con doctores | ✅ (lógica OK, falta nav — Gap 1) |
+| Residentes: no cobran | ✅ Restringido en código |
+| Meets médicos | ✅ `/meetings`, `MeetingCreateDialog` |
+| Buscador en chat | ✅ `ChatSessionsList` con búsqueda |
+| Chat pago separado de consulta | ✅ `create-chat-checkout` vs `create-consultation-checkout` |
+| Límite chats en live | ✅ Lógica en `LiveChat` |
+| Doctor bloquea chat en live | ✅ `chatMode` toggle |
+| Contenido premium (grabaciones + presentaciones) | ✅ `RecordingsGrid`, `ContentGallery` |
+| Psicología/Nutrición | ✅ `/psychology`, `/nutrition` |
+| Geolocalización avanzada | ✅ Continente/País/Ciudad + "Cerca de mí" |
+| Filtros universidad/hospital | ✅ `doctor_education` filter |
+| Resumen post-consulta | ✅ `PostConsultationSummaryDialog`, `ConsultationSummaryCard` |
+| Chat dos ventanas | ✅ Pacientes/Doctores tabs |
+| Conexión residente-doctor | ✅ `doctor_resident_connections` |
+| Reembolsos | ✅ `AdminRefunds`, `refund_requests` |
+| Calculadoras de salud | ✅ `HealthCalculators` |
+| Recetas | ✅ `Prescriptions`, `PrescriptionForm` |
+| Noticias médicas | ✅ `MedicalNews`, `NewsFeed` |
+| Wallet | ✅ Completa con top-up, historial |
 
-### i18n
-- Agregar claves: `doctorProfile.startChat`, `doctorProfile.connectionPending`, `doctorProfile.requestConnection`
+---
 
-**No se requieren migraciones de DB** — la tabla `doctor_resident_connections` y las RLS ya existen.
+## Plan de Correcciones (3 gaps)
+
+### 1. `src/components/layout/MainLayout.tsx`
+- Línea 85: Agregar `'resident'` a roles del chat nav → `roles: ['patient', 'doctor', 'resident']`
+- Línea 88: Agregar `'resident'` a roles del medicalRecord nav → `roles: ['patient', 'resident']`
+- Líneas 140-145: Agregar Chat a los bottom tabs de resident (reemplazar uno de los tabs actuales)
+
+### 2. `src/lib/i18n/es.ts`
+- Buscar y reemplazar instancias de "Consulta" → "Orientación médica" en las claves orientadas al usuario (labels de botones, títulos, toasts)
+- Mantener "consulta" en contextos internos/técnicos donde no es visible al usuario
+
+### 3. `src/lib/i18n/en.ts`
+- Correspondiente: "Consultation" → "Medical Guidance" donde aplique
+
+**No se requieren migraciones de DB ni cambios de lógica backend.**
 
