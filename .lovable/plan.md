@@ -1,104 +1,67 @@
 
 
-# Auditoría Final Completa — Estado vs Requisitos del Drive
+# Auditoría Final — Gaps Restantes
 
-## Resultado: ~97% implementado. Gaps restantes identificados abajo.
+## Estado: ~98% completo. Un gap de terminología pendiente.
 
----
-
-## Gaps Funcionales Encontrados
-
-### Gap 1: Residentes NO tienen acceso al Chat en la navegación
-**Archivo:** `src/components/layout/MainLayout.tsx` línea 85
-- `navItems` para chat tiene `roles: ['patient', 'doctor']` — falta `'resident'`
-- Bottom tabs para resident (líneas 140-145) tampoco incluyen Chat
-- **Impacto:** Residentes no pueden acceder a `/chat` desde la navegación, aunque la lógica del chat (filtro, conexiones) ya está implementada
-
-**Fix:** Agregar `'resident'` al array de roles del nav item de chat, y agregar Chat en los bottom tabs de resident
-
-### Gap 2: Residentes NO tienen "Historia Clínica Propia" en nav
-El requisito dice: *"historia clínica propia → solicitar orientación médica → lista de doctores"*
-- `navItems` línea 88: `medicalRecord` solo tiene `roles: ['patient']`
-- Residentes deberían poder tener su propio expediente médico
-
-**Fix:** Agregar `'resident'` al nav item de `medicalRecord`
-
-### Gap 3: Terminología "Consulta" → "Orientación Médica"
-El cliente pidió explícitamente: *"Reemplazar palabra 'Consulta' → 'Orientación médica'"*
-- Los archivos i18n (`es.ts`) probablemente siguen usando "Consulta" en muchos lugares
-- Esto es un cambio de i18n, no de lógica
-
-**Fix:** Revisar y actualizar las claves i18n relevantes en `es.ts` para usar "Orientación médica" en vez de "Consulta"
+### Verificación de navegación y lógica ✅
+- **Resident tiene Chat en nav** (línea 85): ✅ `roles: ['patient', 'doctor', 'resident']`
+- **Resident tiene Medical Record en nav** (línea 88): ✅ `roles: ['patient', 'resident']`
+- **Resident bottom tabs incluyen Chat** (línea 143): ✅
+- **Resident-Doctor connection flow en DoctorProfile**: ✅ Implementado
+- **Type safety (as any removido)**: ✅
+- **Toda la lógica funcional (pagos, lives, chat, wallet, etc.)**: ✅
 
 ---
 
-## Verificación de Items Completados (✅ = OK)
+## Gap Único: Terminología incompleta "Consulta" → "Orientación médica"
 
-| Requisito | Estado |
-|-----------|--------|
-| Suscripción pacientes a doctores | ✅ `useSubscriptions`, `SubscribeButton` |
-| Notificaciones de conexión del doctor | ✅ `send-live-notification-email`, `send-availability-reminders` |
-| Idioma inglés/español | ✅ `LanguageContext`, `LanguageSwitcher`, `es.ts`/`en.ts` |
-| Validación identidad facial | ✅ Veriff integration |
-| Clasificación contenido (audiencia) | ✅ `AudienceSelector` |
-| Verificación cédula automática | ✅ `verify-cedula-sep`, `claim-cedula` |
-| Notificación por recargas/pagos | ✅ `send-purchase-email` |
-| Modelo pagos tipo Uber | ✅ Stripe Connect, splits, `process-doctor-payouts` |
-| Onboarding: firma + datos pago | ✅ `DocumentSignature`, `DoctorBankAccount` |
-| Subida facturas doctor | ✅ `DoctorInvoices`, `AdminInvoiceReview` |
-| Lives gratuitos + paywall premium | ✅ `AccessGuard`, `PaywallModal` |
-| Expediente médico renombrado | ✅ Tab "Expediente Médico" |
-| Seguridad expediente (OTP) | ✅ `OtpContext`, `expediente_otp` table |
-| Formulario clínico en registro | ✅ `ClinicalHistoryForm` en onboarding |
-| Almacenamiento tipo iCloud | ✅ `storage_used_bytes`/`storage_limit_bytes` |
-| Directorio "Localiza tu médico" | ✅ `/doctors` con filtros geo/especialidad |
-| Emergencia/911 | ✅ `/emergency` |
-| Notificaciones por suscripción | ✅ Push + email notifications |
-| Métricas de lives | ✅ `viewer_count`, `DoctorAnalytics` |
-| Videollamada paciente-doctor | ✅ Daily integration, `/video-call` |
-| Disponibilidad doctor (toggle) | ✅ `DoctorAvailability`, office hours |
-| Perfil profesional (CV) | ✅ `DoctorCredentials`, education/certifications |
-| Bloqueo de usuarios | ✅ `BlockUserButton` |
-| Categorías documentos | ✅ Radiografías, laboratorios, etc. |
-| Cambio país/moneda | ✅ `useCurrency`, `PriceDisplay` |
-| Split de pagos | ✅ `payout_settings`, comisiones |
-| Facturación | ✅ `DoctorInvoices` |
-| Badges doctores | ✅ `DoctorBadge`, `doctor_ranks` |
-| Residentes: chat con doctores | ✅ (lógica OK, falta nav — Gap 1) |
-| Residentes: no cobran | ✅ Restringido en código |
-| Meets médicos | ✅ `/meetings`, `MeetingCreateDialog` |
-| Buscador en chat | ✅ `ChatSessionsList` con búsqueda |
-| Chat pago separado de consulta | ✅ `create-chat-checkout` vs `create-consultation-checkout` |
-| Límite chats en live | ✅ Lógica en `LiveChat` |
-| Doctor bloquea chat en live | ✅ `chatMode` toggle |
-| Contenido premium (grabaciones + presentaciones) | ✅ `RecordingsGrid`, `ContentGallery` |
-| Psicología/Nutrición | ✅ `/psychology`, `/nutrition` |
-| Geolocalización avanzada | ✅ Continente/País/Ciudad + "Cerca de mí" |
-| Filtros universidad/hospital | ✅ `doctor_education` filter |
-| Resumen post-consulta | ✅ `PostConsultationSummaryDialog`, `ConsultationSummaryCard` |
-| Chat dos ventanas | ✅ Pacientes/Doctores tabs |
-| Conexión residente-doctor | ✅ `doctor_resident_connections` |
-| Reembolsos | ✅ `AdminRefunds`, `refund_requests` |
-| Calculadoras de salud | ✅ `HealthCalculators` |
-| Recetas | ✅ `Prescriptions`, `PrescriptionForm` |
-| Noticias médicas | ✅ `MedicalNews`, `NewsFeed` |
-| Wallet | ✅ Completa con top-up, historial |
+Se hizo un reemplazo parcial en sesiones anteriores, pero quedan **~20 instancias** sin cambiar en ambos archivos i18n:
+
+### `src/lib/i18n/es.ts` — Instancias pendientes:
+| Línea | Actual | Corrección |
+|-------|--------|------------|
+| 1150 | `'Consultar Ahora'` | `'Orientación Ahora'` |
+| 1165 | `'...para consulta'` | `'...para orientación médica'` |
+| 1166 | `'...iniciar tu consulta de inmediato'` | `'...iniciar tu orientación de inmediato'` |
+| 1169 | `'Consultar Ahora'` | `'Orientación Ahora'` |
+| 1483 | `'...una consulta privada...'` | `'...una orientación privada...'` |
+| 1487 | `'...tu consulta o pregunta...'` | `'...tu orientación o pregunta...'` |
+| 1562 | `'...tienes consultas o chats...'` | `'...tienes orientaciones o chats...'` |
+| 1573 | `'Consulta'` | `'Orientación'` |
+| 1600 | `'consultas'` | `'orientaciones'` |
+| 1602 | `'Consulta:'` | `'Orientación:'` |
+| 1603 | `'Consulta gratuita'` | `'Orientación gratuita'` |
+| 1671 | `'Resumen Post-Consulta'` | `'Resumen Post-Orientación'` |
+| 1673 | `'Resumen de la consulta'` | `'Resumen de la orientación'` |
+
+### `src/lib/i18n/en.ts` — Instancias pendientes:
+| Línea | Actual | Corrección |
+|-------|--------|------------|
+| 1165 | `'...for consultation'` | `'...for guidance'` |
+| 1166 | `'...your consultation immediately'` | `'...your guidance session immediately'` |
+| 1482 | `'Book Consultation'` | `'Book Guidance'` |
+| 1483 | `'...private consultation...'` | `'...private guidance session...'` |
+| 1485 | `'...consultation limit...'` | `'...guidance limit...'` |
+| 1495 | `'Consultation booked!'` | `'Guidance booked!'` |
+| 1562 | `'...have consultations or...'` | `'...have guidance sessions or...'` |
+| 1565 | `'...medical consultation...'` | `'...medical guidance session...'` |
+| 1573 | `'Consultation'` | `'Guidance'` |
+| 1600 | `'consultations'` | `'guidance sessions'` |
+| 1602 | `'Consultation:'` | `'Guidance:'` |
+| 1603 | `'Free consultation'` | `'Free guidance'` |
+| 1671 | `'Post-Consultation Summary'` | `'Post-Guidance Summary'` |
+| 1673 | `'Consultation summary'` | `'Guidance summary'` |
 
 ---
 
-## Plan de Correcciones (3 gaps)
+## Plan de implementación
 
-### 1. `src/components/layout/MainLayout.tsx`
-- Línea 85: Agregar `'resident'` a roles del chat nav → `roles: ['patient', 'doctor', 'resident']`
-- Línea 88: Agregar `'resident'` a roles del medicalRecord nav → `roles: ['patient', 'resident']`
-- Líneas 140-145: Agregar Chat a los bottom tabs de resident (reemplazar uno de los tabs actuales)
+### Archivo 1: `src/lib/i18n/es.ts`
+- Reemplazar las ~13 instancias restantes de "consulta" → "orientación" en textos orientados al usuario
 
-### 2. `src/lib/i18n/es.ts`
-- Buscar y reemplazar instancias de "Consulta" → "Orientación médica" en las claves orientadas al usuario (labels de botones, títulos, toasts)
-- Mantener "consulta" en contextos internos/técnicos donde no es visible al usuario
+### Archivo 2: `src/lib/i18n/en.ts`  
+- Reemplazar las ~14 instancias restantes de "consultation" → "guidance" en textos orientados al usuario
 
-### 3. `src/lib/i18n/en.ts`
-- Correspondiente: "Consultation" → "Medical Guidance" donde aplique
-
-**No se requieren migraciones de DB ni cambios de lógica backend.**
+**No se requieren cambios de lógica, DB, ni otros archivos.** Solo terminología i18n.
 
