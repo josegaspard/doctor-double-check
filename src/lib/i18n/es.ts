@@ -1668,9 +1668,9 @@ export const es = {
     searchDoctors: 'Buscar doctor por nombre...',
   },
   postConsultation: {
-    title: 'Resumen Post-Consulta',
+    title: 'Resumen Post-Orientación',
     description: 'Completa un breve resumen de la orientación médica para el expediente del paciente.',
-    summary: 'Resumen de la consulta',
+    summary: 'Resumen de la orientación',
     summaryPlaceholder: 'Describe brevemente lo que se discutió...',
     diagnosis: 'Diagnóstico / Impresión',
     diagnosisPlaceholder: 'Impresión diagnóstica...',
