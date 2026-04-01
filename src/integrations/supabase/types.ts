@@ -475,6 +475,7 @@ export type Database = {
           max_participants: number | null
           meeting_notes: string | null
           meeting_summary: string | null
+          meeting_type: string
           organizer_id: string
           scheduled_at: string | null
           specialty: string
@@ -492,6 +493,7 @@ export type Database = {
           max_participants?: number | null
           meeting_notes?: string | null
           meeting_summary?: string | null
+          meeting_type?: string
           organizer_id: string
           scheduled_at?: string | null
           specialty: string
@@ -509,6 +511,7 @@ export type Database = {
           max_participants?: number | null
           meeting_notes?: string | null
           meeting_summary?: string | null
+          meeting_type?: string
           organizer_id?: string
           scheduled_at?: string | null
           specialty?: string
