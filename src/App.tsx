@@ -123,6 +123,7 @@ const ForResidents = React.lazy(() => import("./pages/ForResidents"));
 const MedicalRecord = React.lazy(() => import("./pages/MedicalRecord"));
 const Meetings = React.lazy(() => import("./pages/Meetings"));
 const EmergencyDoctors = React.lazy(() => import("./pages/EmergencyDoctors"));
+const HospitalLocator = React.lazy(() => import("./pages/HospitalLocator"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
