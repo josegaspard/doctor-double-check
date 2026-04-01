@@ -447,16 +447,56 @@ export default function MedicalRecord() {
                   <Textarea placeholder="Medicamentos, alimentos, etc." value={data.allergies} onChange={e => update('allergies', e.target.value)} rows={2} />
                 </div>
                 <div>
-                  <Label className="text-xs">Enfermedades crónicas</Label>
-                  <Textarea placeholder="Diabetes, hipertensión, etc." value={data.chronic_conditions} onChange={e => update('chronic_conditions', e.target.value)} rows={2} />
+                  <Label className="text-xs font-medium">Enfermedades crónicas</Label>
+                  <div className="space-y-2 mt-2">
+                    {CHRONIC_CONDITIONS_LIST.map(condition => {
+                      const item = data.chronic_conditions_list[condition] || { active: false, detail: '' };
+                      return (
+                        <div key={condition} className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Checkbox checked={item.active} onCheckedChange={(v) => {
+                              setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, active: !!v } } }));
+                            }} />
+                            <Label className="text-sm cursor-pointer">{condition}</Label>
+                          </div>
+                          {item.active && (
+                            <Input placeholder="Fecha de diagnóstico, tratamiento..." className="ml-6 text-sm" value={item.detail} onChange={e => {
+                              setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, detail: e.target.value } } }));
+                            }} />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div>
-                  <Label className="text-xs">Medicamentos actuales</Label>
-                  <Textarea placeholder="Nombre, dosis y frecuencia" value={data.current_medications} onChange={e => update('current_medications', e.target.value)} rows={2} />
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-xs font-medium">Medicamentos actuales</Label>
+                    <Button type="button" variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={addMedication}>+ Agregar</Button>
+                  </div>
+                  {data.medications.map((med, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 mb-2 items-end">
+                      <Input placeholder="Nombre" value={med.name} onChange={e => updateMedication(i, 'name', e.target.value)} className="text-sm" />
+                      <Input placeholder="Dosis" value={med.dose} onChange={e => updateMedication(i, 'dose', e.target.value)} className="text-sm w-24" />
+                      <Input placeholder="Frecuencia" value={med.frequency} onChange={e => updateMedication(i, 'frequency', e.target.value)} className="text-sm w-28" />
+                      <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => removeMedication(i)}>✕</Button>
+                    </div>
+                  ))}
+                  {data.medications.length === 0 && <p className="text-xs text-muted-foreground">Sin medicamentos registrados</p>}
                 </div>
                 <div>
-                  <Label className="text-xs">Cirugías previas</Label>
-                  <Textarea placeholder="Procedimiento y fecha" value={data.previous_surgeries} onChange={e => update('previous_surgeries', e.target.value)} rows={2} />
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-xs font-medium">Cirugías previas</Label>
+                    <Button type="button" variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={addSurgery}>+ Agregar</Button>
+                  </div>
+                  {data.surgeries.map((s, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-2 mb-2 items-end">
+                      <Input placeholder="Procedimiento" value={s.procedure} onChange={e => updateSurgery(i, 'procedure', e.target.value)} className="text-sm" />
+                      <Input type="date" value={s.date} onChange={e => updateSurgery(i, 'date', e.target.value)} className="text-sm w-36" />
+                      <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => removeSurgery(i)}>✕</Button>
+                    </div>
+                  ))}
+                  {data.surgeries.length === 0 && <p className="text-xs text-muted-foreground">Sin cirugías registradas</p>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
