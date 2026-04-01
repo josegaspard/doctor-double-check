@@ -57,6 +57,7 @@ import {
   HelpCircle,
   Shield,
   Megaphone,
+  MapPin,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
