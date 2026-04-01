@@ -722,7 +722,7 @@ export default function Doctors() {
                         <p className="text-xs font-medium truncate">{doc.name}</p>
                         <p className="text-[10px] text-muted-foreground truncate">{doc.specialty}</p>
                       </div>
-                      <PriceDisplay amount={doc.consultation_fee} size="sm" />
+                      {/* Price hidden per client request */}
                     </button>
                   ))}
                 </div>
