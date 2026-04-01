@@ -82,7 +82,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     const fetchSettings = async () => {
       const { data } = await supabase
         .from('lives')
-        .select('chat_enabled, max_questions, questions_count, chat_mode, chat_price, chat_highlight_seconds')
+        .select('chat_enabled, max_questions, questions_count, chat_mode, chat_price, chat_highlight_seconds, doctor_id')
         .eq('id', liveId)
         .single();
       if (data) {
