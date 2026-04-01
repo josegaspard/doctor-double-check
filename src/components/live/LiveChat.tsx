@@ -379,7 +379,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const isDisabled = role === 'visitor' || !user;
   const questionLimitReached = !isOwner && maxQuestions != null && questionsCount >= maxQuestions;
   const chatDisabledForViewers = !isOwner && !chatEnabled;
-  const isPaidOnly = !isOwner && chatMode === 'paid_only';
+  const isPaidOnly = !isOwner && chatMode === 'paid_only' && !isSubscribed;
   const isMixed = !isOwner && chatMode === 'mixed';
 
   const isHighlighted = (msg: LiveChatMessage) => {
