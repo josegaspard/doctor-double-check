@@ -289,25 +289,8 @@ export default function RecordingsGrid() {
               />
             </div>
 
-            {/* Mobile: Specialty chips */}
-            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 md:hidden">
-              {SPECIALTIES.map(spec => (
-                <button
-                  key={spec.value}
-                  onClick={() => setSelectedSpecialty(spec.value)}
-                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
-                    selectedSpecialty === spec.value
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-                  }`}
-                >
-                  {t(spec.labelKey)}
-                </button>
-              ))}
-            </div>
-
-            {/* Mobile: Content filter chips */}
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3 md:hidden">
+            {/* Mobile: Content filter chips FIRST */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 md:hidden">
               {filterOptions.map(opt => (
                 <button
                   key={opt.key}
@@ -320,6 +303,23 @@ export default function RecordingsGrid() {
                 >
                   {opt.icon}
                   {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile: Specialty chips */}
+            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3 md:hidden">
+              {SPECIALTIES.map(spec => (
+                <button
+                  key={spec.value}
+                  onClick={() => setSelectedSpecialty(spec.value)}
+                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
+                    selectedSpecialty === spec.value
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
+                  }`}
+                >
+                  {t(spec.labelKey)}
                 </button>
               ))}
             </div>
