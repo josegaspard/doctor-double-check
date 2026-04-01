@@ -190,31 +190,7 @@ export default function RecordingsGrid() {
           {/* ===== Desktop Sidebar ===== */}
           {!isMobile && (
             <aside className="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide bg-card border border-border rounded-xl p-4 space-y-1">
-              {/* Specialties */}
-              <div>
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Especialidades' : 'Specialties'}
-                </h4>
-                <div className="space-y-0.5">
-                  {SPECIALTIES.map(spec => (
-                    <button
-                      key={spec.value}
-                      onClick={() => setSelectedSpecialty(spec.value)}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        selectedSpecialty === spec.value
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {t(spec.labelKey)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t border-border my-3" />
-
-              {/* Content filter */}
+              {/* Access filter FIRST */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                   {language === 'es' ? 'Acceso' : 'Access'}
@@ -232,6 +208,30 @@ export default function RecordingsGrid() {
                     >
                       {opt.icon}
                       {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-border my-3" />
+
+              {/* Specialties */}
+              <div>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  {language === 'es' ? 'Especialidades' : 'Specialties'}
+                </h4>
+                <div className="space-y-0.5">
+                  {SPECIALTIES.map(spec => (
+                    <button
+                      key={spec.value}
+                      onClick={() => setSelectedSpecialty(spec.value)}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        selectedSpecialty === spec.value
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {t(spec.labelKey)}
                     </button>
                   ))}
                 </div>
