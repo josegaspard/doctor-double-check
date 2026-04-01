@@ -57,6 +57,8 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
   const [paidNotifications, setPaidNotifications] = useState<PaidNotification[]>([]);
+  const [liveDoctorId, setLiveDoctorId] = useState<string | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   const showPaidNotification = useCallback((userName: string, amount: number) => {
     const id = crypto.randomUUID();
