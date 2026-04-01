@@ -111,7 +111,7 @@ export const es = {
     freeLives: 'Lives gratis',
     verifiedDoctors: 'Médicos verificados',
     secureVault: 'Vault seguro',
-    oneOnOneChat: 'Chat 1:1',
+    oneOnOneChat: 'Chat Médico',
   },
   // Login page
   login: {
