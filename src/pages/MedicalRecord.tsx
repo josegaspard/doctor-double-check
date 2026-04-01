@@ -50,56 +50,77 @@ const VACCINES = [
   { key: 'varicela', label: 'Varicela' },
 ];
 
+interface MedicationItem { name: string; dose: string; frequency: string; }
+interface SurgeryItem { procedure: string; date: string; }
+interface VaccineData { applied: boolean; doses: string; date: string; }
+
+const CHRONIC_CONDITIONS_LIST = [
+  'Diabetes', 'Hipertensión', 'Asma', 'EPOC', 'Artritis',
+  'Hipotiroidismo', 'Hipertiroidismo', 'Epilepsia', 'Insuficiencia renal',
+  'Enfermedad hepática', 'VIH/SIDA', 'Lupus', 'Fibromialgia',
+];
+
 interface ClinicalData {
-  // Personal
-  sex: string;
-  date_of_birth: string;
-  blood_type: string;
-  height_cm: string;
-  weight_kg: string;
-  allergies: string;
+  sex: string; date_of_birth: string; blood_type: string;
+  height_cm: string; weight_kg: string; allergies: string;
+  chronic_conditions_list: Record<string, { active: boolean; detail: string }>;
   chronic_conditions: string;
+  medications: MedicationItem[];
   current_medications: string;
+  surgeries: SurgeryItem[];
   previous_surgeries: string;
-  emergency_contact_name: string;
-  emergency_contact_phone: string;
-  // Family
-  family_diabetes: boolean;
-  family_diabetes_detail: string;
-  family_hypertension: boolean;
-  family_hypertension_detail: string;
-  family_cancer: boolean;
-  family_cancer_detail: string;
-  family_heart_disease: boolean;
-  family_heart_disease_detail: string;
-  family_mental_illness: boolean;
-  family_mental_illness_detail: string;
-  family_other: string;
-  family_history: string;
-  // Habits
-  habit_alcohol: string;
-  habit_smoking: string;
-  habit_vaping: string;
-  habit_hookah: string;
-  habit_drugs: string;
-  habit_exercise: string;
-  // Gyn
-  gyn_last_period: string;
-  gyn_pregnancies: string;
-  gyn_births: string;
-  gyn_cesareans: string;
-  gyn_abortions: string;
-  gyn_contraceptive: string;
-  gyn_pap_result: string;
-  // Vaccines
-  vaccines: Record<string, boolean>;
-  // Notes
+  emergency_contact_name: string; emergency_contact_phone: string;
+  family_diabetes: boolean; family_diabetes_detail: string;
+  family_hypertension: boolean; family_hypertension_detail: string;
+  family_cancer: boolean; family_cancer_detail: string;
+  family_heart_disease: boolean; family_heart_disease_detail: string;
+  family_mental_illness: boolean; family_mental_illness_detail: string;
+  family_other: string; family_history: string;
+  habit_alcohol: string; habit_smoking: string; habit_vaping: string;
+  habit_hookah: string; habit_drugs: string; habit_exercise: string;
+  gyn_last_period: string; gyn_pregnancies: string; gyn_births: string;
+  gyn_cesareans: string; gyn_abortions: string;
+  gyn_contraceptive: string; gyn_pap_result: string;
+  vaccines: Record<string, VaccineData>;
   notes: string;
+}
+
+function parseMedications(text: string): MedicationItem[] {
+  try { const arr = JSON.parse(text); if (Array.isArray(arr)) return arr; } catch {}
+  if (!text.trim()) return [];
+  return text.split('\n').filter(Boolean).map(l => ({ name: l, dose: '', frequency: '' }));
+}
+function parsesSurgeries(text: string): SurgeryItem[] {
+  try { const arr = JSON.parse(text); if (Array.isArray(arr)) return arr; } catch {}
+  if (!text.trim()) return [];
+  return text.split('\n').filter(Boolean).map(l => ({ procedure: l, date: '' }));
+}
+function parseChronicList(text: string): Record<string, { active: boolean; detail: string }> {
+  try { const obj = JSON.parse(text); if (typeof obj === 'object' && !Array.isArray(obj)) return obj; } catch {}
+  const result: Record<string, { active: boolean; detail: string }> = {};
+  CHRONIC_CONDITIONS_LIST.forEach(c => { result[c] = { active: false, detail: '' }; });
+  if (text.trim()) { result['_other'] = { active: true, detail: text }; }
+  return result;
+}
+function parseVaccines(raw: any): Record<string, VaccineData> {
+  const result: Record<string, VaccineData> = {};
+  if (raw && typeof raw === 'object') {
+    VACCINES.forEach(v => {
+      const val = raw[v.key];
+      if (typeof val === 'object' && val !== null) {
+        result[v.key] = { applied: !!val.applied, doses: val.doses || '', date: val.date || '' };
+      } else {
+        result[v.key] = { applied: !!val, doses: '', date: '' };
+      }
+    });
+  }
+  return result;
 }
 
 const DEFAULT_DATA: ClinicalData = {
   sex: '', date_of_birth: '', blood_type: '', height_cm: '', weight_kg: '',
-  allergies: '', chronic_conditions: '', current_medications: '', previous_surgeries: '',
+  allergies: '', chronic_conditions: '', chronic_conditions_list: {},
+  current_medications: '', medications: [], previous_surgeries: '', surgeries: [],
   emergency_contact_name: '', emergency_contact_phone: '',
   family_diabetes: false, family_diabetes_detail: '',
   family_hypertension: false, family_hypertension_detail: '',
@@ -189,8 +210,11 @@ export default function MedicalRecord() {
           weight_kg: record.weight_kg ? String(record.weight_kg) : '',
           allergies: record.allergies || '',
           chronic_conditions: record.chronic_conditions || '',
+          chronic_conditions_list: parseChronicList(record.chronic_conditions || ''),
           current_medications: record.current_medications || '',
+          medications: parseMedications(record.current_medications || ''),
           previous_surgeries: record.previous_surgeries || '',
+          surgeries: parsesSurgeries(record.previous_surgeries || ''),
           emergency_contact_name: record.emergency_contact_name || '',
           emergency_contact_phone: record.emergency_contact_phone || '',
           family_diabetes: (record as any).family_diabetes || false,
@@ -218,7 +242,7 @@ export default function MedicalRecord() {
           gyn_abortions: String((record as any).gyn_abortions || 0),
           gyn_contraceptive: (record as any).gyn_contraceptive || '',
           gyn_pap_result: (record as any).gyn_pap_result || '',
-          vaccines: (record as any).vaccines || {},
+          vaccines: parseVaccines((record as any).vaccines),
           notes: (record as any).notes || '',
         });
       }
@@ -234,8 +258,36 @@ export default function MedicalRecord() {
   const toggleVaccine = (key: string) => {
     setData(prev => ({
       ...prev,
-      vaccines: { ...prev.vaccines, [key]: !prev.vaccines[key] },
+      vaccines: {
+        ...prev.vaccines,
+        [key]: {
+          ...(prev.vaccines[key] || { applied: false, doses: '', date: '' }),
+          applied: !(prev.vaccines[key]?.applied),
+        },
+      },
     }));
+  };
+
+  const updateVaccineField = (key: string, field: 'doses' | 'date', value: string) => {
+    setData(prev => ({
+      ...prev,
+      vaccines: {
+        ...prev.vaccines,
+        [key]: { ...(prev.vaccines[key] || { applied: true, doses: '', date: '' }), [field]: value },
+      },
+    }));
+  };
+
+  const addMedication = () => setData(prev => ({ ...prev, medications: [...prev.medications, { name: '', dose: '', frequency: '' }] }));
+  const removeMedication = (i: number) => setData(prev => ({ ...prev, medications: prev.medications.filter((_, idx) => idx !== i) }));
+  const updateMedication = (i: number, field: keyof MedicationItem, value: string) => {
+    setData(prev => ({ ...prev, medications: prev.medications.map((m, idx) => idx === i ? { ...m, [field]: value } : m) }));
+  };
+
+  const addSurgery = () => setData(prev => ({ ...prev, surgeries: [...prev.surgeries, { procedure: '', date: '' }] }));
+  const removeSurgery = (i: number) => setData(prev => ({ ...prev, surgeries: prev.surgeries.filter((_, idx) => idx !== i) }));
+  const updateSurgery = (i: number, field: keyof SurgeryItem, value: string) => {
+    setData(prev => ({ ...prev, surgeries: prev.surgeries.map((s, idx) => idx === i ? { ...s, [field]: value } : s) }));
   };
 
   const handleSave = async () => {
@@ -250,9 +302,9 @@ export default function MedicalRecord() {
         height_cm: data.height_cm ? parseFloat(data.height_cm) : null,
         weight_kg: data.weight_kg ? parseFloat(data.weight_kg) : null,
         allergies: data.allergies || null,
-        chronic_conditions: data.chronic_conditions || null,
-        current_medications: data.current_medications || null,
-        previous_surgeries: data.previous_surgeries || null,
+        chronic_conditions: JSON.stringify(data.chronic_conditions_list),
+        current_medications: JSON.stringify(data.medications),
+        previous_surgeries: JSON.stringify(data.surgeries),
         emergency_contact_name: data.emergency_contact_name || null,
         emergency_contact_phone: data.emergency_contact_phone || null,
         family_diabetes: data.family_diabetes,
@@ -308,7 +360,7 @@ export default function MedicalRecord() {
     }
   };
 
-  if (role !== 'patient') return <Navigate to="/lives" replace />;
+  if (!['patient', 'doctor', 'resident'].includes(role || '')) return <Navigate to="/lives" replace />;
 
   if (isLoading) {
     return (
@@ -395,16 +447,56 @@ export default function MedicalRecord() {
                   <Textarea placeholder="Medicamentos, alimentos, etc." value={data.allergies} onChange={e => update('allergies', e.target.value)} rows={2} />
                 </div>
                 <div>
-                  <Label className="text-xs">Enfermedades crónicas</Label>
-                  <Textarea placeholder="Diabetes, hipertensión, etc." value={data.chronic_conditions} onChange={e => update('chronic_conditions', e.target.value)} rows={2} />
+                  <Label className="text-xs font-medium">Enfermedades crónicas</Label>
+                  <div className="space-y-2 mt-2">
+                    {CHRONIC_CONDITIONS_LIST.map(condition => {
+                      const item = data.chronic_conditions_list[condition] || { active: false, detail: '' };
+                      return (
+                        <div key={condition} className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Checkbox checked={item.active} onCheckedChange={(v) => {
+                              setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, active: !!v } } }));
+                            }} />
+                            <Label className="text-sm cursor-pointer">{condition}</Label>
+                          </div>
+                          {item.active && (
+                            <Input placeholder="Fecha de diagnóstico, tratamiento..." className="ml-6 text-sm" value={item.detail} onChange={e => {
+                              setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, detail: e.target.value } } }));
+                            }} />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div>
-                  <Label className="text-xs">Medicamentos actuales</Label>
-                  <Textarea placeholder="Nombre, dosis y frecuencia" value={data.current_medications} onChange={e => update('current_medications', e.target.value)} rows={2} />
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-xs font-medium">Medicamentos actuales</Label>
+                    <Button type="button" variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={addMedication}>+ Agregar</Button>
+                  </div>
+                  {data.medications.map((med, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 mb-2 items-end">
+                      <Input placeholder="Nombre" value={med.name} onChange={e => updateMedication(i, 'name', e.target.value)} className="text-sm" />
+                      <Input placeholder="Dosis" value={med.dose} onChange={e => updateMedication(i, 'dose', e.target.value)} className="text-sm w-24" />
+                      <Input placeholder="Frecuencia" value={med.frequency} onChange={e => updateMedication(i, 'frequency', e.target.value)} className="text-sm w-28" />
+                      <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => removeMedication(i)}>✕</Button>
+                    </div>
+                  ))}
+                  {data.medications.length === 0 && <p className="text-xs text-muted-foreground">Sin medicamentos registrados</p>}
                 </div>
                 <div>
-                  <Label className="text-xs">Cirugías previas</Label>
-                  <Textarea placeholder="Procedimiento y fecha" value={data.previous_surgeries} onChange={e => update('previous_surgeries', e.target.value)} rows={2} />
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-xs font-medium">Cirugías previas</Label>
+                    <Button type="button" variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={addSurgery}>+ Agregar</Button>
+                  </div>
+                  {data.surgeries.map((s, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-2 mb-2 items-end">
+                      <Input placeholder="Procedimiento" value={s.procedure} onChange={e => updateSurgery(i, 'procedure', e.target.value)} className="text-sm" />
+                      <Input type="date" value={s.date} onChange={e => updateSurgery(i, 'date', e.target.value)} className="text-sm w-36" />
+                      <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => removeSurgery(i)}>✕</Button>
+                    </div>
+                  ))}
+                  {data.surgeries.length === 0 && <p className="text-xs text-muted-foreground">Sin cirugías registradas</p>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -553,21 +645,33 @@ export default function MedicalRecord() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {VACCINES.map(v => (
-                    <div key={v.key} className="flex items-center gap-3 p-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                      <Checkbox
-                        checked={!!data.vaccines[v.key]}
-                        onCheckedChange={() => toggleVaccine(v.key)}
-                      />
-                      <Label className="text-sm cursor-pointer flex-1">{v.label}</Label>
-                      {data.vaccines[v.key] && (
-                        <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/30">
-                          Aplicada
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 gap-3">
+                  {VACCINES.map(v => {
+                    const vData = data.vaccines[v.key] || { applied: false, doses: '', date: '' };
+                    return (
+                      <div key={v.key} className="p-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors space-y-2">
+                        <div className="flex items-center gap-3">
+                          <Checkbox checked={vData.applied} onCheckedChange={() => toggleVaccine(v.key)} />
+                          <Label className="text-sm cursor-pointer flex-1">{v.label}</Label>
+                          {vData.applied && (
+                            <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/30">Aplicada</Badge>
+                          )}
+                        </div>
+                        {vData.applied && (
+                          <div className="flex gap-2 ml-6">
+                            <div className="flex-1">
+                              <Label className="text-[10px] text-muted-foreground">Dosis</Label>
+                              <Input placeholder="Ej: 2 de 3" value={vData.doses} onChange={e => updateVaccineField(v.key, 'doses', e.target.value)} className="h-8 text-xs" />
+                            </div>
+                            <div className="flex-1">
+                              <Label className="text-[10px] text-muted-foreground">Fecha</Label>
+                              <Input type="date" value={vData.date} onChange={e => updateVaccineField(v.key, 'date', e.target.value)} className="h-8 text-xs" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

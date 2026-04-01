@@ -353,8 +353,8 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                   />
                   <ChatModeCard
                     icon={DollarSign}
-                    title="Solo chat de pago"
-                    description="Solo pueden comentar quienes paguen por mensaje"
+                    title="Solo pacientes suscritos"
+                    description="Solo pueden comentar los pacientes que estén suscritos a ti"
                     selected={chatMode === 'paid_only'}
                     onClick={() => setChatMode('paid_only')}
                   />

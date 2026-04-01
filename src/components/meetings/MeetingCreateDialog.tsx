@@ -37,7 +37,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
   const { user, role } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState({
-    title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
+    title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '', meetingType: 'case_discussion' as 'case_discussion' | 'resident_class',
   });
 
   // Doctor search for invitations
@@ -133,6 +133,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
           case_summary: form.caseSummary || null,
           scheduled_at: form.scheduledAt || null,
           organizer_id: user.id,
+          meeting_type: form.meetingType,
         })
         .select('id')
         .single();
@@ -156,7 +157,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
 
       toast.success('Reunión creada exitosamente');
       onOpenChange(false);
-      setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '' });
+      setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '', meetingType: 'case_discussion' });
       setSelectedInvitees([]);
       onCreated();
     } catch (error: any) {
@@ -180,6 +181,17 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
               onChange={e => setForm({ ...form, title: e.target.value })}
               placeholder="Ej: Revisión de caso clínico de cardiopatía"
             />
+          </div>
+
+          <div>
+            <Label className="text-xs font-medium">Tipo de reunión *</Label>
+            <Select value={form.meetingType} onValueChange={(v: 'case_discussion' | 'resident_class') => setForm({ ...form, meetingType: v })}>
+              <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="case_discussion">Discusión de caso clínico</SelectItem>
+                <SelectItem value="resident_class">Clase con residentes</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

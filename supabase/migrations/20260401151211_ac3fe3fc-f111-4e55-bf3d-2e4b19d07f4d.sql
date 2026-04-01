@@ -1,0 +1,1 @@
+ALTER TABLE public.clinical_sessions ADD COLUMN IF NOT EXISTS meeting_type text NOT NULL DEFAULT 'case_discussion';

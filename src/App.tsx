@@ -123,6 +123,7 @@ const ForResidents = React.lazy(() => import("./pages/ForResidents"));
 const MedicalRecord = React.lazy(() => import("./pages/MedicalRecord"));
 const Meetings = React.lazy(() => import("./pages/Meetings"));
 const EmergencyDoctors = React.lazy(() => import("./pages/EmergencyDoctors"));
+const HospitalLocator = React.lazy(() => import("./pages/HospitalLocator"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -204,6 +205,7 @@ const App = () => {
                       <Route path="/medical-record" element={<MedicalRecord />} />
                       <Route path="/clinical-sessions" element={<ClinicalSessions />} />
                       <Route path="/meetings" element={<Meetings />} />
+                      <Route path="/hospital-locator" element={<HospitalLocator />} />
                       <Route path="/double-check" element={<DoubleCheck />} />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/admin" element={<AdminDashboard />} />

@@ -57,6 +57,8 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
   const [paidNotifications, setPaidNotifications] = useState<PaidNotification[]>([]);
+  const [liveDoctorId, setLiveDoctorId] = useState<string | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   const showPaidNotification = useCallback((userName: string, amount: number) => {
     const id = crypto.randomUUID();
@@ -80,7 +82,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     const fetchSettings = async () => {
       const { data } = await supabase
         .from('lives')
-        .select('chat_enabled, max_questions, questions_count, chat_mode, chat_price, chat_highlight_seconds')
+        .select('chat_enabled, max_questions, questions_count, chat_mode, chat_price, chat_highlight_seconds, doctor_id')
         .eq('id', liveId)
         .single();
       if (data) {
@@ -90,6 +92,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         setChatMode((data as any).chat_mode || 'free');
         setChatPrice(Number((data as any).chat_price) || 0);
         setChatHighlightSeconds(Number((data as any).chat_highlight_seconds) || 120);
+        setLiveDoctorId(data.doctor_id);
       }
     };
     fetchSettings();
@@ -114,6 +117,22 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
 
     return () => { supabase.removeChannel(channel); };
   }, [liveId]);
+
+  // Check if current user is subscribed to the live doctor
+  useEffect(() => {
+    if (!user?.id || !liveDoctorId || isOwner) return;
+    const checkSub = async () => {
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('subscriber_id', user.id)
+        .eq('creator_id', liveDoctorId)
+        .eq('is_active', true)
+        .maybeSingle();
+      setIsSubscribed(!!data);
+    };
+    checkSub();
+  }, [user?.id, liveDoctorId, isOwner]);
 
   // Load existing persisted messages on mount
   useEffect(() => {
@@ -347,7 +366,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const handleSend = async () => {
     if (!newMessage.trim() || !user || isSending) return;
 
-    const needsPayment = !isOwner && (chatMode === 'paid_only' || (chatMode === 'mixed' && wantHighlight));
+    const needsPayment = !isOwner && !isSubscribed && (chatMode === 'paid_only' || (chatMode === 'mixed' && wantHighlight));
 
     if (needsPayment && chatPrice > 0) {
       setShowPaymentPicker(true);
@@ -360,7 +379,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const isDisabled = role === 'visitor' || !user;
   const questionLimitReached = !isOwner && maxQuestions != null && questionsCount >= maxQuestions;
   const chatDisabledForViewers = !isOwner && !chatEnabled;
-  const isPaidOnly = !isOwner && chatMode === 'paid_only';
+  const isPaidOnly = !isOwner && chatMode === 'paid_only' && !isSubscribed;
   const isMixed = !isOwner && chatMode === 'mixed';
 
   const isHighlighted = (msg: LiveChatMessage) => {

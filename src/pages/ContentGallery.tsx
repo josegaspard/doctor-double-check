@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useLayoutEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -33,6 +34,7 @@ import {
   Wallet,
   AlertCircle,
   Presentation,
+  Upload,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useWallet } from '@/contexts/WalletContext';
@@ -419,18 +421,53 @@ export default function ContentGallery() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {/* Header */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-            <Library className="w-6 h-6 text-primary" />
-            {t('content.library')}
-          </h1>
-          <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 sm:mb-6">
+          <div>
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+              <Library className="w-6 h-6 text-primary" />
+              {t('content.library')}
+            </h1>
+            <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
+          </div>
+          {user && (
+            <Link to="/doctor/upload">
+              <Button variant="live" className="gap-2">
+                <Upload className="w-4 h-4" />
+                {language === 'es' ? 'Subir contenido' : 'Upload content'}
+              </Button>
+            </Link>
+          )}
         </div>
 
         <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
           {/* ===== Desktop Sidebar ===== */}
           {!isMobile && (
             <aside className="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide bg-card border border-border rounded-xl p-4 space-y-1">
+              {/* Content Type FIRST */}
+              <div>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  {language === 'es' ? 'Tipo de contenido' : 'Content Type'}
+                </h4>
+                <div className="space-y-0.5">
+                  {CONTENT_TYPES.map(ct => (
+                    <button
+                      key={ct.value}
+                      onClick={() => setTypeFilter(ct.value)}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        typeFilter === ct.value
+                          ? 'bg-accent text-accent-foreground shadow-sm'
+                          : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <ct.icon className="w-3 h-3 flex-shrink-0" />
+                      {ct.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-border my-3" />
+
               {/* Specialties */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">

@@ -10,6 +10,7 @@ export const es = {
     meetings: 'Reuniones',
     vault: 'Mi Vault',
     medicalRecord: 'Expediente Médico',
+    hospitalLocator: 'Localizar Hospital',
     doctorVault: 'Vault Pacientes',
     doctorVaultShort: 'Pacientes',
     dashboard: 'Panel',
@@ -111,7 +112,7 @@ export const es = {
     freeLives: 'Lives gratis',
     verifiedDoctors: 'Médicos verificados',
     secureVault: 'Vault seguro',
-    oneOnOneChat: 'Chat 1:1',
+    oneOnOneChat: 'Chat Médico',
   },
   // Login page
   login: {
@@ -240,8 +241,8 @@ export const es = {
   },
   // Chat
   chat: {
-    title: 'Chat 1:1',
-    oneOnOne: 'Chat 1:1',
+    title: 'Chat Médico',
+    oneOnOne: 'Chat Médico',
     noConversations: 'No hay conversaciones activas',
     noHistory: 'No hay orientaciones anteriores',
     closeConsult: 'Cerrar orientación',
@@ -259,7 +260,7 @@ export const es = {
     yesClose: 'Sí, cerrar orientación',
     closing: 'Cerrando...',
     chatUnavailable: 'El chat está disponible solo para pacientes y médicos registrados.',
-    activateChat: 'Activa el Chat 1:1',
+    activateChat: 'Activa el Chat Médico',
     premiumService: 'El chat con médicos es un servicio premium. Adquiere el servicio para comunicarte directamente con profesionales de la salud.',
     viewOptions: 'Ver Opciones',
     goToLives: 'Ir a Lives',

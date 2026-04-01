@@ -30,6 +30,7 @@ import {
   Library,
   Gift,
   Globe,
+  Upload,
 } from 'lucide-react';
 
 type ContentFilter = 'all' | 'free' | 'paid' | 'purchased' | 'not_purchased';
@@ -176,45 +177,31 @@ export default function RecordingsGrid() {
             </p>
           </div>
           
-          {isAuthenticated && (role === 'patient' || role === 'resident') && (
-            <Link to="/wallet">
-              <Button variant="outline" className="gap-2">
-                <Wallet className="w-4 h-4" />
-                {t('wallet.balance')}: ${balance.toLocaleString()}
-              </Button>
-            </Link>
-          )}
+          <div className="flex items-center gap-2">
+            {isAuthenticated && role === 'doctor' && (
+              <Link to="/doctor/upload">
+                <Button variant="live" className="gap-2">
+                  <Upload className="w-4 h-4" />
+                  {language === 'es' ? 'Subir contenido' : 'Upload content'}
+                </Button>
+              </Link>
+            )}
+            {isAuthenticated && (role === 'patient' || role === 'resident') && (
+              <Link to="/wallet">
+                <Button variant="outline" className="gap-2">
+                  <Wallet className="w-4 h-4" />
+                  {t('wallet.balance')}: ${balance.toLocaleString()}
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
           {/* ===== Desktop Sidebar ===== */}
           {!isMobile && (
             <aside className="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide bg-card border border-border rounded-xl p-4 space-y-1">
-              {/* Specialties */}
-              <div>
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Especialidades' : 'Specialties'}
-                </h4>
-                <div className="space-y-0.5">
-                  {SPECIALTIES.map(spec => (
-                    <button
-                      key={spec.value}
-                      onClick={() => setSelectedSpecialty(spec.value)}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        selectedSpecialty === spec.value
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {t(spec.labelKey)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t border-border my-3" />
-
-              {/* Content filter */}
+              {/* Access filter FIRST */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                   {language === 'es' ? 'Acceso' : 'Access'}
@@ -232,6 +219,30 @@ export default function RecordingsGrid() {
                     >
                       {opt.icon}
                       {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-border my-3" />
+
+              {/* Specialties */}
+              <div>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  {language === 'es' ? 'Especialidades' : 'Specialties'}
+                </h4>
+                <div className="space-y-0.5">
+                  {SPECIALTIES.map(spec => (
+                    <button
+                      key={spec.value}
+                      onClick={() => setSelectedSpecialty(spec.value)}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        selectedSpecialty === spec.value
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {t(spec.labelKey)}
                     </button>
                   ))}
                 </div>
@@ -289,25 +300,8 @@ export default function RecordingsGrid() {
               />
             </div>
 
-            {/* Mobile: Specialty chips */}
-            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 md:hidden">
-              {SPECIALTIES.map(spec => (
-                <button
-                  key={spec.value}
-                  onClick={() => setSelectedSpecialty(spec.value)}
-                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
-                    selectedSpecialty === spec.value
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-                  }`}
-                >
-                  {t(spec.labelKey)}
-                </button>
-              ))}
-            </div>
-
-            {/* Mobile: Content filter chips */}
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3 md:hidden">
+            {/* Mobile: Content filter chips FIRST */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 md:hidden">
               {filterOptions.map(opt => (
                 <button
                   key={opt.key}
@@ -320,6 +314,23 @@ export default function RecordingsGrid() {
                 >
                   {opt.icon}
                   {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile: Specialty chips */}
+            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3 md:hidden">
+              {SPECIALTIES.map(spec => (
+                <button
+                  key={spec.value}
+                  onClick={() => setSelectedSpecialty(spec.value)}
+                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
+                    selectedSpecialty === spec.value
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
+                  }`}
+                >
+                  {t(spec.labelKey)}
                 </button>
               ))}
             </div>
