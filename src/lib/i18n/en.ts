@@ -10,6 +10,7 @@ export const en = {
     meetings: 'Meetings',
     vault: 'My Vault',
     medicalRecord: 'Medical Record',
+    hospitalLocator: 'Find Hospital',
     doctorVault: 'Patient Vault',
     doctorVaultShort: 'Patients',
     dashboard: 'Dashboard',
