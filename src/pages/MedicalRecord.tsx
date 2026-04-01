@@ -258,8 +258,36 @@ export default function MedicalRecord() {
   const toggleVaccine = (key: string) => {
     setData(prev => ({
       ...prev,
-      vaccines: { ...prev.vaccines, [key]: !prev.vaccines[key] },
+      vaccines: {
+        ...prev.vaccines,
+        [key]: {
+          ...(prev.vaccines[key] || { applied: false, doses: '', date: '' }),
+          applied: !(prev.vaccines[key]?.applied),
+        },
+      },
     }));
+  };
+
+  const updateVaccineField = (key: string, field: 'doses' | 'date', value: string) => {
+    setData(prev => ({
+      ...prev,
+      vaccines: {
+        ...prev.vaccines,
+        [key]: { ...(prev.vaccines[key] || { applied: true, doses: '', date: '' }), [field]: value },
+      },
+    }));
+  };
+
+  const addMedication = () => setData(prev => ({ ...prev, medications: [...prev.medications, { name: '', dose: '', frequency: '' }] }));
+  const removeMedication = (i: number) => setData(prev => ({ ...prev, medications: prev.medications.filter((_, idx) => idx !== i) }));
+  const updateMedication = (i: number, field: keyof MedicationItem, value: string) => {
+    setData(prev => ({ ...prev, medications: prev.medications.map((m, idx) => idx === i ? { ...m, [field]: value } : m) }));
+  };
+
+  const addSurgery = () => setData(prev => ({ ...prev, surgeries: [...prev.surgeries, { procedure: '', date: '' }] }));
+  const removeSurgery = (i: number) => setData(prev => ({ ...prev, surgeries: prev.surgeries.filter((_, idx) => idx !== i) }));
+  const updateSurgery = (i: number, field: keyof SurgeryItem, value: string) => {
+    setData(prev => ({ ...prev, surgeries: prev.surgeries.map((s, idx) => idx === i ? { ...s, [field]: value } : s) }));
   };
 
   const handleSave = async () => {
