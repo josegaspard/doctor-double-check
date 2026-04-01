@@ -50,56 +50,77 @@ const VACCINES = [
   { key: 'varicela', label: 'Varicela' },
 ];
 
+interface MedicationItem { name: string; dose: string; frequency: string; }
+interface SurgeryItem { procedure: string; date: string; }
+interface VaccineData { applied: boolean; doses: string; date: string; }
+
+const CHRONIC_CONDITIONS_LIST = [
+  'Diabetes', 'Hipertensión', 'Asma', 'EPOC', 'Artritis',
+  'Hipotiroidismo', 'Hipertiroidismo', 'Epilepsia', 'Insuficiencia renal',
+  'Enfermedad hepática', 'VIH/SIDA', 'Lupus', 'Fibromialgia',
+];
+
 interface ClinicalData {
-  // Personal
-  sex: string;
-  date_of_birth: string;
-  blood_type: string;
-  height_cm: string;
-  weight_kg: string;
-  allergies: string;
+  sex: string; date_of_birth: string; blood_type: string;
+  height_cm: string; weight_kg: string; allergies: string;
+  chronic_conditions_list: Record<string, { active: boolean; detail: string }>;
   chronic_conditions: string;
+  medications: MedicationItem[];
   current_medications: string;
+  surgeries: SurgeryItem[];
   previous_surgeries: string;
-  emergency_contact_name: string;
-  emergency_contact_phone: string;
-  // Family
-  family_diabetes: boolean;
-  family_diabetes_detail: string;
-  family_hypertension: boolean;
-  family_hypertension_detail: string;
-  family_cancer: boolean;
-  family_cancer_detail: string;
-  family_heart_disease: boolean;
-  family_heart_disease_detail: string;
-  family_mental_illness: boolean;
-  family_mental_illness_detail: string;
-  family_other: string;
-  family_history: string;
-  // Habits
-  habit_alcohol: string;
-  habit_smoking: string;
-  habit_vaping: string;
-  habit_hookah: string;
-  habit_drugs: string;
-  habit_exercise: string;
-  // Gyn
-  gyn_last_period: string;
-  gyn_pregnancies: string;
-  gyn_births: string;
-  gyn_cesareans: string;
-  gyn_abortions: string;
-  gyn_contraceptive: string;
-  gyn_pap_result: string;
-  // Vaccines
-  vaccines: Record<string, boolean>;
-  // Notes
+  emergency_contact_name: string; emergency_contact_phone: string;
+  family_diabetes: boolean; family_diabetes_detail: string;
+  family_hypertension: boolean; family_hypertension_detail: string;
+  family_cancer: boolean; family_cancer_detail: string;
+  family_heart_disease: boolean; family_heart_disease_detail: string;
+  family_mental_illness: boolean; family_mental_illness_detail: string;
+  family_other: string; family_history: string;
+  habit_alcohol: string; habit_smoking: string; habit_vaping: string;
+  habit_hookah: string; habit_drugs: string; habit_exercise: string;
+  gyn_last_period: string; gyn_pregnancies: string; gyn_births: string;
+  gyn_cesareans: string; gyn_abortions: string;
+  gyn_contraceptive: string; gyn_pap_result: string;
+  vaccines: Record<string, VaccineData>;
   notes: string;
+}
+
+function parseMedications(text: string): MedicationItem[] {
+  try { const arr = JSON.parse(text); if (Array.isArray(arr)) return arr; } catch {}
+  if (!text.trim()) return [];
+  return text.split('\n').filter(Boolean).map(l => ({ name: l, dose: '', frequency: '' }));
+}
+function parsesSurgeries(text: string): SurgeryItem[] {
+  try { const arr = JSON.parse(text); if (Array.isArray(arr)) return arr; } catch {}
+  if (!text.trim()) return [];
+  return text.split('\n').filter(Boolean).map(l => ({ procedure: l, date: '' }));
+}
+function parseChronicList(text: string): Record<string, { active: boolean; detail: string }> {
+  try { const obj = JSON.parse(text); if (typeof obj === 'object' && !Array.isArray(obj)) return obj; } catch {}
+  const result: Record<string, { active: boolean; detail: string }> = {};
+  CHRONIC_CONDITIONS_LIST.forEach(c => { result[c] = { active: false, detail: '' }; });
+  if (text.trim()) { result['_other'] = { active: true, detail: text }; }
+  return result;
+}
+function parseVaccines(raw: any): Record<string, VaccineData> {
+  const result: Record<string, VaccineData> = {};
+  if (raw && typeof raw === 'object') {
+    VACCINES.forEach(v => {
+      const val = raw[v.key];
+      if (typeof val === 'object' && val !== null) {
+        result[v.key] = { applied: !!val.applied, doses: val.doses || '', date: val.date || '' };
+      } else {
+        result[v.key] = { applied: !!val, doses: '', date: '' };
+      }
+    });
+  }
+  return result;
 }
 
 const DEFAULT_DATA: ClinicalData = {
   sex: '', date_of_birth: '', blood_type: '', height_cm: '', weight_kg: '',
-  allergies: '', chronic_conditions: '', current_medications: '', previous_surgeries: '',
+  allergies: '', chronic_conditions: '', chronic_conditions_list: {},
+  current_medications: '', medications: [], previous_surgeries: '', surgeries: [],
   emergency_contact_name: '', emergency_contact_phone: '',
   family_diabetes: false, family_diabetes_detail: '',
   family_hypertension: false, family_hypertension_detail: '',
