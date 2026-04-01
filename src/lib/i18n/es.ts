@@ -240,8 +240,8 @@ export const es = {
   },
   // Chat
   chat: {
-    title: 'Chat 1:1',
-    oneOnOne: 'Chat 1:1',
+    title: 'Chat Médico',
+    oneOnOne: 'Chat Médico',
     noConversations: 'No hay conversaciones activas',
     noHistory: 'No hay orientaciones anteriores',
     closeConsult: 'Cerrar orientación',
