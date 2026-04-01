@@ -37,7 +37,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
   const { user, role } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState({
-    title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
+    title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '', meetingType: 'case_discussion' as 'case_discussion' | 'resident_class',
   });
 
   // Doctor search for invitations
