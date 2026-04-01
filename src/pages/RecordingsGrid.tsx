@@ -30,6 +30,7 @@ import {
   Library,
   Gift,
   Globe,
+  Upload,
 } from 'lucide-react';
 
 type ContentFilter = 'all' | 'free' | 'paid' | 'purchased' | 'not_purchased';
