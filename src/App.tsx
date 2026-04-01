@@ -205,6 +205,7 @@ const App = () => {
                       <Route path="/medical-record" element={<MedicalRecord />} />
                       <Route path="/clinical-sessions" element={<ClinicalSessions />} />
                       <Route path="/meetings" element={<Meetings />} />
+                      <Route path="/hospital-locator" element={<HospitalLocator />} />
                       <Route path="/double-check" element={<DoubleCheck />} />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/admin" element={<AdminDashboard />} />
