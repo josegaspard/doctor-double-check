@@ -34,6 +34,7 @@ import {
   Wallet,
   AlertCircle,
   Presentation,
+  Upload,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useWallet } from '@/contexts/WalletContext';
