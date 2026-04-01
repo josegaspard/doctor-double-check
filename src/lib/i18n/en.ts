@@ -240,8 +240,8 @@ export const en = {
   },
   // Chat
   chat: {
-    title: '1:1 Chat',
-    oneOnOne: '1:1 Chat',
+    title: 'Medical Chat',
+    oneOnOne: 'Medical Chat',
     noConversations: 'No active conversations',
     noHistory: 'No previous sessions',
     closeConsult: 'Close session',
