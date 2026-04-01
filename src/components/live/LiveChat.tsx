@@ -92,6 +92,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         setChatMode((data as any).chat_mode || 'free');
         setChatPrice(Number((data as any).chat_price) || 0);
         setChatHighlightSeconds(Number((data as any).chat_highlight_seconds) || 120);
+        setLiveDoctorId(data.doctor_id);
       }
     };
     fetchSettings();
