@@ -419,12 +419,22 @@ export default function ContentGallery() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {/* Header */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-            <Library className="w-6 h-6 text-primary" />
-            {t('content.library')}
-          </h1>
-          <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 sm:mb-6">
+          <div>
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+              <Library className="w-6 h-6 text-primary" />
+              {t('content.library')}
+            </h1>
+            <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
+          </div>
+          {user && (
+            <Link to="/doctor/upload">
+              <Button variant="live" className="gap-2">
+                <Upload className="w-4 h-4" />
+                {language === 'es' ? 'Subir contenido' : 'Upload content'}
+              </Button>
+            </Link>
+          )}
         </div>
 
         <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">

@@ -176,14 +176,24 @@ export default function RecordingsGrid() {
             </p>
           </div>
           
-          {isAuthenticated && (role === 'patient' || role === 'resident') && (
-            <Link to="/wallet">
-              <Button variant="outline" className="gap-2">
-                <Wallet className="w-4 h-4" />
-                {t('wallet.balance')}: ${balance.toLocaleString()}
-              </Button>
-            </Link>
-          )}
+          <div className="flex items-center gap-2">
+            {isAuthenticated && role === 'doctor' && (
+              <Link to="/doctor/upload">
+                <Button variant="live" className="gap-2">
+                  <Upload className="w-4 h-4" />
+                  {language === 'es' ? 'Subir contenido' : 'Upload content'}
+                </Button>
+              </Link>
+            )}
+            {isAuthenticated && (role === 'patient' || role === 'resident') && (
+              <Link to="/wallet">
+                <Button variant="outline" className="gap-2">
+                  <Wallet className="w-4 h-4" />
+                  {t('wallet.balance')}: ${balance.toLocaleString()}
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
