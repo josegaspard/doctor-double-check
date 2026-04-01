@@ -210,8 +210,11 @@ export default function MedicalRecord() {
           weight_kg: record.weight_kg ? String(record.weight_kg) : '',
           allergies: record.allergies || '',
           chronic_conditions: record.chronic_conditions || '',
+          chronic_conditions_list: parseChronicList(record.chronic_conditions || ''),
           current_medications: record.current_medications || '',
+          medications: parseMedications(record.current_medications || ''),
           previous_surgeries: record.previous_surgeries || '',
+          surgeries: parsesSurgeries(record.previous_surgeries || ''),
           emergency_contact_name: record.emergency_contact_name || '',
           emergency_contact_phone: record.emergency_contact_phone || '',
           family_diabetes: (record as any).family_diabetes || false,
@@ -239,7 +242,7 @@ export default function MedicalRecord() {
           gyn_abortions: String((record as any).gyn_abortions || 0),
           gyn_contraceptive: (record as any).gyn_contraceptive || '',
           gyn_pap_result: (record as any).gyn_pap_result || '',
-          vaccines: (record as any).vaccines || {},
+          vaccines: parseVaccines((record as any).vaccines),
           notes: (record as any).notes || '',
         });
       }
