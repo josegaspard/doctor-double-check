@@ -45,13 +45,13 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
       buttonLabel: 'Ver y editar perfil',
     },
     ...(canPublishNews ? [{
-      title: 'Escribir Artículo',
-      description: 'Publica noticias y artículos médicos para la comunidad',
-      icon: Newspaper,
+      title: 'Subir Contenido',
+      description: 'Sube videos, PDFs, artículos o imágenes para la comunidad',
+      icon: Upload,
       color: 'warning',
       requiresApproval: true,
-      onClick: () => navigate('/doctor/news'),
-      buttonLabel: 'Escribir',
+      onClick: () => navigate('/doctor/upload'),
+      buttonLabel: 'Subir',
     }] : []),
     {
       title: 'Orientaciones',

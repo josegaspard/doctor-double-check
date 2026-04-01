@@ -259,7 +259,7 @@ export const en = {
     yesClose: 'Yes, close session',
     closing: 'Closing...',
     chatUnavailable: 'Chat is only available for registered patients and doctors.',
-    activateChat: 'Activate 1:1 Chat',
+    activateChat: 'Activate Medical Chat',
     premiumService: 'Chat with doctors is a premium service. Purchase the service to communicate directly with healthcare professionals.',
     viewOptions: 'View Options',
     goToLives: 'Go to Lives',

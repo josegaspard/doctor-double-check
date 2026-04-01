@@ -259,7 +259,7 @@ export const es = {
     yesClose: 'Sí, cerrar orientación',
     closing: 'Cerrando...',
     chatUnavailable: 'El chat está disponible solo para pacientes y médicos registrados.',
-    activateChat: 'Activa el Chat 1:1',
+    activateChat: 'Activa el Chat Médico',
     premiumService: 'El chat con médicos es un servicio premium. Adquiere el servicio para comunicarte directamente con profesionales de la salud.',
     viewOptions: 'Ver Opciones',
     goToLives: 'Ir a Lives',

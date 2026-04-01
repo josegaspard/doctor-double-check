@@ -308,7 +308,7 @@ export default function MedicalRecord() {
     }
   };
 
-  if (role !== 'patient') return <Navigate to="/lives" replace />;
+  if (!['patient', 'doctor', 'resident'].includes(role || '')) return <Navigate to="/lives" replace />;
 
   if (isLoading) {
     return (
