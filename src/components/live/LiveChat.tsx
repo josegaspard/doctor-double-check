@@ -366,7 +366,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const handleSend = async () => {
     if (!newMessage.trim() || !user || isSending) return;
 
-    const needsPayment = !isOwner && (chatMode === 'paid_only' || (chatMode === 'mixed' && wantHighlight));
+    const needsPayment = !isOwner && !isSubscribed && (chatMode === 'paid_only' || (chatMode === 'mixed' && wantHighlight));
 
     if (needsPayment && chatPrice > 0) {
       setShowPaymentPicker(true);
