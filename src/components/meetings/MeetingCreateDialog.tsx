@@ -184,6 +184,17 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
           </div>
 
           <div>
+            <Label className="text-xs font-medium">Tipo de reunión *</Label>
+            <Select value={form.meetingType} onValueChange={(v: 'case_discussion' | 'resident_class') => setForm({ ...form, meetingType: v })}>
+              <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="case_discussion">Discusión de caso clínico</SelectItem>
+                <SelectItem value="resident_class">Clase con residentes</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
             <Label className="text-xs font-medium">Especialidad *</Label>
             <Select value={form.specialty} onValueChange={v => setForm({ ...form, specialty: v })}>
               <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
