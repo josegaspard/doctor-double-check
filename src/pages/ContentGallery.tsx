@@ -431,6 +431,31 @@ export default function ContentGallery() {
           {/* ===== Desktop Sidebar ===== */}
           {!isMobile && (
             <aside className="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide bg-card border border-border rounded-xl p-4 space-y-1">
+              {/* Content Type FIRST */}
+              <div>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  {language === 'es' ? 'Tipo de contenido' : 'Content Type'}
+                </h4>
+                <div className="space-y-0.5">
+                  {CONTENT_TYPES.map(ct => (
+                    <button
+                      key={ct.value}
+                      onClick={() => setTypeFilter(ct.value)}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        typeFilter === ct.value
+                          ? 'bg-accent text-accent-foreground shadow-sm'
+                          : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <ct.icon className="w-3 h-3 flex-shrink-0" />
+                      {ct.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-border my-3" />
+
               {/* Specialties */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
