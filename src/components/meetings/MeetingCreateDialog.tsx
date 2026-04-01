@@ -133,6 +133,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
           case_summary: form.caseSummary || null,
           scheduled_at: form.scheduledAt || null,
           organizer_id: user.id,
+          meeting_type: form.meetingType,
         })
         .select('id')
         .single();
