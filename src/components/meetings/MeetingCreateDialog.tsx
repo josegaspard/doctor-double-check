@@ -157,7 +157,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
 
       toast.success('Reunión creada exitosamente');
       onOpenChange(false);
-      setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '' });
+      setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '', meetingType: 'case_discussion' });
       setSelectedInvitees([]);
       onCreated();
     } catch (error: any) {
