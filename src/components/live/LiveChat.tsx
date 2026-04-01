@@ -118,6 +118,22 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
     return () => { supabase.removeChannel(channel); };
   }, [liveId]);
 
+  // Check if current user is subscribed to the live doctor
+  useEffect(() => {
+    if (!user?.id || !liveDoctorId || isOwner) return;
+    const checkSub = async () => {
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('subscriber_id', user.id)
+        .eq('creator_id', liveDoctorId)
+        .eq('is_active', true)
+        .maybeSingle();
+      setIsSubscribed(!!data);
+    };
+    checkSub();
+  }, [user?.id, liveDoctorId, isOwner]);
+
   // Load existing persisted messages on mount
   useEffect(() => {
     const loadMessages = async () => {
