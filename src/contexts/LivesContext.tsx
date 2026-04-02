@@ -181,6 +181,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           recordingPrice: l.recording_price ? Number(l.recording_price) : undefined,
           tags: l.tags || [],
           followersCount: doctorProfileCache.current.get(l.doctor_id)?.followers_count || 0,
+          doctorCedula: doctorProfileCache.current.get(l.doctor_id)?.cedula_profesional || undefined,
           dailyRoomName: l.daily_room_name || undefined,
           location: (l as any).location || undefined,
           chatMode: (l as any).chat_mode || 'free',
