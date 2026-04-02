@@ -95,6 +95,7 @@ interface ClinicalData {
   family_cancer: boolean; family_cancer_detail: string;
   family_heart_disease: boolean; family_heart_disease_detail: string;
   family_mental_illness: boolean; family_mental_illness_detail: string;
+  extra_family: Record<string, { active: boolean; detail: string }>;
   family_other: string; family_history: string;
   habit_alcohol: string; habit_smoking: string; habit_vaping: string;
   habit_hookah: string; habit_drugs: string; habit_exercise: string;
@@ -120,6 +121,12 @@ function parseChronicList(text: string): Record<string, { active: boolean; detai
   const result: Record<string, { active: boolean; detail: string }> = {};
   CHRONIC_CONDITIONS_LIST.forEach(c => { result[c] = { active: false, detail: '' }; });
   if (text.trim()) { result['_other'] = { active: true, detail: text }; }
+  return result;
+}
+function parseExtraFamily(text: string): Record<string, { active: boolean; detail: string }> {
+  try { const obj = JSON.parse(text); if (typeof obj === 'object' && !Array.isArray(obj)) return obj; } catch {}
+  const result: Record<string, { active: boolean; detail: string }> = {};
+  EXTRA_FAMILY_CONDITIONS.forEach(c => { result[c.key] = { active: false, detail: '' }; });
   return result;
 }
 function parseVaccines(raw: any): Record<string, VaccineData> {
