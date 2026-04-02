@@ -154,6 +154,7 @@ const DEFAULT_DATA: ClinicalData = {
   family_cancer: false, family_cancer_detail: '',
   family_heart_disease: false, family_heart_disease_detail: '',
   family_mental_illness: false, family_mental_illness_detail: '',
+  extra_family: {},
   family_other: '', family_history: '',
   habit_alcohol: 'never', habit_smoking: 'never', habit_vaping: 'never',
   habit_hookah: 'never', habit_drugs: 'never', habit_exercise: 'never',
