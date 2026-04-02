@@ -256,6 +256,7 @@ export default function MedicalRecord() {
           family_mental_illness: (record as any).family_mental_illness || false,
           family_mental_illness_detail: (record as any).family_mental_illness_detail || '',
           family_other: (record as any).family_other || '',
+          extra_family: parseExtraFamily(record.family_history || ''),
           family_history: record.family_history || '',
           habit_alcohol: (record as any).habit_alcohol || 'never',
           habit_smoking: (record as any).habit_smoking || 'never',
