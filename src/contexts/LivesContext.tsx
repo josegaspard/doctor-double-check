@@ -27,6 +27,7 @@ export interface Live {
   location?: string;
   chatMode?: string;
   chatPrice?: number;
+  doctorCedula?: string;
 }
 
 export interface Recording {
