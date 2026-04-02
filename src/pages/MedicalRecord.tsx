@@ -622,6 +622,42 @@ export default function MedicalRecord() {
                     </div>
                   );
                 })}
+
+                {/* Extended family conditions */}
+                {EXTRA_FAMILY_CONDITIONS.map(item => {
+                  const val = data.extra_family[item.key] || { active: false, detail: '' };
+                  return (
+                    <div key={item.key} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">{item.label}</Label>
+                        <Switch
+                          checked={val.active}
+                          onCheckedChange={v => {
+                            setData(prev => ({
+                              ...prev,
+                              extra_family: { ...prev.extra_family, [item.key]: { ...val, active: !!v } },
+                            }));
+                          }}
+                        />
+                      </div>
+                      {val.active && (
+                        <Textarea
+                          placeholder={`Detalle sobre ${item.label.toLowerCase()} en la familia...`}
+                          value={val.detail}
+                          onChange={e => {
+                            setData(prev => ({
+                              ...prev,
+                              extra_family: { ...prev.extra_family, [item.key]: { ...val, detail: e.target.value } },
+                            }));
+                          }}
+                          rows={2}
+                          className="text-sm"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+
                 <div>
                   <Label className="text-xs">Otros antecedentes familiares</Label>
                   <Textarea placeholder="Otros antecedentes relevantes..." value={data.family_other} onChange={e => update('family_other', e.target.value)} rows={2} />
