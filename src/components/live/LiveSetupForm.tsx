@@ -25,10 +25,15 @@ import {
 } from 'lucide-react';
 
 const SPECIALTIES = [
-  'Cardiología', 'Cirugía General', 'Dermatología', 'Endocrinología', 'Gastroenterología',
-  'Ginecología', 'Medicina General', 'Medicina Interna', 'Neurología',
-  'Oftalmología', 'Oncología', 'Ortopedia', 'Pediatría',
-  'Psiquiatría', 'Urología', 'Otra',
+  'Alergología', 'Anestesiología', 'Angiología', 'Cardiología', 'Cirugía General',
+  'Cirugía Plástica', 'Coloproctología', 'Dermatología', 'Endocrinología',
+  'Gastroenterología', 'Geriatría', 'Ginecología', 'Hematología', 'Infectología',
+  'Medicina Crítica', 'Medicina de Urgencias', 'Medicina del Deporte', 'Medicina Familiar',
+  'Medicina Física y Rehabilitación', 'Medicina General', 'Medicina Interna',
+  'Nefrología', 'Neonatología', 'Neumología', 'Neurología', 'Nutriología',
+  'Oftalmología', 'Oncología', 'Ortopedia', 'Otorrinolaringología', 'Patología',
+  'Pediatría', 'Psiquiatría', 'Radiología', 'Reumatología', 'Traumatología',
+  'Urología', 'Otra',
 ];
 
 interface LiveSetupFormProps {

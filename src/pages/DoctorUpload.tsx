@@ -27,9 +27,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const CONTENT_CATEGORIES = [
-  'Cardiología', 'Medicina Interna', 'Pediatría', 'Neurología', 'Dermatología',
-  'Oftalmología', 'Neumología', 'Endocrinología', 'Psiquiatría',
-  'Cirugías', 'Casos Clínicos', 'Explicaciones', 'Procedimientos', 'Conferencias',
+  'Alergología', 'Anestesiología', 'Angiología', 'Cardiología', 'Cirugía General',
+  'Cirugía Plástica', 'Coloproctología', 'Dermatología', 'Endocrinología',
+  'Gastroenterología', 'Geriatría', 'Ginecología', 'Hematología', 'Infectología',
+  'Medicina Crítica', 'Medicina de Urgencias', 'Medicina del Deporte', 'Medicina Familiar',
+  'Medicina Física y Rehabilitación', 'Medicina General', 'Medicina Interna',
+  'Nefrología', 'Neonatología', 'Neumología', 'Neurología', 'Nutriología',
+  'Oftalmología', 'Oncología', 'Ortopedia', 'Otorrinolaringología', 'Patología',
+  'Pediatría', 'Psiquiatría', 'Radiología', 'Reumatología', 'Traumatología',
+  'Urología',
+  'Casos Clínicos', 'Explicaciones', 'Procedimientos', 'Conferencias',
   'Otro',
 ];
 
