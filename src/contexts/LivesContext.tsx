@@ -141,7 +141,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
               .in('id', uncachedIds),
             supabase
               .from('doctor_profiles_public')
-              .select('user_id, followers_count')
+              .select('user_id, followers_count, specialty')
               .in('user_id', uncachedIds)
           ]);
 
