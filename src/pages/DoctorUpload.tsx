@@ -40,6 +40,13 @@ const CONTENT_CATEGORIES = [
   'Otro',
 ];
 
+interface MasterclassSession {
+  session_number: number;
+  title: string;
+  scheduled_at: string;
+  duration_minutes: number;
+}
+
 interface UploadedContent {
   id: string;
   type: 'video' | 'pdf' | 'image' | 'presentation';
@@ -51,6 +58,7 @@ interface UploadedContent {
   uploadedAt: Date;
   fileUrl?: string;
   thumbnailUrl?: string;
+  isMasterclass?: boolean;
 }
 
 export default function DoctorUpload() {
@@ -69,6 +77,12 @@ export default function DoctorUpload() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedContent, setUploadedContent] = useState<UploadedContent[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Masterclass state
+  const [isMasterclass, setIsMasterclass] = useState(false);
+  const [masterclassSessions, setMasterclassSessions] = useState<MasterclassSession[]>([
+    { session_number: 1, title: '', scheduled_at: '', duration_minutes: 60 },
+  ]);
 
   // Manage mode state
   const [manageMode, setManageMode] = useState(false);

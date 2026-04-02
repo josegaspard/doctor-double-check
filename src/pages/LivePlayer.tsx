@@ -628,7 +628,7 @@ export default function LivePlayer() {
                       <Stethoscope className="w-5 h-5 text-primary" />
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{live.doctorName}</h3>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-xs text-muted-foreground truncate">{live.specialty}</span>
@@ -637,6 +637,9 @@ export default function LivePlayer() {
                         {t('livePlayer.verified')}
                       </Badge>
                     </div>
+                    {(live as any).doctorCedula && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Céd. Prof.: {(live as any).doctorCedula}</p>
+                    )}
                   </div>
                 </div>
 
