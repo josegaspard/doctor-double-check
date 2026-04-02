@@ -27,11 +27,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const CONTENT_CATEGORIES = [
-  'Cardiología', 'Medicina Interna', 'Pediatría', 'Neurología', 'Dermatología',
-  'Oftalmología', 'Neumología', 'Endocrinología', 'Psiquiatría',
-  'Cirugías', 'Casos Clínicos', 'Explicaciones', 'Procedimientos', 'Conferencias',
+  'Alergología', 'Anestesiología', 'Angiología', 'Cardiología', 'Cirugía General',
+  'Cirugía Plástica', 'Coloproctología', 'Dermatología', 'Endocrinología',
+  'Gastroenterología', 'Geriatría', 'Ginecología', 'Hematología', 'Infectología',
+  'Medicina Crítica', 'Medicina de Urgencias', 'Medicina del Deporte', 'Medicina Familiar',
+  'Medicina Física y Rehabilitación', 'Medicina General', 'Medicina Interna',
+  'Nefrología', 'Neonatología', 'Neumología', 'Neurología', 'Nutriología',
+  'Oftalmología', 'Oncología', 'Ortopedia', 'Otorrinolaringología', 'Patología',
+  'Pediatría', 'Psiquiatría', 'Radiología', 'Reumatología', 'Traumatología',
+  'Urología',
+  'Casos Clínicos', 'Explicaciones', 'Procedimientos', 'Conferencias',
   'Otro',
 ];
+
+interface MasterclassSession {
+  session_number: number;
+  title: string;
+  scheduled_at: string;
+  duration_minutes: number;
+}
 
 interface UploadedContent {
   id: string;
@@ -44,6 +58,7 @@ interface UploadedContent {
   uploadedAt: Date;
   fileUrl?: string;
   thumbnailUrl?: string;
+  isMasterclass?: boolean;
 }
 
 export default function DoctorUpload() {
@@ -62,6 +77,12 @@ export default function DoctorUpload() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedContent, setUploadedContent] = useState<UploadedContent[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Masterclass state
+  const [isMasterclass, setIsMasterclass] = useState(false);
+  const [masterclassSessions, setMasterclassSessions] = useState<MasterclassSession[]>([
+    { session_number: 1, title: '', scheduled_at: '', duration_minutes: 60 },
+  ]);
 
   // Manage mode state
   const [manageMode, setManageMode] = useState(false);
@@ -220,9 +241,15 @@ export default function DoctorUpload() {
       setUploadProgress(100);
       if (uploadError) throw uploadError;
 
+      const insertPayload: any = { creator_id: user.id, type: getFileType(selectedFile), title: title.trim(), description: description.trim() || null, category, is_public: isPublic, audience_type: audienceType, file_url: fileName };
+      if (isMasterclass) {
+        insertPayload.is_masterclass = true;
+        insertPayload.masterclass_sessions = masterclassSessions.filter(s => s.title.trim());
+      }
+
       const { data: contentData, error: dbError } = await supabase
         .from('doctor_content')
-        .insert({ creator_id: user.id, type: getFileType(selectedFile), title: title.trim(), description: description.trim() || null, category, is_public: isPublic, audience_type: audienceType, file_url: fileName })
+        .insert(insertPayload)
         .select().single();
       if (dbError) throw dbError;
 
@@ -324,6 +351,51 @@ export default function DoctorUpload() {
               </Select>
             </div>
             <AudienceSelector value={audienceType} onChange={setAudienceType} disabled={!isApproved} />
+
+            {/* Masterclass toggle */}
+            <div className="flex items-center justify-between">
+              <div><Label>Masterclass</Label><p className="text-xs text-muted-foreground">Contenido de múltiples sesiones programadas</p></div>
+              <Switch checked={isMasterclass} onCheckedChange={v => { setIsMasterclass(v); if (v && masterclassSessions.length === 0) setMasterclassSessions([{ session_number: 1, title: '', scheduled_at: '', duration_minutes: 60 }]); }} disabled={!isApproved} />
+            </div>
+
+            {isMasterclass && (
+              <div className="space-y-3 border border-border rounded-lg p-4 bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Sesiones ({masterclassSessions.length})</Label>
+                  <Button type="button" variant="outline" size="sm" className="text-xs h-7" onClick={() => setMasterclassSessions(prev => [...prev, { session_number: prev.length + 1, title: '', scheduled_at: '', duration_minutes: 60 }])}>
+                    + Agregar sesión
+                  </Button>
+                </div>
+                {masterclassSessions.map((session, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Sesión {i + 1} — Título</Label>
+                      <Input placeholder={`Sesión ${i + 1}`} value={session.title} onChange={e => {
+                        setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, title: e.target.value } : s));
+                      }} className="text-sm" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Fecha/Hora</Label>
+                      <Input type="datetime-local" value={session.scheduled_at} onChange={e => {
+                        setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, scheduled_at: e.target.value } : s));
+                      }} className="text-sm w-44" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Min.</Label>
+                      <Input type="number" value={session.duration_minutes} onChange={e => {
+                        setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, duration_minutes: parseInt(e.target.value) || 60 } : s));
+                      }} className="text-sm w-16" />
+                    </div>
+                    {masterclassSessions.length > 1 && (
+                      <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => {
+                        setMasterclassSessions(prev => prev.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, session_number: idx + 1 })));
+                      }}>✕</Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div><Label>Contenido Público</Label><p className="text-xs text-muted-foreground">El contenido público aparece en tu perfil y notifica a suscriptores</p></div>
               <Switch checked={isPublic} onCheckedChange={setIsPublic} disabled={!isApproved} />

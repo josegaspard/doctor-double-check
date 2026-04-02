@@ -780,7 +780,9 @@ export type Database = {
           description: string | null
           file_url: string
           id: string
+          is_masterclass: boolean | null
           is_public: boolean
+          masterclass_sessions: Json | null
           price: number | null
           thumbnail_url: string | null
           title: string
@@ -795,7 +797,9 @@ export type Database = {
           description?: string | null
           file_url: string
           id?: string
+          is_masterclass?: boolean | null
           is_public?: boolean
+          masterclass_sessions?: Json | null
           price?: number | null
           thumbnail_url?: string | null
           title: string
@@ -810,7 +814,9 @@ export type Database = {
           description?: string | null
           file_url?: string
           id?: string
+          is_masterclass?: boolean | null
           is_public?: boolean
+          masterclass_sessions?: Json | null
           price?: number | null
           thumbnail_url?: string | null
           title?: string

@@ -27,6 +27,7 @@ export interface Live {
   location?: string;
   chatMode?: string;
   chatPrice?: number;
+  doctorCedula?: string;
 }
 
 export interface Recording {
@@ -103,7 +104,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   
   // Cache for doctor profiles to reduce redundant queries
   const profileCache = useRef<Map<string, { name: string; avatar_url?: string }>>(new Map());
-  const doctorProfileCache = useRef<Map<string, { followers_count: number }>>(new Map());
+  const doctorProfileCache = useRef<Map<string, { followers_count: number; cedula_profesional?: string }>>(new Map());
 
   const fetchLives = useCallback(async (force = false) => {
     const now = Date.now();
@@ -134,23 +135,33 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         
         // Only fetch profiles not in cache
         if (uncachedIds.length > 0) {
-          const [profilesResult, doctorProfilesResult] = await Promise.all([
+          const [profilesResult, doctorProfilesResult, cedulaResult] = await Promise.all([
             supabase
               .from('profiles_public')
               .select('id, name, avatar_url')
               .in('id', uncachedIds),
             supabase
               .from('doctor_profiles_public')
-              .select('user_id, followers_count')
+              .select('user_id, followers_count, specialty')
+              .in('user_id', uncachedIds),
+            supabase
+              .from('doctor_profiles')
+              .select('user_id, cedula_profesional')
               .in('user_id', uncachedIds)
           ]);
+
+          // Build cedula map
+          const cedulaMap: Record<string, string> = {};
+          cedulaResult.data?.forEach(c => {
+            if (c.cedula_profesional) cedulaMap[c.user_id] = c.cedula_profesional;
+          });
 
           // Update caches
           profilesResult.data?.forEach(p => {
             profileCache.current.set(p.id, { name: p.name || 'Doctor', avatar_url: p.avatar_url || undefined });
           });
           doctorProfilesResult.data?.forEach(d => {
-            doctorProfileCache.current.set(d.user_id, { followers_count: d.followers_count || 0 });
+            doctorProfileCache.current.set(d.user_id, { followers_count: d.followers_count || 0, cedula_profesional: cedulaMap[d.user_id] });
           });
         }
 
@@ -171,6 +182,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           recordingPrice: l.recording_price ? Number(l.recording_price) : undefined,
           tags: l.tags || [],
           followersCount: doctorProfileCache.current.get(l.doctor_id)?.followers_count || 0,
+          doctorCedula: doctorProfileCache.current.get(l.doctor_id)?.cedula_profesional || undefined,
           dailyRoomName: l.daily_room_name || undefined,
           location: (l as any).location || undefined,
           chatMode: (l as any).chat_mode || 'free',

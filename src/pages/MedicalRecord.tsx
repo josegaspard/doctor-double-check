@@ -34,20 +34,27 @@ const FREQUENCY_OPTIONS = [
 ];
 
 const VACCINES = [
-  { key: 'bcg', label: 'BCG' },
+  { key: 'bcg', label: 'BCG (Tuberculosis)' },
   { key: 'hepatitis_b', label: 'Hepatitis B' },
-  { key: 'pentavalente', label: 'Pentavalente' },
+  { key: 'pentavalente', label: 'Pentavalente (DPaT+VPI+Hib)' },
+  { key: 'dpt', label: 'DPT (Difteria, Pertussis, Tétanos)' },
   { key: 'rotavirus', label: 'Rotavirus' },
-  { key: 'neumococo', label: 'Neumococo' },
-  { key: 'influenza', label: 'Influenza' },
+  { key: 'neumococo_conjugada', label: 'Neumococo conjugada (PCV13)' },
+  { key: 'neumococo_23', label: 'Neumococo 23 (PPSV23)' },
+  { key: 'influenza', label: 'Influenza (estacional)' },
   { key: 'srp', label: 'SRP (Sarampión, Rubéola, Parotiditis)' },
-  { key: 'dpt', label: 'DPT' },
-  { key: 'vph', label: 'VPH' },
+  { key: 'sabin', label: 'Sabin (Polio oral)' },
+  { key: 'salk', label: 'Salk (Polio inyectable)' },
+  { key: 'sr', label: 'SR (Sarampión-Rubéola)' },
+  { key: 'vph', label: 'VPH (Virus del Papiloma Humano)' },
   { key: 'hepatitis_a', label: 'Hepatitis A' },
-  { key: 'tetanos', label: 'Tétanos' },
+  { key: 'tetanos_td', label: 'Tétanos / Td' },
+  { key: 'tdpa', label: 'Tdpa (Tétanos, Difteria, Pertussis acelular)' },
   { key: 'covid19', label: 'COVID-19' },
   { key: 'meningococo', label: 'Meningococo' },
   { key: 'varicela', label: 'Varicela' },
+  { key: 'fiebre_amarilla', label: 'Fiebre amarilla' },
+  { key: 'rabia', label: 'Rabia' },
 ];
 
 interface MedicationItem { name: string; dose: string; frequency: string; }
@@ -58,6 +65,19 @@ const CHRONIC_CONDITIONS_LIST = [
   'Diabetes', 'Hipertensión', 'Asma', 'EPOC', 'Artritis',
   'Hipotiroidismo', 'Hipertiroidismo', 'Epilepsia', 'Insuficiencia renal',
   'Enfermedad hepática', 'VIH/SIDA', 'Lupus', 'Fibromialgia',
+];
+
+const EXTRA_FAMILY_CONDITIONS = [
+  { key: 'renal', label: 'Enfermedades renales' },
+  { key: 'hepatic', label: 'Enfermedades hepáticas' },
+  { key: 'thyroid', label: 'Enfermedades tiroideas' },
+  { key: 'asthma_copd', label: 'Asma / EPOC' },
+  { key: 'arthritis', label: 'Artritis / Reumatismo' },
+  { key: 'epilepsy', label: 'Epilepsia' },
+  { key: 'obesity', label: 'Obesidad' },
+  { key: 'alcoholism', label: 'Alcoholismo / Adicciones' },
+  { key: 'hereditary_allergies', label: 'Alergias hereditarias' },
+  { key: 'autoimmune', label: 'Enfermedades autoinmunes' },
 ];
 
 interface ClinicalData {
@@ -75,6 +95,7 @@ interface ClinicalData {
   family_cancer: boolean; family_cancer_detail: string;
   family_heart_disease: boolean; family_heart_disease_detail: string;
   family_mental_illness: boolean; family_mental_illness_detail: string;
+  extra_family: Record<string, { active: boolean; detail: string }>;
   family_other: string; family_history: string;
   habit_alcohol: string; habit_smoking: string; habit_vaping: string;
   habit_hookah: string; habit_drugs: string; habit_exercise: string;
@@ -102,6 +123,12 @@ function parseChronicList(text: string): Record<string, { active: boolean; detai
   if (text.trim()) { result['_other'] = { active: true, detail: text }; }
   return result;
 }
+function parseExtraFamily(text: string): Record<string, { active: boolean; detail: string }> {
+  try { const obj = JSON.parse(text); if (typeof obj === 'object' && !Array.isArray(obj)) return obj; } catch {}
+  const result: Record<string, { active: boolean; detail: string }> = {};
+  EXTRA_FAMILY_CONDITIONS.forEach(c => { result[c.key] = { active: false, detail: '' }; });
+  return result;
+}
 function parseVaccines(raw: any): Record<string, VaccineData> {
   const result: Record<string, VaccineData> = {};
   if (raw && typeof raw === 'object') {
@@ -127,6 +154,7 @@ const DEFAULT_DATA: ClinicalData = {
   family_cancer: false, family_cancer_detail: '',
   family_heart_disease: false, family_heart_disease_detail: '',
   family_mental_illness: false, family_mental_illness_detail: '',
+  extra_family: {},
   family_other: '', family_history: '',
   habit_alcohol: 'never', habit_smoking: 'never', habit_vaping: 'never',
   habit_hookah: 'never', habit_drugs: 'never', habit_exercise: 'never',
@@ -228,6 +256,7 @@ export default function MedicalRecord() {
           family_mental_illness: (record as any).family_mental_illness || false,
           family_mental_illness_detail: (record as any).family_mental_illness_detail || '',
           family_other: (record as any).family_other || '',
+          extra_family: parseExtraFamily(record.family_history || ''),
           family_history: record.family_history || '',
           habit_alcohol: (record as any).habit_alcohol || 'never',
           habit_smoking: (record as any).habit_smoking || 'never',
@@ -318,7 +347,7 @@ export default function MedicalRecord() {
         family_mental_illness: data.family_mental_illness,
         family_mental_illness_detail: data.family_mental_illness_detail || null,
         family_other: data.family_other || null,
-        family_history: data.family_history || null,
+        family_history: JSON.stringify(data.extra_family),
         habit_alcohol: data.habit_alcohol,
         habit_smoking: data.habit_smoking,
         habit_vaping: data.habit_vaping,
@@ -593,6 +622,42 @@ export default function MedicalRecord() {
                     </div>
                   );
                 })}
+
+                {/* Extended family conditions */}
+                {EXTRA_FAMILY_CONDITIONS.map(item => {
+                  const val = data.extra_family[item.key] || { active: false, detail: '' };
+                  return (
+                    <div key={item.key} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">{item.label}</Label>
+                        <Switch
+                          checked={val.active}
+                          onCheckedChange={v => {
+                            setData(prev => ({
+                              ...prev,
+                              extra_family: { ...prev.extra_family, [item.key]: { ...val, active: !!v } },
+                            }));
+                          }}
+                        />
+                      </div>
+                      {val.active && (
+                        <Textarea
+                          placeholder={`Detalle sobre ${item.label.toLowerCase()} en la familia...`}
+                          value={val.detail}
+                          onChange={e => {
+                            setData(prev => ({
+                              ...prev,
+                              extra_family: { ...prev.extra_family, [item.key]: { ...val, detail: e.target.value } },
+                            }));
+                          }}
+                          rows={2}
+                          className="text-sm"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+
                 <div>
                   <Label className="text-xs">Otros antecedentes familiares</Label>
                   <Textarea placeholder="Otros antecedentes relevantes..." value={data.family_other} onChange={e => update('family_other', e.target.value)} rows={2} />
