@@ -67,6 +67,19 @@ const CHRONIC_CONDITIONS_LIST = [
   'Enfermedad hepática', 'VIH/SIDA', 'Lupus', 'Fibromialgia',
 ];
 
+const EXTRA_FAMILY_CONDITIONS = [
+  { key: 'renal', label: 'Enfermedades renales' },
+  { key: 'hepatic', label: 'Enfermedades hepáticas' },
+  { key: 'thyroid', label: 'Enfermedades tiroideas' },
+  { key: 'asthma_copd', label: 'Asma / EPOC' },
+  { key: 'arthritis', label: 'Artritis / Reumatismo' },
+  { key: 'epilepsy', label: 'Epilepsia' },
+  { key: 'obesity', label: 'Obesidad' },
+  { key: 'alcoholism', label: 'Alcoholismo / Adicciones' },
+  { key: 'hereditary_allergies', label: 'Alergias hereditarias' },
+  { key: 'autoimmune', label: 'Enfermedades autoinmunes' },
+];
+
 interface ClinicalData {
   sex: string; date_of_birth: string; blood_type: string;
   height_cm: string; weight_kg: string; allergies: string;
