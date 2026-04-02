@@ -34,20 +34,27 @@ const FREQUENCY_OPTIONS = [
 ];
 
 const VACCINES = [
-  { key: 'bcg', label: 'BCG' },
+  { key: 'bcg', label: 'BCG (Tuberculosis)' },
   { key: 'hepatitis_b', label: 'Hepatitis B' },
-  { key: 'pentavalente', label: 'Pentavalente' },
+  { key: 'pentavalente', label: 'Pentavalente (DPaT+VPI+Hib)' },
+  { key: 'dpt', label: 'DPT (Difteria, Pertussis, Tétanos)' },
   { key: 'rotavirus', label: 'Rotavirus' },
-  { key: 'neumococo', label: 'Neumococo' },
-  { key: 'influenza', label: 'Influenza' },
+  { key: 'neumococo_conjugada', label: 'Neumococo conjugada (PCV13)' },
+  { key: 'neumococo_23', label: 'Neumococo 23 (PPSV23)' },
+  { key: 'influenza', label: 'Influenza (estacional)' },
   { key: 'srp', label: 'SRP (Sarampión, Rubéola, Parotiditis)' },
-  { key: 'dpt', label: 'DPT' },
-  { key: 'vph', label: 'VPH' },
+  { key: 'sabin', label: 'Sabin (Polio oral)' },
+  { key: 'salk', label: 'Salk (Polio inyectable)' },
+  { key: 'sr', label: 'SR (Sarampión-Rubéola)' },
+  { key: 'vph', label: 'VPH (Virus del Papiloma Humano)' },
   { key: 'hepatitis_a', label: 'Hepatitis A' },
-  { key: 'tetanos', label: 'Tétanos' },
+  { key: 'tetanos_td', label: 'Tétanos / Td' },
+  { key: 'tdpa', label: 'Tdpa (Tétanos, Difteria, Pertussis acelular)' },
   { key: 'covid19', label: 'COVID-19' },
   { key: 'meningococo', label: 'Meningococo' },
   { key: 'varicela', label: 'Varicela' },
+  { key: 'fiebre_amarilla', label: 'Fiebre amarilla' },
+  { key: 'rabia', label: 'Rabia' },
 ];
 
 interface MedicationItem { name: string; dose: string; frequency: string; }
