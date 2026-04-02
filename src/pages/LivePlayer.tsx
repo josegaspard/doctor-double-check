@@ -637,8 +637,8 @@ export default function LivePlayer() {
                         {t('livePlayer.verified')}
                       </Badge>
                     </div>
-                    {(live as any).doctorCedula && (
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Céd. Prof.: {(live as any).doctorCedula}</p>
+                    {live.doctorCedula && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Céd. Prof.: {live.doctorCedula}</p>
                     )}
                   </div>
                 </div>
