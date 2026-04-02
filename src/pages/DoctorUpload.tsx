@@ -241,9 +241,15 @@ export default function DoctorUpload() {
       setUploadProgress(100);
       if (uploadError) throw uploadError;
 
+      const insertPayload: any = { creator_id: user.id, type: getFileType(selectedFile), title: title.trim(), description: description.trim() || null, category, is_public: isPublic, audience_type: audienceType, file_url: fileName };
+      if (isMasterclass) {
+        insertPayload.is_masterclass = true;
+        insertPayload.masterclass_sessions = masterclassSessions.filter(s => s.title.trim());
+      }
+
       const { data: contentData, error: dbError } = await supabase
         .from('doctor_content')
-        .insert({ creator_id: user.id, type: getFileType(selectedFile), title: title.trim(), description: description.trim() || null, category, is_public: isPublic, audience_type: audienceType, file_url: fileName })
+        .insert(insertPayload)
         .select().single();
       if (dbError) throw dbError;
 

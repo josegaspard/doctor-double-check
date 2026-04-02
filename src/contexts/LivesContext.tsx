@@ -103,7 +103,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   
   // Cache for doctor profiles to reduce redundant queries
   const profileCache = useRef<Map<string, { name: string; avatar_url?: string }>>(new Map());
-  const doctorProfileCache = useRef<Map<string, { followers_count: number }>>(new Map());
+  const doctorProfileCache = useRef<Map<string, { followers_count: number; cedula_profesional?: string }>>(new Map());
 
   const fetchLives = useCallback(async (force = false) => {
     const now = Date.now();
