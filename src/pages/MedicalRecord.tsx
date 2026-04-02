@@ -347,7 +347,7 @@ export default function MedicalRecord() {
         family_mental_illness: data.family_mental_illness,
         family_mental_illness_detail: data.family_mental_illness_detail || null,
         family_other: data.family_other || null,
-        family_history: data.family_history || null,
+        family_history: JSON.stringify(data.extra_family),
         habit_alcohol: data.habit_alcohol,
         habit_smoking: data.habit_smoking,
         habit_vaping: data.habit_vaping,
