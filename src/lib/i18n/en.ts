@@ -11,6 +11,7 @@ export const en = {
     vault: 'My Vault',
     medicalRecord: 'Medical Record',
     hospitalLocator: 'Find Hospital',
+    medicalSupplies: 'Medical Supplies',
     doctorVault: 'Patient Vault',
     doctorVaultShort: 'Patients',
     dashboard: 'Dashboard',
