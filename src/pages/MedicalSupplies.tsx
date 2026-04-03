@@ -8,7 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Search, Package, ExternalLink, ShoppingCart, Filter,
   Stethoscope, Syringe, HeartPulse, Microscope, Pill, Shield,
-  Building2, Phone, Globe,
+  Building2, Phone, Globe, MapPin,
 } from 'lucide-react';
 
 interface Supplier {
