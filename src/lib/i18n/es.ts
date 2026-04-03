@@ -11,6 +11,7 @@ export const es = {
     vault: 'Mi Vault',
     medicalRecord: 'Expediente Médico',
     hospitalLocator: 'Localizar Hospital',
+    medicalSupplies: 'Material Médico',
     doctorVault: 'Vault Pacientes',
     doctorVaultShort: 'Pacientes',
     dashboard: 'Panel',

@@ -58,6 +58,7 @@ import {
   Shield,
   Megaphone,
   MapPin,
+  Package,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -90,6 +91,7 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['patient', 'doctor', 'resident'] },
   { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'] },
+  { labelKey: 'nav.medicalSupplies', href: '/medical-supplies', icon: Package, roles: ['doctor', 'resident'] },
   { labelKey: 'nav.upload', href: '/doctor/upload', icon: Upload, roles: ['doctor'], toggleKey: 'show_content_medical' },
   { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
