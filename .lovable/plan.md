@@ -1,131 +1,109 @@
 
-# Auditoría Completa: Estado Actual — ~90% completado
 
-## Resumen: ~60% hecho, ~40% pendiente
+# Plan: Hospital Locator UX/UI + Material Médico + Verificación Final
 
----
-
-## MÉDICOS
-
-### 1. Farmacéuticas (pestaña nueva después de disponibilidad)
-**❌ NO HECHO** — No existe ninguna funcionalidad de farmacéuticas. Se necesita crear una página nueva, una tabla en DB, y un nav item. Es una feature completamente nueva (marketplace de productos farmacéuticos con pago para promoción).
-
-### 2. Lives: Solo chat de pago → "Solo chat de pacientes suscritos"
-**⚠️ PARCIAL** — Existe `chatMode: 'paid_only'` pero su descripción dice "Solo pueden comentar quienes paguen por mensaje". Falta la opción específica de "solo pacientes suscritos" (que ya pagaron suscripción) sin cobro adicional por mensaje. La descripción en `LiveSetupForm.tsx` debe cambiarse y la lógica en `LiveChat.tsx` debe verificar suscripción activa en vez de cobrar por mensaje.
-
-### 3. Contenido Premium: Orden de filtros (Acceso primero, luego especialidades) + botón rojo "Subir contenido"
-**⚠️ PARCIAL** — Los filtros de acceso (all/free/paid/purchased) existen en `RecordingsGrid.tsx` y `ContentGallery.tsx`, pero no están primero en la UI. No hay botón rojo "Subir contenido" visible para doctores en estas páginas.
-
-### 4. Doctores: Quitar precios de las consultas
-**❌ NO HECHO** — `Doctors.tsx` líneas 725 y 858 muestran `PriceDisplay` con `consultation_fee`. Deben eliminarse para todos los usuarios.
-
-### 5. Chat: Quitar "1:1"
-**❌ NO HECHO** — `es.ts` y `en.ts` todavía tienen "Chat 1:1" en múltiples claves (líneas 114, 243, 244, 262).
-
-### 6. Reuniones: Tipo de reunión (caso clínico vs clase con residentes)
-**❌ NO HECHO** — `MeetingCreateDialog.tsx` no tiene selector de tipo. Se necesita agregar un campo `meeting_type` (ej: 'case_discussion' | 'resident_class') y migración DB.
-
-### 7. Pacientes: Ver location para restricción de receta por país
-**❌ NO HECHO** — No existe lógica que muestre la ubicación/país del paciente al doctor ni restricción de recetas por país.
-
-### 8. Panel: Cambiar "Acceso Vault" y "Escribir artículo" → "Subir contenido"
-**⚠️ PARCIAL** — `DoctorQuickActions.tsx` línea 29 ya dice "Subir Contenido". Pero línea 48 dice "Escribir Artículo" (debe cambiar a "Subir Contenido" o eliminarse). Y en el Dashboard general, las secciones de Vault necesitan renombrarse.
-
-### 9. Historia clínica personal para doctores (en panel o después)
-**❌ NO HECHO** — `MedicalRecord.tsx` línea 311 bloquea acceso: `if (role !== 'patient') return <Navigate to="/lives" replace />`. Los doctores no pueden ver su propio expediente. Debe permitir `role === 'doctor'` también.
-
-### 10. "Publicita en Medical Masters" — Explicar
-**✅ HECHO** — Sistema de advertising completo con `AdBanner`, `AdvertiserDashboard`, `AdminAds`, campañas CPM/CPC.
-
-### 11. Localizar un hospital (al final de nav para doctores)
-**❌ NO HECHO** — No existe página de "Localizar hospital" con integración de mapa/Waze/Google Maps.
-
-### 12. Completar lista de especialidades
-**⚠️ PARCIAL** — Hay ~17 especialidades en las listas. Fernanda pide la lista completa tipo Centro Médico ABC (~30+ especialidades).
-
-### 13. Chat privado solo con suscripción
-**✅ HECHO** — El AccessGuard + PaywallModal ya bloquean el chat a usuarios sin entitlement/suscripción.
+## 3 bloques de trabajo
 
 ---
 
-## PACIENTES
+## 1. Hospital Locator — Rediseño completo UX/UI
 
-### 14. Contenido Premium: Mismo orden que médicos
-**❌ NO HECHO** — Se aplica el mismo cambio del punto 3.
+**Estado actual:** Lista simple de 8 hospitales con nombre, dirección, teléfono y botones Waze/Google Maps. Sin imágenes, sin web, sin especialidades, sin mapa visual.
 
-### 15. Expediente Médico mejoras detalladas:
-- **Enfermedades crónicas con checkbox + recuadro:** **⚠️ PARCIAL** — Antecedentes familiares ya usan Switch+Textarea, pero enfermedades crónicas personales son un simple Textarea libre. Fernanda quiere checkboxes individuales con recuadro para fecha, igual que en familiares.
-- **Medicamentos como items individuales (no textarea grande):** **❌ NO HECHO** — Es un solo Textarea. Debe ser un array dinámico donde se agreguen medicamentos uno a uno.
-- **Cirugías previas como items individuales:** **❌ NO HECHO** — Mismo problema, es Textarea.
-- **Lista específica de enfermedades familiares:** **⚠️ PENDIENTE** — Fernanda dice "te mando la lista". Las 5 actuales (diabetes, hipertensión, cáncer, cardíaca, mental) pueden no ser suficientes.
-- **Hábitos con especificación:** **✅ HECHO** — Alcohol, cigarro, vape, hookah, drogas, ejercicio todos con selector de frecuencia.
-- **Vacunas con dosis y fecha:** **❌ NO HECHO** — Solo tiene checkbox de aplicada/no aplicada. Falta campos para número de dosis y fecha de aplicación.
-- **Estudios: descargar y compartir con médico específico:** **⚠️ PARCIAL** — El botón actual redirige a `/medical-history` pero no tiene descarga directa ni opción de compartir estudio individual a un médico.
+**Mejoras:**
 
-### 16. Localizar hospital con distancia + abrir en Waze/Google Maps
-**❌ NO HECHO** — No existe esta página.
+### Datos expandidos por hospital (~20 hospitales reales de CDMX)
+Cada hospital tendrá: nombre, dirección, teléfono, sitio web, especialidades destacadas, horario, nivel de atención (1er/2do/3er nivel), imagen de fachada (URL real del hospital), logo placeholder con iniciales estilizadas, y coordenadas reales.
 
-### 17. Chat: pacientes no pueden entrar a llamada sin pagar + recordatorio
-**⚠️ PARCIAL** — Hay AccessGuard que bloquea, pero no existe un sistema de "recordatorio del médico" antes de la llamada.
+### Rediseño UI
+- **Hero banner** con gradiente azul/verde médico y contador de hospitales
+- **Vista de tarjetas tipo grid** (2 columnas desktop, 1 móvil) con imagen de fachada en la parte superior de cada card
+- **Cada card muestra:** imagen, badge de tipo (Público/Privado/Clínica), nombre, dirección, teléfono clickeable, sitio web con enlace externo, distancia calculada, especialidades como chips/badges, horario
+- **Botones de navegación:** Google Maps y Waze con iconos estilizados
+- **Filtro por zona/delegación** además de tipo
+- **Vista de detalle expandible** al hacer click en la card (accordion o modal)
+- Se usarán imágenes reales de hospitales mexicanos vía URLs públicas de sus sitios web
 
----
-
-## RESIDENTES
-
-### 18. Contenido Premium: mismo cambio
-**❌ NO HECHO** — Mismo punto 3.
-
-### 19. Chat con opción residente-residente o residente-doctor
-**⚠️ PARCIAL** — El chat ya permite residente-doctor (con conexión aceptada), pero no residente-residente.
-
-### 20. Historia clínica después de reuniones
-**⚠️ PARCIAL** — Nav ya incluye Medical Record para resident, pero el código en `MedicalRecord.tsx` línea 311 bloquea si `role !== 'patient'`.
-
-### 21. Localizar hospital después de historia clínica
-**❌ NO HECHO** — Mismo punto 16.
+### Archivo: `src/pages/HospitalLocator.tsx` — reescritura completa
 
 ---
 
-## GENERAL
+## 2. Material Médico — Marketplace solo para doctores
 
-### 22. Filtrar contenido si es para todos o solo médicos/residentes
-**✅ HECHO** — `AudienceSelector` con opciones 'all', 'patients', 'professionals', 'subscribers' ya existe en `DoctorUpload.tsx`.
+**Requerimiento de Fernanda:** "Agregar compra/venta de material, solo para médicos, que a pacientes no les salga."
+
+### Implementación
+- **Nueva página:** `src/pages/MedicalSupplies.tsx`
+- **Acceso restringido:** Solo visible en nav para `roles: ['doctor', 'resident']` (NO pacientes)
+- **Contenido:** Directorio/marketplace de material y equipo médico
+  - Lista de categorías (instrumental quirúrgico, equipo diagnóstico, insumos, etc.)
+  - Cards de productos con imagen, nombre, descripción, precio, proveedor
+  - Botón "Solicitar info" o "Contactar proveedor"
+  - Filtros por categoría y búsqueda
+- **Datos iniciales:** Productos sample con proveedores mexicanos reales (referencias a marcas como Medline, 3M Health, BD, etc.)
+- **Nav item:** Después de "Disponibilidad" en el menú lateral del doctor, con icono `Package`
+
+### Archivos:
+- Crear `src/pages/MedicalSupplies.tsx`
+- Agregar ruta en `src/App.tsx`
+- Agregar nav item en `src/components/layout/MainLayout.tsx` con `roles: ['doctor', 'resident']`
+- Agregar i18n keys en `es.ts` y `en.ts`
 
 ---
 
-## Plan de Implementación (ordenado por prioridad)
+## 3. Verificación final del listado completo del cliente
 
-### Fase A: Cambios rápidos de texto/UI (sin DB)
-1. **Quitar "1:1" del chat** — Reemplazar en `es.ts` y `en.ts` (~6 strings)
-2. **Quitar precios de consulta en directorio** — Eliminar `PriceDisplay` en `Doctors.tsx` líneas 725 y 858
-3. **Panel doctor: renombrar "Escribir Artículo"** — Cambiar a "Subir Contenido" en `DoctorQuickActions.tsx`
-4. **Contenido Premium: reordenar filtros** — Mover access tabs antes de specialty en `RecordingsGrid.tsx` y `ContentGallery.tsx`, agregar botón rojo "Subir contenido" visible para doctores
-5. **Lives chat: cambiar descripción "Solo chat de pago"** → "Solo pacientes suscritos" en `LiveSetupForm.tsx`
+Basado en la revisión exhaustiva del código actual, confirmo el estado de cada punto:
 
-### Fase B: Cambios de lógica (sin DB migration)
-6. **MedicalRecord acceso para doctor y resident** — Cambiar línea 311 de `role !== 'patient'` a `!['patient','resident','doctor'].includes(role)`
-7. **Lives chat: verificar suscripción** — En `LiveChat.tsx`, agregar opción de chat `subscribers_only` que valide suscripción activa en vez de cobrar por mensaje
+| Punto | Estado |
+|-------|--------|
+| Suscripción pacientes a doctores | ✅ (followers + subscriptions) |
+| Notificaciones de conexión del doctor | ✅ (email + push) |
+| Idioma inglés/español | ✅ (LanguageContext) |
+| Validación identidad facial | ✅ (Veriff) |
+| Clasificación contenido por audiencia | ✅ (AudienceSelector) |
+| Verificación automática de doctor (cédula SEP) | ✅ |
+| Notificación por recargas/pagos | ✅ (send-purchase-email) |
+| Modelo pagos tipo Uber/marketplace | ✅ (Stripe Connect) |
+| Firma de documentos onboarding | ✅ (DocumentSignature) |
+| Subida de facturas por doctor | ✅ (DoctorInvoices) |
+| Lives freemium | ✅ |
+| Expediente médico renombrado | ✅ |
+| Seguridad expediente con OTP | ✅ |
+| Formularios clínicos al registro | ✅ (ClinicalHistoryForm) |
+| Chat tonos azules | ✅ |
+| Almacenamiento tipo iCloud (Vault) | ✅ |
+| Localiza tu médico/directorio | ✅ (Doctors.tsx) |
+| Notificaciones por suscripción | ✅ |
+| Métricas de Lives (viewers) | ✅ |
+| Videollamada paciente-doctor | ✅ (Daily/WebRTC) |
+| Disponibilidad del doctor toggle | ✅ |
+| Perfil profesional doctor (CV) | ✅ |
+| Bloqueo de pacientes | ✅ (BlockUserButton) |
+| Categorías de documentos | ✅ |
+| Cambio de moneda/divisa | ✅ (useCurrency) |
+| Split de pagos | ✅ (Stripe Connect) |
+| Facturación | ✅ |
+| Terminología "Orientación médica" | ✅ |
+| Noticias médicas | ✅ |
+| Badges doctores | ✅ (DoctorBadge + ranks) |
+| Residentes restricciones | ✅ |
+| Meets médicos | ✅ (ClinicalSessions + meeting_type) |
+| Reembolsos/disputas | ✅ (AdminRefunds) |
+| Contenido Premium reordenado | ✅ |
+| Precios ocultos en directorio | ✅ |
+| Chat sin "1:1" | ✅ |
+| Reuniones con tipo | ✅ |
+| Especialidades completas (~35) | ✅ |
+| Vacunas cartilla mexicana | ✅ |
+| Enfermedades familiares ampliadas | ✅ |
+| Medicamentos/cirugías dinámicos | ✅ |
+| Localizar hospital | ✅ (se mejorará) |
+| Masterclass en upload | ✅ |
+| Cédula en Lives | ✅ |
+| Chat modes (gratis/pago/mixto/suscriptores) | ✅ |
+| Farmacéuticas/Material médico | ❌ → Se implementa ahora |
+| Hospital Locator mejorado | ❌ → Se implementa ahora |
 
-### Fase C: Mejoras al Expediente Médico (migration necesaria)
-8. **Medicamentos como array dinámico** — Cambiar de Textarea a lista con botón "Agregar medicamento" (nombre, dosis, frecuencia)
-9. **Cirugías como array dinámico** — Igual que medicamentos (procedimiento, fecha)
-10. **Vacunas con dosis y fecha** — Expandir de boolean a objeto con `doses` y `date` por vacuna
-11. **Enfermedades crónicas con checkboxes** — Convertir de textarea a checkboxes con detalle (similar a antecedentes familiares)
-
-### Fase D: Features nuevas (requieren páginas y posiblemente DB)
-12. **Tipo de reunión** — Agregar campo `meeting_type` a `clinical_sessions` table + selector en `MeetingCreateDialog.tsx`
-13. **Localizar hospital** — Nueva página con geolocalización, lista de hospitales, enlace a Waze/Google Maps
-14. **Location de pacientes para doctores** — Mostrar país del paciente en el chat/perfil, restricción de prescripción por país
-15. **Farmacéuticas** — Feature completamente nueva (marketplace). Requiere tabla, página, lógica de pago. **Scope más grande.**
-
-### Archivos principales a modificar:
-- `src/lib/i18n/es.ts` y `en.ts` — Terminología
-- `src/pages/Doctors.tsx` — Quitar precios
-- `src/pages/MedicalRecord.tsx` — Acceso multi-rol + mejoras de formulario
-- `src/pages/RecordingsGrid.tsx` y `ContentGallery.tsx` — Reordenar filtros + botón
-- `src/components/live/LiveSetupForm.tsx` y `LiveChat.tsx` — Chat suscriptores
-- `src/components/meetings/MeetingCreateDialog.tsx` — Tipo de reunión
-- `src/components/doctor/DoctorQuickActions.tsx` — Renombrar acciones
-- **Nueva página:** `src/pages/HospitalLocator.tsx`
-- **Migration:** Campos JSON expandidos en `patient_clinical_history`, campo `meeting_type` en `clinical_sessions`
+**Todo lo demás del listado está implementado. Solo faltan estos 2 puntos que se resuelven en este plan.**
 
