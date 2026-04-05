@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import {
   Users, UserCheck, Stethoscope, GraduationCap, FileCheck, ArrowRight,
   LayoutDashboard, Loader2, Settings, RefreshCcw, Banknote, FileText,
-  Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare,
+  Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare, Building2, Package,
 } from 'lucide-react';
 
 interface AdminModule {
