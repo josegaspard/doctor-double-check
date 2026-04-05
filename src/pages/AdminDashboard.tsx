@@ -103,7 +103,13 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
         { id: 'reports', icon: Flag, href: '/admin/reports', color: 'text-destructive', borderColor: 'border-l-destructive', title: es ? 'Reportes y Reclamos' : 'Reports & Claims', desc: es ? 'Gestiona reportes de usuarios' : 'Manage user reports', badge: stats.pendingReports },
       ],
     },
-  ];
+    {
+      title: es ? '🏥 Directorio y Marketplace' : '🏥 Directory & Marketplace',
+      modules: [
+        { id: 'hospitals', icon: Building2, href: '/admin/hospitals', color: 'text-primary', borderColor: 'border-l-primary', title: es ? 'Hospitales y Clínicas' : 'Hospitals & Clinics', desc: es ? 'Administra el directorio de hospitales' : 'Manage hospital directory' },
+        { id: 'marketplace', icon: Package, href: '/admin/marketplace', color: 'text-secondary', borderColor: 'border-l-secondary', title: es ? 'Marketplace Material Médico' : 'Medical Supplies Marketplace', desc: es ? 'Productos, proveedores y pedidos' : 'Products, vendors and orders' },
+      ],
+    },
 
   if (role !== 'admin') return null;
 
