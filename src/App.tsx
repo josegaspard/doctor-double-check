@@ -125,6 +125,9 @@ const Meetings = React.lazy(() => import("./pages/Meetings"));
 const EmergencyDoctors = React.lazy(() => import("./pages/EmergencyDoctors"));
 const HospitalLocator = React.lazy(() => import("./pages/HospitalLocator"));
 const MedicalSupplies = React.lazy(() => import("./pages/MedicalSupplies"));
+const AdminHospitals = React.lazy(() => import("./pages/AdminHospitals"));
+const AdminMarketplace = React.lazy(() => import("./pages/AdminMarketplace"));
+const VendorDashboard = React.lazy(() => import("./pages/VendorDashboard"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
