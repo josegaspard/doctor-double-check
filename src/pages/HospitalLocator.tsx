@@ -1,9 +1,10 @@
 // @ts-nocheck
-// Full rewrite: DB-driven hospital locator with reviews
-import React, { useState, useEffect } from 'react';
+// Full rewrite: DB-driven hospital locator with reviews + featured
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useFeaturedListings } from '@/hooks/useFeaturedListings';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Building2, MapPin, Phone, Globe, Clock, Star, Navigation, Search, Loader2, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
+import { Building2, MapPin, Phone, Globe, Clock, Star, Navigation, Search, Loader2, ChevronDown, ChevronUp, MessageSquare, Sparkles } from 'lucide-react';
 
 const ZONES = ['Centro', 'Norte', 'Sur', 'Poniente', 'Oriente'];
 function getDistance(lat1, lng1, lat2, lng2) { const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180; const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2; return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
@@ -33,6 +34,8 @@ export default function HospitalLocator() {
   const [reviewDialog, setReviewDialog] = useState(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [submitting, setSubmitting] = useState(false);
+  const { featuredIds, featuredMap, trackImpression, trackClick } = useFeaturedListings('hospital');
+  const impressionTrackerRef = useRef(new Set());
 
   useEffect(() => { navigator.geolocation?.getCurrentPosition(pos => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }), () => setUserLoc({ lat: 19.4326, lng: -99.1332 })); }, []);
 
@@ -52,6 +55,17 @@ export default function HospitalLocator() {
     };
     fetchData();
   }, []);
+
+  // Track impressions for visible featured hospitals
+  useEffect(() => {
+    if (loading) return;
+    hospitals.forEach(h => {
+      if (featuredIds.has(h.id) && !impressionTrackerRef.current.has(h.id)) {
+        impressionTrackerRef.current.add(h.id);
+        trackImpression(h.id);
+      }
+    });
+  }, [hospitals, featuredIds, loading, trackImpression]);
 
   const handleSubmitReview = async () => {
     if (!user || !reviewDialog) return;
@@ -74,7 +88,20 @@ export default function HospitalLocator() {
     if (filterZone !== 'all' && h.zone !== filterZone) return false;
     if (search) { const s = search.toLowerCase(); return h.name.toLowerCase().includes(s) || h.address.toLowerCase().includes(s) || h.specialties.some(sp => sp.toLowerCase().includes(s)); }
     return true;
-  }).sort((a, b) => { if (userLoc && a.lat && a.lng && b.lat && b.lng) return getDistance(userLoc.lat, userLoc.lng, a.lat, a.lng) - getDistance(userLoc.lat, userLoc.lng, b.lat, b.lng); return 0; });
+  }).sort((a, b) => {
+    // Featured items first
+    const aFeatured = featuredIds.has(a.id) ? (featuredMap[a.id]?.priority || 1) : 0;
+    const bFeatured = featuredIds.has(b.id) ? (featuredMap[b.id]?.priority || 1) : 0;
+    if (aFeatured !== bFeatured) return bFeatured - aFeatured;
+    // Then by distance
+    if (userLoc && a.lat && a.lng && b.lat && b.lng) return getDistance(userLoc.lat, userLoc.lng, a.lat, a.lng) - getDistance(userLoc.lat, userLoc.lng, b.lat, b.lng);
+    return 0;
+  });
+
+  const handleCardClick = (h) => {
+    if (featuredIds.has(h.id)) trackClick(h.id);
+    setExpandedId(expandedId === h.id ? null : h.id);
+  };
 
   return (
     <MainLayout>
@@ -106,9 +133,30 @@ export default function HospitalLocator() {
               const dist = userLoc && h.lat && h.lng ? getDistance(userLoc.lat, userLoc.lng, h.lat, h.lng) : null;
               const expanded = expandedId === h.id;
               const hospReviews = reviews[h.id] || [];
+              const isFeatured = featuredIds.has(h.id);
+              const featuredLabel = isFeatured ? (es ? featuredMap[h.id]?.label_es : featuredMap[h.id]?.label_en) : null;
               return (
-                <Card key={h.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  {h.image_url && (<div className="relative h-40 sm:h-48 overflow-hidden"><img src={h.image_url} alt={h.name} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" /><div className="absolute bottom-2 left-3 right-3 flex items-end justify-between"><Badge variant="secondary" className="text-[10px] bg-background/90 backdrop-blur">{h.type === 'public' ? (es ? '🏥 Público' : '🏥 Public') : h.type === 'private' ? (es ? '🏨 Privado' : '🏨 Private') : (es ? '🏥 Clínica' : '🏥 Clinic')}</Badge>{dist !== null && <span className="text-[10px] text-white font-medium">{dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)} km`}</span>}</div></div>)}
+                <Card key={h.id} className={`overflow-hidden hover:shadow-lg transition-shadow ${isFeatured ? 'ring-2 ring-yellow-400/60 shadow-yellow-100/50' : ''}`}>
+                  {h.image_url && (
+                    <div className="relative h-40 sm:h-48 overflow-hidden">
+                      <img src={h.image_url} alt={h.name} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
+                        <Badge variant="secondary" className="text-[10px] bg-background/90 backdrop-blur">{h.type === 'public' ? (es ? '🏥 Público' : '🏥 Public') : h.type === 'private' ? (es ? '🏨 Privado' : '🏨 Private') : (es ? '🏥 Clínica' : '🏥 Clinic')}</Badge>
+                        {dist !== null && <span className="text-[10px] text-white font-medium">{dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)} km`}</span>}
+                      </div>
+                      {isFeatured && (
+                        <Badge className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-[9px] gap-1 shadow-lg">
+                          <Sparkles className="w-3 h-3" /> {featuredLabel}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                  {!h.image_url && isFeatured && (
+                    <Badge className="mx-4 mt-3 bg-yellow-400 text-yellow-900 text-[9px] gap-1 w-fit">
+                      <Sparkles className="w-3 h-3" /> {featuredLabel}
+                    </Badge>
+                  )}
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <h3 className="font-semibold text-sm sm:text-base leading-tight">{h.name}</h3>
@@ -118,7 +166,7 @@ export default function HospitalLocator() {
                     <div className="flex flex-wrap gap-1 mb-3">{h.specialties.slice(0, 4).map((sp, i) => <Badge key={i} variant="outline" className="text-[9px] px-1.5 py-0">{sp}</Badge>)}{h.specialties.length > 4 && <Badge variant="outline" className="text-[9px] px-1.5 py-0">+{h.specialties.length - 4}</Badge>}</div>
                     <div className="flex items-center gap-1.5 flex-wrap text-xs text-muted-foreground mb-3">{h.phone && <a href={`tel:${h.phone}`} className="flex items-center gap-1 hover:text-primary transition-colors"><Phone className="w-3 h-3" />{h.phone}</a>}{h.hours && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{h.hours}</span>}</div>
                     <div className="flex gap-2 mb-2">{h.lat && h.lng && (<><Button size="sm" variant="default" className="flex-1 text-xs gap-1" asChild><a href={`https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}`} target="_blank" rel="noopener noreferrer"><Navigation className="w-3.5 h-3.5" /> Google Maps</a></Button><Button size="sm" variant="outline" className="flex-1 text-xs gap-1" asChild><a href={`https://www.waze.com/ul?ll=${h.lat},${h.lng}&navigate=yes`} target="_blank" rel="noopener noreferrer"><Navigation className="w-3.5 h-3.5" /> Waze</a></Button></>)}</div>
-                    <div className="flex gap-2">{h.website && <Button size="sm" variant="ghost" className="text-xs gap-1 flex-1" asChild><a href={h.website} target="_blank" rel="noopener noreferrer"><Globe className="w-3.5 h-3.5" />{es ? 'Sitio web' : 'Website'}</a></Button>}<Button size="sm" variant="ghost" className="text-xs gap-1" onClick={() => setExpandedId(expanded ? null : h.id)}>{expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}{es ? 'Detalles' : 'Details'}</Button></div>
+                    <div className="flex gap-2">{h.website && <Button size="sm" variant="ghost" className="text-xs gap-1 flex-1" asChild><a href={h.website} target="_blank" rel="noopener noreferrer"><Globe className="w-3.5 h-3.5" />{es ? 'Sitio web' : 'Website'}</a></Button>}<Button size="sm" variant="ghost" className="text-xs gap-1" onClick={() => handleCardClick(h)}>{expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}{es ? 'Detalles' : 'Details'}</Button></div>
                     {expanded && (<div className="mt-3 pt-3 border-t border-border space-y-3">{h.description && <p className="text-xs text-muted-foreground">{h.description}</p>}{h.level && <p className="text-xs"><span className="font-medium">{es ? 'Nivel: ' : 'Level: '}</span>{h.level}</p>}{h.specialties.length > 0 && <div><p className="text-xs font-medium mb-1">{es ? 'Especialidades:' : 'Specialties:'}</p><div className="flex flex-wrap gap-1">{h.specialties.map((sp, i) => <Badge key={i} variant="secondary" className="text-[9px]">{sp}</Badge>)}</div></div>}<div><div className="flex items-center justify-between mb-2"><p className="text-xs font-medium">{es ? 'Reseñas' : 'Reviews'} ({hospReviews.length})</p>{user && <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => setReviewDialog(h.id)}><MessageSquare className="w-3 h-3" />{es ? 'Escribir' : 'Write'}</Button>}</div>{hospReviews.slice(0, 3).map(rv => <div key={rv.id} className="bg-muted/50 rounded-lg p-2 mb-1.5"><div className="flex items-center gap-1 mb-1">{[1,2,3,4,5].map(s => <Star key={s} className={`w-3 h-3 ${s <= rv.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />)}<span className="text-[10px] text-muted-foreground ml-1">{new Date(rv.created_at).toLocaleDateString()}</span></div>{rv.comment && <p className="text-xs text-muted-foreground">{rv.comment}</p>}</div>)}</div></div>)}
                   </CardContent>
                 </Card>

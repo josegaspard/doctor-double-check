@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import {
   Users, UserCheck, Stethoscope, GraduationCap, FileCheck, ArrowRight,
   LayoutDashboard, Loader2, Settings, RefreshCcw, Banknote, FileText,
-  Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare, Building2, Package,
+  Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare, Building2, Package, Star,
 } from 'lucide-react';
 
 interface AdminModule {
@@ -108,6 +108,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
       modules: [
         { id: 'hospitals', icon: Building2, href: '/admin/hospitals', color: 'text-primary', borderColor: 'border-l-primary', title: es ? 'Hospitales y Clínicas' : 'Hospitals & Clinics', desc: es ? 'Administra el directorio de hospitales' : 'Manage hospital directory' },
         { id: 'marketplace', icon: Package, href: '/admin/marketplace', color: 'text-secondary', borderColor: 'border-l-secondary', title: es ? 'Marketplace Material Médico' : 'Medical Supplies Marketplace', desc: es ? 'Productos, proveedores y pedidos' : 'Products, vendors and orders' },
+        { id: 'featured', icon: Star, href: '/admin/featured', color: 'text-warning', borderColor: 'border-l-warning', title: es ? 'Destacados y Promociones' : 'Featured & Promotions', desc: es ? 'Destaca hospitales y productos con métricas' : 'Feature hospitals & products with analytics' },
       ],
     },
   ];
