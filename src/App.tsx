@@ -128,6 +128,7 @@ const MedicalSupplies = React.lazy(() => import("./pages/MedicalSupplies"));
 const AdminHospitals = React.lazy(() => import("./pages/AdminHospitals"));
 const AdminMarketplace = React.lazy(() => import("./pages/AdminMarketplace"));
 const VendorDashboard = React.lazy(() => import("./pages/VendorDashboard"));
+const AdminFeatured = React.lazy(() => import("./pages/AdminFeatured"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -263,6 +264,7 @@ const App = () => {
                       <Route path="/admin/hospitals" element={<AdminHospitals />} />
                       <Route path="/admin/marketplace" element={<AdminMarketplace />} />
                       <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+                      <Route path="/admin/featured" element={<AdminFeatured />} />
                       <Route path="/psychology" element={<PsychologyDirectory />} />
                       <Route path="/nutrition" element={<NutritionDirectory />} />
                       <Route path="/for-residents" element={<ForResidents />} />
