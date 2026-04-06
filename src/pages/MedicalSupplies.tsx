@@ -47,10 +47,17 @@ export default function MedicalSupplies() {
     if (!user) { toast.error(es ? 'Inicia sesión para comprar' : 'Log in to purchase'); return; }
     setPurchasing(true);
     try {
-      const { error } = await supabase.from('marketplace_orders').insert({ buyer_id: user.id, product_id: product.id, vendor_id: product.vendor_id, quantity: 1, total_amount: product.price, status: 'pending' }).select().single();
+      const { data, error } = await supabase.functions.invoke('create-marketplace-checkout', {
+        body: { product_id: product.id, quantity: 1 },
+      });
       if (error) throw error;
-      toast.success(es ? '¡Pedido creado! El proveedor será notificado.' : 'Order placed! The vendor will be notified.');
-      setSelectedProduct(null);
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        toast.success(es ? 'Redirigiendo al pago...' : 'Redirecting to payment...');
+        setSelectedProduct(null);
+      } else {
+        throw new Error(data?.error || 'No checkout URL returned');
+      }
     } catch (err) { toast.error(err.message); }
     setPurchasing(false);
   };
