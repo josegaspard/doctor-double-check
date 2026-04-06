@@ -110,6 +110,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
         { id: 'marketplace', icon: Package, href: '/admin/marketplace', color: 'text-secondary', borderColor: 'border-l-secondary', title: es ? 'Marketplace Material Médico' : 'Medical Supplies Marketplace', desc: es ? 'Productos, proveedores y pedidos' : 'Products, vendors and orders' },
       ],
     },
+  ];
 
   if (role !== 'admin') return null;
 
