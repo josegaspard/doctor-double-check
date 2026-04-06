@@ -1370,6 +1370,95 @@ export type Database = {
         }
         Relationships: []
       }
+      featured_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          featured_id: string
+          id: string
+          user_id: string | null
+          user_role: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          featured_id: string
+          id?: string
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          featured_id?: string
+          id?: string
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "featured_events_featured_id_fkey"
+            columns: ["featured_id"]
+            isOneToOne: false
+            referencedRelation: "featured_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      featured_listings: {
+        Row: {
+          budget: number
+          cpc_rate: number
+          cpm_rate: number
+          created_at: string
+          end_date: string | null
+          id: string
+          is_active: boolean
+          label_en: string | null
+          label_es: string | null
+          listing_id: string
+          listing_type: string
+          priority: number
+          spent: number
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          budget?: number
+          cpc_rate?: number
+          cpm_rate?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          label_en?: string | null
+          label_es?: string | null
+          listing_id: string
+          listing_type: string
+          priority?: number
+          spent?: number
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          budget?: number
+          cpc_rate?: number
+          cpm_rate?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          label_en?: string | null
+          label_es?: string | null
+          listing_id?: string
+          listing_type?: string
+          priority?: number
+          spent?: number
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       followers: {
         Row: {
           created_at: string
@@ -1477,6 +1566,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          is_featured: boolean
           lat: number | null
           level: string | null
           lng: number | null
@@ -1496,6 +1586,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_featured?: boolean
           lat?: number | null
           level?: string | null
           lng?: number | null
@@ -1515,6 +1606,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_featured?: boolean
           lat?: number | null
           level?: string | null
           lng?: number | null
@@ -1883,6 +1975,7 @@ export type Database = {
           image_url: string | null
           images: Json | null
           is_active: boolean
+          is_featured: boolean
           name: string
           price: number
           stock: number
@@ -1899,6 +1992,7 @@ export type Database = {
           image_url?: string | null
           images?: Json | null
           is_active?: boolean
+          is_featured?: boolean
           name: string
           price?: number
           stock?: number
@@ -1915,6 +2009,7 @@ export type Database = {
           image_url?: string | null
           images?: Json | null
           is_active?: boolean
+          is_featured?: boolean
           name?: string
           price?: number
           stock?: number
