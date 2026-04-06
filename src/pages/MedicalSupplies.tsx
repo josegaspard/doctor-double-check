@@ -1,9 +1,10 @@
 // @ts-nocheck
-// Full rewrite: DB-driven marketplace with purchase flow
-import React, { useState, useEffect } from 'react';
+// Full rewrite: DB-driven marketplace with purchase flow + featured
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useFeaturedListings } from '@/hooks/useFeaturedListings';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Package, Search, Loader2, ShoppingCart, Store, Phone, Globe, MapPin } from 'lucide-react';
+import { Package, Search, Loader2, ShoppingCart, Store, Phone, Globe, MapPin, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function MedicalSupplies() {
@@ -29,6 +30,8 @@ export default function MedicalSupplies() {
   const [tab, setTab] = useState('products');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [purchasing, setPurchasing] = useState(false);
+  const { featuredIds, featuredMap, trackImpression, trackClick } = useFeaturedListings('product');
+  const impressionTrackerRef = useRef(new Set());
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -42,6 +45,17 @@ export default function MedicalSupplies() {
     };
     fetchAll();
   }, []);
+
+  // Track impressions for featured products
+  useEffect(() => {
+    if (loading) return;
+    products.forEach(p => {
+      if (featuredIds.has(p.id) && !impressionTrackerRef.current.has(p.id)) {
+        impressionTrackerRef.current.add(p.id);
+        trackImpression(p.id);
+      }
+    });
+  }, [products, featuredIds, loading, trackImpression]);
 
   const handlePurchase = async (product) => {
     if (!user) { toast.error(es ? 'Inicia sesión para comprar' : 'Log in to purchase'); return; }
@@ -62,10 +76,20 @@ export default function MedicalSupplies() {
     setPurchasing(false);
   };
 
+  const handleProductClick = (product) => {
+    if (featuredIds.has(product.id)) trackClick(product.id);
+    setSelectedProduct(product);
+  };
+
   const filteredProducts = products.filter(p => {
     if (filterCat !== 'all' && p.category !== filterCat) return false;
     if (search) { const s = search.toLowerCase(); return p.name.toLowerCase().includes(s) || (p.description || '').toLowerCase().includes(s) || (p.marketplace_vendors?.name || '').toLowerCase().includes(s); }
     return true;
+  }).sort((a, b) => {
+    // Featured items first
+    const aFeatured = featuredIds.has(a.id) ? (featuredMap[a.id]?.priority || 1) : 0;
+    const bFeatured = featuredIds.has(b.id) ? (featuredMap[b.id]?.priority || 1) : 0;
+    return bFeatured - aFeatured;
   });
 
   return (
@@ -106,23 +130,32 @@ export default function MedicalSupplies() {
             </div>
             {loading ? <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> : (
               <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-                {filteredProducts.map(p => (
-                  <Card key={p.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => setSelectedProduct(p)}>
-                    <div className="relative aspect-square overflow-hidden bg-muted">
-                      {p.image_url ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> : <div className="w-full h-full flex items-center justify-center"><Package className="w-12 h-12 text-muted-foreground/30" /></div>}
-                      {p.stock <= 5 && p.stock > 0 && <Badge variant="destructive" className="absolute top-2 right-2 text-[9px]">{es ? 'Últimas unidades' : 'Low stock'}</Badge>}
-                      {p.stock === 0 && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Badge variant="destructive">{es ? 'Agotado' : 'Sold out'}</Badge></div>}
-                    </div>
-                    <CardContent className="p-3">
-                      <p className="font-medium text-xs sm:text-sm line-clamp-2 mb-1 min-h-[2rem]">{p.name}</p>
-                      <p className="text-[10px] text-muted-foreground mb-2 truncate">{p.marketplace_vendors?.name}</p>
-                      <div className="flex items-end justify-between">
-                        <div><p className="text-sm sm:text-base font-bold text-primary">${p.price.toLocaleString()}</p><p className="text-[9px] text-muted-foreground">{p.currency}</p></div>
-                        <Button size="sm" variant="default" className="h-7 text-xs gap-1 px-2"><ShoppingCart className="w-3 h-3" />{es ? 'Comprar' : 'Buy'}</Button>
+                {filteredProducts.map(p => {
+                  const isFeatured = featuredIds.has(p.id);
+                  const featuredLabel = isFeatured ? (es ? featuredMap[p.id]?.label_es : featuredMap[p.id]?.label_en) : null;
+                  return (
+                    <Card key={p.id} className={`overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group ${isFeatured ? 'ring-2 ring-yellow-400/60 shadow-yellow-100/50' : ''}`} onClick={() => handleProductClick(p)}>
+                      <div className="relative aspect-square overflow-hidden bg-muted">
+                        {p.image_url ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> : <div className="w-full h-full flex items-center justify-center"><Package className="w-12 h-12 text-muted-foreground/30" /></div>}
+                        {isFeatured && (
+                          <Badge className="absolute top-2 left-2 bg-yellow-400 text-yellow-900 text-[9px] gap-1 shadow-lg">
+                            <Sparkles className="w-3 h-3" /> {featuredLabel}
+                          </Badge>
+                        )}
+                        {p.stock <= 5 && p.stock > 0 && <Badge variant="destructive" className="absolute top-2 right-2 text-[9px]">{es ? 'Últimas unidades' : 'Low stock'}</Badge>}
+                        {p.stock === 0 && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Badge variant="destructive">{es ? 'Agotado' : 'Sold out'}</Badge></div>}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      <CardContent className="p-3">
+                        <p className="font-medium text-xs sm:text-sm line-clamp-2 mb-1 min-h-[2rem]">{p.name}</p>
+                        <p className="text-[10px] text-muted-foreground mb-2 truncate">{p.marketplace_vendors?.name}</p>
+                        <div className="flex items-end justify-between">
+                          <div><p className="text-sm sm:text-base font-bold text-primary">${p.price.toLocaleString()}</p><p className="text-[9px] text-muted-foreground">{p.currency}</p></div>
+                          <Button size="sm" variant="default" className="h-7 text-xs gap-1 px-2"><ShoppingCart className="w-3 h-3" />{es ? 'Comprar' : 'Buy'}</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
             {!loading && filteredProducts.length === 0 && <p className="text-center text-muted-foreground py-12">{es ? 'No se encontraron productos' : 'No products found'}</p>}
@@ -154,6 +187,11 @@ export default function MedicalSupplies() {
             {selectedProduct && (<>
               <DialogHeader><DialogTitle className="text-base">{selectedProduct.name}</DialogTitle></DialogHeader>
               {selectedProduct.image_url && <img src={selectedProduct.image_url} alt={selectedProduct.name} className="w-full aspect-video object-cover rounded-lg mb-3" />}
+              {featuredIds.has(selectedProduct.id) && (
+                <Badge className="bg-yellow-400 text-yellow-900 text-[10px] gap-1 w-fit mb-2">
+                  <Sparkles className="w-3 h-3" /> {es ? featuredMap[selectedProduct.id]?.label_es : featuredMap[selectedProduct.id]?.label_en}
+                </Badge>
+              )}
               {selectedProduct.description && <p className="text-sm text-muted-foreground mb-3">{selectedProduct.description}</p>}
               {selectedProduct.category && <Badge variant="outline" className="mb-3">{selectedProduct.category}</Badge>}
               <div className="bg-muted/50 rounded-lg p-3 mb-3">
