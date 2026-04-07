@@ -22,6 +22,8 @@ import {
   Camera,
   Upload,
   Sparkles,
+  Users,
+  Stethoscope,
 } from 'lucide-react';
 
 const SPECIALTIES = [
@@ -309,7 +311,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
         {/* ── Section 2: Recording & Monetization ── */}
         <section className="space-y-4">
-          <SectionHeader number={2} icon={FilmIcon} title="Grabación y monetización" subtitle="Decide si grabas y cuánto cobrarás" />
+          <SectionHeader number={3} icon={FilmIcon} title="Grabación y monetización" subtitle="Decide si grabas y cuánto cobrarás" />
 
           <div className="flex items-center justify-between min-h-12">
             <div className="space-y-0.5">
@@ -353,7 +355,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
         {/* ── Section 3: Chat ── */}
         <section className="space-y-4">
-          <SectionHeader number={3} icon={MessageSquare} title="Chat en vivo" subtitle="Configura cómo interactúan los espectadores" />
+          <SectionHeader number={4} icon={MessageSquare} title="Chat en vivo" subtitle="Configura cómo interactúan los espectadores" />
 
           <div className="flex items-center justify-between min-h-12">
             <div className="space-y-0.5">
@@ -477,7 +479,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
         {/* ── Section 4: Tags (compact) ── */}
         <section className="space-y-3">
-          <SectionHeader number={4} icon={Tag} title="Etiquetas" subtitle="Opcional · Ayudan a encontrar tu live" />
+          <SectionHeader number={5} icon={Tag} title="Etiquetas" subtitle="Opcional · Ayudan a encontrar tu live" />
           <div className="flex gap-2">
             <Input
               placeholder="Añade una etiqueta"
@@ -523,6 +525,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             Se notificará automáticamente a tus suscriptores
           </p>
         </div>
+        </>)}
       </div>
 
       {/* Sticky mobile submit */}
