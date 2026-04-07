@@ -450,7 +450,7 @@ export default function ContentGallery() {
             </h1>
             <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
           </div>
-          {user && (
+          {user && user.role === 'doctor' && (
             <Link to="/doctor/upload">
               <Button variant="live" className="gap-2">
                 <Upload className="w-4 h-4" />
@@ -464,24 +464,28 @@ export default function ContentGallery() {
           {/* ===== Desktop Sidebar ===== */}
           {!isMobile && (
             <aside className="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide bg-card border border-border rounded-xl p-4 space-y-1">
-              {/* Content Type FIRST */}
+              {/* Access filter FIRST */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Tipo de contenido' : 'Content Type'}
+                  {language === 'es' ? 'Acceso' : 'Access'}
                 </h4>
                 <div className="space-y-0.5">
-                  {CONTENT_TYPES.map(ct => (
+                  {[
+                    { value: 'all', label: language === 'es' ? 'Todo' : 'All', icon: Globe },
+                    { value: 'new', label: language === 'es' ? 'Gratis' : 'Free', icon: Sparkles },
+                    { value: 'purchased', label: language === 'es' ? 'Comprados' : 'Purchased', icon: ShoppingBag },
+                  ].map(tab => (
                     <button
-                      key={ct.value}
-                      onClick={() => setTypeFilter(ct.value)}
+                      key={tab.value}
+                      onClick={() => setContentTab(tab.value)}
                       className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                        typeFilter === ct.value
-                          ? 'bg-accent text-accent-foreground shadow-sm'
+                        contentTab === tab.value
+                          ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'text-foreground hover:bg-muted'
                       }`}
                     >
-                      <ct.icon className="w-3 h-3 flex-shrink-0" />
-                      {ct.label}
+                      <tab.icon className="w-3 h-3 flex-shrink-0" />
+                      {tab.label}
                     </button>
                   ))}
                 </div>
@@ -582,15 +586,15 @@ export default function ContentGallery() {
               <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
                 <TabsTrigger value="all" className="gap-1.5 text-xs sm:text-sm">
                   <Library className="w-3.5 h-3.5" />
-                  {t('ads.contentAll')}
-                </TabsTrigger>
-                <TabsTrigger value="purchased" className="gap-1.5 text-xs sm:text-sm">
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  {t('ads.contentPurchased')}
+                  {language === 'es' ? 'Todo' : 'All'}
                 </TabsTrigger>
                 <TabsTrigger value="new" className="gap-1.5 text-xs sm:text-sm">
                   <Sparkles className="w-3.5 h-3.5" />
-                  {t('ads.contentNew')}
+                  {language === 'es' ? 'Gratis' : 'Free'}
+                </TabsTrigger>
+                <TabsTrigger value="purchased" className="gap-1.5 text-xs sm:text-sm">
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  {language === 'es' ? 'Comprados' : 'Purchased'}
                 </TabsTrigger>
               </TabsList>
             </Tabs>

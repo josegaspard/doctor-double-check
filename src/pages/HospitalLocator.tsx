@@ -142,7 +142,7 @@ export default function HospitalLocator() {
                       <img src={h.image_url} alt={h.name} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
-                        <Badge variant="secondary" className="text-[10px] bg-background/90 backdrop-blur">{h.type === 'public' ? (es ? '🏥 Público' : '🏥 Public') : h.type === 'private' ? (es ? '🏨 Privado' : '🏨 Private') : (es ? '🏥 Clínica' : '🏥 Clinic')}</Badge>
+                        <Badge className={`text-[10px] ${h.type === 'public' ? 'bg-blue-600 text-white' : h.type === 'private' ? 'bg-purple-600 text-white' : 'bg-teal-600 text-white'}`}>{h.type === 'public' ? (es ? '🏥 Público' : '🏥 Public') : h.type === 'private' ? (es ? '🏨 Privado' : '🏨 Private') : (es ? '🏥 Clínica' : '🏥 Clinic')}</Badge>
                         {dist !== null && <span className="text-[10px] text-white font-medium">{dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)} km`}</span>}
                       </div>
                       {isFeatured && (

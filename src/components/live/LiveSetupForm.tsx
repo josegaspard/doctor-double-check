@@ -22,6 +22,8 @@ import {
   Camera,
   Upload,
   Sparkles,
+  Users,
+  Stethoscope,
 } from 'lucide-react';
 
 const SPECIALTIES = [
@@ -55,6 +57,7 @@ export interface LiveConfig {
   chatMode: 'free' | 'paid_only' | 'mixed';
   chatPrice: number;
   chatHighlightSeconds: number;
+  contentTarget: 'medical' | 'patients';
 }
 
 function SectionHeader({ number, icon: Icon, title, subtitle }: { number: number; icon: React.ElementType; title: string; subtitle?: string }) {
@@ -106,6 +109,7 @@ function ChatModeCard({ icon: Icon, title, description, selected, onClick }: Cha
 }
 
 export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
+  const [contentTarget, setContentTarget] = useState<'medical' | 'patients' | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [specialty, setSpecialty] = useState('');
@@ -158,10 +162,11 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
       chatMode,
       chatPrice: Number(chatPrice) || 0,
       chatHighlightSeconds,
+      contentTarget: contentTarget || 'patients',
     });
   };
 
-  const isValid = title.trim().length > 0 && specialty.length > 0;
+  const isValid = title.trim().length > 0 && specialty.length > 0 && contentTarget !== null;
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-xl pb-36 sm:pb-8">
@@ -177,9 +182,33 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
       </div>
 
       <div className="space-y-6">
+        {/* ── Section 0: Content Target ── */}
+        <section className="space-y-4">
+          <SectionHeader number={1} icon={Users} title="¿Para quién es tu contenido?" subtitle="Selecciona el tipo de audiencia" />
+          <div className="grid grid-cols-2 gap-3">
+            <ChatModeCard
+              icon={Stethoscope}
+              title="Contenido médico"
+              description="Para profesionales de la salud (médicos y residentes)"
+              selected={contentTarget === 'medical'}
+              onClick={() => setContentTarget('medical')}
+            />
+            <ChatModeCard
+              icon={Users}
+              title="Contenido para pacientes"
+              description="Para pacientes y público general"
+              selected={contentTarget === 'patients'}
+              onClick={() => setContentTarget('patients')}
+            />
+          </div>
+        </section>
+
+        {contentTarget && (<>
+        <div className="border-t border-border" />
+
         {/* ── Section 1: About your live + Thumbnail ── */}
         <section className="space-y-4">
-          <SectionHeader number={1} icon={Mic} title="¿De qué trata tu live?" subtitle="Estos datos se muestran a los espectadores" />
+          <SectionHeader number={2} icon={Mic} title="¿De qué trata tu live?" subtitle="Estos datos se muestran a los espectadores" />
           
           {/* ★ THUMBNAIL — now prominent and always visible */}
           <div className="space-y-2">
@@ -282,7 +311,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
         {/* ── Section 2: Recording & Monetization ── */}
         <section className="space-y-4">
-          <SectionHeader number={2} icon={FilmIcon} title="Grabación y monetización" subtitle="Decide si grabas y cuánto cobrarás" />
+          <SectionHeader number={3} icon={FilmIcon} title="Grabación y monetización" subtitle="Decide si grabas y cuánto cobrarás" />
 
           <div className="flex items-center justify-between min-h-12">
             <div className="space-y-0.5">
@@ -326,7 +355,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
         {/* ── Section 3: Chat ── */}
         <section className="space-y-4">
-          <SectionHeader number={3} icon={MessageSquare} title="Chat en vivo" subtitle="Configura cómo interactúan los espectadores" />
+          <SectionHeader number={4} icon={MessageSquare} title="Chat en vivo" subtitle="Configura cómo interactúan los espectadores" />
 
           <div className="flex items-center justify-between min-h-12">
             <div className="space-y-0.5">
@@ -450,7 +479,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
         {/* ── Section 4: Tags (compact) ── */}
         <section className="space-y-3">
-          <SectionHeader number={4} icon={Tag} title="Etiquetas" subtitle="Opcional · Ayudan a encontrar tu live" />
+          <SectionHeader number={5} icon={Tag} title="Etiquetas" subtitle="Opcional · Ayudan a encontrar tu live" />
           <div className="flex gap-2">
             <Input
               placeholder="Añade una etiqueta"
@@ -496,6 +525,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             Se notificará automáticamente a tus suscriptores
           </p>
         </div>
+        </>)}
       </div>
 
       {/* Sticky mobile submit */}
