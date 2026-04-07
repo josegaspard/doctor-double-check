@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Upload, Video, FileText, Image, ArrowLeft, CheckCircle, AlertTriangle,
-  Loader2, X, Clock, Users, Trash2, Settings2, CheckSquare,
+  Loader2, X, Clock, Users, Trash2, Settings2, CheckSquare, Stethoscope,
 } from 'lucide-react';
 import { AudienceSelector, ContentAudience } from '@/components/content/AudienceSelector';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,6 +73,7 @@ export default function DoctorUpload() {
   const [category, setCategory] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [audienceType, setAudienceType] = useState<ContentAudience>('all');
+  const [contentTarget, setContentTarget] = useState<'medical' | 'patients' | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedContent, setUploadedContent] = useState<UploadedContent[]>([]);
@@ -311,6 +312,42 @@ export default function DoctorUpload() {
         <Card className={!isApproved ? 'opacity-50 pointer-events-none' : ''}>
           <CardHeader><CardTitle className="text-lg">Nuevo Contenido</CardTitle></CardHeader>
           <CardContent className="space-y-6">
+            {/* Content Target Selector */}
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">¿Para quién es este contenido? *</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setContentTarget('medical'); setAudienceType('professionals'); }}
+                  className={`text-left p-4 rounded-xl border-2 transition-all ${contentTarget === 'medical' ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/40'}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${contentTarget === 'medical' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                      <Stethoscope className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className={`font-semibold text-sm ${contentTarget === 'medical' ? 'text-primary' : 'text-foreground'}`}>Contenido médico</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Para profesionales de la salud</p>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setContentTarget('patients'); setAudienceType('patients'); }}
+                  className={`text-left p-4 rounded-xl border-2 transition-all ${contentTarget === 'patients' ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/40'}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${contentTarget === 'patients' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className={`font-semibold text-sm ${contentTarget === 'patients' ? 'text-primary' : 'text-foreground'}`}>Contenido para pacientes</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Para pacientes y público general</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
             {/* File Selection */}
             <div className="space-y-2">
               <Label>Archivo</Label>
