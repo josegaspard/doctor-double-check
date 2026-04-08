@@ -365,7 +365,7 @@ export default function Chat() {
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
               <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
             </div>
-            <span>Chat 1:1</span>
+            <span>Chat</span>
           </h1>
           <div className="flex items-center gap-2">
             {activeSessions.length > 0 && (

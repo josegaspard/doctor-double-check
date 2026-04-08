@@ -3,6 +3,7 @@ export const en = {
   nav: {
     lives: 'Lives',
     recordings: 'Premium Content',
+    recordingsShort: 'Content',
     content: 'Medical Content',
     contentShort: 'Med. Content',
     chat: 'Chat',
