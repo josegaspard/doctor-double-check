@@ -106,7 +106,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   if (role === 'doctor') {
     return [
       ...common,
-      { label: t('nav.recordings'), href: '/recordings', icon: PlayCircle },
+      { label: t('nav.recordingsShort'), href: '/recordings', icon: PlayCircle },
       { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
       { label: t('nav.dashboard'), href: '/doctor/dashboard', icon: LayoutDashboard },
     ];
@@ -115,7 +115,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   if (role === 'patient') {
     return [
       ...common,
-      { label: t('nav.recordings'), href: '/recordings', icon: PlayCircle },
+      { label: t('nav.recordingsShort'), href: '/recordings', icon: PlayCircle },
       { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
       { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
     ];
@@ -124,7 +124,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   if (role === 'admin') {
     return [
       ...common,
-      { label: t('nav.recordings'), href: '/recordings', icon: PlayCircle },
+      { label: t('nav.recordingsShort'), href: '/recordings', icon: PlayCircle },
       { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
       { label: t('nav.admin'), href: '/admin', icon: Settings },
     ];
@@ -134,7 +134,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   if (role === 'visitor' || !role) {
     return [
       ...common,
-      { label: t('nav.recordings'), href: '/recordings', icon: PlayCircle },
+      { label: t('nav.recordingsShort'), href: '/recordings', icon: PlayCircle },
       { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
       { label: t('nav.news'), href: '/news', icon: Calendar },
     ];
