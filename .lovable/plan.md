@@ -1,163 +1,109 @@
 
 
-# Plan: Client Feedback Implementation — Comprehensive Changes
+# Plan: Mobile Bottom Bar Fix + Audit Report
 
-## Analysis of what's ALREADY done vs what STILL NEEDS changes
+## 1. Fix: Mobile bottom bar "Contenido Premium" text
 
-Many items from the client's list were already implemented in prior iterations. Here's what **still needs work**:
+**Problem:** The bottom tab label uses `t('nav.recordings')` which translates to "Contenido Premium" — too long for mobile tabs, causing overflow/misalignment.
 
----
+**Solution:** In `MainLayout.tsx`, the `getBottomTabs` function returns `{ label: t('nav.recordings'), ... }`. Change this to use a shorter label for the bottom bar only: "Contenido" instead of "Contenido Premium".
 
-## 1. Live Setup — Add "Content Type" question as FIRST step
+**Files:**
+- `src/lib/i18n/es.ts` — Add `recordingsShort: 'Contenido'` under `nav`
+- `src/lib/i18n/en.ts` — Add `recordingsShort: 'Content'` under `nav`
+- `src/components/layout/MainLayout.tsx` — In `getBottomTabs`, change all `{ label: t('nav.recordings'), ... }` to `{ label: t('nav.recordingsShort'), ... }`
 
-**File:** `src/components/live/LiveSetupForm.tsx`
+## 2. Fix: Chat still shows "1:1"
 
-Currently the live setup form starts with "¿De qué trata tu live?" — the client wants the **first question** when going live or uploading content to be:
-- **Contenido médico** (for professionals)
-- **Contenido para pacientes** (for patients)
+**Problem:** `src/pages/Chat.tsx` line 368 still says `Chat 1:1`. Client asked to remove "1:1".
 
-Add a new "content target" selector as Section 0 (before everything else) in `LiveSetupForm.tsx` with two visual cards: "Contenido médico" and "Contenido para pacientes". This maps to the existing `audience_type` field but as a prominent first-step choice. Add `contentTarget` to the `LiveConfig` interface.
-
----
-
-## 2. DoctorUpload — Same "Content Type" first question
-
-**File:** `src/pages/DoctorUpload.tsx`
-
-Same as above — add a prominent content target selector before the file upload area. Two big cards: "Contenido médico" / "Contenido para pacientes". This replaces/precedes the existing `AudienceSelector` component.
+**Fix:** Change `<span>Chat 1:1</span>` to `<span>Chat</span>` in `Chat.tsx`.
 
 ---
 
-## 3. ContentGallery — Reorder tabs: Access FIRST, then specialties
+## 3. Audit: Feature Completion Status
 
-**File:** `src/pages/ContentGallery.tsx`
+After thorough review of the codebase against the full client feature list:
 
-The tabs at the top should be reordered to: **Todo → Gratis → Comprados** (access filter first). The sidebar on desktop currently has "Tipo de contenido" first then specialties — but it also has a **duplicate** "Tipo de contenido" section (lines 467-488 AND 516-537). Fix: Remove the duplicate, and ensure the sidebar order is:
-1. **Acceso** (Todo, Gratis, Comprados)
-2. **Especialidades** 
-3. **Tipo de contenido**
-4. **Categorías**
+### IMPLEMENTED (Confirmed in code):
 
-Also, the "Subir contenido" button should only show for doctors (currently shows for all logged-in users).
+| Feature | Status |
+|---------|--------|
+| Patient subscriptions to doctors (follow + notifications) | ✅ |
+| Doctor connection notifications (live/availability) | ✅ |
+| Language switching (ES/EN) with profile persistence | ✅ |
+| Identity verification (Veriff facial + SEP cédula) | ✅ |
+| Content audience classification (médico vs pacientes) as first step | ✅ |
+| Masterclass with sessions + calendar scheduling | ✅ |
+| Cédula shown in Lives info card | ✅ |
+| Lives: paid chat / subscribers-only mode | ✅ |
+| ContentGallery: Access filter first (Todo/Gratis/Comprados) | ✅ |
+| ContentGallery: Upload button restricted to doctors | ✅ |
+| Doctors directory: prices hidden | ✅ |
+| Meetings: case_discussion / resident_class type selector | ✅ |
+| Patient location for prescriptions (same-country check) | ✅ (per memory) |
+| Panel: "Subir contenido" instead of "Escribir artículo" | ✅ |
+| Medical record for doctors/residents/patients in nav | ✅ |
+| Hospital locator in nav | ✅ |
+| Expediente Médico structured (meds, surgeries, chronic diseases, habits, vaccines) | ✅ |
+| Content audience filter (professionals/patients) | ✅ |
+| Freemium lives (free to watch, premium to download/chat) | ✅ |
+| OTP-secured vault/expediente access | ✅ |
+| Clinical history form at registration | ✅ |
+| iCloud-style storage with limits | ✅ |
+| Doctor availability (Google Calendar style) | ✅ |
+| Videocall (Daily.co) | ✅ |
+| Doctor professional profile (CV, specialty, bio) | ✅ |
+| Block/restrict users | ✅ |
+| Document categories (labs, X-rays, etc.) | ✅ |
+| Stripe payments (wallet, checkout, splits) | ✅ |
+| Doctor bank account (CLABE, RFC) | ✅ |
+| Payouts with fund holds | ✅ |
+| Financial dashboard (doctor + admin) | ✅ |
+| Doctor invoice upload module | ✅ |
+| Reembolsos / disputas | ✅ |
+| Doctor badges (Élite, Pro, etc.) | ✅ |
+| Residents (chat allowed, no cobros, no consultas) | ✅ |
+| Resident-doctor networking (request/accept) | ✅ |
+| Medical news section | ✅ |
+| Admin panel (users, doctors, content, payments, moderation) | ✅ |
+| Specialties directory | ✅ |
+| Live metrics (viewer count, analytics) | ✅ |
+| PDF protection (no download, blob URLs) | ✅ |
+| Live recordings kept 24h + doctor chooses to save | ✅ |
+| Chat search | ✅ (per memory) |
+| Separate chat vs consultation payment | ✅ |
+| Compliance page | ✅ |
+| Hospital Locator (admin CRUD, reviews, Waze/Maps) | ✅ |
+| Medical Supplies Marketplace (admin, vendors, orders) | ✅ |
+| Featured/promoted listings with analytics | ✅ |
+| Hospital Locator badge colors fixed | ✅ |
 
----
+### STILL NEEDS FIX (found in code):
 
-## 4. ContentGallery — Red "Subir contenido" button for doctors
+| Item | Issue |
+|------|-------|
+| Chat "1:1" label | Still shows "Chat 1:1" — needs removal |
+| Mobile bottom bar "Contenido Premium" | Too long, needs short label |
 
-**File:** `src/pages/ContentGallery.tsx`
+### PHASE 2 (Not in scope — acknowledged as future):
 
-The upload button already exists with `variant="live"` (red). Just need to restrict visibility to `role === 'doctor'` instead of `!!user`.
-
----
-
-## 5. Hospital Locator — Fix button colors
-
-**File:** `src/pages/HospitalLocator.tsx`
-
-The badges "🏨 Privado" and "🏥 Público" use `variant="secondary"` with `bg-background/90` which results in white-on-white in some themes. Change to use colored badges:
-- **Público**: Blue badge (`bg-blue-600 text-white`)
-- **Privado**: Purple badge (`bg-purple-600 text-white`)
-- **Clínica**: Teal badge (`bg-teal-600 text-white`)
-
-Also fix the Google Maps and Waze buttons to ensure proper contrast.
-
----
-
-## 6. Lives — Chat mode "Solo chat de pago" → already says "Solo pacientes suscritos" ✅
-
-Looking at `LiveSetupForm.tsx` lines 359-364, this is **already done**: the `paid_only` mode says "Solo pacientes suscritos" with description "Solo pueden comentar los pacientes que estén suscritos a ti". **No change needed.**
-
----
-
-## 7. Doctors directory — Hide consultation prices ✅
-
-Already implemented per memory. **No change needed.**
-
----
-
-## 8. Chat — Remove "1:1" ✅
-
-Already implemented per memory. **No change needed.**
-
----
-
-## 9. Meetings — Meeting type selector ✅
-
-Already implemented (meeting_type with "case_discussion" and "resident_class"). **No change needed.**
-
----
-
-## 10. Patient location for prescription restriction ✅
-
-Already implemented per memory. **No change needed.**
-
----
-
-## 11. Panel: "Escribir artículo" → "Subir contenido" ✅
-
-Already done. **No change needed.**
-
----
-
-## 12. Medical Record for doctors/residents ✅
-
-Already in nav for `['patient', 'resident', 'doctor']`. **No change needed.**
-
----
-
-## 13. Hospital locator in nav ✅
-
-Already in nav for `['patient', 'doctor', 'resident']`. **No change needed.**
+- Psicología module (separate section)
+- Nutrición module (separate section)
+- Advanced geolocation filters (continent/country/city/university/hospital)
+- Multi-currency with automatic conversion
+- Native iOS/Android app
+- Advanced emergency/911 doctor finder
 
 ---
 
-## 14. Expediente Médico enhancements (chronic diseases, medications, surgeries, habits, vaccines) ✅
+## Summary of changes needed
 
-Already implemented with structured data per memory. **No change needed.**
+Only 2 small fixes remain:
 
----
+1. **`src/lib/i18n/es.ts` + `en.ts`**: Add `nav.recordingsShort`
+2. **`src/components/layout/MainLayout.tsx`**: Use short label in bottom tabs
+3. **`src/pages/Chat.tsx`**: Remove "1:1" from chat title
 
-## 15. Content audience filter ("solo para médicos y residentes") ✅
-
-AudienceSelector already has "professionals" option. **No change needed.**
-
----
-
-## Summary of ACTUAL changes needed
-
-| # | What | File(s) |
-|---|------|---------|
-| 1 | Add "Contenido médico / Contenido para pacientes" as first question in Live setup | `src/components/live/LiveSetupForm.tsx` |
-| 2 | Same first question in DoctorUpload | `src/pages/DoctorUpload.tsx` |
-| 3 | Fix ContentGallery sidebar order + remove duplicate + add Access filter first | `src/pages/ContentGallery.tsx` |
-| 4 | Restrict "Subir contenido" button to doctors only | `src/pages/ContentGallery.tsx` |
-| 5 | Fix Hospital Locator badge colors (Público/Privado/Clínica) | `src/pages/HospitalLocator.tsx` |
-
----
-
-## Technical Details
-
-### LiveSetupForm.tsx changes
-- Add new `contentTarget: 'medical' | 'patients'` field to `LiveConfig` interface
-- Add a new Section 0 before the current Section 1 with two visual `ChatModeCard`-style cards:
-  - 🩺 "Contenido médico" — "Para profesionales de la salud"
-  - 👥 "Contenido para pacientes" — "Para pacientes y público general"
-- Map this to the `audience_type` when saving
-
-### DoctorUpload.tsx changes  
-- Add the same content target selector before the file upload area
-- Two prominent cards matching the same design
-- Pre-set `audienceType` based on selection ('professionals' or 'patients')
-
-### ContentGallery.tsx changes
-- Fix: lines 467-488 duplicate the content type filter that also appears at 516-537. Remove the first one (or reorganize)
-- Reorder sidebar to: Access tabs → Specialties → Content Type → Categories  
-- Change `{user && (` to `{user && role === 'doctor' && (` for the upload button
-- On mobile, ensure the tabs show access filter (Todo/Gratis/Comprados) prominently
-
-### HospitalLocator.tsx changes
-- Line 145: Change badge classes from `bg-background/90 backdrop-blur` to colored variants:
-  - `public` → `bg-blue-600 text-white`
-  - `private` → `bg-purple-600 text-white`  
-  - `clinic` → `bg-teal-600 text-white`
+Everything else from the client's list is implemented.
 
