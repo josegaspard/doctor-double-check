@@ -198,16 +198,16 @@ export default function HospitalLocator() {
   ];
 
   const FilterPanel = () => (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Type */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{es ? 'Tipo' : 'Type'}</p>
-        <div className="flex flex-wrap gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Tipo' : 'Type'}</p>
+        <div className="grid grid-cols-2 gap-1.5">
           {typeChips.map(chip => (
             <button
               key={chip.value}
               onClick={() => setFilterType(chip.value)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${filterType === chip.value ? chip.color + ' shadow-md scale-105' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 text-center ${filterType === chip.value ? chip.color + ' shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}
             >
               {chip.icon} {chip.label}
             </button>
@@ -215,9 +215,11 @@ export default function HospitalLocator() {
         </div>
       </div>
 
+      <hr className="border-border/50" />
+
       {/* Specialty */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{es ? 'Especialidad' : 'Specialty'}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Especialidad' : 'Specialty'}</p>
         <Select value={filterSpecialty} onValueChange={setFilterSpecialty}>
           <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={es ? 'Todas' : 'All'} /></SelectTrigger>
           <SelectContent className="max-h-60">
@@ -227,67 +229,80 @@ export default function HospitalLocator() {
         </Select>
       </div>
 
+      <hr className="border-border/50" />
+
       {/* Zone */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{es ? 'Zona' : 'Zone'}</p>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setFilterZone('all')} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${filterZone === 'all' ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Zona' : 'Zone'}</p>
+        <div className="flex flex-wrap gap-1.5">
+          <button onClick={() => setFilterZone('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${filterZone === 'all' ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
             {es ? 'Todas' : 'All'}
           </button>
           {ZONES.map(z => (
-            <button key={z} onClick={() => setFilterZone(z)} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${filterZone === z ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
+            <button key={z} onClick={() => setFilterZone(z)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${filterZone === z ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
               {z}
             </button>
           ))}
         </div>
       </div>
 
+      <hr className="border-border/50" />
+
       {/* Min rating */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{es ? 'Calificación mínima' : 'Min. Rating'}</p>
-          <span className="text-xs font-medium text-primary">{filterMinRating > 0 ? `${filterMinRating}+ ⭐` : es ? 'Cualquiera' : 'Any'}</span>
-        </div>
-        <div className="flex gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Calificación mínima' : 'Min. Rating'}</p>
+        <div className="grid grid-cols-5 gap-1.5">
           {[0, 3, 3.5, 4, 4.5].map(r => (
-            <button key={r} onClick={() => setFilterMinRating(r)} className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${filterMinRating === r ? 'bg-yellow-400/20 text-yellow-700 border border-yellow-400 shadow-sm' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
+            <button key={r} onClick={() => setFilterMinRating(r)} className={`py-2 rounded-lg text-xs font-medium transition-all duration-200 text-center ${filterMinRating === r ? 'bg-yellow-400/20 text-yellow-700 border-2 border-yellow-400 shadow-sm ring-1 ring-yellow-400/30' : 'bg-muted/60 text-muted-foreground hover:bg-muted border border-transparent'}`}>
               {r === 0 ? (es ? 'Todo' : 'All') : `${r}+`}
             </button>
           ))}
         </div>
       </div>
 
+      <hr className="border-border/50" />
+
       {/* Max distance */}
       {userLoc && (
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{es ? 'Distancia máxima' : 'Max Distance'}</p>
-            <span className="text-xs font-medium text-primary">{filterMaxDist < 100 ? `${filterMaxDist} km` : es ? 'Sin límite' : 'No limit'}</span>
+        <>
+          <div>
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{es ? 'Distancia máxima' : 'Max Distance'}</p>
+              <span className="text-xs font-semibold text-primary">{filterMaxDist < 100 ? `${filterMaxDist} km` : es ? 'Sin límite' : 'No limit'}</span>
+            </div>
+            <Slider value={[filterMaxDist]} onValueChange={([v]) => setFilterMaxDist(v)} min={1} max={100} step={1} className="py-2" />
+            <div className="flex justify-between text-[9px] text-muted-foreground mt-1 px-0.5">
+              <span>1 km</span><span>25</span><span>50</span><span>75</span><span>100</span>
+            </div>
           </div>
-          <Slider value={[filterMaxDist]} onValueChange={([v]) => setFilterMaxDist(v)} min={1} max={100} step={1} className="py-2" />
-        </div>
+          <hr className="border-border/50" />
+        </>
       )}
 
       {/* Sort */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{es ? 'Ordenar por' : 'Sort by'}</p>
-        <div className="flex gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Ordenar por' : 'Sort by'}</p>
+        <div className="grid grid-cols-3 gap-1.5">
           {([
-            { value: 'distance', label: es ? 'Cercanía' : 'Distance', icon: <Navigation className="w-3.5 h-3.5" /> },
-            { value: 'rating', label: es ? 'Calificación' : 'Rating', icon: <Star className="w-3.5 h-3.5" /> },
+            { value: 'distance', label: es ? 'Cercanía' : 'Near', icon: <Navigation className="w-3.5 h-3.5" /> },
+            { value: 'rating', label: es ? 'Rating' : 'Rating', icon: <Star className="w-3.5 h-3.5" /> },
             { value: 'name', label: es ? 'Nombre' : 'Name', icon: <ArrowUpDown className="w-3.5 h-3.5" /> },
           ] as { value: SortMode; label: string; icon: React.ReactNode }[]).map(s => (
-            <button key={s.value} onClick={() => setSortMode(s.value)} className={`flex items-center gap-1.5 flex-1 justify-center py-2 rounded-lg text-xs font-medium transition-all duration-200 ${sortMode === s.value ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
-              {s.icon} {s.label}
+            <button key={s.value} onClick={() => setSortMode(s.value)} className={`flex flex-col items-center gap-1 py-2.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${sortMode === s.value ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
+              {s.icon}
+              <span>{s.label}</span>
             </button>
           ))}
         </div>
       </div>
 
       {activeFilterCount > 0 && (
-        <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full text-xs gap-1 text-destructive hover:text-destructive">
-          <X className="w-3.5 h-3.5" /> {es ? 'Limpiar filtros' : 'Clear filters'} ({activeFilterCount})
-        </Button>
+        <>
+          <hr className="border-border/50" />
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10">
+            <X className="w-3.5 h-3.5" /> {es ? 'Limpiar filtros' : 'Clear filters'} ({activeFilterCount})
+          </Button>
+        </>
       )}
     </div>
   );
@@ -408,7 +423,7 @@ export default function HospitalLocator() {
 
         <div className="flex gap-6">
           {/* Desktop sidebar */}
-          <aside className="hidden sm:block w-56 flex-shrink-0 sticky top-20 self-start">
+          <aside className="hidden sm:block w-60 flex-shrink-0 sticky top-20 self-start">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-1.5">
                 <SlidersHorizontal className="w-4 h-4 text-primary" />

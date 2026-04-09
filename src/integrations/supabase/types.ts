@@ -1911,39 +1911,75 @@ export type Database = {
         Row: {
           buyer_id: string
           created_at: string
+          delivered_at: string | null
+          delivery_fee: number | null
+          estimated_delivery: string | null
           id: string
+          paid_at: string | null
           product_id: string | null
           quantity: number
+          shipped_at: string | null
           shipping_address: Json | null
+          shipping_city: string | null
+          shipping_name: string | null
+          shipping_notes: string | null
+          shipping_phone: string | null
+          shipping_state: string | null
+          shipping_zip: string | null
           status: string
           stripe_session_id: string | null
           total_amount: number
+          tracking_number: string | null
           updated_at: string
           vendor_id: string | null
         }
         Insert: {
           buyer_id: string
           created_at?: string
+          delivered_at?: string | null
+          delivery_fee?: number | null
+          estimated_delivery?: string | null
           id?: string
+          paid_at?: string | null
           product_id?: string | null
           quantity?: number
+          shipped_at?: string | null
           shipping_address?: Json | null
+          shipping_city?: string | null
+          shipping_name?: string | null
+          shipping_notes?: string | null
+          shipping_phone?: string | null
+          shipping_state?: string | null
+          shipping_zip?: string | null
           status?: string
           stripe_session_id?: string | null
           total_amount?: number
+          tracking_number?: string | null
           updated_at?: string
           vendor_id?: string | null
         }
         Update: {
           buyer_id?: string
           created_at?: string
+          delivered_at?: string | null
+          delivery_fee?: number | null
+          estimated_delivery?: string | null
           id?: string
+          paid_at?: string | null
           product_id?: string | null
           quantity?: number
+          shipped_at?: string | null
           shipping_address?: Json | null
+          shipping_city?: string | null
+          shipping_name?: string | null
+          shipping_notes?: string | null
+          shipping_phone?: string | null
+          shipping_state?: string | null
+          shipping_zip?: string | null
           status?: string
           stripe_session_id?: string | null
           total_amount?: number
+          tracking_number?: string | null
           updated_at?: string
           vendor_id?: string | null
         }

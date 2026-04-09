@@ -73,6 +73,9 @@ Deno.serve(async (req) => {
       if (session.metadata?.type === "live_chat_highlight" && session.payment_status === "paid") {
         await handleLiveChatHighlight(db, session);
       }
+      if (session.metadata?.type === "marketplace_purchase" && session.payment_status === "paid") {
+        await handleMarketplacePurchase(db, session);
+      }
     }
 
     if (event.type === "invoice.payment_succeeded") {
@@ -906,4 +909,79 @@ async function handleLiveChatHighlight(db: ReturnType<typeof supabaseAdmin>, ses
     
     logStep("Subscriptions deactivated", { count: subs.length, userId: profile.id });
   }
+}
+
+async function handleMarketplacePurchase(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const buyerId = session.metadata!.buyer_id;
+  const productId = session.metadata!.product_id;
+  const totalAmount = parseFloat(session.metadata!.total_amount);
+
+  logStep("Processing marketplace purchase", { buyerId, productId, totalAmount });
+
+  // Update order status to paid
+  const { data: order } = await db
+    .from("marketplace_orders")
+    .update({ status: "paid", paid_at: new Date().toISOString() })
+    .eq("stripe_session_id", session.id)
+    .select("id, shipping_city")
+    .single();
+
+  // Get product name for email
+  const { data: product } = await db
+    .from("marketplace_products")
+    .select("name")
+    .eq("id", productId)
+    .single();
+
+  // Get buyer profile for email
+  const { data: buyer } = await db
+    .from("profiles")
+    .select("email, name")
+    .eq("id", buyerId)
+    .single();
+
+  // Notify admin
+  const { data: admins } = await db
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "admin");
+
+  if (admins) {
+    for (const admin of admins) {
+      await db.from("notifications").insert({
+        user_id: admin.user_id,
+        type: "system",
+        title: "🛒 Nueva compra en Marketplace",
+        message: `${buyer?.name || "Usuario"} compró ${product?.name || "un producto"} por $${totalAmount}`,
+        data: { order_id: order?.id, url: "/admin/marketplace" },
+      });
+    }
+  }
+
+  // Send purchase confirmation email
+  if (buyer?.email) {
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+      await fetch(`${supabaseUrl}/functions/v1/send-purchase-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+        body: JSON.stringify({
+          email: buyer.email,
+          name: buyer.name || "Usuario",
+          productName: product?.name || "Producto",
+          amount: totalAmount,
+          currency: "MXN",
+          orderId: order?.id,
+          shippingCity: order?.shipping_city,
+          type: "purchase",
+        }),
+      });
+      logStep("Marketplace purchase email sent", { buyerId });
+    } catch (e) {
+      logStep("Error sending marketplace email (non-critical)", { error: e instanceof Error ? e.message : e });
+    }
+  }
+
+  logStep("Marketplace purchase completed", { buyerId, productId, orderId: order?.id });
 }
