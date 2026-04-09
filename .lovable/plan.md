@@ -1,109 +1,107 @@
 
 
-# Plan: Mobile Bottom Bar Fix + Audit Report
+# Plan: Hospital Locator Filter UX + Marketplace Full Purchase Flow + Medical Supplies Filters
 
-## 1. Fix: Mobile bottom bar "Contenido Premium" text
+## 1. Hospital Locator — Filter Sidebar UX/UI Polish
 
-**Problem:** The bottom tab label uses `t('nav.recordings')` which translates to "Contenido Premium" — too long for mobile tabs, causing overflow/misalignment.
+**File:** `src/pages/HospitalLocator.tsx`
 
-**Solution:** In `MainLayout.tsx`, the `getBottomTabs` function returns `{ label: t('nav.recordings'), ... }`. Change this to use a shorter label for the bottom bar only: "Contenido" instead of "Contenido Premium".
-
-**Files:**
-- `src/lib/i18n/es.ts` — Add `recordingsShort: 'Contenido'` under `nav`
-- `src/lib/i18n/en.ts` — Add `recordingsShort: 'Content'` under `nav`
-- `src/components/layout/MainLayout.tsx` — In `getBottomTabs`, change all `{ label: t('nav.recordings'), ... }` to `{ label: t('nav.recordingsShort'), ... }`
-
-## 2. Fix: Chat still shows "1:1"
-
-**Problem:** `src/pages/Chat.tsx` line 368 still says `Chat 1:1`. Client asked to remove "1:1".
-
-**Fix:** Change `<span>Chat 1:1</span>` to `<span>Chat</span>` in `Chat.tsx`.
+**Changes to FilterPanel:**
+- **Rating buttons**: Add proper grid layout (`grid grid-cols-5 gap-1.5`) so all 5 buttons (Todo, 3+, 3.5+, 4+, 4.5+) are evenly spaced and aligned
+- **Sort buttons**: Use `grid grid-cols-3 gap-2` instead of `flex gap-2` so Cercanía/Calificación/Nombre are uniform width and don't squish text
+- **Spacing**: Increase `space-y-5` to `space-y-6` between sections; add subtle dividers (`<hr>`) between filter groups
+- **Visual hierarchy**: Use slightly larger section labels (text-[11px] instead of text-xs), add bottom border separators
+- **Selected state**: Make selected buttons more prominent with a ring/border effect instead of just background color change
+- **Distance slider**: Add tick marks at 10, 25, 50, 75, 100km
+- **Overall sidebar**: Slightly wider (w-60 instead of w-56), more padding (p-5)
 
 ---
 
-## 3. Audit: Feature Completion Status
+## 2. Marketplace Full Purchase Flow — End-to-End
 
-After thorough review of the codebase against the full client feature list:
+This is the biggest piece. Currently: checkout creates a Stripe session + pending order, but after payment **nothing happens** (webhook doesn't handle marketplace). We need:
 
-### IMPLEMENTED (Confirmed in code):
+### 2a. DB Migration — Add shipping/tracking fields + notifications table
 
-| Feature | Status |
-|---------|--------|
-| Patient subscriptions to doctors (follow + notifications) | ✅ |
-| Doctor connection notifications (live/availability) | ✅ |
-| Language switching (ES/EN) with profile persistence | ✅ |
-| Identity verification (Veriff facial + SEP cédula) | ✅ |
-| Content audience classification (médico vs pacientes) as first step | ✅ |
-| Masterclass with sessions + calendar scheduling | ✅ |
-| Cédula shown in Lives info card | ✅ |
-| Lives: paid chat / subscribers-only mode | ✅ |
-| ContentGallery: Access filter first (Todo/Gratis/Comprados) | ✅ |
-| ContentGallery: Upload button restricted to doctors | ✅ |
-| Doctors directory: prices hidden | ✅ |
-| Meetings: case_discussion / resident_class type selector | ✅ |
-| Patient location for prescriptions (same-country check) | ✅ (per memory) |
-| Panel: "Subir contenido" instead of "Escribir artículo" | ✅ |
-| Medical record for doctors/residents/patients in nav | ✅ |
-| Hospital locator in nav | ✅ |
-| Expediente Médico structured (meds, surgeries, chronic diseases, habits, vaccines) | ✅ |
-| Content audience filter (professionals/patients) | ✅ |
-| Freemium lives (free to watch, premium to download/chat) | ✅ |
-| OTP-secured vault/expediente access | ✅ |
-| Clinical history form at registration | ✅ |
-| iCloud-style storage with limits | ✅ |
-| Doctor availability (Google Calendar style) | ✅ |
-| Videocall (Daily.co) | ✅ |
-| Doctor professional profile (CV, specialty, bio) | ✅ |
-| Block/restrict users | ✅ |
-| Document categories (labs, X-rays, etc.) | ✅ |
-| Stripe payments (wallet, checkout, splits) | ✅ |
-| Doctor bank account (CLABE, RFC) | ✅ |
-| Payouts with fund holds | ✅ |
-| Financial dashboard (doctor + admin) | ✅ |
-| Doctor invoice upload module | ✅ |
-| Reembolsos / disputas | ✅ |
-| Doctor badges (Élite, Pro, etc.) | ✅ |
-| Residents (chat allowed, no cobros, no consultas) | ✅ |
-| Resident-doctor networking (request/accept) | ✅ |
-| Medical news section | ✅ |
-| Admin panel (users, doctors, content, payments, moderation) | ✅ |
-| Specialties directory | ✅ |
-| Live metrics (viewer count, analytics) | ✅ |
-| PDF protection (no download, blob URLs) | ✅ |
-| Live recordings kept 24h + doctor chooses to save | ✅ |
-| Chat search | ✅ (per memory) |
-| Separate chat vs consultation payment | ✅ |
-| Compliance page | ✅ |
-| Hospital Locator (admin CRUD, reviews, Waze/Maps) | ✅ |
-| Medical Supplies Marketplace (admin, vendors, orders) | ✅ |
-| Featured/promoted listings with analytics | ✅ |
-| Hospital Locator badge colors fixed | ✅ |
+- Add columns to `marketplace_orders`: `shipping_name`, `shipping_phone`, `shipping_city`, `shipping_notes`, `tracking_number`, `estimated_delivery`, `delivery_fee`, `paid_at`, `shipped_at`, `delivered_at`
+- Create `marketplace_notifications` table for order status change emails/notifications
 
-### STILL NEEDS FIX (found in code):
+### 2b. Stripe Webhook — Handle marketplace purchase completion
 
-| Item | Issue |
-|------|-------|
-| Chat "1:1" label | Still shows "Chat 1:1" — needs removal |
-| Mobile bottom bar "Contenido Premium" | Too long, needs short label |
+**File:** `supabase/functions/stripe-webhook/index.ts`
 
-### PHASE 2 (Not in scope — acknowledged as future):
+- Add handler in `checkout.session.completed` for marketplace orders (detect by `metadata.product_id` presence and no `type` field, or add `type: 'marketplace_purchase'` to the checkout metadata)
+- Update `create-marketplace-checkout` to add `type: 'marketplace_purchase'` to metadata
+- On payment: update order status to `paid`, set `paid_at`, send purchase confirmation email, notify admin
 
-- Psicología module (separate section)
-- Nutrición module (separate section)
-- Advanced geolocation filters (continent/country/city/university/hospital)
-- Multi-currency with automatic conversion
-- Native iOS/Android app
-- Advanced emergency/911 doctor finder
+### 2c. Shipping Address Collection — Pre-purchase dialog
+
+**File:** `src/pages/MedicalSupplies.tsx`
+
+- Before calling checkout, show a shipping address dialog: name, phone, address, city, state, zip, delivery notes
+- Calculate delivery fee based on city (simple table: same city = free or $X, different city = $Y)
+- Pass shipping info to the checkout edge function, which stores it in the order
+
+### 2d. User Orders Page — `/my-orders`
+
+**New file:** `src/pages/MyOrders.tsx`
+
+- List all user's marketplace orders with status badges (Pendiente, Pagado, Enviado, Entregado, Cancelado)
+- Each order shows: product image/name, quantity, total, date, status timeline
+- Expandable details: shipping address, tracking number (if available)
+- Route added to App.tsx
+
+### 2e. Admin Orders Panel Enhancement
+
+**File:** `src/pages/AdminMarketplace.tsx` (OrdersTab)
+
+- Add filters: by status, date range, product, vendor
+- Add order detail view: buyer info, shipping address, product details
+- Add tracking number input, estimated delivery date
+- Add export to CSV
+- Show totals/revenue summary at top
+- Status change triggers email notification to buyer
+
+### 2f. Purchase Confirmation Email
+
+**File:** `supabase/functions/send-purchase-email/index.ts` (already exists)
+
+- Update to accept marketplace-specific data (product name, shipping address, order ID)
+- Add status update email templates (shipped, delivered)
+
+### 2g. Admin Notifications
+
+- When a new order is placed, create a notification for admin users
+- Show order count badge in AdminDashboard marketplace card
 
 ---
 
-## Summary of changes needed
+## 3. Medical Supplies — Advanced Filters
 
-Only 2 small fixes remain:
+**File:** `src/pages/MedicalSupplies.tsx`
 
-1. **`src/lib/i18n/es.ts` + `en.ts`**: Add `nav.recordingsShort`
-2. **`src/components/layout/MainLayout.tsx`**: Use short label in bottom tabs
-3. **`src/pages/Chat.tsx`**: Remove "1:1" from chat title
+**Add filter sidebar (desktop) + Sheet (mobile) matching Hospital Locator pattern:**
+- **Price range**: Min/Max inputs or a dual-thumb slider
+- **Vendor/Brand**: Multi-select or dropdown of all vendors
+- **Category**: Already exists but move to sidebar for consistency
+- **Sort by**: Price (low→high, high→low), Name, Newest, Featured
+- **In stock only**: Toggle
+- **Active filter chips**: Show removable badges for each active filter (mobile)
+- **Filter button with count badge** on mobile (Sheet trigger)
 
-Everything else from the client's list is implemented.
+---
+
+## Technical Summary
+
+| # | What | Files |
+|---|------|-------|
+| 1 | Hospital filter sidebar UX polish | `HospitalLocator.tsx` |
+| 2a | DB: order shipping fields + notifications | New migration |
+| 2b | Stripe webhook: marketplace handler + update checkout metadata | `stripe-webhook/index.ts`, `create-marketplace-checkout/index.ts` |
+| 2c | Shipping address dialog before purchase | `MedicalSupplies.tsx` |
+| 2d | User orders page `/my-orders` | New `MyOrders.tsx` + `App.tsx` route |
+| 2e | Admin orders panel with filters, tracking, export | `AdminMarketplace.tsx` |
+| 2f | Purchase + status email updates | `send-purchase-email/index.ts` |
+| 2g | Admin notification on new order | `AdminDashboard.tsx` stats |
+| 3 | Medical Supplies filter sidebar + sort | `MedicalSupplies.tsx` |
 
