@@ -73,6 +73,9 @@ Deno.serve(async (req) => {
       if (session.metadata?.type === "live_chat_highlight" && session.payment_status === "paid") {
         await handleLiveChatHighlight(db, session);
       }
+      if (session.metadata?.type === "marketplace_purchase" && session.payment_status === "paid") {
+        await handleMarketplacePurchase(db, session);
+      }
     }
 
     if (event.type === "invoice.payment_succeeded") {
