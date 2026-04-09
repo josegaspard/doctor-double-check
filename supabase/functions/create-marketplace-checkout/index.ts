@@ -25,7 +25,7 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { product_id, quantity = 1 } = await req.json();
+    const { product_id, quantity = 1, shipping } = await req.json();
     if (!product_id) throw new Error("product_id is required");
 
     // Fetch product details
@@ -72,9 +72,10 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/medical-supplies?success=true`,
+      success_url: `${req.headers.get("origin")}/my-orders?success=true`,
       cancel_url: `${req.headers.get("origin")}/medical-supplies?canceled=true`,
       metadata: {
+        type: "marketplace_purchase",
         product_id: product.id,
         vendor_id: product.vendor_id,
         buyer_id: user.id,
@@ -83,7 +84,7 @@ serve(async (req) => {
       },
     });
 
-    // Create pending order
+    // Create pending order with shipping info
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -97,6 +98,12 @@ serve(async (req) => {
       total_amount: totalAmount,
       status: "pending",
       stripe_session_id: session.id,
+      shipping_name: shipping?.name || null,
+      shipping_phone: shipping?.phone || null,
+      shipping_city: shipping?.city || null,
+      shipping_state: shipping?.state || null,
+      shipping_zip: shipping?.zip || null,
+      shipping_notes: shipping?.notes || null,
     });
 
     // Decrement stock
