@@ -44,6 +44,7 @@ export default function MedicalSupplies() {
   const [shippingDialog, setShippingDialog] = useState(false);
   const [shippingForm, setShippingForm] = useState({ name: '', phone: '', city: '', state: '', zip: '', notes: '' });
   const [pendingProduct, setPendingProduct] = useState(null);
+  const [quantity, setQuantity] = useState(1);
   const { featuredIds, featuredMap, trackImpression, trackClick } = useFeaturedListings('product');
   const impressionTrackerRef = useRef(new Set());
 

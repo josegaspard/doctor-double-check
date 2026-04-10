@@ -72,7 +72,7 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/my-orders?success=true`,
+      success_url: `${req.headers.get("origin")}/order-success?session_id=${"{CHECKOUT_SESSION_ID}"}`,
       cancel_url: `${req.headers.get("origin")}/medical-supplies?canceled=true`,
       metadata: {
         type: "marketplace_purchase",
