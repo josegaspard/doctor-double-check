@@ -44,6 +44,7 @@ export default function MedicalSupplies() {
   const [shippingDialog, setShippingDialog] = useState(false);
   const [shippingForm, setShippingForm] = useState({ name: '', phone: '', city: '', state: '', zip: '', notes: '' });
   const [pendingProduct, setPendingProduct] = useState(null);
+  const [quantity, setQuantity] = useState(1);
   const { featuredIds, featuredMap, trackImpression, trackClick } = useFeaturedListings('product');
   const impressionTrackerRef = useRef(new Set());
 
@@ -90,6 +91,7 @@ export default function MedicalSupplies() {
   const startPurchase = (product) => {
     if (!user) { toast.error(es ? 'Inicia sesión para comprar' : 'Log in to purchase'); return; }
     setPendingProduct(product);
+    setQuantity(1);
     setSelectedProduct(null);
     setShippingDialog(true);
   };
@@ -104,7 +106,7 @@ export default function MedicalSupplies() {
       const { data, error } = await supabase.functions.invoke('create-marketplace-checkout', {
         body: {
           product_id: pendingProduct.id,
-          quantity: 1,
+          quantity,
           shipping: shippingForm,
         },
       });
@@ -380,9 +382,19 @@ export default function MedicalSupplies() {
                 <div className="flex items-center gap-2 mb-1"><Store className="w-4 h-4 text-primary" /><span className="font-medium text-sm">{selectedProduct.marketplace_vendors?.name}</span></div>
                 {selectedProduct.marketplace_vendors?.location && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{selectedProduct.marketplace_vendors.location}</p>}
               </div>
-              <div className="flex items-end justify-between mb-4">
+              <div className="flex items-end justify-between mb-3">
                 <div><p className="text-2xl font-bold text-primary">${selectedProduct.price.toLocaleString()}</p><p className="text-xs text-muted-foreground">{selectedProduct.currency}</p></div>
                 <p className="text-xs text-muted-foreground">Stock: {selectedProduct.stock}</p>
+              </div>
+              {/* Quantity selector */}
+              <div className="flex items-center gap-3 mb-4 bg-muted/50 rounded-lg p-3">
+                <span className="text-xs font-medium">{es ? 'Cantidad' : 'Quantity'}:</span>
+                <div className="flex items-center gap-2">
+                  <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}>-</Button>
+                  <span className="w-8 text-center font-semibold">{quantity}</span>
+                  <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(Math.min(selectedProduct.stock, quantity + 1))} disabled={quantity >= selectedProduct.stock}>+</Button>
+                </div>
+                {quantity > 1 && <span className="text-xs text-muted-foreground ml-auto">= ${(selectedProduct.price * quantity).toLocaleString()}</span>}
               </div>
               <Button onClick={() => startPurchase(selectedProduct)} disabled={purchasing || selectedProduct.stock === 0} className="w-full gap-2">
                 {purchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}
@@ -407,9 +419,13 @@ export default function MedicalSupplies() {
               <div><Label>{es ? 'Notas de entrega' : 'Delivery notes'}</Label><Textarea value={shippingForm.notes} onChange={e => setShippingForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder={es ? 'Instrucciones adicionales...' : 'Additional instructions...'} /></div>
               
               {pendingProduct && (
-                <div className="bg-muted/50 rounded-lg p-3">
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
                   <p className="text-sm font-medium">{pendingProduct.name}</p>
-                  <p className="text-lg font-bold text-primary">${pendingProduct.price.toLocaleString()} {pendingProduct.currency}</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-lg font-bold text-primary">${(pendingProduct.price * quantity).toLocaleString()}</p>
+                    <span className="text-xs text-muted-foreground">{pendingProduct.currency}</span>
+                  </div>
+                  {quantity > 1 && <p className="text-[10px] text-muted-foreground">{quantity} × ${pendingProduct.price.toLocaleString()}</p>}
                 </div>
               )}
 
