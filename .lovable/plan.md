@@ -1,93 +1,89 @@
 
 
-# Plan: Hospital Locator Filter UX + Marketplace Full Purchase Flow + Medical Supplies Filters
+# Plan: Complete E-Commerce Flow Overhaul — MyOrders, Admin Sales Dashboard, Quantity Selector, Thank You Page, Status Emails, Navigation
 
-## 1. Hospital Locator — Filter Sidebar UX/UI Polish
-
-**File:** `src/pages/HospitalLocator.tsx`
-
-**Changes to FilterPanel:**
-- **Rating buttons**: Add proper grid layout (`grid grid-cols-5 gap-1.5`) so all 5 buttons (Todo, 3+, 3.5+, 4+, 4.5+) are evenly spaced and aligned
-- **Sort buttons**: Use `grid grid-cols-3 gap-2` instead of `flex gap-2` so Cercanía/Calificación/Nombre are uniform width and don't squish text
-- **Spacing**: Increase `space-y-5` to `space-y-6` between sections; add subtle dividers (`<hr>`) between filter groups
-- **Visual hierarchy**: Use slightly larger section labels (text-[11px] instead of text-xs), add bottom border separators
-- **Selected state**: Make selected buttons more prominent with a ring/border effect instead of just background color change
-- **Distance slider**: Add tick marks at 10, 25, 50, 75, 100km
-- **Overall sidebar**: Slightly wider (w-60 instead of w-56), more padding (p-5)
+## Current State
+- Basic purchase flow exists: MedicalSupplies → shipping dialog → Stripe → webhook updates order to "paid"
+- MyOrders page exists but is minimal (expandable cards, basic timeline)
+- AdminMarketplace OrdersTab is bare (list with status dropdown, no analytics/tracking/export)
+- Quantity is hardcoded to 1 in `startPurchase`
+- No Thank You page — Stripe redirects to `/my-orders?success=true` but nothing handles the query param
+- Emails exist (purchase, shipped, delivered) but admin status change doesn't trigger them
+- No sales analytics/accounting dashboard for admin
+- MyOrders not accessible from mobile nav or sidebar — only from MedicalSupplies page
 
 ---
 
-## 2. Marketplace Full Purchase Flow — End-to-End
+## Changes
 
-This is the biggest piece. Currently: checkout creates a Stripe session + pending order, but after payment **nothing happens** (webhook doesn't handle marketplace). We need:
-
-### 2a. DB Migration — Add shipping/tracking fields + notifications table
-
-- Add columns to `marketplace_orders`: `shipping_name`, `shipping_phone`, `shipping_city`, `shipping_notes`, `tracking_number`, `estimated_delivery`, `delivery_fee`, `paid_at`, `shipped_at`, `delivered_at`
-- Create `marketplace_notifications` table for order status change emails/notifications
-
-### 2b. Stripe Webhook — Handle marketplace purchase completion
-
-**File:** `supabase/functions/stripe-webhook/index.ts`
-
-- Add handler in `checkout.session.completed` for marketplace orders (detect by `metadata.product_id` presence and no `type` field, or add `type: 'marketplace_purchase'` to the checkout metadata)
-- Update `create-marketplace-checkout` to add `type: 'marketplace_purchase'` to metadata
-- On payment: update order status to `paid`, set `paid_at`, send purchase confirmation email, notify admin
-
-### 2c. Shipping Address Collection — Pre-purchase dialog
-
+### 1. Quantity Selector in Product Detail + Shipping Dialog
 **File:** `src/pages/MedicalSupplies.tsx`
 
-- Before calling checkout, show a shipping address dialog: name, phone, address, city, state, zip, delivery notes
-- Calculate delivery fee based on city (simple table: same city = free or $X, different city = $Y)
-- Pass shipping info to the checkout edge function, which stores it in the order
+- Add `quantity` state, initialized to 1
+- In product detail dialog: add +/- stepper with stock limit
+- In shipping dialog: show quantity × price subtotal + delivery fee line
+- Pass quantity to `create-marketplace-checkout`
+- Update `create-marketplace-checkout/index.ts` — already accepts quantity, just verify stock check uses it
 
-### 2d. User Orders Page — `/my-orders`
+### 2. Thank You Page
+**New file:** `src/pages/OrderSuccess.tsx`
 
-**New file:** `src/pages/MyOrders.tsx`
+- Beautiful full-page confirmation with green checkmark animation
+- Shows order summary (pulled from `?session_id` query param or latest order)
+- "Ver mis pedidos" and "Seguir comprando" buttons
+- Confetti/celebration animation on mount
+- Add route `/order-success` to `App.tsx`
+- Update `create-marketplace-checkout` success_url to `/order-success?session_id={CHECKOUT_SESSION_ID}`
 
-- List all user's marketplace orders with status badges (Pendiente, Pagado, Enviado, Entregado, Cancelado)
-- Each order shows: product image/name, quantity, total, date, status timeline
-- Expandable details: shipping address, tracking number (if available)
-- Route added to App.tsx
+### 3. MyOrders Page — Full Redesign (Shopify/WooCommerce style)
+**File:** `src/pages/MyOrders.tsx` (rewrite)
 
-### 2e. Admin Orders Panel Enhancement
+- **Header**: Summary stats (total orders, total spent, active orders count)
+- **Filters**: Status tabs (Todos, Pendiente, Pagado, Enviado, Entregado), search by product name, date sort
+- **Order cards**: Larger product images, clear order number (#ORD-XXXX), quantity, unit price × qty, subtotal + delivery, order date, status badge with color
+- **Expanded view**: Visual step timeline (connected dots with lines, filled/unfilled), shipping address card, tracking with copy button, timestamps, "Contactar soporte" link
+- **Empty state**: Illustration + CTA to marketplace
+- **Mobile-first**: Full-width cards, touch-friendly expand, sticky filter tabs
 
-**File:** `src/pages/AdminMarketplace.tsx` (OrdersTab)
+### 4. Admin Sales Dashboard & Order Management
+**File:** `src/pages/AdminMarketplace.tsx` — Enhance OrdersTab + add new SalesTab
 
-- Add filters: by status, date range, product, vendor
-- Add order detail view: buyer info, shipping address, product details
-- Add tracking number input, estimated delivery date
-- Add export to CSV
-- Show totals/revenue summary at top
-- Status change triggers email notification to buyer
+**OrdersTab enhancements:**
+- Top summary cards: Total Revenue, Orders Today, Pending Orders, Average Order Value
+- Filters: status dropdown, date range (from/to), search by buyer/product, vendor filter
+- Order detail expansion: buyer info (name, email, phone), shipping address, product details, status timeline
+- Tracking number input + estimated delivery date picker
+- Status change button that also triggers email notification to buyer
+- CSV export button (all orders or filtered)
+- Bulk status update for selected orders
 
-### 2f. Purchase Confirmation Email
+**New "Ventas" (Sales/Accounting) tab:**
+- Revenue summary cards: Total sales (MXN), units sold, unique buyers, avg order value
+- Sales by vendor breakdown table
+- Sales by product ranking (top 10)
+- Sales by status (pie/donut chart or simple table)
+- Monthly/weekly revenue trend (simple bar chart using recharts)
+- Date range filter for all analytics
+- Export full accounting report as CSV
 
-**File:** `supabase/functions/send-purchase-email/index.ts` (already exists)
+### 5. Status Change Emails — Wire admin actions to email triggers
+**File:** `src/pages/AdminMarketplace.tsx`
 
-- Update to accept marketplace-specific data (product name, shipping address, order ID)
-- Add status update email templates (shipped, delivered)
+- When admin changes order status to "shipped": call `send-purchase-email` with `type: 'shipped'`, include tracking number
+- When admin changes to "delivered": call `send-purchase-email` with `type: 'delivered'`
+- Add toast confirmation after email sent
+- The edge function `send-purchase-email` already handles these email types
 
-### 2g. Admin Notifications
+### 6. Navigation — Add MyOrders access point
+**Files:** `src/components/layout/MainLayout.tsx`
 
-- When a new order is placed, create a notification for admin users
-- Show order count badge in AdminDashboard marketplace card
+- Add "Mis Compras" to the sidebar nav items for roles `['doctor', 'resident']` (same roles that see medical supplies)
+- On mobile: add it as an item in the "More" menu/drawer
+- Also keep the existing button in MedicalSupplies hero
 
----
-
-## 3. Medical Supplies — Advanced Filters
-
-**File:** `src/pages/MedicalSupplies.tsx`
-
-**Add filter sidebar (desktop) + Sheet (mobile) matching Hospital Locator pattern:**
-- **Price range**: Min/Max inputs or a dual-thumb slider
-- **Vendor/Brand**: Multi-select or dropdown of all vendors
-- **Category**: Already exists but move to sidebar for consistency
-- **Sort by**: Price (low→high, high→low), Name, Newest, Featured
-- **In stock only**: Toggle
-- **Active filter chips**: Show removable badges for each active filter (mobile)
-- **Filter button with count badge** on mobile (Sheet trigger)
+### 7. Edge Function Updates
+**File:** `supabase/functions/create-marketplace-checkout/index.ts`
+- Update `success_url` to `/order-success?session_id={CHECKOUT_SESSION_ID}`
 
 ---
 
@@ -95,13 +91,11 @@ This is the biggest piece. Currently: checkout creates a Stripe session + pendin
 
 | # | What | Files |
 |---|------|-------|
-| 1 | Hospital filter sidebar UX polish | `HospitalLocator.tsx` |
-| 2a | DB: order shipping fields + notifications | New migration |
-| 2b | Stripe webhook: marketplace handler + update checkout metadata | `stripe-webhook/index.ts`, `create-marketplace-checkout/index.ts` |
-| 2c | Shipping address dialog before purchase | `MedicalSupplies.tsx` |
-| 2d | User orders page `/my-orders` | New `MyOrders.tsx` + `App.tsx` route |
-| 2e | Admin orders panel with filters, tracking, export | `AdminMarketplace.tsx` |
-| 2f | Purchase + status email updates | `send-purchase-email/index.ts` |
-| 2g | Admin notification on new order | `AdminDashboard.tsx` stats |
-| 3 | Medical Supplies filter sidebar + sort | `MedicalSupplies.tsx` |
+| 1 | Quantity selector in product detail + shipping | `MedicalSupplies.tsx` |
+| 2 | Thank You page with order confirmation | New `OrderSuccess.tsx` + `App.tsx` route |
+| 3 | MyOrders full redesign (Shopify-style) | `MyOrders.tsx` (rewrite) |
+| 4 | Admin sales dashboard + enhanced order mgmt | `AdminMarketplace.tsx` |
+| 5 | Status change triggers email | `AdminMarketplace.tsx` (invoke send-purchase-email) |
+| 6 | Nav: add MyOrders to sidebar | `MainLayout.tsx` |
+| 7 | Update checkout success_url | `create-marketplace-checkout/index.ts` |
 
