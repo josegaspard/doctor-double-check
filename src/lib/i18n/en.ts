@@ -30,6 +30,7 @@ export const en = {
     doctors: 'Doctors',
     more: 'More',
     advertising: 'Advertising',
+    myOrders: 'My Orders',
   },
   // Common
   search: {

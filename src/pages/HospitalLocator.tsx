@@ -575,7 +575,7 @@ export default function HospitalLocator() {
                                   <Navigation className="w-3.5 h-3.5" /> Maps
                                 </a>
                               </Button>
-                              <Button size="sm" variant="outline" className="flex-1 text-xs gap-1.5 h-8 border-blue-200 text-blue-700 hover:bg-blue-50" asChild>
+                              <Button size="sm" className="flex-1 text-xs gap-1.5 h-8 border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800" asChild>
                                 <a href={`https://www.waze.com/ul?ll=${h.lat},${h.lng}&navigate=yes`} target="_blank" rel="noopener noreferrer">
                                   <Navigation className="w-3.5 h-3.5" /> Waze
                                 </a>
