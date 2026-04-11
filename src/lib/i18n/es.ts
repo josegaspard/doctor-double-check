@@ -30,6 +30,7 @@ export const es = {
     doctors: 'Doctores',
     more: 'Más',
     advertising: 'Publicidad',
+    myOrders: 'Mis Compras',
   },
   // Common
   search: {
