@@ -54,6 +54,15 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
       buttonLabel: 'Subir',
     }] : []),
     {
+      title: 'Mis Compras',
+      description: 'Revisa el estado de tus pedidos de material médico',
+      icon: ShoppingBag,
+      color: 'secondary',
+      requiresApproval: false,
+      onClick: () => navigate('/my-orders'),
+      buttonLabel: 'Ver Compras',
+    },
+    {
       title: 'Orientaciones',
       description: 'Revisa tus chats con pacientes',
       icon: MessageSquare,
