@@ -18,17 +18,17 @@ import {
 import { toast } from 'sonner';
 import {
   BarChart3, TrendingUp, Users, DollarSign, Stethoscope, Video, ArrowLeft,
-  Star, Download, Wallet, Building, CreditCard, Banknote,
+  Star, Download, Wallet, Building, CreditCard, Banknote, ShoppingCart,
 } from 'lucide-react';
 import { format, subMonths, subWeeks, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-interface MonthData { month: string; revenue: number; transactions: number; purchases: number; subscriptions: number; consultations: number; }
+interface MonthData { month: string; revenue: number; transactions: number; purchases: number; subscriptions: number; consultations: number; marketplace: number; }
 interface AnalyticsData {
   totalRevenue: number; totalUsers: number; totalDoctors: number; totalLives: number;
   purchasesRevenue: number; subscriptionsRevenue: number; walletTopupsRevenue: number;
   totalRecordings: number; totalPurchases: number; consultationsRevenue: number;
-  // New metrics
+  marketplaceRevenue: number; marketplaceOrders: number;
   totalPaidToDoctors: number; totalPendingPayouts: number;
   platformCommission: number; grossRevenue: number;
   recordingsPurchased: number;
@@ -80,6 +80,7 @@ export default function AdminAnalytics() {
           { count: totalRecordings }, { count: totalUsers }, { count: totalDoctors },
           { count: totalLives }, { data: rolesData }, { data: livesData },
           { data: doctorStats }, { count: recordingsPurchased },
+          { data: marketplaceData },
         ] = await Promise.all([
           supabase.from('wallet_transactions').select('amount, type, created_at, status, metadata').eq('status', 'paid').gte('created_at', dateFromStr),
           supabase.from('purchases').select('amount, created_at').gte('created_at', dateFromStr),
@@ -92,17 +93,20 @@ export default function AdminAnalytics() {
           supabase.from('lives').select('id, started_at').gte('started_at', dateFromStr),
           supabase.from('doctor_profiles').select('user_id, total_consultations, rating, consultation_fee, pending_earnings, total_earnings').eq('status', 'approved').order('total_consultations', { ascending: false }).limit(10),
           supabase.from('purchases').select('*', { count: 'exact', head: true }),
+          supabase.from('marketplace_orders').select('total_amount, created_at').in('status', ['paid', 'shipped', 'delivered']).gte('created_at', dateFromStr),
         ]);
 
         const walletTopupsRevenue = transactions?.filter(t => t.type === 'topup').reduce((s, t) => s + Number(t.amount), 0) || 0;
         const purchasesRevenue = allPurchases?.reduce((s, p) => s + Number(p.amount), 0) || 0;
         const subscriptionsRevenue = subscriptions?.reduce((s, s2) => s + Number(s2.price_paid), 0) || 0;
         const consultationsRevenue = transactions?.filter(t => t.type === 'earning' && (t.metadata as any)?.source === 'consultation').reduce((s, t) => s + Number(t.amount), 0) || 0;
+        const marketplaceRevenue = marketplaceData?.reduce((s, o) => s + Number(o.total_amount), 0) || 0;
+        const marketplaceOrders = marketplaceData?.length || 0;
 
         // Doctor payment metrics
         const totalPaidToDoctors = doctorStats?.reduce((s, d) => s + Number(d.total_earnings || 0), 0) || 0;
         const totalPendingPayouts = doctorStats?.reduce((s, d) => s + Number(d.pending_earnings || 0), 0) || 0;
-        const grossRevenue = walletTopupsRevenue + purchasesRevenue + subscriptionsRevenue;
+        const grossRevenue = walletTopupsRevenue + purchasesRevenue + subscriptionsRevenue + marketplaceRevenue;
         const platformCommission = grossRevenue - totalPaidToDoctors - totalPendingPayouts;
 
         const rolesCounts = rolesData?.reduce((acc: Record<string, number>, r) => { acc[r.role] = (acc[r.role] || 0) + 1; return acc; }, {}) || {};
@@ -135,7 +139,8 @@ export default function AdminAnalytics() {
             const mPurchases = weekTx.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
             const mEarnings = weekTx.filter(t => t.type === 'earning' && (t.metadata as any)?.source === 'consultation').reduce((s, t) => s + Number(t.amount), 0);
             const mSubs = weekTx.filter(t => t.type === 'earning' && ((t.metadata as any)?.source === 'subscription' || (t.metadata as any)?.source === 'subscription_renewal')).reduce((s, t) => s + Number(t.amount), 0);
-            revenueByMonth.push({ month: label, revenue: topups, transactions: weekTx.length, purchases: mPurchases, subscriptions: mSubs, consultations: mEarnings });
+            const mMarketplace = marketplaceData?.filter(o => { const d = new Date(o.created_at); return d >= weekStart && d <= weekEnd; }).reduce((s, o) => s + Number(o.total_amount), 0) || 0;
+            revenueByMonth.push({ month: label, revenue: topups, transactions: weekTx.length, purchases: mPurchases, subscriptions: mSubs, consultations: mEarnings, marketplace: mMarketplace });
             const weekLives = livesData?.filter(l => { const d = new Date(l.started_at); return d >= weekStart && d <= weekEnd; }) || [];
             livesByMonth.push({ month: label, count: weekLives.length });
           }
@@ -149,7 +154,8 @@ export default function AdminAnalytics() {
             const mPurchases = monthTx.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
             const mEarnings = monthTx.filter(t => t.type === 'earning' && (t.metadata as any)?.source === 'consultation').reduce((s, t) => s + Number(t.amount), 0);
             const mSubs = monthTx.filter(t => t.type === 'earning' && ((t.metadata as any)?.source === 'subscription' || (t.metadata as any)?.source === 'subscription_renewal')).reduce((s, t) => s + Number(t.amount), 0);
-            revenueByMonth.push({ month: label, revenue: topups, transactions: monthTx.length, purchases: mPurchases, subscriptions: mSubs, consultations: mEarnings });
+            const mMarketplace = marketplaceData?.filter(o => { const d = new Date(o.created_at); return d.getFullYear() === y && d.getMonth() === m; }).reduce((s, o) => s + Number(o.total_amount), 0) || 0;
+            revenueByMonth.push({ month: label, revenue: topups, transactions: monthTx.length, purchases: mPurchases, subscriptions: mSubs, consultations: mEarnings, marketplace: mMarketplace });
             const monthLives = livesData?.filter(l => { const d = new Date(l.started_at); return d.getFullYear() === y && d.getMonth() === m; }) || [];
             livesByMonth.push({ month: label, count: monthLives.length });
           }
@@ -159,6 +165,7 @@ export default function AdminAnalytics() {
           totalRevenue: walletTopupsRevenue,
           totalUsers: totalUsers || 0, totalDoctors: totalDoctors || 0, totalLives: totalLives || 0,
           purchasesRevenue, subscriptionsRevenue, walletTopupsRevenue, consultationsRevenue,
+          marketplaceRevenue, marketplaceOrders,
           totalRecordings: totalRecordings || 0, totalPurchases: allPurchases?.length || 0,
           totalPaidToDoctors, totalPendingPayouts, platformCommission, grossRevenue,
           recordingsPurchased: recordingsPurchased || 0,
@@ -209,10 +216,11 @@ export default function AdminAnalytics() {
       <div class="kpi"><div class="value">${formatCurrency(analytics.subscriptionsRevenue)}</div><div class="label">Suscripciones</div></div>
       <div class="kpi"><div class="value">${formatCurrency(analytics.walletTopupsRevenue)}</div><div class="label">Recargas Wallet</div></div>
       <div class="kpi"><div class="value">${formatCurrency(analytics.consultationsRevenue)}</div><div class="label">Consultas</div></div>
+      <div class="kpi"><div class="value">${formatCurrency(analytics.marketplaceRevenue)}</div><div class="label">Marketplace (${analytics.marketplaceOrders})</div></div>
     </div>
     <h2>Ingresos por ${periodColumnLabel}</h2>
-    <table><thead><tr><th>${periodColumnLabel}</th><th class="text-right">Recargas</th><th class="text-right">Compras</th><th class="text-right">Suscripciones</th><th class="text-right">Consultas</th><th class="text-right">Tx</th></tr></thead><tbody>
-    ${analytics.revenueByMonth.map(m => `<tr><td>${m.month}</td><td class="text-right">${formatCurrency(m.revenue)}</td><td class="text-right">${formatCurrency(m.purchases)}</td><td class="text-right">${formatCurrency(m.subscriptions)}</td><td class="text-right">${formatCurrency(m.consultations)}</td><td class="text-right">${m.transactions}</td></tr>`).join('')}
+    <table><thead><tr><th>${periodColumnLabel}</th><th class="text-right">Recargas</th><th class="text-right">Compras</th><th class="text-right">Suscripciones</th><th class="text-right">Consultas</th><th class="text-right">Marketplace</th><th class="text-right">Tx</th></tr></thead><tbody>
+    ${analytics.revenueByMonth.map(m => `<tr><td>${m.month}</td><td class="text-right">${formatCurrency(m.revenue)}</td><td class="text-right">${formatCurrency(m.purchases)}</td><td class="text-right">${formatCurrency(m.subscriptions)}</td><td class="text-right">${formatCurrency(m.consultations)}</td><td class="text-right">${formatCurrency(m.marketplace)}</td><td class="text-right">${m.transactions}</td></tr>`).join('')}
     </tbody></table>
     <h2>Top 10 Médicos</h2>
     <table><thead><tr><th>#</th><th>Nombre</th><th class="text-right">Consultas</th><th class="text-right">Rating</th><th class="text-right">Ingresos</th><th class="text-right">Pendiente</th></tr></thead><tbody>
@@ -318,12 +326,13 @@ export default function AdminAnalytics() {
               <CreditCard className="w-4 h-4 text-info" />
               Desglose por Fuente
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
               {[
                 { label: 'Compras de Videos', value: formatCurrency(analytics.purchasesRevenue), sub: `${analytics.totalPurchases} compras`, border: 'border-l-premium' },
                 { label: 'Suscripciones', value: formatCurrency(analytics.subscriptionsRevenue), border: 'border-l-info' },
                 { label: 'Recargas Wallet', value: formatCurrency(analytics.walletTopupsRevenue), border: 'border-l-success' },
                 { label: 'Consultas Médicas', value: formatCurrency(analytics.consultationsRevenue), border: 'border-l-primary' },
+                { label: 'Marketplace', value: formatCurrency(analytics.marketplaceRevenue), sub: `${analytics.marketplaceOrders} pedidos`, border: 'border-l-warning' },
               ].map((item, i) => (
               <Card key={i} className={`border-l-4 ${item.border}`}><CardContent className="p-3 sm:p-4">
                   <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 truncate">{item.label}</p>
