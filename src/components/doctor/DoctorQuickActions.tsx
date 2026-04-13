@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Radio, Upload, UserCircle, Newspaper, MessageSquare } from 'lucide-react';
+import { Radio, Upload, UserCircle, Newspaper, MessageSquare, ShoppingBag } from 'lucide-react';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
 
 interface Props {
@@ -53,6 +53,15 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
       onClick: () => navigate('/doctor/upload'),
       buttonLabel: 'Subir',
     }] : []),
+    {
+      title: 'Mis Compras',
+      description: 'Revisa el estado de tus pedidos de material médico',
+      icon: ShoppingBag,
+      color: 'secondary',
+      requiresApproval: false,
+      onClick: () => navigate('/my-orders'),
+      buttonLabel: 'Ver Compras',
+    },
     {
       title: 'Orientaciones',
       description: 'Revisa tus chats con pacientes',
