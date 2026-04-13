@@ -59,6 +59,7 @@ import {
   Megaphone,
   MapPin,
   Package,
+  ShoppingBag,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -662,6 +663,18 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         <DollarSign className="w-5 h-5 text-success" />
                         <span className="text-sm font-medium">{t('nav.earnings')}</span>
                         <span className="ml-auto text-xs font-semibold text-muted-foreground">${pendingEarnings.toLocaleString()}</span>
+                      </Link>
+                    )}
+                    {(role === 'doctor' || role === 'resident') && (
+                      <Link
+                        to="/my-orders"
+                        onClick={() => setMoreSheetOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                          location.pathname === '/my-orders' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <ShoppingBag className="w-5 h-5" />
+                        <span className="text-sm font-medium">{t('nav.myOrders')}</span>
                       </Link>
                     )}
                     {(role === 'patient' || role === 'resident') && (
