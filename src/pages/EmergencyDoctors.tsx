@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import {
-  Zap,
+  Plus,
   Star,
   Users,
   MapPin,
@@ -70,7 +70,7 @@ export default function EmergencyDoctors() {
           <div className="flex items-center gap-3 mb-3">
             <div className="relative">
               <div className="w-14 h-14 rounded-2xl bg-destructive/20 flex items-center justify-center">
-                <Zap className="w-7 h-7 text-destructive" />
+                <Plus className="w-7 h-7 text-destructive" strokeWidth={3} />
               </div>
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-success animate-pulse border-2 border-background" />
             </div>

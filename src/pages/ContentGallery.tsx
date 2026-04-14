@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { AdBanner } from '@/components/ads/AdBanner';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -422,13 +422,7 @@ export default function ContentGallery() {
         </Card>
       );
 
-      if ((index + 1) % 4 === 0 && index < filteredContents.length - 1) {
-        items.push(
-          <div key={`ad-inline-${index}`} className="col-span-full">
-            <AdBanner placementName="content_mid_inline" className="w-full" />
-          </div>
-        );
-      }
+      // No inline ads
     });
 
     return (
@@ -440,24 +434,27 @@ export default function ContentGallery() {
 
   return (
     <MainLayout>
+      <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background">
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 sm:mb-6">
-          <div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-              <Library className="w-6 h-6 text-primary" />
-              {t('content.library')}
-            </h1>
-            <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
+        <div className="mb-4 sm:mb-6 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+                <Library className="w-6 h-6 text-primary" />
+                {t('content.library')}
+              </h1>
+              <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
+            </div>
+            {user && user.role === 'doctor' && (
+              <Link to="/doctor/upload">
+                <Button variant="live" className="gap-2">
+                  <Upload className="w-4 h-4" />
+                  {language === 'es' ? 'Subir contenido' : 'Upload content'}
+                </Button>
+              </Link>
+            )}
           </div>
-          {user && user.role === 'doctor' && (
-            <Link to="/doctor/upload">
-              <Button variant="live" className="gap-2">
-                <Upload className="w-4 h-4" />
-                {language === 'es' ? 'Subir contenido' : 'Upload content'}
-              </Button>
-            </Link>
-          )}
         </div>
 
         <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
@@ -695,10 +692,9 @@ export default function ContentGallery() {
               )}
             </div>
 
-            {/* Bottom banner */}
-            <AdBanner placementName="content_bottom_banner" className="mt-6 [&_img]:max-h-[140px] [&_img]:sm:max-h-[160px]" />
           </div>
         </div>
+      </div>
       </div>
 
       <ContentPreviewModal

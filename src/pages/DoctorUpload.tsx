@@ -22,7 +22,7 @@ import {
   Upload, Video, FileText, Image, ArrowLeft, CheckCircle, AlertTriangle,
   Loader2, X, Clock, Users, Trash2, Settings2, CheckSquare, Stethoscope,
 } from 'lucide-react';
-import { AudienceSelector, ContentAudience } from '@/components/content/AudienceSelector';
+import { ContentAudience } from '@/components/content/AudienceSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -387,7 +387,7 @@ export default function DoctorUpload() {
                 <SelectContent>{CONTENT_CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <AudienceSelector value={audienceType} onChange={setAudienceType} disabled={!isApproved} />
+            
 
             {/* Masterclass toggle */}
             <div className="flex items-center justify-between">

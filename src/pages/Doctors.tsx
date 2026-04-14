@@ -29,7 +29,7 @@ import {
   SlidersHorizontal,
   ChevronDown,
   AlertCircle,
-  Zap,
+  Plus,
   GraduationCap,
   Globe,
   ArrowLeft,
@@ -691,7 +691,7 @@ export default function Doctors() {
             <div className="mb-4 p-3 sm:p-4 rounded-xl border-2 border-success/30 bg-success/5">
               <div className="flex items-center gap-2 mb-3">
                 <div className="relative">
-                  <Zap className="w-5 h-5 text-success" />
+                  <Plus className="w-5 h-5 text-success" strokeWidth={3} />
                   <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-success animate-pulse" />
                 </div>
                 <div>
@@ -709,7 +709,7 @@ export default function Doctors() {
                     className="h-7 text-[10px] gap-1"
                     onClick={(e) => { e.stopPropagation(); navigate('/emergency'); }}
                   >
-                    <Zap className="w-3 h-3" />
+                    <Plus className="w-3 h-3" strokeWidth={3} />
                     {t('emergency.title')}
                   </Button>
                 </div>
