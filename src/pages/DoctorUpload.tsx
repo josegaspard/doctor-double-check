@@ -22,7 +22,7 @@ import {
   Upload, Video, FileText, Image, ArrowLeft, CheckCircle, AlertTriangle,
   Loader2, X, Clock, Users, Trash2, Settings2, CheckSquare, Stethoscope,
 } from 'lucide-react';
-import { AudienceSelector, ContentAudience } from '@/components/content/AudienceSelector';
+import { ContentAudience } from '@/components/content/AudienceSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 

@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import {
-  Zap,
+  Plus,
   Star,
   Users,
   MapPin,
