@@ -456,15 +456,6 @@ export default function ContentGallery() {
             )}
           </div>
         </div>
-          {user && user.role === 'doctor' && (
-            <Link to="/doctor/upload">
-              <Button variant="live" className="gap-2">
-                <Upload className="w-4 h-4" />
-                {language === 'es' ? 'Subir contenido' : 'Upload content'}
-              </Button>
-            </Link>
-          )}
-        </div>
 
         <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
           {/* ===== Desktop Sidebar ===== */}
