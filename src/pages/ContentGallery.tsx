@@ -422,13 +422,7 @@ export default function ContentGallery() {
         </Card>
       );
 
-      if ((index + 1) % 4 === 0 && index < filteredContents.length - 1) {
-        items.push(
-          <div key={`ad-inline-${index}`} className="col-span-full">
-            <AdBanner placementName="content_mid_inline" className="w-full" />
-          </div>
-        );
-      }
+      // No inline ads
     });
 
     return (
@@ -696,7 +690,7 @@ export default function ContentGallery() {
             </div>
 
             {/* Bottom banner */}
-            <AdBanner placementName="content_bottom_banner" className="mt-6 [&_img]:max-h-[140px] [&_img]:sm:max-h-[160px]" />
+            
           </div>
         </div>
       </div>

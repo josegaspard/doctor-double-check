@@ -387,7 +387,7 @@ export default function DoctorUpload() {
                 <SelectContent>{CONTENT_CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <AudienceSelector value={audienceType} onChange={setAudienceType} disabled={!isApproved} />
+            
 
             {/* Masterclass toggle */}
             <div className="flex items-center justify-between">
