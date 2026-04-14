@@ -701,10 +701,9 @@ export default function ContentGallery() {
               )}
             </div>
 
-            {/* Bottom banner */}
-            
           </div>
         </div>
+      </div>
       </div>
 
       <ContentPreviewModal
