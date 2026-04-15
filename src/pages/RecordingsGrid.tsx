@@ -176,15 +176,21 @@ export default function RecordingsGrid() {
 
   return (
     <MainLayout>
-      <div className="relative min-h-screen overflow-hidden">
-        {/* Decorative background circles */}
-        <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
-          <div className="absolute top-16 -left-20 w-72 h-72 rounded-full bg-primary/[0.07] blur-3xl" />
-          <div className="absolute top-60 right-10 w-56 h-56 rounded-full bg-secondary/[0.06] blur-2xl" />
-          <div className="absolute bottom-40 left-1/4 w-96 h-96 rounded-full bg-primary/[0.04] blur-3xl" />
-          <div className="absolute top-1/3 right-1/3 w-40 h-40 rounded-full bg-accent/[0.08] blur-2xl" />
-          <div className="absolute bottom-20 right-20 w-64 h-64 rounded-full bg-primary/[0.05] blur-3xl" />
-          <div className="absolute top-[70%] left-10 w-48 h-48 rounded-full bg-secondary/[0.05] blur-2xl" />
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-primary/[0.03] via-background to-primary/[0.02]">
+        {/* Decorative background — visible soft circles */}
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+          {/* Large soft circles */}
+          <div className="absolute -top-10 -left-16 w-80 h-80 sm:w-[28rem] sm:h-[28rem] rounded-full bg-primary/[0.06]" />
+          <div className="absolute top-48 right-0 w-64 h-64 sm:w-96 sm:h-96 rounded-full bg-primary/[0.05]" />
+          <div className="absolute top-[30rem] left-[10%] w-72 h-72 sm:w-[22rem] sm:h-[22rem] rounded-full bg-secondary/[0.05]" />
+          <div className="absolute top-[55rem] right-[15%] w-56 h-56 sm:w-80 sm:h-80 rounded-full bg-primary/[0.04]" />
+          <div className="absolute bottom-40 -left-10 w-60 h-60 sm:w-[20rem] sm:h-[20rem] rounded-full bg-primary/[0.05]" />
+          <div className="absolute bottom-10 right-[5%] w-48 h-48 sm:w-72 sm:h-72 rounded-full bg-secondary/[0.04]" />
+          {/* Smaller accent dots */}
+          <div className="absolute top-32 left-[40%] w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-primary/[0.07]" />
+          <div className="absolute top-[20rem] right-[30%] w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-accent/[0.06]" />
+          <div className="absolute top-[45rem] left-[55%] w-32 h-32 sm:w-44 sm:h-44 rounded-full bg-primary/[0.05]" />
+          <div className="absolute bottom-[20rem] left-[70%] w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-secondary/[0.07]" />
         </div>
 
         <div className="relative z-10 container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
