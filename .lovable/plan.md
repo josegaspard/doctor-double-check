@@ -1,36 +1,41 @@
 
 
-# Plan: Recordings Page — Remove Ads + Decorative Background
+# Plan: Unify Specialties System-Wide + Soften Background
 
-## Changes to `src/pages/RecordingsGrid.tsx`
+## Problem
+The full 110+ specialties list only exists in `src/pages/Doctors.tsx`. Six other files still use the old short list (~30 specialties), causing inconsistency across the platform.
 
-### 1. Remove advertising
-- **Line 2**: Remove `AdBanner` import
-- **Line 182**: Remove `<AdBanner placementName="recordings_top_banner" className="mb-4" />`
+## Changes
 
-### 2. Add decorative background with blue circles
-Replace the plain white container with a styled background that includes:
-- A gradient base: `bg-gradient-to-b from-primary/5 via-background to-background`
-- Decorative floating blue circles using `absolute` positioned `div` elements with `rounded-full`, `bg-primary/5` and `bg-secondary/5` at various sizes and positions, with `pointer-events-none` so they don't interfere with content
-- All circles sit behind content via `z-0`, content gets `relative z-10`
+### 1. Create shared specialties constant
+**New file: `src/lib/specialties.ts`**
+- Export the complete 110+ specialties array (with `value` and `labelKey` format for filter components)
+- Export a plain string array version for dropdowns (onboarding, live setup, meetings, clinical sessions)
+- Include `'Otra especialidad'` as the last option for free-text entry
 
-### 3. Add a hero header card
-Replace the plain `h1` + subtitle (lines 185-219) with a styled card header:
-- Gradient background card: `bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent`
-- Rounded corners, subtle border, padding
-- Same content (title, subtitle, buttons) but wrapped in the styled card
-- Fully responsive — stacks on mobile, row on desktop
+### 2. Update all files to use shared constant
 
-### Visual result
-The page gets a subtle medical-themed decorative background with soft blue circles at different opacities and sizes, plus a professional hero header — all fully responsive without obscuring any content.
+| File | Current list size | Format used |
+|------|------------------|-------------|
+| `src/pages/Doctors.tsx` | 110+ (object array) | `{ value, labelKey }` |
+| `src/pages/RecordingsGrid.tsx` | ~30 (object array) | `{ value, labelKey }` |
+| `src/pages/ContentGallery.tsx` | ~30 (object array) | `{ value, labelKey }` |
+| `src/pages/ClinicalSessions.tsx` | ~30 (string array) | plain strings |
+| `src/components/meetings/MeetingCreateDialog.tsx` | ~30 (string array) | plain strings |
+| `src/components/live/LiveSetupForm.tsx` | ~30 (string array) | plain strings |
+| `src/pages/Onboarding.tsx` | ~30 (string array) | plain strings |
+| `supabase/functions/seed-demo-users/index.ts` | ~15 (string array) | plain strings |
 
-## Technical Summary
+Each file will replace its local `SPECIALTIES` / `MEDICAL_SPECIALTIES` constant with an import from `src/lib/specialties.ts`.
 
-| # | What | Detail |
-|---|------|--------|
-| 1 | Remove AdBanner import + usage | Lines 2, 182 |
-| 2 | Add decorative circle background | Absolute-positioned divs behind content |
-| 3 | Hero header card | Gradient card wrapping existing header |
+### 3. Soften decorative background
+**File: `src/components/layout/DecorativeBackground.tsx`**
+- Reduce filled circle opacities from `0.05/0.04/0.03` to `0.03/0.025/0.02`
+- Reduce ring border opacities from `0.08/0.06` to `0.05/0.04`
+- Reduce dot opacities from `0.10-0.15` to `0.06-0.08`
 
-Single file change: `src/pages/RecordingsGrid.tsx`
+## Technical Notes
+- The shared file exports two formats: `SPECIALTIES_FILTER` (objects with value/labelKey, includes "Todas" first) for filter UIs, and `SPECIALTIES_LIST` (plain strings, includes "Otra especialidad" last) for selection dropdowns.
+- No database changes needed -- specialties are stored as free text in `doctor_profiles.specialty`.
+- Total files modified: 9 (1 new + 8 updated).
 
