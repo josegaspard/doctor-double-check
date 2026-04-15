@@ -6,26 +6,18 @@ const corsHeaders = {
 };
 
 const SPECIALTIES = [
-  "Cardiología",
-  "Dermatología",
-  "Endocrinología",
-  "Gastroenterología",
-  "Ginecología",
-  "Medicina General",
-  "Medicina Interna",
-  "Neurología",
-  "Oftalmología",
-  "Oncología",
-  "Ortopedia",
-  "Pediatría",
-  "Psiquiatría",
-  "Urología",
-  "Neumología",
-  "Nefrología",
-  "Reumatología",
-  "Hematología",
-  "Cirugía General",
-  "Anestesiología",
+  "Alergología e Inmunología", "Algología", "Anestesiología", "Cardiología Clínica",
+  "Cardiología Intervencionista", "Cirugía Bariátrica", "Cirugía Cardíaca",
+  "Cirugía General", "Cirugía Oncológica", "Cirugía Pediátrica",
+  "Cirugía Plástica, Estética y Reconstructiva", "Coloproctología",
+  "Dermatología", "Endocrinología", "Gastroenterología", "Geriatría",
+  "Ginecología y Obstetricia", "Hematología", "Infectología",
+  "Medicina Crítica", "Medicina General", "Medicina Interna",
+  "Nefrología", "Neonatología", "Neumología", "Neurocirugía", "Neurología",
+  "Nutrición Clínica", "Oftalmología", "Oncología Médica",
+  "Ortopedia y Traumatología", "Otorrinolaringología y Cirugía de Cabeza y Cuello",
+  "Pediatría", "Psiquiatría Adultos", "Radiología e Imagen",
+  "Reumatología", "Urgencias", "Urología",
 ];
 
 const INSTITUTIONS = [
