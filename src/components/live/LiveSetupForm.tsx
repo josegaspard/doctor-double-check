@@ -26,17 +26,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 
-const SPECIALTIES = [
-  'Alergología', 'Anestesiología', 'Angiología', 'Cardiología', 'Cirugía General',
-  'Cirugía Plástica', 'Coloproctología', 'Dermatología', 'Endocrinología',
-  'Gastroenterología', 'Geriatría', 'Ginecología', 'Hematología', 'Infectología',
-  'Medicina Crítica', 'Medicina de Urgencias', 'Medicina del Deporte', 'Medicina Familiar',
-  'Medicina Física y Rehabilitación', 'Medicina General', 'Medicina Interna',
-  'Nefrología', 'Neonatología', 'Neumología', 'Neurología', 'Nutriología',
-  'Oftalmología', 'Oncología', 'Ortopedia', 'Otorrinolaringología', 'Patología',
-  'Pediatría', 'Psiquiatría', 'Radiología', 'Reumatología', 'Traumatología',
-  'Urología', 'Otra',
-];
+import { SPECIALTIES_LIST as SPECIALTIES } from '@/lib/specialties';
 
 interface LiveSetupFormProps {
   onStartLive: (config: LiveConfig) => Promise<void>;
