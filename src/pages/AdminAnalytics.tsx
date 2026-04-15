@@ -106,7 +106,8 @@ export default function AdminAnalytics() {
         // Doctor payment metrics
         const totalPaidToDoctors = doctorStats?.reduce((s, d) => s + Number(d.total_earnings || 0), 0) || 0;
         const totalPendingPayouts = doctorStats?.reduce((s, d) => s + Number(d.pending_earnings || 0), 0) || 0;
-        const grossRevenue = walletTopupsRevenue + purchasesRevenue + subscriptionsRevenue + marketplaceRevenue;
+        // grossRevenue = actual sales only (NOT topups — topups are deposits, not revenue)
+        const grossRevenue = purchasesRevenue + subscriptionsRevenue + consultationsRevenue + marketplaceRevenue;
         const platformCommission = grossRevenue - totalPaidToDoctors - totalPendingPayouts;
 
         const rolesCounts = rolesData?.reduce((acc: Record<string, number>, r) => { acc[r.role] = (acc[r.role] || 0) + 1; return acc; }, {}) || {};
@@ -162,7 +163,7 @@ export default function AdminAnalytics() {
         }
 
         setAnalytics({
-          totalRevenue: walletTopupsRevenue,
+          totalRevenue: grossRevenue, // actual sales revenue, not including wallet deposits
           totalUsers: totalUsers || 0, totalDoctors: totalDoctors || 0, totalLives: totalLives || 0,
           purchasesRevenue, subscriptionsRevenue, walletTopupsRevenue, consultationsRevenue,
           marketplaceRevenue, marketplaceOrders,
