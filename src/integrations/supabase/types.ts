@@ -3771,6 +3771,10 @@ export type Database = {
         Returns: boolean
       }
       increment_news_view: { Args: { news_id: string }; Returns: undefined }
+      increment_paid_chats_count: {
+        Args: { p_live_id: string }
+        Returns: undefined
+      }
       increment_storage_used: {
         Args: { p_bytes: number; p_user_id: string }
         Returns: undefined
