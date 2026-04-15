@@ -1,52 +1,36 @@
 
 
-# Plan: Vendor Registration Professionalization + UI Adjustments
+# Plan: Recordings Page — Remove Ads + Decorative Background
 
-## Changes
+## Changes to `src/pages/RecordingsGrid.tsx`
 
-### 1. Professionalize Vendor Registration & Dashboard (`VendorDashboard.tsx`)
-Currently a simple dialog with 5 fields. Redesign into a full-page multi-step registration flow:
+### 1. Remove advertising
+- **Line 2**: Remove `AdBanner` import
+- **Line 182**: Remove `<AdBanner placementName="recordings_top_banner" className="mb-4" />`
 
-- **Step 1**: Company info (name, description, logo upload, RIF/tax ID)
-- **Step 2**: Contact details (phone, email, website, location/address)
-- **Step 3**: Business documents (commercial license upload, bank details)
-- **Step 4**: Review & submit
+### 2. Add decorative background with blue circles
+Replace the plain white container with a styled background that includes:
+- A gradient base: `bg-gradient-to-b from-primary/5 via-background to-background`
+- Decorative floating blue circles using `absolute` positioned `div` elements with `rounded-full`, `bg-primary/5` and `bg-secondary/5` at various sizes and positions, with `pointer-events-none` so they don't interfere with content
+- All circles sit behind content via `z-0`, content gets `relative z-10`
 
-Replace the plain dialog with a professional card-based stepper UI with progress indicator. Add a hero section for the unregistered state with benefits/features callout. The pending state gets a professional timeline showing approval steps.
+### 3. Add a hero header card
+Replace the plain `h1` + subtitle (lines 185-219) with a styled card header:
+- Gradient background card: `bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent`
+- Rounded corners, subtle border, padding
+- Same content (title, subtitle, buttons) but wrapped in the styled card
+- Fully responsive — stacks on mobile, row on desktop
 
-The approved vendor dashboard gets:
-- Better stats cards with icons and trends
-- A third tab "Analytics" with basic revenue chart
-- Product cards with image previews, toggle active/inactive inline
-- Order management with status badges and action buttons
-
-### 2. ContentGallery — Remove ads, add gradient background (`ContentGallery.tsx`)
-- Remove `AdBanner` import and both `<AdBanner>` instances (inline ad at line 427-431 and bottom banner at line 699)
-- Remove the `AdBanner` import from line 3
-- Add a gradient background to the page container: `bg-gradient-to-b from-primary/5 via-background to-background`
-- Add a styled hero header section with gradient card background instead of plain text
-
-### 3. Change lightning bolt to medical cross icon
-**Files:** `EmergencyDoctors.tsx`, `Doctors.tsx`
-- Replace `Zap` icon import with `Cross` (lucide-react `Plus` with custom styling to look like a medical cross)
-- In EmergencyDoctors.tsx (line 73): `<Zap>` → `<Plus>` with medical cross styling
-- In Doctors.tsx (lines 694, 712): same replacement
-- Also update the i18n if needed (icon is code-only, no text change)
-
-### 4. Remove Audience Type selector from DoctorUpload (`DoctorUpload.tsx`)
-- Remove line 390: `<AudienceSelector value={audienceType} onChange={setAudienceType} disabled={!isApproved} />`
-- Remove the `AudienceSelector` import (line 25)
-- Keep `audienceType` state but default it based on `contentTarget` selection (medical → 'professionals', patients → 'patients') — this already happens in the content target selector (lines 321, 336)
-- The "Content Target" selector (medical vs patients) stays — it replaces the audience type functionality
-
----
+### Visual result
+The page gets a subtle medical-themed decorative background with soft blue circles at different opacities and sizes, plus a professional hero header — all fully responsive without obscuring any content.
 
 ## Technical Summary
 
-| # | What | File(s) |
-|---|------|---------|
-| 1 | Professional vendor registration stepper + enhanced dashboard | `VendorDashboard.tsx` |
-| 2 | Remove ads, add gradient design to ContentGallery | `ContentGallery.tsx` |
-| 3 | Zap → medical cross icon | `EmergencyDoctors.tsx`, `Doctors.tsx` |
-| 4 | Remove AudienceSelector from upload form | `DoctorUpload.tsx` |
+| # | What | Detail |
+|---|------|--------|
+| 1 | Remove AdBanner import + usage | Lines 2, 182 |
+| 2 | Add decorative circle background | Absolute-positioned divs behind content |
+| 3 | Hero header card | Gradient card wrapping existing header |
+
+Single file change: `src/pages/RecordingsGrid.tsx`
 
