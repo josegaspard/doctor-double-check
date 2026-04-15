@@ -65,6 +65,7 @@ import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
+import { DecorativeBackground } from '@/components/layout/DecorativeBackground';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { ActiveLiveBanner } from '@/components/live/ActiveLiveBanner';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
@@ -264,7 +265,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const hideBottomNav = location.pathname.startsWith('/video-call');
 
   return (
-    <div ref={ref} className="min-h-screen bg-background flex flex-col overflow-x-hidden">
+    <div ref={ref} className="min-h-screen bg-gradient-to-br from-primary/[0.02] via-secondary/[0.01] to-primary/[0.02] flex flex-col overflow-x-hidden">
+      <DecorativeBackground />
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container mx-auto px-4">
