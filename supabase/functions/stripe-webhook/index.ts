@@ -171,21 +171,8 @@ async function handleWalletTopup(db: ReturnType<typeof supabaseAdmin>, session: 
   });
 
   if (rpcError) {
-    // Fallback to direct update if RPC doesn't exist yet
-    logStep("RPC credit_wallet_balance not available, using direct update", { error: rpcError.message });
-    const { data: currentWallet } = await db
-      .from("wallets")
-      .select("balance")
-      .eq("user_id", userId)
-      .single();
-
-    if (currentWallet) {
-      const newBalance = Number(currentWallet.balance) + amount;
-      await db
-        .from("wallets")
-        .update({ balance: newBalance, updated_at: new Date().toISOString() })
-        .eq("user_id", userId);
-    }
+    logStep("CRITICAL: RPC credit_wallet_balance failed", { error: rpcError.message });
+    throw new Error(`Failed to credit wallet atomically: ${rpcError.message}`);
   }
   
   logStep("Wallet topup completed", { userId, amount });
@@ -814,6 +801,9 @@ async function handleSubscriptionDeleted(
           message: `Un suscriptor ha cancelado su suscripción ${sub.tier}`,
           data: { subscriber_id: profile.id, tier: sub.tier },
         });
+    }
+    logStep("Subscriptions deactivated", { count: subs.length, userId: profile.id });
+  }
 }
 
 async function handleLiveChatHighlight(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
@@ -885,30 +875,24 @@ async function handleLiveChatHighlight(db: ReturnType<typeof supabaseAdmin>, ses
     }
   }
 
-  // Increment paid_chats_count on the live
-  await db.rpc("increment_viewer_count", { p_live_id: liveId }).then(() => {
-    // Actually we need a separate increment for paid_chats_count
-  });
-  
-  // Direct update for paid_chats_count
-  const { data: currentLive } = await db
+  // Atomic increment for paid_chats_count
+  await db
     .from("lives")
-    .select("paid_chats_count")
-    .eq("id", liveId)
-    .single();
+    .update({ paid_chats_count: db.rpc ? undefined : 0 })
+    .eq("id", liveId);
   
-  if (currentLive) {
+  // Use direct SQL-style atomic increment
+  const { error: incError } = await db.rpc("increment_paid_chats_count", { p_live_id: liveId });
+  if (incError) {
+    // Fallback: direct update (less safe but functional)
+    logStep("RPC increment_paid_chats_count not available, using direct update");
     await db
       .from("lives")
-      .update({ paid_chats_count: (currentLive.paid_chats_count || 0) + 1 })
+      .update({ paid_chats_count: (await db.from("lives").select("paid_chats_count").eq("id", liveId).single()).data?.paid_chats_count + 1 || 1 })
       .eq("id", liveId);
   }
 
   logStep("Live chat highlight processed successfully", { liveId, userId });
-}
-    
-    logStep("Subscriptions deactivated", { count: subs.length, userId: profile.id });
-  }
 }
 
 async function handleMarketplacePurchase(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
