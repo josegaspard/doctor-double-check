@@ -106,11 +106,20 @@ serve(async (req) => {
       shipping_notes: shipping?.notes || null,
     });
 
-    // Decrement stock
-    await serviceClient
+    // Atomic stock decrement — only succeeds if stock is still sufficient
+    const { data: updatedProduct, error: stockErr } = await serviceClient
       .from("marketplace_products")
       .update({ stock: product.stock - quantity })
-      .eq("id", product.id);
+      .eq("id", product.id)
+      .gte("stock", quantity)
+      .select("id")
+      .single();
+
+    if (stockErr || !updatedProduct) {
+      // Stock was modified concurrently — cancel the order
+      await serviceClient.from("marketplace_orders").delete().eq("stripe_session_id", session.id);
+      throw new Error("Stock changed concurrently, please try again");
+    }
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
