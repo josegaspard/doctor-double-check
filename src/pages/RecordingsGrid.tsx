@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { AdBanner } from '@/components/ads/AdBanner';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -177,46 +176,58 @@ export default function RecordingsGrid() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
-        {/* Ad Banner */}
-        <AdBanner placementName="recordings_top_banner" className="mb-4" />
-
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-          <div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-              <PlayCircle className="w-5 h-5 sm:w-6 sm:h-6 text-premium" />
-              {doctorName ? `${t('recordings.recordingsOf')} ${doctorName}` : t('recordings.premiumContent')}
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {filteredRecordings.length} {t('recordings.title').toLowerCase()}
-              {doctorFilter && (
-                <Button variant="link" size="sm" className="ml-2 p-0 h-auto text-xs" onClick={() => navigate('/recordings')}>
-                  {t('recordings.viewAll')}
-                </Button>
-              )}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {isAuthenticated && role === 'doctor' && (
-              <Link to="/doctor/upload">
-                <Button variant="live" className="gap-2">
-                  <Upload className="w-4 h-4" />
-                  {language === 'es' ? 'Subir contenido' : 'Upload content'}
-                </Button>
-              </Link>
-            )}
-            {isAuthenticated && (role === 'patient' || role === 'resident') && (
-              <Link to="/wallet">
-                <Button variant="outline" className="gap-2">
-                  <Wallet className="w-4 h-4" />
-                  {t('wallet.balance')}: ${balance.toLocaleString()}
-                </Button>
-              </Link>
-            )}
-          </div>
+      <div className="relative min-h-screen overflow-hidden">
+        {/* Decorative background circles */}
+        <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
+          <div className="absolute top-16 -left-20 w-72 h-72 rounded-full bg-primary/[0.07] blur-3xl" />
+          <div className="absolute top-60 right-10 w-56 h-56 rounded-full bg-secondary/[0.06] blur-2xl" />
+          <div className="absolute bottom-40 left-1/4 w-96 h-96 rounded-full bg-primary/[0.04] blur-3xl" />
+          <div className="absolute top-1/3 right-1/3 w-40 h-40 rounded-full bg-accent/[0.08] blur-2xl" />
+          <div className="absolute bottom-20 right-20 w-64 h-64 rounded-full bg-primary/[0.05] blur-3xl" />
+          <div className="absolute top-[70%] left-10 w-48 h-48 rounded-full bg-secondary/[0.05] blur-2xl" />
         </div>
+
+        <div className="relative z-10 container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
+          {/* Hero Header Card */}
+          <div className="mb-6 rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent p-5 sm:p-6 backdrop-blur-sm">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <PlayCircle className="w-5 h-5 text-primary" />
+                  </div>
+                  {doctorName ? `${t('recordings.recordingsOf')} ${doctorName}` : t('recordings.premiumContent')}
+                </h1>
+                <p className="text-muted-foreground text-sm mt-1.5 ml-11">
+                  {filteredRecordings.length} {t('recordings.title').toLowerCase()}
+                  {doctorFilter && (
+                    <Button variant="link" size="sm" className="ml-2 p-0 h-auto text-xs" onClick={() => navigate('/recordings')}>
+                      {t('recordings.viewAll')}
+                    </Button>
+                  )}
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {isAuthenticated && role === 'doctor' && (
+                  <Link to="/doctor/upload">
+                    <Button variant="live" className="gap-2">
+                      <Upload className="w-4 h-4" />
+                      {language === 'es' ? 'Subir contenido' : 'Upload content'}
+                    </Button>
+                  </Link>
+                )}
+                {isAuthenticated && (role === 'patient' || role === 'resident') && (
+                  <Link to="/wallet">
+                    <Button variant="outline" className="gap-2">
+                      <Wallet className="w-4 h-4" />
+                      {t('wallet.balance')}: ${balance.toLocaleString()}
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
 
         <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
           {/* ===== Desktop Sidebar ===== */}
@@ -534,6 +545,7 @@ export default function RecordingsGrid() {
               </Card>
             )}
           </div>
+        </div>
         </div>
       </div>
 
