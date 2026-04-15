@@ -384,7 +384,7 @@ export default function Doctors() {
                           : 'text-foreground hover:bg-muted'
                       }`}
                     >
-                      {t(spec.labelKey)}
+                      {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
                     </button>
                   ))}
                 </div>
@@ -458,7 +458,7 @@ export default function Doctors() {
                   : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
               }`}
             >
-              {t(spec.labelKey)}
+              {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
             </button>
           ))}
         </div>

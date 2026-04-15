@@ -467,7 +467,7 @@ export default function ContentGallery() {
                           : 'text-foreground hover:bg-muted'
                       }`}
                     >
-                      {t(spec.labelKey)}
+                      {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
                     </button>
                   ))}
                 </div>
@@ -580,7 +580,7 @@ export default function ContentGallery() {
                       : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
                   }`}
                 >
-                  {t(spec.labelKey)}
+                  {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
                 </button>
               ))}
             </div>
