@@ -44,6 +44,7 @@ function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import AccessGuard from "./components/AccessGuard";
 
 // Lazy loaded pages
 const LivesGrid = React.lazy(() => import("./pages/LivesGrid"));
@@ -218,21 +219,21 @@ const App = () => {
                       <Route path="/order-success" element={<OrderSuccess />} />
                       <Route path="/double-check" element={<DoubleCheck />} />
                       <Route path="/settings" element={<Settings />} />
-                      <Route path="/admin" element={<AdminDashboard />} />
-                      <Route path="/admin/verifications" element={<AdminVerifications />} />
-                      <Route path="/admin/doctors" element={<AdminDoctors />} />
-                      <Route path="/admin/residents" element={<AdminResidents />} />
-                      <Route path="/admin/users" element={<AdminUsers />} />
-                      <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                      <Route path="/admin/reports" element={<AdminReports />} />
-                      <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
-                      <Route path="/admin/refunds" element={<AdminRefunds />} />
-                      <Route path="/admin/payout-settings" element={<AdminPayoutSettings />} />
-                      <Route path="/admin/payouts" element={<AdminPayouts />} />
-                      <Route path="/admin/invoices" element={<AdminInvoiceReview />} />
-                      <Route path="/admin/credentials" element={<AdminCredentials />} />
-                      <Route path="/admin/news" element={<AdminNews />} />
-                      <Route path="/admin/ranks" element={<AdminRanks />} />
+                      <Route path="/admin" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminDashboard /></AccessGuard>} />
+                      <Route path="/admin/verifications" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminVerifications /></AccessGuard>} />
+                      <Route path="/admin/doctors" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminDoctors /></AccessGuard>} />
+                      <Route path="/admin/residents" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminResidents /></AccessGuard>} />
+                      <Route path="/admin/users" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminUsers /></AccessGuard>} />
+                      <Route path="/admin/analytics" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminAnalytics /></AccessGuard>} />
+                      <Route path="/admin/reports" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminReports /></AccessGuard>} />
+                      <Route path="/admin/site-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminSiteSettings /></AccessGuard>} />
+                      <Route path="/admin/refunds" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminRefunds /></AccessGuard>} />
+                      <Route path="/admin/payout-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminPayoutSettings /></AccessGuard>} />
+                      <Route path="/admin/payouts" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminPayouts /></AccessGuard>} />
+                      <Route path="/admin/invoices" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminInvoiceReview /></AccessGuard>} />
+                      <Route path="/admin/credentials" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminCredentials /></AccessGuard>} />
+                      <Route path="/admin/news" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminNews /></AccessGuard>} />
+                      <Route path="/admin/ranks" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminRanks /></AccessGuard>} />
                       <Route path="/doctor/news" element={<AdminNews />} />
                       <Route path="/verification-pending" element={<VerificationPending />} />
                       <Route path="/doctors" element={<Doctors />} />
@@ -264,11 +265,11 @@ const App = () => {
                       <Route path="/email-confirmed" element={<EmailConfirmed />} />
                       <Route path="/advertising" element={<Advertising />} />
                       <Route path="/advertiser/dashboard" element={<AdvertiserDashboard />} />
-                      <Route path="/admin/ads" element={<AdminAds />} />
-                      <Route path="/admin/hospitals" element={<AdminHospitals />} />
-                      <Route path="/admin/marketplace" element={<AdminMarketplace />} />
+                      <Route path="/admin/ads" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminAds /></AccessGuard>} />
+                      <Route path="/admin/hospitals" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminHospitals /></AccessGuard>} />
+                      <Route path="/admin/marketplace" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminMarketplace /></AccessGuard>} />
                       <Route path="/vendor/dashboard" element={<VendorDashboard />} />
-                      <Route path="/admin/featured" element={<AdminFeatured />} />
+                      <Route path="/admin/featured" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminFeatured /></AccessGuard>} />
                       <Route path="/psychology" element={<PsychologyDirectory />} />
                       <Route path="/nutrition" element={<NutritionDirectory />} />
                       <Route path="/for-residents" element={<ForResidents />} />
