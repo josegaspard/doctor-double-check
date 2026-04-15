@@ -67,43 +67,7 @@ function reverseGeocode(lat: number, lng: number): string {
   return nearest.replace(/\b\w/g, c => c.toUpperCase());
 }
 
-// Predefined medical specialties
-const MEDICAL_SPECIALTIES = [
-  'Medicina General',
-  'Medicina Interna',
-  'Cardiología',
-  'Dermatología',
-  'Endocrinología',
-  'Gastroenterología',
-  'Geriatría',
-  'Ginecología y Obstetricia',
-  'Hematología',
-  'Infectología',
-  'Medicina de Urgencias',
-  'Medicina Familiar',
-  'Nefrología',
-  'Neumología',
-  'Neurología',
-  'Nutriología',
-  'Oftalmología',
-  'Oncología',
-  'Ortopedia y Traumatología',
-  'Otorrinolaringología',
-  'Pediatría',
-  'Psiquiatría',
-  'Radiología',
-  'Reumatología',
-  'Urología',
-  'Cirugía General',
-  'Cirugía Cardiovascular',
-  'Cirugía Plástica',
-  'Anestesiología',
-  'Medicina del Deporte',
-  'Medicina Física y Rehabilitación',
-  'Patología',
-  'Alergología e Inmunología',
-  'Otra especialidad'
-] as const;
+import { SPECIALTIES_LIST as MEDICAL_SPECIALTIES } from '@/lib/specialties';
 
 interface ValidationErrors {
   specialty?: string;
