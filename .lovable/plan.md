@@ -1,44 +1,41 @@
 
 
-# Smart Searchable Filters for Specialties & Cities
+# Fix: Synchronize Doctor Specialties with Canonical List
 
 ## Problem
-The Doctors directory has 110+ specialties rendered as plain button lists — on desktop as a long sidebar and on mobile as a horizontal scroll of 110+ chips. This is unusable. Cities are a hardcoded list of 8 items with no search.
+The database has 5 doctor specialties that don't match the canonical `SPECIALTIES_FILTER` list:
 
-## Solution
-Create a reusable `SearchableFilter` combobox component using the existing `Popover` + `Command` (cmdk) primitives already in the project. Users can either browse the list or type to filter instantly. Works on both desktop sidebar and mobile.
+| Current DB Value | Canonical Value |
+|---|---|
+| Cardiología | Cardiología Clínica |
+| Ginecología | Ginecología y Obstetricia |
+| Oncología | Oncología Médica |
+| Ortopedia | Ortopedia y Traumatología |
+| Psiquiatría | Psiquiatría Adultos |
 
-## Component Design
+The remaining 15 specialties (Anestesiología, Cirugía General, Dermatología, etc.) already match the canonical list exactly.
 
-**New file: `src/components/filters/SearchableFilter.tsx`**
-- Props: `options: string[]`, `value: string`, `onChange: (val: string) => void`, `placeholder: string`, `emptyLabel: string`, `icon?: LucideIcon`
-- Uses `Popover` + `Command` + `CommandInput` + `CommandList` + `CommandItem` + `CommandEmpty`
-- Trigger button shows selected value with a chevron; full-width on mobile
-- Search input inside popover filters options as user types
-- Selected item gets a checkmark
-- Mobile: popover renders as a `Drawer` (using existing `useIsMobile` hook) for better touch UX
-- 48px touch targets per item (per project memory)
+## Root Cause
+Some doctors were created via the seed function or manually with shortened specialty names. The onboarding flow already uses `SPECIALTIES_LIST` correctly, so new doctors get canonical names — but existing records are wrong.
 
-## Changes to `src/pages/Doctors.tsx`
+## Fix (3 steps)
 
-### Desktop Sidebar (lines 370-427)
-- Replace the 110-button specialty list with `<SearchableFilter>` 
-- Replace the city button list with `<SearchableFilter>`
-- Sidebar becomes compact (2 filter widgets + clear button)
+### 1. Update existing DB records
+Run 5 UPDATE statements to normalize the mismatched specialties to their canonical names:
+- `UPDATE doctor_profiles SET specialty = 'Cardiología Clínica' WHERE specialty = 'Cardiología'`
+- Same for the other 4 mismatches
 
-### Mobile (lines 449-482)  
-- Replace the 110-chip horizontal scroll with a single `<SearchableFilter>` button that opens a searchable drawer
-- Replace the city chip scroll with a similar `<SearchableFilter>` button
-- Both shown as a compact row: `[🔬 Especialidad ▼] [📍 Ciudad ▼]`
-- Active filters shown as dismissible badges below
+### 2. Update `seed-demo-users` edge function
+The seed function has its own hardcoded `SPECIALTIES` array (line 9-21). Replace it with the canonical names so future seeds create doctors with correct specialties. The mismatched entries are:
+- "Cardiología Clínica" (not "Cardiología")  — note: seed actually doesn't have plain "Cardiología", so the manual/test doctors are the source
+- Keep using the existing seed list but ensure every entry matches `SPECIALTIES_FILTER`
 
-### Cities
-- Fetch unique cities from `doctor_profiles` via a simple query instead of the hardcoded 8-city array, so the list is always current
+### 3. Update `resident_profiles` too
+Check and fix any resident specialty mismatches with the same mapping.
 
 ## Technical Details
-- Uses existing `cmdk` package (already installed) and `Popover`/`Drawer` components
-- `CommandInput` handles the search/filter natively — no custom debounce needed
-- Responsive: `Popover` on desktop, `Drawer` on mobile (pattern already used elsewhere in the project)
-- All items use `spec.value` directly (no i18n keys, matching the fix already applied)
-- Total files: 1 new component + 1 modified page
+- Step 1: Use the Supabase insert/update tool (5 UPDATE queries)
+- Step 2: Edit `supabase/functions/seed-demo-users/index.ts` lines 9-21
+- Step 3: Query + update resident specialties if needed
+- No schema changes needed — just data normalization
 
