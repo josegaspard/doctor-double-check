@@ -219,24 +219,40 @@ export default function RecordingsGrid() {
               {/* Specialties */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Especialidades' : 'Specialties'}
+                  {language === 'es' ? 'Especialidad' : 'Specialty'}
                 </h4>
-                <div className="space-y-0.5">
-                  {SPECIALTIES.map(spec => (
-                    <button
-                      key={spec.value}
-                      onClick={() => setSelectedSpecialty(spec.value)}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        selectedSpecialty === spec.value
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
-                    </button>
-                  ))}
-                </div>
+                <SearchableFilter
+                  options={specialtyOptions}
+                  value={selectedSpecialty}
+                  onChange={setSelectedSpecialty}
+                  placeholder={language === 'es' ? 'Especialidad' : 'Specialty'}
+                  searchPlaceholder={language === 'es' ? 'Buscar especialidad...' : 'Search specialty...'}
+                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  icon={Stethoscope}
+                  allLabel={language === 'es' ? 'Todas' : 'All'}
+                />
               </div>
+
+              <div className="border-t border-border my-3" />
+
+              {/* Doctor filter */}
+              {allDoctorNames.length > 0 && (
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                    Doctor
+                  </h4>
+                  <SearchableFilter
+                    options={allDoctorNames}
+                    value={selectedDoctor}
+                    onChange={setSelectedDoctor}
+                    placeholder="Doctor"
+                    searchPlaceholder={language === 'es' ? 'Buscar doctor...' : 'Search doctor...'}
+                    emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                    icon={User}
+                    allLabel={language === 'es' ? 'Todos' : 'All'}
+                  />
+                </div>
+              )}
 
               {/* Tags */}
               {allTags.length > 0 && (
@@ -246,31 +262,16 @@ export default function RecordingsGrid() {
                     <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                       {language === 'es' ? 'Categorías' : 'Categories'}
                     </h4>
-                    <div className="space-y-0.5">
-                      <button
-                        onClick={() => setSelectedTag(null)}
-                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                          !selectedTag
-                            ? 'bg-accent text-accent-foreground shadow-sm'
-                            : 'text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        {language === 'es' ? 'Todas' : 'All'}
-                      </button>
-                      {allTags.map(tag => (
-                        <button
-                          key={tag}
-                          onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                            selectedTag === tag
-                              ? 'bg-accent text-accent-foreground shadow-sm'
-                              : 'text-foreground hover:bg-muted'
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
+                    <SearchableFilter
+                      options={allTags}
+                      value={selectedTag}
+                      onChange={setSelectedTag}
+                      placeholder={language === 'es' ? 'Categoría' : 'Category'}
+                      searchPlaceholder={language === 'es' ? 'Buscar categoría...' : 'Search category...'}
+                      emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                      icon={Tag}
+                      allLabel={language === 'es' ? 'Todas' : 'All'}
+                    />
                   </div>
                 </>
               )}
@@ -308,51 +309,43 @@ export default function RecordingsGrid() {
               ))}
             </div>
 
-            {/* Mobile: Specialty chips */}
-            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3 md:hidden">
-              {SPECIALTIES.map(spec => (
-                <button
-                  key={spec.value}
-                  onClick={() => setSelectedSpecialty(spec.value)}
-                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
-                    selectedSpecialty === spec.value
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-                  }`}
-                >
-                  {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
-                </button>
-              ))}
+            {/* Mobile: Smart filters */}
+            <div className="flex gap-2 mb-3 md:hidden">
+              <SearchableFilter
+                options={specialtyOptions}
+                value={selectedSpecialty}
+                onChange={setSelectedSpecialty}
+                placeholder={language === 'es' ? 'Especialidad' : 'Specialty'}
+                searchPlaceholder={language === 'es' ? 'Buscar especialidad...' : 'Search specialty...'}
+                emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                icon={Stethoscope}
+                allLabel={language === 'es' ? 'Todas' : 'All'}
+              />
+              {allDoctorNames.length > 0 && (
+                <SearchableFilter
+                  options={allDoctorNames}
+                  value={selectedDoctor}
+                  onChange={setSelectedDoctor}
+                  placeholder="Doctor"
+                  searchPlaceholder={language === 'es' ? 'Buscar doctor...' : 'Search doctor...'}
+                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  icon={User}
+                  allLabel={language === 'es' ? 'Todos' : 'All'}
+                />
+              )}
+              {allTags.length > 0 && (
+                <SearchableFilter
+                  options={allTags}
+                  value={selectedTag}
+                  onChange={setSelectedTag}
+                  placeholder={language === 'es' ? 'Categoría' : 'Category'}
+                  searchPlaceholder={language === 'es' ? 'Buscar categoría...' : 'Search category...'}
+                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  icon={Tag}
+                  allLabel={language === 'es' ? 'Todas' : 'All'}
+                />
+              )}
             </div>
-
-            {/* Mobile: Tag chips */}
-            {allTags.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3 md:hidden">
-                <button
-                  onClick={() => setSelectedTag(null)}
-                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                    !selectedTag
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-                  }`}
-                >
-                  {language === 'es' ? 'Todas' : 'All'}
-                </button>
-                {allTags.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                    className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                      selectedTag === tag
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {/* No balance CTA */}
             {isAuthenticated && (role === 'patient' || role === 'resident') && balance === 0 && (
