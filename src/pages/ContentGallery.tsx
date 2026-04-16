@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useCallback, useLayoutEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { ContentPreviewModal } from '@/components/content/ContentPreviewModal';
+import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import {
   FileText,
   Image as ImageIcon,
@@ -35,6 +36,7 @@ import {
   AlertCircle,
   Presentation,
   Upload,
+  Tag,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useWallet } from '@/contexts/WalletContext';
@@ -256,7 +258,8 @@ export default function ContentGallery() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
+  const [selectedSpecialty, setSelectedSpecialty] = useState('');
+  const specialtyOptions = useMemo(() => SPECIALTIES.filter(s => s.value !== 'Todas').map(s => s.value), []);
   const [previewContent, setPreviewContent] = useState<DoctorContent | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [contentTab, setContentTab] = useState('all');
@@ -342,7 +345,7 @@ export default function ContentGallery() {
       content.creator_name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = typeFilter === 'all' || content.type === typeFilter || (typeFilter === 'presentation' && content.type === 'pdf' && content.category?.toLowerCase().includes('presentaci'));
     const matchesCategory = categoryFilter === 'all' || content.category === categoryFilter;
-    const matchesSpecialty = selectedSpecialty === 'Todas' || content.creator_specialty === selectedSpecialty;
+    const matchesSpecialty = !selectedSpecialty || content.creator_specialty === selectedSpecialty;
     const isPurchased = purchasedIds.has(content.id);
 
     if (!matchesSearch || !matchesType || !matchesCategory || !matchesSpecialty) return false;
@@ -359,7 +362,7 @@ export default function ContentGallery() {
           <Library className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">{t('content.noContent')}</h3>
           <p className="text-muted-foreground">
-            {searchQuery || typeFilter !== 'all' || categoryFilter !== 'all' || selectedSpecialty !== 'Todas'
+            {searchQuery || typeFilter !== 'all' || categoryFilter !== 'all' || selectedSpecialty
               ? t('content.noContentFilters')
               : t('content.noContentUploaded')}
           </p>
@@ -454,23 +457,18 @@ export default function ContentGallery() {
               {/* Specialties */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Especialidades' : 'Specialties'}
+                  {language === 'es' ? 'Especialidad' : 'Specialty'}
                 </h4>
-                <div className="space-y-0.5">
-                  {SPECIALTIES.map(spec => (
-                    <button
-                      key={spec.value}
-                      onClick={() => setSelectedSpecialty(spec.value)}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        selectedSpecialty === spec.value
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
-                    </button>
-                  ))}
-                </div>
+                <SearchableFilter
+                  options={specialtyOptions}
+                  value={selectedSpecialty}
+                  onChange={setSelectedSpecialty}
+                  placeholder={language === 'es' ? 'Especialidad' : 'Specialty'}
+                  searchPlaceholder={language === 'es' ? 'Buscar especialidad...' : 'Search specialty...'}
+                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  icon={Stethoscope}
+                  allLabel={language === 'es' ? 'Todas' : 'All'}
+                />
               </div>
 
               <div className="border-t border-border my-3" />
@@ -506,31 +504,16 @@ export default function ContentGallery() {
                     <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                       {language === 'es' ? 'Categorías' : 'Categories'}
                     </h4>
-                    <div className="space-y-0.5">
-                      <button
-                        onClick={() => setCategoryFilter('all')}
-                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                          categoryFilter === 'all'
-                            ? 'bg-accent text-accent-foreground shadow-sm'
-                            : 'text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        {t('content.allCategories')}
-                      </button>
-                      {categories.map(cat => (
-                        <button
-                          key={cat}
-                          onClick={() => setCategoryFilter(cat)}
-                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                            categoryFilter === cat
-                              ? 'bg-accent text-accent-foreground shadow-sm'
-                              : 'text-foreground hover:bg-muted'
-                          }`}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
+                    <SearchableFilter
+                      options={categories}
+                      value={categoryFilter === 'all' ? '' : categoryFilter}
+                      onChange={(val) => setCategoryFilter(val || 'all')}
+                      placeholder={language === 'es' ? 'Categoría' : 'Category'}
+                      searchPlaceholder={language === 'es' ? 'Buscar categoría...' : 'Search category...'}
+                      emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                      icon={Tag}
+                      allLabel={language === 'es' ? 'Todas' : 'All'}
+                    />
                   </div>
                 </>
               )}
@@ -568,21 +551,30 @@ export default function ContentGallery() {
               />
             </div>
 
-            {/* Mobile: Specialty chips */}
-            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 md:hidden">
-              {SPECIALTIES.map(spec => (
-                <button
-                  key={spec.value}
-                  onClick={() => setSelectedSpecialty(spec.value)}
-                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
-                    selectedSpecialty === spec.value
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-                  }`}
-                >
-                  {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
-                </button>
-              ))}
+            {/* Mobile: Smart filters */}
+            <div className="flex gap-2 mb-3 md:hidden">
+              <SearchableFilter
+                options={specialtyOptions}
+                value={selectedSpecialty}
+                onChange={setSelectedSpecialty}
+                placeholder={language === 'es' ? 'Especialidad' : 'Specialty'}
+                searchPlaceholder={language === 'es' ? 'Buscar especialidad...' : 'Search specialty...'}
+                emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                icon={Stethoscope}
+                allLabel={language === 'es' ? 'Todas' : 'All'}
+              />
+              {categories.length > 0 && (
+                <SearchableFilter
+                  options={categories}
+                  value={categoryFilter === 'all' ? '' : categoryFilter}
+                  onChange={(val) => setCategoryFilter(val || 'all')}
+                  placeholder={language === 'es' ? 'Categoría' : 'Category'}
+                  searchPlaceholder={language === 'es' ? 'Buscar categoría...' : 'Search category...'}
+                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  icon={Tag}
+                  allLabel={language === 'es' ? 'Todas' : 'All'}
+                />
+              )}
             </div>
 
             {/* Mobile: Type filter chips */}
@@ -608,39 +600,6 @@ export default function ContentGallery() {
                 <ScrollBar orientation="horizontal" className="h-0" />
               </ScrollArea>
             </div>
-
-            {/* Mobile: Category chips */}
-            {categories.length > 0 && (
-              <div className="md:hidden mb-4">
-                <ScrollArea className="w-full whitespace-nowrap">
-                  <div className="flex gap-2 pb-1">
-                    <Button
-                      variant={categoryFilter === 'all' ? 'default' : 'outline'}
-                      size="sm"
-                      className={`rounded-full shrink-0 text-xs h-7 px-3 ${categoryFilter === 'all' ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
-                      onClick={() => setCategoryFilter('all')}
-                    >
-                      {t('content.allCategories')}
-                    </Button>
-                    {categories.map(cat => {
-                      const active = categoryFilter === cat;
-                      return (
-                        <Button
-                          key={cat}
-                          variant={active ? 'default' : 'outline'}
-                          size="sm"
-                          className={`rounded-full shrink-0 text-xs h-7 px-3 ${active ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
-                          onClick={() => setCategoryFilter(cat)}
-                        >
-                          {cat}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  <ScrollBar orientation="horizontal" className="h-0" />
-                </ScrollArea>
-              </div>
-            )}
 
             {/* Content Grid */}
             <div>

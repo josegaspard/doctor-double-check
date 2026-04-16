@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { 
   PlayCircle, 
   Clock, 
@@ -30,6 +30,9 @@ import {
   Gift,
   Globe,
   Upload,
+  Stethoscope,
+  Tag,
+  User,
 } from 'lucide-react';
 
 type ContentFilter = 'all' | 'free' | 'paid' | 'purchased' | 'not_purchased';
@@ -48,12 +51,13 @@ export default function RecordingsGrid() {
   const { hasPurchased, purchaseWithWallet, isPurchasing } = usePurchases();
   const { getEffectiveRecordingPrice, hasPremiumTo } = useSubscriptions();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
+  const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [doctorName, setDoctorName] = useState<string | null>(null);
   const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState('');
+  const [selectedDoctor, setSelectedDoctor] = useState('');
 
   useEffect(() => { refreshRecordings(); }, [refreshRecordings]);
 
@@ -66,7 +70,9 @@ export default function RecordingsGrid() {
     fetchName();
   }, [doctorFilter]);
 
-  const allTags = [...new Set(recordings.flatMap(r => r.tags || []))].filter(Boolean).sort();
+  const allTags = useMemo(() => [...new Set(recordings.flatMap(r => r.tags || []))].filter(Boolean).sort(), [recordings]);
+  const allDoctorNames = useMemo(() => [...new Set(recordings.map(r => r.doctorName))].filter(Boolean).sort(), [recordings]);
+  const specialtyOptions = useMemo(() => SPECIALTIES.filter(s => s.value !== 'Todas').map(s => s.value), []);
 
   const ownsRecording = (recording: Recording): boolean => {
     if (!user) return false;
@@ -78,11 +84,12 @@ export default function RecordingsGrid() {
   const filteredRecordings = recordings.filter(rec => {
     const matchesSearch = rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          rec.doctorName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialty = selectedSpecialty === 'Todas' || rec.specialty === selectedSpecialty;
+    const matchesSpecialty = !selectedSpecialty || rec.specialty === selectedSpecialty;
     const matchesDoctor = !doctorFilter || rec.doctorId === doctorFilter;
     const matchesTag = !selectedTag || (rec.tags || []).includes(selectedTag);
+    const matchesDoctorName = !selectedDoctor || rec.doctorName === selectedDoctor;
     
-    if (!matchesSearch || !matchesSpecialty || !matchesDoctor || !matchesTag) return false;
+    if (!matchesSearch || !matchesSpecialty || !matchesDoctor || !matchesTag || !matchesDoctorName) return false;
     
     const owned = ownsRecording(rec);
     switch (contentFilter) {
@@ -212,24 +219,40 @@ export default function RecordingsGrid() {
               {/* Specialties */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Especialidades' : 'Specialties'}
+                  {language === 'es' ? 'Especialidad' : 'Specialty'}
                 </h4>
-                <div className="space-y-0.5">
-                  {SPECIALTIES.map(spec => (
-                    <button
-                      key={spec.value}
-                      onClick={() => setSelectedSpecialty(spec.value)}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        selectedSpecialty === spec.value
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
-                    </button>
-                  ))}
-                </div>
+                <SearchableFilter
+                  options={specialtyOptions}
+                  value={selectedSpecialty}
+                  onChange={setSelectedSpecialty}
+                  placeholder={language === 'es' ? 'Especialidad' : 'Specialty'}
+                  searchPlaceholder={language === 'es' ? 'Buscar especialidad...' : 'Search specialty...'}
+                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  icon={Stethoscope}
+                  allLabel={language === 'es' ? 'Todas' : 'All'}
+                />
               </div>
+
+              <div className="border-t border-border my-3" />
+
+              {/* Doctor filter */}
+              {allDoctorNames.length > 0 && (
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                    Doctor
+                  </h4>
+                  <SearchableFilter
+                    options={allDoctorNames}
+                    value={selectedDoctor}
+                    onChange={setSelectedDoctor}
+                    placeholder="Doctor"
+                    searchPlaceholder={language === 'es' ? 'Buscar doctor...' : 'Search doctor...'}
+                    emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                    icon={User}
+                    allLabel={language === 'es' ? 'Todos' : 'All'}
+                  />
+                </div>
+              )}
 
               {/* Tags */}
               {allTags.length > 0 && (
@@ -239,31 +262,16 @@ export default function RecordingsGrid() {
                     <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                       {language === 'es' ? 'Categorías' : 'Categories'}
                     </h4>
-                    <div className="space-y-0.5">
-                      <button
-                        onClick={() => setSelectedTag(null)}
-                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                          !selectedTag
-                            ? 'bg-accent text-accent-foreground shadow-sm'
-                            : 'text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        {language === 'es' ? 'Todas' : 'All'}
-                      </button>
-                      {allTags.map(tag => (
-                        <button
-                          key={tag}
-                          onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                            selectedTag === tag
-                              ? 'bg-accent text-accent-foreground shadow-sm'
-                              : 'text-foreground hover:bg-muted'
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
+                    <SearchableFilter
+                      options={allTags}
+                      value={selectedTag}
+                      onChange={setSelectedTag}
+                      placeholder={language === 'es' ? 'Categoría' : 'Category'}
+                      searchPlaceholder={language === 'es' ? 'Buscar categoría...' : 'Search category...'}
+                      emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                      icon={Tag}
+                      allLabel={language === 'es' ? 'Todas' : 'All'}
+                    />
                   </div>
                 </>
               )}
@@ -301,51 +309,43 @@ export default function RecordingsGrid() {
               ))}
             </div>
 
-            {/* Mobile: Specialty chips */}
-            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3 md:hidden">
-              {SPECIALTIES.map(spec => (
-                <button
-                  key={spec.value}
-                  onClick={() => setSelectedSpecialty(spec.value)}
-                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
-                    selectedSpecialty === spec.value
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-                  }`}
-                >
-                  {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
-                </button>
-              ))}
+            {/* Mobile: Smart filters */}
+            <div className="flex gap-2 mb-3 md:hidden">
+              <SearchableFilter
+                options={specialtyOptions}
+                value={selectedSpecialty}
+                onChange={setSelectedSpecialty}
+                placeholder={language === 'es' ? 'Especialidad' : 'Specialty'}
+                searchPlaceholder={language === 'es' ? 'Buscar especialidad...' : 'Search specialty...'}
+                emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                icon={Stethoscope}
+                allLabel={language === 'es' ? 'Todas' : 'All'}
+              />
+              {allDoctorNames.length > 0 && (
+                <SearchableFilter
+                  options={allDoctorNames}
+                  value={selectedDoctor}
+                  onChange={setSelectedDoctor}
+                  placeholder="Doctor"
+                  searchPlaceholder={language === 'es' ? 'Buscar doctor...' : 'Search doctor...'}
+                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  icon={User}
+                  allLabel={language === 'es' ? 'Todos' : 'All'}
+                />
+              )}
+              {allTags.length > 0 && (
+                <SearchableFilter
+                  options={allTags}
+                  value={selectedTag}
+                  onChange={setSelectedTag}
+                  placeholder={language === 'es' ? 'Categoría' : 'Category'}
+                  searchPlaceholder={language === 'es' ? 'Buscar categoría...' : 'Search category...'}
+                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  icon={Tag}
+                  allLabel={language === 'es' ? 'Todas' : 'All'}
+                />
+              )}
             </div>
-
-            {/* Mobile: Tag chips */}
-            {allTags.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x mb-3 md:hidden">
-                <button
-                  onClick={() => setSelectedTag(null)}
-                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                    !selectedTag
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-                  }`}
-                >
-                  {language === 'es' ? 'Todas' : 'All'}
-                </button>
-                {allTags.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                    className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                      selectedTag === tag
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {/* No balance CTA */}
             {isAuthenticated && (role === 'patient' || role === 'resident') && balance === 0 && (
@@ -483,13 +483,13 @@ export default function RecordingsGrid() {
               <Card className="p-8 sm:p-12 text-center">
                 <PlayCircle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
                 <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-                  {contentFilter !== 'all' || selectedSpecialty !== 'Todas' ? t('ads.noRecordingsFilters') : t('recordings.noRecordings')}
+                  {contentFilter !== 'all' || selectedSpecialty ? t('ads.noRecordingsFilters') : t('recordings.noRecordings')}
                 </h3>
                 <p className="text-muted-foreground text-sm">
                   {t('common.noResults')}
                 </p>
-                {(contentFilter !== 'all' || selectedSpecialty !== 'Todas') && (
-                  <Button variant="outline" className="mt-3" onClick={() => { setContentFilter('all'); setSelectedSpecialty('Todas'); }}>
+                {(contentFilter !== 'all' || selectedSpecialty) && (
+                  <Button variant="outline" className="mt-3" onClick={() => { setContentFilter('all'); setSelectedSpecialty(''); setSelectedDoctor(''); setSelectedTag(''); }}>
                     {t('ads.removeFilters')}
                   </Button>
                 )}
