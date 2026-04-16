@@ -463,8 +463,6 @@ export default function Doctors() {
             allLabel={t('doctors.specAll') === 'All' ? 'All' : 'Todas'}
           />
         </div>
-          ))}
-        </div>
 
         {/* Advanced Filters — Collapsible */}
         <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
