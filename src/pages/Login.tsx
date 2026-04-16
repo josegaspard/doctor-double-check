@@ -21,6 +21,7 @@ import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { PasswordStrength, getPasswordStrength } from '@/components/ui/password-strength';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 import { LandingFooter } from '@/components/landing/LandingFooter';
+import { DecorativeBackground } from '@/components/layout/DecorativeBackground';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -183,9 +184,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col relative">
+      <DecorativeBackground />
       {/* Header */}
-      <header className="border-b border-border bg-dark">
+      <header className="relative z-10 border-b border-border bg-dark">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -200,7 +202,7 @@ export default function Login() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8 flex items-start sm:items-center justify-center">
+      <main className="relative z-10 flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8 flex items-start sm:items-center justify-center">
         <div className="w-full max-w-md">
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
