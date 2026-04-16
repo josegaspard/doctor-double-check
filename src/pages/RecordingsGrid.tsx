@@ -483,13 +483,13 @@ export default function RecordingsGrid() {
               <Card className="p-8 sm:p-12 text-center">
                 <PlayCircle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
                 <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-                  {contentFilter !== 'all' || selectedSpecialty !== 'Todas' ? t('ads.noRecordingsFilters') : t('recordings.noRecordings')}
+                  {contentFilter !== 'all' || selectedSpecialty ? t('ads.noRecordingsFilters') : t('recordings.noRecordings')}
                 </h3>
                 <p className="text-muted-foreground text-sm">
                   {t('common.noResults')}
                 </p>
-                {(contentFilter !== 'all' || selectedSpecialty !== 'Todas') && (
-                  <Button variant="outline" className="mt-3" onClick={() => { setContentFilter('all'); setSelectedSpecialty('Todas'); }}>
+                {(contentFilter !== 'all' || selectedSpecialty) && (
+                  <Button variant="outline" className="mt-3" onClick={() => { setContentFilter('all'); setSelectedSpecialty(''); setSelectedDoctor(''); setSelectedTag(''); }}>
                     {t('ads.removeFilters')}
                   </Button>
                 )}
