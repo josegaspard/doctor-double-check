@@ -250,19 +250,15 @@ export default function ClinicalSessions() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">{t('clinicalSessions.requiredSpecialty')} *</label>
-                  <Select
+                  <SearchableFilter
+                    options={SPECIALTIES}
                     value={newSession.specialty}
-                    onValueChange={(value) => setNewSession({ ...newSession, specialty: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('clinicalSessions.selectSpecialty')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SPECIALTIES.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(value) => setNewSession({ ...newSession, specialty: value })}
+                    placeholder={t('clinicalSessions.selectSpecialty')}
+                    searchPlaceholder="Buscar especialidad..."
+                    icon={Stethoscope}
+                    allLabel=""
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">{t('clinicalSessions.caseSummary')}</label>

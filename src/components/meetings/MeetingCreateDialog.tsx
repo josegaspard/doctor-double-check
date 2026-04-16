@@ -192,12 +192,15 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
 
           <div>
             <Label className="text-xs font-medium">Especialidad *</Label>
-            <Select value={form.specialty} onValueChange={v => setForm({ ...form, specialty: v })}>
-              <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-              <SelectContent>
-                {SPECIALTIES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <SearchableFilter
+              options={SPECIALTIES}
+              value={form.specialty}
+              onChange={v => setForm({ ...form, specialty: v })}
+              placeholder="Especialidad"
+              searchPlaceholder="Buscar especialidad..."
+              icon={Stethoscope}
+              allLabel=""
+            />
           </div>
 
           <div>
