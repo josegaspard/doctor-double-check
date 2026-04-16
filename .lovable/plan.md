@@ -1,45 +1,42 @@
 
 
-# Apply SearchableFilter to RecordingsGrid & ContentGallery + Enhanced Filters
+# Fix: Specialty Data Sync + SearchableFilter for Specialty Selectors
 
 ## Problem
-`/recordings` and `/content` still render 110+ specialty buttons/chips (both desktop sidebar and mobile horizontal scroll). Only `/doctors` uses the new `SearchableFilter`. LivesGrid is fine — it only shows specialties from active lives (dynamic, small list).
+Three issues identified:
 
-## Changes
+1. **Data mismatch in `lives` and `recordings` tables**: The previous fix only updated `doctor_profiles` and `resident_profiles`. The `lives` and `recordings` tables still have old values:
+   - `Cardiología` → should be `Cardiología Clínica`
+   - `Otra` → should be `Otra especialidad`
+   - (Cirugía General, Dermatología, Gastroenterología, Endocrinología already match the canonical list)
 
-### 1. `src/pages/RecordingsGrid.tsx`
-**Desktop sidebar (lines 212-232):** Replace the 110-button specialty list with `<SearchableFilter>` using the specialty values from `SPECIALTIES`.
-**Mobile (lines 304-319):** Replace the 110-chip horizontal scroll with `<SearchableFilter>` in a compact row alongside a tags filter.
-**State change:** `selectedSpecialty` switches from `'Todas'` default to `''` (empty = all) to match SearchableFilter's convention.
-**Additional filters:**
-- Add a **doctor name** SearchableFilter (extracted from recordings list) so users can filter by doctor
-- Tags already exist but also convert to SearchableFilter for consistency
+2. **Recording/content cards display the raw DB specialty** (e.g., line 455 in RecordingsGrid: `{recording.specialty}`). Since the DB has "Cardiología", the card shows "Cardiología" while the filter uses "Cardiología Clínica" — so filtering never matches.
 
-### 2. `src/pages/ContentGallery.tsx`
-**Desktop sidebar (lines 454-474):** Replace specialty buttons with `<SearchableFilter>`.
-**Mobile (lines 571-586):** Replace specialty chip scroll with `<SearchableFilter>` button.
-**State change:** Same `'Todas'` → `''` convention.
-**Additional filters:**
-- Categories already exist as buttons — convert to `<SearchableFilter>` for consistency
-- Content type filter stays as small button group (only 5 items, works fine)
+3. **The LiveSetupForm specialty selector is a native `<select>` with 110+ options** (screenshot confirms). This should use `SearchableFilter` for consistency. Same for ClinicalSessions and MeetingCreateDialog.
 
-### 3. No changes to `LivesGrid.tsx`
-It only shows specialties from currently active lives (typically 0-5), so a simple chip row is appropriate.
+## Solution
 
-### 4. No changes to `SearchableFilter.tsx`
-Component is already fully functional and responsive.
-
-## Layout for mobile filters (both pages)
-```
-[🔬 Especialidad ▼] [🏷️ Categoría ▼]
-[Content filter chips: All | Free | Paid | Purchased]
+### Step 1: Normalize DB data (SQL UPDATE)
+```sql
+UPDATE lives SET specialty = 'Cardiología Clínica' WHERE specialty = 'Cardiología';
+UPDATE lives SET specialty = 'Otra especialidad' WHERE specialty = 'Otra';
+UPDATE recordings SET specialty = 'Cardiología Clínica' WHERE specialty = 'Cardiología';
+UPDATE recordings SET specialty = 'Otra especialidad' WHERE specialty = 'Otra';
 ```
 
-Two SearchableFilter buttons side by side, then access/type chips below.
+### Step 2: Replace native `<select>` with SearchableFilter in creation forms
+- **`src/components/live/LiveSetupForm.tsx`** (lines 286-296): Replace native `<select>` with `SearchableFilter`
+- **`src/pages/ClinicalSessions.tsx`** (lines 252-264): Replace `Select`/`SelectContent` with `SearchableFilter`
+- **`src/components/meetings/MeetingCreateDialog.tsx`** (lines 196-200): Replace `Select`/`SelectContent` with `SearchableFilter`
 
-## Technical details
-- Import `SearchableFilter` and icons (`Stethoscope`, `Tag`, `MapPin`)
-- Extract specialty options: `SPECIALTIES.filter(s => s.value !== 'Todas').map(s => s.value)`
-- Filter logic: `selectedSpecialty === '' || rec.specialty === selectedSpecialty` (unchanged semantics)
-- 3 files modified total
+Each will use `SearchableFilter` with `options={SPECIALTIES}`, making 110+ specialties easily searchable.
+
+### Step 3: No card changes needed
+Once DB data is normalized, the cards (`{recording.specialty}`) will show correct values that match the filter options.
+
+## Files modified
+- `src/components/live/LiveSetupForm.tsx` — SearchableFilter for specialty
+- `src/pages/ClinicalSessions.tsx` — SearchableFilter for specialty
+- `src/components/meetings/MeetingCreateDialog.tsx` — SearchableFilter for specialty
+- DB: 4 UPDATE queries on `lives` and `recordings`
 
