@@ -1,41 +1,45 @@
 
 
-# Fix: Synchronize Doctor Specialties with Canonical List
+# Apply SearchableFilter to RecordingsGrid & ContentGallery + Enhanced Filters
 
 ## Problem
-The database has 5 doctor specialties that don't match the canonical `SPECIALTIES_FILTER` list:
+`/recordings` and `/content` still render 110+ specialty buttons/chips (both desktop sidebar and mobile horizontal scroll). Only `/doctors` uses the new `SearchableFilter`. LivesGrid is fine — it only shows specialties from active lives (dynamic, small list).
 
-| Current DB Value | Canonical Value |
-|---|---|
-| Cardiología | Cardiología Clínica |
-| Ginecología | Ginecología y Obstetricia |
-| Oncología | Oncología Médica |
-| Ortopedia | Ortopedia y Traumatología |
-| Psiquiatría | Psiquiatría Adultos |
+## Changes
 
-The remaining 15 specialties (Anestesiología, Cirugía General, Dermatología, etc.) already match the canonical list exactly.
+### 1. `src/pages/RecordingsGrid.tsx`
+**Desktop sidebar (lines 212-232):** Replace the 110-button specialty list with `<SearchableFilter>` using the specialty values from `SPECIALTIES`.
+**Mobile (lines 304-319):** Replace the 110-chip horizontal scroll with `<SearchableFilter>` in a compact row alongside a tags filter.
+**State change:** `selectedSpecialty` switches from `'Todas'` default to `''` (empty = all) to match SearchableFilter's convention.
+**Additional filters:**
+- Add a **doctor name** SearchableFilter (extracted from recordings list) so users can filter by doctor
+- Tags already exist but also convert to SearchableFilter for consistency
 
-## Root Cause
-Some doctors were created via the seed function or manually with shortened specialty names. The onboarding flow already uses `SPECIALTIES_LIST` correctly, so new doctors get canonical names — but existing records are wrong.
+### 2. `src/pages/ContentGallery.tsx`
+**Desktop sidebar (lines 454-474):** Replace specialty buttons with `<SearchableFilter>`.
+**Mobile (lines 571-586):** Replace specialty chip scroll with `<SearchableFilter>` button.
+**State change:** Same `'Todas'` → `''` convention.
+**Additional filters:**
+- Categories already exist as buttons — convert to `<SearchableFilter>` for consistency
+- Content type filter stays as small button group (only 5 items, works fine)
 
-## Fix (3 steps)
+### 3. No changes to `LivesGrid.tsx`
+It only shows specialties from currently active lives (typically 0-5), so a simple chip row is appropriate.
 
-### 1. Update existing DB records
-Run 5 UPDATE statements to normalize the mismatched specialties to their canonical names:
-- `UPDATE doctor_profiles SET specialty = 'Cardiología Clínica' WHERE specialty = 'Cardiología'`
-- Same for the other 4 mismatches
+### 4. No changes to `SearchableFilter.tsx`
+Component is already fully functional and responsive.
 
-### 2. Update `seed-demo-users` edge function
-The seed function has its own hardcoded `SPECIALTIES` array (line 9-21). Replace it with the canonical names so future seeds create doctors with correct specialties. The mismatched entries are:
-- "Cardiología Clínica" (not "Cardiología")  — note: seed actually doesn't have plain "Cardiología", so the manual/test doctors are the source
-- Keep using the existing seed list but ensure every entry matches `SPECIALTIES_FILTER`
+## Layout for mobile filters (both pages)
+```
+[🔬 Especialidad ▼] [🏷️ Categoría ▼]
+[Content filter chips: All | Free | Paid | Purchased]
+```
 
-### 3. Update `resident_profiles` too
-Check and fix any resident specialty mismatches with the same mapping.
+Two SearchableFilter buttons side by side, then access/type chips below.
 
-## Technical Details
-- Step 1: Use the Supabase insert/update tool (5 UPDATE queries)
-- Step 2: Edit `supabase/functions/seed-demo-users/index.ts` lines 9-21
-- Step 3: Query + update resident specialties if needed
-- No schema changes needed — just data normalization
+## Technical details
+- Import `SearchableFilter` and icons (`Stethoscope`, `Tag`, `MapPin`)
+- Extract specialty options: `SPECIALTIES.filter(s => s.value !== 'Todas').map(s => s.value)`
+- Filter logic: `selectedSpecialty === '' || rec.specialty === selectedSpecialty` (unchanged semantics)
+- 3 files modified total
 
