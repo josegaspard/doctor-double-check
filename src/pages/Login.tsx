@@ -202,7 +202,7 @@ export default function Login() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8 flex items-start sm:items-center justify-center">
+      <main className="relative z-10 flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8 flex items-start sm:items-center justify-center">
         <div className="w-full max-w-md">
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">

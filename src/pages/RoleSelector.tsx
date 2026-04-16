@@ -116,7 +116,7 @@ export default function RoleSelector() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 md:py-12">
+      <main className="relative z-10 flex-1 container mx-auto px-3 sm:px-4 py-4 md:py-12">
         <div className="max-w-2xl mx-auto">
           {/* Hero */}
           <div className="text-center mb-6 md:mb-10">
@@ -189,7 +189,7 @@ export default function RoleSelector() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-dark py-4">
+      <footer className="relative z-10 border-t border-border bg-dark py-4">
         <div className="container mx-auto px-4 text-center">
           <p className="text-xs text-dark-foreground">
             {t('footer.copyright')}
