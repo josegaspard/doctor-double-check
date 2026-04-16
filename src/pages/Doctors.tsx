@@ -373,7 +373,8 @@ export default function Doctors() {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const totalPages = Math.ceil(totalCount / DOCTORS_PER_PAGE);
 
-  const CITIES = ['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'];
+  const specialtyOptions = SPECIALTIES.filter(s => s.value !== 'Todas').map(s => s.value);
+  const cityOptions = dynamicCities.length > 0 ? dynamicCities : ['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'];
 
   return (
     <MainLayout>
