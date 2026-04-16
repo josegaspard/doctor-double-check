@@ -345,7 +345,7 @@ export default function ContentGallery() {
       content.creator_name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = typeFilter === 'all' || content.type === typeFilter || (typeFilter === 'presentation' && content.type === 'pdf' && content.category?.toLowerCase().includes('presentaci'));
     const matchesCategory = categoryFilter === 'all' || content.category === categoryFilter;
-    const matchesSpecialty = selectedSpecialty === 'Todas' || content.creator_specialty === selectedSpecialty;
+    const matchesSpecialty = !selectedSpecialty || content.creator_specialty === selectedSpecialty;
     const isPurchased = purchasedIds.has(content.id);
 
     if (!matchesSearch || !matchesType || !matchesCategory || !matchesSpecialty) return false;
@@ -362,7 +362,7 @@ export default function ContentGallery() {
           <Library className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">{t('content.noContent')}</h3>
           <p className="text-muted-foreground">
-            {searchQuery || typeFilter !== 'all' || categoryFilter !== 'all' || selectedSpecialty !== 'Todas'
+            {searchQuery || typeFilter !== 'all' || categoryFilter !== 'all' || selectedSpecialty
               ? t('content.noContentFilters')
               : t('content.noContentUploaded')}
           </p>
