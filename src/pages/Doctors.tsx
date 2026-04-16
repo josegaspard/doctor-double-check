@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
@@ -154,6 +155,7 @@ export default function Doctors() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const [dynamicCities, setDynamicCities] = useState<string[]>([]);
   const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
   const [followedDoctors, setFollowedDoctors] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
