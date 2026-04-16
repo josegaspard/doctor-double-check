@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useCallback, useLayoutEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { ContentPreviewModal } from '@/components/content/ContentPreviewModal';
+import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import {
   FileText,
   Image as ImageIcon,
@@ -35,6 +36,7 @@ import {
   AlertCircle,
   Presentation,
   Upload,
+  Tag,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useWallet } from '@/contexts/WalletContext';
@@ -256,7 +258,8 @@ export default function ContentGallery() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
+  const [selectedSpecialty, setSelectedSpecialty] = useState('');
+  const specialtyOptions = useMemo(() => SPECIALTIES.filter(s => s.value !== 'Todas').map(s => s.value), []);
   const [previewContent, setPreviewContent] = useState<DoctorContent | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [contentTab, setContentTab] = useState('all');
