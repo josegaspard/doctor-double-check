@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
@@ -154,6 +155,7 @@ export default function Doctors() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const [dynamicCities, setDynamicCities] = useState<string[]>([]);
   const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
   const [followedDoctors, setFollowedDoctors] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
@@ -175,6 +177,24 @@ export default function Doctors() {
 
   const fetchDoctorsStableRef = useRef<() => void>(() => {});
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Fetch dynamic cities from doctor_profiles
+  useEffect(() => {
+    const fetchCities = async () => {
+      const { data } = await supabase
+        .from('doctor_profiles')
+        .select('location')
+        .eq('status', 'approved')
+        .not('location', 'is', null);
+      if (data) {
+        const cities = [...new Set(
+          data.map(d => d.location?.trim()).filter(Boolean) as string[]
+        )].sort();
+        setDynamicCities(cities);
+      }
+    };
+    fetchCities();
+  }, []);
 
   // Fetch universities for filter
   useEffect(() => {
@@ -353,7 +373,8 @@ export default function Doctors() {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const totalPages = Math.ceil(totalCount / DOCTORS_PER_PAGE);
 
-  const CITIES = ['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'];
+  const specialtyOptions = SPECIALTIES.filter(s => s.value !== 'Todas').map(s => s.value);
+  const cityOptions = dynamicCities.length > 0 ? dynamicCities : ['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'];
 
   return (
     <MainLayout>
@@ -367,62 +388,37 @@ export default function Doctors() {
         <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
           {/* Desktop Sidebar (P6) */}
           {!isMobile && (
-          <aside className="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide bg-card border border-border rounded-xl p-4 space-y-1">
-              {/* Specialties */}
+          <aside className="hidden md:block sticky top-24 self-start bg-card border border-border rounded-xl p-4 space-y-4">
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {t('doctors.specAll') === 'All' ? 'Specialties' : 'Especialidades'}
+                  {t('doctors.specAll') === 'All' ? 'Specialty' : 'Especialidad'}
                 </h4>
-                <div className="space-y-0.5">
-                  {SPECIALTIES.map(spec => (
-                    <button
-                      key={spec.value}
-                      onClick={() => setSelectedSpecialty(spec.value)}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        selectedSpecialty === spec.value
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
-                    </button>
-                  ))}
-                </div>
+                <SearchableFilter
+                  options={specialtyOptions}
+                  value={selectedSpecialty === 'Todas' ? '' : selectedSpecialty}
+                  onChange={(val) => setSelectedSpecialty(val || 'Todas')}
+                  placeholder="Especialidad"
+                  searchPlaceholder="Buscar especialidad..."
+                  icon={Stethoscope}
+                  allLabel={t('doctors.specAll') === 'All' ? 'All' : 'Todas'}
+                />
               </div>
 
-              <div className="border-t border-border my-3" />
+              <div className="border-t border-border" />
 
-              {/* Cities */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  Ciudades
+                  {t('doctors.specAll') === 'All' ? 'City' : 'Ciudad'}
                 </h4>
-                <div className="space-y-0.5">
-                  <button
-                    onClick={() => setLocationFilter('')}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      !locationFilter
-                        ? 'bg-accent text-accent-foreground shadow-sm'
-                        : 'text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    Todas
-                  </button>
-                  {CITIES.map(city => (
-                    <button
-                      key={city}
-                      onClick={() => setLocationFilter(locationFilter === city ? '' : city)}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                        locationFilter === city
-                          ? 'bg-accent text-accent-foreground shadow-sm'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <MapPin className="w-3 h-3 flex-shrink-0" />
-                      {city}
-                    </button>
-                  ))}
-                </div>
+                <SearchableFilter
+                  options={cityOptions}
+                  value={locationFilter}
+                  onChange={setLocationFilter}
+                  placeholder="Ciudad"
+                  searchPlaceholder="Buscar ciudad..."
+                  icon={MapPin}
+                  allLabel={t('doctors.specAll') === 'All' ? 'All' : 'Todas'}
+                />
               </div>
             </aside>
           )}
@@ -446,39 +442,26 @@ export default function Doctors() {
           </Button>
         </div>
 
-        {/* Mobile: Specialty filter chips (hidden on lg+ because sidebar handles it) */}
-        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 md:hidden">
-          {SPECIALTIES.map(spec => (
-            <button
-              key={spec.value}
-              onClick={() => setSelectedSpecialty(spec.value)}
-              className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
-                selectedSpecialty === spec.value
-                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                  : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
-              }`}
-            >
-              {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
-            </button>
-          ))}
-        </div>
-
-        {/* Mobile: City filter chips (hidden on lg+ because sidebar handles it) */}
-        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 lg:hidden">
-          {CITIES.map(city => (
-            <button
-              key={city}
-              onClick={() => setLocationFilter(locationFilter === city ? '' : city)}
-              className={`flex-shrink-0 snap-start flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all border ${
-                locationFilter === city
-                  ? 'bg-accent text-accent-foreground border-accent shadow-sm'
-                  : 'bg-card text-muted-foreground border-border hover:border-accent/50'
-              }`}
-            >
-              <MapPin className="w-3 h-3" />
-              {city}
-            </button>
-          ))}
+        {/* Mobile: Searchable filter buttons */}
+        <div className="flex gap-2 mb-3 md:hidden">
+          <SearchableFilter
+            options={specialtyOptions}
+            value={selectedSpecialty === 'Todas' ? '' : selectedSpecialty}
+            onChange={(val) => setSelectedSpecialty(val || 'Todas')}
+            placeholder="Especialidad"
+            searchPlaceholder="Buscar especialidad..."
+            icon={Stethoscope}
+            allLabel={t('doctors.specAll') === 'All' ? 'All' : 'Todas'}
+          />
+          <SearchableFilter
+            options={cityOptions}
+            value={locationFilter}
+            onChange={setLocationFilter}
+            placeholder="Ciudad"
+            searchPlaceholder="Buscar ciudad..."
+            icon={MapPin}
+            allLabel={t('doctors.specAll') === 'All' ? 'All' : 'Todas'}
+          />
         </div>
 
         {/* Advanced Filters — Collapsible */}
