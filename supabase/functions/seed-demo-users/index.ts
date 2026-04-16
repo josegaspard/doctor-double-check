@@ -5,6 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Canonical specialties — must match SPECIALTIES_FILTER in src/lib/specialties.ts
 const SPECIALTIES = [
   "Alergología e Inmunología", "Algología", "Anestesiología", "Cardiología Clínica",
   "Cardiología Intervencionista", "Cirugía Bariátrica", "Cirugía Cardíaca",
