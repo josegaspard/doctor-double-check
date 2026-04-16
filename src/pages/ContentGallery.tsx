@@ -551,21 +551,30 @@ export default function ContentGallery() {
               />
             </div>
 
-            {/* Mobile: Specialty chips */}
-            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide snap-x mb-2 md:hidden">
-              {SPECIALTIES.map(spec => (
-                <button
-                  key={spec.value}
-                  onClick={() => setSelectedSpecialty(spec.value)}
-                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
-                    selectedSpecialty === spec.value
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                      : 'bg-muted/50 text-muted-foreground border-border hover:border-primary/50'
-                  }`}
-                >
-                  {spec.value === 'Todas' ? t(spec.labelKey) : spec.value}
-                </button>
-              ))}
+            {/* Mobile: Smart filters */}
+            <div className="flex gap-2 mb-3 md:hidden">
+              <SearchableFilter
+                options={specialtyOptions}
+                value={selectedSpecialty}
+                onChange={setSelectedSpecialty}
+                placeholder={language === 'es' ? 'Especialidad' : 'Specialty'}
+                searchPlaceholder={language === 'es' ? 'Buscar especialidad...' : 'Search specialty...'}
+                emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                icon={Stethoscope}
+                allLabel={language === 'es' ? 'Todas' : 'All'}
+              />
+              {categories.length > 0 && (
+                <SearchableFilter
+                  options={categories}
+                  value={categoryFilter === 'all' ? '' : categoryFilter}
+                  onChange={(val) => setCategoryFilter(val || 'all')}
+                  placeholder={language === 'es' ? 'Categoría' : 'Category'}
+                  searchPlaceholder={language === 'es' ? 'Buscar categoría...' : 'Search category...'}
+                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  icon={Tag}
+                  allLabel={language === 'es' ? 'Todas' : 'All'}
+                />
+              )}
             </div>
 
             {/* Mobile: Type filter chips */}
@@ -591,39 +600,6 @@ export default function ContentGallery() {
                 <ScrollBar orientation="horizontal" className="h-0" />
               </ScrollArea>
             </div>
-
-            {/* Mobile: Category chips */}
-            {categories.length > 0 && (
-              <div className="md:hidden mb-4">
-                <ScrollArea className="w-full whitespace-nowrap">
-                  <div className="flex gap-2 pb-1">
-                    <Button
-                      variant={categoryFilter === 'all' ? 'default' : 'outline'}
-                      size="sm"
-                      className={`rounded-full shrink-0 text-xs h-7 px-3 ${categoryFilter === 'all' ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
-                      onClick={() => setCategoryFilter('all')}
-                    >
-                      {t('content.allCategories')}
-                    </Button>
-                    {categories.map(cat => {
-                      const active = categoryFilter === cat;
-                      return (
-                        <Button
-                          key={cat}
-                          variant={active ? 'default' : 'outline'}
-                          size="sm"
-                          className={`rounded-full shrink-0 text-xs h-7 px-3 ${active ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
-                          onClick={() => setCategoryFilter(cat)}
-                        >
-                          {cat}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  <ScrollBar orientation="horizontal" className="h-0" />
-                </ScrollArea>
-              </div>
-            )}
 
             {/* Content Grid */}
             <div>
