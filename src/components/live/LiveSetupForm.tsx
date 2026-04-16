@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 
 import { SPECIALTIES_LIST as SPECIALTIES } from '@/lib/specialties';
+import { SearchableFilter } from '@/components/filters/SearchableFilter';
 
 interface LiveSetupFormProps {
   onStartLive: (config: LiveConfig) => Promise<void>;

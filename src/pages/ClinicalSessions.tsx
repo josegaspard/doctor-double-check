@@ -38,6 +38,7 @@ import {
 import { toast } from 'sonner';
 
 import { SPECIALTIES_LIST as SPECIALTIES } from '@/lib/specialties';
+import { SearchableFilter } from '@/components/filters/SearchableFilter';
 
 type SessionStatus = 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
 
