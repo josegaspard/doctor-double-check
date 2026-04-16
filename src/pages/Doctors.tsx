@@ -178,6 +178,24 @@ export default function Doctors() {
   const fetchDoctorsStableRef = useRef<() => void>(() => {});
   const debouncedSearch = useDebounce(searchQuery, 300);
 
+  // Fetch dynamic cities from doctor_profiles
+  useEffect(() => {
+    const fetchCities = async () => {
+      const { data } = await supabase
+        .from('doctor_profiles')
+        .select('location')
+        .eq('status', 'approved')
+        .not('location', 'is', null);
+      if (data) {
+        const cities = [...new Set(
+          data.map(d => d.location?.trim()).filter(Boolean) as string[]
+        )].sort();
+        setDynamicCities(cities);
+      }
+    };
+    fetchCities();
+  }, []);
+
   // Fetch universities for filter
   useEffect(() => {
     const fetchUniversities = async () => {
