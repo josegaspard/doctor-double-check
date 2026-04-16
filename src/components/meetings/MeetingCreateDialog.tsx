@@ -12,10 +12,11 @@ import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Search, UserPlus, X } from 'lucide-react';
+import { Loader2, Search, Stethoscope, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { SPECIALTIES_LIST as SPECIALTIES } from '@/lib/specialties';
+import { SearchableFilter } from '@/components/filters/SearchableFilter';
 
 interface Props {
   open: boolean;
@@ -192,12 +193,15 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
 
           <div>
             <Label className="text-xs font-medium">Especialidad *</Label>
-            <Select value={form.specialty} onValueChange={v => setForm({ ...form, specialty: v })}>
-              <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-              <SelectContent>
-                {SPECIALTIES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <SearchableFilter
+              options={SPECIALTIES}
+              value={form.specialty}
+              onChange={v => setForm({ ...form, specialty: v })}
+              placeholder="Especialidad"
+              searchPlaceholder="Buscar especialidad..."
+              icon={Stethoscope}
+              allLabel=""
+            />
           </div>
 
           <div>

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 
 import { SPECIALTIES_LIST as SPECIALTIES } from '@/lib/specialties';
+import { SearchableFilter } from '@/components/filters/SearchableFilter';
 
 interface LiveSetupFormProps {
   onStartLive: (config: LiveConfig) => Promise<void>;
@@ -283,17 +284,15 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             <Label htmlFor="specialty" className="flex items-center gap-1 text-sm font-semibold">
               Especialidad <span className="text-destructive">*</span>
             </Label>
-            <select
-              id="specialty"
+            <SearchableFilter
+              options={SPECIALTIES}
               value={specialty}
-              onChange={(e) => setSpecialty(e.target.value)}
-              className="flex min-h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              <option value="" disabled>Selecciona una especialidad</option>
-              {SPECIALTIES.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+              onChange={setSpecialty}
+              placeholder="Especialidad"
+              searchPlaceholder="Buscar especialidad..."
+              icon={Stethoscope}
+              allLabel=""
+            />
           </div>
         </section>
 
