@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { 
   PlayCircle, 
   Clock, 
@@ -30,6 +30,9 @@ import {
   Gift,
   Globe,
   Upload,
+  Stethoscope,
+  Tag,
+  User,
 } from 'lucide-react';
 
 type ContentFilter = 'all' | 'free' | 'paid' | 'purchased' | 'not_purchased';
@@ -48,12 +51,13 @@ export default function RecordingsGrid() {
   const { hasPurchased, purchaseWithWallet, isPurchasing } = usePurchases();
   const { getEffectiveRecordingPrice, hasPremiumTo } = useSubscriptions();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('Todas');
+  const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [doctorName, setDoctorName] = useState<string | null>(null);
   const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState('');
+  const [selectedDoctor, setSelectedDoctor] = useState('');
 
   useEffect(() => { refreshRecordings(); }, [refreshRecordings]);
 
@@ -66,7 +70,9 @@ export default function RecordingsGrid() {
     fetchName();
   }, [doctorFilter]);
 
-  const allTags = [...new Set(recordings.flatMap(r => r.tags || []))].filter(Boolean).sort();
+  const allTags = useMemo(() => [...new Set(recordings.flatMap(r => r.tags || []))].filter(Boolean).sort(), [recordings]);
+  const allDoctorNames = useMemo(() => [...new Set(recordings.map(r => r.doctorName))].filter(Boolean).sort(), [recordings]);
+  const specialtyOptions = useMemo(() => SPECIALTIES.filter(s => s.value !== 'Todas').map(s => s.value), []);
 
   const ownsRecording = (recording: Recording): boolean => {
     if (!user) return false;
@@ -78,11 +84,12 @@ export default function RecordingsGrid() {
   const filteredRecordings = recordings.filter(rec => {
     const matchesSearch = rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          rec.doctorName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialty = selectedSpecialty === 'Todas' || rec.specialty === selectedSpecialty;
+    const matchesSpecialty = !selectedSpecialty || rec.specialty === selectedSpecialty;
     const matchesDoctor = !doctorFilter || rec.doctorId === doctorFilter;
     const matchesTag = !selectedTag || (rec.tags || []).includes(selectedTag);
+    const matchesDoctorName = !selectedDoctor || rec.doctorName === selectedDoctor;
     
-    if (!matchesSearch || !matchesSpecialty || !matchesDoctor || !matchesTag) return false;
+    if (!matchesSearch || !matchesSpecialty || !matchesDoctor || !matchesTag || !matchesDoctorName) return false;
     
     const owned = ownsRecording(rec);
     switch (contentFilter) {
