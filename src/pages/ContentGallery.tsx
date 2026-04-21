@@ -37,6 +37,7 @@ import {
   Presentation,
   Upload,
   Tag,
+  ShieldCheck,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useWallet } from '@/contexts/WalletContext';
@@ -60,6 +61,8 @@ interface DoctorContent {
   creator_name?: string;
   creator_avatar?: string;
   creator_specialty?: string;
+  creator_cedula?: string;
+  creator_cofepris?: string;
 }
 
 import { SPECIALTIES_FILTER as SPECIALTIES } from '@/lib/specialties';
@@ -217,13 +220,29 @@ function ContentCardBody({
       )}
 
       {/* Doctor info */}
-      <div className="flex items-center gap-2">
-        <Avatar className="w-6 h-6 sm:w-7 sm:h-7">
+      <div className="flex items-start gap-2">
+        <Avatar className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 mt-0.5">
           <AvatarImage src={content.creator_avatar || undefined} />
           <AvatarFallback><User className="w-3 h-3" /></AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
           <p className="text-xs sm:text-sm font-medium truncate">{content.creator_name}</p>
+          {(content.creator_cedula || content.creator_cofepris) && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {content.creator_cedula && (
+                <Badge variant="outline" className="text-[10px] gap-1 text-success border-success/30 bg-success/5 px-1.5 py-0 max-w-full">
+                  <ShieldCheck className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">Céd: {content.creator_cedula}</span>
+                </Badge>
+              )}
+              {content.creator_cofepris && (
+                <Badge variant="outline" className="text-[10px] gap-1 text-info border-info/30 bg-info/5 px-1.5 py-0 max-w-full">
+                  <ShieldCheck className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">COFEPRIS: {content.creator_cofepris}</span>
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -279,13 +298,15 @@ export default function ContentGallery() {
 
       const creatorIds = [...new Set((data || []).map(c => c.creator_id))];
 
-      const [{ data: profiles }, { data: doctorProfiles }] = await Promise.all([
+      const [{ data: profiles }, { data: doctorProfiles }, { data: doctorCreds }] = await Promise.all([
         supabase.from('profiles_public').select('id, name, avatar_url').in('id', creatorIds),
         supabase.from('doctor_profiles_public').select('user_id, specialty').in('user_id', creatorIds),
+        supabase.from('doctor_profiles').select('user_id, cedula_profesional, cofepris_permit').in('user_id', creatorIds),
       ]);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
       const specialtyMap = new Map(doctorProfiles?.map(d => [d.user_id, d.specialty]) || []);
+      const credsMap = new Map(doctorCreds?.map(d => [d.user_id, { cedula: d.cedula_profesional, cofepris: d.cofepris_permit }]) || []);
 
       const uniqueCategories = [...new Set((data || []).map(c => c.category).filter(Boolean))] as string[];
       setCategories(uniqueCategories);
@@ -297,6 +318,8 @@ export default function ContentGallery() {
         creator_name: profileMap.get(c.creator_id)?.name,
         creator_avatar: profileMap.get(c.creator_id)?.avatar_url,
         creator_specialty: specialtyMap.get(c.creator_id),
+        creator_cedula: credsMap.get(c.creator_id)?.cedula || undefined,
+        creator_cofepris: credsMap.get(c.creator_id)?.cofepris || undefined,
       }));
 
       setContents(mapped);

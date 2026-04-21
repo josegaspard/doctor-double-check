@@ -11,6 +11,7 @@ import {
   Users, UserCheck, Stethoscope, GraduationCap, FileCheck, ArrowRight,
   LayoutDashboard, Loader2, Settings, RefreshCcw, Banknote, FileText,
   Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare, Building2, Package, Star,
+  ClipboardCheck,
 } from 'lucide-react';
 
 interface AdminModule {
@@ -101,6 +102,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
       title: es ? '🛡️ Soporte' : '🛡️ Support',
       modules: [
         { id: 'reports', icon: Flag, href: '/admin/reports', color: 'text-destructive', borderColor: 'border-l-destructive', title: es ? 'Reportes y Reclamos' : 'Reports & Claims', desc: es ? 'Gestiona reportes de usuarios' : 'Manage user reports', badge: stats.pendingReports },
+        { id: 'qa-checklist', icon: ClipboardCheck, href: '/admin/qa-checklist', color: 'text-info', borderColor: 'border-l-info', title: es ? 'QA Checklist E2E' : 'QA Checklist E2E', desc: es ? 'Pruebas end-to-end por rol con seguimiento' : 'End-to-end testing by role with tracking' },
       ],
     },
     {
