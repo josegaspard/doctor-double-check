@@ -56,6 +56,7 @@ export default function HospitalLocator() {
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [submitting, setSubmitting] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [activeDoctorsCount, setActiveDoctorsCount] = useState<number>(0);
   const { featuredIds, featuredMap, trackImpression, trackClick } = useFeaturedListings('hospital');
   const impressionTrackerRef = useRef(new Set());
 
@@ -69,9 +70,10 @@ export default function HospitalLocator() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const [{ data: h }, { data: r }] = await Promise.all([
+      const [{ data: h }, { data: r }, { count: docCount }] = await Promise.all([
         supabase.from('hospitals').select('*').eq('is_active', true).order('name'),
         supabase.from('hospital_reviews').select('*'),
+        supabase.from('doctor_profiles').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
       ]);
       const hospData = h || [];
       const revData = r || [];
@@ -81,6 +83,7 @@ export default function HospitalLocator() {
         revMap[rev.hospital_id].push(rev);
       });
       setReviews(revMap);
+      setActiveDoctorsCount(docCount || 0);
       setHospitals(hospData.map(hosp => ({
         ...hosp,
         specialties: Array.isArray(hosp.specialties) ? hosp.specialties : [],
@@ -324,6 +327,7 @@ export default function HospitalLocator() {
             <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Building2 className="w-3.5 h-3.5 text-blue-500" />{hospitals.length} {es ? 'hospitales' : 'hospitals'}</span>
             <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Star className="w-3.5 h-3.5 text-yellow-500" />{es ? 'Información verificada' : 'Verified info'}</span>
             {userLoc && <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Navigation className="w-3.5 h-3.5 text-green-500" />{es ? 'Ubicación activa' : 'Location active'}</span>}
+            <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Heart className="w-3.5 h-3.5 text-rose-500" />{activeDoctorsCount} {es ? 'doctores activos' : 'active doctors'}</span>
           </div>
         </div>
 
