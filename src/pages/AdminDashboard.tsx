@@ -102,6 +102,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
       title: es ? '🛡️ Soporte' : '🛡️ Support',
       modules: [
         { id: 'reports', icon: Flag, href: '/admin/reports', color: 'text-destructive', borderColor: 'border-l-destructive', title: es ? 'Reportes y Reclamos' : 'Reports & Claims', desc: es ? 'Gestiona reportes de usuarios' : 'Manage user reports', badge: stats.pendingReports },
+        { id: 'qa-checklist', icon: ClipboardCheck, href: '/admin/qa-checklist', color: 'text-info', borderColor: 'border-l-info', title: es ? 'QA Checklist E2E' : 'QA Checklist E2E', desc: es ? 'Pruebas end-to-end por rol con seguimiento' : 'End-to-end testing by role with tracking' },
       ],
     },
     {
