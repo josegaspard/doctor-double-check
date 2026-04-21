@@ -53,10 +53,9 @@ export default function DoctorVault() {
     setSearchParams({}, { replace: true });
   }, [targetPatientId, autoOpenHandled, accessibleFiles, isPatientVerified, setSearchParams]);
 
-  if (role !== 'doctor') {
-    navigate('/lives');
-    return null;
-  }
+  useEffect(() => {
+    if (role && role !== 'doctor') navigate('/lives');
+  }, [role, navigate]);
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
