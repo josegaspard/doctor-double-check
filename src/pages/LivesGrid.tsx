@@ -25,6 +25,7 @@ import {
   Crown,
   Plus,
   LogIn,
+  ShieldCheck,
 } from 'lucide-react';
 
 const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boolean; isNew: boolean }>(function LiveCard({ live, isPremiumSub, isNew }, ref) {
@@ -107,6 +108,23 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
               </Badge>
             )}
           </div>
+          {/* Verified credentials */}
+          {(live.doctorCedula || live.doctorCofepris) && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {live.doctorCedula && (
+                <Badge variant="outline" className="text-[10px] gap-1 text-success border-success/30 bg-success/5">
+                  <ShieldCheck className="w-3 h-3" />
+                  Cédula: {live.doctorCedula}
+                </Badge>
+              )}
+              {live.doctorCofepris && (
+                <Badge variant="outline" className="text-[10px] gap-1 text-info border-info/30 bg-info/5">
+                  <ShieldCheck className="w-3 h-3" />
+                  COFEPRIS: {live.doctorCofepris}
+                </Badge>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </Link>
