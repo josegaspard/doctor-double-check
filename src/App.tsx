@@ -133,6 +133,7 @@ const VendorDashboard = React.lazy(() => import("./pages/VendorDashboard"));
 const AdminFeatured = React.lazy(() => import("./pages/AdminFeatured"));
 const MyOrders = React.lazy(() => import("./pages/MyOrders"));
 const OrderSuccess = React.lazy(() => import("./pages/OrderSuccess"));
+const AdminQAChecklist = React.lazy(() => import("./pages/AdminQAChecklist"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -272,6 +273,7 @@ const App = () => {
                       <Route path="/admin/marketplace" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminMarketplace /></AccessGuard>} />
                       <Route path="/vendor/dashboard" element={<VendorDashboard />} />
                       <Route path="/admin/featured" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminFeatured /></AccessGuard>} />
+                      <Route path="/admin/qa-checklist" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminQAChecklist /></AccessGuard>} />
                       <Route path="/psychology" element={<PsychologyDirectory />} />
                       <Route path="/nutrition" element={<NutritionDirectory />} />
                       <Route path="/for-residents" element={<ForResidents />} />
