@@ -11,9 +11,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Folder, FileText, Image, ArrowLeft, Lock, User, Users,
-  Calendar, Eye, KeyRound, ShieldCheck,
+  Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail, Receipt,
 } from 'lucide-react';
 import { VaultFile } from '@/contexts/VaultContext';
+import { supabase } from '@/integrations/supabase/client';
+import { PriceDisplay } from '@/components/currency/PriceDisplay';
+
+interface PatientPaymentSummary {
+  patientEmail: string | null;
+  totalPaid: number;
+  consultationsCount: number;
+  purchasesCount: number;
+  lastPaymentAt: string | null;
+}
 
 export default function DoctorVault() {
   const navigate = useNavigate();
@@ -25,6 +35,7 @@ export default function DoctorVault() {
   const [selectedFile, setSelectedFile] = useState<VaultFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [autoOpenHandled, setAutoOpenHandled] = useState(false);
+  const [paymentsByPatient, setPaymentsByPatient] = useState<Record<string, PatientPaymentSummary>>({});
 
   const accessibleFiles = getAccessibleFiles(user?.id || '');
 
