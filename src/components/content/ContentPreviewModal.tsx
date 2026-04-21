@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { FileText, Video, Image as ImageIcon, Loader2, ExternalLink, RefreshCw, User, DollarSign, X, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeCredential } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -312,18 +313,30 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
                 {content.creator_specialty && (
                   <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{content.creator_specialty}</p>
                 )}
-                {(content.creator_cedula || content.creator_cofepris) && (
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {content.creator_cedula && (
-                      <Badge variant="outline" className="text-[10px] gap-1 text-success border-success/30 bg-success/5 px-1.5 py-0">
-                        <ShieldCheck className="w-3 h-3" />
-                        Céd. Prof.: {content.creator_cedula}
+                {(sanitizeCredential(content.creator_cedula) || sanitizeCredential(content.creator_cofepris)) && (
+                  <div className="flex flex-wrap gap-1 mt-1.5 min-w-0">
+                    {sanitizeCredential(content.creator_cedula) && (
+                      <Badge
+                        variant="outline"
+                        title={`Cédula Profesional: ${sanitizeCredential(content.creator_cedula)}`}
+                        className="inline-flex items-center text-[10px] gap-1 text-success border-success/30 bg-success/5 px-1.5 py-0 max-w-full overflow-hidden"
+                      >
+                        <ShieldCheck className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate max-w-[140px] sm:max-w-[200px]">
+                          Céd. Prof.: {sanitizeCredential(content.creator_cedula)}
+                        </span>
                       </Badge>
                     )}
-                    {content.creator_cofepris && (
-                      <Badge variant="outline" className="text-[10px] gap-1 text-info border-info/30 bg-info/5 px-1.5 py-0">
-                        <ShieldCheck className="w-3 h-3" />
-                        COFEPRIS: {content.creator_cofepris}
+                    {sanitizeCredential(content.creator_cofepris) && (
+                      <Badge
+                        variant="outline"
+                        title={`COFEPRIS: ${sanitizeCredential(content.creator_cofepris)}`}
+                        className="inline-flex items-center text-[10px] gap-1 text-info border-info/30 bg-info/5 px-1.5 py-0 max-w-full overflow-hidden"
+                      >
+                        <ShieldCheck className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate max-w-[140px] sm:max-w-[200px]">
+                          COFEPRIS: {sanitizeCredential(content.creator_cofepris)}
+                        </span>
                       </Badge>
                     )}
                   </div>

@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { ContentPreviewModal } from '@/components/content/ContentPreviewModal';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
+import { sanitizeCredential } from '@/lib/utils';
 import {
   FileText,
   Image as ImageIcon,
@@ -228,17 +229,25 @@ function ContentCardBody({
         <div className="flex-1 min-w-0">
           <p className="text-xs sm:text-sm font-medium truncate">{content.creator_name}</p>
           {(content.creator_cedula || content.creator_cofepris) && (
-            <div className="flex flex-wrap gap-1 mt-1">
+            <div className="flex flex-wrap gap-1 mt-1 min-w-0">
               {content.creator_cedula && (
-                <Badge variant="outline" className="text-[10px] gap-1 text-success border-success/30 bg-success/5 px-1.5 py-0 max-w-full">
+                <Badge
+                  variant="outline"
+                  title={`Cédula Profesional: ${content.creator_cedula}`}
+                  className="inline-flex items-center text-[10px] gap-1 text-success border-success/30 bg-success/5 px-1.5 py-0 max-w-full overflow-hidden"
+                >
                   <ShieldCheck className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">Céd: {content.creator_cedula}</span>
+                  <span className="truncate max-w-[110px] sm:max-w-[150px]">Céd: {content.creator_cedula}</span>
                 </Badge>
               )}
               {content.creator_cofepris && (
-                <Badge variant="outline" className="text-[10px] gap-1 text-info border-info/30 bg-info/5 px-1.5 py-0 max-w-full">
+                <Badge
+                  variant="outline"
+                  title={`COFEPRIS: ${content.creator_cofepris}`}
+                  className="inline-flex items-center text-[10px] gap-1 text-info border-info/30 bg-info/5 px-1.5 py-0 max-w-full overflow-hidden"
+                >
                   <ShieldCheck className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">COFEPRIS: {content.creator_cofepris}</span>
+                  <span className="truncate max-w-[110px] sm:max-w-[150px]">COFEPRIS: {content.creator_cofepris}</span>
                 </Badge>
               )}
             </div>
@@ -318,8 +327,8 @@ export default function ContentGallery() {
         creator_name: profileMap.get(c.creator_id)?.name,
         creator_avatar: profileMap.get(c.creator_id)?.avatar_url,
         creator_specialty: specialtyMap.get(c.creator_id),
-        creator_cedula: credsMap.get(c.creator_id)?.cedula || undefined,
-        creator_cofepris: credsMap.get(c.creator_id)?.cofepris || undefined,
+        creator_cedula: sanitizeCredential(credsMap.get(c.creator_id)?.cedula) || undefined,
+        creator_cofepris: sanitizeCredential(credsMap.get(c.creator_id)?.cofepris) || undefined,
       }));
 
       setContents(mapped);
