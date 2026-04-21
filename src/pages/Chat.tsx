@@ -44,7 +44,7 @@ export default function Chat() {
       const otherType = s.participant1Id === user?.id ? s.participant2Type : s.participant1Type;
       if (chatFilter === 'patients') return otherType === 'patient';
       if (chatFilter === 'doctors') return otherType === 'doctor' || otherType === 'resident';
-      if (chatFilter === 'providers') return otherType === 'vendor';
+      if (chatFilter === 'providers') return (otherType as string) === 'vendor';
       return true;
     });
   };
