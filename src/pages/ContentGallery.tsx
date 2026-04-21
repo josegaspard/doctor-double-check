@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { ContentPreviewModal } from '@/components/content/ContentPreviewModal';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
+import { sanitizeCredential } from '@/lib/utils';
 import {
   FileText,
   Image as ImageIcon,
