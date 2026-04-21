@@ -1,106 +1,103 @@
 
 
-# Comprehensive UX & Data Improvements
+# Plan: Credenciales en Contenido Premium + Optimización de Menú + SEO Audit
 
-## 1. SEO & Favicon Fix
+## Parte 1 — Credenciales del doctor en Contenido Premium
 
-**Files: `index.html`, `public/favicon.png`, `public/icon-192.png`, `public/icon-512.png`, `public/manifest.json`**
+Replicar el mismo patrón que ya existe en `LivesGrid` (cédula profesional + COFEPRIS) dentro de las tarjetas y el modal de Contenido Premium.
 
-- Generate a square version of the official teal "M" logo from `src/assets/logo-medical-masters.png` (crop the left "M" symbol) and overwrite all three icons (`favicon.png` 256×256, `icon-192.png`, `icon-512.png`).
-- Update `index.html` to add cache-busting (`?v=2`) on the favicon link so browsers/Google re-fetch the new icon.
-- Optimize SEO metadata:
-  - **Title**: `Medical Masters · Orientación médica con especialistas verificados`
-  - **Description**: `Plataforma médica profesional en México: orientaciones en línea, lives con doctores certificados, contenido premium y expediente clínico digital. 100% verificados ante SEP y COFEPRIS.`
-  - Add Spanish-friendly OG/Twitter copy and keywords.
+**Archivos a modificar:**
+- `src/pages/ContentGallery.tsx`: en `fetchContents`, ampliar el query a `doctor_profiles_public` para traer también `cedula_professional` y `cofepris_permit` (o los campos equivalentes del schema). Mapearlos al `DoctorContent` como `creator_cedula` y `creator_cofepris`.
+- `src/pages/ContentGallery.tsx > ContentCardBody`: bajo el nombre del doctor, agregar dos `Badge` outline con `ShieldCheck`:
+  - Verde (success): `Cédula: {creator_cedula}`
+  - Azul (info): `COFEPRIS: {creator_cofepris}`
+  - Solo se renderizan si existen; truncado responsive para que nunca rompan layout.
+- `src/components/content/ContentPreviewModal.tsx`: ampliar `content` props con `creator_cedula?` y `creator_cofepris?`. Mostrarlos junto al avatar del creador, con el mismo estilo que en `LivePlayer`.
+- Migración: si los campos no existen en `doctor_profiles_public`, exponerlos vía `ALTER VIEW` o desde la tabla `doctor_profiles` (verificar primero antes de migrar — si ya están solo se mapean).
 
-## 2. Cédula + COFEPRIS on Live Cards
+## Parte 2 — Menú optimizado (Desktop / Tablet / Mobile)
 
-**Files: `src/pages/LivesGrid.tsx`, SQL migration**
+El problema: el menú desktop tiene ~14 items para doctor y se cortan. Solución multi-breakpoint:
 
-- Add a new badge row inside `LiveCard` (right after the specialty Badge) showing the doctor's `cedula_profesional` and `cofepris_permit` with small icons (`ShieldCheck`).
-- The `LivesContext` already loads `doctorId`; extend the live data fetch to also bring `cedula_profesional` and `cofepris_permit` from `doctor_profiles`.
-- **Database**:
-  - Add `cofepris_permit text` column to `doctor_profiles` (does not exist yet).
-  - Backfill **test** values for ALL existing `doctor_profiles`: `cedula_profesional = 'CED-' || left(user_id::text, 8)` (where null) and `cofepris_permit = 'COF-' || left(user_id::text, 8)`. Clearly test-only fakes.
+**`src/components/layout/MainLayout.tsx`:**
 
-## 3. Live Setup: Always-on Free Chat + File Sharing for Both
+- **Desktop (≥1024px)**: en lugar de hacer scroll horizontal, dividir en dos zonas:
+  - Items principales (máx 6) visibles directamente: Lives, Education, Soy Médico, Chat, Panel, Disponibilidad.
+  - El resto se agrupa bajo un dropdown `MoreHorizontal` "Más" (Contenido, Reuniones, Mis Pacientes, Localizar Hospital, Material Médico, Noticias). Esto elimina el scroll y todo es accesible.
+- **Tablet (768–1023px)**: mantener el `Sheet` lateral con hamburguesa (ya existe) — verificar que muestre TODOS los items con scroll vertical limpio.
+- **Mobile (<768px)**: bottom-nav fija de 5 tabs (4 + "Más"). El 5° botón "Más" abre un `Sheet` bottom con grid de íconos 3×N para acceder al resto.
+  - Reducir tamaño de tabs a `text-[10px]` con ícono `w-5 h-5` para que entren cómodamente.
+  - Asegurar `safe-area-inset-bottom` en iOS.
 
-**File: `src/components/live/LiveSetupForm.tsx`, `src/components/chat/ChatMessagesPanel.tsx`**
+**Reducción tipográfica:**
+- Desktop nav: `text-[11px] xl:text-xs` con `px-2`, `gap-1`, ícono `w-3.5 h-3.5`.
+- Eliminar `overflow-x-auto` del desktop nav (ya no lo necesita con el dropdown).
 
-- Remove the 3 "ChatModeCard" choices (`free`/`mixed`/`paid_only`). The chat is **always free** for everyone. Hard-code `chatMode = 'free'` and remove the price input + advanced highlight options.
-- Keep the master "Permitir preguntas" switch.
-- For file sharing: keep `ChatFileUpload` available for **both** doctor and patient sides (already works that way) — no removal here. (Item 7 below removes file upload from the regular Chat, not the live chat.)
+## Parte 3 — QA Checklist URL
 
-## 4. Show Consultation Price on Doctor Cards (Patients Only)
+Ya está creada la ruta. URL directa:
 
-**File: `src/pages/Doctors.tsx`**
+```
+https://medical-masters.com/admin/qa-checklist
+```
 
-- Replace the comment `{/* Price hidden per client request */}` (line 822) with a `<PriceDisplay amount={doctor.consultation_fee} />` block, but only when `role === 'patient'`. Other roles continue to see no price.
-- Style: small badge in the top-right of the card header, e.g. `Desde $XXX MXN`.
-- Update memory rule to reflect the new exception (patients see price; doctors/residents/visitors do not).
+(Requiere sesión con rol `admin`.) Adicionalmente añadir un atajo en `AdminDashboard` (card "QA Checklist E2E") para que sea descubrible.
 
-## 5. Conditional Frequency for Habits
+## Parte 4 — Auditoría SEO (sin cambios de código, solo verificación)
 
-**File: `src/pages/MedicalRecord.tsx` (Hábitos tab)**
+Estado actual de `index.html`:
 
-- Replace the single frequency dropdown per habit with a two-step flow:
-  1. **Yes/No** toggle (positivo/negativo).
-  2. If **Yes**: reveal `Frecuencia` dropdown (current options) + a new `Cantidad` text field (e.g. "2 copas", "5 cigarros/día", "30 min × 4 días").
-- Apply to all 6 habits: alcohol, smoking, vaping, hookah, drugs, exercise.
-- **Database**: add columns `habit_<name>_amount text` for each of the 6 habits to store the quantity. Existing `habit_<name>` text column keeps frequency (`never` = No; anything else = Yes).
-- Update fetch + save logic (lines ~262–356) to read/write the new amount fields.
+| Elemento | Estado | Valor |
+|---|---|---|
+| `<title>` | ✅ Optimizado | "Medical Masters · Orientación médica con especialistas verificados" (66 chars) |
+| `<meta description>` | ✅ Optimizado | 195 chars con keywords México/SEP/COFEPRIS |
+| `<meta keywords>` | ✅ Presente | 8 keywords relevantes |
+| `<meta theme-color>` | ✅ `#163a83` (azul marca) |
+| Open Graph (og:title/description/image/locale) | ✅ Completo (`es_MX`) |
+| Twitter Card | ✅ summary con título/descripción/imagen |
+| `<link rel="icon">` | ✅ `/favicon.png?v=2` |
+| `apple-touch-icon` | ✅ Configurado |
+| `manifest.json` | ✅ Linkeado (PWA) |
+| `lang="es"` | ✅ Correcto |
 
-## 6. Premium Content: All / Free / Purchased (Already Exists)
+**Mejoras SEO adicionales que aplicaré:**
+1. Añadir `<link rel="canonical" href="https://medical-masters.com/" />` para evitar duplicados con dominio preview.
+2. Añadir `<meta name="robots" content="index, follow, max-image-preview:large" />`.
+3. Añadir JSON-LD `Organization` schema (nombre, logo, sameAs redes sociales) para rich snippets en Google.
+4. Cambiar `og:image` y `twitter:image` a una URL absoluta (`https://medical-masters.com/icon-512.png`) para que LinkedIn/WhatsApp la cacheen correctamente.
+5. Verificar que `/public/robots.txt` permite indexación.
 
-**File: `src/pages/ContentGallery.tsx`** — verify current state matches request.
+## Parte 5 — Mega-prompt consolidado (auditoría de cumplimiento)
 
-- The page already has tabs: `Todo` / `Gratis` / `Comprados`. No code change needed beyond confirming both desktop sidebar and mobile dropdown expose the same three options consistently.
+Tras esta entrega, el estado del megaprompt completo del cliente queda:
 
-## 7. Chat: Add "Proveedores" filter + remove file upload
+| Petición del cliente | Estado |
+|---|---|
+| Cédula + COFEPRIS en lives | ✅ |
+| Cédula + COFEPRIS en Contenido Premium | ⚠️ → ESTE PLAN |
+| Logo MM en favicon/header | ✅ |
+| Precios de orientación solo a pacientes | ✅ |
+| Hábitos: alcohol/tabaco/ejercicio con frecuencia condicional | ✅ |
+| Contenido Premium: Todo / Gratis / Comprados | ✅ |
+| Chat sin archivos | ✅ |
+| Localizar hospital con Maps + Waze | ✅ |
+| Doctores activos después de "Ubicación activa" | ✅ |
+| Vault → "Mis Pacientes" + contacto cobros + amarillo→azul | ✅ |
+| Medical Master Education (casos clínicos + chat residentes/doctores) | ✅ |
+| "Soy Médico" después de Education | ✅ |
+| Compartir contenido a ambos (sin elección de chat) | ✅ |
+| Menú accesible en todos los dispositivos | ⚠️ → ESTE PLAN |
+| QA Checklist E2E | ✅ (URL: `/admin/qa-checklist`) |
+| Wallet con notificaciones initiated/paid/failed | ✅ |
+| AccessGuard auditable ("¿Por qué no puedo entrar?") | ✅ |
+| Resumen clínico descargable con DRM UX | ✅ |
 
-**Files: `src/pages/Chat.tsx`, `src/components/chat/ChatMessagesPanel.tsx`, `src/lib/i18n/{es,en}.ts`**
+## Resumen de archivos tocados
 
-- Extend `chatFilter` type to `'all' | 'patients' | 'doctors' | 'providers'` and add a 4th filter button "Proveedores" (visible to all roles that can chat with vendors). Filter by `otherType === 'vendor'`.
-- Remove `<ChatFileUpload>` from `ChatMessagesPanel` input row (and the `onFileUploaded` prop wiring in `Chat.tsx`). Files attribute survives in the type for backwards compatibility but the upload UI is gone.
-
-## 8. Hospital Locator: Reorder Stat Chips + (No code change for Maps/Waze/Doctores)
-
-**File: `src/pages/HospitalLocator.tsx`**
-
-- Stat row order under the hero (line 323): change to `Hospitales · Información verificada · Ubicación activa · Doctores activos` (move "Doctores activos" right after "Ubicación activa").
-- Add a new chip "X doctores activos" computed as `doctors.filter(d => isAvailableNow(d)).length` from a lightweight query against `doctor_profiles` (only counts, no list).
-- Hospital cards already show Maps + Waze buttons; they already cover the request.
-
-## 9. Doctor Vault Color Fix (yellow → blue)
-
-**File: `src/pages/DoctorVault.tsx`**
-
-- Page title: change "Vault de Pacientes" → "Mis Pacientes" (with `Users` icon).
-- Replace the amber/yellow OTP warning banner (`bg-warning/10 border-warning/30 text-warning`) with the blue info palette (`bg-info/10 border-info/30 text-info`). Apply both to the top "Acceso Controlado" card and the per-patient "Requiere verificación OTP" pill.
-- Add a contact-of-payments info row inside each patient card showing: name + email of payer, total paid amount, and number of items, queried from `purchases`/`consultations` joined to `auth.users` view. Read-only summary.
-
----
-
-## Execution Order
-1. Favicon + SEO meta (quick win, deploys instantly).
-2. SQL migrations (cofepris column + habit amount columns + cedula/cofepris backfill).
-3. Live card cédula/COFEPRIS badges.
-4. LiveSetupForm simplification.
-5. Doctor card price (patients only).
-6. MedicalRecord conditional habits.
-7. Chat proveedores filter + remove file upload.
-8. Hospital locator chip reorder + doctor count.
-9. DoctorVault color & title fix + payment summary.
-
-## Files Modified (summary)
-- `index.html` + 3 PNG regenerations (favicon/icon-192/icon-512)
-- `src/pages/LivesGrid.tsx`, `src/contexts/LivesContext.tsx`
-- `src/components/live/LiveSetupForm.tsx`
-- `src/components/chat/ChatMessagesPanel.tsx`, `src/pages/Chat.tsx`
-- `src/pages/Doctors.tsx`
-- `src/pages/MedicalRecord.tsx`
-- `src/pages/HospitalLocator.tsx`
-- `src/pages/DoctorVault.tsx`
-- `src/lib/i18n/{es,en}.ts` (new strings: cédula, COFEPRIS, proveedores, mis pacientes, etc.)
-- 2 SQL migrations (1 schema, 1 data backfill)
+1. `src/pages/ContentGallery.tsx` — credenciales del doctor en cards
+2. `src/components/content/ContentPreviewModal.tsx` — credenciales en modal
+3. `src/components/layout/MainLayout.tsx` — reorganización nav desktop + mobile compactos
+4. `index.html` — canonical, robots meta, JSON-LD Organization, og:image absoluta
+5. `src/pages/AdminDashboard.tsx` — atajo a QA Checklist
+6. (Posible) migración SQL si los campos `cedula_professional`/`cofepris_permit` no están en `doctor_profiles_public`
 
