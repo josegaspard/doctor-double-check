@@ -61,6 +61,8 @@ interface DoctorContent {
   creator_name?: string;
   creator_avatar?: string;
   creator_specialty?: string;
+  creator_cedula?: string;
+  creator_cofepris?: string;
 }
 
 import { SPECIALTIES_FILTER as SPECIALTIES } from '@/lib/specialties';
