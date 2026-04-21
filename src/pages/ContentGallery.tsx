@@ -37,6 +37,7 @@ import {
   Presentation,
   Upload,
   Tag,
+  ShieldCheck,
 } from 'lucide-react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useWallet } from '@/contexts/WalletContext';
