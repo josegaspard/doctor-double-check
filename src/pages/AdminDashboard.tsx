@@ -11,6 +11,7 @@ import {
   Users, UserCheck, Stethoscope, GraduationCap, FileCheck, ArrowRight,
   LayoutDashboard, Loader2, Settings, RefreshCcw, Banknote, FileText,
   Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare, Building2, Package, Star,
+  ClipboardCheck,
 } from 'lucide-react';
 
 interface AdminModule {
