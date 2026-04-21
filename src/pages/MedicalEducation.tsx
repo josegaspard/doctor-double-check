@@ -90,17 +90,18 @@ export default function MedicalEducation() {
       return;
     }
     const ids = Array.from(new Set((rows || []).map(r => r.author_id)));
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url, role')
-      .in('id', ids);
-    const map = new Map(profiles?.map(p => [p.id, p]) || []);
+    const [{ data: profiles }, { data: roles }] = await Promise.all([
+      supabase.from('profiles').select('id, name, avatar_url').in('id', ids),
+      supabase.from('user_roles').select('user_id, role').in('user_id', ids),
+    ]);
+    const pmap = new Map((profiles || []).map(p => [p.id, p]));
+    const rmap = new Map((roles || []).map(r => [r.user_id, r.role]));
     setCases(
       (rows || []).map(r => ({
         ...r,
-        author_name: map.get(r.author_id)?.full_name || 'Médico',
-        author_avatar: map.get(r.author_id)?.avatar_url || undefined,
-        author_role: map.get(r.author_id)?.role || 'doctor',
+        author_name: pmap.get(r.author_id)?.name || 'Médico',
+        author_avatar: pmap.get(r.author_id)?.avatar_url || undefined,
+        author_role: (rmap.get(r.author_id) as string) || 'doctor',
       }))
     );
     setLoading(false);
@@ -123,16 +124,17 @@ export default function MedicalEducation() {
       .eq('case_id', c.id)
       .order('created_at', { ascending: true });
     const ids = Array.from(new Set((data || []).map(r => r.author_id)));
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, full_name, role')
-      .in('id', ids);
-    const map = new Map(profiles?.map(p => [p.id, p]) || []);
+    const [{ data: profiles }, { data: roles }] = await Promise.all([
+      supabase.from('profiles').select('id, name').in('id', ids),
+      supabase.from('user_roles').select('user_id, role').in('user_id', ids),
+    ]);
+    const pmap = new Map((profiles || []).map(p => [p.id, p]));
+    const rmap = new Map((roles || []).map(r => [r.user_id, r.role]));
     setComments(
       (data || []).map(r => ({
         ...r,
-        author_name: map.get(r.author_id)?.full_name || 'Usuario',
-        author_role: map.get(r.author_id)?.role || 'doctor',
+        author_name: pmap.get(r.author_id)?.name || 'Usuario',
+        author_role: (rmap.get(r.author_id) as string) || 'doctor',
       }))
     );
   };
