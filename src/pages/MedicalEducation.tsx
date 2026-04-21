@@ -240,7 +240,7 @@ export default function MedicalEducation() {
                     <SearchableFilter
                       value={form.specialty}
                       onChange={v => setForm(f => ({ ...f, specialty: v }))}
-                      options={SPECIALTIES_LIST.map(s => ({ value: s, label: s }))}
+                      options={SPECIALTIES_LIST}
                       placeholder="Selecciona especialidad"
                     />
                   </div>
@@ -291,7 +291,7 @@ export default function MedicalEducation() {
           <SearchableFilter
             value={specialty}
             onChange={setSpecialty}
-            options={[{ value: '', label: 'Todas las especialidades' }, ...SPECIALTIES_LIST.map(s => ({ value: s, label: s }))]}
+            options={SPECIALTIES_LIST}
             placeholder="Filtrar por especialidad"
           />
         </div>
