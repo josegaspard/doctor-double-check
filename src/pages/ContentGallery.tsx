@@ -298,13 +298,15 @@ export default function ContentGallery() {
 
       const creatorIds = [...new Set((data || []).map(c => c.creator_id))];
 
-      const [{ data: profiles }, { data: doctorProfiles }] = await Promise.all([
+      const [{ data: profiles }, { data: doctorProfiles }, { data: doctorCreds }] = await Promise.all([
         supabase.from('profiles_public').select('id, name, avatar_url').in('id', creatorIds),
         supabase.from('doctor_profiles_public').select('user_id, specialty').in('user_id', creatorIds),
+        supabase.from('doctor_profiles').select('user_id, cedula_profesional, cofepris_permit').in('user_id', creatorIds),
       ]);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
       const specialtyMap = new Map(doctorProfiles?.map(d => [d.user_id, d.specialty]) || []);
+      const credsMap = new Map(doctorCreds?.map(d => [d.user_id, { cedula: d.cedula_profesional, cofepris: d.cofepris_permit }]) || []);
 
       const uniqueCategories = [...new Set((data || []).map(c => c.category).filter(Boolean))] as string[];
       setCategories(uniqueCategories);
@@ -316,6 +318,8 @@ export default function ContentGallery() {
         creator_name: profileMap.get(c.creator_id)?.name,
         creator_avatar: profileMap.get(c.creator_id)?.avatar_url,
         creator_specialty: specialtyMap.get(c.creator_id),
+        creator_cedula: credsMap.get(c.creator_id)?.cedula || undefined,
+        creator_cofepris: credsMap.get(c.creator_id)?.cofepris || undefined,
       }));
 
       setContents(mapped);
