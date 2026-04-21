@@ -1046,6 +1046,7 @@ export type Database = {
           can_publish_news: boolean
           cedula_profesional: string | null
           cedula_verification_id: string | null
+          cofepris_permit: string | null
           consultation_fee: number
           created_at: string
           followers_count: number
@@ -1077,6 +1078,7 @@ export type Database = {
           can_publish_news?: boolean
           cedula_profesional?: string | null
           cedula_verification_id?: string | null
+          cofepris_permit?: string | null
           consultation_fee?: number
           created_at?: string
           followers_count?: number
@@ -1108,6 +1110,7 @@ export type Database = {
           can_publish_news?: boolean
           cedula_profesional?: string | null
           cedula_verification_id?: string | null
+          cofepris_permit?: string | null
           consultation_fee?: number
           created_at?: string
           followers_count?: number
@@ -2120,6 +2123,12 @@ export type Database = {
           file_size: number
           file_type: Database["public"]["Enums"]["vault_file_type"]
           file_url: string
+          habit_alcohol_amount: string | null
+          habit_drugs_amount: string | null
+          habit_exercise_amount: string | null
+          habit_hookah_amount: string | null
+          habit_smoking_amount: string | null
+          habit_vaping_amount: string | null
           id: string
           patient_id: string
           title: string
@@ -2133,6 +2142,12 @@ export type Database = {
           file_size?: number
           file_type: Database["public"]["Enums"]["vault_file_type"]
           file_url: string
+          habit_alcohol_amount?: string | null
+          habit_drugs_amount?: string | null
+          habit_exercise_amount?: string | null
+          habit_hookah_amount?: string | null
+          habit_smoking_amount?: string | null
+          habit_vaping_amount?: string | null
           id?: string
           patient_id: string
           title: string
@@ -2146,6 +2161,12 @@ export type Database = {
           file_size?: number
           file_type?: Database["public"]["Enums"]["vault_file_type"]
           file_url?: string
+          habit_alcohol_amount?: string | null
+          habit_drugs_amount?: string | null
+          habit_exercise_amount?: string | null
+          habit_hookah_amount?: string | null
+          habit_smoking_amount?: string | null
+          habit_vaping_amount?: string | null
           id?: string
           patient_id?: string
           title?: string
