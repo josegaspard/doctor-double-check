@@ -327,8 +327,8 @@ export default function ContentGallery() {
         creator_name: profileMap.get(c.creator_id)?.name,
         creator_avatar: profileMap.get(c.creator_id)?.avatar_url,
         creator_specialty: specialtyMap.get(c.creator_id),
-        creator_cedula: credsMap.get(c.creator_id)?.cedula || undefined,
-        creator_cofepris: credsMap.get(c.creator_id)?.cofepris || undefined,
+        creator_cedula: sanitizeCredential(credsMap.get(c.creator_id)?.cedula) || undefined,
+        creator_cofepris: sanitizeCredential(credsMap.get(c.creator_id)?.cofepris) || undefined,
       }));
 
       setContents(mapped);
