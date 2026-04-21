@@ -118,6 +118,7 @@ const AdminRanks = React.lazy(() => import("./pages/AdminRanks"));
 const AdminAds = React.lazy(() => import("./pages/AdminAds"));
 const Advertising = React.lazy(() => import("./pages/Advertising"));
 const AdvertiserDashboard = React.lazy(() => import("./pages/AdvertiserDashboard"));
+const MedicalEducation = React.lazy(() => import("./pages/MedicalEducation"));
 const PsychologyDirectory = React.lazy(() => import("./pages/PsychologyDirectory"));
 const NutritionDirectory = React.lazy(() => import("./pages/NutritionDirectory"));
 const ForResidents = React.lazy(() => import("./pages/ForResidents"));
@@ -211,6 +212,7 @@ const App = () => {
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />
                       <Route path="/medical-record" element={<MedicalRecord />} />
+                      <Route path="/education" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><MedicalEducation /></AccessGuard>} />
                       <Route path="/clinical-sessions" element={<ClinicalSessions />} />
                       <Route path="/meetings" element={<Meetings />} />
                       <Route path="/hospital-locator" element={<HospitalLocator />} />

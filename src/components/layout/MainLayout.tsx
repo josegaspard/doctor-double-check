@@ -60,6 +60,7 @@ import {
   MapPin,
   Package,
   ShoppingBag,
+  GraduationCap,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -83,7 +84,10 @@ interface NavItem {
 const navItems: NavItem[] = [
   { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.recordings', href: '/recordings', icon: PlayCircle, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
-  { labelKey: 'nav.doctors', href: '/doctors', icon: Stethoscope, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
+  { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
+  { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['doctor', 'resident', 'admin'] },
+  { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['doctor'] },
+  { labelKey: 'nav.doctors', href: '/doctors', icon: Stethoscope, roles: ['visitor', 'patient', 'resident', 'admin'] },
   { labelKey: 'nav.content', shortLabelKey: 'nav.contentShort', href: '/content', icon: Folder, roles: ['patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_content_medical' },
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'doctor', 'resident'] },
@@ -94,7 +98,6 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'] },
   { labelKey: 'nav.medicalSupplies', href: '/medical-supplies', icon: Package, roles: ['doctor', 'resident'] },
-  { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];
 
