@@ -423,6 +423,89 @@ export type Database = {
         }
         Relationships: []
       }
+      clinical_case_comments: {
+        Row: {
+          author_id: string
+          case_id: string
+          content: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_id: string
+          case_id: string
+          content: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_id?: string
+          case_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_case_comments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinical_cases: {
+        Row: {
+          author_id: string
+          category: string | null
+          comments_count: number
+          created_at: string
+          description: string | null
+          file_url: string | null
+          id: string
+          patient_age: number | null
+          patient_sex: string | null
+          specialty: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          author_id: string
+          category?: string | null
+          comments_count?: number
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          patient_age?: number | null
+          patient_sex?: string | null
+          specialty: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          author_id?: string
+          category?: string | null
+          comments_count?: number
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          patient_age?: number | null
+          patient_sex?: string | null
+          specialty?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Relationships: []
+      }
       clinical_session_invitations: {
         Row: {
           created_at: string
