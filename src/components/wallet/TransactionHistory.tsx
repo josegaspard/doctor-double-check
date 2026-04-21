@@ -135,7 +135,7 @@ export function TransactionHistory() {
       case 'purchase':
         return <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">{t('transactions.purchase')}</Badge>;
       case 'earning':
-        return <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">{t('transactions.earning')}</Badge>;
+        return <Badge variant="outline" className="bg-info/10 text-info border-info/30">{t('transactions.earning')}</Badge>;
       case 'refund':
         return <Badge variant="outline" className="bg-info/10 text-info border-info/30">{t('transactions.refund')}</Badge>;
       default:
@@ -146,9 +146,10 @@ export function TransactionHistory() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <Badge variant="outline" className="text-success">{t('transactions.completed')}</Badge>;
+        return <Badge variant="outline" className="text-success border-success/30 bg-success/5">{t('transactions.completed')}</Badge>;
+      case 'initiated':
       case 'pending':
-        return <Badge variant="outline" className="text-warning">{t('transactions.pending')}</Badge>;
+        return <Badge variant="outline" className="text-warning border-warning/30 bg-warning/5">{t('transactions.pending')}</Badge>;
       case 'failed':
         return <Badge variant="destructive">{t('transactions.failed')}</Badge>;
       default:
@@ -234,9 +235,9 @@ export function TransactionHistory() {
               <p className="text-[11px] sm:text-lg font-bold">-${stats.purchases.toLocaleString()}</p>
               <p className="text-[9px] sm:text-xs text-muted-foreground">{t('transactions.purchases')}</p>
             </div>
-            <div className="p-2 sm:p-3 bg-amber-500/10 rounded-lg text-center">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 mx-auto mb-0.5 sm:mb-1" />
-              <p className="text-[11px] sm:text-lg font-bold text-amber-600">+${stats.earnings.toLocaleString()}</p>
+            <div className="p-2 sm:p-3 bg-info/10 rounded-lg text-center">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-info mx-auto mb-0.5 sm:mb-1" />
+              <p className="text-[11px] sm:text-lg font-bold text-info">+${stats.earnings.toLocaleString()}</p>
               <p className="text-[9px] sm:text-xs text-muted-foreground">{t('transactions.earnings')}</p>
             </div>
           </div>
