@@ -819,7 +819,13 @@ export default function Doctors() {
                             </div>
                           </div>
 
-                          {/* Price hidden per client request */}
+                          {/* Price visible to patients only */}
+                          {role === 'patient' && doctor.consultation_fee > 0 && (
+                            <div className="flex-shrink-0 text-right">
+                              <p className="text-[10px] text-muted-foreground leading-tight">Desde</p>
+                              <PriceDisplay amount={doctor.consultation_fee} size="sm" className="font-bold text-primary" />
+                            </div>
+                          )}
                         </div>
                       </div>
 

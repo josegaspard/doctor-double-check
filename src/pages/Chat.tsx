@@ -31,7 +31,7 @@ export default function Chat() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
-  const [chatFilter, setChatFilter] = useState<'all' | 'patients' | 'doctors'>(role === 'resident' ? 'doctors' : 'all');
+  const [chatFilter, setChatFilter] = useState<'all' | 'patients' | 'doctors' | 'providers'>(role === 'resident' ? 'doctors' : 'all');
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
 
   const allSessions = getSessionsByUser();
@@ -44,6 +44,7 @@ export default function Chat() {
       const otherType = s.participant1Id === user?.id ? s.participant2Type : s.participant1Type;
       if (chatFilter === 'patients') return otherType === 'patient';
       if (chatFilter === 'doctors') return otherType === 'doctor' || otherType === 'resident';
+      if (chatFilter === 'providers') return otherType === 'vendor';
       return true;
     });
   };
@@ -407,6 +408,14 @@ export default function Chat() {
               onClick={() => setChatFilter('doctors')}
             >
               {t('chat.filterDoctors')}
+            </Button>
+            <Button
+              variant={chatFilter === 'providers' ? 'default' : 'outline'}
+              size="sm"
+              className="text-xs h-8"
+              onClick={() => setChatFilter('providers')}
+            >
+              {t('chat.filterProviders')}
             </Button>
           </div>
         )}
