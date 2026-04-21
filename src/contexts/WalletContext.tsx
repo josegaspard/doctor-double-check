@@ -116,7 +116,31 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'wallet_transactions', filter: `user_id=eq.${user.id}` },
-        () => {
+        (payload) => {
+          const tx = payload.new as { type: string; amount: number; status: string; description: string };
+          // Status-specific notifications
+          if (tx.status === 'initiated' || tx.status === 'pending') {
+            toast.loading(`⏳ Procesando: ${tx.description}`, { id: `tx-${tx.description}`, duration: 4000 });
+          } else if (tx.status === 'failed') {
+            toast.error(`❌ Pago fallido: ${tx.description}. Verifica tu método de pago.`, { duration: 6000 });
+          }
+          fetchWalletData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'wallet_transactions', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const tx = payload.new as { type: string; amount: number; status: string; description: string };
+          const oldTx = payload.old as { status: string };
+          // Status transitions
+          if (oldTx.status !== tx.status) {
+            if (tx.status === 'paid') {
+              toast.success(`✅ Confirmado: ${tx.description}`, { duration: 4000 });
+            } else if (tx.status === 'failed') {
+              toast.error(`❌ Falló: ${tx.description}. Reintenta o contacta soporte.`, { duration: 6000 });
+            }
+          }
           fetchWalletData();
         }
       )
