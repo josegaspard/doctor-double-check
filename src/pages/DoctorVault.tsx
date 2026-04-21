@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Folder, FileText, Image, ArrowLeft, Lock, User, Users,
-  Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail, Receipt,
+  Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail,
 } from 'lucide-react';
 import { VaultFile } from '@/contexts/VaultContext';
 import { supabase } from '@/integrations/supabase/client';
