@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Folder, FileText, Image, ArrowLeft, Lock, User, Users,
-  Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail, Receipt,
+  Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail,
 } from 'lucide-react';
 import { VaultFile } from '@/contexts/VaultContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -175,30 +175,45 @@ export default function DoctorVault() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-6">
-                  {paymentsByPatient[patientId] && (paymentsByPatient[patientId].consultationsCount > 0 || paymentsByPatient[patientId].patientEmail) && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-3 space-y-1.5">
-                      <div className="flex items-center justify-between gap-2 text-xs">
-                        <span className="flex items-center gap-1.5 text-muted-foreground min-w-0">
-                          <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span className="truncate">{paymentsByPatient[patientId].patientEmail || 'Sin correo'}</span>
+                  {paymentsByPatient[patientId] && (paymentsByPatient[patientId].consultationsCount > 0 || paymentsByPatient[patientId].purchasesCount > 0 || paymentsByPatient[patientId].patientEmail) && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-3 space-y-2">
+                      {/* Contacto de cobros */}
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+                        <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate" title={paymentsByPatient[patientId].patientEmail || ''}>
+                          {paymentsByPatient[patientId].patientEmail || 'Sin correo registrado'}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Receipt className="w-3.5 h-3.5" />
-                          {paymentsByPatient[patientId].consultationsCount} orientaciones
-                          {paymentsByPatient[patientId].purchasesCount > 0 && (
-                            <> · {paymentsByPatient[patientId].purchasesCount} compras</>
-                          )}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-sm font-semibold text-primary">
-                          <DollarSign className="w-3.5 h-3.5" />
+
+                      {/* Total destacado */}
+                      <div className="flex items-baseline justify-between gap-2 pt-1 border-t border-primary/10">
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Total pagado</span>
+                        <span className="flex items-center gap-1 text-base sm:text-lg font-bold text-primary">
+                          <DollarSign className="w-4 h-4" />
                           <PriceDisplay amount={paymentsByPatient[patientId].totalPaid} />
                         </span>
                       </div>
+
+                      {/* Desglose orientaciones vs compras */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-background/60 rounded-md p-2">
+                          <p className="text-[10px] uppercase text-muted-foreground font-medium leading-tight">Orientaciones</p>
+                          <p className="text-sm font-semibold text-foreground mt-0.5">
+                            {paymentsByPatient[patientId].consultationsCount}
+                          </p>
+                        </div>
+                        <div className="bg-background/60 rounded-md p-2">
+                          <p className="text-[10px] uppercase text-muted-foreground font-medium leading-tight">Compras</p>
+                          <p className="text-sm font-semibold text-foreground mt-0.5">
+                            {paymentsByPatient[patientId].purchasesCount}
+                          </p>
+                        </div>
+                      </div>
+
                       {paymentsByPatient[patientId].lastPaymentAt && (
-                        <p className="text-[10px] text-muted-foreground">
-                          Último pago: {new Date(paymentsByPatient[patientId].lastPaymentAt!).toLocaleDateString('es-MX')}
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1 pt-1">
+                          <Calendar className="w-3 h-3" />
+                          Último pago: {new Date(paymentsByPatient[patientId].lastPaymentAt!).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
                       )}
                     </div>

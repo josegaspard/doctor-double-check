@@ -19,9 +19,10 @@ import { HealthCalculators } from '@/components/medical/HealthCalculators';
 import { ConsultationSummaryCard } from '@/components/chat/ConsultationSummaryCard';
 import {
   User, Heart, Wine, Syringe, Upload, Calculator,
-  Loader2, Save, FileText, Stethoscope,
+  Loader2, Save, FileText, Stethoscope, Download, ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { exportClinicalSummary } from '@/lib/exportClinicalSummary';
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'No sé'];
 
@@ -420,19 +421,44 @@ export default function MedicalRecord() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
-        <div className="flex items-center justify-between mb-4">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+          <div className="min-w-0">
             <h1 className="font-heading text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <Stethoscope className="w-6 h-6 text-primary" />
-              Expediente Médico
+              <Stethoscope className="w-6 h-6 text-primary flex-shrink-0" />
+              <span className="truncate">Expediente Médico</span>
             </h1>
             <p className="text-sm text-muted-foreground">Tu historial clínico completo</p>
           </div>
-          <Button onClick={handleSave} disabled={isSaving} size="sm" className="gap-2">
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Guardar
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {role === 'patient' && hasRecord && (
+              <Button
+                onClick={() => exportClinicalSummary({
+                  patient: { name: user?.name || 'Paciente', email: user?.email || '' },
+                  data,
+                  language: language as 'es' | 'en',
+                })}
+                size="sm"
+                variant="outline"
+                className="gap-1.5 min-h-[40px]"
+                title="Descargar resumen clínico (uso personal)"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden xs:inline sm:inline">Descargar</span>
+              </Button>
+            )}
+            <Button onClick={handleSave} disabled={isSaving} size="sm" className="gap-2 min-h-[40px]">
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Guardar
+            </Button>
+          </div>
         </div>
+
+        {role === 'patient' && (
+          <div className="mb-4 flex items-start gap-2 p-2.5 rounded-md bg-info/5 border border-info/20 text-xs text-muted-foreground">
+            <ShieldCheck className="w-3.5 h-3.5 text-info flex-shrink-0 mt-0.5" />
+            <span>Tu expediente es privado. Puedes descargar un <strong className="text-foreground">resumen para uso personal</strong> con marca de agua. No compartas el documento fuera de la plataforma.</span>
+          </div>
+        )}
 
         <Tabs defaultValue="personal" className="space-y-4">
           <TabsList className="w-full grid grid-cols-4 sm:grid-cols-7 gap-1">
