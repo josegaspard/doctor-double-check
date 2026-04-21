@@ -168,6 +168,31 @@ export default function DoctorVault() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-6">
+                  {paymentsByPatient[patientId] && (paymentsByPatient[patientId].consultationsCount > 0 || paymentsByPatient[patientId].patientEmail) && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-3 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+                          <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="truncate">{paymentsByPatient[patientId].patientEmail || 'Sin correo'}</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Receipt className="w-3.5 h-3.5" />
+                          {paymentsByPatient[patientId].consultationsCount} orientaciones
+                        </span>
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-primary">
+                          <DollarSign className="w-3.5 h-3.5" />
+                          <PriceDisplay amount={paymentsByPatient[patientId].totalPaid} />
+                        </span>
+                      </div>
+                      {paymentsByPatient[patientId].lastPaymentAt && (
+                        <p className="text-[10px] text-muted-foreground">
+                          Último pago: {new Date(paymentsByPatient[patientId].lastPaymentAt!).toLocaleDateString('es-MX')}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   {!isPatientVerified(patientId) && (
                     <div className="bg-info/10 border border-info/30 rounded-lg p-3 mb-3 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
