@@ -380,17 +380,17 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               </Link>
             </div>
 
-            {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start overflow-x-auto scrollbar-hide mx-1 lg:mx-2">
-              <div className="flex items-center gap-0">
-                {filteredNavItems.map((item) => {
+            {/* Desktop Nav — split: 6 main items visible + "Más" dropdown for the rest */}
+            <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start mx-1 lg:mx-2 min-w-0">
+              <div className="flex items-center gap-0.5 min-w-0">
+                {filteredNavItems.slice(0, 6).map((item) => {
                   const isActive = location.pathname === item.href;
                   const isPanelItem = item.href === '/doctor/dashboard';
                   return (
                     <Link
                       key={item.href}
                       to={item.href}
-                      className={`relative flex items-center gap-1 px-1 lg:px-1.5 xl:px-2 py-1.5 rounded-md text-[10px] lg:text-[11px] xl:text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      className={`relative flex items-center gap-1 px-1.5 lg:px-2 py-1.5 rounded-md text-[11px] xl:text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                         isActive
                           ? 'text-primary'
                           : isPanelItem
@@ -405,11 +405,41 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                           transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                         />
                       )}
-                      <item.icon className="w-3 h-3 xl:w-3.5 xl:h-3.5 flex-shrink-0 relative z-10 hidden 2xl:block" />
+                      <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10 hidden xl:block" />
                       <span className="relative z-10">{t(item.shortLabelKey || item.labelKey)}</span>
                     </Link>
                   );
                 })}
+
+                {/* "Más" dropdown for remaining items */}
+                {filteredNavItems.length > 6 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="flex items-center gap-1 px-1.5 lg:px-2 py-1.5 rounded-md text-[11px] xl:text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all whitespace-nowrap flex-shrink-0"
+                        aria-label={t('nav.more')}
+                      >
+                        <MoreHorizontal className="w-3.5 h-3.5" />
+                        <span>{t('nav.more')}</span>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-56">
+                      {filteredNavItems.slice(6).map((item) => {
+                        const isActive = location.pathname === item.href;
+                        return (
+                          <DropdownMenuItem
+                            key={item.href}
+                            onClick={() => navigate(item.href)}
+                            className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary/10 text-primary' : ''}`}
+                          >
+                            <item.icon className="w-4 h-4 mr-2" />
+                            {t(item.labelKey)}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </nav>
 
