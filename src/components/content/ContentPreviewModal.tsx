@@ -302,15 +302,31 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
 
           {/* Doctor info */}
           {content.creator_name && (
-            <div className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/40 border border-border/30">
-              <Avatar className="w-8 h-8 sm:w-9 sm:h-9">
+            <div className="flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/40 border border-border/30">
+              <Avatar className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0">
                 <AvatarImage src={content.creator_avatar || undefined} />
                 <AvatarFallback><User className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></AvatarFallback>
               </Avatar>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs sm:text-sm font-medium truncate">{content.creator_name}</p>
                 {content.creator_specialty && (
                   <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{content.creator_specialty}</p>
+                )}
+                {(content.creator_cedula || content.creator_cofepris) && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {content.creator_cedula && (
+                      <Badge variant="outline" className="text-[10px] gap-1 text-success border-success/30 bg-success/5 px-1.5 py-0">
+                        <ShieldCheck className="w-3 h-3" />
+                        Céd. Prof.: {content.creator_cedula}
+                      </Badge>
+                    )}
+                    {content.creator_cofepris && (
+                      <Badge variant="outline" className="text-[10px] gap-1 text-info border-info/30 bg-info/5 px-1.5 py-0">
+                        <ShieldCheck className="w-3 h-3" />
+                        COFEPRIS: {content.creator_cofepris}
+                      </Badge>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
