@@ -282,6 +282,7 @@ export const es = {
     filterAll: 'Todos',
     filterPatients: 'Pacientes',
     filterDoctors: 'Doctores',
+    filterProviders: 'Proveedores',
   },
   // Wallet
   wallet: {

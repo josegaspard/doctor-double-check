@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Folder, FileText, Image, ArrowLeft, Lock, User,
+  Folder, FileText, Image, ArrowLeft, Lock, User, Users,
   Calendar, Eye, KeyRound, ShieldCheck,
 } from 'lucide-react';
 import { VaultFile } from '@/contexts/VaultContext';
@@ -89,15 +89,15 @@ export default function DoctorVault() {
         </Button>
 
         <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
-          <Folder className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-          Vault de Pacientes
+          <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+          Mis Pacientes
         </h1>
         <p className="text-sm text-muted-foreground mb-6">
           Expedientes médicos a los que tienes acceso por autorización del paciente
         </p>
 
         {/* Info Banner */}
-        <Card className="mb-6 bg-info/5 border-info/20">
+        <Card className="mb-6 bg-info/10 border-info/30">
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-start gap-3">
               <Lock className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
@@ -132,16 +132,16 @@ export default function DoctorVault() {
                 </CardHeader>
                 <CardContent className="px-3 sm:px-6">
                   {!isPatientVerified(patientId) && (
-                    <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 mb-3 flex items-center justify-between gap-2">
+                    <div className="bg-info/10 border border-info/30 rounded-lg p-3 mb-3 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <KeyRound className="w-4 h-4 text-warning flex-shrink-0" />
+                        <KeyRound className="w-4 h-4 text-info flex-shrink-0" />
                         <span className="text-xs text-foreground font-medium truncate">Requiere verificación OTP</span>
                       </div>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => openOtpForPatient(patientId, patientName)}
-                        className="h-8 text-xs gap-1 flex-shrink-0"
+                        className="h-8 text-xs gap-1 flex-shrink-0 border-info/40 text-info hover:bg-info/10"
                       >
                         <KeyRound className="w-3 h-3" />
                         Verificar

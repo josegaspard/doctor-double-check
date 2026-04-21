@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Lock } from 'lucide-react';
-import { ChatFileUpload } from '@/components/chat/ChatFileUpload';
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
@@ -210,10 +209,6 @@ export function ChatMessagesPanel({
             ) : (
               <div className="p-2 sm:p-4 border-t bg-card flex-shrink-0" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
                 <div className="flex gap-2 items-center">
-                  <ChatFileUpload
-                    sessionId={session.id}
-                    onFileUploaded={onFileUploaded}
-                  />
                   <Input
                     placeholder={t('chat.writeMessage')}
                     value={newMessage}

@@ -99,6 +99,8 @@ interface ClinicalData {
   family_other: string; family_history: string;
   habit_alcohol: string; habit_smoking: string; habit_vaping: string;
   habit_hookah: string; habit_drugs: string; habit_exercise: string;
+  habit_alcohol_amount: string; habit_smoking_amount: string; habit_vaping_amount: string;
+  habit_hookah_amount: string; habit_drugs_amount: string; habit_exercise_amount: string;
   gyn_last_period: string; gyn_pregnancies: string; gyn_births: string;
   gyn_cesareans: string; gyn_abortions: string;
   gyn_contraceptive: string; gyn_pap_result: string;
@@ -158,6 +160,8 @@ const DEFAULT_DATA: ClinicalData = {
   family_other: '', family_history: '',
   habit_alcohol: 'never', habit_smoking: 'never', habit_vaping: 'never',
   habit_hookah: 'never', habit_drugs: 'never', habit_exercise: 'never',
+  habit_alcohol_amount: '', habit_smoking_amount: '', habit_vaping_amount: '',
+  habit_hookah_amount: '', habit_drugs_amount: '', habit_exercise_amount: '',
   gyn_last_period: '', gyn_pregnancies: '0', gyn_births: '0', gyn_cesareans: '0',
   gyn_abortions: '0', gyn_contraceptive: '', gyn_pap_result: '',
   vaccines: {},
@@ -264,6 +268,12 @@ export default function MedicalRecord() {
           habit_hookah: (record as any).habit_hookah || 'never',
           habit_drugs: (record as any).habit_drugs || 'never',
           habit_exercise: (record as any).habit_exercise || 'never',
+          habit_alcohol_amount: (record as any).habit_alcohol_amount || '',
+          habit_smoking_amount: (record as any).habit_smoking_amount || '',
+          habit_vaping_amount: (record as any).habit_vaping_amount || '',
+          habit_hookah_amount: (record as any).habit_hookah_amount || '',
+          habit_drugs_amount: (record as any).habit_drugs_amount || '',
+          habit_exercise_amount: (record as any).habit_exercise_amount || '',
           gyn_last_period: (record as any).gyn_last_period || '',
           gyn_pregnancies: String((record as any).gyn_pregnancies || 0),
           gyn_births: String((record as any).gyn_births || 0),
@@ -354,6 +364,12 @@ export default function MedicalRecord() {
         habit_hookah: data.habit_hookah,
         habit_drugs: data.habit_drugs,
         habit_exercise: data.habit_exercise,
+        habit_alcohol_amount: data.habit_alcohol_amount || null,
+        habit_smoking_amount: data.habit_smoking_amount || null,
+        habit_vaping_amount: data.habit_vaping_amount || null,
+        habit_hookah_amount: data.habit_hookah_amount || null,
+        habit_drugs_amount: data.habit_drugs_amount || null,
+        habit_exercise_amount: data.habit_exercise_amount || null,
         gyn_last_period: data.gyn_last_period || null,
         gyn_pregnancies: parseInt(data.gyn_pregnancies) || 0,
         gyn_births: parseInt(data.gyn_births) || 0,
@@ -674,28 +690,69 @@ export default function MedicalRecord() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { key: 'habit_alcohol' as const, label: 'Alcohol', icon: '🍷' },
-                  { key: 'habit_smoking' as const, label: 'Cigarro', icon: '🚬' },
-                  { key: 'habit_vaping' as const, label: 'Vape', icon: '💨' },
-                  { key: 'habit_hookah' as const, label: 'Arguile/Hookah', icon: '🫧' },
-                  { key: 'habit_drugs' as const, label: 'Drogas recreativas', icon: '💊' },
-                  { key: 'habit_exercise' as const, label: 'Ejercicio', icon: '🏃' },
-                ].map(item => (
-                  <div key={item.key} className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-lg">{item.icon}</span>
-                      <Label className="text-sm">{item.label}</Label>
+                  { key: 'habit_alcohol' as const, amountKey: 'habit_alcohol_amount' as const, label: 'Alcohol', icon: '🍷', placeholder: 'Ej: 2 copas por ocasión' },
+                  { key: 'habit_smoking' as const, amountKey: 'habit_smoking_amount' as const, label: 'Cigarro', icon: '🚬', placeholder: 'Ej: 5 cigarros/día' },
+                  { key: 'habit_vaping' as const, amountKey: 'habit_vaping_amount' as const, label: 'Vape', icon: '💨', placeholder: 'Ej: 1 pod cada 2 días' },
+                  { key: 'habit_hookah' as const, amountKey: 'habit_hookah_amount' as const, label: 'Arguile/Hookah', icon: '🫧', placeholder: 'Ej: 1 sesión por semana' },
+                  { key: 'habit_drugs' as const, amountKey: 'habit_drugs_amount' as const, label: 'Drogas recreativas', icon: '💊', placeholder: 'Tipo y cantidad' },
+                  { key: 'habit_exercise' as const, amountKey: 'habit_exercise_amount' as const, label: 'Ejercicio', icon: '🏃', placeholder: 'Ej: 30 min × 4 días' },
+                ].map(item => {
+                  const isPositive = data[item.key] !== 'never' && data[item.key] !== '';
+                  return (
+                    <div key={item.key} className="rounded-lg border border-border p-3 space-y-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-lg">{item.icon}</span>
+                          <Label className="text-sm font-medium">{item.label}</Label>
+                        </div>
+                        <Select
+                          value={isPositive ? 'positive' : 'negative'}
+                          onValueChange={v => {
+                            if (v === 'negative') {
+                              update(item.key, 'never');
+                              update(item.amountKey, '');
+                            } else {
+                              // Default to "occasionally" when switching to positive
+                              if (data[item.key] === 'never' || !data[item.key]) {
+                                update(item.key, 'occasionally');
+                              }
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="negative">Negativo</SelectItem>
+                            <SelectItem value="positive">Positivo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {isPositive && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-7">
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Frecuencia</Label>
+                            <Select value={data[item.key]} onValueChange={v => update(item.key, v)}>
+                              <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => (
+                                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Cantidad</Label>
+                            <Input
+                              placeholder={item.placeholder}
+                              value={data[item.amountKey]}
+                              onChange={e => update(item.amountKey, e.target.value)}
+                              className="h-9 text-xs"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <Select value={data[item.key]} onValueChange={v => update(item.key, v)}>
-                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {FREQUENCY_OPTIONS.map(o => (
-                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           </TabsContent>

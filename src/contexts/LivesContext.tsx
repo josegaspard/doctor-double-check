@@ -28,6 +28,7 @@ export interface Live {
   chatMode?: string;
   chatPrice?: number;
   doctorCedula?: string;
+  doctorCofepris?: string;
 }
 
 export interface Recording {
@@ -104,7 +105,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   
   // Cache for doctor profiles to reduce redundant queries
   const profileCache = useRef<Map<string, { name: string; avatar_url?: string }>>(new Map());
-  const doctorProfileCache = useRef<Map<string, { followers_count: number; cedula_profesional?: string }>>(new Map());
+  const doctorProfileCache = useRef<Map<string, { followers_count: number; cedula_profesional?: string; cofepris_permit?: string }>>(new Map());
 
   const fetchLives = useCallback(async (force = false) => {
     const now = Date.now();
@@ -146,14 +147,16 @@ export function LivesProvider({ children }: { children: ReactNode }) {
               .in('user_id', uncachedIds),
             supabase
               .from('doctor_profiles')
-              .select('user_id, cedula_profesional')
+              .select('user_id, cedula_profesional, cofepris_permit')
               .in('user_id', uncachedIds)
           ]);
 
-          // Build cedula map
+          // Build cedula + cofepris maps
           const cedulaMap: Record<string, string> = {};
-          cedulaResult.data?.forEach(c => {
+          const cofeprisMap: Record<string, string> = {};
+          cedulaResult.data?.forEach((c: any) => {
             if (c.cedula_profesional) cedulaMap[c.user_id] = c.cedula_profesional;
+            if (c.cofepris_permit) cofeprisMap[c.user_id] = c.cofepris_permit;
           });
 
           // Update caches
@@ -161,7 +164,11 @@ export function LivesProvider({ children }: { children: ReactNode }) {
             profileCache.current.set(p.id, { name: p.name || 'Doctor', avatar_url: p.avatar_url || undefined });
           });
           doctorProfilesResult.data?.forEach(d => {
-            doctorProfileCache.current.set(d.user_id, { followers_count: d.followers_count || 0, cedula_profesional: cedulaMap[d.user_id] });
+            doctorProfileCache.current.set(d.user_id, {
+              followers_count: d.followers_count || 0,
+              cedula_profesional: cedulaMap[d.user_id],
+              cofepris_permit: cofeprisMap[d.user_id],
+            });
           });
         }
 
@@ -183,6 +190,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           tags: l.tags || [],
           followersCount: doctorProfileCache.current.get(l.doctor_id)?.followers_count || 0,
           doctorCedula: doctorProfileCache.current.get(l.doctor_id)?.cedula_profesional || undefined,
+          doctorCofepris: doctorProfileCache.current.get(l.doctor_id)?.cofepris_permit || undefined,
           dailyRoomName: l.daily_room_name || undefined,
           location: (l as any).location || undefined,
           chatMode: (l as any).chat_mode || 'free',
