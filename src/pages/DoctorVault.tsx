@@ -95,22 +95,29 @@ export default function DoctorVault() {
     const patientIds = patientKeys ? patientKeys.split(',') : [];
     if (!user?.id || patientIds.length === 0) return;
     (async () => {
-      const [{ data: cons }, { data: profs }, { data: dp }] = await Promise.all([
+      const [{ data: cons }, { data: profs }, { data: dp }, { data: purchases }] = await Promise.all([
         supabase.from('consultations').select('patient_id, completed_at, started_at, status').eq('doctor_id', user.id).in('patient_id', patientIds),
         supabase.from('profiles').select('id, email').in('id', patientIds),
         supabase.from('doctor_profiles').select('consultation_fee').eq('user_id', user.id).maybeSingle(),
+        supabase.from('purchases').select('user_id, amount, created_at, content_id').in('user_id', patientIds),
       ]);
       const emailMap = new Map((profs || []).map((p: any) => [p.id, p.email]));
       const fee = Number(dp?.consultation_fee || 0);
       const summary: Record<string, PatientPaymentSummary> = {};
       for (const pid of patientIds) {
         const myCons = (cons || []).filter((c: any) => c.patient_id === pid && c.status === 'completed');
+        const myPurchases = (purchases || []).filter((p: any) => p.user_id === pid);
+        const consultTotal = myCons.length * fee;
+        const purchaseTotal = myPurchases.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+        const lastConsult = myCons[0]?.completed_at || myCons[0]?.started_at || null;
+        const lastPurchase = myPurchases[0]?.created_at || null;
+        const lastPaymentAt = [lastConsult, lastPurchase].filter(Boolean).sort().reverse()[0] || null;
         summary[pid] = {
           patientEmail: emailMap.get(pid) || null,
-          totalPaid: myCons.length * fee,
+          totalPaid: consultTotal + purchaseTotal,
           consultationsCount: myCons.length,
-          purchasesCount: 0,
-          lastPaymentAt: myCons[0]?.completed_at || myCons[0]?.started_at || null,
+          purchasesCount: myPurchases.length,
+          lastPaymentAt,
         };
       }
       setPaymentsByPatient(summary);
@@ -180,6 +187,9 @@ export default function DoctorVault() {
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Receipt className="w-3.5 h-3.5" />
                           {paymentsByPatient[patientId].consultationsCount} orientaciones
+                          {paymentsByPatient[patientId].purchasesCount > 0 && (
+                            <> · {paymentsByPatient[patientId].purchasesCount} compras</>
+                          )}
                         </span>
                         <span className="flex items-center gap-1.5 text-sm font-semibold text-primary">
                           <DollarSign className="w-3.5 h-3.5" />

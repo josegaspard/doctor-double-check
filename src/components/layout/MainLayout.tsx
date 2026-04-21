@@ -110,7 +110,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   if (role === 'doctor') {
     return [
       ...common,
-      { label: t('nav.recordingsShort'), href: '/recordings', icon: PlayCircle },
+      { label: t('nav.educationShort') || 'Edu', href: '/education', icon: GraduationCap },
       { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
       { label: t('nav.dashboard'), href: '/doctor/dashboard', icon: LayoutDashboard },
     ];
@@ -147,7 +147,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   // resident
   return [
     ...common,
-    { label: t('nav.content') || 'Contenido', href: '/content', icon: Folder },
+    { label: t('nav.educationShort') || 'Edu', href: '/education', icon: GraduationCap },
     { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
     { label: t('nav.meetings') || 'Reuniones', href: '/meetings', icon: Calendar },
   ];
