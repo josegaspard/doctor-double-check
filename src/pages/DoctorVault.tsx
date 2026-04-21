@@ -11,9 +11,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Folder, FileText, Image, ArrowLeft, Lock, User, Users,
-  Calendar, Eye, KeyRound, ShieldCheck,
+  Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail, Receipt,
 } from 'lucide-react';
 import { VaultFile } from '@/contexts/VaultContext';
+import { supabase } from '@/integrations/supabase/client';
+import { PriceDisplay } from '@/components/currency/PriceDisplay';
+
+interface PatientPaymentSummary {
+  patientEmail: string | null;
+  totalPaid: number;
+  consultationsCount: number;
+  purchasesCount: number;
+  lastPaymentAt: string | null;
+}
 
 export default function DoctorVault() {
   const navigate = useNavigate();
@@ -25,6 +35,7 @@ export default function DoctorVault() {
   const [selectedFile, setSelectedFile] = useState<VaultFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [autoOpenHandled, setAutoOpenHandled] = useState(false);
+  const [paymentsByPatient, setPaymentsByPatient] = useState<Record<string, PatientPaymentSummary>>({});
 
   const accessibleFiles = getAccessibleFiles(user?.id || '');
 
@@ -42,10 +53,9 @@ export default function DoctorVault() {
     setSearchParams({}, { replace: true });
   }, [targetPatientId, autoOpenHandled, accessibleFiles, isPatientVerified, setSearchParams]);
 
-  if (role !== 'doctor') {
-    navigate('/lives');
-    return null;
-  }
+  useEffect(() => {
+    if (role && role !== 'doctor') navigate('/lives');
+  }, [role, navigate]);
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -79,6 +89,33 @@ export default function DoctorVault() {
     }
     filesByPatient[file.patientId].files.push(file);
   });
+
+  const patientKeys = Object.keys(filesByPatient).join(',');
+  useEffect(() => {
+    const patientIds = patientKeys ? patientKeys.split(',') : [];
+    if (!user?.id || patientIds.length === 0) return;
+    (async () => {
+      const [{ data: cons }, { data: profs }, { data: dp }] = await Promise.all([
+        supabase.from('consultations').select('patient_id, completed_at, started_at, status').eq('doctor_id', user.id).in('patient_id', patientIds),
+        supabase.from('profiles').select('id, email').in('id', patientIds),
+        supabase.from('doctor_profiles').select('consultation_fee').eq('user_id', user.id).maybeSingle(),
+      ]);
+      const emailMap = new Map((profs || []).map((p: any) => [p.id, p.email]));
+      const fee = Number(dp?.consultation_fee || 0);
+      const summary: Record<string, PatientPaymentSummary> = {};
+      for (const pid of patientIds) {
+        const myCons = (cons || []).filter((c: any) => c.patient_id === pid && c.status === 'completed');
+        summary[pid] = {
+          patientEmail: emailMap.get(pid) || null,
+          totalPaid: myCons.length * fee,
+          consultationsCount: myCons.length,
+          purchasesCount: 0,
+          lastPaymentAt: myCons[0]?.completed_at || myCons[0]?.started_at || null,
+        };
+      }
+      setPaymentsByPatient(summary);
+    })();
+  }, [user?.id, patientKeys]);
 
   return (
     <MainLayout>
@@ -131,6 +168,31 @@ export default function DoctorVault() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-6">
+                  {paymentsByPatient[patientId] && (paymentsByPatient[patientId].consultationsCount > 0 || paymentsByPatient[patientId].patientEmail) && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-3 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+                          <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="truncate">{paymentsByPatient[patientId].patientEmail || 'Sin correo'}</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Receipt className="w-3.5 h-3.5" />
+                          {paymentsByPatient[patientId].consultationsCount} orientaciones
+                        </span>
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-primary">
+                          <DollarSign className="w-3.5 h-3.5" />
+                          <PriceDisplay amount={paymentsByPatient[patientId].totalPaid} />
+                        </span>
+                      </div>
+                      {paymentsByPatient[patientId].lastPaymentAt && (
+                        <p className="text-[10px] text-muted-foreground">
+                          Último pago: {new Date(paymentsByPatient[patientId].lastPaymentAt!).toLocaleDateString('es-MX')}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   {!isPatientVerified(patientId) && (
                     <div className="bg-info/10 border border-info/30 rounded-lg p-3 mb-3 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
