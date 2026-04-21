@@ -134,10 +134,10 @@ export default function DoctorVault() {
 
         <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
           <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-          Mis Pacientes
+          {t('nav.doctorVault')}
         </h1>
         <p className="text-sm text-muted-foreground mb-6">
-          Expedientes médicos a los que tienes acceso por autorización del paciente
+          Expedientes médicos a los que tienes acceso por autorización del paciente. Aquí también verás el contacto de cobros y los totales pagados por cada paciente.
         </p>
 
         {/* Info Banner */}
@@ -167,7 +167,7 @@ export default function DoctorVault() {
                     <span className="truncate">{patientName}</span>
                     <Badge variant="outline" className="ml-auto text-[10px]">{files.length} exp.</Badge>
                     {isPatientVerified(patientId) && (
-                      <Badge variant="success" className="gap-1 text-[10px]">
+                      <Badge variant="info" className="gap-1 text-[10px]">
                         <ShieldCheck className="w-3 h-3" />
                         Verificado
                       </Badge>

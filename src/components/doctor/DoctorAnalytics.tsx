@@ -167,9 +167,9 @@ export function DoctorAnalytics() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
         {[
           { icon: DollarSign, iconClass: 'text-success', bg: 'bg-success/10', value: `$${data.totalEarnings.toLocaleString()}`, label: 'Ganancias Totales' },
-          { icon: DollarSign, iconClass: 'text-warning', bg: 'bg-warning/10', value: `$${data.pendingEarnings.toLocaleString()}`, label: 'Pendiente de Cobro' },
+          { icon: DollarSign, iconClass: 'text-info', bg: 'bg-info/10', value: `$${data.pendingEarnings.toLocaleString()}`, label: 'Pendiente de Cobro' },
           { icon: Users, iconClass: 'text-primary', bg: 'bg-primary/10', value: data.subscriberCount, label: 'Suscriptores' },
-          { icon: Star, iconClass: 'text-amber-500', bg: 'bg-amber-500/10', value: data.avgRating.toFixed(1), label: `${data.totalRatings} calificaciones` },
+          { icon: Star, iconClass: 'text-info', bg: 'bg-info/10', value: data.avgRating.toFixed(1), label: `${data.totalRatings} calificaciones` },
         ].map((stat, i) => {
           const Icon = stat.icon;
           return (
