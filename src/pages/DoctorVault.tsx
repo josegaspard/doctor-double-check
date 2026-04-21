@@ -91,6 +91,33 @@ export default function DoctorVault() {
     filesByPatient[file.patientId].files.push(file);
   });
 
+  const patientKeys = Object.keys(filesByPatient).join(',');
+  useEffect(() => {
+    const patientIds = patientKeys ? patientKeys.split(',') : [];
+    if (!user?.id || patientIds.length === 0) return;
+    (async () => {
+      const [{ data: cons }, { data: profs }, { data: dp }] = await Promise.all([
+        supabase.from('consultations').select('patient_id, completed_at, started_at, status').eq('doctor_id', user.id).in('patient_id', patientIds),
+        supabase.from('profiles').select('id, email').in('id', patientIds),
+        supabase.from('doctor_profiles').select('consultation_fee').eq('user_id', user.id).maybeSingle(),
+      ]);
+      const emailMap = new Map((profs || []).map((p: any) => [p.id, p.email]));
+      const fee = Number(dp?.consultation_fee || 0);
+      const summary: Record<string, PatientPaymentSummary> = {};
+      for (const pid of patientIds) {
+        const myCons = (cons || []).filter((c: any) => c.patient_id === pid && c.status === 'completed');
+        summary[pid] = {
+          patientEmail: emailMap.get(pid) || null,
+          totalPaid: myCons.length * fee,
+          consultationsCount: myCons.length,
+          purchasesCount: 0,
+          lastPaymentAt: myCons[0]?.completed_at || myCons[0]?.started_at || null,
+        };
+      }
+      setPaymentsByPatient(summary);
+    })();
+  }, [user?.id, patientKeys]);
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-4xl">
