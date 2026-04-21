@@ -356,58 +356,12 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
           {chatEnabled && (
             <>
-              {/* ★ Visual Chat Mode Cards — replaces confusing radio buttons */}
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">¿Cómo quieres que funcione el chat?</Label>
-                <div className="space-y-2">
-                  <ChatModeCard
-                    icon={MessageSquare}
-                    title="Chat gratuito"
-                    description="Todos pueden comentar gratis"
-                    selected={chatMode === 'free'}
-                    onClick={() => setChatMode('free')}
-                  />
-                  <ChatModeCard
-                    icon={Sparkles}
-                    title="Chat con mensajes destacados"
-                    description="Los espectadores pueden pagar para que su mensaje se destaque. Tú defines el precio."
-                    selected={chatMode === 'mixed'}
-                    onClick={() => setChatMode('mixed')}
-                  />
-                  <ChatModeCard
-                    icon={DollarSign}
-                    title="Solo pacientes suscritos"
-                    description="Solo pueden comentar los pacientes que estén suscritos a ti"
-                    selected={chatMode === 'paid_only'}
-                    onClick={() => setChatMode('paid_only')}
-                  />
-                </div>
+              <div className="rounded-xl border border-success/30 bg-success/5 p-3 flex items-start gap-2">
+                <MessageSquare className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-foreground">
+                  El chat es <strong>gratuito para todos</strong>. Cualquier espectador podrá enviar mensajes durante tu transmisión.
+                </p>
               </div>
-
-              {/* ★ Price input — immediately visible when paid mode selected */}
-              {(chatMode === 'paid_only' || chatMode === 'mixed') && (
-                <div className="rounded-xl border-2 border-accent/30 bg-accent/5 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <Label htmlFor="chatPrice" className="text-sm font-semibold flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-primary" />
-                    ¿Cuánto cobrar por mensaje?
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-base">$</span>
-                    <Input
-                      id="chatPrice"
-                      type="number"
-                      min={1}
-                      placeholder="Ej: 20"
-                      value={chatPrice}
-                      onChange={(e) => setChatPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="pl-8 text-lg min-h-12 font-semibold"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Cada mensaje pagado se destacará por {chatHighlightSeconds >= 60 ? `${Math.round(chatHighlightSeconds / 60)} minuto(s)` : `${chatHighlightSeconds} segundos`}
-                  </p>
-                </div>
-              )}
 
               <Collapsible open={showAdvancedChat} onOpenChange={setShowAdvancedChat}>
                 <CollapsibleTrigger asChild>
@@ -417,23 +371,6 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-3 space-y-3">
-                  {(chatMode === 'paid_only' || chatMode === 'mixed') && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="chatHighlight" className="text-xs flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" /> Duración del destacado (segundos)
-                      </Label>
-                      <Input
-                        id="chatHighlight"
-                        type="number"
-                        min={10}
-                        max={600}
-                        placeholder="120"
-                        value={chatHighlightSeconds}
-                        onChange={(e) => setChatHighlightSeconds(Number(e.target.value) || 120)}
-                        className="min-h-12"
-                      />
-                    </div>
-                  )}
                   <div className="space-y-1.5">
                     <Label htmlFor="maxQuestions" className="text-xs">Límite de preguntas</Label>
                     <Input
@@ -443,18 +380,6 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                       placeholder="Sin límite"
                       value={maxQuestions}
                       onChange={(e) => setMaxQuestions(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="min-h-12"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="maxPaidChats" className="text-xs">Límite de orientaciones pagadas</Label>
-                    <Input
-                      id="maxPaidChats"
-                      type="number"
-                      min={1}
-                      placeholder="Sin límite"
-                      value={maxPaidChats}
-                      onChange={(e) => setMaxPaidChats(e.target.value === '' ? '' : Number(e.target.value))}
                       className="min-h-12"
                     />
                   </div>
