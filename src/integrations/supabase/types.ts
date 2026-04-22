@@ -1128,8 +1128,16 @@ export type Database = {
           bio: string | null
           can_publish_news: boolean
           cedula_profesional: string | null
+          cedula_rejection_reason: string | null
+          cedula_status:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           cedula_verification_id: string | null
           cofepris_permit: string | null
+          cofepris_rejection_reason: string | null
+          cofepris_status:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           consultation_fee: number
           created_at: string
           followers_count: number
@@ -1160,8 +1168,16 @@ export type Database = {
           bio?: string | null
           can_publish_news?: boolean
           cedula_profesional?: string | null
+          cedula_rejection_reason?: string | null
+          cedula_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           cedula_verification_id?: string | null
           cofepris_permit?: string | null
+          cofepris_rejection_reason?: string | null
+          cofepris_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           consultation_fee?: number
           created_at?: string
           followers_count?: number
@@ -1192,8 +1208,16 @@ export type Database = {
           bio?: string | null
           can_publish_news?: boolean
           cedula_profesional?: string | null
+          cedula_rejection_reason?: string | null
+          cedula_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           cedula_verification_id?: string | null
           cofepris_permit?: string | null
+          cofepris_rejection_reason?: string | null
+          cofepris_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           consultation_fee?: number
           created_at?: string
           followers_count?: number
@@ -3483,6 +3507,44 @@ export type Database = {
           },
         ]
       }
+      vault_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          file_id: string | null
+          id: string
+          metadata: Json | null
+          patient_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          file_id?: string | null
+          id?: string
+          metadata?: Json | null
+          patient_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          file_id?: string | null
+          id?: string
+          metadata?: Json | null
+          patient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vault_audit_log_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "vault_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vault_files: {
         Row: {
           category: string
@@ -3596,7 +3658,15 @@ export type Database = {
           badge_override: string | null
           bio: string | null
           cedula_profesional: string | null
+          cedula_rejection_reason: string | null
+          cedula_status:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           cofepris_permit: string | null
+          cofepris_rejection_reason: string | null
+          cofepris_status:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           consultation_fee: number | null
           created_at: string | null
           followers_count: number | null
@@ -3620,7 +3690,15 @@ export type Database = {
           badge_override?: string | null
           bio?: string | null
           cedula_profesional?: string | null
+          cedula_rejection_reason?: string | null
+          cedula_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           cofepris_permit?: string | null
+          cofepris_rejection_reason?: string | null
+          cofepris_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           consultation_fee?: number | null
           created_at?: string | null
           followers_count?: number | null
@@ -3644,7 +3722,15 @@ export type Database = {
           badge_override?: string | null
           bio?: string | null
           cedula_profesional?: string | null
+          cedula_rejection_reason?: string | null
+          cedula_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           cofepris_permit?: string | null
+          cofepris_rejection_reason?: string | null
+          cofepris_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           consultation_fee?: number | null
           created_at?: string | null
           followers_count?: number | null
@@ -3898,6 +3984,15 @@ export type Database = {
       }
       is_approved_doctor: { Args: { _user_id: string }; Returns: boolean }
       is_approved_resident: { Args: { _user_id: string }; Returns: boolean }
+      log_vault_action: {
+        Args: {
+          p_action: string
+          p_file_id: string
+          p_metadata?: Json
+          p_patient_id: string
+        }
+        Returns: string
+      }
       notify_subscribers: {
         Args: {
           p_data?: Json
@@ -3993,6 +4088,7 @@ export type Database = {
         | "subscription"
         | "earning"
       vault_file_type: "pdf" | "image" | "study"
+      verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4163,6 +4259,7 @@ export const Constants = {
         "earning",
       ],
       vault_file_type: ["pdf", "image", "study"],
+      verification_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
