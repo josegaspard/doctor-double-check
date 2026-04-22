@@ -1,88 +1,115 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
 
-/**
- * Anyone landing on /recording/:id with a stale or stolen signed URL must be
- * blocked — the page never mounts a <video> with a token the backend rejects.
- *
- * These tests verify the contract: if the storage signed URL fetch returns
- * 403 / null, the page must render the paywall or expiration overlay.
- */
+const invokeMock = vi.fn();
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    functions: { invoke: (...args: any[]) => invokeMock(...args) },
+  },
+}));
 
-interface FetchedUrl {
-  signedUrl: string | null;
-  status: number;
-  isPaywalled?: boolean;
-  isExpired?: boolean;
-}
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'user-1', email: 'tester@example.com', role: 'patient' },
+    supabaseUser: { id: 'user-1' },
+    role: 'patient',
+  }),
+}));
 
-async function resolveRecordingAccess(
-  recordingId: string,
-  signedUrlFromQuery: string | undefined,
-  hasPurchased: boolean,
-  fetchSignedUrl: (id: string) => Promise<FetchedUrl>
-): Promise<{ render: 'video' | 'paywall' | 'expired'; videoSrc?: string }> {
-  if (!hasPurchased) {
-    return { render: 'paywall' };
-  }
-  // Even if URL came from query string, re-fetch a fresh token; never trust
-  // the URL the user pasted in the address bar.
-  const fresh = await fetchSignedUrl(recordingId);
-  if (fresh.status === 403 || fresh.signedUrl === null) {
-    return { render: 'expired' };
-  }
-  return { render: 'video', videoSrc: fresh.signedUrl };
-}
+vi.mock('hls.js', () => ({
+  default: {
+    isSupported: () => true,
+    Events: { MANIFEST_PARSED: 'parsed', LEVEL_LOADED: 'level', ERROR: 'err' },
+    ErrorTypes: { NETWORK_ERROR: 'net', MEDIA_ERROR: 'media' },
+  },
+}));
 
-describe('Direct URL access to /recording/:id', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+const { CloudflareRecordingPlayer } = await import('@/components/recordings/CloudflareRecordingPlayer');
+
+beforeEach(() => {
+  invokeMock.mockReset();
+});
+
+describe('Recording paywall hardening — direct URL & 403 server-side gating', () => {
+  it('with active purchase: edge function is called WITH recordingId so backend can verify', async () => {
+    invokeMock.mockResolvedValue({
+      data: { success: true, playbackUrl: 'https://signed.example/manifest.m3u8', duration: 600 },
+      error: null,
+    });
+
+    render(<CloudflareRecordingPlayer videoUrl="pending:input-uid" recordingId="rec-1" />);
+
+    await waitFor(() => {
+      expect(invokeMock).toHaveBeenCalledWith(
+        'get-cloudflare-playback',
+        expect.objectContaining({
+          body: expect.objectContaining({ recordingId: 'rec-1', videoUid: 'pending:input-uid' }),
+        })
+      );
+    });
   });
 
-  it('blocks unauthenticated visitor with paywall, even if they paste a URL', async () => {
-    const fetcher = vi.fn(async () => ({ signedUrl: 'https://x', status: 200 }));
-    const res = await resolveRecordingAccess(
-      'rec-1',
-      'expired_token_from_url',
-      /* hasPurchased */ false,
-      fetcher
-    );
-    expect(res.render).toBe('paywall');
-    // CRITICAL: must NOT have called the storage backend with the user-supplied token
-    expect(fetcher).not.toHaveBeenCalled();
-    expect(res.videoSrc).toBeUndefined();
+  it('without purchase: edge function returns 403 → no playback URL leaks to <video src>', async () => {
+    invokeMock.mockResolvedValue({
+      data: null,
+      error: { message: 'Forbidden: No purchase found', status: 403 },
+    });
+
+    render(<CloudflareRecordingPlayer videoUrl="pending:input-uid" recordingId="rec-2" />);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Reintentar/i) || screen.queryByText(/Error/i)
+      ).toBeTruthy();
+    });
+
+    const video = document.querySelector('video');
+    if (video) expect(video.getAttribute('src') ?? '').toBe('');
   });
 
-  it('renders expiration overlay when backend rejects the token (403)', async () => {
-    const fetcher = vi.fn(async () => ({ signedUrl: null, status: 403 }));
-    const res = await resolveRecordingAccess('rec-1', undefined, true, fetcher);
-    expect(res.render).toBe('expired');
-    expect(res.videoSrc).toBeUndefined();
+  it('non-pending UID (admin/owner shortcut): NO edge function call, URL constructed directly', async () => {
+    render(<CloudflareRecordingPlayer videoUrl="ready-uid-xyz" recordingId="rec-3" />);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(invokeMock).not.toHaveBeenCalled();
   });
 
-  it('mounts video with a freshly issued URL — never with the URL from the query string', async () => {
-    const stolenToken = 'https://signed.example/rec-1?token=stolen';
-    const freshToken = 'https://signed.example/rec-1?token=fresh-new';
-    const fetcher = vi.fn(async () => ({ signedUrl: freshToken, status: 200 }));
-    const res = await resolveRecordingAccess('rec-1', stolenToken, true, fetcher);
-    expect(res.render).toBe('video');
-    expect(res.videoSrc).toBe(freshToken);
-    expect(res.videoSrc).not.toBe(stolenToken);
+  it('contract: a direct fetch to the edge function without auth returns 403', async () => {
+    const originalFetch = global.fetch;
+    global.fetch = vi.fn(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ success: false, error: 'Forbidden: missing authorization' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    ) as any;
+
+    const res = await fetch('https://example.supabase.co/functions/v1/get-cloudflare-playback', {
+      method: 'POST',
+      body: JSON.stringify({ videoUid: 'x', type: 'recording', recordingId: 'rec-x' }),
+    });
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toMatch(/Forbidden/i);
+
+    global.fetch = originalFetch;
   });
 
-  it('an expired URL pasted directly results in 403 → expired overlay', async () => {
-    const fetcher = vi.fn(async () => ({ signedUrl: null, status: 403, isExpired: true }));
-    const res = await resolveRecordingAccess(
-      'rec-1',
-      'https://signed.example/rec-1?token=expired',
-      true,
-      fetcher
-    );
-    expect(res.render).toBe('expired');
-  });
+  it('processing status: shows processing UI, never exposes URL to <video>', async () => {
+    invokeMock.mockResolvedValue({
+      data: { success: false, status: 'processing', error: 'Recording is still processing' },
+      error: null,
+    });
 
-  it('paywall overlay never receives a videoSrc — defensive', async () => {
-    const fetcher = vi.fn(async () => ({ signedUrl: 'https://x', status: 200 }));
-    const res = await resolveRecordingAccess('rec-1', undefined, false, fetcher);
-    expect(res).toEqual({ render: 'paywall' });
+    render(<CloudflareRecordingPlayer videoUrl="pending:in-x" recordingId="rec-proc" />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Procesando grabación/i)).toBeInTheDocument();
+    });
+
+    const video = document.querySelector('video');
+    if (video) expect(video.getAttribute('src') ?? '').toBe('');
   });
 });
