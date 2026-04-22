@@ -479,6 +479,6 @@ export default function Login() {
       </main>
 
       <LandingFooter />
-    </div>
+    </AppBackground>
   );
 }
