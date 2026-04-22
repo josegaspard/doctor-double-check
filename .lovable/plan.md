@@ -1,124 +1,52 @@
-<final-text>
-## Cierre total final, completo, sin tocar el flujo de En Vivo
+## Cambiar fondo blanco con círculos por imagen + asegurar contraste
 
-No voy a proponer cambios al reproductor/live/Daily ni a la lógica de transmisión. El cierre se enfoca en lo que sí sigue generando recomendaciones, ruido o deuda fuera de En Vivo.
+### Qué voy a hacer
 
-### 1) Correcciones reales que aún faltan en frontend
-1. **Eliminar warning activo de refs en `LanguageSwitcher`**
-   - Ajustar `src/components/settings/LanguageSwitcher.tsx` y, si hace falta, el wrapper `src/components/ui/popover.tsx`.
-   - Objetivo: quitar los warnings de `Function components cannot be given refs` en consola.
+**1. Subir tu imagen al proyecto**
 
-2. **Terminar la limpieza de logs en producción**
-   - Ya existe `src/lib/logger.ts`, pero siguen quedando ~1552 usos de `console.*` en app code.
-   - Reemplazar en frontend productivo por `logger.*` y dejar `console.error` solo donde sea realmente crítico.
-   - Prioridad alta en hooks/context/pages más visibles.
+- Copiar `46.png` a `src/assets/app-background.jpg` para que quede integrada y optimizada por el bundler.
 
-3. **Quitar los `@ts-ignore` legacy**
-   - Cambiar en:
-     - `src/pages/__tests__/Doctors.tablet.test.tsx`
-     - `src/pages/__tests__/LivesGrid.credentials.test.tsx`
-     - `src/pages/__tests__/LivesGrid.rejection.test.tsx`
-   - Usar `@ts-expect-error` con motivo explícito.
+**2. Reemplazar el fondo decorativo en `MainLayout.tsx**`
 
-4. **Conectar i18n que ya existe pero no se está usando**
-   - Ya están las keys nuevas en `src/lib/i18n/es.ts` y `en.ts`.
-   - Falta usarlas en:
-     - `src/pages/WalletLedger.tsx`
-     - `src/components/wallet/ReceiptModal.tsx`
-     - `src/components/recordings/RecordingPaywall.tsx`
-     - `src/components/recordings/HoverPlayCard.tsx`
-   - No tocaré el comportamiento live; si se decide internacionalizar `LiveProcessingOverlay`, sería solo texto, no lógica.
+- Quitar el componente `<DecorativeBackground />` (es el que dibuja los círculos de colores).
+- Cambiar el `bg-gradient-to-br from-primary/[0.02]...` del `<div>` raíz por la imagen importada como background fijo, con `background-size: cover`, `center`, y `attachment: fixed` para que no haga scroll y se vea bien en cualquier tamaño.
+- Añadir un overlay sutil oscuro encima de la imagen (ej. `bg-black/30`) para garantizar legibilidad de cards/textos sobre el fondo azul.
 
-5. **Corregir inconsistencia en compra Stripe de grabaciones**
-   - `create-recording-checkout` redirige con `?purchased=true`
-   - `RecordingPlayer` escucha `?recording_paid=success`
-   - Unificar ambos lados para que el unlock post-checkout no dependa de casualidad/realtime.
+**3. Asegurar contraste de textos y botones**
 
-6. **Arreglar el “Ledger completo” del wallet**
-   - `WalletLedger` consume `transactions` del `WalletContext`, pero el contexto solo trae 50 filas.
-   - La pantalla dice “historial completo”, pero hoy no lo es.
-   - Solución: consulta propia paginada/directa en `src/pages/WalletLedger.tsx`, manteniendo filtros, recibos y deep-links.
+Como tu imagen es azul oscuro degradado a teal, los textos directos sobre el fondo necesitan claridad. Estrategia:
 
-7. **Pulir copy y coherencia de UI en wallet/recibos**
-   - `WalletLedger` y `ReceiptModal` siguen con textos hardcoded en español.
-   - Alinear labels, estados (`initiated/paid/failed`) y CTAs con i18n y con el resto del sistema.
+- **Cards/popovers/headers/footer**: ya usan `bg-card`, `bg-background`, `bg-popover` → mantienen su contraste interno (texto oscuro sobre superficie clara). Refuerzo: subir opacidad de `bg-card/95` donde haga falta para que no se transparente la imagen detrás y se vuelva ilegible.
+- **Header**: actualmente `bg-card/95` → lo dejo igual, queda blanco translúcido sobre la imagen, perfecto contraste.
+- **Bottom nav móvil**: aseguro `bg-card` sólido (sin translucidez agresiva).
+- **Textos sueltos sobre el fondo** (títulos de página fuera de cards): repaso pages clave (`/app`, listados, etc.) y donde haya texto directo sobre el `<main>` añado wrapper con `bg-card/80 backdrop-blur` o cambio a `text-white` con `drop-shadow` cuando aplica.
+- **Botones**: las variantes (`default`, `secondary`, `outline`, `ghost`) ya tienen tokens de color sólidos, así que se ven bien. Refuerzo `variant="ghost"` que es el más débil con `hover:bg-card/80` para que no se pierda sobre el fondo.
 
-### 2) Seguridad / backend: lo que sí sigue pendiente de verdad
-8. **Endurecer storage RLS con path exacto**
-   - La migración reciente mejoró políticas, pero en varios casos sigue usando comparación por filename/fallback.
-   - Reescribir acceso en buckets sensibles para validar path completo/carpeta real:
-     - `recordings`
-     - `doctor-content`
-     - `prescriptions`
-   - Objetivo: evitar colisiones por mismo nombre de archivo entre usuarios.
+**4. Dejarte documentado dónde cambiar la imagen en el futuro**
 
-9. **Normalizar findings del scanner para que no “reaparezcan”**
-   - Varias recomendaciones ya no son bugs activos, pero siguen saliendo porque el scanner quedó desactualizado o marcado como ignored con justificación antigua.
-   - Rehacer cierre formal:
-     - rerun linter/scan
-     - actualizar finding details
-     - marcar fixed los que sí quedaron resueltos
-     - dejar ignorados solo los verdaderamente “by design”
+Para cambiar la imagen después solo abres `**src/assets/app-background.jpg**` y la reemplazas por otra con el mismo nombre, o:
 
-### 3) Cosas que te siguen apareciendo como “recomendaciones”, pero NO son nuevas correcciones del producto
-Estas no son bugs nuevos del app; son ruido recurrente del scanner/configuración si no se normalizan:
+- Sustituyes el archivo en `src/assets/`
+- O cambias el `import appBackground from '@/assets/app-background.jpg'` en `src/components/layout/MainLayout.tsx` (línea cerca de los otros imports de logos) por la nueva ruta.
 
-10. **`realtime.messages`**
-   - La recomendación puede seguir saliendo.
-   - Es un schema reservado de plataforma; no es una migración normal del repo.
-   - No lo seguiría persiguiendo como bug de app mientras el acceso real a tablas siga protegido por RLS.
+### Archivos que voy a tocar
 
-11. **Views públicas con `security_invoker = false`**
-   - `profiles_public`, `doctor_profiles_public`, `resident_profiles_public`
-   - Hay migraciones viejas que explícitamente las dejaron así para que la búsqueda pública no se rompa.
-   - Si el scanner las vuelve a reportar, no significa que haya aparecido un bug nuevo.
+- `src/assets/app-background.jpg` (nuevo, copia de tu upload)
+- `src/components/layout/MainLayout.tsx` (quitar `DecorativeBackground`, aplicar imagen + overlay)
+- `src/components/layout/DecorativeBackground.tsx` (lo dejo en disco pero ya no se usa; si prefieres lo borro)
+- `src/index.css` (pequeño ajuste si hace falta una utilidad `.app-bg` reutilizable, opcional)
 
-12. **Warnings “by design” del linter/security**
-   - `ad_events` insert abierto para analytics
-   - `ad_config` / `ad_placements` lectura pública para servir anuncios
-   - `avatars` / `thumbnails` públicos
-   - `pg_net` en `public` si se decide mantener por compatibilidad
-   - protección de contraseñas filtradas desactivada, si se mantiene esa decisión
-   - Si no quieres verlos más, hay que cerrar el ciclo de findings; no seguir corrigiendo UI/backend una y otra vez.
+### Lo que NO voy a tocar
 
-13. **Los chips/sugerencias de Lovable de tus screenshots**
-   - “Agregar auditoría de seguridad UI”, “Create admin role routing map”, etc.
-   - No encontré esas cadenas en el código.
-   - Eso apunta a sugerencias/meta-UI de la herramienta, no a tareas pendientes dentro de tu app.
+- Nada del flujo de En Vivo (`LiveStreamView`, `DailyVideoPlayer`, `LivePreviewPlayer`, etc.).
+- Nada de `LandingFooter` / página `/` pública (esa tiene su propio diseño).
+- Tokens de color del design system (los mantengo intactos).
 
-### 4) Validación final para cerrar de verdad
-14. **QA final sin tocar En Vivo**
-   - Revisar consola en `/app`, `/wallet`, `/wallet/ledger`, `/recordings`, `/recording/:id`, admin screens.
-   - Confirmar:
-     - 0 warnings de refs
-     - ledger realmente completo/paginado
-     - recibos y filtros correctos
-     - compra Stripe de grabación vuelve y desbloquea correctamente
-     - i18n conectado
-     - hover preview/paywall/download guardrails siguen bien
+### Resultado
 
-15. **Cierre de auditoría**
-   - Re-ejecutar linter + security scan
-   - Marcar fixed/ignored correctamente
-   - Dejar documentado qué findings son:
-     - resueltos
-     - by design
-     - platform-level/no self-serve
+- Toda la app autenticada (`/app`, `/lives`, `/recordings`, `/chat`, `/wallet`, etc.) carga con tu imagen azul como fondo fijo.
+- Cards, header, bottom nav y modales mantienen contraste perfecto.
+- El flujo de En Vivo se conserva idéntico.
+- Para cambiar la imagen luego: reemplaza `src/assets/app-background.jpg`.
 
-## Lista final, completa, sin añadir más después
-### Pendiente real para corregir
-- Warning de refs en `LanguageSwitcher` / `Popover`
-- Limpieza real de `console.*`
-- `@ts-ignore` legacy
-- i18n conectado en wallet/paywall/receipt/hover preview
-- Redirect mismatch Stripe grabaciones
-- Wallet ledger no es realmente completo
-- Storage RLS con validación exacta de path
-- Normalizar findings del scanner para que no parezca que “siguen saliendo cosas”
-
-### No seguir persiguiendo como bugs nuevos
-- `realtime.messages` reportado por scanner
-- views públicas con `security_invoker=false` por diseño
-- warnings by design de ads/storage/extensiones/auth config
-- chips/sugerencias visuales de Lovable fuera del repo
-</final-text>
+Perfecto, ahora quiero que guardes esta parte como un commit o le pongas nombre a cómo esta ahora antes de la imagen para que en algún momento que mi cliente quiera volver a blanco, todo vuelva a como esta ahora, o si no agrega una parte del super administrador 
