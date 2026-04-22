@@ -1589,6 +1589,6 @@ export default function Onboarding() {
           <p className="text-xs text-muted-foreground">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
         </div>
       </footer>
-    </div>
+    </AppBackground>
   );
 }
