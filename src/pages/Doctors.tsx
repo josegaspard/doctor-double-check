@@ -801,29 +801,64 @@ export default function Doctors() {
                             )}
                           </div>
 
-                          {/* Name + specialty + badge */}
+                          {/* Name + specialty + badge — wrap-friendly para tablet/móvil */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mb-0.5 min-w-0">
+                              <h3 className="font-semibold text-sm truncate min-w-0 max-w-full group-hover:text-primary transition-colors">
                                 {doctor.name || 'Doctor'}
                               </h3>
                               {doctor.is_identity_verified && (
-                                <CheckCircle className="w-3.5 h-3.5 text-success flex-shrink-0" />
+                                <CheckCircle
+                                  className="w-3.5 h-3.5 text-success shrink-0"
+                                  aria-label={t('doctors.identityVerified') || 'Identidad verificada'}
+                                />
                               )}
                             </div>
-                            <p className="text-xs text-primary/80 font-medium mb-1 truncate">
+                            <p className="text-xs text-primary/80 font-medium mb-1 line-clamp-1 sm:line-clamp-2">
                               {doctor.specialty}
                             </p>
-                            <div className="flex items-center gap-1.5">
-                              <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
+                            <div className="flex flex-wrap items-center gap-1 max-w-full">
+                              <DoctorBadge
+                                type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)}
+                                size="sm"
+                              />
                             </div>
                           </div>
 
-                          {/* Precio visible para todos los roles */}
+                          {/* Precio visible para todos los roles — toolitp aclara si el visor no puede comprar */}
                           {doctor.consultation_fee > 0 && (
-                            <div className="flex-shrink-0 text-right">
-                              <p className="text-[10px] text-muted-foreground leading-tight">Desde</p>
-                              <PriceDisplay amount={doctor.consultation_fee} size="sm" className="font-bold text-primary" />
+                            <div
+                              className="flex-shrink-0 text-right"
+                              title={
+                                role === 'patient' || role === 'resident'
+                                  ? undefined
+                                  : (t('doctors.priceTooltip') ||
+                                      'Precio orientativo. Pacientes y residentes pueden iniciar consulta. Visitantes deben crear cuenta.')
+                              }
+                            >
+                              <p className="text-[10px] text-muted-foreground leading-tight">
+                                {t('doctors.from') || 'Desde'}
+                              </p>
+                              {role === 'resident' ? (
+                                <div className="flex flex-col items-end">
+                                  <PriceDisplay
+                                    amount={doctor.consultation_fee}
+                                    size="sm"
+                                    className="text-[10px] text-muted-foreground line-through leading-none"
+                                  />
+                                  <PriceDisplay
+                                    amount={doctor.consultation_fee * 0.5}
+                                    size="sm"
+                                    className="font-bold text-primary"
+                                  />
+                                </div>
+                              ) : (
+                                <PriceDisplay
+                                  amount={doctor.consultation_fee}
+                                  size="sm"
+                                  className="font-bold text-primary"
+                                />
+                              )}
                             </div>
                           )}
                         </div>

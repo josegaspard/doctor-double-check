@@ -13,10 +13,24 @@ import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatDistanceToNow } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
+import { formatMessagePreview } from '@/lib/utils';
 
 // Strip leading emojis from text to avoid duplicate icons
 function stripLeadingEmoji(text: string): string {
   return text.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\uFE0F]+\s*/u, '').trim();
+}
+
+/**
+ * Sanitiza el cuerpo de la notificación para evitar mostrar marcadores feos
+ * tipo "[Imagen: scan.jpg]" cuando llega una notificación de chat con archivo.
+ * Para tipo `chat_message` aplicamos `formatMessagePreview` (📷 Foto / 📎 Archivo / 📋 Receta médica).
+ */
+function getCleanNotificationBody(notification: Notification): string {
+  const raw = notification.message || '';
+  if (notification.type === 'chat_message') {
+    return formatMessagePreview(raw, 120);
+  }
+  return raw;
 }
 
 function NotificationItem({
@@ -129,7 +143,7 @@ function NotificationItem({
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-            {notification.message}
+            {getCleanNotificationBody(notification)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {formatDistanceToNow(notification.createdAt, {

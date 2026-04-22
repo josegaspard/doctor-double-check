@@ -29,10 +29,12 @@ const colorMap: Record<string, { bg: string; text: string; border: string; fill?
 };
 
 export function DoctorBadge({ rank, type, size = 'md', className }: DoctorBadgeProps) {
+  // whitespace-nowrap + shrink-0 evita que el badge se rompa o desaparezca cuando
+  // la card del doctor está apretada en tablet/móvil.
   const sizeClasses = {
-    sm: 'px-1.5 py-0.5 text-[10px] gap-0.5',
-    md: 'px-2 py-0.5 text-xs gap-1',
-    lg: 'px-3 py-1 text-sm gap-1.5',
+    sm: 'px-1.5 py-0.5 text-[10px] gap-0.5 whitespace-nowrap shrink-0',
+    md: 'px-2 py-0.5 text-xs gap-0.5 whitespace-nowrap shrink-0',
+    lg: 'px-3 py-1 text-sm gap-1 whitespace-nowrap shrink-0',
   };
 
   const iconSizes = {

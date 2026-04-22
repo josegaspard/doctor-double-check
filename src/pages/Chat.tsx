@@ -259,6 +259,10 @@ export default function Chat() {
 
   const handleFileUploaded = async (fileUrl: string, fileName: string, fileType: string) => {
     if (!selectedSession || isSessionClosed) return;
+    // Mantenemos el marcador "[Imagen: ...]" / "[Archivo: ...]" en el cuerpo crudo del
+    // mensaje (necesario para que la burbuja del chat detecte el adjunto y lo renderice
+    // como imagen/enlace), pero `formatMessagePreview` lo convierte a "📷 Foto" /
+    // "📎 nombre" en listas, notificaciones y sesiones para verse estilo redes sociales.
     const fileMessage = fileType.startsWith('image/')
       ? `📷 [Imagen: ${fileName}]\n${fileUrl}`
       : `📎 [Archivo: ${fileName}]\n${fileUrl}`;
