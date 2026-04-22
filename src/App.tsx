@@ -55,6 +55,7 @@ const LivePlayer = React.lazy(() => import("./pages/LivePlayer"));
 const RecordingsGrid = React.lazy(() => import("./pages/RecordingsGrid"));
 const RecordingPlayer = React.lazy(() => import("./pages/RecordingPlayer"));
 const Wallet = React.lazy(() => import("./pages/Wallet"));
+const WalletLedger = React.lazy(() => import("./pages/WalletLedger"));
 const Vault = React.lazy(() => import("./pages/Vault"));
 const Chat = React.lazy(() => import("./pages/Chat"));
 const DoctorProfile = React.lazy(() => import("./pages/DoctorProfile"));
