@@ -1,145 +1,131 @@
 
 
-# Plan: 5 mejoras finales — UI directorio, previews chat, badges credenciales, panel Vault audit
+# Plan: Cierre de chat gate, Vault simulator, y suite e2e completa de validación
 
-## 1. Tarjeta del doctor sin desbordes (PC/tablet/móvil)
+## 1. Compuerta de chat completa (Paywall + input deshabilitado)
 
-**Archivo: `src/pages/Doctors.tsx`** — la card de doctor actualmente apila nombre + badges + especialidad horizontalmente. En tablets (768-1024px) y móviles los badges de credenciales (Céd. Prof., COFEPRIS, identidad verificada) hacen overflow.
+**`src/components/chat/ChatMessagesPanel.tsx`** — ya tiene `hasChatEntitlement` calculado pero falta el bloqueo de UI:
 
-Cambios concretos:
-- Wrapper del header del doctor: pasar de `flex items-center gap-2` a `flex flex-wrap items-start gap-1.5 min-w-0` para permitir que los badges salten a una segunda línea si no caben.
-- Nombre del doctor: agregar `truncate min-w-0 flex-shrink` para no empujar los badges fuera.
-- Contenedor de badges: `flex flex-wrap gap-1 max-w-full` para que el grupo se reorganice.
-- Especialidad y location: `line-clamp-1` en móvil, `line-clamp-2` en `sm:` y superiores.
-- Precio: mover a su propio renglón debajo del nombre con `flex items-baseline justify-between` para que no compita con badges.
+- Importar `<PaywallModal>` y agregar estado `paywallOpen`.
+- Cuando `!hasChatEntitlement && entitlementChecked && userRole === 'patient'`:
+  - Renderizar banner sobre el input: "Necesitas una consulta activa para enviar mensajes" + botón "Comprar consulta ($X)".
+  - `<Input disabled placeholder="Compra una consulta para enviar mensajes" />`.
+  - `<Button disabled>` en Send.
+  - Click en banner abre `<PaywallModal mode="consultation" doctorId={...} fee={consultationFee} />`.
+- Tras compra exitosa (callback `onSuccess`): refetch de entitlement, cerrar modal.
+- Interceptar `onSend()`: si no hay entitlement, abrir paywall en lugar de enviar.
 
-Aplicar también a:
-- `src/components/doctor/DoctorProfileCard.tsx` (mismo patrón de wrap)
-- `src/components/doctor/DoctorBadge.tsx` — reducir `gap-1` a `gap-0.5` y agregar `whitespace-nowrap shrink-0` en cada badge interno
+Obtener `consultationFee` consultando `doctor_profiles.consultation_fee` del otro participante en el mismo `useEffect` que ya consulta entitlements.
 
-## 2. Mostrar precio de consulta para TODOS los usuarios en `/doctors`
+## 2. VaultUploadSimulator integrado en Vault.tsx
 
-**Archivo: `src/pages/Doctors.tsx`**
+**`src/pages/Vault.tsx`** — reemplazar el `<input type="file">` o botón de subida actual por `<VaultUploadSimulator onUploaded={refetch} />` dentro de un Dialog disparado por el botón "Subir archivo".
 
-Hoy hay un check tipo `if (role === 'patient' || role === 'resident')` que oculta el precio para visitantes y otros roles. Memoria registra que se ocultó en directorio público — el usuario explícitamente quiere revertir esto.
+Pasar callback `onUploaded` que refresque la lista de archivos del paciente (`fetchVaultFiles()`).
 
-Cambios:
-- Eliminar el condicional de visibilidad del precio en la card del directorio.
-- Renderizar siempre `<PriceDisplay amount={doctor.consultation_fee} className="text-base font-semibold text-primary" />` con la moneda del usuario via `useCurrency()`.
-- Agregar tooltip discreto "Precio orientativo. Pacientes y residentes pueden iniciar consulta. Visitantes deben crear cuenta." cuando el rol del visor no pueda comprar (visitante anónimo / doctor).
-- Para `resident`: mantener cálculo del 50% off visual con tachado del precio original.
+## 3-11. Suite de tests e2e completa
 
-**Actualizar memoria**: marcar `mem://style/doctors-directory-layout-design` con la nueva regla "Precio visible siempre en directorio público".
+Crear los siguientes archivos en `src/test/e2e/`:
 
-## 3. Preview del último mensaje estilo redes sociales
+### `chat-gate.test.tsx`
+- Mock auth como `patient` sin entitlement → chat con doctor → verifica:
+  - Banner "Comprar consulta" visible
+  - Input deshabilitado con placeholder correcto
+  - `<PaywallModal>` aparece al click
+  - Tras simular compra exitosa: input habilitado
 
-**Archivo: `src/lib/utils.ts`** — ya existe `formatMessagePreview` con buena lógica. Verificar que se use en TODOS los lugares donde se renderiza el último mensaje.
+### `chat-previews.test.tsx`
+- Renderiza `<ChatSessionItem>` con varios `last_message`:
+  - `📷 [Imagen: scan.jpg]` → debe renderizar `📷 Foto`
+  - `📎 [Archivo: estudio.pdf]` → `📎 estudio.pdf`
+  - `🎥 [Video: live.mp4]` → `🎥 Video`
+  - `📋 https://app/prescriptions/abc` → `📋 Receta médica`
+- Verifica que NO aparece nunca el token raw `[Imagen:`, `[Archivo:`, `[Video:`.
+- Renderiza `<NotificationBell>` con notification de `chat_message`: mismo set de assertions.
+- Verifica longitud máxima (60 chars en lista, 120 en notification body).
 
-**Auditar y corregir uso en**:
-- `src/components/chat/ChatSessionItem.tsx` — preview en lista de chats
-- `src/components/notifications/NotificationBell.tsx` — preview en notificaciones de mensaje nuevo
-- `src/hooks/useNotifications.ts` (si renderiza preview)
-- Cualquier badge "último mensaje" en `Chat.tsx`
+### `credential-popover.test.tsx`
+- Mock doctor con `cedula_status='pending'` → click en badge → popover con texto "Pendiente de revisión".
+- Mock con `status='approved'` → popover con "Verificada por Medical Masters".
+- Mock con `status='rejected'` y `rejection_reason='Documento ilegible'` → popover muestra razón + botón "Subir nuevo documento" (solo cuando `isOwner`).
 
-Asegurar que **todos** llamen `formatMessagePreview(message.content, 60)` en lugar de mostrar `message.content` raw. Esto convierte:
-- `📷 [Imagen: scan.jpg]` → `📷 Foto`
-- `📎 [Archivo: estudio.pdf]` → `📎 estudio.pdf`
-- `📋 ... /prescriptions/abc` → `📋 Receta médica`
-- `🎥 [Video: ...]` → `🎥 Video`
+### `credential-resubmit.test.tsx`
+- Mock auth como doctor logueado con `cedula_status='rejected'`, `rejection_reason='Foto borrosa'`.
+- Renderiza `<DoctorCredentials />` → verifica `<Alert variant="destructive">` con la razón completa.
+- Simula click en "Subir nuevo documento" → file input → simula selección de PDF válido → mock de upload exitoso a `doctor-credentials` bucket.
+- Verifica que tras subida se llama a `update({ cedula_status: 'pending', cedula_rejection_reason: null })`.
+- Verifica que la UI ahora muestra estado `pending` y desaparece el alert.
 
-Si algún caller muestra preview HTML, asegurar escape correcto antes del render.
+### `recording-url-expiration.test.tsx`
+- Mock signed URL con `urlGeneratedAt = Date.now() - 56*60*1000` (56 min).
+- Renderiza `<RecordingPlayer>` → simula `<video onError>` → verifica overlay "Sesión expirada" + botón "Renovar sesión".
+- Click en renovar → mock nueva signed URL → verifica que el video carga con el nuevo src.
+- Test adicional: usuario sin compra → verifica que `<RecordingPaywall>` aparece en lugar del video.
 
-## 4. UI verificación médica con estados completos (pending/approved/rejected + motivo COFEPRIS)
+### `recording-paywall-flow.test.tsx`
+- Mock auth como doctor sin compra de grabación de otro doctor.
+- Verifica que `<RecordingPaywall>` se muestra con estado wallet `idle`.
+- Click "Pagar con Wallet" → mock RPC success → verifica transición `initiated` → `paid` → player aparece sin reload.
+- Mock realtime INSERT en `purchases` → verifica que `setHasPurchased(true)` se dispara y player aparece.
 
-**Archivo nuevo: `src/components/doctor/CredentialStatusBadge.tsx`**
+### `vault-audit-access.test.tsx`
+- Mock auth como `patient1` con archivos propios → mock query `vault_audit_log` filtrada por `patient_id=patient1`.
+- Verifica que solo eventos de archivos del paciente aparecen.
+- Mock auth como `doctor1` con acceso a 1 archivo de `patient1` → mock query con filtro `actor_id=doctor1 OR file_id IN (allowed)`.
+- Verifica que doctor solo ve eventos donde fue el actor o sobre archivos a los que tiene acceso.
+- Mock filtros: rango de fecha, archivo específico, tipo de acción → verifica que la tabla se filtra correctamente.
 
-Componente unificado que recibe `{ type: 'cedula' | 'cofepris', status, value, rejectionReason }` y renderiza:
+### `vault-audit-realtime.test.tsx`
+- Renderiza `<VaultAuditPanel mode="patient" />` con lista inicial vacía.
+- Simula INSERT realtime en `vault_audit_log` con `action='access_granted'` → verifica que aparece en la tabla sin recargar.
+- Simula INSERT con `action='access_revoked'` → aparece con badge ámbar.
+- Simula INSERT con `action='viewed'` → aparece con badge azul.
+- Simula INSERT con `action='uploaded'` → aparece con badge gris.
+- Click "Exportar CSV" → mock `URL.createObjectURL` → verifica que el blob contiene exactamente los eventos visibles tras aplicar filtros (no todos).
 
-| Status | Color | Icono | Texto | Tooltip/Popover |
-|--------|-------|-------|-------|-----------------|
-| `approved` | success (verde) | ✓ ShieldCheck | "Céd. Prof." / "COFEPRIS" + valor | "Verificada por Medical Masters" |
-| `pending` | warning (ámbar) | ⏳ Clock | "Céd. en revisión" / "COFEPRIS en revisión" | "Pendiente de revisión por el equipo" |
-| `rejected` | destructive (rojo) | ✗ XCircle | "Céd. rechazada" / "COFEPRIS rechazado" | Popover con `rejectionReason` y botón "Resubir documento" si es el doctor mismo |
+### `recording-direct-url.test.tsx`
+- Simula URL pública directa: `/recording/:id` con query `?signed_url=expired_token`.
+- Mock backend devuelve 403 al fetch → verifica overlay de bloqueo.
+- Verifica que el `<video>` no recibe `src` con el token expirado.
+- Adicional: verifica que `RecordingPaywall` se renderiza si el usuario nunca compró, aun si llega con URL directa.
 
-Usar `<Popover>` (no Tooltip) para soportar contenido rico en mobile (tap para abrir).
+### `vault-audit-csv.test.tsx`
+- Renderiza panel con 10 eventos, aplica filtro de fecha = "Hoy" → solo 3 visibles.
+- Click "Exportar CSV" → captura el blob → parsea contenido → verifica exactamente 3 filas + header.
+- Verifica columnas: `fecha,accion,archivo,actor,doctor`.
+- Verifica que cada fila tiene escape correcto de comillas (CSV-safe).
 
-**Reemplazar instancias** en:
-- `src/components/doctor/DoctorBadge.tsx`
-- `src/components/doctor/DoctorProfileCard.tsx`
-- `src/pages/DoctorProfile.tsx`
-- `src/pages/Doctors.tsx`
-- `src/pages/LivesGrid.tsx` (ya tiene rejection inline pero usar el componente unificado)
-- `src/pages/UserProfile.tsx` para perfil del doctor logueado
+## Helpers compartidos
 
-**Para el doctor logueado en su perfil**: agregar sección con `<Alert variant="destructive">` si tiene credencial rechazada, mostrando:
-- Razón completa (no truncada)
-- Botón directo "Subir nuevo documento" → abre dialog de upload a `doctor-credentials` bucket
-- Marca `cedula_status='pending'` o `cofepris_status='pending'` al re-subir y limpia `rejection_reason`
-
-## 5. Panel de auditoría del Vault con filtros
-
-**Archivo nuevo: `src/components/vault/VaultAuditPanel.tsx`**
-
-Tabla con columnas:
-- Fecha (formato `dd MMM yyyy HH:mm`)
-- Acción (badge color-coded): `access_granted` (verde), `access_revoked` (ámbar), `access_denied` (rojo), `viewed` (azul), `downloaded` (azul), `uploaded` (gris)
-- Archivo (nombre clickable que abre preview)
-- Actor (nombre + avatar pequeño)
-- Doctor (si aplica, desde `metadata.doctor_id`)
-
-**Filtros** (en panel superior):
-- Date range picker con presets: Hoy, 7 días, 30 días, Personalizado
-- Select por archivo: dropdown con archivos del paciente/doctor actual
-- Select por acción: multi-select de tipos
-- Búsqueda libre por nombre de actor
-
-**Datos**: query a `vault_audit_log` con joins:
-```sql
-SELECT val.*, vf.file_name, p_actor.name as actor_name, p_actor.avatar_url
-FROM vault_audit_log val
-LEFT JOIN vault_files vf ON vf.id = val.file_id
-LEFT JOIN profiles p_actor ON p_actor.id = val.actor_id
-WHERE val.patient_id = $current_user OR val.actor_id = $current_user
-ORDER BY val.created_at DESC
-LIMIT 100
-```
-
-**RLS**: la tabla ya tiene políticas que permiten al paciente ver eventos sobre sus archivos y al doctor ver eventos donde él es el actor — verificar y ajustar si falta.
-
-**Realtime**: suscripción a INSERT en `vault_audit_log` filtrada por `patient_id=auth.uid()` para refrescar la tabla en vivo.
-
-**Export CSV**: botón "Exportar CSV" que descarga los eventos visibles con filtros aplicados (reusa lógica de `lib/exportClinicalSummary.ts`).
-
-**Integrar en**:
-- `src/pages/Vault.tsx` — pestaña nueva "Auditoría" para el paciente
-- `src/pages/DoctorVault.tsx` — pestaña "Mi actividad" para el doctor (filtra por `actor_id=auth.uid()`)
+**Extender `src/test/e2e/helpers.tsx`** con:
+- `mockSupabaseQuery(table, response)` — interceptor genérico para `from().select().eq().maybeSingle()`.
+- `mockRealtimeChannel(table, events[])` — emite eventos `postgres_changes` simulados.
+- `mockUpload(bucket, success)` — simula upload con `onprogress` callbacks.
+- `mockSignedUrl(path, expiresIn)` — devuelve URL falsa con TTL controlado.
 
 ## Archivos tocados
 
-**Nuevos:**
-1. `src/components/doctor/CredentialStatusBadge.tsx`
-2. `src/components/vault/VaultAuditPanel.tsx`
-
 **Editados:**
-3. `src/pages/Doctors.tsx` — wrap badges, mostrar precio universal
-4. `src/components/doctor/DoctorProfileCard.tsx` — wrap layout, usar `CredentialStatusBadge`
-5. `src/components/doctor/DoctorBadge.tsx` — usar `CredentialStatusBadge`, gap reducido
-6. `src/pages/DoctorProfile.tsx` — usar `CredentialStatusBadge` + alert para rechazos del propio doctor
-7. `src/pages/LivesGrid.tsx` — sustituir badges custom por `CredentialStatusBadge`
-8. `src/pages/UserProfile.tsx` — alert con resubida si credencial rechazada
-9. `src/components/chat/ChatSessionItem.tsx` — usar `formatMessagePreview` en último mensaje
-10. `src/components/notifications/NotificationBell.tsx` — usar `formatMessagePreview`
-11. `src/pages/Vault.tsx` — agregar pestaña "Auditoría" con `<VaultAuditPanel mode="patient" />`
-12. `src/pages/DoctorVault.tsx` — agregar pestaña "Mi actividad" con `<VaultAuditPanel mode="doctor" />`
-13. `mem://style/doctors-directory-layout-design` — actualizar regla de precio visible
+1. `src/components/chat/ChatMessagesPanel.tsx` — paywall + input disabled cuando `!hasChatEntitlement`
+2. `src/pages/Vault.tsx` — integrar `<VaultUploadSimulator>`
+3. `src/test/e2e/helpers.tsx` — helpers de mock para Supabase queries/realtime/upload/signed URLs
 
-**Sin migraciones SQL** — `vault_audit_log` ya existe con trigger `trg_vault_access_audit` activo.
+**Nuevos tests:**
+4. `src/test/e2e/chat-gate.test.tsx`
+5. `src/test/e2e/chat-previews.test.tsx`
+6. `src/test/e2e/credential-popover.test.tsx`
+7. `src/test/e2e/credential-resubmit.test.tsx`
+8. `src/test/e2e/recording-url-expiration.test.tsx`
+9. `src/test/e2e/recording-paywall-flow.test.tsx`
+10. `src/test/e2e/vault-audit-access.test.tsx`
+11. `src/test/e2e/vault-audit-realtime.test.tsx`
+12. `src/test/e2e/recording-direct-url.test.tsx`
+13. `src/test/e2e/vault-audit-csv.test.tsx`
 
 ## Resultado garantizado
 
-- Cards de doctores fluyen correctamente en cualquier tamaño de pantalla; badges saltan de línea sin desbordes ni truncado feo.
-- Precio del doctor visible para visitantes, pacientes, residentes y otros doctores en `/doctors`, con tooltip aclaratorio del descuento de residentes.
-- Lista de chats y notificaciones muestran previews limpios estilo WhatsApp ("📷 Foto", "📋 Receta médica", "📎 estudio.pdf") en lugar de marcadores raw.
-- Cada credencial (Cédula y COFEPRIS) muestra estado visual claro con color, ícono y popover con motivo de rechazo; doctor puede resubir documento directamente desde su perfil.
-- Paciente y doctor cuentan con panel de auditoría del Vault con tabla filtrable por fecha/archivo/acción, refresh en vivo y export a CSV.
+- Pacientes sin entitlement no pueden enviar mensajes; ven banner + paywall y, tras pagar, el chat se desbloquea sin recarga.
+- Subida al Vault siempre pasa por el simulator con progreso real, validación MIME y confirmación explícita de permisos por doctor.
+- Suite e2e cubre los 9 flujos solicitados: chat gate, previews limpios, popover de credenciales con sus 3 estados, resubida del doctor, expiración de URL del player, paywall de grabaciones, auditoría con permisos correctos, realtime + CSV de auditoría, y bloqueo de URL directa expirada.
+- Cualquier regresión futura en estos flujos rompe CI inmediatamente.
 
