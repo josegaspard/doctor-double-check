@@ -1,52 +1,97 @@
-## Cambiar fondo blanco con círculos por imagen + asegurar contraste
 
-### Qué voy a hacer
 
-**1. Subir tu imagen al proyecto**
+## Aplicar el fondo azul en TODAS las pantallas + contraste real garantizado
 
-- Copiar `46.png` a `src/assets/app-background.jpg` para que quede integrada y optimizada por el bundler.
+### Problema
+1. Login, Onboarding, ResetPassword, EmailConfirmed, RoleSelector, VerificationPending, NotFound, AccessDenied **NO usan `MainLayout`**, así que siguen con `bg-background` blanco. El fondo nuevo solo aplica en pantallas autenticadas.
+2. Las reglas de contraste actuales en `index.css` son muy específicas (`.app-bg-image > main > div > h1`), por eso muchos títulos siguen oscuros sobre el azul.
+3. Botones `ghost` y `outline` y links normales no tienen reglas de contraste sobre fondo azul.
 
-**2. Reemplazar el fondo decorativo en `MainLayout.tsx**`
+### Solución (sin tocar En Vivo)
 
-- Quitar el componente `<DecorativeBackground />` (es el que dibuja los círculos de colores).
-- Cambiar el `bg-gradient-to-br from-primary/[0.02]...` del `<div>` raíz por la imagen importada como background fijo, con `background-size: cover`, `center`, y `attachment: fixed` para que no haga scroll y se vea bien en cualquier tamaño.
-- Añadir un overlay sutil oscuro encima de la imagen (ej. `bg-black/30`) para garantizar legibilidad de cards/textos sobre el fondo azul.
+**1. Crear un wrapper único `AppBackground`**
+- Nuevo: `src/components/layout/AppBackground.tsx`
+- Encapsula la lógica del toggle `app_background`, la imagen, el overlay y aplica la clase `.app-bg-image` al root.
+- `MainLayout` y todas las páginas standalone (Login, Onboarding, etc.) lo usan.
 
-**3. Asegurar contraste de textos y botones**
+**2. Envolver TODAS las pantallas standalone con el fondo**
+Reemplazar `<div className="min-h-screen bg-background ...">` por `<AppBackground className="min-h-screen ...">` en:
+- `src/pages/Login.tsx` (quita `DecorativeBackground` y `bg-background`)
+- `src/pages/Onboarding.tsx` (3 returns)
+- `src/pages/ResetPassword.tsx` (2 returns)
+- `src/pages/EmailConfirmed.tsx`
+- `src/pages/RoleSelector.tsx` (quita `DecorativeBackground`)
+- `src/pages/VerificationPending.tsx` (2 returns)
+- `src/pages/AccessDenied.tsx`
+- `src/pages/NotFound.tsx` (cambia `bg-muted` por `AppBackground`)
 
-Como tu imagen es azul oscuro degradado a teal, los textos directos sobre el fondo necesitan claridad. Estrategia:
+**Resultado:** cero pantallas en blanco. La imagen azul es global en TODA la app (excepto Landing pública y En Vivo, que tienen su propio fondo intencional).
 
-- **Cards/popovers/headers/footer**: ya usan `bg-card`, `bg-background`, `bg-popover` → mantienen su contraste interno (texto oscuro sobre superficie clara). Refuerzo: subir opacidad de `bg-card/95` donde haga falta para que no se transparente la imagen detrás y se vuelva ilegible.
-- **Header**: actualmente `bg-card/95` → lo dejo igual, queda blanco translúcido sobre la imagen, perfecto contraste.
-- **Bottom nav móvil**: aseguro `bg-card` sólido (sin translucidez agresiva).
-- **Textos sueltos sobre el fondo** (títulos de página fuera de cards): repaso pages clave (`/app`, listados, etc.) y donde haya texto directo sobre el `<main>` añado wrapper con `bg-card/80 backdrop-blur` o cambio a `text-white` con `drop-shadow` cuando aplica.
-- **Botones**: las variantes (`default`, `secondary`, `outline`, `ghost`) ya tienen tokens de color sólidos, así que se ven bien. Refuerzo `variant="ghost"` que es el más débil con `hover:bg-card/80` para que no se pierda sobre el fondo.
+**3. Endurecer las reglas de contraste en `src/index.css`**
+Reescribir el bloque `.app-bg-image` para garantizar contraste sin importar la profundidad del DOM:
 
-**4. Dejarte documentado dónde cambiar la imagen en el futuro**
+```css
+/* Todos los títulos sueltos (no dentro de card/popover/dialog) en blanco */
+.app-bg-image h1:not([class*="bg-card"] *):not([class*="bg-popover"] *):not([class*="bg-background"] *),
+.app-bg-image h2:not([class*="bg-card"] *):not([class*="bg-popover"] *):not([class*="bg-background"] *),
+.app-bg-image h3:not([class*="bg-card"] *):not([class*="bg-popover"] *):not([class*="bg-background"] *) {
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
 
-Para cambiar la imagen después solo abres `**src/assets/app-background.jpg**` y la reemplazas por otra con el mismo nombre, o:
+/* Texto muted-foreground suelto → blanco semi */
+.app-bg-image > main .text-muted-foreground:not([class*="bg-card"] *):not([class*="bg-popover"] *) { 
+  color: rgba(255,255,255,0.85) !important; 
+}
 
-- Sustituyes el archivo en `src/assets/`
-- O cambias el `import appBackground from '@/assets/app-background.jpg'` en `src/components/layout/MainLayout.tsx` (línea cerca de los otros imports de logos) por la nueva ruta.
+/* Links sueltos */
+.app-bg-image > main a:not([class*="bg-"] *):not(.btn) { 
+  color: #93c5fd; 
+}
+.app-bg-image > main a:not([class*="bg-"] *):hover { color: #fff; }
 
-### Archivos que voy a tocar
+/* Botones ghost/outline sobre fondo azul */
+.app-bg-image button[class*="hover:bg-accent"]:not([class*="bg-card"] *) {
+  color: #fff;
+  border-color: rgba(255,255,255,0.25);
+}
+.app-bg-image button[class*="hover:bg-accent"]:hover:not([class*="bg-card"] *) {
+  background-color: rgba(255,255,255,0.12) !important;
+  color: #fff !important;
+}
 
-- `src/assets/app-background.jpg` (nuevo, copia de tu upload)
-- `src/components/layout/MainLayout.tsx` (quitar `DecorativeBackground`, aplicar imagen + overlay)
-- `src/components/layout/DecorativeBackground.tsx` (lo dejo en disco pero ya no se usa; si prefieres lo borro)
-- `src/index.css` (pequeño ajuste si hace falta una utilidad `.app-bg` reutilizable, opcional)
+/* Skeletons sueltos: tono claro para que se vean sobre azul */
+.app-bg-image > main .bg-muted:not([class*="bg-card"] *) { 
+  background-color: rgba(255,255,255,0.12) !important; 
+}
+```
 
-### Lo que NO voy a tocar
+**4. Garantizar que cards/dialogs/popovers sigan siendo sólidos blancos (con texto oscuro)**
+- Subir `bg-card/95` → `bg-card` en componentes que ya estaban semitransparentes y se vuelven ilegibles sobre azul (revisión puntual).
+- Los Dialog/Sheet/Popover ya usan `bg-popover` sólido → ok.
 
-- Nada del flujo de En Vivo (`LiveStreamView`, `DailyVideoPlayer`, `LivePreviewPlayer`, etc.).
-- Nada de `LandingFooter` / página `/` pública (esa tiene su propio diseño).
-- Tokens de color del design system (los mantengo intactos).
+**5. NotFound: alinear al estilo del resto**
+- Cambiar `bg-muted` por `AppBackground`, texto blanco, botón outline con bordes blancos.
 
-### Resultado
+### Cómo cambiar la imagen en el futuro
+Sigue siendo el mismo punto único:
+- **`src/assets/app-background.jpg`** (reemplazas el archivo) o
+- Cambias el `import appBackground` en **`src/components/layout/AppBackground.tsx`** (ahora la fuente única, ya no en `MainLayout`).
 
-- Toda la app autenticada (`/app`, `/lives`, `/recordings`, `/chat`, `/wallet`, etc.) carga con tu imagen azul como fondo fijo.
-- Cards, header, bottom nav y modales mantienen contraste perfecto.
-- El flujo de En Vivo se conserva idéntico.
-- Para cambiar la imagen luego: reemplaza `src/assets/app-background.jpg`.
+Y para volver a blanco totalmente: **Admin → Site Settings → Toggles → Fondo de la aplicación → Blanco (clásico)** (este toggle ya existe).
 
-Perfecto, ahora quiero que guardes esta parte como un commit o le pongas nombre a cómo esta ahora antes de la imagen para que en algún momento que mi cliente quiera volver a blanco, todo vuelva a como esta ahora, o si no agrega una parte del super administrador 
+### Lo que NO toco
+- En Vivo (`LiveStreamView`, `DailyVideoPlayer`, `LivePreviewPlayer`, `LivesGrid`, `LivePlayer`).
+- Landing pública (`/`) — ya tiene su gradient azul propio.
+- Tokens del design system (`--primary`, `--card`, etc.).
+- Lógica de auth, pagos, video, etc.
+
+### Archivos modificados
+- **Nuevo:** `src/components/layout/AppBackground.tsx`
+- **Editados:** `src/components/layout/MainLayout.tsx` (usa el wrapper), `src/index.css` (reglas reforzadas), `src/pages/Login.tsx`, `src/pages/Onboarding.tsx`, `src/pages/ResetPassword.tsx`, `src/pages/EmailConfirmed.tsx`, `src/pages/RoleSelector.tsx`, `src/pages/VerificationPending.tsx`, `src/pages/AccessDenied.tsx`, `src/pages/NotFound.tsx`
+
+### Resultado final
+- **Cero pantallas blancas.** Login/registro/onboarding/reset/404/etc. todas con fondo azul.
+- **Contraste real:** títulos blancos con sombra, botones ghost legibles, links visibles, cards/modales con su blanco interno intacto.
+- Toggle de admin sigue funcionando para volver a blanco clásico cuando el cliente lo pida.
+
