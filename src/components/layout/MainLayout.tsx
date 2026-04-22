@@ -794,7 +794,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
       {/* Unified Footer - hidden on mobile (bottom nav takes its place) */}
       <UnifiedFooter variant="app" />
-    </div>
+    </AppBackground>
   );
 });
 
