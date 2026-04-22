@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
-import { DecorativeBackground } from '@/components/layout/DecorativeBackground';
+import { AppBackground } from '@/components/layout/AppBackground';
 
 export default function RoleSelector() {
   const navigate = useNavigate();
@@ -103,8 +103,7 @@ export default function RoleSelector() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
-      <DecorativeBackground />
+    <AppBackground className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="relative z-10 border-b border-border bg-dark">
         <div className="container mx-auto px-4 py-4">
@@ -196,6 +195,6 @@ export default function RoleSelector() {
           </p>
         </div>
       </footer>
-    </div>
+    </AppBackground>
   );
 }

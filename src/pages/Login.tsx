@@ -21,7 +21,7 @@ import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { PasswordStrength, getPasswordStrength } from '@/components/ui/password-strength';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 import { LandingFooter } from '@/components/landing/LandingFooter';
-import { DecorativeBackground } from '@/components/layout/DecorativeBackground';
+import { AppBackground } from '@/components/layout/AppBackground';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -184,8 +184,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
-      <DecorativeBackground />
+    <AppBackground className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="relative z-10 border-b border-border bg-dark">
         <div className="container mx-auto px-4 py-4">
