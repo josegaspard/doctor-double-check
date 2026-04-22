@@ -110,7 +110,7 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
             )}
           </div>
           {/* Verified credentials with status */}
-          {(live.doctorCedula || live.doctorCofepris) && (
+          {(live.doctorCedula || live.doctorCofepris) ? (
             <div className="flex flex-wrap gap-1 mt-2">
               <CredentialStatusBadge
                 type="cedula"
@@ -127,6 +127,13 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
                 size="xs"
               />
             </div>
+          ) : (
+            <div className="flex flex-wrap gap-1 mt-2">
+              <Badge variant="outline" className="text-[10px] gap-0.5 text-muted-foreground h-4 px-1.5 py-0">
+                <Clock className="w-2.5 h-2.5" />
+                Verificando credenciales…
+              </Badge>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -136,7 +143,7 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
 });
 
 export default function LivesGrid() {
-  const { lives, isLoading } = useLives();
+  const { lives, isLoading, refreshLives } = useLives();
   const { role, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const { getSubscription } = useSubscriptions();
@@ -144,6 +151,13 @@ export default function LivesGrid() {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+
+  // Force a fresh fetch on mount so credential fields are populated
+  // even if the cache was filled before this version was deployed.
+  useEffect(() => {
+    refreshLives();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
 

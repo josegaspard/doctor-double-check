@@ -111,13 +111,33 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   const profileCache = useRef<Map<string, { name: string; avatar_url?: string }>>(new Map());
   const doctorProfileCache = useRef<Map<string, {
     followers_count: number;
-    cedula_profesional?: string;
-    cofepris_permit?: string;
+    cedula_profesional?: string | null;
+    cofepris_permit?: string | null;
     cedula_status?: 'pending' | 'approved' | 'rejected' | null;
     cedula_rejection_reason?: string | null;
     cofepris_status?: 'pending' | 'approved' | 'rejected' | null;
     cofepris_rejection_reason?: string | null;
   }>>(new Map());
+
+  // Cache versioning: invalidates stale caches that lack credential fields
+  const PROFILE_CACHE_VERSION = 'v2-credentials';
+  const cacheVersionChecked = useRef(false);
+  if (!cacheVersionChecked.current) {
+    cacheVersionChecked.current = true;
+    try {
+      const stored = typeof window !== 'undefined' ? sessionStorage.getItem('lives_profile_cache_version') : null;
+      if (stored !== PROFILE_CACHE_VERSION) {
+        doctorProfileCache.current.clear();
+        profileCache.current.clear();
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('lives_profile_cache_version', PROFILE_CACHE_VERSION);
+        }
+      }
+    } catch (e) {
+      // sessionStorage unavailable — clear anyway to be safe
+      doctorProfileCache.current.clear();
+    }
+  }
 
   const fetchLives = useCallback(async (force = false) => {
     const now = Date.now();
@@ -142,32 +162,42 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       }
       
       if (livesData && livesData.length > 0) {
-        // Get unique doctor IDs that aren't in cache
+        // Get unique doctor IDs that aren't in cache OR are cached but missing credential fields
         const doctorIds = [...new Set(livesData.map(l => l.doctor_id))];
-        const uncachedIds = doctorIds.filter(id => !profileCache.current.has(id));
+        const needsFetch = (id: string) => {
+          const cached = doctorProfileCache.current.get(id);
+          // Refetch if missing entirely or if credential field is undefined (not null — null = fetched but empty)
+          return !cached || cached.cedula_profesional === undefined;
+        };
+        const uncachedIds = doctorIds.filter(needsFetch);
+        const uncachedProfileIds = doctorIds.filter(id => !profileCache.current.has(id));
         
         // Only fetch profiles not in cache
-        if (uncachedIds.length > 0) {
+        if (uncachedIds.length > 0 || uncachedProfileIds.length > 0) {
           const [profilesResult, doctorProfilesResult] = await Promise.all([
-            supabase
-              .from('profiles_public')
-              .select('id, name, avatar_url')
-              .in('id', uncachedIds),
-            supabase
-              .from('doctor_profiles_public')
-              .select('user_id, followers_count, specialty, cedula_profesional, cofepris_permit, cedula_status, cedula_rejection_reason, cofepris_status, cofepris_rejection_reason')
-              .in('user_id', uncachedIds),
+            uncachedProfileIds.length > 0
+              ? supabase
+                  .from('profiles_public')
+                  .select('id, name, avatar_url')
+                  .in('id', uncachedProfileIds)
+              : Promise.resolve({ data: [] as any[] }),
+            uncachedIds.length > 0
+              ? supabase
+                  .from('doctor_profiles_public')
+                  .select('user_id, followers_count, specialty, cedula_profesional, cofepris_permit, cedula_status, cedula_rejection_reason, cofepris_status, cofepris_rejection_reason')
+                  .in('user_id', uncachedIds)
+              : Promise.resolve({ data: [] as any[] }),
           ]);
 
           // Update caches
-          profilesResult.data?.forEach(p => {
+          profilesResult.data?.forEach((p: any) => {
             profileCache.current.set(p.id, { name: p.name || 'Doctor', avatar_url: p.avatar_url || undefined });
           });
           doctorProfilesResult.data?.forEach((d: any) => {
             doctorProfileCache.current.set(d.user_id, {
               followers_count: d.followers_count || 0,
-              cedula_profesional: d.cedula_profesional || undefined,
-              cofepris_permit: d.cofepris_permit || undefined,
+              cedula_profesional: d.cedula_profesional ?? null,
+              cofepris_permit: d.cofepris_permit ?? null,
               cedula_status: d.cedula_status || null,
               cedula_rejection_reason: d.cedula_rejection_reason || null,
               cofepris_status: d.cofepris_status || null,
