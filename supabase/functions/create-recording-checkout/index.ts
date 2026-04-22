@@ -112,8 +112,8 @@ Deno.serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/recording/${recordingId}?purchased=true`,
-      cancel_url: `${req.headers.get("origin")}/recordings?canceled=true`,
+      success_url: `${req.headers.get("origin")}/recording/${recordingId}?recording_paid=success`,
+      cancel_url: `${req.headers.get("origin")}/recordings?recording_paid=canceled`,
       metadata: {
         user_id: user.id,
         recording_id: recordingId,
