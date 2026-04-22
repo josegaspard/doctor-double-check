@@ -328,6 +328,19 @@ export default function LivesGrid() {
           </div>
         )}
 
+        {/* Credentials load error banner */}
+        {credentialsLoadError && filteredLives.length > 0 && (
+          <div className="mb-3 p-2 rounded-md bg-destructive/10 border border-destructive/30 flex items-center justify-between gap-2">
+            <span className="text-xs text-destructive flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5" />
+              No se pudieron cargar todas las credenciales
+            </span>
+            <Button size="sm" variant="outline" onClick={retryCredentials} className="h-7 text-xs">
+              <RefreshCw className="w-3 h-3 mr-1" /> Reintentar
+            </Button>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {[...Array(8)].map((_, i) => (
@@ -403,6 +416,9 @@ export default function LivesGrid() {
 
         {toggles.show_news_section && <NewsFeed />}
       </div>
+
+      {/* Admin-only debug panel for credential cache visibility */}
+      <LivesDebugPanel />
     </MainLayout>
   );
 }
