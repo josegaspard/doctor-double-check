@@ -144,6 +144,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ad_creatives_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ad_creatives_placement_id_fkey"
             columns: ["placement_id"]
             isOneToOne: false
@@ -195,6 +202,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ad_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ad_events_creative_id_fkey"
             columns: ["creative_id"]
             isOneToOne: false
@@ -237,6 +251,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "ad_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_payments_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns_public"
             referencedColumns: ["id"]
           },
         ]
@@ -3651,6 +3672,42 @@ export type Database = {
       }
     }
     Views: {
+      ad_campaigns_public: {
+        Row: {
+          created_at: string | null
+          end_date: string | null
+          id: string | null
+          name: string | null
+          placement_ids: string[] | null
+          start_date: string | null
+          status: string | null
+          target_language: string | null
+          target_roles: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string | null
+          name?: string | null
+          placement_ids?: string[] | null
+          start_date?: string | null
+          status?: string | null
+          target_language?: string | null
+          target_roles?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string | null
+          name?: string | null
+          placement_ids?: string[] | null
+          start_date?: string | null
+          status?: string | null
+          target_language?: string | null
+          target_roles?: string[] | null
+        }
+        Relationships: []
+      }
       doctor_profiles_public: {
         Row: {
           available_for_clinical_sessions: boolean | null
