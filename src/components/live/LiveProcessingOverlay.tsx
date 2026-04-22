@@ -38,14 +38,14 @@ export function LiveProcessingOverlay({
 
   const refetchStatus = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('lives')
-        .select('recording_status, recording_id, status')
+        .select('*')
         .eq('id', liveId)
         .maybeSingle();
       if (error) throw error;
       if (data) {
-        const next = (data.recording_status as LiveRecordingStatus) ?? 'none';
+        const next = ((data as any).recording_status as LiveRecordingStatus) ?? 'none';
         onStatusChange?.(next, (data as any).recording_id ?? null);
       }
     } catch (e) {
