@@ -3,11 +3,31 @@
  * without rendering all rows in the DOM, and that filtering still works
  * end-to-end on the underlying dataset (not on the virtualized window).
  */
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useLayoutEffect } from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { makeAuditBurst, resetFixtureIds, type FixtureVaultAuditEvent } from './fixtures';
+
+// jsdom doesn't run layout — stub the parent's measurement so the virtualizer
+// can compute a window of visible rows.
+const CONTAINER_HEIGHT = 600;
+function stubElementSize(el: HTMLElement, height: number) {
+  Object.defineProperty(el, 'clientHeight', { configurable: true, value: height });
+  Object.defineProperty(el, 'offsetHeight', { configurable: true, value: height });
+  el.getBoundingClientRect = () =>
+    ({
+      width: 800,
+      height,
+      top: 0,
+      left: 0,
+      right: 800,
+      bottom: height,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    }) as DOMRect;
+}
 
 /** Minimal virtualized table that mirrors the panel's behavior. */
 function VirtualizedAuditTable({
