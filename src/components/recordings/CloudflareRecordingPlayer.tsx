@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import Hls from 'hls.js';
 import {
   PlayCircle,
@@ -30,6 +32,7 @@ export function CloudflareRecordingPlayer({
   onTimeUpdate: onTimeUpdateProp,
   autoPlay,
 }: CloudflareRecordingPlayerProps) {
+  const { user, supabaseUser } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -421,6 +424,8 @@ export function CloudflareRecordingPlayer({
           </Button>
         </div>
       </div>
+
+      <DynamicWatermark email={user?.email} userId={supabaseUser?.id} />
     </div>
   );
 }

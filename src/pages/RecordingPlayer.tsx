@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { RecordingVideoPlayer } from '@/components/recordings/RecordingVideoPlayer';
+import { RecordingPaywall } from '@/components/recordings/RecordingPaywall';
 import { AdPreroll } from '@/components/ads/AdPreroll';
 import { RecordingChatReplay } from '@/components/recordings/RecordingChatReplay';
 import {
@@ -50,6 +51,42 @@ export default function RecordingPlayer() {
   const handlePrerollComplete = useCallback(() => {
     setPrerollDone(true);
   }, []);
+
+  const refreshPurchase = useCallback(async () => {
+    if (!id || !supabaseUser?.id) return;
+    const { data } = await supabase
+      .from('purchases')
+      .select('id')
+      .eq('user_id', supabaseUser.id)
+      .eq('recording_id', id)
+      .maybeSingle();
+    setHasPurchased(!!data);
+  }, [id, supabaseUser?.id]);
+
+  // Realtime: detect Stripe webhook -> purchase row insert and unlock player without reload
+  useEffect(() => {
+    if (!supabaseUser?.id || !id || hasPurchased) return;
+    const channel = supabase
+      .channel(`purchases-${supabaseUser.id}-${id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'purchases', filter: `user_id=eq.${supabaseUser.id}` },
+        (payload: any) => {
+          if (payload.new?.recording_id === id) setHasPurchased(true);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [supabaseUser?.id, id, hasPurchased]);
+
+  // Auto-confirm wallet/Stripe redirect (?recording_paid=success)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('recording_paid') === 'success') {
+      refreshPurchase();
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [refreshPurchase]);
 
   // Fetch recording + check purchase in parallel
   useEffect(() => {
@@ -156,15 +193,17 @@ export default function RecordingPlayer() {
   if (!hasAccess()) {
     return (
       <MainLayout>
-        <div className="container mx-auto px-4 py-12 text-center">
-          <Lock className="w-16 h-16 mx-auto text-premium/50 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Acceso restringido</h2>
-          <p className="text-muted-foreground mb-4">No has comprado esta grabación</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button onClick={() => navigate('/recordings')}>Ver Catálogo</Button>
-            <Button variant="outline" onClick={() => navigate('/wallet')}>Recargar Wallet</Button>
-          </div>
-        </div>
+        <RecordingPaywall
+          recordingId={recording.id}
+          title={recording.title}
+          doctorName={recording.doctorName}
+          specialty={recording.specialty}
+          price={recording.price}
+          durationSeconds={recording.duration}
+          thumbnailUrl={recording.thumbnailUrl}
+          onPaid={refreshPurchase}
+          onBack={() => navigate('/recordings')}
+        />
       </MainLayout>
     );
   }
