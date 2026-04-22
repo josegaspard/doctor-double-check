@@ -45,6 +45,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { VaultAuditPanel } from '@/components/vault/VaultAuditPanel';
+import { VaultUploadSimulator } from '@/components/vault/VaultUploadSimulator';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -94,6 +95,7 @@ export default function Vault() {
     { gb: 10, label: '+10 GB', badge: 'Mejor valor' },
   ]);
   const [pricePerGb, setPricePerGb] = useState(49);
+  const [showSimulator, setShowSimulator] = useState(false);
 
   // Fetch storage usage
   const fetchStorage = useCallback(async () => {
@@ -480,136 +482,64 @@ export default function Vault() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 px-3 sm:px-6">
-            {/* Step-by-step instructions */}
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
-                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">1</span>
-                <span className="text-[11px] text-muted-foreground leading-tight">{t('ads.stepCategory')}</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
-                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">2</span>
-                <span className="text-[11px] text-muted-foreground leading-tight">{t('ads.stepDescription')}</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-primary/5">
-                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">3</span>
-                <span className="text-[11px] text-muted-foreground leading-tight">{t('ads.stepFile')}</span>
-              </div>
-            </div>
-
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {CATEGORIES_MAP.map(c => <SelectItem key={c.value} value={c.value}>{t(c.labelKey)}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            <div>
-              <div className="relative">
-                <Input
-                  placeholder={t('ads.descPlaceholder')}
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  className={`h-10 ${!description.trim() ? 'border-destructive/40 focus-visible:ring-destructive/30' : ''}`}
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3 text-destructive" />
-                {t('ads.descRequired')}
+            <div className="rounded-xl border-2 border-dashed border-primary/30 p-6 sm:p-8 text-center bg-primary/5">
+              <Upload className="w-10 h-10 mx-auto mb-3 text-primary/60" />
+              <p className="text-sm font-medium text-foreground">
+                Subida segura paso a paso
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-md mx-auto">
+                Validación de tipo (PDF · JPG · PNG · DICOM), progreso en vivo y confirmación
+                explícita de qué doctores tendrán acceso. Por defecto, ningún doctor verá tu archivo.
+              </p>
+              <Button
+                onClick={() => {
+                  if (isStorageFull) {
+                    setShowUpgradeDialog(true);
+                    return;
+                  }
+                  setShowSimulator(true);
+                }}
+                disabled={isLoading}
+                className="gap-2"
+                data-testid="vault-open-simulator"
+              >
+                {isStorageFull ? (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    {t('ads.storageFull')}
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Subir archivo
+                  </>
+                )}
+              </Button>
+              <p className="text-[11px] text-muted-foreground mt-3">
+                {formatStorageSize(storageLimit - storageUsed)} {t('ads.available')}
               </p>
             </div>
-
-            <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleUpload} />
-
-            {/* Drop zone style upload button */}
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (description.trim() && !isStorageFull) setIsDragging(true);
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(false);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(false);
-                if (!description.trim()) {
-                  toast.error(t('ads.addDescFirst'));
-                  return;
-                }
-                if (isStorageFull) {
-                  setShowUpgradeDialog(true);
-                  return;
-                }
-                const file = e.dataTransfer.files?.[0];
-                if (file) {
-                  // Simulate file input change
-                  const dt = new DataTransfer();
-                  dt.items.add(file);
-                  if (fileInputRef.current) {
-                    fileInputRef.current.files = dt.files;
-                    fileInputRef.current.dispatchEvent(new Event('change', { bubbles: true }));
-                  }
-                }
-              }}
-            >
-            <button
-              onClick={() => {
-              if (!description.trim()) {
-                  toast.error(t('ads.addDescFirst'));
-                  return;
-                }
-                if (isStorageFull) {
-                  setShowUpgradeDialog(true);
-                  return;
-                }
-                fileInputRef.current?.click();
-              }}
-              disabled={isLoading}
-              className={`w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-2 transition-all ${
-                isDragging
-                  ? 'border-primary bg-primary/10 scale-[1.02]'
-                  : !description.trim()
-                    ? 'border-muted-foreground/20 opacity-50 cursor-not-allowed'
-                    : isStorageFull
-                      ? 'border-destructive/30 hover:border-destructive/50 cursor-pointer'
-                      : 'border-primary/30 hover:border-primary/60 hover:bg-primary/5 cursor-pointer'
-              }`}
-            >
-              {isLoading ? (
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              ) : isStorageFull ? (
-                <>
-                  <Lock className="w-8 h-8 text-destructive/60" />
-                  <span className="text-sm font-medium text-destructive">{t('ads.storageFull')}</span>
-                  <span className="text-xs text-muted-foreground">{t('ads.storageNeedMore')}</span>
-                </>
-              ) : (
-                <>
-                  <Upload className="w-8 h-8 text-primary/60" />
-                  <span className="text-sm font-medium text-foreground">
-                    {description.trim() ? t('ads.tapToSelect') : t('ads.addDescriptionFirst')}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{t('ads.fileTypes')} — {t('common.loading').includes('...') ? '' : ''}{formatStorageSize(storageLimit - storageUsed)} {t('ads.available')}</span>
-                </>
-              )}
-            </button>
-            </div>
-
-            {uploadProgress !== null && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{t('ads.uploading')}</span>
-                  <span className="font-medium">{uploadProgress}%</span>
-                </div>
-                <Progress value={uploadProgress} className="h-2" />
-              </div>
-            )}
           </CardContent>
         </Card>
+
+        {/* Upload simulator dialog */}
+        <VaultUploadSimulator
+          open={showSimulator}
+          onOpenChange={(o) => {
+            setShowSimulator(o);
+            if (!o) fetchStorage();
+          }}
+          category={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          description={description}
+          onDescriptionChange={setDescription}
+          categories={CATEGORIES_MAP.map((c) => ({ value: c.value, label: t(c.labelKey) }))}
+          availableDoctors={availableDoctors.map((d) => ({
+            id: d.id,
+            name: d.name,
+            specialty: d.specialty,
+          }))}
+        />
 
         <Card>
           <CardHeader>

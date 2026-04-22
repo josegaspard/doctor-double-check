@@ -1,9 +1,21 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Lock, ShoppingCart } from 'lucide-react';
+import { Send, Lock, ShoppingCart, Loader2, Wallet, CreditCard } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { useWallet } from '@/contexts/WalletContext';
+import { toast } from 'sonner';
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
@@ -81,13 +93,25 @@ export function ChatMessagesPanel({
   onDoctorProfileClick,
 }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const [activeVideoRoom, setActiveVideoRoom] = useState<boolean>(false);
   const [hasChatEntitlement, setHasChatEntitlement] = useState<boolean>(true);
   const [entitlementChecked, setEntitlementChecked] = useState(false);
+  const [consultationFee, setConsultationFee] = useState<number>(0);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [paywallProcessing, setPaywallProcessing] = useState(false);
+  const [paywallError, setPaywallError] = useState<string | null>(null);
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { balance, canAfford } = useWallet();
 
-  // Check chat entitlement for patients chatting with doctors
+  const otherDoctorId = session
+    ? session.participant1Id === userId
+      ? session.participant2Type === 'doctor' ? session.participant2Id : null
+      : session.participant1Type === 'doctor' ? session.participant1Id : null
+    : null;
+
+  // Check chat entitlement for patients chatting with doctors + fetch consultation fee
   useEffect(() => {
     if (!session || !userId || userRole !== 'patient') {
       setHasChatEntitlement(true);
@@ -102,19 +126,99 @@ export function ChatMessagesPanel({
     }
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from('entitlements')
-        .select('is_active, expires_at')
-        .eq('user_id', userId)
-        .eq('type', 'chat')
-        .maybeSingle();
+      const otherId = session.participant1Id === userId ? session.participant2Id : session.participant1Id;
+      const [entRes, doctorRes] = await Promise.all([
+        supabase
+          .from('entitlements')
+          .select('is_active, expires_at')
+          .eq('user_id', userId)
+          .eq('type', 'chat')
+          .maybeSingle(),
+        supabase
+          .from('doctor_profiles')
+          .select('consultation_fee')
+          .eq('user_id', otherId)
+          .maybeSingle(),
+      ]);
       if (cancelled) return;
+      const data = entRes.data;
       const valid = !!data?.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
       setHasChatEntitlement(valid);
       setEntitlementChecked(true);
+      setConsultationFee(Number(doctorRes.data?.consultation_fee) || 0);
     })();
     return () => { cancelled = true; };
   }, [session?.id, userId, userRole]);
+
+  const refetchEntitlement = async () => {
+    if (!userId) return;
+    const { data } = await supabase
+      .from('entitlements')
+      .select('is_active, expires_at')
+      .eq('user_id', userId)
+      .eq('type', 'chat')
+      .maybeSingle();
+    const valid = !!data?.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
+    setHasChatEntitlement(valid);
+    return valid;
+  };
+
+  const handleWalletPurchase = async () => {
+    if (!otherDoctorId || consultationFee <= 0) return;
+    setPaywallProcessing(true);
+    setPaywallError(null);
+    try {
+      const { data, error } = await supabase.rpc('process_consultation_purchase', {
+        p_doctor_id: otherDoctorId,
+        p_amount: consultationFee,
+        p_patient_name: user?.name || 'Paciente',
+      });
+      if (error) throw error;
+      const result = data as any;
+      if (!result?.success) {
+        setPaywallError(result?.error || 'No se pudo procesar el pago');
+        return;
+      }
+      const ok = await refetchEntitlement();
+      if (ok) {
+        toast.success('Consulta activada');
+        setPaywallOpen(false);
+      }
+    } catch (e: any) {
+      setPaywallError(e?.message || 'Error inesperado');
+    } finally {
+      setPaywallProcessing(false);
+    }
+  };
+
+  const handleStripePurchase = async () => {
+    if (!otherDoctorId) return;
+    setPaywallProcessing(true);
+    setPaywallError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-consultation-checkout', {
+        body: { doctorId: otherDoctorId },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setPaywallError('No se pudo iniciar el checkout');
+    } catch (e: any) {
+      setPaywallError(e?.message || 'Error iniciando checkout');
+    } finally {
+      setPaywallProcessing(false);
+    }
+  };
+
+  const handleSendIntercept = () => {
+    if (userRole === 'patient' && entitlementChecked && !hasChatEntitlement && otherDoctorId) {
+      setPaywallOpen(true);
+      return;
+    }
+    onSend();
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -240,19 +344,55 @@ export function ChatMessagesPanel({
                 </div>
               </div>
             ) : (
-              <div className="p-2 sm:p-4 border-t bg-card flex-shrink-0" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+              <div className="p-2 sm:p-4 border-t bg-card flex-shrink-0 space-y-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+                {/* Chat gate banner — patient without entitlement */}
+                {userRole === 'patient' && entitlementChecked && !hasChatEntitlement && otherDoctorId && (
+                  <button
+                    type="button"
+                    data-testid="chat-paywall-banner"
+                    onClick={() => setPaywallOpen(true)}
+                    className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-warning/10 border border-warning/30 hover:bg-warning/15 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <Lock className="w-4 h-4 text-warning flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          Necesitas una consulta activa para enviar mensajes
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Acceso de 30 días tras la compra
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="gap-1 flex-shrink-0">
+                      <ShoppingCart className="w-3 h-3" />
+                      {consultationFee > 0 ? `Comprar ($${consultationFee.toFixed(0)})` : 'Comprar'}
+                    </Badge>
+                  </button>
+                )}
+
                 <div className="flex gap-2 items-center">
                   <Input
-                    placeholder={t('chat.writeMessage')}
+                    placeholder={
+                      userRole === 'patient' && entitlementChecked && !hasChatEntitlement
+                        ? 'Compra una consulta para enviar mensajes'
+                        : t('chat.writeMessage')
+                    }
                     value={newMessage}
                     onChange={onInputChange}
-                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && onSend()}
+                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSendIntercept()}
+                    disabled={userRole === 'patient' && entitlementChecked && !hasChatEntitlement}
+                    data-testid="chat-input"
                     className="flex-1 h-12 text-base bg-muted/50 border-0 focus-visible:ring-1"
                   />
                   <Button
-                    onClick={onSend}
+                    onClick={handleSendIntercept}
                     size="icon"
-                    disabled={!newMessage.trim()}
+                    disabled={
+                      !newMessage.trim() ||
+                      (userRole === 'patient' && entitlementChecked && !hasChatEntitlement)
+                    }
+                    data-testid="chat-send-button"
                     className="h-12 w-12 rounded-xl flex-shrink-0"
                   >
                     <Send className="w-5 h-5" />
@@ -265,6 +405,83 @@ export function ChatMessagesPanel({
       ) : (
         <EmptyState type="no-selection" activeTab={activeTab} />
       )}
+
+      {/* Paywall Dialog — chat consultation purchase */}
+      <Dialog open={paywallOpen} onOpenChange={(o) => !o && setPaywallOpen(false)}>
+        <DialogContent className="sm:max-w-md" data-testid="chat-paywall-modal">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-primary" />
+              Compra una consulta
+            </DialogTitle>
+            <DialogDescription>
+              Activa tu chat con este doctor por 30 días.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="text-center py-3 bg-muted/40 rounded-lg">
+              <p className="text-xs text-muted-foreground">Precio único</p>
+              <p className="text-3xl font-bold text-foreground mt-1">
+                ${consultationFee.toLocaleString()}{' '}
+                <span className="text-sm font-normal text-muted-foreground">MXN</span>
+              </p>
+            </div>
+
+            {paywallError && (
+              <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-md p-2.5">
+                {paywallError}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Button
+                className="w-full h-11 gap-2"
+                onClick={handleWalletPurchase}
+                disabled={paywallProcessing || consultationFee <= 0 || !canAfford(consultationFee)}
+                data-testid="chat-paywall-wallet"
+              >
+                {paywallProcessing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Wallet className="w-4 h-4" />
+                )}
+                {canAfford(consultationFee)
+                  ? `Pagar con Wallet — $${consultationFee.toFixed(0)} MXN`
+                  : `Saldo insuficiente ($${balance.toLocaleString()})`}
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full h-11 gap-2"
+                onClick={handleStripePurchase}
+                disabled={paywallProcessing || consultationFee <= 0}
+                data-testid="chat-paywall-stripe"
+              >
+                <CreditCard className="w-4 h-4" />
+                Pagar con Tarjeta
+              </Button>
+              {!canAfford(consultationFee) && (
+                <Button
+                  variant="ghost"
+                  className="w-full h-9 text-xs"
+                  onClick={() => {
+                    setPaywallOpen(false);
+                    navigate('/wallet');
+                  }}
+                >
+                  Recargar Wallet
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPaywallOpen(false)} className="w-full">
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
