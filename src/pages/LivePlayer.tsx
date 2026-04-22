@@ -23,6 +23,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
 import {
   Dialog,
   DialogContent,
@@ -639,12 +640,24 @@ export default function LivePlayer() {
                     </div>
                     {/* Fila 2: especialidad truncada */}
                     <span className="text-xs text-muted-foreground truncate block w-full mt-0.5">{live.specialty}</span>
-                    {/* Credenciales: cédula + COFEPRIS */}
-                    {live.doctorCedula && (
-                      <p className="text-[10px] text-muted-foreground mt-1 truncate">Céd. Prof.: <span className="font-medium text-foreground">{live.doctorCedula}</span></p>
-                    )}
-                    {(live as any).doctorCofepris && (
-                      <p className="text-[10px] text-muted-foreground truncate">COFEPRIS: <span className="font-medium text-foreground">{(live as any).doctorCofepris}</span></p>
+                    {/* Credenciales: cédula + COFEPRIS con estado */}
+                    {(live.doctorCedula || live.doctorCofepris) && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        <CredentialStatusBadge
+                          type="cedula"
+                          status={live.doctorCedulaStatus}
+                          value={live.doctorCedula}
+                          rejectionReason={live.doctorCedulaRejectionReason}
+                          size="xs"
+                        />
+                        <CredentialStatusBadge
+                          type="cofepris"
+                          status={live.doctorCofeprisStatus}
+                          value={live.doctorCofepris}
+                          rejectionReason={live.doctorCofeprisRejectionReason}
+                          size="xs"
+                        />
+                      </div>
                     )}
                   </div>
                 </div>

@@ -29,6 +29,10 @@ export interface Live {
   chatPrice?: number;
   doctorCedula?: string;
   doctorCofepris?: string;
+  doctorCedulaStatus?: 'pending' | 'approved' | 'rejected' | null;
+  doctorCedulaRejectionReason?: string | null;
+  doctorCofeprisStatus?: 'pending' | 'approved' | 'rejected' | null;
+  doctorCofeprisRejectionReason?: string | null;
 }
 
 export interface Recording {
@@ -105,7 +109,15 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   
   // Cache for doctor profiles to reduce redundant queries
   const profileCache = useRef<Map<string, { name: string; avatar_url?: string }>>(new Map());
-  const doctorProfileCache = useRef<Map<string, { followers_count: number; cedula_profesional?: string; cofepris_permit?: string }>>(new Map());
+  const doctorProfileCache = useRef<Map<string, {
+    followers_count: number;
+    cedula_profesional?: string;
+    cofepris_permit?: string;
+    cedula_status?: 'pending' | 'approved' | 'rejected' | null;
+    cedula_rejection_reason?: string | null;
+    cofepris_status?: 'pending' | 'approved' | 'rejected' | null;
+    cofepris_rejection_reason?: string | null;
+  }>>(new Map());
 
   const fetchLives = useCallback(async (force = false) => {
     const now = Date.now();
@@ -143,7 +155,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
               .in('id', uncachedIds),
             supabase
               .from('doctor_profiles_public')
-              .select('user_id, followers_count, specialty, cedula_profesional, cofepris_permit')
+              .select('user_id, followers_count, specialty, cedula_profesional, cofepris_permit, cedula_status, cedula_rejection_reason, cofepris_status, cofepris_rejection_reason')
               .in('user_id', uncachedIds),
           ]);
 
@@ -156,6 +168,10 @@ export function LivesProvider({ children }: { children: ReactNode }) {
               followers_count: d.followers_count || 0,
               cedula_profesional: d.cedula_profesional || undefined,
               cofepris_permit: d.cofepris_permit || undefined,
+              cedula_status: d.cedula_status || null,
+              cedula_rejection_reason: d.cedula_rejection_reason || null,
+              cofepris_status: d.cofepris_status || null,
+              cofepris_rejection_reason: d.cofepris_rejection_reason || null,
             });
           });
         }
@@ -179,6 +195,10 @@ export function LivesProvider({ children }: { children: ReactNode }) {
           followersCount: doctorProfileCache.current.get(l.doctor_id)?.followers_count || 0,
           doctorCedula: doctorProfileCache.current.get(l.doctor_id)?.cedula_profesional || undefined,
           doctorCofepris: doctorProfileCache.current.get(l.doctor_id)?.cofepris_permit || undefined,
+          doctorCedulaStatus: doctorProfileCache.current.get(l.doctor_id)?.cedula_status ?? null,
+          doctorCedulaRejectionReason: doctorProfileCache.current.get(l.doctor_id)?.cedula_rejection_reason ?? null,
+          doctorCofeprisStatus: doctorProfileCache.current.get(l.doctor_id)?.cofepris_status ?? null,
+          doctorCofeprisRejectionReason: doctorProfileCache.current.get(l.doctor_id)?.cofepris_rejection_reason ?? null,
           dailyRoomName: l.daily_room_name || undefined,
           location: (l as any).location || undefined,
           chatMode: (l as any).chat_mode || 'free',

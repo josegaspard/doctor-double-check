@@ -34,7 +34,9 @@ import {
   Loader2,
   ArrowLeft,
   RefreshCw,
+  ShieldCheck,
 } from 'lucide-react';
+import { MedicalCredentialsReview } from '@/components/admin/MedicalCredentialsReview';
 
 type VerificationStatus = 'pending' | 'in_progress' | 'verified' | 'failed' | 'expired';
 
@@ -245,16 +247,35 @@ export default function AdminVerifications() {
           <div className="flex-1 min-w-0">
             <h1 className="font-heading text-base sm:text-2xl font-bold text-foreground flex items-center gap-1.5 sm:gap-2">
               <Shield className="w-4 h-4 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
-              <span className="truncate">{language === 'es' ? 'Verificaciones de Identidad' : 'Identity Verifications'}</span>
+              <span className="truncate">{language === 'es' ? 'Verificaciones' : 'Verifications'}</span>
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              {language === 'es' ? 'Gestiona las solicitudes' : 'Manage requests'}
+              {language === 'es' ? 'Identidad biométrica + credenciales médicas' : 'Biometric identity + medical credentials'}
             </p>
           </div>
           <Button variant="outline" size="icon" onClick={fetchVerifications} disabled={isLoading} className="h-9 w-9">
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
+
+        {/* Top-level tabs: Identity vs Medical credentials */}
+        <Tabs defaultValue="identity" className="mb-4">
+          <TabsList className="grid w-full grid-cols-2 h-10">
+            <TabsTrigger value="identity" className="gap-1.5 text-xs sm:text-sm">
+              <Shield className="w-3.5 h-3.5" />
+              {language === 'es' ? 'Identidad' : 'Identity'}
+            </TabsTrigger>
+            <TabsTrigger value="credentials" className="gap-1.5 text-xs sm:text-sm">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              {language === 'es' ? 'Credenciales médicas' : 'Medical credentials'}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="credentials" className="mt-4">
+            <MedicalCredentialsReview />
+          </TabsContent>
+
+          <TabsContent value="identity" className="mt-4">
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
@@ -421,6 +442,8 @@ export default function AdminVerifications() {
                 ))}
               </div>
             )}
+          </TabsContent>
+        </Tabs>
           </TabsContent>
         </Tabs>
 
