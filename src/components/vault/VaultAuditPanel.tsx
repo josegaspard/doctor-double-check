@@ -578,6 +578,86 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
           </>
         )}
       </CardContent>
+
+      {/* CSV Preview Modal */}
+      {previewOpen && previewData && (
+        <div
+          data-testid="csv-preview-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setPreviewOpen(false)}
+        >
+          <div
+            className="bg-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div>
+                <h3 className="font-heading text-base font-bold text-foreground">
+                  Vista previa del CSV
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {previewData.totalRows} filas · {previewData.headers.length} columnas
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(false)}>
+                <XCircle className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {previewData.totalRows > 5 && (
+              <div className="px-4 py-2 bg-warning/10 border-b border-warning/20">
+                <p className="text-xs text-warning-foreground">
+                  Mostrando primeras 5 filas. El archivo descargado contendrá <strong>{previewData.totalRows}</strong> filas.
+                </p>
+              </div>
+            )}
+
+            <div className="px-4 py-2 border-b border-border bg-muted/30 text-xs text-muted-foreground">
+              <strong>Filtros activos:</strong>{' '}
+              {actionFilter !== 'all' ? `Acción: ${actionFilter}` : 'Todas las acciones'}
+              {' • '}
+              {fileFilter !== 'all' ? `Archivo filtrado` : 'Todos los archivos'}
+              {' • '}
+              {fromDate} → {toDate}
+            </div>
+
+            <div className="overflow-auto flex-1">
+              <table className="w-full text-xs" data-testid="csv-preview-table">
+                <thead className="bg-muted/50 sticky top-0">
+                  <tr>
+                    {previewData.headers.map((h) => (
+                      <th key={h} className="px-3 py-2 text-left font-semibold text-foreground border-b border-border">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewData.rows.map((row, i) => (
+                    <tr key={i} className="border-b border-border/50 hover:bg-muted/30">
+                      {row.map((cell, j) => (
+                        <td key={j} className="px-3 py-2 text-foreground max-w-[200px] truncate">
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-4 border-t border-border flex items-center justify-end gap-2">
+              <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={exportCsv} disabled={isExporting} className="gap-2" data-testid="csv-confirm-download">
+                <Download className="w-4 h-4" />
+                Descargar CSV
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
