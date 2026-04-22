@@ -173,6 +173,8 @@ export default function LivePlayer() {
   
   const isLiked = live ? hasLiked(live.id) : false;
   const [liveEnded, setLiveEnded] = useState(false);
+  const [recordingStatus, setRecordingStatus] = useState<LiveRecordingStatus>('none');
+  const [recordingId, setRecordingId] = useState<string | null>(null);
 
   // Scroll to top on mount / live change + detect chat_paid return
   useEffect(() => {
@@ -192,7 +194,7 @@ export default function LivePlayer() {
     }
   }, [id]);
 
-  // Direct realtime subscription on this specific live to detect ending reliably
+  // Direct realtime subscription on this specific live to detect ending + recording lifecycle
   useEffect(() => {
     if (!id || isOwner) return;
 
@@ -202,13 +204,33 @@ export default function LivePlayer() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'lives', filter: `id=eq.${id}` },
         (payload) => {
-          const newStatus = (payload.new as any)?.status;
-          if (newStatus === 'ended') {
+          const row = payload.new as any;
+          if (row?.status === 'ended') {
             setLiveEnded(true);
+          }
+          if (row?.recording_status) {
+            setRecordingStatus(row.recording_status as LiveRecordingStatus);
+          }
+          if (row?.recording_id) {
+            setRecordingId(row.recording_id as string);
           }
         }
       )
       .subscribe();
+
+    // Initial fetch of recording_status (in case the live has already advanced past 'live')
+    (async () => {
+      const { data } = await (supabase as any)
+        .from('lives')
+        .select('recording_status, recording_id, status')
+        .eq('id', id)
+        .maybeSingle();
+      if (data) {
+        if (data.recording_status) setRecordingStatus(data.recording_status as LiveRecordingStatus);
+        if (data.recording_id) setRecordingId(data.recording_id as string);
+        if (data.status === 'ended') setLiveEnded(true);
+      }
+    })();
 
     return () => {
       supabase.removeChannel(channel);
