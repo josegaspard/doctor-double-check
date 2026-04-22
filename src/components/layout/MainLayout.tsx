@@ -274,7 +274,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       ref={ref}
       className={`min-h-screen flex flex-col overflow-x-hidden relative ${
         useImageBackground
-          ? ''
+          ? 'app-bg-image'
           : 'bg-gradient-to-br from-primary/[0.02] via-secondary/[0.01] to-primary/[0.02]'
       }`}
       style={
@@ -297,8 +297,14 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         />
       )}
       {!useImageBackground && <DecorativeBackground />}
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      {/* Header — usa color del footer cuando el fondo es imagen */}
+      <header
+        className={`sticky top-0 z-50 border-b backdrop-blur ${
+          useImageBackground
+            ? 'bg-[#0b1d45]/95 border-white/10 text-white'
+            : 'border-border bg-card/95 supports-[backdrop-filter]:bg-card/60'
+        }`}
+      >
         <div className="container mx-auto px-4">
           <div className="flex h-14 items-center justify-between">
             {/* Logo & Mobile Menu */}
