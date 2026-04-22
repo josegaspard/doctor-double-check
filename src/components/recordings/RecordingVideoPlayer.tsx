@@ -3,6 +3,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client';
 
 import { CloudflareRecordingPlayer } from '@/components/recordings/CloudflareRecordingPlayer';
+import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
+import { useAuth } from '@/contexts/AuthContext';
 
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
@@ -30,10 +32,13 @@ function getStoragePath(url: string) {
  */
 export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, onTimeUpdate, autoPlay }: RecordingVideoPlayerProps) {
   const storagePath = useMemo(() => (isStorageRef(videoUrl) ? getStoragePath(videoUrl) : null), [videoUrl]);
+  const { user, supabaseUser } = useAuth();
 
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [urlGeneratedAt, setUrlGeneratedAt] = useState<number>(0);
+  const [expired, setExpired] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const fetchSignedUrl = useCallback(async () => {
@@ -41,6 +46,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
 
     setIsLoading(true);
     setError(null);
+    setExpired(false);
     try {
       const { data, error: signError } = await supabase.storage
         .from('recordings')
@@ -51,12 +57,14 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
         const { data: publicUrlData } = supabase.storage.from('recordings').getPublicUrl(storagePath);
         if (publicUrlData?.publicUrl) {
           setSignedUrl(publicUrlData.publicUrl);
+          setUrlGeneratedAt(Date.now());
           return;
         }
         throw signError;
       }
 
       setSignedUrl(data.signedUrl);
+      setUrlGeneratedAt(Date.now());
     } catch (e: any) {
       console.error('[RecordingVideoPlayer] Signed URL error:', e);
       setError('No se pudo cargar el video desde almacenamiento');
@@ -79,19 +87,24 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
 
   if (!storagePath) {
     return (
-      <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} autoPlay={autoPlay} />
+      <div className="relative">
+        <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} autoPlay={autoPlay} />
+        <DynamicWatermark email={user?.email} userId={supabaseUser?.id} />
+      </div>
     );
   }
 
-  if (error) {
+  if (error || expired) {
     return (
       <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
         <div className="text-center p-6">
           <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-4" />
-          <p className="text-muted-foreground mb-4">{error}</p>
+          <p className="text-muted-foreground mb-4">
+            {expired ? 'Sesión expirada — recarga la URL para continuar viendo' : error}
+          </p>
           <Button onClick={fetchSignedUrl} variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Reintentar
+            {expired ? 'Renovar sesión' : 'Reintentar'}
           </Button>
         </div>
       </div>
@@ -123,6 +136,11 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
           if (onTimeUpdate) onTimeUpdate(Math.floor((e.currentTarget as HTMLVideoElement).currentTime));
         }}
         onError={() => {
+          // Detect signed URL expiration (TTL ~1h)
+          if (urlGeneratedAt && Date.now() - urlGeneratedAt > 55 * 60 * 1000) {
+            setExpired(true);
+            return;
+          }
           const isWebm = storagePath?.endsWith('.webm');
           if (isWebm) {
             setError('Esta grabación está en formato .webm que no es compatible con todos los dispositivos. Las nuevas grabaciones se guardarán en formato compatible.');
@@ -131,6 +149,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
           }
         }}
       />
+      <DynamicWatermark email={user?.email} userId={supabaseUser?.id} />
     </div>
   );
 }
