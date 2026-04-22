@@ -93,6 +93,7 @@ export function ChatMessagesPanel({
   onDoctorProfileClick,
 }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const [activeVideoRoom, setActiveVideoRoom] = useState<boolean>(false);
   const [hasChatEntitlement, setHasChatEntitlement] = useState<boolean>(true);
@@ -212,13 +213,41 @@ export function ChatMessagesPanel({
     }
   };
 
+  const isChatGated =
+    userRole === 'patient' && entitlementChecked && !hasChatEntitlement && !!otherDoctorId;
+
   const handleSendIntercept = () => {
-    if (userRole === 'patient' && entitlementChecked && !hasChatEntitlement && otherDoctorId) {
+    if (isChatGated) {
       setPaywallOpen(true);
       return;
     }
     onSend();
   };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Block Enter (and Ctrl/Cmd+Enter) when gated → opens paywall
+    if (e.key === 'Enter') {
+      if (e.shiftKey) return; // shift+enter = newline (no send)
+      e.preventDefault();
+      handleSendIntercept();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    if (isChatGated) {
+      e.preventDefault();
+      setPaywallOpen(true);
+    }
+  };
+
+  // Restore focus to chat input after paywall closes
+  useEffect(() => {
+    if (!paywallOpen) {
+      // Defer to allow Dialog unmount/focus-trap teardown
+      const t = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [paywallOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -379,25 +408,31 @@ export function ChatMessagesPanel({
 
                 <div className="flex gap-2 items-center">
                   <Input
+                    ref={inputRef}
                     placeholder={
-                      userRole === 'patient' && entitlementChecked && !hasChatEntitlement
+                      isChatGated
                         ? 'Compra una consulta para enviar mensajes'
                         : t('chat.writeMessage')
                     }
                     value={newMessage}
                     onChange={onInputChange}
-                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSendIntercept()}
-                    disabled={userRole === 'patient' && entitlementChecked && !hasChatEntitlement}
+                    onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
+                    onDrop={(e) => {
+                      if (isChatGated) {
+                        e.preventDefault();
+                        setPaywallOpen(true);
+                      }
+                    }}
+                    disabled={isChatGated}
+                    aria-disabled={isChatGated}
                     data-testid="chat-input"
                     className="flex-1 h-12 text-base bg-muted/50 border-0 focus-visible:ring-1"
                   />
                   <Button
                     onClick={handleSendIntercept}
                     size="icon"
-                    disabled={
-                      !newMessage.trim() ||
-                      (userRole === 'patient' && entitlementChecked && !hasChatEntitlement)
-                    }
+                    disabled={!newMessage.trim() || isChatGated}
                     data-testid="chat-send-button"
                     className="h-12 w-12 rounded-xl flex-shrink-0"
                   >
