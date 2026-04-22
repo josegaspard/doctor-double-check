@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-// @ts-expect-error - testing library typings missing for jest-dom matchers
 import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 
