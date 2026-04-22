@@ -1,160 +1,99 @@
 
 
-# Plan: Live processing overlay, recording paywall hardening, CSV preview, watermark en hover, Wallet Ledger
+# Lista FINAL Y COMPLETA — Cierre total de auditoría
 
-## 1. Overlay "Procesando grabación" / "Listo para replay" para estados live
+Todo lo que falta, sin más recomendaciones después. 8 hallazgos del scanner + 2 del linter + limpieza técnica.
 
-**Nuevo `src/components/live/LiveProcessingOverlay.tsx`**:
-- Props: `status: 'live' | 'processing_recording' | 'recording_ready'`, `recordingId?: string`, `onReplayClick: () => void`.
-- Estados visuales:
-  - `live`: badge rojo pulsante "EN VIVO" con contador de viewers.
-  - `processing_recording`: spinner + "Procesando grabación..." + barra de progreso indeterminada + texto "Esto puede tardar 1-3 minutos".
-  - `recording_ready`: ícono check verde + "Replay disponible" + botón "Ver replay".
-- Reintentos automáticos: `useEffect` con `setInterval(15s)` que re-consulta `lives` table por `recording_status`. Tras 5 reintentos sin cambio, muestra botón manual "Reintentar".
-- Transición automática: cuando `status` cambia a `recording_ready`, mostrar toast + auto-redirect tras 3s a `/recordings/{recordingId}` (si el usuario no canceló).
+## CRÍTICOS (errors del scanner) — 4 ítems
 
-**Editado `src/pages/LivePlayer.tsx` y `src/components/live/LiveEndedOverlay.tsx`**:
-- Renderizar `<LiveProcessingOverlay>` cuando `live.status !== 'live'`.
-- Suscribirse a Realtime channel sobre `lives` table filtrando por `id=live_id` para detectar cambios de `recording_status` sin polling adicional.
+### 1. Realtime sin autorización de canales
+`realtime.messages` no tiene RLS. Cualquier autenticado puede suscribirse a cualquier topic (chats privados, video calls, presencia).
+- **Fix:** policy en `realtime.messages` que valide `topic` contra `auth.uid()` y participación real en `chat_sessions` / `lives` / `consultations`.
+- Topics permitidos: `chat:{session_id}` solo si `EXISTS chat_sessions WHERE id=session_id AND (participant1_id=auth.uid() OR participant2_id=auth.uid())`.
 
-**Migración SQL** (si falta):
-- Verificar columna `recording_status` en `lives` con enum `('none', 'processing', 'ready', 'failed')`. Si no existe, agregarla con default `'none'`.
-- Trigger en `cloudflare-webhook` (edge function ya existe) que actualiza `recording_status` cuando Cloudflare confirma el VOD listo.
+### 2. `consultation_ratings` expone datos privados
+Policy SELECT con `USING (true)` filtra patient_id, doctor_id y comentarios libres a todos los autenticados.
+- **Fix:** DROP policy actual + CREATE nueva con `USING (auth.uid() = patient_id OR auth.uid() = doctor_id OR has_role(auth.uid(),'admin'))`. Para mostrar rating público, usar agregado vía `doctor_profiles.rating` (ya existe).
 
-**Test e2e nuevo `src/test/e2e/live-recording-states.test.tsx`**:
-- Mock `lives.recording_status='processing'` → verifica que aparece spinner y texto.
-- Simula update Realtime a `'ready'` → verifica que aparece botón "Ver replay" y se dispara redirect tras 3s (con `vi.useFakeTimers`).
-- Simula 5 reintentos sin cambio → botón "Reintentar" aparece, click → re-fetch con `expect(supabase.from).toHaveBeenCalledWith('lives')`.
+### 3. `push_subscriptions` publicado en Realtime
+Credenciales de Web Push (endpoint, auth token, p256dh) viajan por Realtime broadcasts.
+- **Fix:** `ALTER PUBLICATION supabase_realtime DROP TABLE public.push_subscriptions;`
 
-## 2. Hardening de paywall en grabaciones premium
+### 4. Storage policies con substring match
+3 policies usan `~~ ('%' || filename)` que permite colisión de nombres entre usuarios:
+- `Purchasers can view recording files`
+- `doctor-content restricted read`
+- `prescriptions patient access`
+- **Fix:** Reescribir con igualdad exacta del path completo `(storage.foldername(name))[1] = recording.user_id::text`, validando ownership por carpeta.
 
-**Editado `src/components/recordings/RecordingVideoPlayer.tsx` y `CloudflareRecordingPlayer.tsx`**:
-- Antes de renderizar `<video>` o solicitar URL firmada, verificar `hasPurchased(recordingId) || isOwner || isAdmin`.
-- Si NO tiene acceso:
-  - NO renderizar `<video>` (evita prefetch del navegador).
-  - NO llamar a `supabase.functions.invoke('get-cloudflare-playback')` (evita gastar URL firmada).
-  - Renderizar `<RecordingPaywall>` directamente.
-- Eliminar botón "Descargar" del UI cuando no hay acceso (`{hasPurchased && <DownloadButton />}`).
-- En `RecordingPaywall.tsx`, omitir el atributo `download` y el endpoint de download.
+## ALTOS (warns del scanner) — 2 ítems
 
-**Edge function `get-cloudflare-playback/index.ts`** — reforzar:
-- Validar JWT del usuario.
-- Query a `purchases` y `recordings.user_id` antes de generar URL firmada.
-- Si no tiene acceso: retornar `403 { error: 'Forbidden: No purchase found' }`. NUNCA generar la URL.
+### 5. `ad_campaigns` expone presupuesto a anónimos
+Policy pública filtra `budget`, `spent`, `target_impressions`, `target_clicks`.
+- **Fix:** DROP policy pública, CREATE policy SELECT solo para columnas necesarias usando vista `ad_campaigns_public` con `security_invoker=true` que excluya columnas financieras. Cambiar `useAds.ts` para leer de la vista.
 
-**Editado `src/pages/RecordingPlayer.tsx`**:
-- En el `useEffect` de carga, si `!hasPurchased && !isOwner`, NO disparar fetch de la URL — mostrar paywall directo.
-- Si el usuario manipula el URL hash o pega `?direct=1`, ignorar y aplicar la misma validación.
+### 6. `followers` expone grafo social completo
+Policy `USING (true)` revela quién sigue a quién.
+- **Fix:** `USING (auth.uid() = follower_id OR auth.uid() = followed_id OR has_role(auth.uid(),'admin'))`. Counts agregados ya están en `doctor_profiles.followers_count`.
 
-**Test e2e nuevo `src/test/e2e/recording-direct-url.test.tsx`**:
-- Sin compra: render `<RecordingPlayer>` con `recordingId='premium-X'` → `<video>` NO en DOM, `<RecordingPaywall>` visible.
-- Verifica que `supabase.functions.invoke` NUNCA fue llamada con `'get-cloudflare-playback'`.
-- Mock fetch directo a edge function sin auth → respuesta `403`.
-- Con compra activa: `<video>` renderizado, URL firmada presente, botón download presente.
+## LINTER DB — 2 ítems
 
-## 3. Vista previa de CSV antes de descargar
+### 7. Extension `pg_net` en schema public
+- **Fix:** Mover a schema `extensions` (`ALTER EXTENSION pg_net SET SCHEMA extensions;`). Validar que ningún edge function llame `net.http_post` sin schema cualificado.
 
-**Editado `src/components/vault/VaultAuditPanel.tsx`**:
-- Nuevo botón "Vista previa" junto a "Exportar CSV" (cuando hay permisos).
-- Click abre `<Dialog>` con:
-  - Título: "Vista previa del CSV — {N} filas, {M} columnas"
-  - Tabla con primeras 5 filas + headers actuales (respeta filtros activos).
-  - Banner amarillo si hay >100 filas: "Solo se muestran las primeras 5 — el archivo descargado contendrá {N} filas".
-  - Lista de filtros activos aplicados (ej: "Acción: access_granted • Doctor: Dr. X • Fecha: últimos 7 días").
-  - Botones: "Cancelar" / "Descargar CSV" (este último ejecuta el export real).
-- Reutiliza la función `buildCsvContent()` extraída del export actual para garantizar paridad.
+### 8. RLS policy con `USING (true)` en INSERT/UPDATE/DELETE
+Linter detecta al menos una policy permisiva. Auditar todas las policies write con `USING/WITH CHECK (true)` y restringir.
+- **Fix:** Query `pg_policies WHERE qual='true' AND cmd != 'SELECT'`, reemplazar cada una con condición específica de ownership.
 
-**Test extendido `src/test/e2e/vault-audit-csv.test.tsx`**:
-- Click en "Vista previa" → modal abre con tabla de 5 filas.
-- Verifica que las columnas mostradas coinciden con `visibleColumns` del estado.
-- Click en "Descargar CSV" desde el modal → dispara descarga + cierra modal.
-- Click en "Cancelar" → modal cierra sin descargar (`URL.createObjectURL` no llamado).
+## LIMPIEZA TÉCNICA — 4 ítems
 
-## 4. Watermark en miniaturas con hover-play
+### 9. 1533 `console.log/error/warn` en código de producción
+- **Fix:** Crear wrapper `src/lib/logger.ts` con `log/warn/error` que solo emita si `import.meta.env.DEV`. Reemplazar masivamente con sed/codemod en `src/**/*.{ts,tsx}` (excluir tests). Mantener `console.error` solo en catch blocks críticos.
 
-**Editado `src/pages/RecordingsGrid.tsx`**:
-- Card de grabación: `<div onMouseEnter={() => setHoverPlay(true)} onMouseLeave={() => setHoverPlay(false)}>`.
-- Si `hoverPlay && hasPurchased`:
-  - Renderizar `<video autoPlay muted loop>` sobre el poster.
-  - Generar `previewSessionId` con `useMemo(() => crypto.randomUUID(), [recording.id])`.
-  - Montar `<DynamicWatermark sessionId={previewSessionId} email={user.email} userId={user.id} />`.
-- Si `!hoverPlay` o `!hasPurchased`: solo poster estático, SIN watermark (poster es imagen pública del thumbnail).
+### 10. `@ts-ignore` en tests legacy
+- **Fix:** Reemplazar por `@ts-expect-error` con razón documentada.
 
-**Test extendido `src/test/e2e/watermark-previews.test.tsx`**:
-- Render `<RecordingCard>` sin hover → watermark NO en DOM.
-- `fireEvent.mouseEnter(card)` con `hasPurchased=true` → watermark aparece con `data-session-id` único.
-- `fireEvent.mouseLeave(card)` → watermark desmontado.
-- Re-hover sobre la misma card → mismo `previewSessionId` (estable por `useMemo`).
-- Hover sobre 3 cards distintas → 3 sessionIds únicos.
+### 11. Falta i18n en features nuevos
+Strings hardcoded en `LiveProcessingOverlay`, `WalletLedger`, `ReceiptModal`, `HoverPlayCard`, `RecordingPaywall`.
+- **Fix:** Agregar keys a `src/lib/i18n/es.ts` y `en.ts`, reemplazar literales con `t('...')`.
 
-## 5. Pantalla "Ledger" del Wallet con estados initiated/paid/failed
+### 12. Seed data y demo accounts en migraciones
+`seed-demo-users` y referencias `Demo1234!` en código de producción.
+- **Fix:** Confirmar que esa edge function requiere `SUPABASE_SERVICE_ROLE_KEY` y no se puede invocar desde frontend. Documentar que solo es ejecutable manualmente.
 
-**Nuevo `src/pages/WalletLedger.tsx`** (ruta `/wallet/ledger`):
-- Lista paginada de `wallet_transactions` del usuario, ordenada por `created_at DESC`.
-- Filtros: por status (`initiated | paid | failed | all`), por tipo (`topup | purchase | earning | refund`), por rango de fechas.
-- Cada fila muestra:
-  - Fecha (formato `dd MMM yyyy HH:mm`).
-  - Tipo + ícono semántico (verde=earning/topup, rojo=purchase, gris=initiated).
-  - Descripción (`description` field).
-  - Monto con signo (+/-) y formato MXN.
-  - Status badge: `initiated` (gris), `paid` (verde), `failed` (rojo).
-  - Botón "Ver recibo" → modal con recibo simulado (fecha, monto, ID de transacción, link a `metadata.session_id` o `metadata.recording_id`).
-- Link de "Ver detalle de compra":
-  - Si `metadata.recording_id` → link a `/recordings/{id}`.
-  - Si `metadata.session_id` (chat) → link a `/chat/{session_id}`.
-  - Si `metadata.consultation_id` → link a `/chat` con session resaltada.
+## VALIDACIÓN FINAL
 
-**Nuevo `src/components/wallet/ReceiptModal.tsx`**:
-- Modal con recibo simulado (no PDF real, vista HTML printable).
-- Campos: ID transacción, fecha emisión, descripción, monto, método (wallet/Stripe), status, referencia externa (Stripe payment_intent si aplica).
-- Botón "Imprimir" (`window.print()`).
+Después de aplicar todo:
+1. Re-run `supabase--linter` → 0 issues (excepto `pg_net` si se decide no mover por compatibilidad).
+2. Re-run `security--run_security_scan` → 0 errors, máximo 1-2 warns aceptados con justificación documentada.
+3. Re-run `vitest` → 258/258 tests verdes.
+4. Marcar findings como `mark_as_fixed` en el scanner con explicación de cada uno.
 
-**Editado `src/pages/Wallet.tsx`**:
-- Agregar tab "Movimientos" o link "Ver historial completo" → navega a `/wallet/ledger`.
+## ARCHIVOS A MODIFICAR
 
-**Editado `src/App.tsx`**:
-- Registrar ruta `/wallet/ledger` con `<AccessGuard requireAuth>`.
+**Migración SQL única:**
+- `supabase/migrations/{timestamp}_final_security_hardening.sql` — cubre items 1-8.
 
-**Test e2e nuevo `src/test/e2e/wallet-ledger.test.tsx`**:
-- Mock 10 transacciones con statuses mixtos.
-- Verifica que aparecen en orden DESC.
-- Filtra por `status='paid'` → solo muestra esas.
-- Click "Ver recibo" en transacción → modal abre con datos correctos.
-- Verifica que link "Ver grabación" navega a `/recordings/{id}`.
+**Frontend:**
+- `src/lib/logger.ts` (nuevo) — wrapper de logs.
+- Codemod sobre `src/**/*.{ts,tsx}` para reemplazar `console.*` (item 9).
+- `src/hooks/useAds.ts` — leer de vista `ad_campaigns_public` (item 5).
+- `src/lib/i18n/es.ts` y `en.ts` — keys nuevas (item 11).
+- `src/components/live/LiveProcessingOverlay.tsx`, `src/pages/WalletLedger.tsx`, `src/components/wallet/ReceiptModal.tsx`, `src/components/recordings/HoverPlayCard.tsx`, `src/components/recordings/RecordingPaywall.tsx` — usar `t()`.
 
-## Archivos tocados
+**Tests legacy:**
+- `src/pages/__tests__/LivesGrid.rejection.test.tsx` y similares — `@ts-ignore` → `@ts-expect-error`.
 
-**Nuevos:**
-1. `src/components/live/LiveProcessingOverlay.tsx`
-2. `src/pages/WalletLedger.tsx`
-3. `src/components/wallet/ReceiptModal.tsx`
-4. `src/test/e2e/live-recording-states.test.tsx`
-5. `src/test/e2e/recording-direct-url.test.tsx`
-6. `src/test/e2e/wallet-ledger.test.tsx`
+## RESULTADO GARANTIZADO POST-EJECUCIÓN
 
-**Editados:**
-7. `src/pages/LivePlayer.tsx` — integra overlay con realtime sub
-8. `src/components/live/LiveEndedOverlay.tsx` — usa overlay nuevo
-9. `src/components/recordings/RecordingVideoPlayer.tsx` — gating estricto antes de mount
-10. `src/components/recordings/CloudflareRecordingPlayer.tsx` — mismo
-11. `src/pages/RecordingPlayer.tsx` — pre-check entitlement antes de fetch URL
-12. `supabase/functions/get-cloudflare-playback/index.ts` — JWT + purchase check, 403 si falla
-13. `src/components/vault/VaultAuditPanel.tsx` — botón Vista previa + modal preview
-14. `src/pages/RecordingsGrid.tsx` — hover-play con watermark
-15. `src/pages/Wallet.tsx` — link/tab al Ledger
-16. `src/App.tsx` — ruta `/wallet/ledger`
-17. `src/test/e2e/vault-audit-csv.test.tsx` — extender con tests de preview modal
-18. `src/test/e2e/watermark-previews.test.tsx` — extender con hover-play
+- Realtime con RLS por topic (no más subscripción cross-user).
+- `consultation_ratings`, `followers`, `push_subscriptions`, `ad_campaigns` blindados a su scope correcto.
+- Storage policies validan path completo, no substring.
+- `pg_net` fuera de schema público.
+- Cero policies `USING (true)` en operaciones de escritura.
+- Logger condicional en producción (sin ruido en consola).
+- i18n completo para los 5 features nuevos.
+- 258/258 tests pasando + scanner limpio.
 
-**Migración SQL (si falta):**
-19. Columna `recording_status` enum en `lives` table con default
-
-## Resultado garantizado
-
-- Live transmissions muestran overlay claro durante procesamiento de grabación con reintentos automáticos y transición a "Listo para replay".
-- Grabaciones premium están blindadas: sin compra, ni el `<video>` se monta, ni la URL firmada se solicita, ni el endpoint backend la entrega (403 server-side).
-- CSV de auditoría tiene preview obligatorio que muestra exactamente qué filtros/columnas/filas se exportarán.
-- Hover sobre cards de grabaciones (con compra) reproduce video con watermark único; posters estáticos siguen limpios.
-- Wallet Ledger consolida historial de transacciones con filtros, recibos simulados y deep-links a la compra original.
-- Tests cubren: estados live/processing/ready, bloqueo directo de URL, preview CSV, hover watermark, ledger filters/recibos.
+**Esta es la lista completa. No hay más hallazgos pendientes después de esto — solo lo que ya está documentado en memoria como "by design" (ad_events anonymous insert, demo accounts, pg_net si se mantiene).**
 
