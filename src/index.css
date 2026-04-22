@@ -659,3 +659,61 @@
     height: 100vw !important;
   }
 }
+
+/* ============================================================
+   APP BACKGROUND IMAGE MODE
+   Cuando el toggle "app_background" = "image" está activo,
+   el div raíz del MainLayout tiene la clase .app-bg-image.
+   - Header con color del footer (#0b1d45).
+   - Bottom nav con el mismo color.
+   - Nav links del header en blanco.
+   - Títulos h1/h2/h3 sueltos (fuera de cards) en blanco con sombra.
+   ============================================================ */
+
+/* Header: nav links / botones en blanco para contraste sobre #0b1d45 */
+.app-bg-image > header a,
+.app-bg-image > header button {
+  color: rgba(255, 255, 255, 0.92);
+}
+.app-bg-image > header a:hover,
+.app-bg-image > header button:hover {
+  color: #ffffff;
+}
+.app-bg-image > header .text-muted-foreground {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+.app-bg-image > header .text-foreground {
+  color: #ffffff !important;
+}
+
+/* Bottom nav móvil: mismo color de fondo que el footer */
+.app-bg-image > nav.fixed.bottom-0 {
+  background-color: rgba(11, 29, 69, 0.95) !important;
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
+}
+.app-bg-image > nav.fixed.bottom-0 a,
+.app-bg-image > nav.fixed.bottom-0 button {
+  color: rgba(255, 255, 255, 0.7);
+}
+.app-bg-image > nav.fixed.bottom-0 a.text-primary,
+.app-bg-image > nav.fixed.bottom-0 .text-primary {
+  color: hsl(188, 80%, 60%) !important;
+}
+
+/* Títulos sueltos directos sobre <main> (fuera de cards) en blanco */
+.app-bg-image > main > div > h1,
+.app-bg-image > main > div > h2,
+.app-bg-image > main > div > h3,
+.app-bg-image > main > div > div > h1,
+.app-bg-image > main > div > div > h2,
+.app-bg-image > main > div > div > h3,
+.app-bg-image > main > div > .container > h1,
+.app-bg-image > main > div > .container > h2,
+.app-bg-image > main > div > .container > h3,
+.app-bg-image > main > div > .container > div > h1,
+.app-bg-image > main > div > .container > div > h2,
+.app-bg-image > main > div > .container > div > h3 {
+  color: #ffffff !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
