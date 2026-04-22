@@ -628,23 +628,29 @@ export default function LivePlayer() {
                       <Stethoscope className="w-5 h-5 text-primary" />
                     </AvatarFallback>
                   </Avatar>
-                    <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{live.doctorName}</h3>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-xs text-muted-foreground truncate">{live.specialty}</span>
-                      <Badge variant="verified" className="gap-0.5 text-[10px] px-1.5 py-0 h-4">
+                  <div className="flex-1 min-w-0">
+                    {/* Fila 1: nombre + badge verificado (con wrap) */}
+                    <div className="flex items-start gap-1.5 flex-wrap">
+                      <h3 className="font-semibold text-foreground text-sm leading-tight truncate flex-1 min-w-0">{live.doctorName}</h3>
+                      <Badge variant="verified" className="gap-0.5 text-[10px] px-1.5 py-0 h-4 leading-none whitespace-nowrap shrink-0">
                         <Award className="w-2.5 h-2.5" />
                         {t('livePlayer.verified')}
                       </Badge>
                     </div>
+                    {/* Fila 2: especialidad truncada */}
+                    <span className="text-xs text-muted-foreground truncate block w-full mt-0.5">{live.specialty}</span>
+                    {/* Credenciales: cédula + COFEPRIS */}
                     {live.doctorCedula && (
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Céd. Prof.: {live.doctorCedula}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1 truncate">Céd. Prof.: <span className="font-medium text-foreground">{live.doctorCedula}</span></p>
+                    )}
+                    {(live as any).doctorCofepris && (
+                      <p className="text-[10px] text-muted-foreground truncate">COFEPRIS: <span className="font-medium text-foreground">{(live as any).doctorCofepris}</span></p>
                     )}
                   </div>
                 </div>
 
                 {/* Inline stats */}
-                <div className="flex items-center gap-3 mt-3">
+                <div className="flex items-center gap-3 mt-3 flex-wrap">
                   <Badge variant="outline" className="gap-1 text-xs font-normal">
                     <Heart className="w-3 h-3 fill-destructive text-destructive" />
                     {realtimeLikesCount ?? live.likesCount} {t('livePlayer.likes')}
@@ -655,13 +661,13 @@ export default function LivePlayer() {
                   </Badge>
                 </div>
 
-                {/* Compact actions */}
-                <div className="flex gap-2 mt-3">
-                  <Button size="sm" variant="outline" className="flex-1 h-8 text-xs" onClick={() => navigate(`/doctor/${live.doctorId}`)}>
+                {/* Compact actions — apilados en móvil, en línea en desktop */}
+                <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                  <Button size="sm" variant="outline" className="w-full sm:flex-1 h-9 sm:h-8 text-xs" onClick={() => navigate(`/doctor/${live.doctorId}`)}>
                     {t('livePlayer.viewProfile')}
                   </Button>
                   {role === 'patient' && (
-                    <Button size="sm" variant="outline" className="flex-1 h-8 text-xs gap-1" onClick={handleStartPrivateChat}>
+                    <Button size="sm" variant="outline" className="w-full sm:flex-1 h-9 sm:h-8 text-xs gap-1" onClick={handleStartPrivateChat}>
                       <MessageSquare className="w-3 h-3" />
                       {t('livePlayer.startPrivateChat')}
                     </Button>

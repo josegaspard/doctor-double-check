@@ -161,10 +161,10 @@ export function ChatSessionItem({
             </span>
           )}
 
-          {/* Last message */}
+          {/* Last message — sanitiza mensajes legacy guardados con formato feo [Imagen:...] */}
           <div className="flex items-center justify-between gap-2 mt-0.5">
             <p className="text-xs text-muted-foreground truncate flex-1">
-              {session.lastMessage || t('chat.noConversations')}
+              {session.lastMessage ? formatMessagePreview(session.lastMessage, 80) : t('chat.noConversations')}
             </p>
             {/* Right indicators */}
             {!isClosed && session.unreadCount > 0 && (
