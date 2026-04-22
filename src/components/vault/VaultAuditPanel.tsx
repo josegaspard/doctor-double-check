@@ -23,9 +23,11 @@ import {
   RefreshCw,
   History,
   FilterX,
+  Download,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 type AuditAction =
   | 'accessed'
@@ -242,6 +244,80 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
     setLimit(PAGE_SIZE);
   };
 
+  const [isExporting, setIsExporting] = useState(false);
+
+  const escapeCsv = (val: any): string => {
+    if (val === null || val === undefined) return '';
+    const s = String(val).replace(/"/g, '""');
+    return /[",\n\r]/.test(s) ? `"${s}"` : s;
+  };
+
+  const exportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const q = buildBaseQuery(false).order('created_at', { ascending: false }).range(0, 4999);
+      const { data, error } = await q;
+      if (error) throw error;
+      const list = (data || []) as unknown as AuditEntry[];
+
+      const actorIds = Array.from(new Set(list.map((e) => e.actor_id).filter(Boolean))) as string[];
+      const fileIds = Array.from(new Set(list.map((e) => e.file_id).filter(Boolean))) as string[];
+
+      const [{ data: profs }, { data: files }] = await Promise.all([
+        actorIds.length
+          ? supabase.from('profiles').select('id, name').in('id', actorIds)
+          : Promise.resolve({ data: [] as any[] }),
+        fileIds.length
+          ? supabase.from('vault_files').select('id, name').in('id', fileIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const aMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.name]));
+      const fMap = Object.fromEntries((files || []).map((f: any) => [f.id, f.name]));
+
+      const labels: Record<AuditAction, string> = {
+        accessed: 'Acceso al archivo',
+        access_denied: 'Acceso denegado',
+        access_granted: 'Permiso otorgado',
+        access_revoked: 'Permiso revocado',
+        otp_required: 'OTP requerido',
+        otp_failed: 'OTP fallido',
+        otp_verified: 'OTP verificado',
+      };
+
+      const headers = ['Fecha', 'Acción', 'Archivo', 'Actor', 'Patient ID', 'Metadata'];
+      const rows = list.map((e) => [
+        format(new Date(e.created_at), "yyyy-MM-dd HH:mm:ss"),
+        labels[e.action] || e.action,
+        e.file_id ? fMap[e.file_id] || '(eliminado)' : '',
+        e.actor_id ? aMap[e.actor_id] || e.actor_id : '',
+        e.patient_id || '',
+        e.metadata ? JSON.stringify(e.metadata) : '',
+      ]);
+
+      const csv =
+        '\uFEFF' +
+        [headers, ...rows].map((r) => r.map(escapeCsv).join(',')).join('\r\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const dateStr = format(new Date(), 'yyyyMMdd');
+      link.href = url;
+      link.download = `vault-audit-${mode}-${dateStr}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Exportadas ${list.length} filas a CSV`);
+    } catch (err: any) {
+      console.error('[VaultAuditPanel] export error', err);
+      toast.error(err?.message || 'No se pudo exportar');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const renderAction = (action: AuditAction) => {
     const cfg: Record<AuditAction, { label: string; icon: React.ElementType; variant: any }> = {
       accessed: { label: 'Acceso al archivo', icon: Eye, variant: 'info' },
@@ -271,21 +347,33 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
 
   return (
     <Card>
-      <CardHeader className="pb-3 flex flex-row items-center justify-between">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
         <CardTitle className="text-base flex items-center gap-2">
           <History className="w-4 h-4 text-primary" />
           Auditoría de Vault
         </CardTitle>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={fetchAudit}
-          disabled={isLoading}
-          className="h-8 gap-1"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          Actualizar
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={exportCsv}
+            disabled={isExporting || isLoading || totalCount === 0}
+            className="h-8 gap-1"
+          >
+            <Download className={`w-3.5 h-3.5 ${isExporting ? 'animate-pulse' : ''}`} />
+            <span className="hidden sm:inline">Exportar CSV</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchAudit}
+            disabled={isLoading}
+            className="h-8 gap-1"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Actualizar</span>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {/* Filtros */}

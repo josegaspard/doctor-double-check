@@ -57,6 +57,7 @@ export function MedicalCredentialsReview() {
   }>({ open: false, doctor: null, kind: 'cedula', action: 'approve' });
   const [reason, setReason] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [confirmStep, setConfirmStep] = useState<'edit' | 'confirm'>('edit');
 
   const fetchDoctors = useCallback(async () => {
     setIsLoading(true);
@@ -106,6 +107,12 @@ export function MedicalCredentialsReview() {
   const openAction = (doctor: DoctorRow, kind: CredKind, action: 'approve' | 'reject') => {
     setActionDialog({ open: true, doctor, kind, action });
     setReason('');
+    setConfirmStep('edit');
+  };
+
+  const closeDialog = () => {
+    setActionDialog({ ...actionDialog, open: false });
+    setConfirmStep('edit');
   };
 
   const handleAction = async () => {
@@ -130,15 +137,18 @@ export function MedicalCredentialsReview() {
       if (error) throw error;
 
       const credLabel = kind === 'cedula' ? 'Cédula Profesional' : 'Permiso COFEPRIS';
+      const trimmedReason = reason.trim();
+      const message =
+        action === 'approve'
+          ? `Tu ${credLabel} fue aprobada por el equipo de Medical Masters.\n\n📝 Notas de verificación:\n${trimmedReason}`
+          : `Tu ${credLabel} no fue aprobada.\n\n❌ Motivo:\n${trimmedReason}\n\nPuedes corregir y volver a enviar la documentación desde tu perfil.`;
+
       await supabase.from('notifications').insert({
         user_id: doctor.user_id,
         type: 'system',
         title: action === 'approve' ? '✅ Credencial aprobada' : '❌ Credencial rechazada',
-        message:
-          action === 'approve'
-            ? `Tu ${credLabel} fue aprobada. Notas de verificación: ${reason.trim()}`
-            : `Tu ${credLabel} fue rechazada. Motivo: ${reason.trim()}`,
-        data: { kind, status: newStatus, admin_notes: reason.trim() },
+        message,
+        data: { kind, status: newStatus, admin_notes: trimmedReason },
       });
 
       toast.success(
@@ -147,6 +157,7 @@ export function MedicalCredentialsReview() {
           : `Credencial ${kind === 'cedula' ? 'Cédula' : 'COFEPRIS'} rechazada`
       );
       setActionDialog({ open: false, doctor: null, kind: 'cedula', action: 'approve' });
+      setConfirmStep('edit');
       fetchDoctors();
     } catch (err: any) {
       toast.error(err.message || 'No se pudo actualizar la credencial');
@@ -329,11 +340,15 @@ export function MedicalCredentialsReview() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={actionDialog.open} onOpenChange={(open) => !open && setActionDialog({ ...actionDialog, open: false })}>
+      <Dialog open={actionDialog.open} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {actionDialog.action === 'approve'
+              {confirmStep === 'confirm'
+                ? actionDialog.action === 'approve'
+                  ? '¿Confirmas la aprobación?'
+                  : '¿Confirmas el rechazo?'
+                : actionDialog.action === 'approve'
                 ? 'Aprobar credencial — confirma verificación'
                 : 'Rechazar credencial — indica motivo'}
             </DialogTitle>
@@ -342,40 +357,102 @@ export function MedicalCredentialsReview() {
               {actionDialog.kind === 'cedula' ? 'Cédula Profesional' : 'Permiso COFEPRIS'}
             </DialogDescription>
           </DialogHeader>
-          <div>
-            <label className="text-sm font-medium">
-              {actionDialog.action === 'approve' ? 'Notas de verificación' : 'Motivo del rechazo'}
-              <span className="text-destructive ml-1">*</span>
-            </label>
-            <Textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder={
-                actionDialog.action === 'approve'
-                  ? 'Confirma cómo verificaste esta credencial — visible al doctor y registrado para auditoría'
-                  : 'Explica el motivo (visible al doctor)...'
-              }
-              className="mt-2"
-              rows={4}
-            />
-            <p className="text-[11px] text-muted-foreground mt-1">
-              {actionDialog.action === 'approve'
-                ? 'Ej.: "Verificada en RNPP/SEP por número y nombre el día de hoy."'
-                : 'El doctor recibirá esta razón en su notificación.'}
-            </p>
-          </div>
+
+          {confirmStep === 'edit' ? (
+            <div>
+              <label className="text-sm font-medium">
+                {actionDialog.action === 'approve' ? 'Notas de verificación' : 'Motivo del rechazo'}
+                <span className="text-destructive ml-1">*</span>
+              </label>
+              <Textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder={
+                  actionDialog.action === 'approve'
+                    ? 'Confirma cómo verificaste esta credencial — visible al doctor y registrado para auditoría'
+                    : 'Explica el motivo (visible al doctor)...'
+                }
+                className="mt-2"
+                rows={4}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {actionDialog.action === 'approve'
+                  ? 'Ej.: "Verificada en RNPP/SEP por número y nombre el día de hoy."'
+                  : 'El doctor recibirá esta razón en su notificación.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-border/60 bg-muted/40 p-3 space-y-1.5 text-sm">
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Doctor:</span>
+                  <span className="font-medium text-foreground text-right">{actionDialog.doctor?.name}</span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Credencial:</span>
+                  <span className="font-medium text-foreground text-right">
+                    {actionDialog.kind === 'cedula' ? 'Cédula Profesional' : 'Permiso COFEPRIS'}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Número/Permiso:</span>
+                  <span className="font-mono text-xs text-foreground text-right break-all">
+                    {actionDialog.kind === 'cedula'
+                      ? actionDialog.doctor?.cedula_profesional
+                      : actionDialog.doctor?.cofepris_permit}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Acción:</span>
+                  <Badge variant={actionDialog.action === 'approve' ? 'success' : 'destructive'} className="text-[10px]">
+                    {actionDialog.action === 'approve' ? 'APROBAR' : 'RECHAZAR'}
+                  </Badge>
+                </div>
+                <div className="pt-1.5 border-t border-border/60">
+                  <span className="text-muted-foreground text-xs">
+                    {actionDialog.action === 'approve' ? 'Notas:' : 'Motivo:'}
+                  </span>
+                  <p className="text-xs text-foreground mt-1 whitespace-pre-wrap">
+                    {reason.trim().slice(0, 200)}
+                    {reason.trim().length > 200 ? '…' : ''}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-warning bg-warning/10 border border-warning/30 rounded-md p-2">
+                ⚠️ Esta acción notificará al doctor inmediatamente y queda registrada en auditoría. ¿Confirmas?
+              </p>
+            </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setActionDialog({ ...actionDialog, open: false })}>
-              Cancelar
-            </Button>
-            <Button
-              variant={actionDialog.action === 'approve' ? 'success' : 'destructive'}
-              onClick={handleAction}
-              disabled={isProcessing || !reason.trim()}
-            >
-              {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {actionDialog.action === 'approve' ? 'Aprobar' : 'Rechazar'}
-            </Button>
+            {confirmStep === 'edit' ? (
+              <>
+                <Button variant="outline" onClick={closeDialog}>
+                  Cancelar
+                </Button>
+                <Button
+                  variant={actionDialog.action === 'approve' ? 'success' : 'destructive'}
+                  onClick={() => setConfirmStep('confirm')}
+                  disabled={!reason.trim()}
+                >
+                  {actionDialog.action === 'approve' ? 'Aprobar' : 'Rechazar'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setConfirmStep('edit')} disabled={isProcessing}>
+                  Volver a editar
+                </Button>
+                <Button
+                  variant={actionDialog.action === 'approve' ? 'success' : 'destructive'}
+                  onClick={handleAction}
+                  disabled={isProcessing || !reason.trim()}
+                >
+                  {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Sí, confirmar y enviar
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
