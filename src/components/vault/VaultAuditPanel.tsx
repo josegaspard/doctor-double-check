@@ -245,6 +245,8 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
   };
 
   const [isExporting, setIsExporting] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<{ headers: string[]; rows: string[][]; totalRows: number } | null>(null);
 
   const escapeCsv = (val: any): string => {
     if (val === null || val === undefined) return '';
@@ -252,59 +254,87 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
     return /[",\n\r]/.test(s) ? `"${s}"` : s;
   };
 
-  const exportCsv = async () => {
-    setIsExporting(true);
-    try {
-      const q = buildBaseQuery(false).order('created_at', { ascending: false }).range(0, 4999);
-      const { data, error } = await q;
-      if (error) throw error;
-      const list = (data || []) as unknown as AuditEntry[];
+  // Build CSV content from current filters; returns headers, rows and full csv string
+  const buildCsvContent = async (): Promise<{ headers: string[]; rows: string[][]; csv: string }> => {
+    const q = buildBaseQuery(false).order('created_at', { ascending: false }).range(0, 4999);
+    const { data, error } = await q;
+    if (error) throw error;
+    const list = (data || []) as unknown as AuditEntry[];
 
-      const actorIds = Array.from(new Set(list.map((e) => e.actor_id).filter(Boolean))) as string[];
-      const fileIds = Array.from(new Set(list.map((e) => e.file_id).filter(Boolean))) as string[];
+    const actorIds = Array.from(new Set(list.map((e) => e.actor_id).filter(Boolean))) as string[];
+    const fileIds = Array.from(new Set(list.map((e) => e.file_id).filter(Boolean))) as string[];
 
-      const [{ data: profs }, { data: files }] = await Promise.all([
-        actorIds.length
-          ? supabase.from('profiles').select('id, name').in('id', actorIds)
-          : Promise.resolve({ data: [] as any[] }),
-        fileIds.length
-          ? supabase.from('vault_files').select('id, name').in('id', fileIds)
-          : Promise.resolve({ data: [] as any[] }),
-      ]);
-      const aMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.name]));
-      const fMap = Object.fromEntries((files || []).map((f: any) => [f.id, f.name]));
+    const [{ data: profs }, { data: files }] = await Promise.all([
+      actorIds.length
+        ? supabase.from('profiles').select('id, name').in('id', actorIds)
+        : Promise.resolve({ data: [] as any[] }),
+      fileIds.length
+        ? supabase.from('vault_files').select('id, name').in('id', fileIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const aMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.name]));
+    const fMap = Object.fromEntries((files || []).map((f: any) => [f.id, f.name]));
 
-      const labels: Record<AuditAction, string> = {
-        accessed: 'Acceso al archivo',
-        access_denied: 'Acceso denegado',
-        access_granted: 'Permiso otorgado',
-        access_revoked: 'Permiso revocado',
-        otp_required: 'OTP requerido',
-        otp_failed: 'OTP fallido',
-        otp_verified: 'OTP verificado',
-      };
+    const labels: Record<AuditAction, string> = {
+      accessed: 'Acceso al archivo',
+      access_denied: 'Acceso denegado',
+      access_granted: 'Permiso otorgado',
+      access_revoked: 'Permiso revocado',
+      otp_required: 'OTP requerido',
+      otp_failed: 'OTP fallido',
+      otp_verified: 'OTP verificado',
+    };
 
-      // Fixed column order — never changes (regression-safe)
-      const headers = ['Fecha', 'Acción', 'Archivo', 'Actor', 'Patient ID', 'Metadata'];
-      const rows = list.map((e) => [
+    // Doctor mode: omit/truncate sensitive patient_id and metadata
+    const isDoctorMode = mode === 'doctor';
+    const headers = isDoctorMode
+      ? ['Fecha', 'Acción', 'Archivo', 'Actor']
+      : ['Fecha', 'Acción', 'Archivo', 'Actor', 'Patient ID', 'Metadata'];
+    const rows = list.map((e) => {
+      const base = [
         format(new Date(e.created_at), 'yyyy-MM-dd HH:mm:ss'),
         labels[e.action] || e.action,
         e.file_id ? fMap[e.file_id] || '(eliminado)' : '',
         e.actor_id ? aMap[e.actor_id] || e.actor_id : '',
+      ];
+      if (isDoctorMode) return base;
+      return [
+        ...base,
         e.patient_id || '',
         e.metadata ? JSON.stringify(e.metadata) : '',
-      ]);
+      ];
+    });
 
-      const csv =
-        '\uFEFF' +
-        [headers, ...rows].map((r) => r.map(escapeCsv).join(',')).join('\r\n');
+    const csv =
+      '\uFEFF' +
+      [headers, ...rows].map((r) => r.map(escapeCsv).join(',')).join('\r\n');
 
-      // Validate UTF-8 encoding before download — fail loudly if BOM is missing
-      const bytes = new TextEncoder().encode(csv);
-      if (!(bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)) {
-        throw new Error('Encoding inválido: falta BOM UTF-8');
-      }
+    const bytes = new TextEncoder().encode(csv);
+    if (!(bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)) {
+      throw new Error('Encoding inválido: falta BOM UTF-8');
+    }
 
+    return { headers, rows, csv };
+  };
+
+  const openPreview = async () => {
+    setIsExporting(true);
+    try {
+      const { headers, rows } = await buildCsvContent();
+      setPreviewData({ headers, rows: rows.slice(0, 5), totalRows: rows.length });
+      setPreviewOpen(true);
+    } catch (err: any) {
+      console.error('[VaultAuditPanel] preview error', err);
+      toast.error(err?.message || 'Error generando vista previa');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const exportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const { rows, csv } = await buildCsvContent();
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -316,8 +346,9 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      setPreviewOpen(false);
 
-      toast.success(`Exportadas ${list.length} filas a CSV`);
+      toast.success(`Exportadas ${rows.length} filas a CSV`);
     } catch (err: any) {
       console.error('[VaultAuditPanel] export error', err);
       toast.error(err?.message || 'Error de encoding al exportar');
@@ -362,11 +393,24 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
         </CardTitle>
         <div className="flex items-center gap-1">
           <Button
+            variant="outline"
+            size="sm"
+            onClick={openPreview}
+            disabled={isExporting || isLoading || totalCount === 0}
+            className="h-8 gap-1"
+            data-testid="csv-preview-btn"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Vista previa</span>
+          </Button>
+          <Button
             variant="ghost"
             size="sm"
             onClick={exportCsv}
             disabled={isExporting || isLoading || totalCount === 0}
             className="h-8 gap-1"
+            data-testid="csv-export-btn"
+            aria-disabled={isExporting || isLoading || totalCount === 0}
           >
             <Download className={`w-3.5 h-3.5 ${isExporting ? 'animate-pulse' : ''}`} />
             <span className="hidden sm:inline">Exportar CSV</span>
@@ -534,6 +578,86 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
           </>
         )}
       </CardContent>
+
+      {/* CSV Preview Modal */}
+      {previewOpen && previewData && (
+        <div
+          data-testid="csv-preview-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setPreviewOpen(false)}
+        >
+          <div
+            className="bg-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div>
+                <h3 className="font-heading text-base font-bold text-foreground">
+                  Vista previa del CSV
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {previewData.totalRows} filas · {previewData.headers.length} columnas
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(false)}>
+                <XCircle className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {previewData.totalRows > 5 && (
+              <div className="px-4 py-2 bg-warning/10 border-b border-warning/20">
+                <p className="text-xs text-warning-foreground">
+                  Mostrando primeras 5 filas. El archivo descargado contendrá <strong>{previewData.totalRows}</strong> filas.
+                </p>
+              </div>
+            )}
+
+            <div className="px-4 py-2 border-b border-border bg-muted/30 text-xs text-muted-foreground">
+              <strong>Filtros activos:</strong>{' '}
+              {actionFilter !== 'all' ? `Acción: ${actionFilter}` : 'Todas las acciones'}
+              {' • '}
+              {fileFilter !== 'all' ? `Archivo filtrado` : 'Todos los archivos'}
+              {' • '}
+              {fromDate} → {toDate}
+            </div>
+
+            <div className="overflow-auto flex-1">
+              <table className="w-full text-xs" data-testid="csv-preview-table">
+                <thead className="bg-muted/50 sticky top-0">
+                  <tr>
+                    {previewData.headers.map((h) => (
+                      <th key={h} className="px-3 py-2 text-left font-semibold text-foreground border-b border-border">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewData.rows.map((row, i) => (
+                    <tr key={i} className="border-b border-border/50 hover:bg-muted/30">
+                      {row.map((cell, j) => (
+                        <td key={j} className="px-3 py-2 text-foreground max-w-[200px] truncate">
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-4 border-t border-border flex items-center justify-end gap-2">
+              <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={exportCsv} disabled={isExporting} className="gap-2" data-testid="csv-confirm-download">
+                <Download className="w-4 h-4" />
+                Descargar CSV
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
