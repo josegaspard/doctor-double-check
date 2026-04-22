@@ -1,114 +1,160 @@
 
 
-# Plan: Cierre final — focus persistente, CSV con permisos, watermark en previews, búsqueda con revoke, atajos extendidos
+# Plan: Live processing overlay, recording paywall hardening, CSV preview, watermark en hover, Wallet Ledger
 
-## 1. Test e2e: PaywallModal preserva texto y focus tras cerrar
+## 1. Overlay "Procesando grabación" / "Listo para replay" para estados live
 
-**Nuevo `src/test/e2e/chat-paywall-persistence.test.tsx`**:
-- Render `<ChatMessagesPanel>` con paciente sin entitlement.
-- Usuario escribe "Hola doctor, tengo dolor" en el input → verifica que `value === "Hola doctor, tengo dolor"`.
-- Presiona Enter → `handleSendIntercept` se dispara → `paywallOpen === true`.
-- Cierra modal con Escape (`fireEvent.keyDown(document, { key: 'Escape' })`).
-- Verifica:
-  - `value` del input sigue siendo "Hola doctor, tengo dolor" (texto preservado).
-  - Tras `setTimeout(50ms)` el `document.activeElement === inputRef.current` (focus restaurado).
-  - Presiona Enter de nuevo → paywall reabre, `onSend` nunca se llamó.
-- Repite ciclo 3 veces → verifica que el input nunca pierde el texto y que `onSend` permanece en 0 invocaciones.
+**Nuevo `src/components/live/LiveProcessingOverlay.tsx`**:
+- Props: `status: 'live' | 'processing_recording' | 'recording_ready'`, `recordingId?: string`, `onReplayClick: () => void`.
+- Estados visuales:
+  - `live`: badge rojo pulsante "EN VIVO" con contador de viewers.
+  - `processing_recording`: spinner + "Procesando grabación..." + barra de progreso indeterminada + texto "Esto puede tardar 1-3 minutos".
+  - `recording_ready`: ícono check verde + "Replay disponible" + botón "Ver replay".
+- Reintentos automáticos: `useEffect` con `setInterval(15s)` que re-consulta `lives` table por `recording_status`. Tras 5 reintentos sin cambio, muestra botón manual "Reintentar".
+- Transición automática: cuando `status` cambia a `recording_ready`, mostrar toast + auto-redirect tras 3s a `/recordings/{recordingId}` (si el usuario no canceló).
 
-## 2. Test e2e: CSV auditoría con permisos/entitlements
+**Editado `src/pages/LivePlayer.tsx` y `src/components/live/LiveEndedOverlay.tsx`**:
+- Renderizar `<LiveProcessingOverlay>` cuando `live.status !== 'live'`.
+- Suscribirse a Realtime channel sobre `lives` table filtrando por `id=live_id` para detectar cambios de `recording_status` sin polling adicional.
 
-**Nuevo `src/test/e2e/vault-audit-csv-permissions.test.tsx`**:
-- Caso A — Doctor con entitlement vigente sobre 2 archivos (de 5 totales del paciente):
-  - Mock `vault_audit_log` con 10 eventos (2 propios, 3 sobre archivos accesibles, 5 sobre archivos no accesibles).
-  - Verifica que el CSV exportado contiene exactamente 5 filas (eventos donde `actor_id = doctor` o `file_id IN allowed`).
-  - Verifica que columnas sensibles (`patient_id` completo, `metadata.diagnosis`) están omitidas del export del doctor — solo IDs truncados o vacíos.
-- Caso B — Doctor sin acceso vigente (entitlement expirado):
-  - El botón "Exportar CSV" está `disabled` con `aria-disabled="true"`.
-  - Si fuerza click → `<PaywallModal>` o `<EmptyState message="Sin permisos vigentes para auditoría">` aparece.
-  - `URL.createObjectURL` nunca fue invocado.
-- Caso C — Paciente exportando su propia auditoría: TODAS las columnas y filas accesibles, mime `text/csv;charset=utf-8;`, BOM presente.
+**Migración SQL** (si falta):
+- Verificar columna `recording_status` en `lives` con enum `('none', 'processing', 'ready', 'failed')`. Si no existe, agregarla con default `'none'`.
+- Trigger en `cloudflare-webhook` (edge function ya existe) que actualiza `recording_status` cuando Cloudflare confirma el VOD listo.
 
-## 3. Watermark en preview cards de grabaciones y chat replay
+**Test e2e nuevo `src/test/e2e/live-recording-states.test.tsx`**:
+- Mock `lives.recording_status='processing'` → verifica que aparece spinner y texto.
+- Simula update Realtime a `'ready'` → verifica que aparece botón "Ver replay" y se dispara redirect tras 3s (con `vi.useFakeTimers`).
+- Simula 5 reintentos sin cambio → botón "Reintentar" aparece, click → re-fetch con `expect(supabase.from).toHaveBeenCalledWith('lives')`.
 
-**Editado `src/components/chat/ChatMessageBubble.tsx`** (o donde se renderiza preview de video adjunto):
-- Si el mensaje contiene un archivo de video (`message.attachment_type === 'video'`), envolver `<video>` en `<div className="relative">` y montar `<DynamicWatermark email={user?.email} userId={user?.id} sessionId={previewSessionId} />`.
-- `previewSessionId` generado con `useMemo` por mensaje (uno por bubble, persistente al re-render).
+## 2. Hardening de paywall en grabaciones premium
 
-**Editado `src/components/recordings/RecordingChatReplay.tsx`**:
-- Añadir watermark al video del replay con el mismo patrón.
+**Editado `src/components/recordings/RecordingVideoPlayer.tsx` y `CloudflareRecordingPlayer.tsx`**:
+- Antes de renderizar `<video>` o solicitar URL firmada, verificar `hasPurchased(recordingId) || isOwner || isAdmin`.
+- Si NO tiene acceso:
+  - NO renderizar `<video>` (evita prefetch del navegador).
+  - NO llamar a `supabase.functions.invoke('get-cloudflare-playback')` (evita gastar URL firmada).
+  - Renderizar `<RecordingPaywall>` directamente.
+- Eliminar botón "Descargar" del UI cuando no hay acceso (`{hasPurchased && <DownloadButton />}`).
+- En `RecordingPaywall.tsx`, omitir el atributo `download` y el endpoint de download.
 
-**Editado lista/preview de grabaciones** (`src/pages/RecordingsGrid.tsx` o `RecordingPlayer.tsx`):
-- Para previews/thumbnails interactivos (hover-play o click-to-play), montar el watermark sobre el `<video>` o `<img>` thumbnail.
-- En thumbnails estáticos (poster image sin video activo), NO renderizar watermark (solo cuando el video reproduce).
+**Edge function `get-cloudflare-playback/index.ts`** — reforzar:
+- Validar JWT del usuario.
+- Query a `purchases` y `recordings.user_id` antes de generar URL firmada.
+- Si no tiene acceso: retornar `403 { error: 'Forbidden: No purchase found' }`. NUNCA generar la URL.
 
-**Nuevo `src/test/e2e/watermark-previews.test.tsx`**:
-- Render `<RecordingChatReplay>` con video adjunto → `getByTestId('dynamic-watermark')` existe.
-- Verifica `data-session-id` no vacío + texto contiene email del usuario.
-- Render `<ChatMessageBubble>` con `attachment_type='video'` → watermark visible con sessionId distinto al del replay.
-- Render 2 bubbles + 1 replay simultáneos → 3 sessionIds únicos en el DOM (`new Set(ids).size === 3`).
-- Render bubble con `attachment_type='image'` → NO se monta watermark (solo videos).
+**Editado `src/pages/RecordingPlayer.tsx`**:
+- En el `useEffect` de carga, si `!hasPurchased && !isOwner`, NO disparar fetch de la URL — mostrar paywall directo.
+- Si el usuario manipula el URL hash o pega `?direct=1`, ignorar y aplicar la misma validación.
 
-## 4. Test e2e: doctor no encuentra archivo revocado en búsqueda/filter/listado
+**Test e2e nuevo `src/test/e2e/recording-direct-url.test.tsx`**:
+- Sin compra: render `<RecordingPlayer>` con `recordingId='premium-X'` → `<video>` NO en DOM, `<RecordingPaywall>` visible.
+- Verifica que `supabase.functions.invoke` NUNCA fue llamada con `'get-cloudflare-playback'`.
+- Mock fetch directo a edge function sin auth → respuesta `403`.
+- Con compra activa: `<video>` renderizado, URL firmada presente, botón download presente.
 
-**Nuevo `src/test/e2e/vault-revoke-search-invisibility.test.tsx`**:
-- Helper que simula `get_doctor_accessible_files()` + filtros locales del UI.
-- Setup inicial: doctor con acceso a `archivo-A` (nombre "rx-tumor.pdf").
-- Verifica visibilidad inicial:
-  - Lista completa (`getDoctorAccessibleFiles`) → contiene `archivo-A`.
-  - Filtro por categoría "Imagenología" → contiene `archivo-A`.
-  - Búsqueda local por término "tumor" → contiene `archivo-A`.
-  - Búsqueda por término "rx" → contiene `archivo-A`.
-- Paciente revoca → `vault_access` row eliminado.
-- Re-verificar todas las pantallas:
-  - Lista completa → 0 resultados.
-  - Filtro por categoría → 0 resultados.
-  - Búsqueda por "tumor" → 0 resultados (NO match parcial sobre nombre).
-  - Búsqueda por "rx" → 0 resultados.
-  - Búsqueda directa por `id === archivo-A` → 0 resultados.
-- Adicional: `JSON.stringify(allViews)` no contiene "tumor" ni "rx-tumor.pdf" en ningún lado (zero metadata leak).
+## 3. Vista previa de CSV antes de descargar
 
-## 5. Bloqueo extendido de chat: Ctrl+Enter, Cmd+Enter, Ctrl+V, Ctrl+K, Enter en textarea
+**Editado `src/components/vault/VaultAuditPanel.tsx`**:
+- Nuevo botón "Vista previa" junto a "Exportar CSV" (cuando hay permisos).
+- Click abre `<Dialog>` con:
+  - Título: "Vista previa del CSV — {N} filas, {M} columnas"
+  - Tabla con primeras 5 filas + headers actuales (respeta filtros activos).
+  - Banner amarillo si hay >100 filas: "Solo se muestran las primeras 5 — el archivo descargado contendrá {N} filas".
+  - Lista de filtros activos aplicados (ej: "Acción: access_granted • Doctor: Dr. X • Fecha: últimos 7 días").
+  - Botones: "Cancelar" / "Descargar CSV" (este último ejecuta el export real).
+- Reutiliza la función `buildCsvContent()` extraída del export actual para garantizar paridad.
 
-**Editado `src/components/chat/ChatMessagesPanel.tsx`**:
-- Extender `handleKeyDown` para cubrir:
-  ```ts
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendIntercept(); }
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleSendIntercept(); } // Ctrl/Cmd+Enter
-  if (e.key === 'k' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); if (isChatGated) setPaywallOpen(true); } // Ctrl+K
-  ```
-- `handlePaste` ya existe — confirmar que cubre Ctrl+V (es el evento `paste` por defecto).
-- Si en algún momento se cambia a `<Textarea>`, el mismo handler aplica.
+**Test extendido `src/test/e2e/vault-audit-csv.test.tsx`**:
+- Click en "Vista previa" → modal abre con tabla de 5 filas.
+- Verifica que las columnas mostradas coinciden con `visibleColumns` del estado.
+- Click en "Descargar CSV" desde el modal → dispara descarga + cierra modal.
+- Click en "Cancelar" → modal cierra sin descargar (`URL.createObjectURL` no llamado).
 
-**Nuevo `src/test/e2e/chat-shortcuts-blocked.test.tsx`**:
-- Para cada combinación (`Enter`, `Ctrl+Enter`, `Cmd+Enter`, `Ctrl+V`/`paste`, `Ctrl+K`):
-  - Sin entitlement → `onSend` nunca se llama, `setPaywallOpen(true)` se dispara.
-  - Con entitlement → comportamiento normal (Enter envía, paste inserta texto, Ctrl+K abre comando si aplica).
-- Verifica que `e.preventDefault()` se invocó en cada caso bloqueado.
-- Test ciclo: 5 atajos consecutivos sin entitlement → `onSend` permanece en 0, `paywallOpen` se reactivó 5 veces.
-- Test de `Shift+Enter`: NO bloquea (es nueva línea), NO abre paywall.
+## 4. Watermark en miniaturas con hover-play
+
+**Editado `src/pages/RecordingsGrid.tsx`**:
+- Card de grabación: `<div onMouseEnter={() => setHoverPlay(true)} onMouseLeave={() => setHoverPlay(false)}>`.
+- Si `hoverPlay && hasPurchased`:
+  - Renderizar `<video autoPlay muted loop>` sobre el poster.
+  - Generar `previewSessionId` con `useMemo(() => crypto.randomUUID(), [recording.id])`.
+  - Montar `<DynamicWatermark sessionId={previewSessionId} email={user.email} userId={user.id} />`.
+- Si `!hoverPlay` o `!hasPurchased`: solo poster estático, SIN watermark (poster es imagen pública del thumbnail).
+
+**Test extendido `src/test/e2e/watermark-previews.test.tsx`**:
+- Render `<RecordingCard>` sin hover → watermark NO en DOM.
+- `fireEvent.mouseEnter(card)` con `hasPurchased=true` → watermark aparece con `data-session-id` único.
+- `fireEvent.mouseLeave(card)` → watermark desmontado.
+- Re-hover sobre la misma card → mismo `previewSessionId` (estable por `useMemo`).
+- Hover sobre 3 cards distintas → 3 sessionIds únicos.
+
+## 5. Pantalla "Ledger" del Wallet con estados initiated/paid/failed
+
+**Nuevo `src/pages/WalletLedger.tsx`** (ruta `/wallet/ledger`):
+- Lista paginada de `wallet_transactions` del usuario, ordenada por `created_at DESC`.
+- Filtros: por status (`initiated | paid | failed | all`), por tipo (`topup | purchase | earning | refund`), por rango de fechas.
+- Cada fila muestra:
+  - Fecha (formato `dd MMM yyyy HH:mm`).
+  - Tipo + ícono semántico (verde=earning/topup, rojo=purchase, gris=initiated).
+  - Descripción (`description` field).
+  - Monto con signo (+/-) y formato MXN.
+  - Status badge: `initiated` (gris), `paid` (verde), `failed` (rojo).
+  - Botón "Ver recibo" → modal con recibo simulado (fecha, monto, ID de transacción, link a `metadata.session_id` o `metadata.recording_id`).
+- Link de "Ver detalle de compra":
+  - Si `metadata.recording_id` → link a `/recordings/{id}`.
+  - Si `metadata.session_id` (chat) → link a `/chat/{session_id}`.
+  - Si `metadata.consultation_id` → link a `/chat` con session resaltada.
+
+**Nuevo `src/components/wallet/ReceiptModal.tsx`**:
+- Modal con recibo simulado (no PDF real, vista HTML printable).
+- Campos: ID transacción, fecha emisión, descripción, monto, método (wallet/Stripe), status, referencia externa (Stripe payment_intent si aplica).
+- Botón "Imprimir" (`window.print()`).
+
+**Editado `src/pages/Wallet.tsx`**:
+- Agregar tab "Movimientos" o link "Ver historial completo" → navega a `/wallet/ledger`.
+
+**Editado `src/App.tsx`**:
+- Registrar ruta `/wallet/ledger` con `<AccessGuard requireAuth>`.
+
+**Test e2e nuevo `src/test/e2e/wallet-ledger.test.tsx`**:
+- Mock 10 transacciones con statuses mixtos.
+- Verifica que aparecen en orden DESC.
+- Filtra por `status='paid'` → solo muestra esas.
+- Click "Ver recibo" en transacción → modal abre con datos correctos.
+- Verifica que link "Ver grabación" navega a `/recordings/{id}`.
 
 ## Archivos tocados
 
-**Nuevos (5 tests):**
-1. `src/test/e2e/chat-paywall-persistence.test.tsx`
-2. `src/test/e2e/vault-audit-csv-permissions.test.tsx`
-3. `src/test/e2e/watermark-previews.test.tsx`
-4. `src/test/e2e/vault-revoke-search-invisibility.test.tsx`
-5. `src/test/e2e/chat-shortcuts-blocked.test.tsx`
+**Nuevos:**
+1. `src/components/live/LiveProcessingOverlay.tsx`
+2. `src/pages/WalletLedger.tsx`
+3. `src/components/wallet/ReceiptModal.tsx`
+4. `src/test/e2e/live-recording-states.test.tsx`
+5. `src/test/e2e/recording-direct-url.test.tsx`
+6. `src/test/e2e/wallet-ledger.test.tsx`
 
 **Editados:**
-6. `src/components/chat/ChatMessagesPanel.tsx` — extender `handleKeyDown` con Ctrl/Cmd+Enter y Ctrl+K; preservar texto al cerrar paywall
-7. `src/components/chat/ChatMessageBubble.tsx` — montar `<DynamicWatermark>` sobre videos adjuntos
-8. `src/components/recordings/RecordingChatReplay.tsx` — montar `<DynamicWatermark>` sobre videos del replay
-9. `src/pages/RecordingsGrid.tsx` — watermark en previews hover-play (no en thumbnails estáticos)
-10. `src/components/vault/VaultAuditPanel.tsx` — botón "Exportar CSV" con `disabled` + `aria-disabled` cuando no hay permisos vigentes; mostrar empty state si fuerza click sin acceso
+7. `src/pages/LivePlayer.tsx` — integra overlay con realtime sub
+8. `src/components/live/LiveEndedOverlay.tsx` — usa overlay nuevo
+9. `src/components/recordings/RecordingVideoPlayer.tsx` — gating estricto antes de mount
+10. `src/components/recordings/CloudflareRecordingPlayer.tsx` — mismo
+11. `src/pages/RecordingPlayer.tsx` — pre-check entitlement antes de fetch URL
+12. `supabase/functions/get-cloudflare-playback/index.ts` — JWT + purchase check, 403 si falla
+13. `src/components/vault/VaultAuditPanel.tsx` — botón Vista previa + modal preview
+14. `src/pages/RecordingsGrid.tsx` — hover-play con watermark
+15. `src/pages/Wallet.tsx` — link/tab al Ledger
+16. `src/App.tsx` — ruta `/wallet/ledger`
+17. `src/test/e2e/vault-audit-csv.test.tsx` — extender con tests de preview modal
+18. `src/test/e2e/watermark-previews.test.tsx` — extender con hover-play
+
+**Migración SQL (si falta):**
+19. Columna `recording_status` enum en `lives` table con default
 
 ## Resultado garantizado
 
-- Paywall preserva el texto escrito y restaura el focus tras cerrar; usuario puede reintentar Enter sin perder nada y el envío sigue bloqueado.
-- Exportación de CSV de auditoría respeta entitlements: doctor sin permisos no puede descargar (botón disabled + empty state); doctor con permisos solo recibe filas/columnas autorizadas; paciente recibe export completo de sus propios datos.
-- Watermark DRM (email + userId + sessionId + timestamp) se muestra en videos de chat replay y bubbles de chat con video adjunto; cada preview tiene un sessionId único.
-- Cuando el paciente revoca acceso, el archivo desaparece de listado, filtros y búsqueda — no hay forma de encontrarlo desde ninguna pantalla del doctor.
-- Chat sin entitlement bloquea Enter, Ctrl+Enter, Cmd+Enter, Ctrl+V/paste, Ctrl+K, drop; Shift+Enter sigue funcionando como nueva línea.
-- Tests cubren todos los flujos: persistencia de focus/texto, permisos en CSV, watermark en previews, invisibilidad post-revoke, atajos extendidos.
+- Live transmissions muestran overlay claro durante procesamiento de grabación con reintentos automáticos y transición a "Listo para replay".
+- Grabaciones premium están blindadas: sin compra, ni el `<video>` se monta, ni la URL firmada se solicita, ni el endpoint backend la entrega (403 server-side).
+- CSV de auditoría tiene preview obligatorio que muestra exactamente qué filtros/columnas/filas se exportarán.
+- Hover sobre cards de grabaciones (con compra) reproduce video con watermark único; posters estáticos siguen limpios.
+- Wallet Ledger consolida historial de transacciones con filtros, recibos simulados y deep-links a la compra original.
+- Tests cubren: estados live/processing/ready, bloqueo directo de URL, preview CSV, hover watermark, ledger filters/recibos.
 
