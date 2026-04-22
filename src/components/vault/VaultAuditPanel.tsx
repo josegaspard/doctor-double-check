@@ -245,6 +245,8 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
   };
 
   const [isExporting, setIsExporting] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<{ headers: string[]; rows: string[][]; totalRows: number } | null>(null);
 
   const escapeCsv = (val: any): string => {
     if (val === null || val === undefined) return '';
@@ -252,59 +254,87 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
     return /[",\n\r]/.test(s) ? `"${s}"` : s;
   };
 
-  const exportCsv = async () => {
-    setIsExporting(true);
-    try {
-      const q = buildBaseQuery(false).order('created_at', { ascending: false }).range(0, 4999);
-      const { data, error } = await q;
-      if (error) throw error;
-      const list = (data || []) as unknown as AuditEntry[];
+  // Build CSV content from current filters; returns headers, rows and full csv string
+  const buildCsvContent = async (): Promise<{ headers: string[]; rows: string[][]; csv: string }> => {
+    const q = buildBaseQuery(false).order('created_at', { ascending: false }).range(0, 4999);
+    const { data, error } = await q;
+    if (error) throw error;
+    const list = (data || []) as unknown as AuditEntry[];
 
-      const actorIds = Array.from(new Set(list.map((e) => e.actor_id).filter(Boolean))) as string[];
-      const fileIds = Array.from(new Set(list.map((e) => e.file_id).filter(Boolean))) as string[];
+    const actorIds = Array.from(new Set(list.map((e) => e.actor_id).filter(Boolean))) as string[];
+    const fileIds = Array.from(new Set(list.map((e) => e.file_id).filter(Boolean))) as string[];
 
-      const [{ data: profs }, { data: files }] = await Promise.all([
-        actorIds.length
-          ? supabase.from('profiles').select('id, name').in('id', actorIds)
-          : Promise.resolve({ data: [] as any[] }),
-        fileIds.length
-          ? supabase.from('vault_files').select('id, name').in('id', fileIds)
-          : Promise.resolve({ data: [] as any[] }),
-      ]);
-      const aMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.name]));
-      const fMap = Object.fromEntries((files || []).map((f: any) => [f.id, f.name]));
+    const [{ data: profs }, { data: files }] = await Promise.all([
+      actorIds.length
+        ? supabase.from('profiles').select('id, name').in('id', actorIds)
+        : Promise.resolve({ data: [] as any[] }),
+      fileIds.length
+        ? supabase.from('vault_files').select('id, name').in('id', fileIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const aMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.name]));
+    const fMap = Object.fromEntries((files || []).map((f: any) => [f.id, f.name]));
 
-      const labels: Record<AuditAction, string> = {
-        accessed: 'Acceso al archivo',
-        access_denied: 'Acceso denegado',
-        access_granted: 'Permiso otorgado',
-        access_revoked: 'Permiso revocado',
-        otp_required: 'OTP requerido',
-        otp_failed: 'OTP fallido',
-        otp_verified: 'OTP verificado',
-      };
+    const labels: Record<AuditAction, string> = {
+      accessed: 'Acceso al archivo',
+      access_denied: 'Acceso denegado',
+      access_granted: 'Permiso otorgado',
+      access_revoked: 'Permiso revocado',
+      otp_required: 'OTP requerido',
+      otp_failed: 'OTP fallido',
+      otp_verified: 'OTP verificado',
+    };
 
-      // Fixed column order — never changes (regression-safe)
-      const headers = ['Fecha', 'Acción', 'Archivo', 'Actor', 'Patient ID', 'Metadata'];
-      const rows = list.map((e) => [
+    // Doctor mode: omit/truncate sensitive patient_id and metadata
+    const isDoctorMode = mode === 'doctor';
+    const headers = isDoctorMode
+      ? ['Fecha', 'Acción', 'Archivo', 'Actor']
+      : ['Fecha', 'Acción', 'Archivo', 'Actor', 'Patient ID', 'Metadata'];
+    const rows = list.map((e) => {
+      const base = [
         format(new Date(e.created_at), 'yyyy-MM-dd HH:mm:ss'),
         labels[e.action] || e.action,
         e.file_id ? fMap[e.file_id] || '(eliminado)' : '',
         e.actor_id ? aMap[e.actor_id] || e.actor_id : '',
+      ];
+      if (isDoctorMode) return base;
+      return [
+        ...base,
         e.patient_id || '',
         e.metadata ? JSON.stringify(e.metadata) : '',
-      ]);
+      ];
+    });
 
-      const csv =
-        '\uFEFF' +
-        [headers, ...rows].map((r) => r.map(escapeCsv).join(',')).join('\r\n');
+    const csv =
+      '\uFEFF' +
+      [headers, ...rows].map((r) => r.map(escapeCsv).join(',')).join('\r\n');
 
-      // Validate UTF-8 encoding before download — fail loudly if BOM is missing
-      const bytes = new TextEncoder().encode(csv);
-      if (!(bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)) {
-        throw new Error('Encoding inválido: falta BOM UTF-8');
-      }
+    const bytes = new TextEncoder().encode(csv);
+    if (!(bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)) {
+      throw new Error('Encoding inválido: falta BOM UTF-8');
+    }
 
+    return { headers, rows, csv };
+  };
+
+  const openPreview = async () => {
+    setIsExporting(true);
+    try {
+      const { headers, rows } = await buildCsvContent();
+      setPreviewData({ headers, rows: rows.slice(0, 5), totalRows: rows.length });
+      setPreviewOpen(true);
+    } catch (err: any) {
+      console.error('[VaultAuditPanel] preview error', err);
+      toast.error(err?.message || 'Error generando vista previa');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const exportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const { rows, csv } = await buildCsvContent();
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -316,8 +346,9 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      setPreviewOpen(false);
 
-      toast.success(`Exportadas ${list.length} filas a CSV`);
+      toast.success(`Exportadas ${rows.length} filas a CSV`);
     } catch (err: any) {
       console.error('[VaultAuditPanel] export error', err);
       toast.error(err?.message || 'Error de encoding al exportar');
