@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Lock } from 'lucide-react';
+import { Send, Lock, ShoppingCart } from 'lucide-react';
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
@@ -12,6 +12,7 @@ import { CallWaitingBanner } from '@/components/videocall/CallWaitingBanner';
 import { ConsultationSummaryCard } from '@/components/chat/ConsultationSummaryCard';
 import { ChatSession } from '@/contexts/ChatContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SessionDisplayInfo {
@@ -81,7 +82,39 @@ export function ChatMessagesPanel({
 }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeVideoRoom, setActiveVideoRoom] = useState<boolean>(false);
+  const [hasChatEntitlement, setHasChatEntitlement] = useState<boolean>(true);
+  const [entitlementChecked, setEntitlementChecked] = useState(false);
   const { t } = useLanguage();
+  const { user } = useAuth();
+
+  // Check chat entitlement for patients chatting with doctors
+  useEffect(() => {
+    if (!session || !userId || userRole !== 'patient') {
+      setHasChatEntitlement(true);
+      setEntitlementChecked(true);
+      return;
+    }
+    const otherType = session.participant1Id === userId ? session.participant2Type : session.participant1Type;
+    if (otherType !== 'doctor') {
+      setHasChatEntitlement(true);
+      setEntitlementChecked(true);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('entitlements')
+        .select('is_active, expires_at')
+        .eq('user_id', userId)
+        .eq('type', 'chat')
+        .maybeSingle();
+      if (cancelled) return;
+      const valid = !!data?.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
+      setHasChatEntitlement(valid);
+      setEntitlementChecked(true);
+    })();
+    return () => { cancelled = true; };
+  }, [session?.id, userId, userRole]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
