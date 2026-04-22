@@ -1,119 +1,145 @@
 
 
-# Plan: 5 features finales — tests e2e por rol, watermark, Vault simulado, chat persistente y paywall de grabaciones
+# Plan: 5 mejoras finales — UI directorio, previews chat, badges credenciales, panel Vault audit
 
-## 1. Tests e2e por rol (guards, paywalls, entitlements)
+## 1. Tarjeta del doctor sin desbordes (PC/tablet/móvil)
 
-Crear `src/test/e2e/role-access.test.tsx` con suites por rol que rendericen `<App />` con un `MemoryRouter` apuntando a rutas sensibles y verifiquen el comportamiento esperado:
+**Archivo: `src/pages/Doctors.tsx`** — la card de doctor actualmente apila nombre + badges + especialidad horizontalmente. En tablets (768-1024px) y móviles los badges de credenciales (Céd. Prof., COFEPRIS, identidad verificada) hacen overflow.
 
-| Rol | Rutas testeadas | Resultado esperado |
-|-----|----------------|--------------------|
-| `visitor` (no auth) | `/chat`, `/vault`, `/medical-supplies`, `/doctor-dashboard`, `/admin` | Redirige a `/login` o muestra `<AccessDenied />` |
-| `patient` | `/medical-supplies`, `/admin/*`, `/doctor-dashboard`, `/resident-groups` | Bloqueado vía `<AccessGuard>` o `Navigate` |
-| `patient` sin entitlement | `/chat` con doctor sin pago previo | Muestra `<PaywallModal>` |
-| `doctor` (approved) | `/doctor-dashboard`, `/doctor-availability`, `/chat` | Acceso permitido |
-| `doctor` (pending) | `/doctor-dashboard` | `<DoctorStatusAlert>` visible |
-| `resident` | `/marketplace`, `/admin/*`, `/create-prescription`, `/chat` con paciente | Bloqueado |
-| `admin` | `/admin/*`, `/admin/users`, `/admin/credentials` | Acceso completo |
+Cambios concretos:
+- Wrapper del header del doctor: pasar de `flex items-center gap-2` a `flex flex-wrap items-start gap-1.5 min-w-0` para permitir que los badges salten a una segunda línea si no caben.
+- Nombre del doctor: agregar `truncate min-w-0 flex-shrink` para no empujar los badges fuera.
+- Contenedor de badges: `flex flex-wrap gap-1 max-w-full` para que el grupo se reorganice.
+- Especialidad y location: `line-clamp-1` en móvil, `line-clamp-2` en `sm:` y superiores.
+- Precio: mover a su propio renglón debajo del nombre con `flex items-baseline justify-between` para que no compita con badges.
 
-Mockear `useAuth` con factory `mockAuth(role, opts)` y `supabase.from(...)` para devolver entitlements/chat sessions controlados. Validar con `expect(screen.getByText(...))` los textos clave de bloqueo.
+Aplicar también a:
+- `src/components/doctor/DoctorProfileCard.tsx` (mismo patrón de wrap)
+- `src/components/doctor/DoctorBadge.tsx` — reducir `gap-1` a `gap-0.5` y agregar `whitespace-nowrap shrink-0` en cada badge interno
 
-## 2. Watermark dinámico + expiración de URLs privadas
+## 2. Mostrar precio de consulta para TODOS los usuarios en `/doctors`
 
-**Crear `src/components/recordings/DynamicWatermark.tsx`** — overlay absoluto sobre el `<video>` del player con:
-- Texto: `${user.email} · ${userId.slice(0,8)} · ${formatDateTime(now)}`
-- Posición rotada 4 esquinas cada 30s para evitar masking estático
-- `pointer-events-none`, `text-white/30 text-[10px]`, `mix-blend-difference`
-- Recalcula timestamp cada minuto vía `useEffect` + `setInterval`
+**Archivo: `src/pages/Doctors.tsx`**
 
-**Integrar en `RecordingVideoPlayer.tsx` y `CloudflareRecordingPlayer.tsx`** envolviendo el `<video>` con un wrapper `relative` que contenga `<DynamicWatermark />`.
+Hoy hay un check tipo `if (role === 'patient' || role === 'resident')` que oculta el precio para visitantes y otros roles. Memoria registra que se ocultó en directorio público — el usuario explícitamente quiere revertir esto.
 
-**Expiración de URLs privadas**: en `RecordingPlayer.tsx`, registrar el momento de generación del signed URL (`urlGeneratedAt = Date.now()`). Después de 1h (TTL del signed URL de Supabase Storage para `recordings`), si el video falla con error 403/410, mostrar overlay `<LiveEndedOverlay>`-style que diga "Sesión expirada — recarga para continuar viendo" con botón que llame `regenerateSignedUrl()` (re-fetch del recording → nueva signed URL).
+Cambios:
+- Eliminar el condicional de visibilidad del precio en la card del directorio.
+- Renderizar siempre `<PriceDisplay amount={doctor.consultation_fee} className="text-base font-semibold text-primary" />` con la moneda del usuario via `useCurrency()`.
+- Agregar tooltip discreto "Precio orientativo. Pacientes y residentes pueden iniciar consulta. Visitantes deben crear cuenta." cuando el rol del visor no pueda comprar (visitante anónimo / doctor).
+- Para `resident`: mantener cálculo del 50% off visual con tachado del precio original.
 
-Detectar expiración con listener `onError` del `<video>` que verifique `now - urlGeneratedAt > 55*60*1000` para ofrecer renovación proactiva antes de que falle.
+**Actualizar memoria**: marcar `mem://style/doctors-directory-layout-design` con la nueva regla "Precio visible siempre en directorio público".
 
-## 3. Simulador de subida al Vault con validaciones y confirmación
+## 3. Preview del último mensaje estilo redes sociales
 
-**Crear `src/components/vault/VaultUploadSimulator.tsx`** — botón "Subir al Vault" que abre un dialog con:
-- Drop zone que acepta `.pdf, .jpg, .jpeg, .png, .dcm` (estudios)
-- Validación frontend:
-  - Tipo MIME: rechazar si no está en whitelist con toast
-  - Tamaño máximo 20MB
-  - Nombre sanitizado (sin caracteres especiales)
-- Barra de progreso real usando `XMLHttpRequest` con `onprogress` para mostrar % real durante upload a Storage `vault-files` bucket
-- Tras upload exitoso, paso de **"Confirmación de permisos"** que muestra:
-  - Lista de doctores con acceso actual al patient (consulta a `vault_access`)
-  - Checkbox por doctor: "Otorgar acceso a este archivo"
-  - Por defecto **ningún doctor seleccionado** (privacy-first)
-  - Botón "Guardar archivo" que crea fila en `vault_files` + entradas en `vault_access` para los seleccionados
-  - Trigger `trg_vault_access_audit` (ya existe) registra el evento
+**Archivo: `src/lib/utils.ts`** — ya existe `formatMessagePreview` con buena lógica. Verificar que se use en TODOS los lugares donde se renderiza el último mensaje.
 
-**Integrar en `Vault.tsx`** reemplazando el botón actual de upload por este componente.
+**Auditar y corregir uso en**:
+- `src/components/chat/ChatSessionItem.tsx` — preview en lista de chats
+- `src/components/notifications/NotificationBell.tsx` — preview en notificaciones de mensaje nuevo
+- `src/hooks/useNotifications.ts` (si renderiza preview)
+- Cualquier badge "último mensaje" en `Chat.tsx`
 
-**Edge function nueva `vault-upload-validate`** que valida server-side el MIME real del archivo (lectura de magic bytes con `file-type` package en Deno), evitando spoofing del header. Si MIME no coincide con tipo declarado, rechaza con 400.
+Asegurar que **todos** llamen `formatMessagePreview(message.content, 60)` en lugar de mostrar `message.content` raw. Esto convierte:
+- `📷 [Imagen: scan.jpg]` → `📷 Foto`
+- `📎 [Archivo: estudio.pdf]` → `📎 estudio.pdf`
+- `📋 ... /prescriptions/abc` → `📋 Receta médica`
+- `🎥 [Video: ...]` → `🎥 Video`
 
-## 4. Persistencia chat 1:1 + bloqueo por `entitlement_chat=false`
+Si algún caller muestra preview HTML, asegurar escape correcto antes del render.
 
-**Verificar persistencia**: revisar `Chat.tsx` y `ChatContext.tsx` — el historial ya se persiste en `chat_messages` table. Confirmar que cuando se cierre/reabra la sesión, los mensajes se cargan correctamente con paginación (load 50 últimos, scroll para más).
+## 4. UI verificación médica con estados completos (pending/approved/rejected + motivo COFEPRIS)
 
-**Bloqueo por entitlement**: en `ChatMessagesPanel.tsx` o donde está el input:
-- Antes de cada `sendMessage()`, consultar `entitlements` table:
-  ```ts
-  const { data } = await supabase.from('entitlements')
-    .select('is_active, expires_at')
-    .eq('user_id', user.id).eq('type', 'chat').maybeSingle();
-  const hasChat = data?.is_active && new Date(data.expires_at) > new Date();
-  ```
-- Si `!hasChat` Y el usuario es `patient` Y la otra parte es `doctor`, mostrar `<PaywallModal>` (componente ya existe) con:
-  - Precio dinámico desde `doctor_profiles.consultation_fee` del doctor
-  - Botón "Pagar con Wallet" → llama RPC `process_consultation_purchase(doctorId, fee)` (ya existe)
-  - Botón "Pagar con Stripe" → invoca edge function `create-consultation-checkout`
-  - On success: refrescar entitlement, cerrar modal, permitir envío inmediato
+**Archivo nuevo: `src/components/doctor/CredentialStatusBadge.tsx`**
 
-**Disable input** con `<Textarea disabled />` y placeholder "Compra una consulta para enviar mensajes" cuando `!hasChat`.
+Componente unificado que recibe `{ type: 'cedula' | 'cofepris', status, value, rejectionReason }` y renderiza:
 
-## 5. Paywall real para grabaciones con estados de wallet visibles
+| Status | Color | Icono | Texto | Tooltip/Popover |
+|--------|-------|-------|-------|-----------------|
+| `approved` | success (verde) | ✓ ShieldCheck | "Céd. Prof." / "COFEPRIS" + valor | "Verificada por Medical Masters" |
+| `pending` | warning (ámbar) | ⏳ Clock | "Céd. en revisión" / "COFEPRIS en revisión" | "Pendiente de revisión por el equipo" |
+| `rejected` | destructive (rojo) | ✗ XCircle | "Céd. rechazada" / "COFEPRIS rechazado" | Popover con `rejectionReason` y botón "Resubir documento" si es el doctor mismo |
 
-**Modificar `src/pages/RecordingPlayer.tsx`**:
-- Si `!hasPurchased(recordingId)` y user no es admin/owner, mostrar `<RecordingPaywall>` en lugar del player.
-- Crear nuevo componente `src/components/recordings/RecordingPaywall.tsx`:
-  - Card con thumbnail del recording, título, doctor, precio
-  - Estado del wallet visible: `<WalletStatusBadge status={txStatus} balance={walletBalance} />`
-  - Estados visuales con color-coding:
-    - `idle` (default): badge gris "Saldo: $X"
-    - `initiated` (compra en curso): badge azul + spinner "Procesando pago…"
-    - `paid` (success): badge verde "✓ Pagado · Cargando reproductor…" — auto-hide tras 2s
-    - `failed`: badge rojo "✗ Pago rechazado" + botón "Reintentar"
-  - Botones: "Pagar con Wallet ($X)" y "Pagar con Stripe"
-  - Lógica:
-    - Wallet: invocar `purchaseWithWallet(recordingId)` del hook `usePurchases`. Setea `txStatus='initiated'` durante await; al resolver, `setTxStatus('paid')` y forzar `await refresh()` del hook + re-render del player **sin recargar página** (cambia condición `hasPurchased` → true).
-    - Stripe: invocar `purchaseWithStripe(recordingId)` → redirect a checkout. Al volver con query `?recording_paid=success`, hook refetch automático + render del player.
+Usar `<Popover>` (no Tooltip) para soportar contenido rico en mobile (tap para abrir).
 
-**Suscripción realtime opcional** en `RecordingPlayer.tsx` a la tabla `purchases` filtrada por `user_id=current` para detectar la confirmación del webhook de Stripe sin polling, marcando `txStatus='paid'` y montando el player automáticamente.
+**Reemplazar instancias** en:
+- `src/components/doctor/DoctorBadge.tsx`
+- `src/components/doctor/DoctorProfileCard.tsx`
+- `src/pages/DoctorProfile.tsx`
+- `src/pages/Doctors.tsx`
+- `src/pages/LivesGrid.tsx` (ya tiene rejection inline pero usar el componente unificado)
+- `src/pages/UserProfile.tsx` para perfil del doctor logueado
+
+**Para el doctor logueado en su perfil**: agregar sección con `<Alert variant="destructive">` si tiene credencial rechazada, mostrando:
+- Razón completa (no truncada)
+- Botón directo "Subir nuevo documento" → abre dialog de upload a `doctor-credentials` bucket
+- Marca `cedula_status='pending'` o `cofepris_status='pending'` al re-subir y limpia `rejection_reason`
+
+## 5. Panel de auditoría del Vault con filtros
+
+**Archivo nuevo: `src/components/vault/VaultAuditPanel.tsx`**
+
+Tabla con columnas:
+- Fecha (formato `dd MMM yyyy HH:mm`)
+- Acción (badge color-coded): `access_granted` (verde), `access_revoked` (ámbar), `access_denied` (rojo), `viewed` (azul), `downloaded` (azul), `uploaded` (gris)
+- Archivo (nombre clickable que abre preview)
+- Actor (nombre + avatar pequeño)
+- Doctor (si aplica, desde `metadata.doctor_id`)
+
+**Filtros** (en panel superior):
+- Date range picker con presets: Hoy, 7 días, 30 días, Personalizado
+- Select por archivo: dropdown con archivos del paciente/doctor actual
+- Select por acción: multi-select de tipos
+- Búsqueda libre por nombre de actor
+
+**Datos**: query a `vault_audit_log` con joins:
+```sql
+SELECT val.*, vf.file_name, p_actor.name as actor_name, p_actor.avatar_url
+FROM vault_audit_log val
+LEFT JOIN vault_files vf ON vf.id = val.file_id
+LEFT JOIN profiles p_actor ON p_actor.id = val.actor_id
+WHERE val.patient_id = $current_user OR val.actor_id = $current_user
+ORDER BY val.created_at DESC
+LIMIT 100
+```
+
+**RLS**: la tabla ya tiene políticas que permiten al paciente ver eventos sobre sus archivos y al doctor ver eventos donde él es el actor — verificar y ajustar si falta.
+
+**Realtime**: suscripción a INSERT en `vault_audit_log` filtrada por `patient_id=auth.uid()` para refrescar la tabla en vivo.
+
+**Export CSV**: botón "Exportar CSV" que descarga los eventos visibles con filtros aplicados (reusa lógica de `lib/exportClinicalSummary.ts`).
+
+**Integrar en**:
+- `src/pages/Vault.tsx` — pestaña nueva "Auditoría" para el paciente
+- `src/pages/DoctorVault.tsx` — pestaña "Mi actividad" para el doctor (filtra por `actor_id=auth.uid()`)
 
 ## Archivos tocados
 
 **Nuevos:**
-1. `src/test/e2e/role-access.test.tsx` — suite de tests por rol
-2. `src/test/e2e/helpers.tsx` — `mockAuth()`, `mockSupabase()`, `renderApp()`
-3. `src/components/recordings/DynamicWatermark.tsx`
-4. `src/components/vault/VaultUploadSimulator.tsx`
-5. `src/components/recordings/RecordingPaywall.tsx`
-6. `supabase/functions/vault-upload-validate/index.ts` — validación server-side de MIME
+1. `src/components/doctor/CredentialStatusBadge.tsx`
+2. `src/components/vault/VaultAuditPanel.tsx`
 
 **Editados:**
-7. `src/components/recordings/RecordingVideoPlayer.tsx` — integrar `<DynamicWatermark>`
-8. `src/components/recordings/CloudflareRecordingPlayer.tsx` — integrar `<DynamicWatermark>`
-9. `src/pages/RecordingPlayer.tsx` — paywall + detección de URL expirada + realtime de purchases
-10. `src/pages/Vault.tsx` — reemplazar upload con `<VaultUploadSimulator>`
-11. `src/components/chat/ChatMessagesPanel.tsx` — bloqueo input + paywall trigger por entitlement
-12. `src/contexts/ChatContext.tsx` — exponer `entitlementChat` y método `refreshEntitlement()`
+3. `src/pages/Doctors.tsx` — wrap badges, mostrar precio universal
+4. `src/components/doctor/DoctorProfileCard.tsx` — wrap layout, usar `CredentialStatusBadge`
+5. `src/components/doctor/DoctorBadge.tsx` — usar `CredentialStatusBadge`, gap reducido
+6. `src/pages/DoctorProfile.tsx` — usar `CredentialStatusBadge` + alert para rechazos del propio doctor
+7. `src/pages/LivesGrid.tsx` — sustituir badges custom por `CredentialStatusBadge`
+8. `src/pages/UserProfile.tsx` — alert con resubida si credencial rechazada
+9. `src/components/chat/ChatSessionItem.tsx` — usar `formatMessagePreview` en último mensaje
+10. `src/components/notifications/NotificationBell.tsx` — usar `formatMessagePreview`
+11. `src/pages/Vault.tsx` — agregar pestaña "Auditoría" con `<VaultAuditPanel mode="patient" />`
+12. `src/pages/DoctorVault.tsx` — agregar pestaña "Mi actividad" con `<VaultAuditPanel mode="doctor" />`
+13. `mem://style/doctors-directory-layout-design` — actualizar regla de precio visible
+
+**Sin migraciones SQL** — `vault_audit_log` ya existe con trigger `trg_vault_access_audit` activo.
 
 ## Resultado garantizado
 
-- Tests automáticos cubren acceso por rol en rutas críticas; cualquier regresión de guards/paywalls falla CI.
-- Cada video de grabación muestra watermark dinámico con identidad del usuario y timestamp; URLs expiradas se detectan y se ofrece renovación.
-- Subida al Vault es visualmente clara con progreso real, valida tipo y tamaño, y exige confirmación explícita de qué doctores tendrán acceso (default = ninguno).
-- Chat 1:1 persiste entre sesiones; pacientes sin entitlement ven input deshabilitado y modal de pago end-to-end (Wallet o Stripe) que desbloquea inmediato sin recarga.
-- Compra de grabación muestra estado del wallet en tiempo real (initiated→paid→failed) y abre el player automáticamente al confirmarse el pago, sin recargar la página.
+- Cards de doctores fluyen correctamente en cualquier tamaño de pantalla; badges saltan de línea sin desbordes ni truncado feo.
+- Precio del doctor visible para visitantes, pacientes, residentes y otros doctores en `/doctors`, con tooltip aclaratorio del descuento de residentes.
+- Lista de chats y notificaciones muestran previews limpios estilo WhatsApp ("📷 Foto", "📋 Receta médica", "📎 estudio.pdf") en lugar de marcadores raw.
+- Cada credencial (Cédula y COFEPRIS) muestra estado visual claro con color, ícono y popover con motivo de rechazo; doctor puede resubir documento directamente desde su perfil.
+- Paciente y doctor cuentan con panel de auditoría del Vault con tabla filtrable por fecha/archivo/acción, refresh en vivo y export a CSV.
 
