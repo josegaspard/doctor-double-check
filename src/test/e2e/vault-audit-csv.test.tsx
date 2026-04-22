@@ -121,4 +121,45 @@ describe('Vault audit CSV export', () => {
     expect(blob.type).toBe('text/csv;charset=utf-8;');
     expect(blob.size).toBeGreaterThan(0);
   });
+
+  it('header column order is fixed and exact (regression guard)', () => {
+    const csv = buildCsv([ALL_ROWS[0]]);
+    const firstLine = csv.replace(/^\uFEFF/, '').split('\r\n')[0];
+    expect(firstLine.split(',')).toEqual([
+      'Fecha', 'Acción', 'Archivo', 'Actor', 'Patient ID', 'Metadata',
+    ]);
+  });
+
+  it('uses CRLF line endings (RFC4180)', () => {
+    const csv = buildCsv(ALL_ROWS.slice(0, 3));
+    const body = csv.replace(/^\uFEFF/, '');
+    expect(body.includes('\r\n')).toBe(true);
+    expect(body.split('\r\n').length).toBe(4);
+  });
+
+  it('CR inside cell is escaped via quoting', () => {
+    const row: AuditRow = {
+      created_at: '2026-04-22 12:00:00',
+      action: 'accessed',
+      file_name: 'with\rcarriage.pdf',
+      actor: 'Dra. López',
+      patient_id: 'p1',
+    };
+    expect(buildCsv([row])).toContain('"with\rcarriage.pdf"');
+  });
+
+  it('exact row/column count after filter (3 rows × 6 cols)', () => {
+    const csv = buildCsv(ALL_ROWS.slice(0, 3)).replace(/^\uFEFF/, '');
+    const lines = csv.split('\r\n');
+    expect(lines.length).toBe(4);
+    for (let i = 1; i <= 3; i++) {
+      expect(lines[i].split(',').length).toBe(6);
+    }
+  });
+
+  it('BOM is first byte; header starts immediately after', () => {
+    const csv = buildCsv([ALL_ROWS[0]]);
+    expect(csv.charCodeAt(0)).toBe(0xfeff);
+    expect(csv.slice(1, 6)).toBe('Fecha');
+  });
 });
