@@ -136,6 +136,7 @@ export default function AdminSiteSettings() {
     show_prescriptions: false,
     live_chat_free: true,
     show_transaction_history: false,
+    app_background: 'image',
   });
 
   useEffect(() => {
@@ -929,6 +930,35 @@ export default function AdminSiteSettings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Background mode — special control */}
+                  <div className="p-4 rounded-lg border border-primary/30 bg-primary/5 space-y-3">
+                    <div>
+                      <p className="font-medium text-sm">🎨 Fondo de la aplicación</p>
+                      <p className="text-xs text-muted-foreground">
+                        Alterna entre el fondo con imagen (azul Medical Masters) y el fondo blanco clásico con círculos decorativos.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-md bg-card">
+                      <div className="flex items-center gap-3">
+                        <span className={`text-xs font-medium ${featureToggles.app_background === 'white' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          Blanco (clásico)
+                        </span>
+                        <Switch
+                          checked={featureToggles.app_background === 'image'}
+                          onCheckedChange={(checked) =>
+                            setFeatureToggles(prev => ({ ...prev, app_background: checked ? 'image' : 'white' }))
+                          }
+                        />
+                        <span className={`text-xs font-medium ${featureToggles.app_background === 'image' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          Imagen (azul)
+                        </span>
+                      </div>
+                      <Badge variant={featureToggles.app_background === 'image' ? 'default' : 'secondary'} className="text-[10px]">
+                        {featureToggles.app_background === 'image' ? 'IMAGEN ACTIVA' : 'BLANCO ACTIVO'}
+                      </Badge>
+                    </div>
+                  </div>
+
                   {[
                     { key: 'show_news_section' as const, label: 'Sección de Noticias', desc: 'Mostrar la pestaña de Noticias en la navegación' },
                     { key: 'show_content_medical' as const, label: 'Contenido Médico', desc: 'Mostrar la pestaña de Contenido Médico en la navegación' },
@@ -942,7 +972,7 @@ export default function AdminSiteSettings() {
                         <p className="text-xs text-muted-foreground">{toggle.desc}</p>
                       </div>
                       <Switch
-                        checked={featureToggles[toggle.key]}
+                        checked={featureToggles[toggle.key] as boolean}
                         onCheckedChange={(checked) =>
                           setFeatureToggles(prev => ({ ...prev, [toggle.key]: checked }))
                         }
