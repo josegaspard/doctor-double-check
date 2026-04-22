@@ -316,6 +316,75 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
         )}
       </CardHeader>
       <CardContent>
+        {/* Alerta visible sólo al propio doctor cuando alguna credencial oficial fue rechazada */}
+        {isOwner && (credCedulaStatus === 'rejected' || credCofeprisStatus === 'rejected') && (
+          <div className="mb-4 space-y-2">
+            {credCedulaStatus === 'rejected' && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 flex items-start gap-3">
+                <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <p className="text-sm font-semibold text-destructive">Cédula Profesional rechazada</p>
+                  <p className="text-xs text-muted-foreground break-words">
+                    {credCedulaReason?.trim()
+                      ? `Motivo: ${credCedulaReason}`
+                      : 'El equipo no pudo aprobar tu cédula. Sube un documento legible y vigente.'}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 mt-1 gap-1"
+                    disabled={resubmitting === 'cedula'}
+                    onClick={() => triggerResubmit('cedula')}
+                  >
+                    {resubmitting === 'cedula' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="w-3.5 h-3.5" />
+                    )}
+                    Subir nuevo documento
+                  </Button>
+                </div>
+              </div>
+            )}
+            {credCofeprisStatus === 'rejected' && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 flex items-start gap-3">
+                <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <p className="text-sm font-semibold text-destructive">Permiso COFEPRIS rechazado</p>
+                  <p className="text-xs text-muted-foreground break-words">
+                    {credCofeprisReason?.trim()
+                      ? `Motivo: ${credCofeprisReason}`
+                      : 'El equipo no pudo aprobar tu permiso COFEPRIS. Sube un documento legible y vigente.'}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 mt-1 gap-1"
+                    disabled={resubmitting === 'cofepris'}
+                    onClick={() => triggerResubmit('cofepris')}
+                  >
+                    {resubmitting === 'cofepris' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="w-3.5 h-3.5" />
+                    )}
+                    Subir nuevo documento
+                  </Button>
+                </div>
+              </div>
+            )}
+            <input
+              ref={credFileInputRef}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+              onChange={handleResubmitCredential}
+            />
+          </div>
+        )}
+
         <Tabs defaultValue="education" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="education" className="gap-1 text-xs">
