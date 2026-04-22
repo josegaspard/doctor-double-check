@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LiveEndedOverlay } from '@/components/live/LiveEndedOverlay';
+import { LiveProcessingOverlay, type LiveRecordingStatus } from '@/components/live/LiveProcessingOverlay';
 import { LiveConsultationBooking } from '@/components/live/LiveConsultationBooking';
 
 

@@ -10,6 +10,7 @@ import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import PaywallModal from '@/components/PaywallModal';
+import { HoverPlayCard } from '@/components/recordings/HoverPlayCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -384,15 +385,15 @@ export default function RecordingsGrid() {
                       onClick={() => handleRecordingClick(recording)}
                     >
                       <div className="relative aspect-video bg-gradient-to-br from-premium/10 to-primary/10">
-                        {recording.thumbnailUrl ? (
-                          <img
-                            src={recording.thumbnailUrl}
-                            alt={recording.title}
-                            loading="lazy"
-                            className="w-full h-full object-cover"
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          />
-                        ) : null}
+                        <HoverPlayCard
+                          recordingId={recording.id}
+                          thumbnailUrl={recording.thumbnailUrl}
+                          previewClipUrl={(recording as any).previewClipUrl}
+                          alt={recording.title}
+                          enableHoverPlay={owned}
+                          userEmail={user?.email}
+                          userId={user?.id}
+                        />
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                           {!recording.thumbnailUrl && <PlayCircle className="w-12 h-12 text-premium/40" />}
                         </div>
