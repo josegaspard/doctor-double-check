@@ -179,16 +179,32 @@ describe('Chat gate — purchase → unlock cycle', () => {
   });
 });
 
-describe('Chat gate — banner CTA copy', () => {
-  it('shows fee in CTA when consultationFee > 0', () => {
-    const fee = baseState().consultationFee;
-    const cta = fee > 0 ? `Comprar ($${fee.toFixed(0)})` : 'Comprar';
-    expect(cta).toBe('Comprar ($300)');
+describe('Chat gate — banner CTA copy with real consultation fee', () => {
+  function ctaLabel(fee: number) {
+    return fee > 0 ? `Comprar ($${fee.toLocaleString('es-MX')})` : 'Comprar';
+  }
+  function bannerLabel(fee: number) {
+    return fee > 0
+      ? `Necesitas una consulta activa — $${fee.toLocaleString('es-MX')} MXN`
+      : 'Necesitas una consulta activa para enviar mensajes';
+  }
+
+  it('renders fee 350 as "$350"', () => {
+    expect(ctaLabel(350)).toBe('Comprar ($350)');
+    expect(bannerLabel(350)).toBe('Necesitas una consulta activa — $350 MXN');
   });
 
-  it('falls back to "Comprar" without amount when fee is 0/unknown', () => {
-    const fee = 0;
-    const cta = fee > 0 ? `Comprar ($${fee.toFixed(0)})` : 'Comprar';
-    expect(cta).toBe('Comprar');
+  it('renders fee 1500 with es-MX thousand separator: "$1,500"', () => {
+    expect(ctaLabel(1500)).toBe('Comprar ($1,500)');
+    expect(bannerLabel(1500)).toBe('Necesitas una consulta activa — $1,500 MXN');
+  });
+
+  it('renders very large fee 12000 with separator: "$12,000"', () => {
+    expect(ctaLabel(12000)).toBe('Comprar ($12,000)');
+  });
+
+  it('falls back to "Comprar" / generic banner when fee is 0/unknown', () => {
+    expect(ctaLabel(0)).toBe('Comprar');
+    expect(bannerLabel(0)).toBe('Necesitas una consulta activa para enviar mensajes');
   });
 });

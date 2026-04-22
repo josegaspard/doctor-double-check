@@ -357,16 +357,22 @@ export function ChatMessagesPanel({
                       <Lock className="w-4 h-4 text-warning flex-shrink-0" />
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">
-                          Necesitas una consulta activa para enviar mensajes
+                          {consultationFee > 0
+                            ? `Necesitas una consulta activa — $${consultationFee.toLocaleString('es-MX')} MXN`
+                            : 'Necesitas una consulta activa para enviar mensajes'}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Acceso de 30 días tras la compra
+                          {consultationFee > 0
+                            ? 'Acceso de 30 días tras la compra'
+                            : 'Consulta el precio con el doctor'}
                         </p>
                       </div>
                     </div>
                     <Badge variant="outline" className="gap-1 flex-shrink-0">
                       <ShoppingCart className="w-3 h-3" />
-                      {consultationFee > 0 ? `Comprar ($${consultationFee.toFixed(0)})` : 'Comprar'}
+                      {consultationFee > 0
+                        ? `Comprar ($${consultationFee.toLocaleString('es-MX')})`
+                        : 'Comprar'}
                     </Badge>
                   </button>
                 )}
