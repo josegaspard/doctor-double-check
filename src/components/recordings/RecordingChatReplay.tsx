@@ -22,6 +22,14 @@ export function RecordingChatReplay({ liveId }: RecordingChatReplayProps) {
   const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  // Stable per-replay watermark sessionId for the optional video preview
+  const previewSessionId = useMemo(
+    () => (typeof crypto !== 'undefined' && (crypto as any).randomUUID
+      ? (crypto as any).randomUUID()
+      : `replay-${liveId}-${Math.random().toString(36).slice(2, 10)}`),
+    [liveId]
+  );
 
   useEffect(() => {
     const load = async () => {
