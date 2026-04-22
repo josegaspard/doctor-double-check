@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { DailyVideoPlayer, DailyVideoPlayerHandle } from './DailyVideoPlayer';
 import { LiveChat } from './LiveChat';
 import { AnimatedViewerCount } from './AnimatedViewerCount';
+import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Clock,
   Heart,
@@ -54,6 +56,7 @@ export function LiveStreamView({
   const [mobileFullscreen, setMobileFullscreen] = useState(false);
   const playerRef = useRef<DailyVideoPlayerHandle>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { user } = useAuth();
 
   // Force re-render to read ref state after toggles
   const [, forceUpdate] = useState(0);
@@ -236,6 +239,7 @@ export function LiveStreamView({
                 Finalizar
               </Button>
             </div>
+            <DynamicWatermark email={user?.email} userId={user?.id} />
           </DailyVideoPlayer>
         </div>
 
@@ -298,13 +302,16 @@ export function LiveStreamView({
 
       <div className="grid lg:grid-cols-4 gap-4">
         <div className={showChat ? 'lg:col-span-3' : 'lg:col-span-4'}>
-          <DailyVideoPlayer
-            roomUrl={roomUrl}
-            token={ownerToken}
-            isOwner={true}
-            onLeave={onEndClick}
-            onParticipantCountChange={() => {}}
-          />
+          <div className="relative">
+            <DailyVideoPlayer
+              roomUrl={roomUrl}
+              token={ownerToken}
+              isOwner={true}
+              onLeave={onEndClick}
+              onParticipantCountChange={() => {}}
+            />
+            <DynamicWatermark email={user?.email} userId={user?.id} />
+          </div>
         </div>
 
         {showChat && (
