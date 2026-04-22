@@ -3,11 +3,31 @@
  * without rendering all rows in the DOM, and that filtering still works
  * end-to-end on the underlying dataset (not on the virtualized window).
  */
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useLayoutEffect } from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { makeAuditBurst, resetFixtureIds, type FixtureVaultAuditEvent } from './fixtures';
+
+// jsdom doesn't run layout — stub the parent's measurement so the virtualizer
+// can compute a window of visible rows.
+const CONTAINER_HEIGHT = 600;
+function stubElementSize(el: HTMLElement, height: number) {
+  Object.defineProperty(el, 'clientHeight', { configurable: true, value: height });
+  Object.defineProperty(el, 'offsetHeight', { configurable: true, value: height });
+  el.getBoundingClientRect = () =>
+    ({
+      width: 800,
+      height,
+      top: 0,
+      left: 0,
+      right: 800,
+      bottom: height,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    }) as DOMRect;
+}
 
 /** Minimal virtualized table that mirrors the panel's behavior. */
 function VirtualizedAuditTable({
@@ -23,18 +43,40 @@ function VirtualizedAuditTable({
   );
 
   const parentRef = useRef<HTMLDivElement>(null);
+  const [, setReady] = useState(0);
+
+  useLayoutEffect(() => {
+    if (parentRef.current) {
+      stubElementSize(parentRef.current, CONTAINER_HEIGHT);
+      // Force a re-render so the virtualizer recomputes with the stubbed size.
+      setReady((n) => n + 1);
+    }
+  }, []);
+
   const rowVirtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 56,
     overscan: 5,
+    initialRect: { width: 800, height: CONTAINER_HEIGHT },
+    observeElementRect: (instance, cb) => {
+      cb({ width: 800, height: CONTAINER_HEIGHT });
+      return () => {};
+    },
+    observeElementOffset: (instance, cb) => {
+      const el = instance.scrollElement as HTMLElement | null;
+      const handler = () => cb(el?.scrollTop ?? 0, false);
+      handler();
+      el?.addEventListener('scroll', handler);
+      return () => el?.removeEventListener('scroll', handler);
+    },
   });
 
   return (
     <div
       ref={parentRef}
       data-testid="virtual-container"
-      style={{ height: 600, overflow: 'auto' }}
+      style={{ height: CONTAINER_HEIGHT, overflow: 'auto' }}
     >
       <div
         style={{ height: rowVirtualizer.getTotalSize(), position: 'relative', width: '100%' }}
