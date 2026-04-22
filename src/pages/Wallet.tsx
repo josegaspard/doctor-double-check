@@ -296,6 +296,14 @@ export default function Wallet() {
 
         {/* Transaction History */}
         <TransactionHistory />
+
+        {/* Link to full ledger */}
+        <div className="mt-4 text-center">
+          <Button variant="outline" onClick={() => navigate('/wallet/ledger')} className="gap-2">
+            <Receipt className="w-4 h-4" />
+            Ver historial completo de movimientos
+          </Button>
+        </div>
       </div>
     </MainLayout>
   );
