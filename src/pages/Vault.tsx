@@ -45,6 +45,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { VaultAuditPanel } from '@/components/vault/VaultAuditPanel';
+import { VaultUploadSimulator } from '@/components/vault/VaultUploadSimulator';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
