@@ -1,9 +1,21 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Lock, ShoppingCart } from 'lucide-react';
+import { Send, Lock, ShoppingCart, Loader2, Wallet, CreditCard } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { useWallet } from '@/contexts/WalletContext';
+import { toast } from 'sonner';
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
