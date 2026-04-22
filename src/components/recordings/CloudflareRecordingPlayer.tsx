@@ -424,6 +424,8 @@ export function CloudflareRecordingPlayer({
           </Button>
         </div>
       </div>
+
+      <DynamicWatermark email={user?.email} userId={supabaseUser?.id} />
     </div>
   );
 }
