@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,6 +36,14 @@ export function CloudflareRecordingPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  // Unique playback session id — persists across renders, regenerated on remount
+  const sessionId = useMemo(
+    () =>
+      typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function'
+        ? (crypto as any).randomUUID()
+        : `sess-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
+    [recordingId]
+  );
   
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -425,7 +433,7 @@ export function CloudflareRecordingPlayer({
         </div>
       </div>
 
-      <DynamicWatermark email={user?.email} userId={supabaseUser?.id} />
+      <DynamicWatermark email={user?.email} userId={supabaseUser?.id} sessionId={sessionId} />
     </div>
   );
 }
