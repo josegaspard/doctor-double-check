@@ -27,6 +27,7 @@ import {
   LogIn,
   ShieldCheck,
 } from 'lucide-react';
+import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
 
 const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boolean; isNew: boolean }>(function LiveCard({ live, isPremiumSub, isNew }, ref) {
   const { t } = useLanguage();
@@ -108,21 +109,23 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
               </Badge>
             )}
           </div>
-          {/* Verified credentials */}
+          {/* Verified credentials with status */}
           {(live.doctorCedula || live.doctorCofepris) && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {live.doctorCedula && (
-                <Badge variant="outline" className="text-[10px] gap-1 text-success border-success/30 bg-success/5">
-                  <ShieldCheck className="w-3 h-3" />
-                  Cédula: {live.doctorCedula}
-                </Badge>
-              )}
-              {live.doctorCofepris && (
-                <Badge variant="outline" className="text-[10px] gap-1 text-info border-info/30 bg-info/5">
-                  <ShieldCheck className="w-3 h-3" />
-                  COFEPRIS: {live.doctorCofepris}
-                </Badge>
-              )}
+              <CredentialStatusBadge
+                type="cedula"
+                status={live.doctorCedulaStatus}
+                value={live.doctorCedula}
+                rejectionReason={live.doctorCedulaRejectionReason}
+                size="xs"
+              />
+              <CredentialStatusBadge
+                type="cofepris"
+                status={live.doctorCofeprisStatus}
+                value={live.doctorCofepris}
+                rejectionReason={live.doctorCofeprisRejectionReason}
+                size="xs"
+              />
             </div>
           )}
         </CardContent>
