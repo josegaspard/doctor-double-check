@@ -89,6 +89,16 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
   const [experience, setExperience] = useState<Experience[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Estado de credenciales oficiales (Céd. Profesional / COFEPRIS) para mostrar alerta
+  // de rechazo con motivo y permitir resubir documento al propio doctor.
+  const [credCedulaStatus, setCredCedulaStatus] = useState<string | null>(null);
+  const [credCedulaReason, setCredCedulaReason] = useState<string | null>(null);
+  const [credCofeprisStatus, setCredCofeprisStatus] = useState<string | null>(null);
+  const [credCofeprisReason, setCredCofeprisReason] = useState<string | null>(null);
+  const [resubmitting, setResubmitting] = useState<'cedula' | 'cofepris' | null>(null);
+  const credFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [resubmitTarget, setResubmitTarget] = useState<'cedula' | 'cofepris' | null>(null);
+
   // Form dialogs
   const [showEduDialog, setShowEduDialog] = useState(false);
   const [showCertDialog, setShowCertDialog] = useState(false);
@@ -102,7 +112,72 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
 
   useEffect(() => {
     fetchCredentials();
-  }, [doctorId]);
+    if (isOwner) fetchOfficialCredentials();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doctorId, isOwner]);
+
+  const fetchOfficialCredentials = async () => {
+    try {
+      const { data } = await supabase
+        .from('doctor_profiles')
+        .select('cedula_status, cedula_rejection_reason, cofepris_status, cofepris_rejection_reason')
+        .eq('user_id', doctorId)
+        .maybeSingle();
+      if (data) {
+        setCredCedulaStatus(data.cedula_status ?? null);
+        setCredCedulaReason(data.cedula_rejection_reason ?? null);
+        setCredCofeprisStatus(data.cofepris_status ?? null);
+        setCredCofeprisReason(data.cofepris_rejection_reason ?? null);
+      }
+    } catch (err) {
+      console.warn('[DoctorCredentials] official creds fetch failed', err);
+    }
+  };
+
+  const handleResubmitCredential = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const target = resubmitTarget;
+    if (!file || !target) return;
+    setResubmitting(target);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${doctorId}/${target}_${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('doctor-credentials')
+        .upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+
+      // Marcamos status=pending y limpiamos motivo de rechazo para que admin lo revise.
+      const updatePayload =
+        target === 'cedula'
+          ? { cedula_status: 'pending' as const, cedula_rejection_reason: null }
+          : { cofepris_status: 'pending' as const, cofepris_rejection_reason: null };
+      const { error: updErr } = await supabase
+        .from('doctor_profiles')
+        .update(updatePayload)
+        .eq('user_id', doctorId);
+      if (updErr) throw updErr;
+
+      toast.success(
+        target === 'cedula'
+          ? 'Cédula reenviada — pendiente de nueva revisión'
+          : 'Permiso COFEPRIS reenviado — pendiente de nueva revisión'
+      );
+      await fetchOfficialCredentials();
+    } catch (err: any) {
+      console.error('[DoctorCredentials] resubmit error', err);
+      toast.error(err?.message || 'No se pudo reenviar el documento');
+    } finally {
+      setResubmitting(null);
+      setResubmitTarget(null);
+      if (credFileInputRef.current) credFileInputRef.current.value = '';
+    }
+  };
+
+  const triggerResubmit = (target: 'cedula' | 'cofepris') => {
+    setResubmitTarget(target);
+    setTimeout(() => credFileInputRef.current?.click(), 0);
+  };
 
   const fetchCredentials = async () => {
     try {
