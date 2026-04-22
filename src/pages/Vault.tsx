@@ -706,6 +706,9 @@ export default function Vault() {
             <VaultAuditPanel mode="patient" userId={supabaseUser.id} />
           </div>
         )}
+
+        <Dialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
+          <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Share2 className="w-5 h-5 text-primary" />
