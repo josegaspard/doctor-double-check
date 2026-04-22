@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { ChatSession } from '@/contexts/ChatContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { formatMessagePreview } from '@/lib/utils';
 
 interface SessionDisplayInfo {
   name: string;
