@@ -1,165 +1,140 @@
 
 
-# Plan: Fixtures, snapshots, CSV mejorado, accesibilidad y virtualización
+# Plan: Cierre final — CSV con encoding validado, bloqueo total de chat sin entitlement, Vault zero-metadata, watermark DRM por sesión
 
-## 1. Fixtures reutilizables para tests e2e
-
-**Nuevo archivo `src/test/e2e/fixtures.ts`** con factory functions tipadas:
-
-```ts
-makeUser({ role, overrides }) → AuthUser
-makeDoctorProfile({ status, overrides }) → DoctorProfile  
-makePatientProfile(overrides) → PatientProfile
-makeRecording({ doctorId, isPublic, fee }) → Recording
-makeVaultFile({ patientId, fileName, mime }) → VaultFile
-makeVaultAuditEvent({ action, patientId, actorId, fileId }) → VaultAuditEvent
-makeChatSession({ patient, doctor, hasEntitlement }) → ChatSession
-makeEntitlement({ userId, type, isActive, expiresAt }) → Entitlement
-```
-
-Cada factory acepta overrides parciales y genera IDs estables vía contador local (`fixture_user_1`, `fixture_doctor_2`) para tests deterministas. Los 9 archivos de tests existentes refactorizan sus mocks para usar fixtures.
-
-## 2. Snapshots visuales por breakpoint
-
-**Nuevo `src/test/e2e/responsive-snapshots.test.tsx`**:
-- Renderiza `<DoctorCard>` (extraído como subcomponente exportable de `Doctors.tsx`) y `<CredentialStatusBadge>` con datos largos: nombre de 40 chars, especialidad larga, badges múltiples.
-- Para cada breakpoint (360, 768, 1024) usa `Object.defineProperty(window, 'innerWidth')` + `vi.fn()` en `matchMedia`, y `container.querySelector` para verificar:
-  - No hay `scrollWidth > clientWidth` (sin overflow horizontal)
-  - El nombre tiene `truncate` aplicado cuando supera el contenedor
-  - Los badges hacen wrap (más de 1 fila) cuando no caben
-  - El popover de COFEPRIS abre dentro del viewport (no sale por la derecha)
-- Snapshot serializado del HTML estructural (sin estilos inline que cambien) usando `toMatchInlineSnapshot()`.
-
-## 3. CSV de auditoría mejorado + test estricto
+## 1. Exportación CSV mejorada con encoding validado
 
 **`src/components/vault/VaultAuditPanel.tsx`**:
-- Refactor `exportCSV()` para:
-  - Solo columnas visibles tras filtros (config visible-columns en estado).
-  - Orden fijo: `Fecha, Acción, Archivo, Actor, Patient ID, Metadata`.
-  - BOM UTF-8 (`\uFEFF`) prefijo para Excel.
-  - Escape RFC4180: dobles comillas dentro de campo entre comillas; campo entre comillas si contiene `,`, `"`, `\n` o `\r`.
-  - Mime `text/csv;charset=utf-8;`.
+- Agregar estado `visibleColumns` (default: todas) — los filtros de columna ya activos en UI determinan qué columnas exportar.
+- Refactor `exportCSV()`:
+  - Construir headers solo desde `visibleColumns` (orden fijo: `Fecha → Acción → Archivo → Actor → Patient ID → Metadata`).
+  - Validar encoding antes del download: usar `new TextEncoder('utf-8').encode(csv)` y verificar `bytes[0..2] === [0xEF, 0xBB, 0xBF]` (BOM UTF-8). Si falla, lanzar error visible con `toast.error("Error de encoding al exportar")`.
+  - Mime estricto: `text/csv;charset=utf-8;`.
+  - Nombre del archivo incluye filtros activos: `auditoria_${YYYY-MM-DD}_${actionFilter || 'todos'}.csv`.
 
-**Extender `vault-audit-csv.test.tsx`**:
-- Verifica orden exacto del header.
-- Inyecta valores con coma, comillas, salto de línea → valida escape.
-- Verifica que filtros activos producen exactamente N filas con M columnas.
-- Detecta BOM con `csv.charCodeAt(0) === 0xFEFF`.
+**Extender `src/test/e2e/vault-audit-csv.test.tsx`**:
+- Test con solo 3 columnas visibles → CSV header tiene exactamente 3 columnas en el orden correcto.
+- Test que valida los primeros 3 bytes del Blob (BOM `EF BB BF`).
+- Test que verifica `Blob.type === 'text/csv;charset=utf-8;'`.
+- Test que el nombre del archivo refleja los filtros (`auditoria_2026-04-22_access_granted.csv`).
 
-## 4. Tests de bloqueo Enter + foco/placeholder
+## 2. Bloqueo total de chat con Enter/atajos + PaywallModal
 
-**`src/test/e2e/chat-keyboard-block.test.tsx`**:
-- Render de `ChatMessagesPanel` con paciente sin entitlement.
-- `fireEvent.keyDown(textarea, { key: 'Enter' })` → verifica que `onSend` no se llamó y que `setPaywallOpen(true)`.
-- `fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true })` → no debe abrir paywall (es nueva línea).
-- Verifica `placeholder === 'Compra una consulta para enviar mensajes'`.
-- Verifica `document.activeElement === textarea` después de cerrar paywall sin pagar (foco devuelto).
-- Verifica que tras paywall exitoso el placeholder vuelve al normal.
+**`src/components/chat/ChatMessagesPanel.tsx`** — actualmente ya hay `handleSendIntercept`, falta cubrir keybindings:
+- En el `<Textarea>` (o `<Input>`) del chat, agregar `onKeyDown`:
+  ```ts
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendIntercept(); // dispara paywall si no hay entitlement
+    }
+  };
+  ```
+- Cuando `!hasChatEntitlement && entitlementChecked && userRole === 'patient'`:
+  - `<Textarea disabled placeholder="Compra una consulta para enviar mensajes" aria-disabled="true">`.
+  - Cualquier paste, drag&drop, o atajo (Ctrl+V) bloqueado vía `onPaste={(e) => { e.preventDefault(); openPaywall(); }}`.
+  - Botón de adjunto y emojis con `disabled={!hasChatEntitlement}`.
+- Tras cerrar PaywallModal: restaurar focus al textarea con `inputRef.current?.focus()`.
 
-## 5. Test de estrés realtime para audit panel
+**`src/test/e2e/chat-keyboard-block.test.tsx`** — extender:
+- Verifica `e.preventDefault()` se llamó cuando Enter sin entitlement.
+- Verifica que `Ctrl+Enter` también dispara paywall (no envía).
+- Verifica que `onPaste` con texto largo dispara paywall y NO inserta el texto en el textarea.
+- Verifica que el botón de adjunto está `disabled` y al hacer click abre paywall.
+- Verifica que tras `paywall.close()` el `document.activeElement === textareaRef`.
 
-**`src/test/e2e/vault-audit-stress.test.tsx`**:
-- Renderiza `<VaultAuditPanel>`, simula 200 INSERT realtime via `mockRealtimeChannel.emit()` en burst (3 ráfagas de ~70 cada 50ms).
-- `await waitFor(() => screen.getAllByRole('row').length === 201)` — header + 200.
-- Verifica orden DESC por `created_at` (con timestamps incrementales, el más reciente primero).
-- Verifica que ningún event se duplica (Set por `id` interno).
-- Verifica que scroll no rompe: `container.scrollTop = container.scrollHeight` mantiene los datos.
+## 3. Vault zero-metadata cuando se revoca acceso
 
-## 6. Banner de chat con precio real
+**`src/components/vault/VaultFilePreviewModal.tsx`** y `useVaultFiles` hook (si existe):
+- Modificar el query de archivos para el doctor: en lugar de `select('*').eq('patient_id', X)`, usar JOIN con `vault_access`:
+  ```sql
+  SELECT vf.* FROM vault_files vf
+  INNER JOIN vault_access va ON va.file_id = vf.id
+  WHERE va.doctor_id = auth.uid()
+    AND (va.expires_at IS NULL OR va.expires_at > now())
+  ```
+  Esto se traduce en TS usando `.in('id', allowedFileIds)` precalculado por una RPC `get_doctor_accessible_files()`.
 
-**`src/components/chat/ChatMessagesPanel.tsx`**:
-- Ya hay query a `doctor_profiles.consultation_fee` — reforzar render del banner: `Necesitas una consulta activa para enviar mensajes — $${fee.toLocaleString('es-MX')} MXN`.
-- Si `consultationFee == null` → fallback "Consulta el precio con el doctor" (no romper UI).
+**Nueva migración SQL**:
+- Función `get_doctor_accessible_files()` SECURITY DEFINER que devuelve solo archivos con `vault_access` activo para el doctor llamante.
+- Política RLS estricta en `vault_files`:
+  ```sql
+  CREATE POLICY "Doctors only see files with active access"
+  ON vault_files FOR SELECT
+  USING (
+    auth.uid() = patient_id  -- patients always see own files
+    OR EXISTS (
+      SELECT 1 FROM vault_access va
+      WHERE va.file_id = vault_files.id
+        AND va.doctor_id = auth.uid()
+        AND (va.expires_at IS NULL OR va.expires_at > now())
+    )
+  );
+  ```
+  Reemplaza la política existente que pueda exponer metadata.
+- Trigger en DELETE de `vault_access`: registra `access_revoked` en `vault_audit_log` (ya existe vía `trg_vault_access_audit`).
 
-**Extender `chat-gate.test.tsx`**:
-- Mock fee = 350 → banner contiene `$350 MXN`.
-- Mock fee = 1500 → banner contiene `$1,500 MXN` (verifica formato locale).
-- Mock fee = null → banner contiene "Consulta el precio".
+**Nuevo test `src/test/e2e/vault-revoke-zero-metadata.test.tsx`**:
+- Mock doctor con acceso a archivo X → ve `file_name`, `mime_type`, `created_at`.
+- Mock revocación: `vault_access` row eliminado → re-query → archivo X NO aparece en lista, ni siquiera el nombre.
+- Verifica que un fetch directo a la URL del archivo retorna 403.
+- Verifica que `vault_audit_log` registra `access_revoked` con `actor_id` correcto.
 
-## 7. Previews ocultando metadatos sin entitlement
+## 4. Watermark DRM dinámico por sesión + verificación
 
-**`src/test/e2e/chat-previews-no-entitlement.test.tsx`**:
-- Para paciente sin entitlement, la lista de chats sigue mostrando `formatMessagePreview` (no expone tokens raw como `[Imagen: scan-positivo-covid.jpg]` que filtran info clínica).
-- Verifica que preview es genérico ("📷 Foto") aunque metadata interna tenga `scan-positivo-covid.jpg`.
-- Verifica que URLs internas (`/prescriptions/abc-secret-token`) se renderizan como "📋 Receta médica" sin exponer el token.
+**`src/components/recordings/DynamicWatermark.tsx`** ya existe — reforzar:
+- Recibir prop opcional `sessionId` (uuid corto del playback session) y mostrarlo además del email/userId.
+- Formato visible: `<email_truncated> · <userId_short> · <session_id_short> · <hh:mm:ss>` con timestamp actualizado cada 30s vía `setInterval`.
+- Posición rotativa cada 60s entre 4 esquinas (top-left, top-right, bottom-left, bottom-right) para evitar masking estático.
+- `mix-blend-mode: difference` y `opacity-40` para visibilidad sobre cualquier fondo sin tapar contenido.
 
-## 8. Tests de accesibilidad (PaywallModal + VaultUploadSimulator)
+**Integrar en**:
+- `src/components/recordings/RecordingVideoPlayer.tsx` — ya integrado, pasar `sessionId={crypto.randomUUID()}` generado al montar.
+- `src/components/recordings/CloudflareRecordingPlayer.tsx` — mismo patrón.
+- `src/components/recordings/RecordingChatReplay.tsx` — agregar watermark también si se renderiza video adjunto.
+- `src/pages/LivePlayer.tsx` y `LiveStreamView.tsx` — agregar para lives en vivo (no solo grabaciones).
 
-**`src/test/e2e/accessibility.test.tsx`**:
+**Extender `src/test/e2e/recording-protection-renewal.test.tsx`**:
+- Mount 2 instancias del player en el mismo test → verifica que cada una tiene un `sessionId` distinto.
+- Verifica que el watermark contiene el `sessionId` truncado visible.
+- Avanza `vi.useFakeTimers()` 30s → verifica que el timestamp cambió.
+- Avanza 60s → verifica que la posición rotó (className diferente).
+- Verifica `mix-blend-mode: difference` en computed style.
+- Tras renovar URL firmada, verifica que el watermark sigue presente con el mismo `sessionId` (sesión de visualización persiste).
 
-Para `<PaywallModal>`:
-- `getByRole('dialog')` existe con `aria-modal="true"`.
-- Tiene `aria-labelledby` apuntando al título.
-- Tab cycle: el primer Tab enfoca botón "Pagar con Wallet", segundo "Pagar con Stripe", tercero "Cerrar".
-- Escape cierra el modal.
-- Trap de foco: Tab desde el último vuelve al primero.
-
-Para `<VaultUploadSimulator>`:
-- Drop zone tiene `role="button"` y `aria-label="Subir archivo al vault"`.
-- File input tiene label asociado.
-- Lista de doctores tiene `role="list"` con cada checkbox `role="checkbox"` y `aria-checked` correcto.
-- Botón "Guardar archivo" tiene `aria-disabled` cuando no hay archivo.
-- Anuncio del progreso vía `role="progressbar"` con `aria-valuenow` actualizándose.
-
-## 9. Watermark + click-derecho en URL renovada
-
-**`src/components/recordings/RecordingVideoPlayer.tsx`** y **`CloudflareRecordingPlayer.tsx`**:
-- Verificar que el handler `onContextMenu={(e) => e.preventDefault()}` está en el `<video>` y en su wrapper.
-- Verificar que `<DynamicWatermark>` se monta dentro del wrapper `relative`, no dentro del `<video>` (no posible).
-- Tras renovar URL (`regenerateSignedUrl`), forzar re-mount del `<video>` con `key={signedUrl}` para garantizar que el watermark sigue mostrándose y los handlers permanecen.
-
-**`src/test/e2e/recording-protection-renewal.test.tsx`**:
-- Render player con URL inicial → watermark visible (`getByTestId('dynamic-watermark')`).
-- Simula click derecho → verifica `preventDefault` (event default no aplicado).
-- Simula expiración + renovación de URL → re-render → watermark sigue presente, click derecho sigue bloqueado.
-- Verifica que el watermark muestra timestamp actualizado tras renovación (no el original).
-
-## 10. Virtualización de VaultAuditPanel
-
-**`src/components/vault/VaultAuditPanel.tsx`**:
-- Si `events.length > 100`, usar `@tanstack/react-virtual` (ya disponible vía dependency tree de shadcn) para virtualizar la tabla.
-- Wrapper `<div ref={parentRef} className="h-[600px] overflow-auto">` + `useVirtualizer({ count, estimateSize: 56 })`.
-- Solo renderizar `virtualItems`. Mantener header sticky con `position: sticky; top: 0`.
-- Filtros operan sobre `events` antes de pasarlos al virtualizer (filtros no se rompen).
-
-**`src/test/e2e/vault-audit-virtualization.test.tsx`**:
-- Render con 500 eventos.
-- Verifica que el DOM solo tiene ~15-20 filas renderizadas (no 500).
-- `fireEvent.scroll(container, { target: { scrollTop: 5000 } })` → verifica que aparecen filas con índice ~90+.
-- Aplica filtro por acción → verifica que el conteo total cambia y la virtualización se reinicia desde top.
-- Limpia filtro → verifica que vuelven todas y el orden persiste.
+**Nuevo test `src/test/e2e/watermark-session-uniqueness.test.tsx`**:
+- Renderiza player → captura `sessionId` mostrado.
+- Desmonta + remonta → captura nuevo `sessionId` → verifica que es distinto.
+- Renderiza 3 players simultáneos en distintas tabs simuladas → cada uno tiene sessionId único.
 
 ## Archivos tocados
 
 **Nuevos:**
-1. `src/test/e2e/fixtures.ts` — factories reutilizables
-2. `src/test/e2e/responsive-snapshots.test.tsx`
-3. `src/test/e2e/chat-keyboard-block.test.tsx`
-4. `src/test/e2e/vault-audit-stress.test.tsx`
-5. `src/test/e2e/chat-previews-no-entitlement.test.tsx`
-6. `src/test/e2e/accessibility.test.tsx`
-7. `src/test/e2e/recording-protection-renewal.test.tsx`
-8. `src/test/e2e/vault-audit-virtualization.test.tsx`
+1. `src/test/e2e/vault-revoke-zero-metadata.test.tsx`
+2. `src/test/e2e/watermark-session-uniqueness.test.tsx`
 
 **Editados:**
-9. `src/components/vault/VaultAuditPanel.tsx` — CSV con BOM/escape RFC4180 + virtualización condicional
-10. `src/components/chat/ChatMessagesPanel.tsx` — banner con precio real formateado MXN
-11. `src/components/recordings/RecordingVideoPlayer.tsx` — `key={signedUrl}` para re-mount + onContextMenu
-12. `src/components/recordings/CloudflareRecordingPlayer.tsx` — mismo patrón
-13. `src/test/e2e/vault-audit-csv.test.tsx` — extensión con orden estricto, BOM, escape
-14. `src/test/e2e/chat-gate.test.tsx` — extensión con verificación de precio formateado
-15. `src/pages/Doctors.tsx` — extraer `<DoctorCard>` como componente exportable para snapshots
-16. `package.json` — añadir `@tanstack/react-virtual` si no está presente
+3. `src/components/vault/VaultAuditPanel.tsx` — CSV con `visibleColumns` + validación de BOM/encoding antes del download
+4. `src/components/chat/ChatMessagesPanel.tsx` — `onKeyDown` para Enter/Ctrl+Enter, `onPaste` bloqueado, refs para focus
+5. `src/components/recordings/DynamicWatermark.tsx` — prop `sessionId`, display extendido
+6. `src/components/recordings/RecordingVideoPlayer.tsx` — generar `sessionId` único al mount
+7. `src/components/recordings/CloudflareRecordingPlayer.tsx` — mismo
+8. `src/components/recordings/RecordingChatReplay.tsx` — integrar watermark
+9. `src/pages/LivePlayer.tsx` — integrar watermark
+10. `src/components/live/LiveStreamView.tsx` — integrar watermark
+11. `src/test/e2e/vault-audit-csv.test.tsx` — extender con tests de columnas filtradas, BOM bytes, mime, nombre de archivo
+12. `src/test/e2e/chat-keyboard-block.test.tsx` — extender con paste, Ctrl+Enter, focus restoration
+13. `src/test/e2e/recording-protection-renewal.test.tsx` — extender con verificación de sessionId, rotación de posición, mix-blend
+14. `src/pages/Vault.tsx` y `src/pages/DoctorVault.tsx` — usar nueva RPC `get_doctor_accessible_files`
+
+**Migración SQL:**
+15. Nueva función `get_doctor_accessible_files()` + política RLS estricta sobre `vault_files`
 
 ## Resultado garantizado
 
-- Fixtures unifican datos de mock; cualquier cambio de schema solo se actualiza en un lugar.
-- Snapshots responsivos detectan regresiones de overflow o truncado en 360/768/1024px.
-- CSV de auditoría es Excel-safe, ordenado y con escape correcto; tests fallan si cambia el formato.
-- Chat bloquea Enter/Shift+Enter/click correctamente; foco y placeholder son accesibles.
-- Audit panel soporta cientos de eventos en ráfaga sin perderlos ni desordenarlos, y se virtualiza con 500+ filas sin degradar el navegador.
-- Banner de chat muestra el precio real del doctor en formato MXN.
-- Previews de chat nunca exponen metadata sensible.
-- PaywallModal y VaultUploadSimulator pasan validación de roles/aria/teclado.
-- Watermark y bloqueo de click derecho persisten tras renovación de URL firmada.
+- CSV de auditoría exporta solo columnas visibles en orden fijo, con BOM validado byte-a-byte y nombre que refleja filtros aplicados.
+- Chat sin entitlement bloquea Enter, Ctrl+Enter, paste, drag&drop, botones de adjunto; PaywallModal se abre en cualquier intento; foco vuelve al textarea tras cerrar.
+- Doctor sin acceso vigente NO ve metadata del archivo (ni nombre, ni mime, ni fecha) — la lista se filtra en el backend vía RLS+RPC, no en el cliente.
+- Watermark DRM muestra email + userId + sessionId único por sesión + timestamp actualizado cada 30s, rota posición cada 60s, persiste tras renovación de URL firmada, y aparece en grabaciones, replay de chat, lives en vivo y live player.
+- Tests cubren todas las regresiones: CSV (encoding, columnas, mime), chat (keyboard, paste, focus), Vault (zero-metadata tras revoke), watermark (uniqueness por sesión, rotación, mix-blend).
 
