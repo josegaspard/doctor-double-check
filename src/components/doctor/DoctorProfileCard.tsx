@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Camera, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { CredentialStatusBadge, type CredentialStatus } from './CredentialStatusBadge';
 
@@ -23,14 +25,17 @@ export function DoctorProfileCard() {
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [creds, setCreds] = useState<CredentialsState | null>(null);
+  const [credsLoading, setCredsLoading] = useState(true);
+  const [credsError, setCredsError] = useState<string | null>(null);
 
   const doctorProfile = user?.doctorProfile;
   const initials = (user?.name || 'Dr').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
-  useEffect(() => {
-    let active = true;
-    const loadCreds = async () => {
-      if (!supabaseUser?.id) return;
+  const loadCreds = useCallback(async () => {
+    if (!supabaseUser?.id) return;
+    setCredsLoading(true);
+    setCredsError(null);
+    try {
       const { data, error } = await supabase
         .from('doctor_profiles')
         .select(
@@ -38,11 +43,7 @@ export function DoctorProfileCard() {
         )
         .eq('user_id', supabaseUser.id)
         .maybeSingle();
-      if (!active) return;
-      if (error) {
-        console.warn('[DoctorProfileCard] credentials fetch error', error);
-        return;
-      }
+      if (error) throw error;
       if (data) {
         setCreds({
           cedula_profesional: data.cedula_profesional ?? null,
@@ -52,13 +53,20 @@ export function DoctorProfileCard() {
           cofepris_status: (data.cofepris_status as CredentialStatus) ?? null,
           cofepris_rejection_reason: data.cofepris_rejection_reason ?? null,
         });
+      } else {
+        setCreds(null);
       }
-    };
-    loadCreds();
-    return () => {
-      active = false;
-    };
+    } catch (err: any) {
+      console.warn('[DoctorProfileCard] credentials fetch error', err);
+      setCredsError(err?.message || 'Error al cargar credenciales');
+    } finally {
+      setCredsLoading(false);
+    }
   }, [supabaseUser?.id]);
+
+  useEffect(() => {
+    loadCreds();
+  }, [loadCreds]);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -149,23 +157,53 @@ export function DoctorProfileCard() {
               <Badge variant="outline" className="text-[10px]">
                 {doctorProfile?.status === 'approved' ? '✓ Aprobado' : doctorProfile?.status || 'Pendiente'}
               </Badge>
-              {hasAnyCredential && creds?.cedula_profesional?.trim() && (
-                <CredentialStatusBadge
-                  type="cedula"
-                  status={creds.cedula_status}
-                  value={creds.cedula_profesional}
-                  rejectionReason={creds.cedula_rejection_reason}
-                  size="xs"
-                />
-              )}
-              {hasAnyCredential && creds?.cofepris_permit?.trim() && (
-                <CredentialStatusBadge
-                  type="cofepris"
-                  status={creds.cofepris_status}
-                  value={creds.cofepris_permit}
-                  rejectionReason={creds.cofepris_rejection_reason}
-                  size="xs"
-                />
+              {credsLoading ? (
+                <>
+                  <Skeleton className="h-4 w-20 rounded-full" />
+                  <Skeleton className="h-4 w-20 rounded-full" />
+                </>
+              ) : credsError ? (
+                <div className="flex items-center gap-1">
+                  <Badge
+                    variant="destructive"
+                    className="text-[10px] gap-1 h-4 px-1.5"
+                    title={credsError}
+                  >
+                    <AlertCircle className="w-2.5 h-2.5" />
+                    Error credenciales
+                  </Badge>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={loadCreds}
+                    className="h-5 px-1.5 text-[10px] gap-0.5"
+                  >
+                    <RefreshCw className="w-2.5 h-2.5" />
+                    Reintentar
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {hasAnyCredential && creds?.cedula_profesional?.trim() && (
+                    <CredentialStatusBadge
+                      type="cedula"
+                      status={creds.cedula_status}
+                      value={creds.cedula_profesional}
+                      rejectionReason={creds.cedula_rejection_reason}
+                      size="xs"
+                    />
+                  )}
+                  {hasAnyCredential && creds?.cofepris_permit?.trim() && (
+                    <CredentialStatusBadge
+                      type="cofepris"
+                      status={creds.cofepris_status}
+                      value={creds.cofepris_permit}
+                      rejectionReason={creds.cofepris_rejection_reason}
+                      size="xs"
+                    />
+                  )}
+                </>
               )}
             </div>
           </div>
