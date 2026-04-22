@@ -47,7 +47,34 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed }: ChatMessa
 
     // Check if it's a file message
     const imageMatch = content.match(/📷 \[Imagen: (.+?)\]\n(https?:\/\/.+)/);
+    const videoMatch = content.match(/🎥 \[Video: (.+?)\]\n(https?:\/\/.+)/);
     const fileMatch = content.match(/📎 \[Archivo: (.+?)\]\n(https?:\/\/.+)/);
+
+    if (videoMatch) {
+      const [, fileName, url] = videoMatch;
+      return (
+        <div className="space-y-2">
+          <div className="relative rounded-lg overflow-hidden" data-testid="chat-video-attachment">
+            <video
+              src={url}
+              controls
+              playsInline
+              className="max-w-full rounded-lg w-full"
+            />
+            <DynamicWatermark
+              email={user?.email}
+              userId={user?.id}
+              sessionId={previewSessionId}
+            />
+          </div>
+          <p className="text-[11px] opacity-70 flex items-center gap-1">
+            <FileText className="w-3 h-3" />
+            {fileName}
+          </p>
+        </div>
+      );
+    }
+
 
     if (imageMatch) {
       const [, fileName, url] = imageMatch;
