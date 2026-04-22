@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLives } from '@/contexts/LivesContext';
 import { Button } from '@/components/ui/button';
@@ -6,17 +6,67 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp, RefreshCw, X, Wrench } from 'lucide-react';
 
+const STORAGE_KEY_OPEN = 'lives_debug_panel_open';
+const STORAGE_KEY_HIDDEN = 'lives_debug_panel_hidden';
+
+const readBool = (key: string): boolean => {
+  try {
+    return localStorage.getItem(key) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+const writeBool = (key: string, value: boolean) => {
+  try {
+    localStorage.setItem(key, String(value));
+  } catch {
+    /* ignore */
+  }
+};
+
 /**
  * Floating admin-only debug panel showing the LivesContext doctor profile cache state.
- * Useful to verify in production whether credential fields are populated, null (fetched empty)
- * or undefined (pending refetch).
+ * State (open/hidden) is persisted in localStorage so admins don't need to reopen it
+ * on every navigation. Use `window.__showLivesDebug()` from the console to restore
+ * a hidden panel.
  */
 export function LivesDebugPanel() {
   const { role } = useAuth();
   const { getDebugCacheSnapshot, retryCredentials } = useLives();
-  const [open, setOpen] = useState(false);
-  const [hidden, setHidden] = useState(false);
+  const [open, setOpen] = useState<boolean>(() => readBool(STORAGE_KEY_OPEN));
+  const [hidden, setHidden] = useState<boolean>(() => readBool(STORAGE_KEY_HIDDEN));
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    writeBool(STORAGE_KEY_OPEN, open);
+  }, [open]);
+
+  useEffect(() => {
+    writeBool(STORAGE_KEY_HIDDEN, hidden);
+  }, [hidden]);
+
+  // Expose a console shortcut so admins can restore a hidden panel without
+  // needing to clear localStorage manually.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    (window as any).__showLivesDebug = () => {
+      try {
+        localStorage.removeItem(STORAGE_KEY_HIDDEN);
+      } catch {
+        /* ignore */
+      }
+      setHidden(false);
+      setOpen(true);
+    };
+    return () => {
+      try {
+        delete (window as any).__showLivesDebug;
+      } catch {
+        /* ignore */
+      }
+    };
+  }, []);
 
   if (role !== 'admin' || hidden) return null;
 
@@ -55,6 +105,7 @@ export function LivesDebugPanel() {
             onClick={() => setHidden(true)}
             className="text-muted-foreground hover:text-foreground"
             aria-label="Close"
+            title="Cerrar (usa window.__showLivesDebug() para reabrirlo)"
           >
             <X className="w-3.5 h-3.5" />
           </button>

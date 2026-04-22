@@ -64,6 +64,7 @@ interface LivesContextType {
   recordings: Recording[];
   isLoading: boolean;
   credentialsLoadError: boolean;
+  credentialsRetrying: boolean;
   getLive: (id: string) => Live | undefined;
   getRecording: (id: string) => Recording | undefined;
   getLivesByDoctor: (doctorId: string) => Live[];
@@ -112,6 +113,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   const [likedLives, setLikedLives] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [credentialsLoadError, setCredentialsLoadError] = useState(false);
+  const [credentialsRetrying, setCredentialsRetrying] = useState(false);
   const recordingsLoadedRef = useRef(false);
   
   // Track last fetch time to prevent rapid re-fetches
@@ -200,12 +202,16 @@ export function LivesProvider({ children }: { children: ReactNode }) {
               : Promise.resolve({ data: [] as any[] }),
           ]);
 
-          // Detect credential fetch error
-          if (uncachedIds.length > 0 && (doctorProfilesResult as any).error) {
-            console.error('Error fetching doctor credentials:', (doctorProfilesResult as any).error);
-            setCredentialsLoadError(true);
-          } else if (uncachedIds.length > 0) {
-            setCredentialsLoadError(false);
+          // Detect credential fetch error: only mark error when there's a real client error
+          // (with a message). Empty result arrays are valid responses, NOT errors.
+          if (uncachedIds.length > 0) {
+            const credErr = (doctorProfilesResult as any).error;
+            if (credErr && credErr.message) {
+              console.error('Error fetching doctor credentials:', credErr);
+              setCredentialsLoadError(true);
+            } else {
+              setCredentialsLoadError(false);
+            }
           }
 
           // Update caches
@@ -692,10 +698,15 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   }, [fetchLives]);
 
   const retryCredentials = useCallback(async () => {
-    // Clear credential cache only — keep profile name/avatar cache for snappy UI
-    doctorProfileCache.current.clear();
-    setCredentialsLoadError(false);
-    await fetchLives(true);
+    setCredentialsRetrying(true);
+    try {
+      // Clear credential cache only — keep profile name/avatar cache for snappy UI
+      doctorProfileCache.current.clear();
+      setCredentialsLoadError(false);
+      await fetchLives(true);
+    } finally {
+      setCredentialsRetrying(false);
+    }
   }, [fetchLives]);
 
   const getDebugCacheSnapshot = useCallback((): DebugCacheEntry[] => {
@@ -739,6 +750,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     recordings,
     isLoading,
     credentialsLoadError,
+    credentialsRetrying,
     getLive,
     getRecording,
     getLivesByDoctor,
@@ -753,7 +765,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     ensureRecordingsLoaded,
     retryCredentials,
     getDebugCacheSnapshot,
-  }), [lives, recordings, isLoading, credentialsLoadError, getLive, getRecording, getLivesByDoctor, getRecordingsByDoctor, hasLiked, refreshLives, refreshRecordings, ensureRecordingsLoaded, retryCredentials, getDebugCacheSnapshot]);
+  }), [lives, recordings, isLoading, credentialsLoadError, credentialsRetrying, getLive, getRecording, getLivesByDoctor, getRecordingsByDoctor, hasLiked, refreshLives, refreshRecordings, ensureRecordingsLoaded, retryCredentials, getDebugCacheSnapshot]);
 
   return (
     <LivesContext.Provider value={contextValue}>
@@ -768,6 +780,7 @@ const LIVES_DEFAULTS: LivesContextType = {
   recordings: [],
   isLoading: false,
   credentialsLoadError: false,
+  credentialsRetrying: false,
   getLive: () => undefined,
   getRecording: () => undefined,
   getLivesByDoctor: () => [],
