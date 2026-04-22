@@ -3595,6 +3595,8 @@ export type Database = {
           available_for_double_check: boolean | null
           badge_override: string | null
           bio: string | null
+          cedula_profesional: string | null
+          cofepris_permit: string | null
           consultation_fee: number | null
           created_at: string | null
           followers_count: number | null
@@ -3605,6 +3607,7 @@ export type Database = {
           office_hours_start: string | null
           rank_override: string | null
           rating: number | null
+          signature_url: string | null
           specialty: string | null
           status: Database["public"]["Enums"]["doctor_status"] | null
           total_consultations: number | null
@@ -3616,6 +3619,8 @@ export type Database = {
           available_for_double_check?: boolean | null
           badge_override?: string | null
           bio?: string | null
+          cedula_profesional?: string | null
+          cofepris_permit?: string | null
           consultation_fee?: number | null
           created_at?: string | null
           followers_count?: number | null
@@ -3626,6 +3631,7 @@ export type Database = {
           office_hours_start?: string | null
           rank_override?: string | null
           rating?: number | null
+          signature_url?: string | null
           specialty?: string | null
           status?: Database["public"]["Enums"]["doctor_status"] | null
           total_consultations?: number | null
@@ -3637,6 +3643,8 @@ export type Database = {
           available_for_double_check?: boolean | null
           badge_override?: string | null
           bio?: string | null
+          cedula_profesional?: string | null
+          cofepris_permit?: string | null
           consultation_fee?: number | null
           created_at?: string | null
           followers_count?: number | null
@@ -3647,6 +3655,7 @@ export type Database = {
           office_hours_start?: string | null
           rank_override?: string | null
           rating?: number | null
+          signature_url?: string | null
           specialty?: string | null
           status?: Database["public"]["Enums"]["doctor_status"] | null
           total_consultations?: number | null

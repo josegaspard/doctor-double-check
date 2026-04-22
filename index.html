@@ -16,6 +16,9 @@
     <meta name="format-detection" content="telephone=no" />
 
     <link rel="canonical" href="https://medical-masters.com/" />
+    <link rel="alternate" hreflang="es-mx" href="https://medical-masters.com/" />
+    <link rel="alternate" hreflang="es" href="https://medical-masters.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://medical-masters.com/" />
 
     <meta property="og:title" content="Medical Masters · Orientación médica con especialistas verificados" />
     <meta property="og:description" content="Conecta con médicos certificados en México. Orientaciones en línea, lives, contenido premium y tu expediente clínico digital, todo en un solo lugar." />
@@ -23,7 +26,7 @@
     <meta property="og:locale" content="es_MX" />
     <meta property="og:url" content="https://medical-masters.com/" />
     <meta property="og:site_name" content="Medical Masters" />
-    <meta property="og:image" content="https://medical-masters.com/favicon.png?v=2" />
+    <meta property="og:image" content="https://medical-masters.com/icon-512.png?v=3" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
     <meta property="og:image:type" content="image/png" />
@@ -33,15 +36,21 @@
     <meta name="twitter:site" content="@MedicalMasters" />
     <meta name="twitter:title" content="Medical Masters · Orientación médica con especialistas verificados" />
     <meta name="twitter:description" content="Plataforma médica profesional en México con doctores 100% verificados ante SEP y COFEPRIS." />
-    <meta name="twitter:image" content="https://medical-masters.com/favicon.png?v=2" />
+    <meta name="twitter:image" content="https://medical-masters.com/icon-512.png?v=3" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" /></noscript>
-    <link rel="icon" type="image/png" href="/favicon.png?v=2">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/favicon.png?v=2">
+
+    <!-- Favicons (Google SERP requires .ico + multi-resolution sizes) -->
+    <link rel="icon" href="/favicon.ico?v=3" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=3" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=3" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=3" />
+    <link rel="shortcut icon" href="/favicon.ico?v=3" />
+    <link rel="apple-touch-icon" href="/icon-192.png?v=3" />
+    <link rel="manifest" href="/manifest.json" />
     <link rel="sitemap" type="application/xml" href="https://medical-masters.com/sitemap.xml" />
 
     <script type="application/ld+json">
@@ -51,8 +60,8 @@
       "name": "Medical Masters",
       "alternateName": "Medical Masters MX",
       "url": "https://medical-masters.com/",
-      "logo": "https://medical-masters.com/favicon.png?v=2",
-      "image": "https://medical-masters.com/favicon.png?v=2",
+      "logo": "https://medical-masters.com/icon-512.png?v=3",
+      "image": "https://medical-masters.com/icon-512.png?v=3",
       "description": "Plataforma médica profesional en México: orientaciones médicas en línea, lives con especialistas certificados, contenido premium y expediente clínico digital. Doctores 100% verificados ante SEP y COFEPRIS.",
       "areaServed": {
         "@type": "Country",
@@ -72,6 +81,24 @@
         "https://twitter.com/MedicalMasters",
         "https://www.linkedin.com/company/medical-masters"
       ]
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Medical Masters",
+      "url": "https://medical-masters.com/",
+      "inLanguage": "es-MX",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://medical-masters.com/doctors?search={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
     }
     </script>
 

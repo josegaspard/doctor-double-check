@@ -136,38 +136,26 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         
         // Only fetch profiles not in cache
         if (uncachedIds.length > 0) {
-          const [profilesResult, doctorProfilesResult, cedulaResult] = await Promise.all([
+          const [profilesResult, doctorProfilesResult] = await Promise.all([
             supabase
               .from('profiles_public')
               .select('id, name, avatar_url')
               .in('id', uncachedIds),
             supabase
               .from('doctor_profiles_public')
-              .select('user_id, followers_count, specialty')
+              .select('user_id, followers_count, specialty, cedula_profesional, cofepris_permit')
               .in('user_id', uncachedIds),
-            supabase
-              .from('doctor_profiles')
-              .select('user_id, cedula_profesional, cofepris_permit')
-              .in('user_id', uncachedIds)
           ]);
-
-          // Build cedula + cofepris maps
-          const cedulaMap: Record<string, string> = {};
-          const cofeprisMap: Record<string, string> = {};
-          cedulaResult.data?.forEach((c: any) => {
-            if (c.cedula_profesional) cedulaMap[c.user_id] = c.cedula_profesional;
-            if (c.cofepris_permit) cofeprisMap[c.user_id] = c.cofepris_permit;
-          });
 
           // Update caches
           profilesResult.data?.forEach(p => {
             profileCache.current.set(p.id, { name: p.name || 'Doctor', avatar_url: p.avatar_url || undefined });
           });
-          doctorProfilesResult.data?.forEach(d => {
+          doctorProfilesResult.data?.forEach((d: any) => {
             doctorProfileCache.current.set(d.user_id, {
               followers_count: d.followers_count || 0,
-              cedula_profesional: cedulaMap[d.user_id],
-              cofepris_permit: cofeprisMap[d.user_id],
+              cedula_profesional: d.cedula_profesional || undefined,
+              cofepris_permit: d.cofepris_permit || undefined,
             });
           });
         }
