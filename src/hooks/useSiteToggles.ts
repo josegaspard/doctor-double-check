@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export type AppBackgroundMode = 'image' | 'white';
+
 export interface SiteToggles {
   show_news_section: boolean;
   show_content_medical: boolean;
   show_prescriptions: boolean;
   live_chat_free: boolean;
   show_transaction_history: boolean;
+  app_background: AppBackgroundMode;
 }
 
 const DEFAULT_TOGGLES: SiteToggles = {
@@ -15,6 +18,7 @@ const DEFAULT_TOGGLES: SiteToggles = {
   show_prescriptions: false,
   live_chat_free: true,
   show_transaction_history: false,
+  app_background: 'image',
 };
 
 let cachedToggles: SiteToggles | null = null;

@@ -71,6 +71,8 @@ import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { ActiveLiveBanner } from '@/components/live/ActiveLiveBanner';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
+// 🎨 FONDO DE LA APP — para cambiar la imagen, reemplaza este archivo o ajusta esta ruta:
+import appBackground from '@/assets/app-background.jpg';
 
 interface NavItem {
   labelKey: string;
@@ -264,9 +266,37 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   // Hide bottom nav on certain pages (video call, live player full experience)
   const hideBottomNav = location.pathname.startsWith('/video-call');
 
+  // Background mode controlado desde Admin → Site Settings → Toggles
+  const useImageBackground = (toggles as any).app_background !== 'white';
+
   return (
-    <div ref={ref} className="min-h-screen bg-gradient-to-br from-primary/[0.02] via-secondary/[0.01] to-primary/[0.02] flex flex-col overflow-x-hidden">
-      <DecorativeBackground />
+    <div
+      ref={ref}
+      className={`min-h-screen flex flex-col overflow-x-hidden relative ${
+        useImageBackground
+          ? ''
+          : 'bg-gradient-to-br from-primary/[0.02] via-secondary/[0.01] to-primary/[0.02]'
+      }`}
+      style={
+        useImageBackground
+          ? {
+              backgroundImage: `url(${appBackground})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundAttachment: 'fixed',
+              backgroundRepeat: 'no-repeat',
+            }
+          : undefined
+      }
+    >
+      {/* Overlay sutil para legibilidad sobre la imagen */}
+      {useImageBackground && (
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 pointer-events-none z-0 bg-black/30"
+        />
+      )}
+      {!useImageBackground && <DecorativeBackground />}
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container mx-auto px-4">
