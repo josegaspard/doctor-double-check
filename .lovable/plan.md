@@ -1,86 +1,60 @@
 
 
-# Plan: Cerrar al 100% items 4 y 5 (verificación con estados + auditoría con filtros)
+# Plan: Cerrar al 100% los 3 puntos pendientes
 
-Los items 1, 2, 3 ya están implementados correctamente (verificado en código). Este plan completa lo que aún falta de los items 4 y 5.
+Ya verifiqué el estado real del código. Todo lo demás está implementado. Aquí cierro los huecos exactos que faltan:
 
-## Item 4 — UI de verificación pending/approved/rejected en TODA la app
+## 1. `CredentialStatusBadge` en `DoctorProfileCard` (único faltante de "badges sueltos")
 
-La base de datos y el componente `CredentialStatusBadge` ya existen. Falta **propagar el estado** desde la BD hasta los lugares donde se muestran las credenciales (hoy aún se renderiza el badge plano sin estado).
+`LivesGrid.tsx`, `ContentGallery.tsx` y `ContentPreviewModal.tsx` ya usan `CredentialStatusBadge`. **Sólo falta en `DoctorProfileCard.tsx`** (dashboard del propio doctor), donde hoy únicamente se muestra el badge de estado general (`Aprobado / Pendiente`) sin sus credenciales.
 
-**4.1. Tipos**
-- `src/types/index.ts` (o donde esté `Live`): agregar `doctorCedulaStatus`, `doctorCedulaRejectionReason`, `doctorCofeprisStatus`, `doctorCofeprisRejectionReason`.
-- `src/pages/ContentGallery.tsx` interface `ContentItem`: campos análogos `creator_cedula_status` / `_rejection_reason` para cédula y COFEPRIS.
+**Cambios en `src/components/doctor/DoctorProfileCard.tsx`:**
+- Cargar de `doctor_profiles` (RLS permite al dueño): `cedula_profesional, cedula_status, cedula_rejection_reason, cofepris_permit, cofepris_status, cofepris_rejection_reason` con un `useEffect` único.
+- Debajo del nombre/especialidad agregar una fila `flex flex-wrap gap-1` con dos `<CredentialStatusBadge type="cedula"|"cofepris" ... />`.
+- Si la credencial está `rejected`, el popover ya muestra el motivo (lógica del componente). El doctor verá su propia razón de rechazo aquí mismo → mejora UX para que sepa por qué fue rechazada y pueda actuar.
 
-**4.2. Fetch en contextos**
-- `src/contexts/LivesContext.tsx` (línea ~146): ampliar el `select` de `doctor_profiles_public` a `cedula_status, cedula_rejection_reason, cofepris_status, cofepris_rejection_reason`. Guardar en `doctorProfileCache` y mapear a los nuevos campos del objeto Live.
-- `src/pages/ContentGallery.tsx` (línea ~310-330): mismo `select` ampliado, mapear al objeto `ContentItem`.
+## 2. AdminVerifications: razón **obligatoria también al aprobar** (no solo al rechazar)
 
-**4.3. Sustituir badges crudos por `CredentialStatusBadge`**
-Reemplazar los `<Badge>` planos en estos 4 lugares:
-- `src/pages/LivePlayer.tsx` líneas 642-648 (las dos líneas `Céd. Prof.:` y `COFEPRIS:`).
-- `src/pages/LivesGrid.tsx` líneas 110-126.
-- `src/pages/ContentGallery.tsx` líneas 231-253.
-- `src/components/content/ContentPreviewModal.tsx` líneas 316+.
+Hoy `MedicalCredentialsReview.tsx` permite aprobar sin escribir nada (línea 360: `disabled={isProcessing || (actionDialog.action === 'reject' && !reason.trim())}`). Tu petición textual: *"campo de razón obligatorio para cada acción"*.
 
-Cada uno renderiza dos `<CredentialStatusBadge type="cedula" status={...} value={...} rejectionReason={...} />` que ya muestran color (verde/amarillo/rojo) + popover explicativo (incluida razón de rechazo de COFEPRIS).
+**Cambios en `src/components/admin/MedicalCredentialsReview.tsx`:**
+- Mostrar el `<Textarea>` también cuando `action === 'approve'` con label "Notas de aprobación" (placeholder: "Confirma cómo verificaste esta credencial — visible al doctor y registrado para auditoría").
+- Cambiar `disabled` a: `isProcessing || !reason.trim()` para AMBAS acciones.
+- Persistir la nota:
+  - En `approve`: guardar la nota en `cedula_rejection_reason` / `cofepris_rejection_reason` **NO** (ese campo es semánticamente para rechazo). En su lugar, persistirla en el `metadata` de la notificación al doctor + incluirla en el body del mensaje de notificación que ya se inserta en `notifications`.
+  - En `reject`: comportamiento actual (campo de motivo requerido) sigue igual.
+- Renombrar dinámicamente el label del Textarea según acción ("Motivo del rechazo" vs "Notas de verificación").
+- Renombrar título del dialog: "Aprobar credencial — confirma verificación" / "Rechazar credencial — indica motivo".
 
-**4.4. Admin: aprobar/rechazar cédula y COFEPRIS por separado**
-`src/pages/AdminVerifications.tsx`: añadir una **segunda pestaña "Credenciales médicas"** dentro del tabs existente que liste doctores con `cedula_status` o `cofepris_status` en `pending`. Para cada uno, dos secciones (Cédula / COFEPRIS) con botones Aprobar / Rechazar. Al rechazar abrir el dialog actual y guardar:
-```ts
-await supabase.from('doctor_profiles').update({
-  cedula_status: 'rejected',          // o 'approved'
-  cedula_rejection_reason: reason,    // solo en rechazo
-}).eq('user_id', doctorId);
-```
-Análogo para COFEPRIS. La tab existente "Verificaciones de Identidad" sigue manejando `identity_verifications` (Veriff) sin cambios.
+## 3. Verificación end-to-end del panel de auditoría Vault (filtros, paginación, eventos)
 
-## Item 5 — Auditoría Vault con filtros por fecha y archivo
+El `VaultAuditPanel.tsx` ya tiene filtros (archivo, acción, fecha desde/hasta), contador `Mostrando N de M`, botón "Cargar más" en bloques de 100 y "Limpiar filtros". Está conectado a `vault_audit_log` con triggers automáticos para `access_granted`/`access_revoked` y al `log_vault_action` desde `VaultFilePreviewModal` para `accessed`/`access_denied`.
 
-`VaultAuditPanel` ya existe pero sin filtros. Lo extiendo:
+**Lo que cierro en este pase para garantizar que funciona end-to-end:**
 
-**5.1. Filtros UI** (en `src/components/vault/VaultAuditPanel.tsx`)
-- Fila de controles encima de la lista:
-  - **Selector de archivo**: `<Select>` poblado con los archivos únicos del set actual + opción "Todos".
-  - **Selector de acción**: "Todas / Acceso / Permiso otorgado / Permiso revocado / Denegado / OTP".
-  - **Rango de fecha**: dos inputs `type="date"` (desde / hasta). Default: últimos 30 días.
-  - Botón "Limpiar filtros".
+a) **Bug en `count` cuando hay filtros**: hoy se hace `select('*', { count: 'exact' }).limit(limit)` — Supabase devuelve `count` del total **sin** aplicar el limit (correcto), pero al combinar con `.in()` o múltiples `.eq()` con `count: 'exact'` puede ser lento. Cambio a `count: 'exact', head: false` (ya lo es) y agrego `useEffect` separado que sólo recalcula `totalCount` cuando cambian los filtros, no cuando cambia `limit` (hoy refetchea todo al cargar más → desperdicio). Optimización: `limit` no debe disparar `count` — separo el query en dos.
 
-**5.2. Lógica**
-- Cambiar fetch a aceptar params; aplicar `gte('created_at', from)`, `lte('created_at', to)`, `eq('file_id', fileId)` y `in('action', actions)` cuando estén definidos.
-- Mantener límite de 100 con paginación simple "Cargar más" (incrementa límite +100).
-- Mostrar contador "Mostrando N de M eventos" debajo de los filtros.
+b) **Realtime opcional**: agregar suscripción a `postgres_changes` sobre `vault_audit_log` filtrada por `patient_id` o `actor_id` para refrescar la lista automáticamente cuando llegan eventos nuevos sin tener que pulsar "Actualizar".
 
-**5.3. Registrar acceso real al firmar URL**
-Hoy el trigger registra `access_granted` / `access_revoked` automáticamente. Falta `accessed` y `access_denied`. En `src/contexts/VaultContext.tsx` (donde se solicita la URL firmada del archivo), tras éxito llamar:
-```ts
-await supabase.rpc('log_vault_action', {
-  p_file_id: fileId,
-  p_patient_id: patientId,
-  p_action: 'accessed',
-  p_metadata: { source: 'vault_preview' }
-});
-```
-Y en el catch del error 403, registrar `access_denied`.
+c) **Logging de `access_denied` para descargas bloqueadas por DRM/rol** desde `/access-denied` (cuando un usuario llega ahí desde un intento de Vault): registrar el evento si trae `?file_id=` en la URL.
+
+d) **Helper `useVaultAuditLogger`** (nuevo, opcional) que centraliza llamadas a `log_vault_action` para reutilizar desde otros sitios futuros sin duplicar código.
+
+e) **Test manual documentado** (en código como comentario): pasos para validar que (i) subo un archivo → triggers `access_granted` cuando comparto con un doctor; (ii) doctor abre preview → `accessed`; (iii) revoco acceso → `access_revoked`; (iv) doctor intenta abrir tras revocación → `access_denied`. Los 4 eventos deben aparecer en el panel del paciente con filtros funcionando.
 
 ## Archivos tocados
 
-**Frontend**:
-1. `src/contexts/LivesContext.tsx` — ampliar select y mapping de credenciales con status.
-2. `src/pages/LivePlayer.tsx` — reemplazar líneas 642-648 por `CredentialStatusBadge`.
-3. `src/pages/LivesGrid.tsx` — reemplazar líneas 110-126 por `CredentialStatusBadge`.
-4. `src/pages/ContentGallery.tsx` — ampliar interface, fetch y reemplazar líneas 231-253.
-5. `src/components/content/ContentPreviewModal.tsx` — reemplazar bloque líneas 316+.
-6. `src/pages/AdminVerifications.tsx` — añadir tab "Credenciales médicas" con aprobar/rechazar Cédula y COFEPRIS por separado.
-7. `src/components/vault/VaultAuditPanel.tsx` — agregar filtros (archivo, acción, fecha) + paginación.
-8. `src/contexts/VaultContext.tsx` — llamar `log_vault_action` en accesos y denegaciones.
+1. `src/components/doctor/DoctorProfileCard.tsx` — fetch de credenciales + 2 `<CredentialStatusBadge>`.
+2. `src/components/admin/MedicalCredentialsReview.tsx` — textarea visible y obligatorio para `approve` y `reject`; texto del dialog dinámico; nota incluida en notificación al doctor.
+3. `src/components/vault/VaultAuditPanel.tsx` — separar query de count del query de data, suscripción Realtime opcional para refresco automático, manejar `access_denied` desde `/access-denied`.
+4. `src/pages/AccessDenied.tsx` — leer `?file_id=` y `?patient_id=` y llamar `log_vault_action` con `access_denied` si están presentes.
 
-**Sin migraciones nuevas** — la BD ya tiene todo lo necesario (enum, columnas, view, tabla, triggers, RPC).
+**Sin migraciones SQL** — la BD ya tiene todo (enum, columnas, view, tabla `vault_audit_log`, triggers, RPC `log_vault_action`, política RLS).
 
 ## Resultado garantizado
 
-- Card de doctor en Lives, LivesGrid, ContentGallery y ContentPreviewModal muestran badge de Cédula y COFEPRIS con color por estado (verde aprobado / amarillo pendiente / rojo rechazado) y popover con razón cuando aplica.
-- Admin puede aprobar o rechazar Cédula y COFEPRIS de cada doctor por separado, dejando razón documentada que se muestra al doctor y a usuarios que vean su card.
-- Panel de auditoría del Vault filtrable por archivo, tipo de acción y rango de fecha, tanto para paciente (su expediente) como para doctor (sus accesos), con paginación.
-- Cada apertura/preview de archivo del Vault queda registrada como `accessed`; los rechazos de RLS quedan como `access_denied`.
+- **Doctor logueado** ve sus propias credenciales con estado y motivo de rechazo en su dashboard (`DoctorProfileCard`).
+- **Admin** está obligado a documentar TODA acción (aprobar o rechazar) con texto que se notifica al doctor y queda registrado.
+- **Panel Vault** muestra contador correcto incluso al paginar, refresca en tiempo real cuando hay eventos nuevos, y registra `access_denied` también cuando un usuario llega a `/access-denied` desde un intento de Vault.
+- Cobertura completa de los 4 estados: `accessed`, `access_granted`, `access_revoked`, `access_denied` filtrables por archivo, acción y fecha, con paginación 100 en 100.
 
