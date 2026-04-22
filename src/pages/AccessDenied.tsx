@@ -1,14 +1,37 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShieldOff, ArrowLeft, Lock, Download, Eye } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AccessDenied() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const reason = params.get('reason') || 'protected';
+  const fileId = params.get('file_id');
+  const patientId = params.get('patient_id');
+  const loggedRef = useRef(false);
+
+  // Si llegamos aquí desde un intento de acceso al Vault, registramos `access_denied`
+  useEffect(() => {
+    if (loggedRef.current) return;
+    if (!fileId || !patientId) return;
+    loggedRef.current = true;
+    (async () => {
+      try {
+        await supabase.rpc('log_vault_action', {
+          p_file_id: fileId,
+          p_patient_id: patientId,
+          p_action: 'access_denied',
+          p_metadata: { source: 'access_denied_page', reason },
+        });
+      } catch (err) {
+        console.warn('[AccessDenied] log_vault_action failed', err);
+      }
+    })();
+  }, [fileId, patientId, reason]);
 
   const messages: Record<string, { title: string; description: string }> = {
     role: {

@@ -122,35 +122,37 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
     }
   };
 
+  const buildBaseQuery = (withCount: boolean) => {
+    const filterCol = mode === 'patient' ? 'patient_id' : 'actor_id';
+    let q = withCount
+      ? supabase.from('vault_audit_log' as any).select('*', { count: 'exact', head: true }).eq(filterCol, userId)
+      : supabase.from('vault_audit_log' as any).select('*').eq(filterCol, userId);
+
+    if (actionFilter !== 'all') q = q.eq('action', actionFilter);
+    if (fileFilter !== 'all') q = q.eq('file_id', fileFilter);
+    if (fromDate) q = q.gte('created_at', new Date(fromDate + 'T00:00:00').toISOString());
+    if (toDate) q = q.lte('created_at', new Date(toDate + 'T23:59:59').toISOString());
+    return q;
+  };
+
+  const fetchCount = async () => {
+    try {
+      const { count, error } = await buildBaseQuery(true);
+      if (error) throw error;
+      setTotalCount(count || 0);
+    } catch (err) {
+      console.warn('[VaultAuditPanel] count fetch error', err);
+    }
+  };
+
   const fetchAudit = async () => {
     setIsLoading(true);
     try {
-      const filterCol = mode === 'patient' ? 'patient_id' : 'actor_id';
-      let q = supabase
-        .from('vault_audit_log' as any)
-        .select('*', { count: 'exact' })
-        .eq(filterCol, userId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (actionFilter !== 'all') {
-        q = q.eq('action', actionFilter);
-      }
-      if (fileFilter !== 'all') {
-        q = q.eq('file_id', fileFilter);
-      }
-      if (fromDate) {
-        q = q.gte('created_at', new Date(fromDate + 'T00:00:00').toISOString());
-      }
-      if (toDate) {
-        q = q.lte('created_at', new Date(toDate + 'T23:59:59').toISOString());
-      }
-
-      const { data, error, count } = await q;
+      const q = buildBaseQuery(false).order('created_at', { ascending: false }).limit(limit);
+      const { data, error } = await q;
       if (error) throw error;
       const list = (data || []) as unknown as AuditEntry[];
       setEntries(list);
-      setTotalCount(count || list.length);
 
       // Resolver nombres de actores y archivos
       const actorIds = Array.from(new Set(list.map((e) => e.actor_id).filter(Boolean))) as string[];
@@ -184,10 +186,53 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, mode]);
 
+  // Re-cuenta total sólo cuando cambian los filtros (no al cargar más)
+  useEffect(() => {
+    if (userId) fetchCount();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, mode, actionFilter, fileFilter, fromDate, toDate]);
+
+  // Re-fetch eventos cuando cambian filtros o limit
   useEffect(() => {
     if (userId) fetchAudit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, mode, actionFilter, fileFilter, fromDate, toDate, limit]);
+
+  // Realtime: refrescar al recibir nuevos eventos en mi alcance
+  useEffect(() => {
+    if (!userId) return;
+    const filterCol = mode === 'patient' ? 'patient_id' : 'actor_id';
+    const channel = supabase
+      .channel(`vault_audit_${mode}_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'vault_audit_log',
+          filter: `${filterCol}=eq.${userId}`,
+        },
+        () => {
+          fetchCount();
+          fetchAudit();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, mode, actionFilter, fileFilter, fromDate, toDate, limit]);
+
+  /**
+   * QA manual end-to-end:
+   * 1) Paciente sube un archivo → al compartir con doctor → trigger inserta `access_granted`.
+   * 2) Doctor abre preview en VaultFilePreviewModal → RPC log_vault_action registra `accessed`.
+   * 3) Paciente revoca acceso → trigger inserta `access_revoked`.
+   * 4) Doctor intenta abrir tras revocación → 403 → catch llama log_vault_action con `access_denied`.
+   * 5) Adicional: si llega a /access-denied?file_id=…&patient_id=… se registra `access_denied` desde la página.
+   * Los 5 eventos deben listarse en este panel y filtrarse por archivo, acción y rango de fecha.
+   */
 
   const clearFilters = () => {
     setActionFilter('all');
