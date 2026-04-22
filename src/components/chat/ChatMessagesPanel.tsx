@@ -93,13 +93,25 @@ export function ChatMessagesPanel({
   onDoctorProfileClick,
 }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const [activeVideoRoom, setActiveVideoRoom] = useState<boolean>(false);
   const [hasChatEntitlement, setHasChatEntitlement] = useState<boolean>(true);
   const [entitlementChecked, setEntitlementChecked] = useState(false);
+  const [consultationFee, setConsultationFee] = useState<number>(0);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [paywallProcessing, setPaywallProcessing] = useState(false);
+  const [paywallError, setPaywallError] = useState<string | null>(null);
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { balance, canAfford } = useWallet();
 
-  // Check chat entitlement for patients chatting with doctors
+  const otherDoctorId = session
+    ? session.participant1Id === userId
+      ? session.participant2Type === 'doctor' ? session.participant2Id : null
+      : session.participant1Type === 'doctor' ? session.participant1Id : null
+    : null;
+
+  // Check chat entitlement for patients chatting with doctors + fetch consultation fee
   useEffect(() => {
     if (!session || !userId || userRole !== 'patient') {
       setHasChatEntitlement(true);
@@ -114,19 +126,99 @@ export function ChatMessagesPanel({
     }
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from('entitlements')
-        .select('is_active, expires_at')
-        .eq('user_id', userId)
-        .eq('type', 'chat')
-        .maybeSingle();
+      const otherId = session.participant1Id === userId ? session.participant2Id : session.participant1Id;
+      const [entRes, doctorRes] = await Promise.all([
+        supabase
+          .from('entitlements')
+          .select('is_active, expires_at')
+          .eq('user_id', userId)
+          .eq('type', 'chat')
+          .maybeSingle(),
+        supabase
+          .from('doctor_profiles')
+          .select('consultation_fee')
+          .eq('user_id', otherId)
+          .maybeSingle(),
+      ]);
       if (cancelled) return;
+      const data = entRes.data;
       const valid = !!data?.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
       setHasChatEntitlement(valid);
       setEntitlementChecked(true);
+      setConsultationFee(Number(doctorRes.data?.consultation_fee) || 0);
     })();
     return () => { cancelled = true; };
   }, [session?.id, userId, userRole]);
+
+  const refetchEntitlement = async () => {
+    if (!userId) return;
+    const { data } = await supabase
+      .from('entitlements')
+      .select('is_active, expires_at')
+      .eq('user_id', userId)
+      .eq('type', 'chat')
+      .maybeSingle();
+    const valid = !!data?.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
+    setHasChatEntitlement(valid);
+    return valid;
+  };
+
+  const handleWalletPurchase = async () => {
+    if (!otherDoctorId || consultationFee <= 0) return;
+    setPaywallProcessing(true);
+    setPaywallError(null);
+    try {
+      const { data, error } = await supabase.rpc('process_consultation_purchase', {
+        p_doctor_id: otherDoctorId,
+        p_amount: consultationFee,
+        p_patient_name: user?.name || 'Paciente',
+      });
+      if (error) throw error;
+      const result = data as any;
+      if (!result?.success) {
+        setPaywallError(result?.error || 'No se pudo procesar el pago');
+        return;
+      }
+      const ok = await refetchEntitlement();
+      if (ok) {
+        toast.success('Consulta activada');
+        setPaywallOpen(false);
+      }
+    } catch (e: any) {
+      setPaywallError(e?.message || 'Error inesperado');
+    } finally {
+      setPaywallProcessing(false);
+    }
+  };
+
+  const handleStripePurchase = async () => {
+    if (!otherDoctorId) return;
+    setPaywallProcessing(true);
+    setPaywallError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-consultation-checkout', {
+        body: { doctorId: otherDoctorId },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setPaywallError('No se pudo iniciar el checkout');
+    } catch (e: any) {
+      setPaywallError(e?.message || 'Error iniciando checkout');
+    } finally {
+      setPaywallProcessing(false);
+    }
+  };
+
+  const handleSendIntercept = () => {
+    if (userRole === 'patient' && entitlementChecked && !hasChatEntitlement && otherDoctorId) {
+      setPaywallOpen(true);
+      return;
+    }
+    onSend();
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
