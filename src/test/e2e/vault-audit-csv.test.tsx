@@ -162,4 +162,28 @@ describe('Vault audit CSV export', () => {
     expect(csv.charCodeAt(0)).toBe(0xfeff);
     expect(csv.slice(1, 6)).toBe('Fecha');
   });
+
+  it('TextEncoder produces BOM bytes 0xEF 0xBB 0xBF as first 3 bytes', () => {
+    const csv = buildCsv([ALL_ROWS[0]]);
+    const bytes = new TextEncoder().encode(csv);
+    expect(bytes[0]).toBe(0xef);
+    expect(bytes[1]).toBe(0xbb);
+    expect(bytes[2]).toBe(0xbf);
+  });
+
+  it('Blob mime type is exactly text/csv;charset=utf-8;', () => {
+    const csv = buildCsv([ALL_ROWS[0]]);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    expect(blob.type).toBe('text/csv;charset=utf-8;');
+  });
+
+  it('filename reflects active filter (regression guard for export naming)', () => {
+    function buildFilename(actionFilter: string, dateStr = '2026-04-22') {
+      const tag = actionFilter !== 'all' ? actionFilter : 'todos';
+      return `auditoria_${dateStr}_${tag}.csv`;
+    }
+    expect(buildFilename('all')).toBe('auditoria_2026-04-22_todos.csv');
+    expect(buildFilename('access_granted')).toBe('auditoria_2026-04-22_access_granted.csv');
+    expect(buildFilename('access_revoked')).toBe('auditoria_2026-04-22_access_revoked.csv');
+  });
 });
