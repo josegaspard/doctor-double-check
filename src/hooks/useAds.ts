@@ -165,11 +165,11 @@ export function useAdCreative(placementName: string) {
         }
 
         const campaignIds = [...new Set((creatives as any[]).map((c: any) => c.campaign_id))];
+        // Read from public view (excludes financial columns: budget, spent, target_impressions, target_clicks)
         const { data: campaigns } = await supabase
-          .from('ad_campaigns' as any)
+          .from('ad_campaigns_public' as any)
           .select('id, target_roles, target_language')
-          .in('id', campaignIds)
-          .eq('status', 'active');
+          .in('id', campaignIds);
 
         if (!campaigns || campaigns.length === 0 || cancelled) {
           setIsLoading(false);
