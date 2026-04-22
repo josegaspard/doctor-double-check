@@ -18,9 +18,11 @@ interface ChatMessage {
 interface RecordingChatReplayProps {
   /** The live_id associated with this recording */
   liveId: string;
+  /** Optional URL of an attached video preview (renders with DRM watermark) */
+  videoPreviewUrl?: string;
 }
 
-export function RecordingChatReplay({ liveId }: RecordingChatReplayProps) {
+export function RecordingChatReplay({ liveId, videoPreviewUrl }: RecordingChatReplayProps) {
   const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
