@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { ChatSession } from '@/contexts/ChatContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { formatMessagePreview } from '@/lib/utils';
 
 interface SessionDisplayInfo {
   name: string;
@@ -161,10 +162,10 @@ export function ChatSessionItem({
             </span>
           )}
 
-          {/* Last message */}
+          {/* Last message — sanitiza mensajes legacy guardados con formato feo [Imagen:...] */}
           <div className="flex items-center justify-between gap-2 mt-0.5">
             <p className="text-xs text-muted-foreground truncate flex-1">
-              {session.lastMessage || t('chat.noConversations')}
+              {session.lastMessage ? formatMessagePreview(session.lastMessage, 80) : t('chat.noConversations')}
             </p>
             {/* Right indicators */}
             {!isClosed && session.unreadCount > 0 && (

@@ -115,7 +115,9 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
         controls
         autoPlay={autoPlay}
         playsInline
-        controlsList="nodownload"
+        controlsList="nodownload noremoteplayback noplaybackrate"
+        disablePictureInPicture
+        onContextMenu={(e) => e.preventDefault()}
         onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={(e) => {
           if (onTimeUpdate) onTimeUpdate(Math.floor((e.currentTarget as HTMLVideoElement).currentTime));

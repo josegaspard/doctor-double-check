@@ -44,6 +44,7 @@ import {
   ExternalLink,
   AlertCircle,
 } from 'lucide-react';
+import { VaultAuditPanel } from '@/components/vault/VaultAuditPanel';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -698,6 +699,13 @@ export default function Vault() {
             )}
           </CardContent>
         </Card>
+
+        {/* Auditoría del Vault */}
+        {supabaseUser?.id && (
+          <div className="mt-6">
+            <VaultAuditPanel mode="patient" userId={supabaseUser.id} />
+          </div>
+        )}
 
         <Dialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
           <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">

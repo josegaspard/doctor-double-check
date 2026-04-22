@@ -287,6 +287,9 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
         autoPlay
         playsInline
         muted={isOwner || viewerMuted}
+        controlsList="nodownload noremoteplayback noplaybackrate"
+        disablePictureInPicture
+        onContextMenu={(e) => e.preventDefault()}
         className="w-full h-full object-cover"
       />
 

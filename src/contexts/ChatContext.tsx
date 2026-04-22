@@ -425,8 +425,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           content: trimmed,
         });
 
-      // Update session last message (truncate for preview)
-      const previewMessage = trimmed.length > 100 ? trimmed.substring(0, 100) + '...' : trimmed;
+      // Update session last message — preview limpio (📷 Foto / 📎 Archivo / 📋 Receta) en lugar de [Imagen: ...]
+      const { formatMessagePreview } = await import('@/lib/utils');
+      const previewMessage = formatMessagePreview(trimmed, 100);
       const session = sessions.find(s => s.id === sessionId);
       if (session) {
         const isParticipant1 = session.participant1Id === user.id;

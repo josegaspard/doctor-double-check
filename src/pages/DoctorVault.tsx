@@ -13,6 +13,7 @@ import {
   Folder, FileText, Image, ArrowLeft, Lock, User, Users,
   Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail,
 } from 'lucide-react';
+import { VaultAuditPanel } from '@/components/vault/VaultAuditPanel';
 import { VaultFile } from '@/contexts/VaultContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
@@ -294,6 +295,13 @@ export default function DoctorVault() {
               Ningún paciente te ha concedido acceso a su vault médico todavía.
             </p>
           </Card>
+        )}
+
+        {/* Auditoría: doctor ve sus propios accesos y revocaciones */}
+        {user?.id && (
+          <div className="mt-6">
+            <VaultAuditPanel mode="doctor" userId={user.id} />
+          </div>
         )}
       </div>
 
