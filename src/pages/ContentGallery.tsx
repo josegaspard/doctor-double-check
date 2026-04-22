@@ -40,6 +40,7 @@ import {
   Tag,
   ShieldCheck,
 } from 'lucide-react';
+import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useWallet } from '@/contexts/WalletContext';
 import { usePurchases } from '@/hooks/usePurchases';
@@ -64,6 +65,10 @@ interface DoctorContent {
   creator_specialty?: string;
   creator_cedula?: string;
   creator_cofepris?: string;
+  creator_cedula_status?: 'pending' | 'approved' | 'rejected' | null;
+  creator_cedula_rejection_reason?: string | null;
+  creator_cofepris_status?: 'pending' | 'approved' | 'rejected' | null;
+  creator_cofepris_rejection_reason?: string | null;
 }
 
 import { SPECIALTIES_FILTER as SPECIALTIES } from '@/lib/specialties';
@@ -230,26 +235,20 @@ function ContentCardBody({
           <p className="text-xs sm:text-sm font-medium truncate">{content.creator_name}</p>
           {(content.creator_cedula || content.creator_cofepris) && (
             <div className="flex flex-wrap gap-1 mt-1 min-w-0">
-              {content.creator_cedula && (
-                <Badge
-                  variant="outline"
-                  title={`Cédula Profesional: ${content.creator_cedula}`}
-                  className="inline-flex items-center text-[10px] gap-1 text-success border-success/30 bg-success/5 px-1.5 py-0 max-w-full overflow-hidden"
-                >
-                  <ShieldCheck className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate max-w-[110px] sm:max-w-[150px]">Céd: {content.creator_cedula}</span>
-                </Badge>
-              )}
-              {content.creator_cofepris && (
-                <Badge
-                  variant="outline"
-                  title={`COFEPRIS: ${content.creator_cofepris}`}
-                  className="inline-flex items-center text-[10px] gap-1 text-info border-info/30 bg-info/5 px-1.5 py-0 max-w-full overflow-hidden"
-                >
-                  <ShieldCheck className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate max-w-[110px] sm:max-w-[150px]">COFEPRIS: {content.creator_cofepris}</span>
-                </Badge>
-              )}
+              <CredentialStatusBadge
+                type="cedula"
+                status={content.creator_cedula_status}
+                value={content.creator_cedula}
+                rejectionReason={content.creator_cedula_rejection_reason}
+                size="xs"
+              />
+              <CredentialStatusBadge
+                type="cofepris"
+                status={content.creator_cofepris_status}
+                value={content.creator_cofepris}
+                rejectionReason={content.creator_cofepris_rejection_reason}
+                size="xs"
+              />
             </div>
           )}
         </div>
@@ -309,12 +308,19 @@ export default function ContentGallery() {
 
       const [{ data: profiles }, { data: doctorProfiles }] = await Promise.all([
         supabase.from('profiles_public').select('id, name, avatar_url').in('id', creatorIds),
-        supabase.from('doctor_profiles_public').select('user_id, specialty, cedula_profesional, cofepris_permit').in('user_id', creatorIds),
+        supabase.from('doctor_profiles_public').select('user_id, specialty, cedula_profesional, cofepris_permit, cedula_status, cedula_rejection_reason, cofepris_status, cofepris_rejection_reason').in('user_id', creatorIds),
       ]);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
       const specialtyMap = new Map(doctorProfiles?.map((d: any) => [d.user_id, d.specialty]) || []);
-      const credsMap = new Map(doctorProfiles?.map((d: any) => [d.user_id, { cedula: d.cedula_profesional, cofepris: d.cofepris_permit }]) || []);
+      const credsMap = new Map(doctorProfiles?.map((d: any) => [d.user_id, {
+        cedula: d.cedula_profesional,
+        cofepris: d.cofepris_permit,
+        cedula_status: d.cedula_status,
+        cedula_rejection_reason: d.cedula_rejection_reason,
+        cofepris_status: d.cofepris_status,
+        cofepris_rejection_reason: d.cofepris_rejection_reason,
+      }]) || []);
 
       const uniqueCategories = [...new Set((data || []).map(c => c.category).filter(Boolean))] as string[];
       setCategories(uniqueCategories);
@@ -328,6 +334,10 @@ export default function ContentGallery() {
         creator_specialty: specialtyMap.get(c.creator_id),
         creator_cedula: sanitizeCredential(credsMap.get(c.creator_id)?.cedula) || undefined,
         creator_cofepris: sanitizeCredential(credsMap.get(c.creator_id)?.cofepris) || undefined,
+        creator_cedula_status: credsMap.get(c.creator_id)?.cedula_status ?? null,
+        creator_cedula_rejection_reason: credsMap.get(c.creator_id)?.cedula_rejection_reason ?? null,
+        creator_cofepris_status: credsMap.get(c.creator_id)?.cofepris_status ?? null,
+        creator_cofepris_rejection_reason: credsMap.get(c.creator_id)?.cofepris_rejection_reason ?? null,
       }));
 
       setContents(mapped);
