@@ -25,6 +25,7 @@ interface VaultFilePreviewModalProps {
     description?: string;
     uploadedAt: Date;
     patientName?: string;
+    patientId?: string;
   } | null;
 }
 
@@ -82,9 +83,39 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
 
       const objectUrl = URL.createObjectURL(finalBlob);
       setBlobUrl(objectUrl);
+
+      // Audit: registrar acceso real al archivo
+      if (file.patientId) {
+        supabase.rpc('log_vault_action', {
+          p_file_id: file.id,
+          p_patient_id: file.patientId,
+          p_action: 'accessed',
+          p_metadata: {
+            source: viewOnly ? 'otp_preview' : 'vault_preview',
+            file_type: file.type,
+          },
+        }).then(({ error: logError }) => {
+          if (logError) console.warn('[VaultAudit] log accessed failed', logError);
+        });
+      }
     } catch (err) {
       console.error('Error loading file:', err);
       setError('No se pudo cargar el archivo');
+
+      // Audit: registrar denegación de acceso
+      if (file.patientId) {
+        supabase.rpc('log_vault_action', {
+          p_file_id: file.id,
+          p_patient_id: file.patientId,
+          p_action: 'access_denied',
+          p_metadata: {
+            source: viewOnly ? 'otp_preview' : 'vault_preview',
+            error: String((err as any)?.message || err).slice(0, 200),
+          },
+        }).then(({ error: logError }) => {
+          if (logError) console.warn('[VaultAudit] log denied failed', logError);
+        });
+      }
     } finally {
       setIsLoading(false);
     }
