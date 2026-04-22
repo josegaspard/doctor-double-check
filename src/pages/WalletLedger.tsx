@@ -38,14 +38,14 @@ export default function WalletLedger() {
   const [selectedTx, setSelectedTx] = useState<ReceiptTransaction | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
 
-  if (!user) return <Navigate to="/login" replace />;
-
   const filtered = useMemo(() => {
     return (transactions ?? [])
       .filter((t: any) => statusFilter === 'all' || t.status === statusFilter)
       .filter((t: any) => typeFilter === 'all' || t.type === typeFilter)
       .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [transactions, statusFilter, typeFilter]);
+
+  if (!user) return <Navigate to="/login" replace />;
 
   const openReceipt = (tx: any) => {
     setSelectedTx({
