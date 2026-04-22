@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
 import { usePurchases } from '@/hooks/usePurchases';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 
 export type PaywallTxStatus = 'idle' | 'initiated' | 'paid' | 'failed';
