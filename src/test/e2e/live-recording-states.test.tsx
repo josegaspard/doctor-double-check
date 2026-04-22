@@ -90,22 +90,21 @@ describe('LiveProcessingOverlay — recording lifecycle states', () => {
     setupLivesQueryResponse({ data: { recording_status: 'processing_recording' }, error: null });
     renderOverlay({ status: 'processing_recording' });
 
-    // 5 polling cycles × 15s
+    // 5 polling cycles × 15s — use async variant so React effects flush between ticks
     for (let i = 0; i < 5; i++) {
       await act(async () => {
-        vi.advanceTimersByTime(15_000);
+        await vi.advanceTimersByTimeAsync(15_000);
       });
     }
-    await waitFor(() => {
-      expect(screen.getByTestId('manual-retry-btn')).toBeInTheDocument();
-    });
+    expect(screen.getByTestId('manual-retry-btn')).toBeInTheDocument();
 
     // Clicking manual retry refetches
     fromMock.mockClear();
-    fireEvent.click(screen.getByTestId('manual-retry-btn'));
-    await waitFor(() => {
-      expect(fromMock).toHaveBeenCalledWith('lives');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('manual-retry-btn'));
+      await vi.advanceTimersByTimeAsync(0);
     });
+    expect(fromMock).toHaveBeenCalledWith('lives');
   });
 
   it('renders ready overlay with view-replay button when status=recording_ready', () => {

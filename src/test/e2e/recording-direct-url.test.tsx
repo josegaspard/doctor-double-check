@@ -17,13 +17,18 @@ vi.mock('@/contexts/AuthContext', () => ({
   }),
 }));
 
-vi.mock('hls.js', () => ({
-  default: {
-    isSupported: () => true,
-    Events: { MANIFEST_PARSED: 'parsed', LEVEL_LOADED: 'level', ERROR: 'err' },
-    ErrorTypes: { NETWORK_ERROR: 'net', MEDIA_ERROR: 'media' },
-  },
-}));
+vi.mock('hls.js', () => {
+  class HlsMock {
+    static isSupported = () => true;
+    static Events = { MANIFEST_PARSED: 'parsed', LEVEL_LOADED: 'level', ERROR: 'err' };
+    static ErrorTypes = { NETWORK_ERROR: 'net', MEDIA_ERROR: 'media' };
+    loadSource() {}
+    attachMedia() {}
+    on() {}
+    destroy() {}
+  }
+  return { default: HlsMock };
+});
 
 const { CloudflareRecordingPlayer } = await import('@/components/recordings/CloudflareRecordingPlayer');
 
