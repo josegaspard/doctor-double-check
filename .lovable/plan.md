@@ -1,60 +1,72 @@
 
 
-# Plan: Cerrar al 100% los 3 puntos pendientes
+# Plan: Cerrar TODO al 100% — credenciales, auditoría, exports y confirmaciones
 
-Ya verifiqué el estado real del código. Todo lo demás está implementado. Aquí cierro los huecos exactos que faltan:
+## Estado verificado
 
-## 1. `CredentialStatusBadge` en `DoctorProfileCard` (único faltante de "badges sueltos")
+- **BD**: los 26 doctores ya tienen `cedula_profesional`, `cofepris_permit`, `cedula_status='approved'` y `cofepris_status='approved'`. Ninguno está sin credencial.
+- **`LivesContext`** ya hace `select` de credenciales con `status` desde `doctor_profiles_public` y los mapea al objeto `Live` (líneas 158, 196-201).
+- **`DoctorProfileCard`** ya integra `<CredentialStatusBadge>` para cédula y COFEPRIS (líneas 152-169).
+- **`MedicalCredentialsReview`**: razón ya es obligatoria para ambas acciones (línea 374).
+- **`VaultAuditPanel`** ya tiene filtros (archivo/acción/fecha), paginación 100 en 100, contador "N de M", Realtime y query separada de count.
+- **`AccessDenied`** ya registra `access_denied` cuando llega con `?file_id=&patient_id=`.
+- **`MedicalCredentialsReview`**: ya envía `data: { admin_notes }` y el `message` ya incluye `reason.trim()` en el body (líneas 137-141).
 
-`LivesGrid.tsx`, `ContentGallery.tsx` y `ContentPreviewModal.tsx` ya usan `CredentialStatusBadge`. **Sólo falta en `DoctorProfileCard.tsx`** (dashboard del propio doctor), donde hoy únicamente se muestra el badge de estado general (`Aprobado / Pendiente`) sin sus credenciales.
+## Lo que falta implementar (este pase)
 
-**Cambios en `src/components/doctor/DoctorProfileCard.tsx`:**
-- Cargar de `doctor_profiles` (RLS permite al dueño): `cedula_profesional, cedula_status, cedula_rejection_reason, cofepris_permit, cofepris_status, cofepris_rejection_reason` con un `useEffect` único.
-- Debajo del nombre/especialidad agregar una fila `flex flex-wrap gap-1` con dos `<CredentialStatusBadge type="cedula"|"cofepris" ... />`.
-- Si la credencial está `rejected`, el popover ya muestra el motivo (lógica del componente). El doctor verá su propia razón de rechazo aquí mismo → mejora UX para que sepa por qué fue rechazada y pueda actuar.
+### 1. `DoctorProfileCard` — loading + error en credenciales
 
-## 2. AdminVerifications: razón **obligatoria también al aprobar** (no solo al rechazar)
+- Agregar `loading` y `loadError` al estado.
+- Mientras carga, mostrar 2 `<Skeleton>` chiquitos en la fila de badges en lugar de quedar en blanco.
+- Si falla, mostrar un `Badge` rojo "No se pudieron cargar credenciales" con tooltip del error y botón pequeño "Reintentar" que vuelve a llamar `loadCreds`.
 
-Hoy `MedicalCredentialsReview.tsx` permite aprobar sin escribir nada (línea 360: `disabled={isProcessing || (actionDialog.action === 'reject' && !reason.trim())}`). Tu petición textual: *"campo de razón obligatorio para cada acción"*.
+### 2. `VaultAuditPanel` — exportar a CSV con filtros aplicados
 
-**Cambios en `src/components/admin/MedicalCredentialsReview.tsx`:**
-- Mostrar el `<Textarea>` también cuando `action === 'approve'` con label "Notas de aprobación" (placeholder: "Confirma cómo verificaste esta credencial — visible al doctor y registrado para auditoría").
-- Cambiar `disabled` a: `isProcessing || !reason.trim()` para AMBAS acciones.
-- Persistir la nota:
-  - En `approve`: guardar la nota en `cedula_rejection_reason` / `cofepris_rejection_reason` **NO** (ese campo es semánticamente para rechazo). En su lugar, persistirla en el `metadata` de la notificación al doctor + incluirla en el body del mensaje de notificación que ya se inserta en `notifications`.
-  - En `reject`: comportamiento actual (campo de motivo requerido) sigue igual.
-- Renombrar dinámicamente el label del Textarea según acción ("Motivo del rechazo" vs "Notas de verificación").
-- Renombrar título del dialog: "Aprobar credencial — confirma verificación" / "Rechazar credencial — indica motivo".
+- Botón nuevo "Exportar CSV" en el header (al lado de "Actualizar").
+- Al click: re-query el dataset filtrado COMPLETO (no solo lo cargado) con `range(0, 4999)` como tope de seguridad.
+- Resolver actores y archivos faltantes en lote (mismo patrón que `fetchAudit`).
+- Generar CSV con columnas: `Fecha, Acción, Archivo, Actor (nombre), Patient ID, Metadata`.
+- Escapar comillas y comas, descargar como `vault-audit-{mode}-{YYYYMMDD}.csv` usando `Blob` + `URL.createObjectURL`.
+- Toast de éxito con número de filas exportadas.
 
-## 3. Verificación end-to-end del panel de auditoría Vault (filtros, paginación, eventos)
+### 3. `MedicalCredentialsReview` — confirmación extra antes de Aprobar/Rechazar
 
-El `VaultAuditPanel.tsx` ya tiene filtros (archivo, acción, fecha desde/hasta), contador `Mostrando N de M`, botón "Cargar más" en bloques de 100 y "Limpiar filtros". Está conectado a `vault_audit_log` con triggers automáticos para `access_granted`/`access_revoked` y al `log_vault_action` desde `VaultFilePreviewModal` para `accessed`/`access_denied`.
+- Agregar paso de confirmación dentro del mismo `<Dialog>`:
+  - Estado local `confirmStep: 'edit' | 'confirm'`.
+  - El primer click en "Aprobar"/"Rechazar" cambia a `confirm` y muestra:
+    - Resumen visual: nombre doctor, tipo credencial, acción, número/permiso, primeras 100 chars de la nota.
+    - Texto de advertencia: "Esta acción notificará al doctor inmediatamente y queda registrada en auditoría. ¿Confirmas?".
+    - Botones: "Volver a editar" / "Sí, confirmar y enviar".
+- Solo el segundo click ejecuta `handleAction`.
+- Al cerrar el dialog se resetea a `edit`.
 
-**Lo que cierro en este pase para garantizar que funciona end-to-end:**
+### 4. Notificación al doctor — incluir notas en cuerpo VISIBLE
 
-a) **Bug en `count` cuando hay filtros**: hoy se hace `select('*', { count: 'exact' }).limit(limit)` — Supabase devuelve `count` del total **sin** aplicar el limit (correcto), pero al combinar con `.in()` o múltiples `.eq()` con `count: 'exact'` puede ser lento. Cambio a `count: 'exact', head: false` (ya lo es) y agrego `useEffect` separado que sólo recalcula `totalCount` cuando cambian los filtros, no cuando cambia `limit` (hoy refetchea todo al cargar más → desperdicio). Optimización: `limit` no debe disparar `count` — separo el query en dos.
+Estado actual ya incluye `reason.trim()` en `message`, pero el formato es plano. Lo mejoro:
 
-b) **Realtime opcional**: agregar suscripción a `postgres_changes` sobre `vault_audit_log` filtrada por `patient_id` o `actor_id` para refrescar la lista automáticamente cuando llegan eventos nuevos sin tener que pulsar "Actualizar".
-
-c) **Logging de `access_denied` para descargas bloqueadas por DRM/rol** desde `/access-denied` (cuando un usuario llega ahí desde un intento de Vault): registrar el evento si trae `?file_id=` en la URL.
-
-d) **Helper `useVaultAuditLogger`** (nuevo, opcional) que centraliza llamadas a `log_vault_action` para reutilizar desde otros sitios futuros sin duplicar código.
-
-e) **Test manual documentado** (en código como comentario): pasos para validar que (i) subo un archivo → triggers `access_granted` cuando comparto con un doctor; (ii) doctor abre preview → `accessed`; (iii) revoco acceso → `access_revoked`; (iv) doctor intenta abrir tras revocación → `access_denied`. Los 4 eventos deben aparecer en el panel del paciente con filtros funcionando.
+- Construir el `message` con saltos de línea y prefijo claro:
+  - **Aprobar**: `"Tu Cédula Profesional fue aprobada por el equipo de Medical Masters.\n\n📝 Notas de verificación:\n{reason}"`
+  - **Rechazar**: `"Tu Permiso COFEPRIS no fue aprobado.\n\n❌ Motivo:\n{reason}\n\nPuedes corregir y volver a enviar la documentación desde tu perfil."`
+- Mantener `data.admin_notes` para acceso programático.
+- Tipo de notificación según acción: `'system'` para aprobar, `'system'` para rechazar (mantenemos system; el título emoji ya distingue).
 
 ## Archivos tocados
 
-1. `src/components/doctor/DoctorProfileCard.tsx` — fetch de credenciales + 2 `<CredentialStatusBadge>`.
-2. `src/components/admin/MedicalCredentialsReview.tsx` — textarea visible y obligatorio para `approve` y `reject`; texto del dialog dinámico; nota incluida en notificación al doctor.
-3. `src/components/vault/VaultAuditPanel.tsx` — separar query de count del query de data, suscripción Realtime opcional para refresco automático, manejar `access_denied` desde `/access-denied`.
-4. `src/pages/AccessDenied.tsx` — leer `?file_id=` y `?patient_id=` y llamar `log_vault_action` con `access_denied` si están presentes.
+1. `src/components/doctor/DoctorProfileCard.tsx` — loading/error states + Skeletons + Reintentar.
+2. `src/components/vault/VaultAuditPanel.tsx` — botón "Exportar CSV" + helper de export con filtros activos.
+3. `src/components/admin/MedicalCredentialsReview.tsx` — confirmStep en dialog + mensaje multilínea con notas visibles.
 
-**Sin migraciones SQL** — la BD ya tiene todo (enum, columnas, view, tabla `vault_audit_log`, triggers, RPC `log_vault_action`, política RLS).
+**Sin migraciones SQL** — todo está en BD ya:
+- Los 26 doctores tienen credenciales pobladas y aprobadas (verificado con query directa).
+- View `doctor_profiles_public` expone `cedula_profesional`, `cofepris_permit`, `cedula_status`, `cofepris_status` y razones.
+- Tabla `vault_audit_log` con triggers y RPC `log_vault_action` operativos.
+- Realtime ya activo en `vault_audit_log` desde el panel.
 
 ## Resultado garantizado
 
-- **Doctor logueado** ve sus propias credenciales con estado y motivo de rechazo en su dashboard (`DoctorProfileCard`).
-- **Admin** está obligado a documentar TODA acción (aprobar o rechazar) con texto que se notifica al doctor y queda registrado.
-- **Panel Vault** muestra contador correcto incluso al paginar, refresca en tiempo real cuando hay eventos nuevos, y registra `access_denied` también cuando un usuario llega a `/access-denied` desde un intento de Vault.
-- Cobertura completa de los 4 estados: `accessed`, `access_granted`, `access_revoked`, `access_denied` filtrables por archivo, acción y fecha, con paginación 100 en 100.
+- En `/lives`, las cards ya muestran cédula + COFEPRIS de los 26 doctores con su badge de estado (verde aprobado, los actuales). Confirmado por consulta a BD.
+- El doctor logueado ve un loader mientras cargan sus credenciales y un mensaje de error con botón "Reintentar" si falla.
+- El admin puede exportar todos los eventos del Vault auditados (con filtros aplicados) a CSV con un solo click.
+- El admin no puede aprobar/rechazar credenciales por accidente: hay un paso de confirmación con resumen visual.
+- El doctor recibe una notificación con las notas de verificación claramente visibles en el cuerpo del mensaje, no solo en metadata.
 
