@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 
 interface ChatMessage {
   id: string;
@@ -16,12 +18,22 @@ interface ChatMessage {
 interface RecordingChatReplayProps {
   /** The live_id associated with this recording */
   liveId: string;
+  /** Optional URL of an attached video preview (renders with DRM watermark) */
+  videoPreviewUrl?: string;
 }
 
-export function RecordingChatReplay({ liveId }: RecordingChatReplayProps) {
+export function RecordingChatReplay({ liveId, videoPreviewUrl }: RecordingChatReplayProps) {
   const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  // Stable per-replay watermark sessionId for the optional video preview
+  const previewSessionId = useMemo(
+    () => (typeof crypto !== 'undefined' && (crypto as any).randomUUID
+      ? (crypto as any).randomUUID()
+      : `replay-${liveId}-${Math.random().toString(36).slice(2, 10)}`),
+    [liveId]
+  );
 
   useEffect(() => {
     const load = async () => {

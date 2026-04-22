@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Image, Download, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChatMessage } from '@/contexts/ChatContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
@@ -13,6 +15,14 @@ interface ChatMessageBubbleProps {
 
 export function ChatMessageBubble({ message, isOwn, isSessionClosed }: ChatMessageBubbleProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  // Stable per-bubble watermark sessionId — one per video preview, persists across re-renders
+  const previewSessionId = useMemo(
+    () => (typeof crypto !== 'undefined' && (crypto as any).randomUUID
+      ? (crypto as any).randomUUID()
+      : `bubble-${message.id}-${Math.random().toString(36).slice(2, 10)}`),
+    [message.id]
+  );
 
   // Render message content (with file support)
   const renderMessageContent = (content: string) => {
@@ -37,7 +47,34 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed }: ChatMessa
 
     // Check if it's a file message
     const imageMatch = content.match(/📷 \[Imagen: (.+?)\]\n(https?:\/\/.+)/);
+    const videoMatch = content.match(/🎥 \[Video: (.+?)\]\n(https?:\/\/.+)/);
     const fileMatch = content.match(/📎 \[Archivo: (.+?)\]\n(https?:\/\/.+)/);
+
+    if (videoMatch) {
+      const [, fileName, url] = videoMatch;
+      return (
+        <div className="space-y-2">
+          <div className="relative rounded-lg overflow-hidden" data-testid="chat-video-attachment">
+            <video
+              src={url}
+              controls
+              playsInline
+              className="max-w-full rounded-lg w-full"
+            />
+            <DynamicWatermark
+              email={user?.email}
+              userId={user?.id}
+              sessionId={previewSessionId}
+            />
+          </div>
+          <p className="text-[11px] opacity-70 flex items-center gap-1">
+            <FileText className="w-3 h-3" />
+            {fileName}
+          </p>
+        </div>
+      );
+    }
+
 
     if (imageMatch) {
       const [, fileName, url] = imageMatch;
