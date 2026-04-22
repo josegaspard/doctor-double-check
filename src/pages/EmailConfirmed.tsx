@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { AppBackground } from "@/components/layout/AppBackground";
 
 export default function EmailConfirmed() {
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ export default function EmailConfirmed() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <AppBackground className="min-h-screen flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center space-y-6">
         {status === "loading" && (
           <>
@@ -114,6 +115,6 @@ export default function EmailConfirmed() {
           </>
         )}
       </div>
-    </div>
+    </AppBackground>
   );
 }

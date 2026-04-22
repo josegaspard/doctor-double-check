@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Clock, CheckCircle, ArrowRight, Home, Eye } from 'lucide-react';
+import { AppBackground } from '@/components/layout/AppBackground';
 
 export default function VerificationPending() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export default function VerificationPending() {
 
   if (isApproved) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <AppBackground className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full border-success/30 bg-success/5">
           <CardHeader className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center">
@@ -35,12 +36,12 @@ export default function VerificationPending() {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </AppBackground>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <AppBackground className="min-h-screen flex items-center justify-center p-4">
       <Card className="max-w-md w-full">
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-warning/20 flex items-center justify-center">
@@ -108,6 +109,6 @@ export default function VerificationPending() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </AppBackground>
   );
 }

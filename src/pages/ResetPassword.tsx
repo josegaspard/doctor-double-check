@@ -13,6 +13,7 @@ import { useSocialLinks } from '@/hooks/useSiteSettings';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
+import { AppBackground } from '@/components/layout/AppBackground';
 export default function ResetPassword() {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -75,7 +76,7 @@ export default function ResetPassword() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <AppBackground className="min-h-screen flex flex-col">
         {/* Header */}
         <header className="border-b border-border bg-card">
           <div className="container mx-auto px-4 py-4">
@@ -161,12 +162,12 @@ export default function ResetPassword() {
             </div>
           </div>
         </footer>
-      </div>
+      </AppBackground>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <AppBackground className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
@@ -289,6 +290,6 @@ export default function ResetPassword() {
           </div>
         </div>
       </footer>
-    </div>
+    </AppBackground>
   );
 }
