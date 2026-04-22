@@ -57,6 +57,7 @@ export function MedicalCredentialsReview() {
   }>({ open: false, doctor: null, kind: 'cedula', action: 'approve' });
   const [reason, setReason] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [confirmStep, setConfirmStep] = useState<'edit' | 'confirm'>('edit');
 
   const fetchDoctors = useCallback(async () => {
     setIsLoading(true);
@@ -106,6 +107,12 @@ export function MedicalCredentialsReview() {
   const openAction = (doctor: DoctorRow, kind: CredKind, action: 'approve' | 'reject') => {
     setActionDialog({ open: true, doctor, kind, action });
     setReason('');
+    setConfirmStep('edit');
+  };
+
+  const closeDialog = () => {
+    setActionDialog({ ...actionDialog, open: false });
+    setConfirmStep('edit');
   };
 
   const handleAction = async () => {
@@ -130,15 +137,18 @@ export function MedicalCredentialsReview() {
       if (error) throw error;
 
       const credLabel = kind === 'cedula' ? 'Cédula Profesional' : 'Permiso COFEPRIS';
+      const trimmedReason = reason.trim();
+      const message =
+        action === 'approve'
+          ? `Tu ${credLabel} fue aprobada por el equipo de Medical Masters.\n\n📝 Notas de verificación:\n${trimmedReason}`
+          : `Tu ${credLabel} no fue aprobada.\n\n❌ Motivo:\n${trimmedReason}\n\nPuedes corregir y volver a enviar la documentación desde tu perfil.`;
+
       await supabase.from('notifications').insert({
         user_id: doctor.user_id,
         type: 'system',
         title: action === 'approve' ? '✅ Credencial aprobada' : '❌ Credencial rechazada',
-        message:
-          action === 'approve'
-            ? `Tu ${credLabel} fue aprobada. Notas de verificación: ${reason.trim()}`
-            : `Tu ${credLabel} fue rechazada. Motivo: ${reason.trim()}`,
-        data: { kind, status: newStatus, admin_notes: reason.trim() },
+        message,
+        data: { kind, status: newStatus, admin_notes: trimmedReason },
       });
 
       toast.success(
@@ -147,6 +157,7 @@ export function MedicalCredentialsReview() {
           : `Credencial ${kind === 'cedula' ? 'Cédula' : 'COFEPRIS'} rechazada`
       );
       setActionDialog({ open: false, doctor: null, kind: 'cedula', action: 'approve' });
+      setConfirmStep('edit');
       fetchDoctors();
     } catch (err: any) {
       toast.error(err.message || 'No se pudo actualizar la credencial');
