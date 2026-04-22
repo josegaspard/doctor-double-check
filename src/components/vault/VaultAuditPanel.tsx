@@ -393,11 +393,24 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
         </CardTitle>
         <div className="flex items-center gap-1">
           <Button
+            variant="outline"
+            size="sm"
+            onClick={openPreview}
+            disabled={isExporting || isLoading || totalCount === 0}
+            className="h-8 gap-1"
+            data-testid="csv-preview-btn"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Vista previa</span>
+          </Button>
+          <Button
             variant="ghost"
             size="sm"
             onClick={exportCsv}
             disabled={isExporting || isLoading || totalCount === 0}
             className="h-8 gap-1"
+            data-testid="csv-export-btn"
+            aria-disabled={isExporting || isLoading || totalCount === 0}
           >
             <Download className={`w-3.5 h-3.5 ${isExporting ? 'animate-pulse' : ''}`} />
             <span className="hidden sm:inline">Exportar CSV</span>
