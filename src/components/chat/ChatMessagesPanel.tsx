@@ -225,11 +225,22 @@ export function ChatMessagesPanel({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Block Enter (and Ctrl/Cmd+Enter) when gated → opens paywall
+    // Shift+Enter = newline (allowed, never blocks)
+    if (e.key === 'Enter' && e.shiftKey) return;
+
+    // Enter, Ctrl+Enter, Cmd+Enter → attempt send / open paywall when gated
     if (e.key === 'Enter') {
-      if (e.shiftKey) return; // shift+enter = newline (no send)
       e.preventDefault();
       handleSendIntercept();
+      return;
+    }
+
+    // Ctrl+K / Cmd+K → if gated, open paywall instead of any command palette behavior
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      if (isChatGated) {
+        e.preventDefault();
+        setPaywallOpen(true);
+      }
     }
   };
 
