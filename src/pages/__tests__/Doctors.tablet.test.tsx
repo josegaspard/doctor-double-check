@@ -25,26 +25,35 @@ function setupMatchMedia(width: number) {
   });
 }
 
-// Mock supabase
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ data: [] }),
+// Mock supabase — chainable builder that supports .select().eq().not().maybeSingle()/await
+vi.mock("@/integrations/supabase/client", () => {
+  const makeBuilder = (): any => {
+    const builder: any = {};
+    const chainables = ["select", "eq", "neq", "in", "not", "is", "or", "order", "limit", "range", "gte", "lte"];
+    chainables.forEach((m) => {
+      builder[m] = vi.fn().mockReturnValue(builder);
+    });
+    builder.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    builder.single = vi.fn().mockResolvedValue({ data: null, error: null });
+    builder.then = (resolve: any) => Promise.resolve({ data: [], error: null }).then(resolve);
+    return builder;
+  };
+  return {
+    supabase: {
+      rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
+      from: vi.fn(() => makeBuilder()),
+      auth: {
+        getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+        onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
+      },
+      channel: vi.fn().mockReturnValue({
+        on: vi.fn().mockReturnThis(),
+        subscribe: vi.fn().mockReturnThis(),
       }),
-    }),
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-      onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
+      removeChannel: vi.fn(),
     },
-    channel: vi.fn().mockReturnValue({
-      on: vi.fn().mockReturnThis(),
-      subscribe: vi.fn().mockReturnThis(),
-    }),
-    removeChannel: vi.fn(),
-  },
-}));
+  };
+});
 
 // Mock react-router-dom
 const mockNavigate = vi.fn();
