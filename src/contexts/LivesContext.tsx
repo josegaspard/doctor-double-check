@@ -111,13 +111,33 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   const profileCache = useRef<Map<string, { name: string; avatar_url?: string }>>(new Map());
   const doctorProfileCache = useRef<Map<string, {
     followers_count: number;
-    cedula_profesional?: string;
-    cofepris_permit?: string;
+    cedula_profesional?: string | null;
+    cofepris_permit?: string | null;
     cedula_status?: 'pending' | 'approved' | 'rejected' | null;
     cedula_rejection_reason?: string | null;
     cofepris_status?: 'pending' | 'approved' | 'rejected' | null;
     cofepris_rejection_reason?: string | null;
   }>>(new Map());
+
+  // Cache versioning: invalidates stale caches that lack credential fields
+  const PROFILE_CACHE_VERSION = 'v2-credentials';
+  const cacheVersionChecked = useRef(false);
+  if (!cacheVersionChecked.current) {
+    cacheVersionChecked.current = true;
+    try {
+      const stored = typeof window !== 'undefined' ? sessionStorage.getItem('lives_profile_cache_version') : null;
+      if (stored !== PROFILE_CACHE_VERSION) {
+        doctorProfileCache.current.clear();
+        profileCache.current.clear();
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('lives_profile_cache_version', PROFILE_CACHE_VERSION);
+        }
+      }
+    } catch (e) {
+      // sessionStorage unavailable — clear anyway to be safe
+      doctorProfileCache.current.clear();
+    }
+  }
 
   const fetchLives = useCallback(async (force = false) => {
     const now = Date.now();
