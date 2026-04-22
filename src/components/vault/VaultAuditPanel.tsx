@@ -284,9 +284,10 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
         otp_verified: 'OTP verificado',
       };
 
+      // Fixed column order — never changes (regression-safe)
       const headers = ['Fecha', 'Acción', 'Archivo', 'Actor', 'Patient ID', 'Metadata'];
       const rows = list.map((e) => [
-        format(new Date(e.created_at), "yyyy-MM-dd HH:mm:ss"),
+        format(new Date(e.created_at), 'yyyy-MM-dd HH:mm:ss'),
         labels[e.action] || e.action,
         e.file_id ? fMap[e.file_id] || '(eliminado)' : '',
         e.actor_id ? aMap[e.actor_id] || e.actor_id : '',
@@ -298,12 +299,19 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
         '\uFEFF' +
         [headers, ...rows].map((r) => r.map(escapeCsv).join(',')).join('\r\n');
 
+      // Validate UTF-8 encoding before download — fail loudly if BOM is missing
+      const bytes = new TextEncoder().encode(csv);
+      if (!(bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)) {
+        throw new Error('Encoding inválido: falta BOM UTF-8');
+      }
+
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      const dateStr = format(new Date(), 'yyyyMMdd');
+      const dateStr = format(new Date(), 'yyyy-MM-dd');
+      const filterTag = actionFilter !== 'all' ? actionFilter : 'todos';
       link.href = url;
-      link.download = `vault-audit-${mode}-${dateStr}.csv`;
+      link.download = `auditoria_${dateStr}_${filterTag}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -312,7 +320,7 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
       toast.success(`Exportadas ${list.length} filas a CSV`);
     } catch (err: any) {
       console.error('[VaultAuditPanel] export error', err);
-      toast.error(err?.message || 'No se pudo exportar');
+      toast.error(err?.message || 'Error de encoding al exportar');
     } finally {
       setIsExporting(false);
     }
