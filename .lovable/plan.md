@@ -1,119 +1,134 @@
 
 
-# Plan: Fix REAL credenciales + favicon Google + SEO completo
+# Plan: Fix UI live card + precio doctores universal + chat preview + 4 features nuevos
 
-## Diagnóstico raíz (importante)
+Son 6 ítems distintos. Aviso: las **primeras 3 son cambios chicos y rápidos**. Las **últimas 3 son features grandes** (auditoría Vault, DRM, tokens firmados live) — las divido en sub-tareas y aclaro alcance para que sepas exactamente qué entrego.
 
-**Por qué NO se ven las credenciales en el card de Lives ni en Contenido Premium aunque el código las renderiza:**
+## 1. Fix UI: card del doctor en live (PC + tablet + móvil)
 
-La RLS de la tabla `doctor_profiles` es restrictiva: solo el doctor dueño o un admin pueden hacer `SELECT`. Cuando un paciente, residente u otro doctor visita `/lives` o `/content`, el frontend pide `doctor_profiles.cedula_profesional` y la base de datos devuelve 0 filas (no error, simplemente vacío). Por eso el badge nunca aparece, aunque la data SÍ existe (verifiqué los 26 doctores tienen cédula y COFEPRIS asignados).
+Pantalla: el badge `verificado` se solapa con el nombre y se corta como "verifi...do". Causa: `<Badge>` está al lado de `<span>` especialidad sin contenedor flexible.
 
-**La solución no es "agregar cédula a cada usuario" — eso ya está**. La solución es **exponer cédula y COFEPRIS en la VIEW pública** `doctor_profiles_public`, que es legítimo y deseable porque las credenciales profesionales son datos públicos verificables por diseño (igual que un médico publica su cédula en su consultorio físico).
+**Archivo:** `src/pages/LivePlayer.tsx` líneas ~631-644
+- Reorganizar bloque a 2 filas: fila 1 = nombre + badge `verificado` (con `flex-wrap`); fila 2 = especialidad truncada.
+- Badge `verificado`: usar `shrink-0`, texto `text-[10px] leading-none whitespace-nowrap`, ícono más chico.
+- Especialidad: `truncate block w-full`.
+- Card padre: añadir `min-w-0` al `flex-1` para permitir truncado correcto.
+- Mostrar también COFEPRIS debajo de Cédula (hoy solo muestra cédula): `Permiso COFEPRIS: {live.doctorCofepris}`.
+- Los botones "Ver Perfil" / "Iniciar chat privado" responsive: en móvil apilados, en desktop en línea (`flex-col sm:flex-row`).
 
-## Parte 1 — Migración: exponer credenciales en view pública
+## 2. Precio del doctor visible para TODOS los roles en `/doctors`
 
-Una sola migración SQL:
-1. `DROP VIEW public.doctor_profiles_public CASCADE` y recrear con dos columnas extra: `cedula_profesional` y `cofepris_permit`.
-2. Mantener `WHERE status = 'approved'` (solo doctores aprobados muestran credenciales públicamente).
-3. Otorgar `GRANT SELECT` a `anon` y `authenticated` (ya lo tiene como view).
+**Archivo:** `src/pages/Doctors.tsx` línea ~823
+- Cambiar la condición `role === 'patient' && doctor.consultation_fee > 0` a solo `doctor.consultation_fee > 0`.
+- El precio se mostrará igual a visitantes, doctores, residentes y admins. (Los residentes ya tienen lógica de descuento 50% aplicada vía `get_price_for_user` al momento del checkout, así que mostrar precio base es correcto.)
 
-**No requiere tocar RLS de `doctor_profiles`** — la tabla privada queda igual de protegida; solo abrimos lectura de 2 campos públicos vía view.
+## 3. Preview del último mensaje del chat: NO mostrar `[Imagen: archivo.jpg]`
 
-## Parte 2 — Frontend: usar la view en lugar de la tabla privada
+**Archivo:** `src/contexts/ChatContext.tsx` función `sendMessage` línea ~427
+- Crear helper `formatMessagePreview(content: string)` que detecte:
+  - `📷 [Imagen: ...]` → preview = `📷 Foto`
+  - `📎 [Archivo: ...]` → preview = `📎 Archivo` (o `📎 nombre.ext` corto)
+  - `📋 ...prescriptions/...` → `📋 Receta médica`
+  - texto normal → primeros 100 chars como hoy
+- Aplicar el helper antes de actualizar `last_message` en `chat_sessions`.
+- Adicional: en `ChatSessionItem.tsx` línea 167, sanitizar a la vista en caso de mensajes legacy ya guardados con el formato feo (regex de detección y reemplazo en render).
 
-Los componentes hoy consultan `doctor_profiles` directamente (RLS lo bloquea). Cambio a `doctor_profiles_public`:
+## 4. Verificación médica con estados (pending/approved/rejected) + explicación
 
-**`src/contexts/LivesContext.tsx`** (línea ~148-150):
-- Eliminar el query separado a `doctor_profiles` (`cedulaResult`).
-- Ampliar el `select` de `doctor_profiles_public` a `user_id, followers_count, specialty, cedula_profesional, cofepris_permit`.
-- Eliminar `cedulaMap`/`cofeprisMap` y leer directo de `doctorProfilesResult`.
+Hoy `doctor_profiles.status` ya tiene `pending|approved|rejected`. Falta UI que lo muestre y un campo para razón de rechazo en COFEPRIS.
 
-**`src/pages/ContentGallery.tsx`** (línea ~310-318):
-- Quitar la tercera promesa (`doctorCreds`).
-- Ampliar `doctor_profiles_public` select a `user_id, specialty, cedula_profesional, cofepris_permit`.
-- Mapear `creator_cedula` y `creator_cofepris` desde el mismo `doctorProfiles`.
+**Migración SQL:**
+- Agregar columnas a `doctor_profiles`: `cofepris_status verification_status default 'pending'`, `cofepris_rejection_reason text`, `cedula_status verification_status default 'pending'`, `cedula_rejection_reason text`.
+- Crear enum `verification_status as enum ('pending','approved','rejected')` si no existe.
+- Exponer las 4 columnas nuevas en la view `doctor_profiles_public`.
 
-Esto hace que el card de Lives Y el card de Contenido Premium muestren ambos badges (verde Cédula + azul COFEPRIS) **inmediatamente para todos los usuarios**.
+**Frontend:**
+- Nuevo componente `src/components/doctor/CredentialStatusBadge.tsx`: recibe `{ type: 'cedula'|'cofepris', status, value, rejectionReason }`, renderiza badge con color según estado (verde/amarillo/rojo) + tooltip o popover explicativo con la razón si está rechazado.
+- Reemplazar usos actuales (`LivePlayer.tsx`, `LivesGrid.tsx`, `ContentGallery.tsx`, `DoctorProfileCard.tsx`, `ContentPreviewModal.tsx`) por este componente unificado.
+- En `AdminVerifications.tsx` añadir botones para aprobar/rechazar cédula y COFEPRIS por separado, con campo de razón de rechazo cuando se rechaza.
 
-## Parte 3 — "Aprobar doctores y verificaciones pendientes para pruebas"
+## 5. Panel de auditoría del Vault (accesos, revocaciones, denegados)
 
-Estado actual en BD:
-- 2 doctores con `status='pending'` → los paso a `approved`.
-- 2 `identity_verifications` con `status='in_progress'` → los paso a `verified`.
-- 1 con `status='failed'` → lo paso a `verified`.
+**Migración SQL:**
+- Tabla `vault_audit_log`:
+  - `id uuid pk`, `file_id uuid fk vault_files`, `actor_id uuid` (quien actuó), `patient_id uuid` (dueño), `action text` (`accessed|access_denied|access_granted|access_revoked|otp_required|otp_failed`), `metadata jsonb`, `created_at timestamptz default now()`.
+- RLS: `SELECT` permitido al paciente dueño (`patient_id = auth.uid()`) y al doctor actor (`actor_id = auth.uid()`); `INSERT` solo SECURITY DEFINER vía función `log_vault_action(...)`.
+- Trigger en `vault_access`: al INSERT registrar `access_granted`, al UPDATE con `revoked_at` registrar `access_revoked`.
+- Modificar edge function/RPC que sirve vault files para insertar `accessed` cuando se entrega URL firmada y `access_denied` cuando RLS rechaza.
 
-Migración SQL adicional:
-```sql
-UPDATE doctor_profiles SET status='approved', verified_at=now() 
-  WHERE status='pending';
-UPDATE identity_verifications SET status='verified', verified_at=now() 
-  WHERE status IN ('in_progress','failed');
-```
+**Frontend:**
+- Nuevo componente `src/components/vault/VaultAuditPanel.tsx` (tabla con: fecha, doctor, archivo, acción, color por tipo).
+- Integrar en `src/pages/Vault.tsx` (tab "Auditoría") para el paciente.
+- Integrar en `src/pages/DoctorVault.tsx` (vista filtrada por `actor_id = self`) para el doctor: ve sus propios accesos y cuáles le fueron revocados.
 
-## Parte 4 — Favicon que aparece en Google
+## 6. DRM reforzado: bloqueo descargas + página de explicación
 
-Google y los buscadores cachean el favicon agresivamente y exigen requisitos específicos:
+**Archivos nuevos:**
+- `src/pages/AccessDenied.tsx`: página con explicación legal "Este contenido está protegido. Las descargas directas están deshabilitadas para proteger la confidencialidad médica..."
 
-1. **Crear `/public/favicon.ico`** (formato multi-resolución 16/32/48px) — Google prefiere `.ico` clásico aunque acepta PNG. Lo genero a partir de `favicon.png` con ImageMagick.
-2. **Añadir en `<head>` del `index.html`** (justo después del `<link rel=icon>` actual):
-   - `<link rel="icon" href="/favicon.ico" sizes="any">` (Google lo prefiere primero)
-   - `<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=3">`
-   - `<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">`
-   - `<link rel="shortcut icon" href="/favicon.ico">`
-3. **Subir versión `?v=3`** en todas las referencias para invalidar caché del navegador y Google.
-4. Verificar que `favicon.png` sea ≥48×48 (requisito Google) — lo es (icon-512 está disponible).
+**Modificaciones:**
+- `src/components/recordings/CloudflareRecordingPlayer.tsx`, `RecordingVideoPlayer.tsx`, `VaultFilePreviewModal.tsx`:
+  - Añadir `onContextMenu={e => e.preventDefault()}` (ya existe en algunos, validar todos).
+  - Atributos `controlsList="nodownload noremoteplayback"` y `disablePictureInPicture` en `<video>`.
+  - Para iframes PDF: usar `blob: URL` + `#toolbar=0&navpanes=0` (ya implementado, validar).
+- En descarga de Vault: edge function valida rol antes de firmar URL. Si rol es `patient` o no es dueño/no tiene `vault_access`, devuelve 403 con `redirect: '/access-denied?reason=role'`.
+- Añadir ruta `/access-denied` en `App.tsx`.
 
-## Parte 5 — SEO básico completo (status final)
+## 7. Notificaciones inmediatas wallet/ledger en cambios de estado
 
-Audit del estado actual + mejoras:
+Hoy `process_consultation_purchase` y `purchase-recording-wallet` ya escriben `wallet_transactions` y `notifications`. Falta cubrir el cambio `initiated → paid → failed` en compras vía Stripe.
 
-| Item | Estado | Acción |
-|---|---|---|
-| `<title>` optimizado | ✅ ya existe | — |
-| `<meta description>` 195 chars | ✅ ya existe | — |
-| `canonical` | ✅ ya existe | — |
-| `robots` index/follow | ✅ ya existe | — |
-| OG tags + image absoluta | ✅ ya existe | — |
-| Twitter card | ✅ ya existe | — |
-| JSON-LD `MedicalOrganization` | ✅ ya existe | — |
-| `manifest.json` PWA | ✅ ya existe | — |
-| `lang="es"` | ✅ ya existe | — |
-| `sitemap.xml` con 18 rutas | ✅ ya existe en `/public/sitemap.xml` | — |
-| `robots.txt` con Sitemap directive | ✅ ya existe en `/public/robots.txt` | — |
-| Google Search Console verification | ✅ meta tag insertado | — |
-| Google Analytics gtag | ✅ ya insertado | — |
-| **`favicon.ico` para Google** | ❌ falta | crear en esta entrega |
-| **Multi-size icon links** | ❌ falta | añadir en esta entrega |
-| **OG image: usar `icon-512.png`** (no favicon que es 192) | ⚠️ mejorar | cambiar `og:image` a `/icon-512.png?v=3` |
-| **`hreflang` para idiomas** | ❌ falta | añadir `<link rel="alternate" hreflang="es-mx">` |
-| **Schema.org `WebSite` con SearchAction** | ❌ falta | añadir segundo bloque JSON-LD para sitelinks search box |
+**Migración SQL:**
+- Agregar columna `status text default 'initiated'` a `wallet_transactions` si no existe (ya existe).
+- Trigger `notify_wallet_status_change` AFTER UPDATE OF status ON wallet_transactions: cuando pasa de `initiated` a `paid` inserta notificación "✅ Pago confirmado: {description}"; cuando pasa a `failed` inserta "❌ Pago rechazado: {description} — intenta de nuevo".
 
-## Parte 6 — Cómo enviar a indexar en Google (paso por paso, te lo dejo escrito)
+**Frontend:**
+- Suscripción Realtime en `src/contexts/WalletContext.tsx` a `wallet_transactions` filtrada por `user_id=eq.{uid}`: al recibir UPDATE muestra `toast.success` o `toast.error` y refresca balance.
 
-Después del deploy:
-1. Ir a [Search Console](https://search.google.com/search-console) → verificar dominio (ya está el meta tag, solo dale "Verificar HTML tag").
-2. Search Console → **Sitemaps** → pegar `sitemap.xml` → Enviar.
-3. Search Console → **URL Inspection** → pegar `https://medical-masters.com/` → "Solicitar indexación". Repetir para `/doctors`, `/lives`, `/content`, `/for-patients`, `/for-doctors`.
-4. Validar JSON-LD en [Rich Results Test](https://search.google.com/test/rich-results) → pegar `https://medical-masters.com/`.
-5. Validar OG en [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) → pegar URL → "Scrape Again".
-6. Para forzar update de favicon en Google: tras 24-48h, en Search Console → "Acerca de los resultados" → Google escanea automáticamente el nuevo `.ico`.
+## 8. Tokens firmados expirables para Live Player y Replay
 
-## Archivos tocados
+Hoy `get-cloudflare-playback` retorna URL HLS sin token de firma. Cloudflare Stream soporta signed URLs con `exp` claim.
 
-1. **Migración SQL** (vía herramienta de migraciones):
-   - `DROP VIEW doctor_profiles_public CASCADE; CREATE VIEW ... con cedula_profesional + cofepris_permit`
-   - Si `CASCADE` rompe alguna FK/RLS, recreo lo necesario después.
-   - `UPDATE doctor_profiles SET status='approved' WHERE status='pending'`
-   - `UPDATE identity_verifications SET status='verified' WHERE status IN ('in_progress','failed')`
-2. `src/contexts/LivesContext.tsx` — usar columnas nuevas de la view
-3. `src/pages/ContentGallery.tsx` — usar columnas nuevas de la view
-4. `public/favicon.ico` — nuevo (multi-resolución)
-5. `index.html` — agregar links de favicon `.ico`, sizes, hreflang, segundo JSON-LD WebSite, og:image a icon-512
+**Edge function:**
+- Modificar `supabase/functions/get-cloudflare-playback/index.ts` para emitir signed URL con TTL = 2h usando Cloudflare Stream Signed URL API (header `accountId/stream/{uid}/token` con JWT firmado HS256).
+- Devolver `{ playbackUrl, expiresAt }`.
 
-## Resultado garantizado
+**Frontend:**
+- `CloudflareStreamPlayer.tsx`, `CloudflareRecordingPlayer.tsx`: detectar error HLS 403/410 y mostrar `<Alert>` con mensaje "Tu sesión expiró. Recarga el contenido para continuar." + botón "Reintentar" que vuelve a llamar a `get-cloudflare-playback`.
+- Refrescar URL automáticamente cada 90 min (antes de expirar).
 
-- Cards de **Lives** y **Contenido Premium** muestran badges de Cédula + COFEPRIS para todos los doctores aprobados (los 26 ya tienen data).
-- Todos los doctores quedan aprobados y todas las verifications pendientes pasan a `verified` para pruebas.
-- Favicon `.ico` correctamente expuesto y referenciado para que Google lo indexe en SERP.
-- SEO 100% completo + sitemap + robots + GA4 + Search Console + JSON-LD doble (Organization + WebSite) listo para enviar a indexar.
+## Archivos tocados (resumen)
+
+**Migraciones SQL** (1 nueva):
+- Enum `verification_status` + 4 columnas en `doctor_profiles` + view `doctor_profiles_public`
+- Tabla `vault_audit_log` + RLS + trigger sobre `vault_access`
+- Trigger `notify_wallet_status_change` sobre `wallet_transactions`
+
+**Edge functions:**
+- `get-cloudflare-playback` (signed URLs + expiración)
+- Helper para registrar audit en accesos vault
+
+**Frontend nuevos:**
+- `src/components/doctor/CredentialStatusBadge.tsx`
+- `src/components/vault/VaultAuditPanel.tsx`
+- `src/pages/AccessDenied.tsx`
+- Helper `formatMessagePreview` en `src/lib/utils.ts`
+
+**Frontend modificados:**
+- `src/pages/LivePlayer.tsx` (fix UI card)
+- `src/pages/Doctors.tsx` (precio universal)
+- `src/contexts/ChatContext.tsx` (preview limpio)
+- `src/components/chat/ChatSessionItem.tsx` (sanitización legacy)
+- `src/contexts/WalletContext.tsx` (realtime status notif)
+- `src/pages/Vault.tsx` y `DoctorVault.tsx` (tab auditoría)
+- `src/pages/AdminVerifications.tsx` (aprobar/rechazar cédula y COFEPRIS por separado)
+- `src/components/recordings/*Player.tsx` y `VaultFilePreviewModal.tsx` (DRM hardening)
+- `src/components/live/CloudflareStreamPlayer.tsx` (manejo token expirado)
+- `src/App.tsx` (ruta `/access-denied`)
+
+## Notas honestas
+
+- **Cloudflare Stream Signed URLs** requieren que el campo `requireSignedURLs=true` esté activado por video en Cloudflare. La edge function lo activará para todos los nuevos uploads vía API; los videos antiguos seguirán siendo accesibles sin firma hasta que un admin corra una migración de backfill (te dejo nota).
+- **DRM real (Widevine/FairPlay)** no es factible sin contrato enterprise con Cloudflare. Lo que entrego es "DRM-like UX": bloqueo de descarga, click derecho, controles nativos, validación de rol en backend. Suficiente para cumplimiento HIPAA-equivalente en MX.
+- **Auditoría vault**: el evento `accessed` se registra cuando se firma la URL, no cuando el usuario realmente abre el archivo (no podemos detectar eso desde backend sin tracking adicional).
 
