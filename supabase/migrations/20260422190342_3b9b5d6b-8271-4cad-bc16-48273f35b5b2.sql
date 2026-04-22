@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Anyone can view ad creatives" ON storage.objects;
