@@ -66,13 +66,11 @@ import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
-import { DecorativeBackground } from '@/components/layout/DecorativeBackground';
+import { AppBackground } from '@/components/layout/AppBackground';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { ActiveLiveBanner } from '@/components/live/ActiveLiveBanner';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
-// 🎨 FONDO DE LA APP — para cambiar la imagen, reemplaza este archivo o ajusta esta ruta:
-import appBackground from '@/assets/app-background.jpg';
 
 interface NavItem {
   labelKey: string;
