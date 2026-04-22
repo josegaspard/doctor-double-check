@@ -129,15 +129,16 @@ export function MedicalCredentialsReview() {
         .eq('user_id', doctor.user_id);
       if (error) throw error;
 
+      const credLabel = kind === 'cedula' ? 'Cédula Profesional' : 'Permiso COFEPRIS';
       await supabase.from('notifications').insert({
         user_id: doctor.user_id,
         type: 'system',
         title: action === 'approve' ? '✅ Credencial aprobada' : '❌ Credencial rechazada',
         message:
           action === 'approve'
-            ? `Tu ${kind === 'cedula' ? 'Cédula Profesional' : 'Permiso COFEPRIS'} fue aprobada.`
-            : `Tu ${kind === 'cedula' ? 'Cédula Profesional' : 'Permiso COFEPRIS'} fue rechazada. Motivo: ${reason.trim()}`,
-        data: { kind, status: newStatus },
+            ? `Tu ${credLabel} fue aprobada. Notas de verificación: ${reason.trim()}`
+            : `Tu ${credLabel} fue rechazada. Motivo: ${reason.trim()}`,
+        data: { kind, status: newStatus, admin_notes: reason.trim() },
       });
 
       toast.success(
@@ -332,24 +333,37 @@ export function MedicalCredentialsReview() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {actionDialog.action === 'approve' ? '¿Aprobar credencial?' : '¿Rechazar credencial?'}
+              {actionDialog.action === 'approve'
+                ? 'Aprobar credencial — confirma verificación'
+                : 'Rechazar credencial — indica motivo'}
             </DialogTitle>
             <DialogDescription>
               {actionDialog.doctor?.name} —{' '}
               {actionDialog.kind === 'cedula' ? 'Cédula Profesional' : 'Permiso COFEPRIS'}
             </DialogDescription>
           </DialogHeader>
-          {actionDialog.action === 'reject' && (
-            <div>
-              <label className="text-sm font-medium">Motivo del rechazo</label>
-              <Textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="Explica el motivo (visible al doctor)..."
-                className="mt-2"
-              />
-            </div>
-          )}
+          <div>
+            <label className="text-sm font-medium">
+              {actionDialog.action === 'approve' ? 'Notas de verificación' : 'Motivo del rechazo'}
+              <span className="text-destructive ml-1">*</span>
+            </label>
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder={
+                actionDialog.action === 'approve'
+                  ? 'Confirma cómo verificaste esta credencial — visible al doctor y registrado para auditoría'
+                  : 'Explica el motivo (visible al doctor)...'
+              }
+              className="mt-2"
+              rows={4}
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {actionDialog.action === 'approve'
+                ? 'Ej.: "Verificada en RNPP/SEP por número y nombre el día de hoy."'
+                : 'El doctor recibirá esta razón en su notificación.'}
+            </p>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setActionDialog({ ...actionDialog, open: false })}>
               Cancelar
@@ -357,7 +371,7 @@ export function MedicalCredentialsReview() {
             <Button
               variant={actionDialog.action === 'approve' ? 'success' : 'destructive'}
               onClick={handleAction}
-              disabled={isProcessing || (actionDialog.action === 'reject' && !reason.trim())}
+              disabled={isProcessing || !reason.trim()}
             >
               {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {actionDialog.action === 'approve' ? 'Aprobar' : 'Rechazar'}
