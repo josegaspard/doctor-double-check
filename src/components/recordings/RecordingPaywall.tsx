@@ -52,6 +52,7 @@ export function RecordingPaywall({
   onBack,
 }: RecordingPaywallProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { balance, canAfford } = useWallet();
   const { purchaseWithWallet, purchaseWithStripe, refresh } = usePurchases();
   const [txStatus, setTxStatus] = useState<PaywallTxStatus>('idle');
