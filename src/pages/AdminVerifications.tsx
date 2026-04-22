@@ -276,19 +276,6 @@ export default function AdminVerifications() {
           </TabsContent>
 
           <TabsContent value="identity" className="mt-4">
-            <IdentitySection
-              verifications={verifications}
-              isLoading={isLoading}
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              language={language}
-              getStatusBadge={getStatusBadge}
-              setSelectedVerification={setSelectedVerification}
-              getDocumentUrl={getDocumentUrl}
-              openActionDialog={openActionDialog}
-            />
-          </TabsContent>
-        </Tabs>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
