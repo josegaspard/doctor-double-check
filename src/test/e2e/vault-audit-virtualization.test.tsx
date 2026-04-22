@@ -43,18 +43,40 @@ function VirtualizedAuditTable({
   );
 
   const parentRef = useRef<HTMLDivElement>(null);
+  const [, setReady] = useState(0);
+
+  useLayoutEffect(() => {
+    if (parentRef.current) {
+      stubElementSize(parentRef.current, CONTAINER_HEIGHT);
+      // Force a re-render so the virtualizer recomputes with the stubbed size.
+      setReady((n) => n + 1);
+    }
+  }, []);
+
   const rowVirtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 56,
     overscan: 5,
+    initialRect: { width: 800, height: CONTAINER_HEIGHT },
+    observeElementRect: (instance, cb) => {
+      cb({ width: 800, height: CONTAINER_HEIGHT });
+      return () => {};
+    },
+    observeElementOffset: (instance, cb) => {
+      const el = instance.scrollElement as HTMLElement | null;
+      const handler = () => cb(el?.scrollTop ?? 0, false);
+      handler();
+      el?.addEventListener('scroll', handler);
+      return () => el?.removeEventListener('scroll', handler);
+    },
   });
 
   return (
     <div
       ref={parentRef}
       data-testid="virtual-container"
-      style={{ height: 600, overflow: 'auto' }}
+      style={{ height: CONTAINER_HEIGHT, overflow: 'auto' }}
     >
       <div
         style={{ height: rowVirtualizer.getTotalSize(), position: 'relative', width: '100%' }}
