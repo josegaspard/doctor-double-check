@@ -37,6 +37,53 @@ const sortNewestFirst = (videos: CloudflareVideo[]) => {
   });
 };
 
+/**
+ * Verify user has access to the recording:
+ * - Owner of the recording (doctor)
+ * - Admin role
+ * - Active purchase row in `purchases` table
+ * - Free recording (price == 0)
+ * Returns true if access granted, false otherwise.
+ */
+async function verifyRecordingAccess(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string,
+  recordingId: string
+): Promise<{ allowed: boolean; reason?: string }> {
+  // 1) Admin role
+  const { data: roleRow } = await supabaseAdmin
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (roleRow?.role === 'admin') return { allowed: true, reason: 'admin' };
+
+  // 2) Recording details (owner / price / live_id)
+  const { data: rec, error: recErr } = await supabaseAdmin
+    .from('recordings')
+    .select('doctor_id, price')
+    .eq('id', recordingId)
+    .maybeSingle();
+  if (recErr || !rec) return { allowed: false, reason: 'recording_not_found' };
+
+  // 3) Owner doctor
+  if (rec.doctor_id === userId) return { allowed: true, reason: 'owner' };
+
+  // 4) Free recording
+  if (Number(rec.price) === 0) return { allowed: true, reason: 'free' };
+
+  // 5) Active purchase
+  const { data: purchase } = await supabaseAdmin
+    .from('purchases')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('recording_id', recordingId)
+    .maybeSingle();
+  if (purchase) return { allowed: true, reason: 'purchased' };
+
+  return { allowed: false, reason: 'no_purchase' };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -67,20 +114,47 @@ Deno.serve(async (req) => {
     const isLiveRequest = type === "live" && !!liveInputUid;
 
     // Keep auth required for recordings, but allow live playback for any viewer
+    let authedUserId: string | null = null;
     if (!isLiveRequest) {
       const authHeader = req.headers.get("Authorization");
-      if (!authHeader) throw new Error("No authorization header");
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Forbidden: missing authorization" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+        );
+      }
 
       const token = authHeader.replace("Bearer ", "");
       const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-      if (userError || !userData.user) throw new Error("User not authenticated");
+      if (userError || !userData.user) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Forbidden: invalid token" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+        );
+      }
+      authedUserId = userData.user.id;
+      logStep("User authenticated", { userId: authedUserId });
 
-      logStep("User authenticated", { userId: userData.user.id });
+      // STRICT GATING: must have recordingId + valid purchase/owner/admin
+      if (!recordingId) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Forbidden: recordingId required" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+        );
+      }
+
+      const access = await verifyRecordingAccess(supabaseClient, authedUserId, recordingId);
+      if (!access.allowed) {
+        logStep("Access denied", { userId: authedUserId, recordingId, reason: access.reason });
+        return new Response(
+          JSON.stringify({ success: false, error: "Forbidden: No purchase found", reason: access.reason }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+        );
+      }
+      logStep("Access granted", { userId: authedUserId, recordingId, reason: access.reason });
     } else {
       logStep("Public live playback request", { liveInputUid });
     }
-
-    // Use the constant subdomain
 
     // For live streams
     if (type === "live" && liveInputUid) {
@@ -139,11 +213,8 @@ Deno.serve(async (req) => {
     if (isPending) {
       logStep("Recording is pending, checking live input outputs", { liveInputUid: actualVideoUid });
       
-      // Cloudflare recordings are stored as regular videos.
-      // IMPORTANT: The reliable way is listing videos for a given live input.
       let videos: CloudflareVideo[] = [];
 
-      // Optional: fetch liveId from DB to increase match accuracy
       let liveIdFromDb: string | null = null;
       if (recordingId) {
         const { data: recRow, error: recErr } = await supabaseClient
@@ -157,7 +228,6 @@ Deno.serve(async (req) => {
       }
 
       const MAX_PAGES = 10;
-      // 1) Preferred: list videos attached to this live input directly
       for (let page = 1; page <= MAX_PAGES; page++) {
         const listResponse = await fetch(
           `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/stream/live_inputs/${actualVideoUid}/videos?per_page=100&page=${page}`,
@@ -183,7 +253,6 @@ Deno.serve(async (req) => {
         videos.push(...candidates);
       }
 
-      // 2) Fallback: scan global videos list and match by liveInput/meta (older behavior)
       if (videos.length === 0) {
         for (let page = 1; page <= MAX_PAGES; page++) {
           const listResponse = await fetch(
@@ -226,7 +295,6 @@ Deno.serve(async (req) => {
 
       videos = sortNewestFirst(videos);
 
-      // Log all found videos for debugging
       if (videos.length > 0) {
         logStep("Videos found", videos.map((v: any) => ({ 
           uid: v.uid, 
@@ -236,7 +304,6 @@ Deno.serve(async (req) => {
         })));
       }
 
-      // Find a ready video
       const readyVideo = videos.find((v: any) => v.status?.state === "ready");
 
       if (readyVideo) {
@@ -245,7 +312,6 @@ Deno.serve(async (req) => {
           duration: readyVideo.duration 
         });
 
-        // Update the recording in database if recordingId provided
         if (recordingId) {
           const { error: updateError } = await supabaseClient
             .from('recordings')
@@ -282,7 +348,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Check if there's a video still processing
       const processingVideo = videos.find((v: any) => 
         v.status?.state !== "ready" && v.status?.state !== "error"
       );
@@ -302,7 +367,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // No video found yet - might still be processing at Cloudflare
       logStep("No video found for this live input yet");
       return new Response(
         JSON.stringify({
@@ -317,7 +381,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // For ready recordings (non-pending), get video details directly
     logStep("Getting video details", { videoUid: actualVideoUid });
 
     const videoResponse = await fetch(
@@ -344,7 +407,6 @@ Deno.serve(async (req) => {
       status: video.status?.state 
     });
 
-    // If the video isn't ready yet, report as processing so the client can poll.
     const state = video.status?.state;
     if (state && state !== "ready") {
       logStep("Video not ready yet", { uid: video.uid, state });
