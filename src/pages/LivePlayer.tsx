@@ -466,7 +466,20 @@ export default function LivePlayer() {
         {/* Responsive grid: stack on mobile, 2-col tablet, 3-col desktop */}
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Video Player */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-4 relative">
+            {/* Recording lifecycle overlay (processing / ready / failed) — sits on top of the player */}
+            {!isOwner && id && (recordingStatus === 'processing_recording' || recordingStatus === 'recording_ready' || recordingStatus === 'failed') && (
+              <LiveProcessingOverlay
+                liveId={id}
+                status={recordingStatus}
+                recordingId={recordingId}
+                viewerCount={viewerCount}
+                onStatusChange={(next, recId) => {
+                  setRecordingStatus(next);
+                  if (recId) setRecordingId(recId);
+                }}
+              />
+            )}
             {/* Live ended overlay */}
             {liveEnded && !isOwner ? (
               <LiveEndedOverlay
