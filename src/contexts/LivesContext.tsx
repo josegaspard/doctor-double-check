@@ -52,10 +52,18 @@ export interface Recording {
   peakViewers?: number;
 }
 
+export interface DebugCacheEntry {
+  doctorId: string;
+  name: string;
+  cedulaState: 'value' | 'null' | 'undefined';
+  cofeprisState: 'value' | 'null' | 'undefined';
+}
+
 interface LivesContextType {
   lives: Live[];
   recordings: Recording[];
   isLoading: boolean;
+  credentialsLoadError: boolean;
   getLive: (id: string) => Live | undefined;
   getRecording: (id: string) => Recording | undefined;
   getLivesByDoctor: (doctorId: string) => Live[];
@@ -68,6 +76,8 @@ interface LivesContextType {
   refreshLives: () => Promise<void>;
   refreshRecordings: () => Promise<void>;
   ensureRecordingsLoaded: () => Promise<void>;
+  retryCredentials: () => Promise<void>;
+  getDebugCacheSnapshot: () => DebugCacheEntry[];
 }
 
 const LivesContext = createContext<LivesContextType | undefined>(undefined);
@@ -101,6 +111,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [likedLives, setLikedLives] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const [credentialsLoadError, setCredentialsLoadError] = useState(false);
   const recordingsLoadedRef = useRef(false);
   
   // Track last fetch time to prevent rapid re-fetches
@@ -188,6 +199,14 @@ export function LivesProvider({ children }: { children: ReactNode }) {
                   .in('user_id', uncachedIds)
               : Promise.resolve({ data: [] as any[] }),
           ]);
+
+          // Detect credential fetch error
+          if (uncachedIds.length > 0 && (doctorProfilesResult as any).error) {
+            console.error('Error fetching doctor credentials:', (doctorProfilesResult as any).error);
+            setCredentialsLoadError(true);
+          } else if (uncachedIds.length > 0) {
+            setCredentialsLoadError(false);
+          }
 
           // Update caches
           profilesResult.data?.forEach((p: any) => {
@@ -672,6 +691,35 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     await fetchLives(true);
   }, [fetchLives]);
 
+  const retryCredentials = useCallback(async () => {
+    // Clear credential cache only — keep profile name/avatar cache for snappy UI
+    doctorProfileCache.current.clear();
+    setCredentialsLoadError(false);
+    await fetchLives(true);
+  }, [fetchLives]);
+
+  const getDebugCacheSnapshot = useCallback((): DebugCacheEntry[] => {
+    const entries: DebugCacheEntry[] = [];
+    const seen = new Set<string>();
+    lives.forEach(l => {
+      if (seen.has(l.doctorId)) return;
+      seen.add(l.doctorId);
+      const cached = doctorProfileCache.current.get(l.doctorId);
+      const stateOf = (v: string | null | undefined): 'value' | 'null' | 'undefined' => {
+        if (v === undefined) return 'undefined';
+        if (v === null) return 'null';
+        return 'value';
+      };
+      entries.push({
+        doctorId: l.doctorId,
+        name: l.doctorName,
+        cedulaState: cached ? stateOf(cached.cedula_profesional) : 'undefined',
+        cofeprisState: cached ? stateOf(cached.cofepris_permit) : 'undefined',
+      });
+    });
+    return entries;
+  }, [lives]);
+
   const refreshRecordings = useCallback(async () => {
     recordingsLoadedRef.current = false;
     await fetchRecordings();
@@ -690,6 +738,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     lives,
     recordings,
     isLoading,
+    credentialsLoadError,
     getLive,
     getRecording,
     getLivesByDoctor,
@@ -702,7 +751,9 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     refreshLives,
     refreshRecordings,
     ensureRecordingsLoaded,
-  }), [lives, recordings, isLoading, getLive, getRecording, getLivesByDoctor, getRecordingsByDoctor, hasLiked, refreshLives, refreshRecordings, ensureRecordingsLoaded]);
+    retryCredentials,
+    getDebugCacheSnapshot,
+  }), [lives, recordings, isLoading, credentialsLoadError, getLive, getRecording, getLivesByDoctor, getRecordingsByDoctor, hasLiked, refreshLives, refreshRecordings, ensureRecordingsLoaded, retryCredentials, getDebugCacheSnapshot]);
 
   return (
     <LivesContext.Provider value={contextValue}>
@@ -716,6 +767,7 @@ const LIVES_DEFAULTS: LivesContextType = {
   lives: [],
   recordings: [],
   isLoading: false,
+  credentialsLoadError: false,
   getLive: () => undefined,
   getRecording: () => undefined,
   getLivesByDoctor: () => [],
@@ -728,6 +780,8 @@ const LIVES_DEFAULTS: LivesContextType = {
   refreshLives: async () => {},
   refreshRecordings: async () => {},
   ensureRecordingsLoaded: async () => {},
+  retryCredentials: async () => {},
+  getDebugCacheSnapshot: () => [],
 };
 
 export function useLives() {
