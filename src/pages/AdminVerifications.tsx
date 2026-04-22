@@ -444,6 +444,8 @@ export default function AdminVerifications() {
             )}
           </TabsContent>
         </Tabs>
+          </TabsContent>
+        </Tabs>
 
         {/* Document Viewer Dialog */}
         {selectedVerification && !isActionDialogOpen && (
