@@ -26,8 +26,11 @@ import {
   Plus,
   LogIn,
   ShieldCheck,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
+import { LivesDebugPanel } from '@/components/live/LivesDebugPanel';
 
 const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boolean; isNew: boolean }>(function LiveCard({ live, isPremiumSub, isNew }, ref) {
   const { t } = useLanguage();
@@ -111,22 +114,41 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
           </div>
           {/* Verified credentials with status */}
           {(live.doctorCedula || live.doctorCofepris) ? (
-            <div className="flex flex-wrap gap-1 mt-2">
-              <CredentialStatusBadge
-                type="cedula"
-                status={live.doctorCedulaStatus}
-                value={live.doctorCedula}
-                rejectionReason={live.doctorCedulaRejectionReason}
-                size="xs"
-              />
-              <CredentialStatusBadge
-                type="cofepris"
-                status={live.doctorCofeprisStatus}
-                value={live.doctorCofepris}
-                rejectionReason={live.doctorCofeprisRejectionReason}
-                size="xs"
-              />
-            </div>
+            <>
+              <div className="flex flex-wrap gap-1 mt-2">
+                <CredentialStatusBadge
+                  type="cedula"
+                  status={live.doctorCedulaStatus}
+                  value={live.doctorCedula}
+                  rejectionReason={live.doctorCedulaRejectionReason}
+                  size="xs"
+                />
+                <CredentialStatusBadge
+                  type="cofepris"
+                  status={live.doctorCofeprisStatus}
+                  value={live.doctorCofepris}
+                  rejectionReason={live.doctorCofeprisRejectionReason}
+                  size="xs"
+                />
+              </div>
+              {(live.doctorCedulaStatus === 'rejected' || live.doctorCofeprisStatus === 'rejected') && (() => {
+                const reasons = [
+                  live.doctorCedulaStatus === 'rejected' && live.doctorCedulaRejectionReason
+                    ? `Cédula: ${live.doctorCedulaRejectionReason}`
+                    : null,
+                  live.doctorCofeprisStatus === 'rejected' && live.doctorCofeprisRejectionReason
+                    ? `COFEPRIS: ${live.doctorCofeprisRejectionReason}`
+                    : null,
+                ].filter(Boolean).join(' · ');
+                if (!reasons) return null;
+                return (
+                  <p className="text-[10px] text-destructive mt-1 line-clamp-2 flex items-start gap-1">
+                    <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                    <span>{reasons}</span>
+                  </p>
+                );
+              })()}
+            </>
           ) : (
             <div className="flex flex-wrap gap-1 mt-2">
               <Badge variant="outline" className="text-[10px] gap-0.5 text-muted-foreground h-4 px-1.5 py-0">
@@ -143,7 +165,7 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
 });
 
 export default function LivesGrid() {
-  const { lives, isLoading, refreshLives } = useLives();
+  const { lives, isLoading, refreshLives, credentialsLoadError, retryCredentials } = useLives();
   const { role, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const { getSubscription } = useSubscriptions();
