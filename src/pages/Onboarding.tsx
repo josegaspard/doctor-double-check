@@ -23,6 +23,7 @@ import { ClinicalHistoryForm, ClinicalHistoryData } from '@/components/onboardin
 import { DocumentSignature } from '@/components/onboarding/DocumentSignature';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Badge } from '@/components/ui/badge';
+import { AppBackground } from '@/components/layout/AppBackground';
 
 // Known Mexican city coordinates for geocoding
 const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
@@ -688,10 +689,10 @@ export default function Onboarding() {
 
   if (authLoading || isCheckingOnboarding || isLoadingProgress) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
+      <AppBackground className="min-h-screen flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
         <p className="text-sm text-muted-foreground">{t('onboarding.loadingProgress')}</p>
-      </div>
+      </AppBackground>
     );
   }
 
@@ -699,7 +700,7 @@ export default function Onboarding() {
   if (showWelcome) {
     const RoleIcon = getRoleIcon();
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <AppBackground className="min-h-screen flex flex-col">
       <header className="border-b border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
@@ -810,14 +811,14 @@ export default function Onboarding() {
             <p className="text-xs text-muted-foreground">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
           </div>
         </footer>
-      </div>
+      </AppBackground>
     );
   }
 
   const totalSteps = 2; // Always 2 steps now (Patient has Clinical History, Doctors have Verification/Signature)
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <AppBackground className="min-h-screen flex flex-col">
       <header className="border-b border-border bg-card/95 backdrop-blur">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -1588,6 +1589,6 @@ export default function Onboarding() {
           <p className="text-xs text-muted-foreground">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
         </div>
       </footer>
-    </div>
+    </AppBackground>
   );
 }
