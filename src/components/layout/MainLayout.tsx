@@ -268,33 +268,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const useImageBackground = (toggles as any).app_background !== 'white';
 
   return (
-    <div
+    <AppBackground
       ref={ref}
-      className={`min-h-screen flex flex-col overflow-x-hidden relative ${
-        useImageBackground
-          ? 'app-bg-image'
-          : 'bg-gradient-to-br from-primary/[0.02] via-secondary/[0.01] to-primary/[0.02]'
-      }`}
-      style={
-        useImageBackground
-          ? {
-              backgroundImage: `url(${appBackground})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundAttachment: 'fixed',
-              backgroundRepeat: 'no-repeat',
-            }
-          : undefined
-      }
+      className="min-h-screen flex flex-col overflow-x-hidden"
     >
-      {/* Overlay sutil para legibilidad sobre la imagen */}
-      {useImageBackground && (
-        <div
-          aria-hidden="true"
-          className="fixed inset-0 pointer-events-none z-0 bg-black/30"
-        />
-      )}
-      {!useImageBackground && <DecorativeBackground />}
       {/* Header — usa color del footer cuando el fondo es imagen */}
       <header
         className={`sticky top-0 z-50 border-b backdrop-blur ${
