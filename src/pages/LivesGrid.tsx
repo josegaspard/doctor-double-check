@@ -110,7 +110,7 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
             )}
           </div>
           {/* Verified credentials with status */}
-          {(live.doctorCedula || live.doctorCofepris) && (
+          {(live.doctorCedula || live.doctorCofepris) ? (
             <div className="flex flex-wrap gap-1 mt-2">
               <CredentialStatusBadge
                 type="cedula"
@@ -126,6 +126,13 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
                 rejectionReason={live.doctorCofeprisRejectionReason}
                 size="xs"
               />
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-1 mt-2">
+              <Badge variant="outline" className="text-[10px] gap-0.5 text-muted-foreground h-4 px-1.5 py-0">
+                <Clock className="w-2.5 h-2.5" />
+                Verificando credenciales…
+              </Badge>
             </div>
           )}
         </CardContent>
