@@ -95,6 +95,7 @@ export default function Vault() {
     { gb: 10, label: '+10 GB', badge: 'Mejor valor' },
   ]);
   const [pricePerGb, setPricePerGb] = useState(49);
+  const [showSimulator, setShowSimulator] = useState(false);
 
   // Fetch storage usage
   const fetchStorage = useCallback(async () => {
