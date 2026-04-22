@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 
 interface ChatMessage {
   id: string;
