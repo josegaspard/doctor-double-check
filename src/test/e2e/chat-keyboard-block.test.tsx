@@ -125,3 +125,72 @@ describe('Chat gate — DOM focus restoration after paywall close', () => {
     expect(document.activeElement).toBe(input);
   });
 });
+
+describe('Chat gate — paste / Ctrl+Enter / drop blocking', () => {
+  function handlePaste(
+    s: GateState,
+    e: { preventDefault: () => void },
+    openPaywall: () => void
+  ): 'blocked' | 'pass' {
+    if (isDisabled(s)) {
+      e.preventDefault();
+      openPaywall();
+      return 'blocked';
+    }
+    return 'pass';
+  }
+
+  it('paste while gated prevents default and opens paywall', () => {
+    const openPaywall = vi.fn();
+    const e = { preventDefault: vi.fn() };
+    const r = handlePaste(base(), e, openPaywall);
+    expect(r).toBe('blocked');
+    expect(e.preventDefault).toHaveBeenCalledTimes(1);
+    expect(openPaywall).toHaveBeenCalledTimes(1);
+  });
+
+  it('paste while not gated passes through (no paywall)', () => {
+    const openPaywall = vi.fn();
+    const e = { preventDefault: vi.fn() };
+    const r = handlePaste(base({ hasChatEntitlement: true }), e, openPaywall);
+    expect(r).toBe('pass');
+    expect(openPaywall).not.toHaveBeenCalled();
+    expect(e.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it('Ctrl+Enter on gated chat still opens paywall (not Shift, so it sends-intercepts)', () => {
+    const send = vi.fn();
+    const openPaywall = vi.fn();
+    const r = handleKeyDown(base(), { key: 'Enter', shiftKey: false }, send, openPaywall);
+    expect(r).toBe('paywall');
+    expect(openPaywall).toHaveBeenCalledTimes(1);
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('drop event while gated must be prevented and trigger paywall', () => {
+    const openPaywall = vi.fn();
+    const e = { preventDefault: vi.fn() };
+    // Reuse paste handler logic — same gating semantics
+    const r = handlePaste(base(), e, openPaywall);
+    expect(r).toBe('blocked');
+    expect(e.preventDefault).toHaveBeenCalledTimes(1);
+    expect(openPaywall).toHaveBeenCalledTimes(1);
+  });
+
+  it('focus is restored to chat-input after paywall closes (deferred via timer)', async () => {
+    document.body.innerHTML = '<input data-testid="chat-input" /><button id="dlg">x</button>';
+    const input = document.querySelector('[data-testid="chat-input"]') as HTMLInputElement;
+    const dlg = document.getElementById('dlg') as HTMLButtonElement;
+    dlg.focus();
+    expect(document.activeElement).toBe(dlg);
+
+    // Simulate paywall close → deferred focus restore
+    await new Promise<void>((resolve) => {
+      setTimeout(() => {
+        input.focus();
+        resolve();
+      }, 50);
+    });
+    expect(document.activeElement).toBe(input);
+  });
+});

@@ -3892,6 +3892,22 @@ export type Database = {
           session_id: string
         }[]
       }
+      get_doctor_accessible_files: {
+        Args: { p_doctor_id?: string }
+        Returns: {
+          category: string
+          created_at: string
+          description: string
+          expires_at: string
+          file_size: number
+          file_type: Database["public"]["Enums"]["vault_file_type"]
+          file_url: string
+          granted_at: string
+          id: string
+          name: string
+          patient_id: string
+        }[]
+      }
       get_doctor_public_profile: {
         Args: { p_user_id: string }
         Returns: {

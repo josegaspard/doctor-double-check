@@ -15,6 +15,7 @@ import { useDaily } from '@/hooks/useDaily';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MainLayout from '@/components/layout/MainLayout';
 import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
+import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { LiveChat } from '@/components/live/LiveChat';
 import { AnimatedViewerCount } from '@/components/live/AnimatedViewerCount';
 import { Button } from '@/components/ui/button';
@@ -467,6 +468,7 @@ export default function LivePlayer() {
                   isMobileFullscreen={mobileFullscreen}
                   className={mobileFullscreen ? 'relative bg-black overflow-hidden group w-full h-full' : undefined}
                 />
+                <DynamicWatermark email={user?.email} userId={user?.id} />
               </div>
             ) : (
               <div className="relative aspect-video bg-black rounded-xl overflow-hidden no-context-menu">

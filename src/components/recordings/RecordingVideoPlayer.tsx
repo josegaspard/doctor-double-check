@@ -33,6 +33,14 @@ function getStoragePath(url: string) {
 export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, onTimeUpdate, autoPlay }: RecordingVideoPlayerProps) {
   const storagePath = useMemo(() => (isStorageRef(videoUrl) ? getStoragePath(videoUrl) : null), [videoUrl]);
   const { user, supabaseUser } = useAuth();
+  // Generate a unique sessionId per mount — persists across signed URL renewals
+  const sessionId = useMemo(
+    () =>
+      typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function'
+        ? (crypto as any).randomUUID()
+        : `sess-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
+    [recordingId]
+  );
 
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -89,7 +97,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
     return (
       <div className="relative">
         <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} autoPlay={autoPlay} />
-        <DynamicWatermark email={user?.email} userId={supabaseUser?.id} />
+        <DynamicWatermark email={user?.email} userId={supabaseUser?.id} sessionId={sessionId} />
       </div>
     );
   }
@@ -122,6 +130,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
       )}
 
       <video
+        key={signedUrl || 'pending'}
         ref={videoRef}
         className="w-full h-full object-contain"
         src={signedUrl || undefined}
@@ -149,7 +158,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
           }
         }}
       />
-      <DynamicWatermark email={user?.email} userId={supabaseUser?.id} />
+      <DynamicWatermark email={user?.email} userId={supabaseUser?.id} sessionId={sessionId} />
     </div>
   );
 }
