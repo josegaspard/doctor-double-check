@@ -333,6 +333,9 @@ export function CloudflareRecordingPlayer({
         ref={videoRef}
         className="w-full h-full object-contain"
         playsInline
+        controlsList="nodownload noremoteplayback noplaybackrate"
+        disablePictureInPicture
+        onContextMenu={(e) => e.preventDefault()}
         onTimeUpdate={handleTimeUpdate}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}

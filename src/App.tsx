@@ -134,6 +134,7 @@ const AdminFeatured = React.lazy(() => import("./pages/AdminFeatured"));
 const MyOrders = React.lazy(() => import("./pages/MyOrders"));
 const OrderSuccess = React.lazy(() => import("./pages/OrderSuccess"));
 const AdminQAChecklist = React.lazy(() => import("./pages/AdminQAChecklist"));
+const AccessDenied = React.lazy(() => import("./pages/AccessDenied"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -277,6 +278,7 @@ const App = () => {
                       <Route path="/psychology" element={<PsychologyDirectory />} />
                       <Route path="/nutrition" element={<NutritionDirectory />} />
                       <Route path="/for-residents" element={<ForResidents />} />
+                      <Route path="/access-denied" element={<AccessDenied />} />
                       <Route path="/emergency" element={<EmergencyDoctors />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
