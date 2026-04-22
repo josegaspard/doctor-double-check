@@ -4,6 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import {
   CheckCircle2,
   XCircle,
@@ -13,6 +22,7 @@ import {
   ShieldOff,
   RefreshCw,
   History,
+  FilterX,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -34,8 +44,6 @@ interface AuditEntry {
   action: AuditAction;
   metadata: Record<string, any>;
   created_at: string;
-  actor_name?: string;
-  file_name?: string;
 }
 
 interface VaultAuditPanelProps {
@@ -44,25 +52,105 @@ interface VaultAuditPanelProps {
   userId: string;
 }
 
+const PAGE_SIZE = 100;
+
+const ACTION_OPTIONS: { value: AuditAction | 'all'; label: string }[] = [
+  { value: 'all', label: 'Todas las acciones' },
+  { value: 'accessed', label: 'Acceso al archivo' },
+  { value: 'access_granted', label: 'Permiso otorgado' },
+  { value: 'access_revoked', label: 'Permiso revocado' },
+  { value: 'access_denied', label: 'Acceso denegado' },
+  { value: 'otp_required', label: 'OTP requerido' },
+  { value: 'otp_verified', label: 'OTP verificado' },
+  { value: 'otp_failed', label: 'OTP fallido' },
+];
+
+function defaultFromDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 30);
+  return d.toISOString().slice(0, 10);
+}
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [actorMap, setActorMap] = useState<Record<string, string>>({});
   const [fileMap, setFileMap] = useState<Record<string, string>>({});
 
+  // Filtros
+  const [actionFilter, setActionFilter] = useState<AuditAction | 'all'>('all');
+  const [fileFilter, setFileFilter] = useState<string>('all');
+  const [fromDate, setFromDate] = useState<string>(defaultFromDate());
+  const [toDate, setToDate] = useState<string>(todayStr());
+  const [limit, setLimit] = useState<number>(PAGE_SIZE);
+  const [availableFiles, setAvailableFiles] = useState<{ id: string; name: string }[]>([]);
+
+  const fetchAvailableFiles = async () => {
+    try {
+      if (mode === 'patient') {
+        const { data } = await supabase
+          .from('vault_files')
+          .select('id, name')
+          .eq('patient_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(200);
+        setAvailableFiles((data || []) as any);
+      } else {
+        // For doctor: files from their audit history
+        const { data } = await supabase
+          .from('vault_audit_log' as any)
+          .select('file_id')
+          .eq('actor_id', userId)
+          .not('file_id', 'is', null)
+          .limit(500);
+        const uniq = Array.from(new Set(((data || []) as any[]).map((d) => d.file_id))) as string[];
+        if (uniq.length) {
+          const { data: vf } = await supabase
+            .from('vault_files')
+            .select('id, name')
+            .in('id', uniq);
+          setAvailableFiles((vf || []) as any);
+        }
+      }
+    } catch (err) {
+      console.warn('[VaultAuditPanel] file list fetch failed', err);
+    }
+  };
+
   const fetchAudit = async () => {
     setIsLoading(true);
     try {
-      const filter = mode === 'patient' ? 'patient_id' : 'actor_id';
-      const { data, error } = await supabase
+      const filterCol = mode === 'patient' ? 'patient_id' : 'actor_id';
+      let q = supabase
         .from('vault_audit_log' as any)
-        .select('*')
-        .eq(filter, userId)
+        .select('*', { count: 'exact' })
+        .eq(filterCol, userId)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(limit);
+
+      if (actionFilter !== 'all') {
+        q = q.eq('action', actionFilter);
+      }
+      if (fileFilter !== 'all') {
+        q = q.eq('file_id', fileFilter);
+      }
+      if (fromDate) {
+        q = q.gte('created_at', new Date(fromDate + 'T00:00:00').toISOString());
+      }
+      if (toDate) {
+        q = q.lte('created_at', new Date(toDate + 'T23:59:59').toISOString());
+      }
+
+      const { data, error, count } = await q;
       if (error) throw error;
       const list = (data || []) as unknown as AuditEntry[];
       setEntries(list);
+      setTotalCount(count || list.length);
 
       // Resolver nombres de actores y archivos
       const actorIds = Array.from(new Set(list.map((e) => e.actor_id).filter(Boolean))) as string[];
@@ -78,7 +166,10 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
       ]);
 
       setActorMap(Object.fromEntries((profs || []).map((p: any) => [p.id, p.name])));
-      setFileMap(Object.fromEntries((files || []).map((f: any) => [f.id, f.name])));
+      setFileMap((prev) => ({
+        ...prev,
+        ...Object.fromEntries((files || []).map((f: any) => [f.id, f.name])),
+      }));
     } catch (err) {
       console.error('[VaultAuditPanel] fetch error', err);
     } finally {
@@ -87,9 +178,24 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
   };
 
   useEffect(() => {
-    if (userId) fetchAudit();
+    if (userId) {
+      fetchAvailableFiles();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, mode]);
+
+  useEffect(() => {
+    if (userId) fetchAudit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, mode, actionFilter, fileFilter, fromDate, toDate, limit]);
+
+  const clearFilters = () => {
+    setActionFilter('all');
+    setFileFilter('all');
+    setFromDate(defaultFromDate());
+    setToDate(todayStr());
+    setLimit(PAGE_SIZE);
+  };
 
   const renderAction = (action: AuditAction) => {
     const cfg: Record<AuditAction, { label: string; icon: React.ElementType; variant: any }> = {
@@ -112,6 +218,11 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
   };
 
   const grouped = useMemo(() => entries, [entries]);
+  const hasActiveFilters =
+    actionFilter !== 'all' ||
+    fileFilter !== 'all' ||
+    fromDate !== defaultFromDate() ||
+    toDate !== todayStr();
 
   return (
     <Card>
@@ -120,12 +231,91 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
           <History className="w-4 h-4 text-primary" />
           Auditoría de Vault
         </CardTitle>
-        <Button variant="ghost" size="sm" onClick={fetchAudit} disabled={isLoading} className="h-8 gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={fetchAudit}
+          disabled={isLoading}
+          className="h-8 gap-1"
+        >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           Actualizar
         </Button>
       </CardHeader>
       <CardContent>
+        {/* Filtros */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 p-3 rounded-lg bg-muted/40 border border-border/50">
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Archivo</Label>
+            <Select value={fileFilter} onValueChange={setFileFilter}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                <SelectItem value="all">Todos los archivos</SelectItem>
+                {availableFiles.map((f) => (
+                  <SelectItem key={f.id} value={f.id} className="text-xs">
+                    {f.name.length > 40 ? f.name.slice(0, 40) + '…' : f.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Acción</Label>
+            <Select value={actionFilter} onValueChange={(v) => setActionFilter(v as any)}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ACTION_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value} className="text-xs">
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Desde</Label>
+            <Input
+              type="date"
+              value={fromDate}
+              max={toDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="h-9 text-xs"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Hasta</Label>
+            <Input
+              type="date"
+              value={toDate}
+              min={fromDate}
+              max={todayStr()}
+              onChange={(e) => setToDate(e.target.value)}
+              className="h-9 text-xs"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mb-3 text-xs text-muted-foreground">
+          <span>
+            Mostrando {grouped.length} de {totalCount} eventos
+          </span>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-7 gap-1 text-[11px]"
+            >
+              <FilterX className="w-3 h-3" />
+              Limpiar filtros
+            </Button>
+          )}
+        </div>
+
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -134,51 +324,73 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
           </div>
         ) : grouped.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
-            {mode === 'patient'
+            {hasActiveFilters
+              ? 'No hay eventos que coincidan con los filtros seleccionados.'
+              : mode === 'patient'
               ? 'Aún no hay actividad registrada en tu expediente.'
               : 'Aún no has realizado acciones sobre expedientes de pacientes.'}
           </p>
         ) : (
-          <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
-            {grouped.map((e) => (
-              <div
-                key={e.id}
-                className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 transition-colors"
-              >
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {renderAction(e.action)}
-                    <span className="text-[11px] text-muted-foreground">
-                      {format(new Date(e.created_at), "d MMM yyyy 'a las' HH:mm", { locale: es })}
-                    </span>
-                  </div>
-                  <p className="text-xs text-foreground truncate">
-                    {e.file_id && fileMap[e.file_id] ? (
-                      <>
-                        Archivo: <span className="font-medium">{fileMap[e.file_id]}</span>
-                      </>
-                    ) : (
-                      <span className="text-muted-foreground">Archivo eliminado o no disponible</span>
+          <>
+            <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+              {grouped.map((e) => (
+                <div
+                  key={e.id}
+                  className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {renderAction(e.action)}
+                      <span className="text-[11px] text-muted-foreground">
+                        {format(new Date(e.created_at), "d MMM yyyy 'a las' HH:mm", {
+                          locale: es,
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-foreground truncate">
+                      {e.file_id && fileMap[e.file_id] ? (
+                        <>
+                          Archivo:{' '}
+                          <span className="font-medium">{fileMap[e.file_id]}</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          Archivo eliminado o no disponible
+                        </span>
+                      )}
+                    </p>
+                    {mode === 'patient' && e.actor_id && actorMap[e.actor_id] && (
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        Por: {actorMap[e.actor_id]}
+                      </p>
                     )}
-                  </p>
-                  {mode === 'patient' && e.actor_id && actorMap[e.actor_id] && (
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      Por: {actorMap[e.actor_id]}
-                    </p>
-                  )}
-                  {e.metadata && Object.keys(e.metadata).length > 0 && (
-                    <p className="text-[10px] text-muted-foreground/80 font-mono truncate">
-                      {Object.entries(e.metadata)
-                        .filter(([k]) => !['doctor_id'].includes(k))
-                        .slice(0, 3)
-                        .map(([k, v]) => `${k}: ${String(v).slice(0, 24)}`)
-                        .join(' · ')}
-                    </p>
-                  )}
+                    {e.metadata && Object.keys(e.metadata).length > 0 && (
+                      <p className="text-[10px] text-muted-foreground/80 font-mono truncate">
+                        {Object.entries(e.metadata)
+                          .filter(([k]) => !['doctor_id'].includes(k))
+                          .slice(0, 3)
+                          .map(([k, v]) => `${k}: ${String(v).slice(0, 24)}`)
+                          .join(' · ')}
+                      </p>
+                    )}
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            {grouped.length < totalCount && (
+              <div className="mt-3 flex justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLimit((l) => l + PAGE_SIZE)}
+                  disabled={isLoading}
+                >
+                  Cargar más ({totalCount - grouped.length} restantes)
+                </Button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
