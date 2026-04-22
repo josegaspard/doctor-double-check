@@ -25,6 +25,7 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
+  Receipt,
 } from 'lucide-react';
 import { TransactionHistory } from '@/components/wallet/TransactionHistory';
 import { UserBankAccountForm } from '@/components/wallet/UserBankAccountForm';
