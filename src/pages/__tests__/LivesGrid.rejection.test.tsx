@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-// @ts-ignore - testing library types
 import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 

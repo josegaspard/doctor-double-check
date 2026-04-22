@@ -91,6 +91,7 @@ export function HoverPlayCard({
           playsInline
           controlsList="nodownload"
           disablePictureInPicture
+          aria-label={alt}
           onContextMenu={(e) => e.preventDefault()}
         />
       )}

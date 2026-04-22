@@ -79,10 +79,10 @@ export default function RecordingPlayer() {
     return () => { supabase.removeChannel(channel); };
   }, [supabaseUser?.id, id, hasPurchased]);
 
-  // Auto-confirm wallet/Stripe redirect (?recording_paid=success)
+  // Auto-confirm wallet/Stripe redirect (?recording_paid=success or legacy ?purchased=true)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('recording_paid') === 'success') {
+    if (params.get('recording_paid') === 'success' || params.get('purchased') === 'true') {
       refreshPurchase();
       window.history.replaceState({}, '', window.location.pathname);
     }

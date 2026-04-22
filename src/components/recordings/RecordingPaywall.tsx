@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
 import { usePurchases } from '@/hooks/usePurchases';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 
 export type PaywallTxStatus = 'idle' | 'initiated' | 'paid' | 'failed';
@@ -51,6 +52,7 @@ export function RecordingPaywall({
   onBack,
 }: RecordingPaywallProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { balance, canAfford } = useWallet();
   const { purchaseWithWallet, purchaseWithStripe, refresh } = usePurchases();
   const [txStatus, setTxStatus] = useState<PaywallTxStatus>('idle');
