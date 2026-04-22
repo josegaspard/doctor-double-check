@@ -200,7 +200,7 @@ const App = () => {
                       <Route path="/recordings" element={<RecordingsGrid />} />
                       <Route path="/recording/:id" element={<RecordingPlayer />} />
                       <Route path="/wallet" element={<Wallet />} />
-                      <Route path="/wallet/ledger" element={<AccessGuard><WalletLedger /></AccessGuard>} />
+                      <Route path="/wallet/ledger" element={<WalletLedger />} />
                       <Route path="/chat" element={<Chat />} />
                       <Route path="/doctor/:id" element={<DoctorProfile />} />
                       <Route path="/profile" element={<UserProfile />} />
