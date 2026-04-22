@@ -1,164 +1,119 @@
 
 
-# Plan: Refinamientos finales de credenciales en `/lives`
+# Plan: 5 features finales — tests e2e por rol, watermark, Vault simulado, chat persistente y paywall de grabaciones
 
-## 1. `LivesContext.tsx` — loading state + detección de error real
+## 1. Tests e2e por rol (guards, paywalls, entitlements)
 
-**Agregar estado `credentialsRetrying: boolean`** al context para exponer cuándo se está recargando credenciales tras un retry.
+Crear `src/test/e2e/role-access.test.tsx` con suites por rol que rendericen `<App />` con un `MemoryRouter` apuntando a rutas sensibles y verifiquen el comportamiento esperado:
 
-**Refactorizar `retryCredentials`** para envolver el fetch en `setCredentialsRetrying(true/false)`:
-```ts
-const retryCredentials = useCallback(async () => {
-  setCredentialsRetrying(true);
-  try {
-    doctorProfileCache.current.clear();
-    setCredentialsLoadError(false);
-    await fetchLives(true);
-  } finally {
-    setCredentialsRetrying(false);
-  }
-}, [fetchLives]);
-```
+| Rol | Rutas testeadas | Resultado esperado |
+|-----|----------------|--------------------|
+| `visitor` (no auth) | `/chat`, `/vault`, `/medical-supplies`, `/doctor-dashboard`, `/admin` | Redirige a `/login` o muestra `<AccessDenied />` |
+| `patient` | `/medical-supplies`, `/admin/*`, `/doctor-dashboard`, `/resident-groups` | Bloqueado vía `<AccessGuard>` o `Navigate` |
+| `patient` sin entitlement | `/chat` con doctor sin pago previo | Muestra `<PaywallModal>` |
+| `doctor` (approved) | `/doctor-dashboard`, `/doctor-availability`, `/chat` | Acceso permitido |
+| `doctor` (pending) | `/doctor-dashboard` | `<DoctorStatusAlert>` visible |
+| `resident` | `/marketplace`, `/admin/*`, `/create-prescription`, `/chat` con paciente | Bloqueado |
+| `admin` | `/admin/*`, `/admin/users`, `/admin/credentials` | Acceso completo |
 
-**Mejorar detección error real vs vacío** en `fetchLives`:
-- Distinguir explícitamente: solo marcar `credentialsLoadError=true` si `error` está presente Y no es null/undefined.
-- Resultado vacío (`data: []`) NO es error — limpiar flag.
-- Cambiar bloque (líneas 203-209) a:
-```ts
-if (uncachedIds.length > 0) {
-  const credErr = (doctorProfilesResult as any).error;
-  if (credErr && credErr.message) {
-    console.error('Error fetching doctor credentials:', credErr);
-    setCredentialsLoadError(true);
-  } else {
-    // Either success with data, or success with empty array — both are valid
-    setCredentialsLoadError(false);
-  }
-}
-```
+Mockear `useAuth` con factory `mockAuth(role, opts)` y `supabase.from(...)` para devolver entitlements/chat sessions controlados. Validar con `expect(screen.getByText(...))` los textos clave de bloqueo.
 
-Exponer `credentialsRetrying` en `LivesContextType` y en el `value` del provider.
+## 2. Watermark dinámico + expiración de URLs privadas
 
-## 2. `LivesGrid.tsx` — banner con loading skeleton + botón con spinner
+**Crear `src/components/recordings/DynamicWatermark.tsx`** — overlay absoluto sobre el `<video>` del player con:
+- Texto: `${user.email} · ${userId.slice(0,8)} · ${formatDateTime(now)}`
+- Posición rotada 4 esquinas cada 30s para evitar masking estático
+- `pointer-events-none`, `text-white/30 text-[10px]`, `mix-blend-difference`
+- Recalcula timestamp cada minuto vía `useEffect` + `setInterval`
 
-Reemplazar el banner actual (líneas 332-342) por uno que respete el estado `credentialsRetrying`:
+**Integrar en `RecordingVideoPlayer.tsx` y `CloudflareRecordingPlayer.tsx`** envolviendo el `<video>` con un wrapper `relative` que contenga `<DynamicWatermark />`.
 
-```tsx
-{(credentialsLoadError || credentialsRetrying) && filteredLives.length > 0 && (
-  <div className="mb-3 p-2 rounded-md bg-destructive/10 border border-destructive/30 flex items-center justify-between gap-2">
-    {credentialsRetrying ? (
-      <div className="flex items-center gap-2 flex-1">
-        <RefreshCw className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
-        <div className="flex-1 space-y-1">
-          <div className="h-2 bg-muted/60 rounded animate-pulse w-1/2" />
-          <div className="h-2 bg-muted/40 rounded animate-pulse w-1/3" />
-        </div>
-      </div>
-    ) : (
-      <>
-        <span className="text-xs text-destructive flex items-center gap-1.5">
-          <AlertCircle className="w-3.5 h-3.5" />
-          No se pudieron cargar todas las credenciales
-        </span>
-        <Button size="sm" variant="outline" onClick={retryCredentials} disabled={credentialsRetrying} className="h-7 text-xs">
-          <RefreshCw className={`w-3 h-3 mr-1 ${credentialsRetrying ? 'animate-spin' : ''}`} />
-          {credentialsRetrying ? 'Recargando…' : 'Reintentar'}
-        </Button>
-      </>
-    )}
-  </div>
-)}
-```
+**Expiración de URLs privadas**: en `RecordingPlayer.tsx`, registrar el momento de generación del signed URL (`urlGeneratedAt = Date.now()`). Después de 1h (TTL del signed URL de Supabase Storage para `recordings`), si el video falla con error 403/410, mostrar overlay `<LiveEndedOverlay>`-style que diga "Sesión expirada — recarga para continuar viendo" con botón que llame `regenerateSignedUrl()` (re-fetch del recording → nueva signed URL).
 
-Destructurar `credentialsRetrying` del `useLives()` hook.
+Detectar expiración con listener `onError` del `<video>` que verifique `now - urlGeneratedAt > 55*60*1000` para ofrecer renovación proactiva antes de que falle.
 
-## 3. Texto inline de motivo de rechazo — robustecer cuando solo uno esté rejected
+## 3. Simulador de subida al Vault con validaciones y confirmación
 
-Sustituir el IIFE actual (líneas 134-150) por un patrón más limpio que NO dependa del join:
+**Crear `src/components/vault/VaultUploadSimulator.tsx`** — botón "Subir al Vault" que abre un dialog con:
+- Drop zone que acepta `.pdf, .jpg, .jpeg, .png, .dcm` (estudios)
+- Validación frontend:
+  - Tipo MIME: rechazar si no está en whitelist con toast
+  - Tamaño máximo 20MB
+  - Nombre sanitizado (sin caracteres especiales)
+- Barra de progreso real usando `XMLHttpRequest` con `onprogress` para mostrar % real durante upload a Storage `vault-files` bucket
+- Tras upload exitoso, paso de **"Confirmación de permisos"** que muestra:
+  - Lista de doctores con acceso actual al patient (consulta a `vault_access`)
+  - Checkbox por doctor: "Otorgar acceso a este archivo"
+  - Por defecto **ningún doctor seleccionado** (privacy-first)
+  - Botón "Guardar archivo" que crea fila en `vault_files` + entradas en `vault_access` para los seleccionados
+  - Trigger `trg_vault_access_audit` (ya existe) registra el evento
 
-```tsx
-{(() => {
-  const parts: string[] = [];
-  if (live.doctorCedulaStatus === 'rejected' && live.doctorCedulaRejectionReason) {
-    parts.push(`Cédula: ${live.doctorCedulaRejectionReason}`);
-  }
-  if (live.doctorCofeprisStatus === 'rejected' && live.doctorCofeprisRejectionReason) {
-    parts.push(`COFEPRIS: ${live.doctorCofeprisRejectionReason}`);
-  }
-  // Fallback genérico cuando hay rejection pero sin razón específica
-  if (parts.length === 0 && (live.doctorCedulaStatus === 'rejected' || live.doctorCofeprisStatus === 'rejected')) {
-    parts.push('Credencial rechazada (sin motivo registrado)');
-  }
-  if (parts.length === 0) return null;
-  return (
-    <p className="text-[10px] text-destructive mt-1 line-clamp-2 flex items-start gap-1">
-      <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-      <span>{parts.join(' · ')}</span>
-    </p>
-  );
-})()}
-```
+**Integrar en `Vault.tsx`** reemplazando el botón actual de upload por este componente.
 
-Cambios clave:
-- Usa array push en lugar de filter+join (más explícito, no falla si ambas razones son `null`).
-- Fallback de texto genérico si hay rechazo sin razón (caso edge).
-- Funciona correctamente cuando solo una de las dos está rejected.
+**Edge function nueva `vault-upload-validate`** que valida server-side el MIME real del archivo (lectura de magic bytes con `file-type` package en Deno), evitando spoofing del header. Si MIME no coincide con tipo declarado, rechaza con 400.
 
-## 4. `LivesDebugPanel.tsx` — persistir open/hidden en localStorage
+## 4. Persistencia chat 1:1 + bloqueo por `entitlement_chat=false`
 
-Reemplazar `useState` por estado persistido en `localStorage`:
+**Verificar persistencia**: revisar `Chat.tsx` y `ChatContext.tsx` — el historial ya se persiste en `chat_messages` table. Confirmar que cuando se cierre/reabra la sesión, los mensajes se cargan correctamente con paginación (load 50 últimos, scroll para más).
 
-```ts
-const STORAGE_KEY_OPEN = 'lives_debug_panel_open';
-const STORAGE_KEY_HIDDEN = 'lives_debug_panel_hidden';
+**Bloqueo por entitlement**: en `ChatMessagesPanel.tsx` o donde está el input:
+- Antes de cada `sendMessage()`, consultar `entitlements` table:
+  ```ts
+  const { data } = await supabase.from('entitlements')
+    .select('is_active, expires_at')
+    .eq('user_id', user.id).eq('type', 'chat').maybeSingle();
+  const hasChat = data?.is_active && new Date(data.expires_at) > new Date();
+  ```
+- Si `!hasChat` Y el usuario es `patient` Y la otra parte es `doctor`, mostrar `<PaywallModal>` (componente ya existe) con:
+  - Precio dinámico desde `doctor_profiles.consultation_fee` del doctor
+  - Botón "Pagar con Wallet" → llama RPC `process_consultation_purchase(doctorId, fee)` (ya existe)
+  - Botón "Pagar con Stripe" → invoca edge function `create-consultation-checkout`
+  - On success: refrescar entitlement, cerrar modal, permitir envío inmediato
 
-const [open, setOpen] = useState<boolean>(() => {
-  try { return localStorage.getItem(STORAGE_KEY_OPEN) === 'true'; } catch { return false; }
-});
-const [hidden, setHidden] = useState<boolean>(() => {
-  try { return localStorage.getItem(STORAGE_KEY_HIDDEN) === 'true'; } catch { return false; }
-});
+**Disable input** con `<Textarea disabled />` y placeholder "Compra una consulta para enviar mensajes" cuando `!hasChat`.
 
-useEffect(() => {
-  try { localStorage.setItem(STORAGE_KEY_OPEN, String(open)); } catch {}
-}, [open]);
+## 5. Paywall real para grabaciones con estados de wallet visibles
 
-useEffect(() => {
-  try { localStorage.setItem(STORAGE_KEY_HIDDEN, String(hidden)); } catch {}
-}, [hidden]);
-```
+**Modificar `src/pages/RecordingPlayer.tsx`**:
+- Si `!hasPurchased(recordingId)` y user no es admin/owner, mostrar `<RecordingPaywall>` en lugar del player.
+- Crear nuevo componente `src/components/recordings/RecordingPaywall.tsx`:
+  - Card con thumbnail del recording, título, doctor, precio
+  - Estado del wallet visible: `<WalletStatusBadge status={txStatus} balance={walletBalance} />`
+  - Estados visuales con color-coding:
+    - `idle` (default): badge gris "Saldo: $X"
+    - `initiated` (compra en curso): badge azul + spinner "Procesando pago…"
+    - `paid` (success): badge verde "✓ Pagado · Cargando reproductor…" — auto-hide tras 2s
+    - `failed`: badge rojo "✗ Pago rechazado" + botón "Reintentar"
+  - Botones: "Pagar con Wallet ($X)" y "Pagar con Stripe"
+  - Lógica:
+    - Wallet: invocar `purchaseWithWallet(recordingId)` del hook `usePurchases`. Setea `txStatus='initiated'` durante await; al resolver, `setTxStatus('paid')` y forzar `await refresh()` del hook + re-render del player **sin recargar página** (cambia condición `hasPurchased` → true).
+    - Stripe: invocar `purchaseWithStripe(recordingId)` → redirect a checkout. Al volver con query `?recording_paid=success`, hook refetch automático + render del player.
 
-Agregar también un atajo: si el admin oculta el panel, dejarlo guardado pero exponer en consola un comando rápido `window.__showLivesDebug = () => { localStorage.removeItem('lives_debug_panel_hidden'); location.reload(); }` para reabrirlo sin perder el estado.
-
-## 5. Test nuevo — rejection reason aparece inline sin click
-
-Crear `src/pages/__tests__/LivesGrid.rejection.test.tsx`:
-
-- Setup similar al test existente `LivesGrid.credentials.test.tsx` pero con el doctor configurado:
-```ts
-cedula_status: 'rejected',
-cedula_rejection_reason: 'Documento ilegible, vuelva a subirlo',
-cofepris_status: 'approved',
-cofepris_rejection_reason: null,
-```
-- Mockear `doctor_profiles_public` con esos valores.
-- Renderizar `<LivesProvider><LivesGrid /></LivesProvider>`.
-- Esperar con `waitFor` que aparezca el texto `"Cédula: Documento ilegible, vuelva a subirlo"` directamente en el DOM (sin abrir popover ni hacer click).
-- Verificar que NO aparezca el texto del COFEPRIS (porque está aprobada).
-- Caso adicional: con ambas rechazadas y solo razón en una, verificar que solo aparezca el texto de la que tiene razón.
+**Suscripción realtime opcional** en `RecordingPlayer.tsx` a la tabla `purchases` filtrada por `user_id=current` para detectar la confirmación del webhook de Stripe sin polling, marcando `txStatus='paid'` y montando el player automáticamente.
 
 ## Archivos tocados
 
-1. `src/contexts/LivesContext.tsx` — agregar `credentialsRetrying` al tipo y al state, refactorizar `retryCredentials`, mejorar lógica de detección de error real.
-2. `src/pages/LivesGrid.tsx` — banner con skeleton + spinner durante retry, refactorizar el bloque de motivo de rechazo inline a patrón explícito con fallback.
-3. `src/components/live/LivesDebugPanel.tsx` — persistir `open` y `hidden` en `localStorage`.
-4. `src/pages/__tests__/LivesGrid.rejection.test.tsx` — nuevo test que valida render inline del motivo de rechazo sin click.
+**Nuevos:**
+1. `src/test/e2e/role-access.test.tsx` — suite de tests por rol
+2. `src/test/e2e/helpers.tsx` — `mockAuth()`, `mockSupabase()`, `renderApp()`
+3. `src/components/recordings/DynamicWatermark.tsx`
+4. `src/components/vault/VaultUploadSimulator.tsx`
+5. `src/components/recordings/RecordingPaywall.tsx`
+6. `supabase/functions/vault-upload-validate/index.ts` — validación server-side de MIME
+
+**Editados:**
+7. `src/components/recordings/RecordingVideoPlayer.tsx` — integrar `<DynamicWatermark>`
+8. `src/components/recordings/CloudflareRecordingPlayer.tsx` — integrar `<DynamicWatermark>`
+9. `src/pages/RecordingPlayer.tsx` — paywall + detección de URL expirada + realtime de purchases
+10. `src/pages/Vault.tsx` — reemplazar upload con `<VaultUploadSimulator>`
+11. `src/components/chat/ChatMessagesPanel.tsx` — bloqueo input + paywall trigger por entitlement
+12. `src/contexts/ChatContext.tsx` — exponer `entitlementChat` y método `refreshEntitlement()`
 
 ## Resultado garantizado
 
-- El motivo de rechazo aparece correctamente inline cuando solo una credencial está rejected (no se oculta por join vacío).
-- El botón "Reintentar" muestra spinner y se deshabilita durante recarga; un skeleton minimal aparece en el banner mientras se refrescan credenciales.
-- `credentialsLoadError` no se activa con queries exitosas que devuelven array vacío — solo con errores reales del cliente Supabase.
-- El admin no pierde el estado del panel de debug entre navegaciones (open/hidden persistidos en `localStorage`).
-- Test automatizado verifica que el motivo de rechazo de cédula aparece sin necesidad de interacción.
+- Tests automáticos cubren acceso por rol en rutas críticas; cualquier regresión de guards/paywalls falla CI.
+- Cada video de grabación muestra watermark dinámico con identidad del usuario y timestamp; URLs expiradas se detectan y se ofrece renovación.
+- Subida al Vault es visualmente clara con progreso real, valida tipo y tamaño, y exige confirmación explícita de qué doctores tendrán acceso (default = ninguno).
+- Chat 1:1 persiste entre sesiones; pacientes sin entitlement ven input deshabilitado y modal de pago end-to-end (Wallet o Stripe) que desbloquea inmediato sin recarga.
+- Compra de grabación muestra estado del wallet en tiempo real (initiated→paid→failed) y abre el player automáticamente al confirmarse el pago, sin recargar la página.
 
