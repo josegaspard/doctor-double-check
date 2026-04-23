@@ -736,11 +736,14 @@
      Fondo claro   → texto/icono oscuro
      Hover nunca puede reducir contraste
      Selected nunca puede dejar blanco sobre blanco
-   ============================================================ */
 
-/* ---------- 0. Listas reutilizables de "no afectar superficies claras" ---------- */
-/* Para mantener legibilidad: cualquier elemento dentro de superficie blanca/coloreada
-   queda excluido de las reglas globales (mantiene su contraste original). */
+   ARQUITECTURA:
+     1) Las reglas "chrome oscuro" sólo se aplican a botones GHOST/transparentes
+        (sin variant outline/default/destructive/etc.)
+     2) Las superficies claras (bg-background/bg-card/bg-white/border-input)
+        SIEMPRE fuerzan texto e icono oscuros, ganando por especificidad.
+     3) Hovers de outline → fondo claro + texto oscuro (anti blanco-sobre-blanco).
+   ============================================================ */
 
 .app-bg-image {
   background-color: #0b1d45;
@@ -752,33 +755,74 @@
   }
 }
 
-/* ---------- 1. Header standalone (Login, Onboarding, etc.) ---------- */
+/* ---------- 1. Header standalone y MainLayout ---------- */
 /* Quita cualquier rastro de barra blanca: header siempre fundido al azul */
 .app-bg-image > header {
   background-color: #0b1d45 !important;
   border-bottom: 0 !important;
   backdrop-filter: none !important;
 }
-.app-bg-image > header a,
-.app-bg-image > header button {
+
+/* SOLO links y botones GHOST del header reciben blanco; outline/default/etc. NO. */
+.app-bg-image > header a:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="border-input"]):not([class*="bg-background"]):not([class*="bg-card"]):not([class*="bg-white"]) {
   color: rgba(255, 255, 255, 0.92);
 }
-.app-bg-image > header a:hover,
-.app-bg-image > header button:hover {
+.app-bg-image > header a:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="border-input"]):not([class*="bg-background"]):not([class*="bg-card"]):not([class*="bg-white"]):hover {
+  color: #ffffff;
+}
+.app-bg-image > header button:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not([class*="border-input"]):not([class*="bg-background"]):not([class*="bg-card"]):not([class*="bg-white"]):not([class*="bg-secondary"]) {
+  color: rgba(255, 255, 255, 0.92);
+}
+.app-bg-image > header button:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not([class*="border-input"]):not([class*="bg-background"]):not([class*="bg-card"]):not([class*="bg-white"]):not([class*="bg-secondary"]):hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+.app-bg-image > header button:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not([class*="border-input"]):not([class*="bg-background"]):not([class*="bg-card"]):not([class*="bg-white"]):not([class*="bg-secondary"]) > svg {
+  color: rgba(255, 255, 255, 0.92);
+}
+.app-bg-image > header button:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not([class*="border-input"]):not([class*="bg-background"]):not([class*="bg-card"]):not([class*="bg-white"]):not([class*="bg-secondary"]):hover > svg {
   color: #ffffff;
 }
 .app-bg-image > header .text-muted-foreground {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(255, 255, 255, 0.78) !important;
 }
 .app-bg-image > header .text-foreground {
   color: #ffffff !important;
 }
-.app-bg-image > header svg {
-  color: rgba(255, 255, 255, 0.92);
+
+/* === SAFETY NET CRÍTICO: superficies CLARAS dentro del header (botón wallet, etc.) === */
+/* Si un botón tiene fondo claro (border-input/bg-background/bg-card/bg-white) o un link/badge
+   pintado de blanco, su texto e iconos DEBEN ser oscuros. Esto gana sobre todo lo anterior. */
+.app-bg-image header :is(button, a)[class*="border-input"],
+.app-bg-image header :is(button, a)[class*="bg-background"],
+.app-bg-image header :is(button, a)[class*="bg-card"],
+.app-bg-image header :is(button, a)[class*="bg-white"] {
+  color: #0b1d45 !important;
 }
-.app-bg-image > header button:hover svg,
-.app-bg-image > header a:hover svg {
-  color: #ffffff;
+.app-bg-image header :is(button, a)[class*="border-input"] svg,
+.app-bg-image header :is(button, a)[class*="bg-background"] svg,
+.app-bg-image header :is(button, a)[class*="bg-card"] svg,
+.app-bg-image header :is(button, a)[class*="bg-white"] svg {
+  color: #0b1d45 !important;
+}
+.app-bg-image header :is(button, a)[class*="border-input"] *,
+.app-bg-image header :is(button, a)[class*="bg-background"] *,
+.app-bg-image header :is(button, a)[class*="bg-card"] *,
+.app-bg-image header :is(button, a)[class*="bg-white"] * {
+  color: #0b1d45 !important;
+}
+.app-bg-image header :is(button, a)[class*="border-input"]:hover,
+.app-bg-image header :is(button, a)[class*="bg-background"]:hover,
+.app-bg-image header :is(button, a)[class*="bg-card"]:hover,
+.app-bg-image header :is(button, a)[class*="bg-white"]:hover {
+  color: #0b1d45 !important;
+  background-color: #ffffff !important;
+}
+.app-bg-image header :is(button, a)[class*="border-input"]:hover svg,
+.app-bg-image header :is(button, a)[class*="bg-background"]:hover svg,
+.app-bg-image header :is(button, a)[class*="bg-card"]:hover svg,
+.app-bg-image header :is(button, a)[class*="bg-white"]:hover svg {
+  color: #0b1d45 !important;
 }
 
 /* ---------- 2. Bottom nav móvil ---------- */
@@ -1143,20 +1187,108 @@
   color: #ffffff !important;
 }
 
-/* ---------- 16. SAFETY NET: cualquier elemento con fondo blanco sólido
-   forzado debe garantizar texto/icono oscuro (anti blanco-sobre-blanco).
-   Esto cubre pills/buttons/badges que el usuario o un componente pinte blanco. */
-.app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not(:where(
+/* ---------- 16. SAFETY NET GLOBAL: anti blanco-sobre-blanco ----------
+   Cualquier elemento (botón, link, pill, badge) con fondo CLARO debe forzar
+   texto + iconos OSCUROS, sin importar si está en header, main, footer o nav.
+   Excepción: contenido dentro de cards/dialogs/popovers (ya viven en superficie blanca,
+   pero ahí el sistema base ya gestiona el contraste correctamente).
+*/
+
+/* 16a. Bg-white sólido */
+.app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not([class*="hover:bg-white"]):not(:where(
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )) {
   color: #0b1d45 !important;
 }
-.app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not(:where(
+.app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not([class*="hover:bg-white"]):not(:where(
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )) svg {
   color: #0b1d45 !important;
 }
 
+/* 16b. Botones outline (border-input) y cualquier botón con bg-background/bg-card:
+       fondo casi blanco, deben llevar texto e iconos oscuros desde reposo. */
+.app-bg-image :is(button, a)[class*="border-input"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)),
+.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)) {
+  color: #0b1d45 !important;
+  background-color: #ffffff !important;
+  border-color: rgba(11, 29, 69, 0.15) !important;
+}
+.app-bg-image :is(button, a)[class*="border-input"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)) svg,
+.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)) svg {
+  color: #0b1d45 !important;
+}
+.app-bg-image :is(button, a)[class*="border-input"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)):hover,
+.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)):hover {
+  background-color: #f1f5f9 !important;
+  color: #0b1d45 !important;
+  border-color: rgba(11, 29, 69, 0.25) !important;
+}
+.app-bg-image :is(button, a)[class*="border-input"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)):hover svg,
+.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)):hover svg {
+  color: #0b1d45 !important;
+}
+
+/* ---------- 17. Footer global: contraste premium ---------- */
+.app-bg-image footer a:not([class*="bg-"]) {
+  color: rgba(241, 245, 249, 0.92) !important;
+}
+.app-bg-image footer a:not([class*="bg-"]):hover {
+  color: #ffffff !important;
+}
+.app-bg-image footer p,
+.app-bg-image footer span:not([class*="bg-"]):not([class*="text-green"]):not([class*="text-orange"]) {
+  color: rgba(241, 245, 249, 0.92);
+}
+.app-bg-image footer h4 {
+  color: #ffffff !important;
+}
+
+/* ---------- 18. Bottom nav móvil: iconos activos visibles ---------- */
+.app-bg-image > nav.fixed.bottom-0 a:hover svg,
+.app-bg-image > nav.fixed.bottom-0 button:hover svg {
+  color: #ffffff !important;
+}
 

@@ -69,7 +69,8 @@ function SocialIcons({ socialLinks, className = '' }: { socialLinks: any; classN
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-9 h-9 rounded-full border border-white/28 bg-white/18 text-white shadow-sm flex items-center justify-center hover:bg-white hover:text-dark transition-colors"
+          aria-label={key}
+          className="w-9 h-9 rounded-full border border-white/40 bg-white/20 text-white shadow-sm flex items-center justify-center hover:bg-white hover:text-[#0b1d45] hover:border-white transition-colors"
         >
           <Icon className="w-4 h-4" />
         </a>
@@ -90,7 +91,7 @@ function FooterLinkColumn({ title, links }: { title: string; links: { label: str
               className={`text-xs sm:text-sm transition-colors ${
                 link.href === '/report-issue'
                   ? 'text-orange-300 hover:text-orange-100'
-                  : 'text-slate-200/85 hover:text-white'
+                  : 'text-slate-100/95 hover:text-white'
               }`}
             >
               {link.label}
