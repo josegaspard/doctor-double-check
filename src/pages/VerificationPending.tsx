@@ -54,7 +54,7 @@ export default function VerificationPending() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Status Info */}
-          <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+          <div className="rounded-lg border border-border/60 bg-muted/60 p-4 space-y-3">
             <div className="flex items-start gap-3">
               <Shield className="w-5 h-5 text-primary mt-0.5" />
               <div>
@@ -99,8 +99,8 @@ export default function VerificationPending() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-4 border-t">
-            <Button variant="ghost" className="flex-1" onClick={() => navigate('/')}>
+          <div className="flex gap-2 pt-4 border-t border-border/70">
+            <Button variant="ghost" className="flex-1 text-foreground hover:text-foreground" onClick={() => navigate('/')}>
               Volver al inicio
             </Button>
             <Button variant="outline" className="flex-1" onClick={logout}>

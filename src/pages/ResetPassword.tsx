@@ -78,10 +78,10 @@ export default function ResetPassword() {
     return (
       <AppBackground className="min-h-screen flex flex-col">
         {/* Header */}
-        <header className="relative z-10">
+        <header className="app-shell-header">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/login')} className="text-white hover:bg-white/15 hover:text-white">
+              <Button variant="outline" size="icon" onClick={() => navigate('/login')} className="app-shell-icon-button">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <Link to="/">
@@ -111,7 +111,7 @@ export default function ResetPassword() {
         </main>
 
         {/* Footer */}
-        <footer className="bg-dark text-dark-foreground py-8">
+        <footer className="app-shell-footer py-8">
           <div className="container mx-auto px-4">
             <div className="flex flex-col gap-6">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -121,27 +121,27 @@ export default function ResetPassword() {
                 </div>
                 <div className="flex items-center gap-4">
                   {socialLinks.facebook && (
-                    <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
                       <Facebook className="w-5 h-5" />
                     </a>
                   )}
                   {socialLinks.instagram && (
-                    <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
                       <Instagram className="w-5 h-5" />
                     </a>
                   )}
                   {socialLinks.twitter && (
-                    <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
                       <Twitter className="w-5 h-5" />
                     </a>
                   )}
                   {socialLinks.linkedin && (
-                    <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
                       <Linkedin className="w-5 h-5" />
                     </a>
                   )}
                   {socialLinks.youtube && (
-                    <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                    <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
                       <Youtube className="w-5 h-5" />
                     </a>
                   )}
@@ -150,14 +150,14 @@ export default function ResetPassword() {
               <div className="border-t border-light/20" />
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <nav className="flex items-center gap-6">
-                  <Link to="/terms" className="text-sm text-light/70 hover:text-light transition-colors">
+                  <Link to="/terms" className="text-sm text-light/90 hover:text-light transition-colors">
                     {t('footer.termsOfService')}
                   </Link>
-                  <Link to="/privacy" className="text-sm text-light/70 hover:text-light transition-colors">
+                  <Link to="/privacy" className="text-sm text-light/90 hover:text-light transition-colors">
                     {t('footer.privacyPolicy')}
                   </Link>
                 </nav>
-                <p className="text-sm text-light/70">{t('footer.copyright')}</p>
+                <p className="app-shell-footer-copy text-sm">{t('footer.copyright')}</p>
               </div>
             </div>
           </div>
@@ -169,11 +169,11 @@ export default function ResetPassword() {
   return (
     <AppBackground className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="relative z-10">
+      <header className="app-shell-header">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/login')} className="text-white hover:bg-white/15 hover:text-white">
+              <Button variant="outline" size="icon" onClick={() => navigate('/login')} className="app-shell-icon-button">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <Link to="/">
@@ -239,7 +239,7 @@ export default function ResetPassword() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-dark text-dark-foreground py-8">
+      <footer className="app-shell-footer py-8">
         <div className="container mx-auto px-4">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -249,27 +249,27 @@ export default function ResetPassword() {
               </div>
               <div className="flex items-center gap-4">
                 {socialLinks.facebook && (
-                  <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                  <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
                     <Facebook className="w-5 h-5" />
                   </a>
                 )}
                 {socialLinks.instagram && (
-                  <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                  <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
                     <Instagram className="w-5 h-5" />
                   </a>
                 )}
                 {socialLinks.twitter && (
-                  <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                  <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
                     <Twitter className="w-5 h-5" />
                   </a>
                 )}
                 {socialLinks.linkedin && (
-                  <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                  <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
                     <Linkedin className="w-5 h-5" />
                   </a>
                 )}
                 {socialLinks.youtube && (
-                  <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-light/70 hover:text-light transition-colors">
+                  <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
                     <Youtube className="w-5 h-5" />
                   </a>
                 )}
@@ -278,14 +278,14 @@ export default function ResetPassword() {
             <div className="border-t border-light/20" />
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <nav className="flex items-center gap-6">
-                <Link to="/terms" className="text-sm text-light/70 hover:text-light transition-colors">
+                <Link to="/terms" className="text-sm text-light/90 hover:text-light transition-colors">
                   {t('footer.termsOfService')}
                 </Link>
-                <Link to="/privacy" className="text-sm text-light/70 hover:text-light transition-colors">
+                <Link to="/privacy" className="text-sm text-light/90 hover:text-light transition-colors">
                   {t('footer.privacyPolicy')}
                 </Link>
               </nav>
-              <p className="text-sm text-light/70">{t('footer.copyright')}</p>
+              <p className="app-shell-footer-copy text-sm">{t('footer.copyright')}</p>
             </div>
           </div>
         </div>
