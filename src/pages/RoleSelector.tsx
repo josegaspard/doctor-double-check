@@ -105,11 +105,11 @@ export default function RoleSelector() {
   return (
     <AppBackground className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="relative z-10">
+      <header className="app-shell-header">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-10 w-auto" />
-            <LanguageSwitcher className="text-white hover:text-white hover:bg-white/15" />
+              <LanguageSwitcher className="app-shell-icon-button" />
           </div>
         </div>
       </header>
@@ -119,9 +119,9 @@ export default function RoleSelector() {
         <div className="max-w-2xl mx-auto">
           {/* Hero */}
           <div className="text-center mb-6 md:mb-10">
-            <div className="inline-flex items-center gap-2 bg-accent rounded-full px-3 py-1.5 mb-3">
-              <Video className="w-3.5 h-3.5 text-accent-foreground" />
-              <span className="text-xs sm:text-sm font-medium text-accent-foreground">{t('roleSelector.tagline')}</span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 mb-3 backdrop-blur-sm">
+              <Video className="w-3.5 h-3.5 text-white/90" />
+              <span className="text-xs sm:text-sm font-medium text-white/90">{t('roleSelector.tagline')}</span>
             </div>
             <h2 className="font-heading text-2xl md:text-4xl font-bold text-foreground mb-2">
               {t('roleSelector.title')}
@@ -147,7 +147,7 @@ export default function RoleSelector() {
                     <h3 className="font-semibold text-foreground">{option.title}</h3>
                     <p className="text-sm text-muted-foreground">{option.description}</p>
                   </div>
-                  <Button variant="ghost" size="icon" className="flex-shrink-0">
+                  <Button variant="outline" size="icon" className="flex-shrink-0 app-shell-icon-button">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
@@ -188,9 +188,9 @@ export default function RoleSelector() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 py-4">
+      <footer className="app-shell-footer py-4">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-white/75">
+            <p className="app-shell-footer-copy text-xs">
             {t('footer.copyright')}
           </p>
         </div>

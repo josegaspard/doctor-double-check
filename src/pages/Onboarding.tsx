@@ -701,13 +701,13 @@ export default function Onboarding() {
     const RoleIcon = getRoleIcon();
     return (
       <AppBackground className="min-h-screen flex flex-col">
-      <header className="relative z-10">
+      <header className="app-shell-header">
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               <Link to="/" className="flex items-center">
                 <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
               </Link>
-              <span className="text-xs text-muted-foreground font-medium">Configuración de cuenta</span>
+              <span className="app-shell-header-meta text-xs font-medium">Configuración de cuenta</span>
             </div>
           </div>
         </header>
@@ -806,9 +806,9 @@ export default function Onboarding() {
         </main>
 
         {/* Footer */}
-        <footer className="relative z-10 py-4 mt-auto">
+        <footer className="app-shell-footer py-4">
           <div className="container mx-auto px-4 text-center">
-            <p className="text-xs text-white/75">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
+            <p className="app-shell-footer-copy text-xs">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
           </div>
         </footer>
       </AppBackground>
@@ -819,13 +819,13 @@ export default function Onboarding() {
 
   return (
     <AppBackground className="min-h-screen flex flex-col">
-      <header className="relative z-10">
+      <header className="app-shell-header">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center">
               <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
             </Link>
-            <span className="text-xs text-muted-foreground font-medium">Configuración de cuenta</span>
+            <span className="app-shell-header-meta text-xs font-medium">Configuración de cuenta</span>
           </div>
         </div>
       </header>
@@ -1584,9 +1584,9 @@ export default function Onboarding() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 py-4 mt-auto">
+      <footer className="app-shell-footer py-4">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-white/75">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
+          <p className="app-shell-footer-copy text-xs">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
         </div>
       </footer>
     </AppBackground>
