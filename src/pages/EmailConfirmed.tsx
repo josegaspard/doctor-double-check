@@ -78,10 +78,10 @@ export default function EmailConfirmed() {
 
   return (
     <AppBackground className="min-h-screen flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center space-y-6">
+      <div className="max-w-md w-full text-center space-y-6 rounded-2xl border border-white/12 bg-white/5 p-6 backdrop-blur-sm">
         {status === "loading" && (
           <>
-            <Loader2 className="w-16 h-16 animate-spin text-primary mx-auto" />
+            <Loader2 className="w-16 h-16 animate-spin text-white mx-auto" />
             <h1 className="text-2xl font-bold text-foreground">Verificando...</h1>
             <p className="text-muted-foreground">Estamos confirmando tu correo electrónico...</p>
           </>
@@ -96,7 +96,7 @@ export default function EmailConfirmed() {
             <p className="text-muted-foreground">
               Tu cuenta ha sido verificada exitosamente. Te redirigiremos en unos segundos...
             </p>
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground mx-auto" />
+            <Loader2 className="w-5 h-5 animate-spin text-white/80 mx-auto" />
           </>
         )}
 
