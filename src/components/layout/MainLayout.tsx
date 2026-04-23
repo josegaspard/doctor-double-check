@@ -274,10 +274,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     >
       {/* Header — usa color del footer cuando el fondo es imagen */}
       <header
-        className={`sticky top-0 z-50 border-b backdrop-blur ${
+        className={`sticky top-0 z-50 backdrop-blur ${
           useImageBackground
-            ? 'bg-[#0b1d45]/95 border-white/10 text-white'
-            : 'border-border bg-card/95 supports-[backdrop-filter]:bg-card/60'
+            ? 'bg-[#0b1d45] text-white border-b-0'
+            : 'border-b border-border bg-card/95 supports-[backdrop-filter]:bg-card/60'
         }`}
       >
         <div className="container mx-auto px-4">

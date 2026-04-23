@@ -116,7 +116,7 @@ export function UnifiedFooter({ variant }: Props) {
 
   if (variant === 'app') {
     return (
-      <footer className="bg-[#0b1d45] text-slate-300 pt-8 sm:pt-10 pb-24 sm:pb-6 mt-auto">
+      <footer className="bg-[#0b1d45] text-slate-300 pt-8 sm:pt-10 pb-24 sm:pb-6 mt-auto border-t-0">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-6">
             <div className="col-span-2 md:col-span-1 flex flex-col items-start">
