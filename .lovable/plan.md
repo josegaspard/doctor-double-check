@@ -1,290 +1,263 @@
 
-## Corrección global real: contraste con lógica + eliminación de blancos accidentales
+## Corrección UX/UI real: contraste lógico, no overrides ciegos
 
-### Objetivo
-Dejar la app con una lógica visual consistente sobre el fondo azul/celeste:
+### Problemas confirmados en las capturas
+1. **Header / avatar / wallet / acciones**: hay reglas globales en `src/index.css` que siguen forzando blanco dentro del chrome azul y terminan chocando con controles claros. Resultado: iconos o texto invisibles cuando el fondo del control es blanco o casi blanco.
+2. **Tabs y pills activas**: varios estados activos usan fondo blanco (`bg-background`) pero el texto/icono sigue heredando blanco. Se ve en:
+   - pill de `Expediente Médico`
+   - chips `Público / Privado / Clínica`
+3. **Footer**: el texto base sigue demasiado gris para un fondo azul oscuro. También los iconos sociales tienen contraste insuficiente en reposo.
+4. **Barra/línea oscura o blanca en shells standalone**: aún hay piezas que usan header/footer móvil o bordes heredados (`MobileBackHeader`, separadores, border classes) y rompen la continuidad del fondo.
+5. **Arquitectura CSS**: hoy hay demasiadas reglas globales por `header button`, `header a`, `role=tab`, etc. Eso produce efectos secundarios. La solución debe pasar de “pinta todo de blanco” a “decide color según la superficie”.
 
+---
+
+## Regla maestra que voy a imponer
 ```text
-Fondo oscuro -> texto/iconos claros
-Superficie clara -> texto/iconos oscuros
-Hover nunca baja contraste
-Selected nunca puede terminar blanco sobre blanco
+Superficie oscura/transparente sobre fondo azul -> texto/iconos blancos
+Superficie clara (white, bg-background, bg-card, pill activa) -> texto/iconos #0b1d45
+Hover nunca puede bajar contraste
+Selected nunca puede dejar blanco sobre blanco
+Iconos siempre heredan el color correcto del estado
 ```
-
-### Problemas reales detectados
-1. **El header está forzando blanco a todos los botones y links** dentro de `.app-bg-image > header`, incluyendo botones `outline` con fondo blanco. Por eso aparecen casos como:
-   - botón de wallet con fondo blanco + icono/texto blanco
-   - hover roto en acciones del header
-2. **Los tabs/pills activos usan `bg-background`**, no `bg-white`, así que el “safety net” actual no los corrige cuando quedan con fondo claro.
-3. **El contraste está resuelto con reglas demasiado globales y ambiguas** en `src/index.css`, lo que genera conflictos entre:
-   - header/nav
-   - botones outline/ghost
-   - tabs activos
-   - iconos dentro de superficies claras
-4. **Login/register y pantallas standalone aún mezclan shells oscuros con componentes claros sin una jerarquía clara**, así que siguen apareciendo barras/pills/blancos que se sienten como errores.
-5. **Footer**: links, copy secundaria e iconos siguen demasiado tenues para un fondo azul con imagen.
 
 ---
 
 ## Qué voy a rehacer
 
-### 1) Rehacer la arquitectura de contraste del fondo azul
-Voy a dejar de “pintar todo de blanco” por selector global y lo voy a separar por contexto:
+### 1) Reescribir la lógica del header para separar controles oscuros vs controles claros
+En vez de reglas tipo:
+- “todo lo del header = blanco”
 
-#### A. Chrome oscuro
-Aplica a:
-- header
-- bottom nav
-- footer
-- shells standalone
+voy a crear dos contextos explícitos:
 
-Reglas:
-- texto: blanco o blanco 80–90%
-- iconos: blanco 88–92%
-- hover: blanco pleno o fondo translúcido claro
-- nunca usar texto blanco si el control ya tiene fondo blanco
-
-#### B. Superficies claras
-Aplica a:
-- botones outline con fondo claro
-- tabs/pills activas
-- chips/blobs blancos
-- badges claros
-- cualquier botón con `bg-background`, `bg-card`, `bg-white`
-
-Reglas:
-- texto e iconos: `#0b1d45`
-- hover: mantiene texto oscuro
-- focus/selected: también oscuro
-
-#### C. Contenido suelto sobre la imagen
-Aplica a:
-- títulos
-- subtítulos
-- textos de apoyo
-- links
-- iconos sueltos
-- separadores
-
-Reglas:
-- títulos blancos sólidos con sombra sutil
-- subtítulos blanco 80–86%
-- links cyan claro con hover blanco
-- bordes/separadores blancos translúcidos
-
----
-
-### 2) Corregir el header para que no rompa botones claros
-En lugar de esta lógica actual:
-- “todo botón en header = blanco”
-
-voy a dividirlo en dos tipos:
-
-#### Controles transparentes del shell
+#### A. Shell actions transparentes
 Ejemplos:
-- botón atrás
-- language switcher cuando es ghost
-- acciones transparentes del shell
+- menú
+- search trigger
+- language switcher ghost
+- notification bell
+- user menu trigger si vive sobre fondo azul
 
-Se verán:
-- texto/iconos blancos
-- hover translúcido claro
+Estado:
+- texto/iconos blanco 90%
+- hover `bg-white/12`
+- iconos blancos siempre
 
-#### Controles claros dentro del shell
+#### B. Surface actions claras
 Ejemplos:
-- botón de wallet del header
-- pills claras
-- botones outline visibles dentro del header
+- botón wallet
+- pills claras dentro del header
+- cualquier `outline`/`bg-white` del header
 
-Se verán:
-- fondo claro
-- texto/iconos oscuros desde reposo
-- hover con misma lógica oscura
-
-Esto corrige directamente el error del screenshot del wallet.
+Estado:
+- fondo claro sólido
+- texto/iconos `#0b1d45`
+- hover `bg-slate-100` con texto/iconos `#0b1d45`
+- sin ninguna regla global que vuelva a pintarlos blancos
 
 **Archivos:**
 - `src/index.css`
 - `src/components/layout/MainLayout.tsx`
 - `src/components/settings/LanguageSwitcher.tsx`
+- `src/components/notifications/NotificationBell.tsx`
+- `src/components/search/GlobalSearch.tsx`
 
 ---
 
-### 3) Rehacer `button.tsx` con lógica UX/UI correcta
-Voy a ajustar los variantes globales para que no dependan de hacks posteriores:
+### 2) Corregir el botón wallet y los iconos del header con clases semánticas, no hacks
+Voy a dejar de confiar en el “safety net” genérico y voy a poner clases explícitas para superficies claras del header, por ejemplo una clase tipo:
+- `app-header-surface-button`
+
+Esa clase controlará:
+- color base
+- iconos
+- hover
+- focus
+- disabled
+
+Así el botón wallet no volverá a romperse aunque cambie el CSS global.
+
+**Archivo principal:**
+- `src/components/layout/MainLayout.tsx`
+
+---
+
+### 3) Rehacer `button.tsx` con comportamiento UX correcto
+Voy a corregir los variants globales para que ya nazcan con buena lógica:
 
 #### `outline`
-- base normal: superficie clara con texto/icono oscuro
-- sobre fondo azul: borde visible, fondo claro controlado, texto oscuro si la superficie es clara
-- hover: jamás icono blanco sobre fondo blanco
+- base: superficie clara + texto/icono oscuro
+- hover: sigue oscuro, nunca blanco sobre blanco
 
 #### `ghost`
-- sobre fondo azul: texto/icono claro
-- hover: translúcido, sin volverse ilegible
-- sobre superficies claras: conserva contraste oscuro
+- base: hereda contexto
+- en shell azul: claro
+- sobre hover claro: si el fondo se aclara demasiado, cambia texto/icono a oscuro cuando corresponda
 
 #### `link`
 - sobre azul: cyan claro
 - hover: blanco
-- en cards/modales: conserva contraste normal del sistema
+- dentro de cards: mantiene contraste del sistema
+
+Además voy a reforzar herencia de color de `svg` para que los iconos sigan al texto del botón, no un color viejo.
 
 **Archivo:**
 - `src/components/ui/button.tsx`
 
 ---
 
-### 4) Arreglar tabs, pills y estados selected
-Voy a reforzar la lógica de tabs para que cualquier estado activo con fondo claro fuerce texto/icono oscuro.
+### 4) Rehacer tabs/pills/selected states para que el activo oscuro-claro sea infalible
+Las capturas muestran el fallo exacto: un pill activo blanco con texto/icono demasiado claro.
 
-Esto cubre:
-- login / register
-- pills del header o vistas horizontales
-- cualquier selector con `data-state="active"`
-- blobs como el de “Contenido Premium” del screenshot
-
-Reglas:
-- inactivo: texto claro sobre oscuro
-- hover inactivo: sube contraste
-- activo: fondo claro + texto/icono oscuro
-- iconos dentro del activo: oscuros también
-
-**Archivos:**
+Voy a ajustar:
 - `src/components/ui/tabs.tsx`
 - `src/index.css`
 
----
-
-### 5) Eliminar de verdad las “barras blancas” en auth/standalone
-Voy a unificar el shell visual de estas pantallas para que ninguna vuelva a meter bandas claras o separaciones que parezcan errores:
-
-- `src/pages/Login.tsx`
-- `src/pages/ResetPassword.tsx`
-- `src/pages/Onboarding.tsx`
-- `src/pages/RoleSelector.tsx`
-- `src/pages/EmailConfirmed.tsx`
-- `src/pages/VerificationPending.tsx`
-- `src/pages/NotFound.tsx`
-
-Trabajo concreto:
-- revisar header/footer/shell wrappers
-- quitar cualquier borde superior/inferior visible que corte la imagen
-- asegurar que tabs y CTAs de auth usen la nueva lógica de contraste
-- mantener cards/modales internos legibles sin contaminar el shell global
-
----
-
-### 6) Mejorar iconos globalmente
-Voy a aplicar una regla clara para iconografía:
-
-1. **Iconos sobre fondo azul**
-   - blanco 90%
-
-2. **Iconos dentro de superficies claras**
-   - azul oscuro sólido
-
-3. **Iconos dentro de botones hover/selected**
-   - heredan el color correcto del estado
-   - nunca quedan “blancos por arrastre” si el fondo ya es claro
+Para que:
+- inactivo sobre azul: blanco 80–90%
+- hover inactivo: sube contraste
+- activo: `bg-white` o `bg-background` + texto/iconos `#0b1d45`
+- cualquier `svg` dentro de `data-state="active"` también se fuerza a oscuro
 
 Esto cubrirá:
-- iconos del header
-- iconos de wallet
-- iconos de tabs
-- iconos sociales del footer
-- iconos en auth shells
+- login/register
+- chips de navegación
+- pills tipo `Expediente Médico`
+- cualquier selector horizontal tipo hospital locator
+
+---
+
+### 5) Corregir específicamente los chips del Hospital Locator
+Tus capturas enseñan que `Público / Privado / Clínica` no se leen bien. Aquí no basta CSS global; esos chips usan colores por item.
+
+Voy a corregir su sistema así:
+- **inactivos sobre azul**: fondo translúcido oscuro + texto blanco
+- **activos claros**: fondo claro, pero el texto no será blanco; se pondrá oscuro
+- conservar la codificación visual:
+  - Público = acento azul
+  - Privado = acento púrpura
+  - Clínica = acento teal
+- el color de tipo se usará como detalle de borde/halo/icono, no como una combinación que destruya legibilidad
+
+**Archivo:**
+- `src/pages/HospitalLocator.tsx`
+
+---
+
+### 6) Corregir el header móvil secundario que sigue metiendo una barra separada
+Hay una capa extra en `src/components/layout/MobileBackHeader.tsx`:
+- `border-b border-border bg-card/95 backdrop-blur`
+
+Eso introduce una franja distinta al fondo azul y rompe continuidad visual.
+
+Voy a:
+- integrarlo al shell azul cuando el fondo imagen está activo
+- quitar el borde visible
+- mantener título y botón atrás con contraste alto
+
+**Archivo:**
+- `src/components/layout/MobileBackHeader.tsx`
 
 ---
 
 ### 7) Subir contraste del footer completo
-Voy a rehacer el contraste del footer sin perder estilo premium:
+Tus capturas lo confirman: el footer aún está gris.
 
-- títulos de columnas: blanco fuerte
-- links: subir de tono base para que se lean sin hover
-- hover: blanco pleno
-- descripción institucional: más presencia
-- copyright: menos apagado
-- iconos sociales:
-  - visibles ya en reposo
-  - fondo/borde definidos
-  - hover con inversión correcta
-  - nunca icono blanco sobre fondo blanco
+Voy a subir contraste de forma global y consistente:
+
+#### Texto
+- títulos columnas: blanco fuerte
+- descripción institucional: blanco 88–92%
+- links: blanco 86–90% en reposo
+- hover: blanco puro
+- copyright: blanco 80–85%
+
+#### Iconos sociales
+- reposo: borde y fondo visibles, icono blanco fuerte
+- hover: fondo blanco + icono azul oscuro
+- nunca blanco sobre blanco
+
+#### Badge de estado
+- mantener verde, pero con más contraste respecto al azul base
 
 **Archivo:**
 - `src/components/layout/UnifiedFooter.tsx`
 
 ---
 
-### 8) Ajustar el bloque `.app-bg-image` para que deje de pelearse con la UI
-Voy a limpiar `src/index.css` y separar reglas por tipo de elemento, en vez de usar overrides ambiguos:
+### 8) Limpiar `index.css` para que deje de pelear con la UI
+Voy a sustituir parte de los overrides ambiguos por una arquitectura por contexto:
 
-- header shell
-- footer shell
-- texto suelto
-- links
-- iconos
-- outline
-- ghost
-- tabs/pills activas
-- inputs/selects
-- badges
-- separators
-- safety net para superficies claras
+#### Nuevas zonas
+- `app-header-chrome`
+- `app-header-surface`
+- `app-shell-icon-button`
+- `app-surface-active`
+- `app-footer-link`
+- `app-footer-social`
 
-También voy a ampliar el “safety net” para cubrir no solo `bg-white`, sino también:
-- `bg-background`
-- `bg-card`
-- estados activos/selected que pinten claro
+#### Qué se elimina o reduce
+- selectores demasiado amplios como:
+  - `.app-bg-image > header button...`
+  - `.app-bg-image > main [role="tab"]...`
+  - reglas que pintan todo `*` dentro de botones claros
 
-Así ya no se escapan componentes como el pill blanco con texto blanco.
+#### Qué se mantiene
+- reglas útiles para títulos, links y texto suelto sobre la imagen
+- fallback de contraste sobre el fondo azul
+
+Resultado: menos choques y más lógica real por superficie.
+
+**Archivo central:**
+- `src/index.css`
 
 ---
 
 ## Archivos a tocar
 - `src/index.css`
-- `src/components/ui/button.tsx`
-- `src/components/ui/tabs.tsx`
 - `src/components/layout/MainLayout.tsx`
+- `src/components/layout/MobileBackHeader.tsx`
 - `src/components/layout/UnifiedFooter.tsx`
 - `src/components/settings/LanguageSwitcher.tsx`
-- `src/pages/Login.tsx`
-- `src/pages/ResetPassword.tsx`
-- `src/pages/Onboarding.tsx`
-- `src/pages/RoleSelector.tsx`
-- `src/pages/EmailConfirmed.tsx`
-- `src/pages/VerificationPending.tsx`
-- `src/pages/NotFound.tsx`
+- `src/components/notifications/NotificationBell.tsx`
+- `src/components/search/GlobalSearch.tsx`
+- `src/components/ui/button.tsx`
+- `src/components/ui/tabs.tsx`
+- `src/pages/HospitalLocator.tsx`
 
 ---
 
-## QA que voy a dejar cerrada
-Después de implementarlo, voy a verificar específicamente:
+## QA que voy a cerrar después de implementar
+1. **Header desktop**
+   - wallet siempre oscuro sobre fondo claro
+   - iconos visibles en reposo y hover
+   - avatar / user trigger sin iconos perdidos
 
-1. **Login/Register**
-   - cero barra o banda blanca accidental
-   - tabs activas legibles
-   - botones y hover correctos
+2. **Header móvil**
+   - cero barra separada
+   - back header integrado al fondo azul
 
-2. **Header global**
-   - wallet button con icono/texto visibles
-   - hover correcto en acciones del header
-   - ningún botón claro con texto blanco
+3. **Tabs / pills**
+   - `Expediente Médico` activo legible
+   - `Público / Privado / Clínica` legibles en todos los estados
+   - iconos y emojis visibles
 
-3. **Footer**
-   - links visibles en reposo
+4. **Footer**
+   - todos los textos más blancos
+   - links visibles sin hover
    - iconos sociales visibles antes del hover
-   - copy secundaria legible
 
-4. **Móvil**
-   - fondo continuo
-   - bottom nav con contraste correcto
-   - pills, tabs y botones legibles
+5. **Hover global**
+   - ningún botón termina con icono blanco sobre fondo blanco
+   - ningún hover reduce contraste
 
 ---
 
-## Resultado esperado
-- desaparecen las barras/blancos accidentales
-- el botón de wallet y cualquier control claro dejan de romperse
-- tabs y pills activas quedan legibles
-- iconos visibles en todos los estados
-- footer mucho más claro y premium
-- toda la app hereda una lógica visual coherente tipo “modo noche” real, no parches aislados
+## Resultado final esperado
+- contraste lógico y consistente en toda la app
+- wallet, pills y tabs activas dejan de romperse
+- iconos siempre visibles según el color real del fondo
+- footer claramente más blanco y legible
+- cero barras o capas visuales que corten el fondo azul
+- comportamiento tipo “modo noche” real, no un parche de CSS global
