@@ -661,11 +661,24 @@
 }
 
 /* ============================================================
-   APP BACKGROUND IMAGE MODE
+   APP BACKGROUND IMAGE MODE — "modo noche" global
    Cuando el toggle "app_background" = "image" está activo,
    el wrapper raíz tiene la clase .app-bg-image.
    Aplica también a pantallas standalone (Login, Onboarding, etc.)
    ============================================================ */
+
+/* Color base + comportamiento de la imagen.
+   En desktop: attachment fixed (efecto parallax).
+   En móvil: scroll (evita el bug de iOS con `fixed`). */
+.app-bg-image {
+  background-color: #0b1d45;
+  background-attachment: fixed;
+}
+@media (max-width: 768px) {
+  .app-bg-image {
+    background-attachment: scroll;
+  }
+}
 
 /* Header: nav links / botones en blanco para contraste sobre #0b1d45 */
 .app-bg-image > header a,
@@ -682,11 +695,14 @@
 .app-bg-image > header .text-foreground {
   color: #ffffff !important;
 }
+.app-bg-image > header svg {
+  color: rgba(255, 255, 255, 0.92);
+}
 
 /* Bottom nav móvil: mismo color de fondo que el footer */
 .app-bg-image > nav.fixed.bottom-0 {
-  background-color: rgba(11, 29, 69, 0.95) !important;
-  border-top-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(11, 29, 69, 0.97) !important;
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
 }
 .app-bg-image > nav.fixed.bottom-0 a,
 .app-bg-image > nav.fixed.bottom-0 button {
@@ -694,16 +710,27 @@
 }
 .app-bg-image > nav.fixed.bottom-0 a.text-primary,
 .app-bg-image > nav.fixed.bottom-0 .text-primary {
-  color: hsl(188, 80%, 60%) !important;
+  color: hsl(195, 90%, 70%) !important;
+}
+
+/* Footer fundido con el fondo: cero línea visible entre <main> y <footer> */
+.app-bg-image > footer {
+  border-top: 0 !important;
+}
+.app-bg-image > footer .border-t {
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* ------------------------------------------------------------
-   CONTRASTE GLOBAL — títulos, textos, links, botones sueltos
-   NO afectan elementos dentro de cards/popovers/dialogs.
+   CONTRASTE GLOBAL — títulos, textos, links, botones, iconos sueltos
+   NO afectan elementos dentro de cards/popovers/dialogs/banners de color.
    ------------------------------------------------------------ */
 
+/* Selector base de "elemento suelto" → no está dentro de superficie blanca/de color */
+/* Reutilizamos en cada bloque la misma lista :not(:where(...)) */
+
 /* Títulos sueltos en blanco con sombra */
-.app-bg-image :where(h1, h2, h3):not(:where(
+.app-bg-image :where(h1, h2, h3, h4):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [class*="bg-background"] *,
@@ -712,8 +739,11 @@
   [class*="bg-destructive"] *,
   [class*="bg-warning"] *,
   [class*="bg-primary"] *,
+  [class*="bg-secondary"] *,
+  [class*="bg-accent"] *,
   [role="dialog"] *,
-  [data-state] *
+  [role="menu"] *,
+  [data-radix-popper-content-wrapper] *
 )) {
   color: #ffffff !important;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
@@ -728,7 +758,9 @@
   header *,
   footer *,
   nav *,
-  [role="dialog"] *
+  [role="dialog"] *,
+  [role="menu"] *,
+  [data-radix-popper-content-wrapper] *
 )) {
   color: rgba(255, 255, 255, 0.85) !important;
 }
@@ -740,9 +772,49 @@
   [class*="bg-background"] *,
   [class*="bg-muted"] *,
   header *,
-  [role="dialog"] *
+  [role="dialog"] *,
+  [role="menu"] *,
+  [data-radix-popper-content-wrapper] *
 )) {
   color: #ffffff !important;
+}
+
+/* text-primary suelto → cyan claro legible sobre azul */
+.app-bg-image :where(.text-primary):not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [class*="bg-background"] *,
+  [class*="bg-muted"] *,
+  [class*="bg-primary"] *,
+  header *,
+  footer *,
+  nav *,
+  [role="dialog"] *,
+  [role="menu"] *,
+  [data-radix-popper-content-wrapper] *
+)) {
+  color: hsl(195, 90%, 75%) !important;
+}
+
+/* Iconos SVG sueltos en main → blanco semi */
+.app-bg-image > main svg:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [class*="bg-background"] *,
+  [class*="bg-muted"] *,
+  [class*="bg-success"] *,
+  [class*="bg-destructive"] *,
+  [class*="bg-warning"] *,
+  [class*="bg-primary"] *,
+  [class*="bg-secondary"] *,
+  [class*="bg-accent"] *,
+  button *,
+  a *,
+  [role="dialog"] *,
+  [role="menu"] *,
+  [data-radix-popper-content-wrapper] *
+)) {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* Links sueltos: azul claro legible */
@@ -753,9 +825,11 @@
   header *,
   footer *,
   nav *,
-  [role="dialog"] *
+  [role="dialog"] *,
+  [role="menu"] *,
+  [data-radix-popper-content-wrapper] *
 )) {
-  color: hsl(210, 100%, 80%);
+  color: hsl(210, 100%, 82%);
 }
 .app-bg-image :where(a):not(:where(
   [class*="bg-card"] *,
@@ -774,7 +848,8 @@
   [class*="bg-popover"] *,
   header *,
   nav *,
-  [role="dialog"] *
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
 )) {
   color: #ffffff;
 }
@@ -783,7 +858,8 @@
   [class*="bg-popover"] *,
   header *,
   nav *,
-  [role="dialog"] *
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
 )):hover {
   background-color: rgba(255, 255, 255, 0.12) !important;
   color: #ffffff !important;
@@ -795,27 +871,108 @@
   [class*="bg-popover"] *,
   header *,
   nav *,
-  [role="dialog"] *
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
 )) {
   border-color: rgba(255, 255, 255, 0.3) !important;
   color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+.app-bg-image button[class*="border-input"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  header *,
+  nav *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)):hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Inputs / textareas / selects sueltos sobre azul */
+.app-bg-image > main input:not([type="checkbox"]):not([type="radio"]):not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [class*="bg-background"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)),
+.app-bg-image > main textarea:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [class*="bg-background"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)),
+.app-bg-image > main select:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [class*="bg-background"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)) {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+}
+.app-bg-image > main input::placeholder,
+.app-bg-image > main textarea::placeholder {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* Tabs (TabsList) sueltos */
+.app-bg-image > main [role="tablist"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *
+)) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+.app-bg-image > main [role="tab"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *
+)) {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+.app-bg-image > main [role="tab"][data-state="active"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *
+)) {
+  background-color: #ffffff !important;
+  color: #0b1d45 !important;
 }
 
 /* Skeletons sueltos */
 .app-bg-image > main :where(.bg-muted):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
-  [role="dialog"] *
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
 )) {
   background-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Separadores sueltos */
-.app-bg-image > main :where(.border-border):not(:where(
+.app-bg-image > main :where(.border-border, .border-t, .border-b, .border-input):not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  button,
+  [data-radix-popper-content-wrapper] *
+)) {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Badges secondary/outline sueltos */
+.app-bg-image > main [class*="bg-secondary"]:not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *
 )) {
-  border-color: rgba(255, 255, 255, 0.15) !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
 }
+
 
