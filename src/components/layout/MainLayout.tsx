@@ -170,8 +170,8 @@ function AnimatedBalance({ balance }: { balance: number }) {
   return (
     <motion.span
       key={balance}
-      initial={{ scale: 1.1, color: 'hsl(var(--success))' }}
-      animate={{ scale: 1, color: 'hsl(var(--foreground))' }}
+      initial={{ scale: 1.1 }}
+      animate={{ scale: 1 }}
       transition={{ duration: 0.4 }}
       className="font-semibold leading-none"
     >
