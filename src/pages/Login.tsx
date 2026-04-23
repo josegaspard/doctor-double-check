@@ -186,16 +186,16 @@ export default function Login() {
   return (
     <AppBackground className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="relative z-10 border-b border-border bg-dark">
+      <header className="relative z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="text-dark-foreground hover:bg-dark/80">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="text-white hover:bg-white/15 hover:text-white">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
             </div>
-            <LanguageSwitcher className="text-white hover:text-white hover:bg-white/20" />
+            <LanguageSwitcher className="text-white hover:text-white hover:bg-white/15" />
           </div>
         </div>
       </header>

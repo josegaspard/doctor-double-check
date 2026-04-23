@@ -78,14 +78,14 @@ export default function ResetPassword() {
     return (
       <AppBackground className="min-h-screen flex flex-col">
         {/* Header */}
-        <header className="border-b border-border bg-card">
+        <header className="relative z-10">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/login')}>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/login')} className="text-white hover:bg-white/15 hover:text-white">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <Link to="/">
-                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
               </Link>
             </div>
           </div>
@@ -169,18 +169,18 @@ export default function ResetPassword() {
   return (
     <AppBackground className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="border-b border-border bg-card">
+      <header className="relative z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/login')}>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/login')} className="text-white hover:bg-white/15 hover:text-white">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <Link to="/">
-                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
               </Link>
             </div>
-            <LanguageSwitcher />
+            <LanguageSwitcher className="text-white hover:text-white hover:bg-white/15" />
           </div>
         </div>
       </header>

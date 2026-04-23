@@ -42,12 +42,12 @@ export default function RoleSelector() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+      <AppBackground className="min-h-screen flex items-center justify-center">
+        <div className="relative z-10 flex items-center gap-3 text-white/80">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           <span>Cargando...</span>
         </div>
-      </div>
+      </AppBackground>
     );
   }
 
@@ -105,11 +105,11 @@ export default function RoleSelector() {
   return (
     <AppBackground className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="relative z-10 border-b border-border bg-dark">
+      <header className="relative z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-10 w-auto" />
-            <LanguageSwitcher className="text-white hover:text-white hover:bg-white/20" />
+            <LanguageSwitcher className="text-white hover:text-white hover:bg-white/15" />
           </div>
         </div>
       </header>
@@ -188,9 +188,9 @@ export default function RoleSelector() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-border bg-dark py-4">
+      <footer className="relative z-10 py-4">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-dark-foreground">
+          <p className="text-xs text-white/75">
             {t('footer.copyright')}
           </p>
         </div>
