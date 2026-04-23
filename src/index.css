@@ -1187,20 +1187,108 @@
   color: #ffffff !important;
 }
 
-/* ---------- 16. SAFETY NET: cualquier elemento con fondo blanco sólido
-   forzado debe garantizar texto/icono oscuro (anti blanco-sobre-blanco).
-   Esto cubre pills/buttons/badges que el usuario o un componente pinte blanco. */
-.app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not(:where(
+/* ---------- 16. SAFETY NET GLOBAL: anti blanco-sobre-blanco ----------
+   Cualquier elemento (botón, link, pill, badge) con fondo CLARO debe forzar
+   texto + iconos OSCUROS, sin importar si está en header, main, footer o nav.
+   Excepción: contenido dentro de cards/dialogs/popovers (ya viven en superficie blanca,
+   pero ahí el sistema base ya gestiona el contraste correctamente).
+*/
+
+/* 16a. Bg-white sólido */
+.app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not([class*="hover:bg-white"]):not(:where(
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )) {
   color: #0b1d45 !important;
 }
-.app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not(:where(
+.app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not([class*="hover:bg-white"]):not(:where(
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )) svg {
   color: #0b1d45 !important;
 }
 
+/* 16b. Botones outline (border-input) y cualquier botón con bg-background/bg-card:
+       fondo casi blanco, deben llevar texto e iconos oscuros desde reposo. */
+.app-bg-image :is(button, a)[class*="border-input"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)),
+.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)) {
+  color: #0b1d45 !important;
+  background-color: #ffffff !important;
+  border-color: rgba(11, 29, 69, 0.15) !important;
+}
+.app-bg-image :is(button, a)[class*="border-input"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)) svg,
+.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)) svg {
+  color: #0b1d45 !important;
+}
+.app-bg-image :is(button, a)[class*="border-input"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)):hover,
+.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)):hover {
+  background-color: #f1f5f9 !important;
+  color: #0b1d45 !important;
+  border-color: rgba(11, 29, 69, 0.25) !important;
+}
+.app-bg-image :is(button, a)[class*="border-input"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)):hover svg,
+.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)):hover svg {
+  color: #0b1d45 !important;
+}
+
+/* ---------- 17. Footer global: contraste premium ---------- */
+.app-bg-image footer a:not([class*="bg-"]) {
+  color: rgba(241, 245, 249, 0.92) !important;
+}
+.app-bg-image footer a:not([class*="bg-"]):hover {
+  color: #ffffff !important;
+}
+.app-bg-image footer p,
+.app-bg-image footer span:not([class*="bg-"]):not([class*="text-green"]):not([class*="text-orange"]) {
+  color: rgba(241, 245, 249, 0.92);
+}
+.app-bg-image footer h4 {
+  color: #ffffff !important;
+}
+
+/* ---------- 18. Bottom nav móvil: iconos activos visibles ---------- */
+.app-bg-image > nav.fixed.bottom-0 a:hover svg,
+.app-bg-image > nav.fixed.bottom-0 button:hover svg {
+  color: #ffffff !important;
+}
 
