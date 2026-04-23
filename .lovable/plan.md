@@ -1,79 +1,202 @@
 
+## Cierre final de contraste y eliminación total de barras blancas
 
-## MEGAPROMPT: Fondo perfecto + contraste global tipo "modo noche"
+### Problemas que siguen vivos
+1. **La barra/blanco en login-register sigue apareciendo** porque todavía hay pantallas standalone con `header`/`footer` en `bg-card` o con `border-border` visible sobre el fondo azul:
+   - `ResetPassword.tsx`
+   - `Onboarding.tsx`
+   - `RoleSelector.tsx` (footer con borde)
+   - estados derivados de auth/registro
+2. **Hay hover y estados activos con contraste roto**:
+   - `ghost`, `outline`, `link`
+   - tabs (`TabsTrigger`) y pills activas
+   - iconos dentro de botones blancos o fondos claros
+3. **Footer aún se ve apagado**:
+   - links en `text-slate-400`
+   - iconos sociales con poco contraste antes del hover
+   - copy secundaria demasiado tenue
+4. **Las reglas globales actuales en `index.css` ayudan, pero no cubren bien estados interactivos reales** y en algunos casos generan conflicto visual entre fondo blanco + texto blanco.
 
-### Diagnóstico de los 3 problemas reales
+---
 
-1. **Línea blanca entre header y fondo** → el header tiene `border-b border-white/10` y además su color `#0b1d45/95` no coincide al 100% con el primer pixel de la imagen (que es ligeramente más oscuro/azulado). El navegador renderiza ambos y deja una línea visible.
-2. **Imagen tarda en cargar** → `app-background.jpg` pesa 93 KB y se carga vía `import` normal (no preload), con `background-attachment: fixed` + `background-size: cover`. El primer paint muestra el `bg-background` blanco antes de que la imagen esté lista.
-3. **Contraste incompleto** → varias páginas tienen iconos, badges, valores numéricos, separadores, inputs, dropdowns y placeholders que no están cubiertos por las reglas actuales del `.app-bg-image`.
+## Qué voy a corregir
 
-### Solución completa (sin tocar En Vivo)
+### 1) Quitar cualquier rastro de blanco/línea en auth y pantallas standalone
+Voy a unificar el chrome de las pantallas con fondo azul para que ninguna vuelva a meter una franja clara:
 
-#### 1) Eliminar la línea de separación (definitivo)
+- `Login.tsx`: revisar header y tabs del login/register para que no aparezca ninguna banda blanca ni pill ilegible.
+- `ResetPassword.tsx`: cambiar ambos headers `bg-card` + `border-border` por header oscuro igual al fondo/footer.
+- `Onboarding.tsx`: cambiar los headers `bg-card/95 backdrop-blur` y footer `bg-card` por versión oscura sin borde visible.
+- `RoleSelector.tsx`: quitar el borde superior del footer y reforzar textos.
+- `RoleSelector.tsx` loading state: usar también `AppBackground` para que no exista ni un flash blanco.
+- Revisar `EmailConfirmed`, `VerificationPending`, `NotFound` para asegurar que sus botones/íconos/estados sigan legibles sobre azul.
 
-- En `MainLayout.tsx`, header: cambiar `border-b border-white/10` por `border-b-0` cuando `useImageBackground` está activo. El cambio de tono lo hace solo la transición visual, sin línea.
-- En `AppBackground.tsx`: pintar un **fallback color sólido** (`background-color: #0b1d45`) DEBAJO de la imagen, así mientras carga ya se ve el mismo azul del header → cero salto visual y cero línea.
-- En `index.css` `.app-bg-image`: añadir `background-color: #0b1d45` al root para reforzar el fallback.
+Resultado: **cero barra blanca en login, register, reset, onboarding y estados de auth**.
 
-#### 2) Carga ultrarrápida del fondo
+---
 
-- **Preload del JPG** en `index.html` con `<link rel="preload" as="image" href="/app-bg.jpg" fetchpriority="high">` para que el navegador empiece a descargarlo en paralelo al HTML.
-- **Mover el archivo a `/public/app-bg.jpg`** (no a `src/assets/`) para que sea servible por URL fija sin hash y permitir el `<link rel="preload">` (los assets de `src/` cambian de hash en cada build y rompen el preload).
-- Actualizar `AppBackground.tsx`: usar `url('/app-bg.jpg')` en vez del import. Mantener un comentario claro de que la imagen vive en `public/app-bg.jpg`.
-- Añadir `background-color: #0b1d45` como fallback inmediato (ya descrito arriba).
-- Mantener `background-attachment: fixed` en desktop pero **`scroll` en móvil** (en iOS `fixed` dispara repintes y se ve mal). Se hace con media query.
+### 2) Endurecer el sistema global de contraste con lógica de UX/UI real
+No solo “más blanco”; voy a ordenar el sistema por tipo de superficie:
 
-#### 3) Contraste GLOBAL completo (modo noche)
+#### A. Superficies oscuras sobre fondo azul
+Para elementos que viven directo sobre el fondo:
+- títulos: blanco sólido
+- subtítulos: blanco 80–88%
+- links: celeste claro con hover blanco
+- bordes: blanco translúcido
+- iconos: blanco 85–92%
 
-Reescribir/extender el bloque `.app-bg-image` en `index.css` para cubrir todo lo que falta:
+#### B. Superficies claras
+Para botones/pills/tabs activos blancos o casi blancos:
+- texto e iconos pasarán a **azul oscuro sólido**
+- hover mantendrá contraste alto, nunca icono blanco sobre fondo blanco
+- focus visible también tendrá ring perceptible
 
-- **Iconos sueltos** (`svg` directo dentro de main) → blanco con opacidad 0.85.
-- **Inputs / textareas / select sueltos** → fondo `rgba(255,255,255,0.08)`, borde `rgba(255,255,255,0.2)`, texto blanco, placeholder `rgba(255,255,255,0.5)`.
-- **Badges sueltos** (`secondary`, `outline`) → variantes con fondo translúcido blanco y texto blanco.
-- **Tabs / TabsList sueltos** → fondo translúcido blanco, indicador activo blanco sólido.
-- **Dropdowns trigger sueltos** → fondo translúcido, hover blanco semi.
-- **Loaders / spinners** → color blanco.
-- **Borders sueltos** (`border`, `border-t`, `border-input`) → blanco translúcido.
-- **`text-primary` suelto** (no en card) → `hsl(195, 90%, 75%)` (cyan claro legible sobre azul).
-- **`text-success` / `text-warning` / `text-destructive` sueltos** → mantener color pero saturarlos un 20% para que destaquen sobre azul.
-- **Hover de links del header** → ya está pero refuerzo con `text-shadow` sutil.
-- **Footer**: ya es `#0b1d45` sólido, no necesita cambios. Solo aseguro que el `border-t` superior del footer sea `transparent` para evitar otra línea de separación entre `<main>` y `<footer>`.
+#### C. Estados interactivos
+Voy a cubrir explícitamente:
+- default
+- hover
+- active
+- selected
+- focus-visible
+- disabled
 
-#### 4) Reglas que protegen las superficies blancas (cards/dialogs/popovers)
+Así se corrige exactamente lo que reportaste: **no más icono blanco sobre botón blanco ni texto lavado en hover**.
 
-- Mantener intacto: `bg-card`, `bg-popover`, `bg-background`, `bg-muted`, `[role="dialog"]` no se tocan → siguen siendo blancos con texto oscuro como hoy.
-- Subir las que están en `bg-card/95` o `bg-card/80` que sobre azul se transparentan demasiado → pasarlas a `bg-card` sólido (revisión puntual de Header móvil sheet, MoreSheet y banners).
+---
 
-#### 5) Separación limpia footer ↔ contenido
+### 3) Corregir botones globalmente, no parche por parche
+Voy a ajustar `src/components/ui/button.tsx` y complementar con CSS scoped en `.app-bg-image`:
 
-- Quitar `border-t` del primer hijo de `<footer>` cuando `useImageBackground` está activo (regla CSS específica) para que el `#0b1d45` del footer se funda con el degradado azul oscuro de la imagen sin línea visible.
+#### `ghost`
+- estado base sobre fondo azul: texto/icono blanco o blanco suave
+- hover: fondo blanco translúcido + texto blanco
+- cuando el botón esté sobre superficie clara, seguirá respetando el sistema actual
 
-#### 6) Cómo cambiar la imagen en el futuro (documentado)
+#### `outline`
+- sobre fondo azul: borde blanco translúcido + texto blanco
+- hover: fondo blanco suave pero **texto/icono azul oscuro**
+- esto evita exactamente el problema de “icono blanco con fondo blanco”
 
-- **Sustituir `public/app-bg.jpg`** por otra imagen del mismo nombre (1920×1080 o superior, < 200 KB ideal, JPG progresivo).
-- O cambiar la ruta en `src/components/layout/AppBackground.tsx` (constante `BG_URL`).
-- Para volver a blanco: **Admin → Site Settings → Toggles → Fondo de la aplicación → Blanco (clásico)**.
+#### `link`
+- en fondo azul: celeste claro
+- hover: blanco con mejor legibilidad
 
-### Lo que NO toco
-- En Vivo (`LiveStreamView`, `DailyVideoPlayer`, `LivePreviewPlayer`, `LivesGrid`, `LivePlayer`, `VideoCall`).
-- Landing pública (`/`).
-- Tokens del design system (`--primary`, `--card`, etc.).
-- Lógica de auth, pagos, video, RLS, edge functions.
+#### botones activos/selected tipo pill
+- fondo blanco o claro: texto/icono azul oscuro
+- fondo oscuro: texto/icono blanco
 
-### Archivos modificados
-- `index.html` (preload del JPG)
-- `public/app-bg.jpg` (nuevo, mover desde `src/assets/`)
-- `src/components/layout/AppBackground.tsx` (URL pública + fallback color + media query móvil)
-- `src/components/layout/MainLayout.tsx` (quitar `border-b` del header en modo imagen)
-- `src/components/layout/UnifiedFooter.tsx` (quitar línea superior cuando aplica modo imagen)
-- `src/index.css` (bloque `.app-bg-image` ampliado: iconos, inputs, badges, tabs, loaders, borders, colores semánticos)
+---
 
-### Resultado final
-- **Cero línea de separación** entre header, contenido y footer.
-- **Fondo visible al instante** (color sólido `#0b1d45` antes incluso de descargar la imagen, luego la imagen aparece encima).
-- **Contraste tipo modo noche** garantizado en todos los elementos sueltos: títulos, párrafos, links, botones, **iconos, inputs, badges, tabs, dropdowns, loaders, separadores**.
-- **Cards y modales intactos** (siguen blancos con texto oscuro).
-- Funciona idéntico en **móvil y desktop** (con `attachment: scroll` en móvil para evitar el bug de iOS).
-- Toggle de admin sigue funcional para volver a blanco clásico.
+### 4) Corregir tabs, pills y triggers activos
+El problema visual de pills/tabs activas viene de la mezcla entre reglas globales y estilos Radix/Tailwind.
 
+Voy a ajustar:
+- `src/components/ui/tabs.tsx`
+- bloque `.app-bg-image` en `src/index.css`
+
+Para que:
+- `TabsList` tenga fondo translúcido oscuro/claro consistente
+- `TabsTrigger` inactivo = blanco suave legible
+- `TabsTrigger` activo = fondo blanco y texto/icono azul oscuro
+- hover del inactivo = subir contraste
+- login/register y cualquier tabs de la app queden coherentes
+
+Esto cubre también chips tipo selector que ahora se ven “lavados”.
+
+---
+
+### 5) Mejorar iconografía global
+Voy a reforzar contraste de iconos en tres contextos:
+
+1. **Iconos sueltos sobre fondo azul**
+   - blanco 90%
+
+2. **Iconos dentro de botones oscuros**
+   - heredan blanco o celeste claro
+
+3. **Iconos dentro de botones/pills claras**
+   - azul oscuro sólido
+
+Incluye:
+- iconos de navegación
+- iconos en botones outline/ghost
+- iconos de footer/social
+- iconos en headers standalone
+- iconos de tabs y pills activas
+
+---
+
+### 6) Subir contraste del footer completo
+En `src/components/layout/UnifiedFooter.tsx` voy a mejorar:
+
+- títulos de columnas: mantener blancos fuertes
+- links normales: subir de `slate-400` a un tono más visible
+- hover: blanco pleno
+- descripción institucional: subir contraste
+- copyright: menos apagado
+- iconos sociales:
+  - fondo más visible desde reposo
+  - iconos con contraste alto desde reposo
+  - hover más evidente sin perder elegancia
+
+Resultado: **footer legible incluso con imagen azul/celeste detrás y en móvil**.
+
+---
+
+### 7) Ajustes finos en `index.css` para evitar conflictos
+Voy a reescribir parte del bloque `.app-bg-image` para que sea menos ambiguo y más robusto:
+
+- separar reglas para:
+  - texto
+  - links
+  - iconos
+  - botones ghost
+  - botones outline
+  - tabs
+  - badges
+  - inputs/selects
+  - footer
+  - headers standalone
+- añadir reglas específicas para elementos activos con fondo claro
+- evitar que una regla global vuelva blanco un texto dentro de una pill blanca
+
+---
+
+## Archivos a tocar
+- `src/index.css`
+- `src/components/ui/button.tsx`
+- `src/components/ui/tabs.tsx`
+- `src/components/layout/UnifiedFooter.tsx`
+- `src/pages/Login.tsx`
+- `src/pages/ResetPassword.tsx`
+- `src/pages/Onboarding.tsx`
+- `src/pages/RoleSelector.tsx`
+- `src/pages/EmailConfirmed.tsx`
+- `src/pages/VerificationPending.tsx`
+- `src/pages/NotFound.tsx`
+
+---
+
+## Resultado final esperado
+- **Desaparece la barra blanca** en login/register y demás pantallas de auth
+- **Cero blanco accidental** en headers/footers standalone
+- **Hover de botones corregido**
+- **Pills/tabs activas legibles**
+- **Iconos visibles antes y durante hover**
+- **Footer mucho más claro y premium**
+- **Contraste tipo “modo noche” real** en toda la plataforma, desktop y móvil
+
+---
+
+## Detalle técnico
+La implementación seguirá esta regla UX principal:
+
+```text
+Fondo oscuro  -> texto/icono claro
+Fondo claro   -> texto/icono oscuro
+Hover nunca puede reducir contraste
+Selected nunca puede dejar blanco sobre blanco
+```
+
+Y dejaré la lógica centralizada para que futuras pantallas nuevas hereden el comportamiento automáticamente en vez de volver a romper contraste.
