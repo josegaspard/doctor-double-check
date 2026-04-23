@@ -268,6 +268,72 @@
   .status-busy {
     @apply bg-warning;
   }
+
+  .app-shell-header {
+    position: relative;
+    z-index: 10;
+    border-bottom: 0;
+    background: transparent;
+    color: hsl(var(--dark-foreground));
+  }
+
+  .app-shell-header-meta {
+    color: hsl(var(--dark-foreground) / 0.82);
+    text-shadow: 0 1px 10px hsl(var(--dark) / 0.25);
+  }
+
+  .app-shell-footer {
+    position: relative;
+    z-index: 10;
+    margin-top: auto;
+    border-top: 0;
+    background: transparent;
+  }
+
+  .app-shell-footer-copy {
+    color: hsl(var(--dark-foreground) / 0.86);
+    text-shadow: 0 1px 10px hsl(var(--dark) / 0.2);
+  }
+
+  .app-shell-icon-button {
+    border-color: hsl(var(--dark-foreground) / 0.16);
+    background-color: hsl(var(--dark-foreground) / 0.06);
+    color: hsl(var(--dark-foreground) / 0.92);
+  }
+
+  .app-shell-icon-button:hover,
+  .app-shell-icon-button:focus-visible {
+    border-color: hsl(var(--dark-foreground) / 0.24);
+    background-color: hsl(var(--dark-foreground) / 0.14);
+    color: hsl(var(--dark-foreground));
+  }
+
+  .app-shell-tabs-list {
+    border: 1px solid hsl(var(--dark-foreground) / 0.16);
+    background: hsl(var(--dark-foreground) / 0.1);
+    color: hsl(var(--dark-foreground) / 0.78);
+    backdrop-filter: blur(14px);
+  }
+
+  .app-shell-tabs-trigger {
+    color: hsl(var(--dark-foreground) / 0.78);
+  }
+
+  .app-shell-tabs-trigger:hover,
+  .app-shell-tabs-trigger[data-state='inactive']:hover {
+    background: hsl(var(--dark-foreground) / 0.08);
+    color: hsl(var(--dark-foreground));
+  }
+
+  .app-shell-tabs-trigger[data-state='active'] {
+    background: hsl(var(--dark-foreground));
+    color: hsl(var(--dark));
+    box-shadow: 0 8px 24px hsl(var(--dark) / 0.22);
+  }
+
+  .app-shell-tabs-trigger[data-state='active'] svg {
+    color: hsl(var(--dark));
+  }
 }
 
 @layer utilities {
@@ -735,7 +801,7 @@
   background-color: #0b1d45 !important;
 }
 .app-bg-image > footer .border-t {
-  border-top-color: rgba(255, 255, 255, 0.1) !important;
+  border-top-color: transparent !important;
 }
 
 /* ---------- 4. Headings sueltos ---------- */
@@ -887,6 +953,16 @@
   [data-radix-popper-content-wrapper] *
 )):hover {
   background-color: rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+}
+.app-bg-image button[class*="hover:bg-accent"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  header *,
+  nav *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+ )):hover svg {
   color: #ffffff !important;
 }
 
