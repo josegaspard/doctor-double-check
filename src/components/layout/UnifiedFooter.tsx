@@ -70,9 +70,9 @@ function SocialIcons({ socialLinks, className = '' }: { socialLinks: any; classN
           target="_blank"
           rel="noopener noreferrer"
           aria-label={key}
-          className="w-9 h-9 rounded-full border border-white/40 bg-white/20 text-white shadow-sm flex items-center justify-center hover:bg-white hover:text-[#0b1d45] hover:border-white transition-colors"
+          className="group w-9 h-9 rounded-full border-2 border-white/70 bg-white/15 shadow-sm flex items-center justify-center hover:bg-white hover:border-white transition-colors"
         >
-          <Icon className="w-4 h-4" />
+          <Icon className="w-4 h-4 text-white group-hover:text-[#0b1d45]" />
         </a>
       ))}
     </div>
@@ -88,10 +88,10 @@ function FooterLinkColumn({ title, links }: { title: string; links: { label: str
           <li key={i}>
             <Link
               to={link.href}
-              className={`text-xs sm:text-sm transition-colors ${
+              className={`text-xs sm:text-sm font-medium transition-colors ${
                 link.href === '/report-issue'
-                  ? 'text-orange-300 hover:text-orange-100'
-                  : 'text-slate-100/95 hover:text-white'
+                  ? 'text-orange-200 hover:text-white'
+                  : 'text-white hover:text-white hover:underline'
               }`}
             >
               {link.label}
@@ -119,12 +119,12 @@ export function UnifiedFooter({ variant }: Props) {
 
   if (variant === 'app') {
     return (
-      <footer className="bg-[#0b1d45] text-slate-100 pt-8 sm:pt-10 pb-24 sm:pb-6 mt-auto border-t-0">
+      <footer className="bg-[#0b1d45] text-white pt-8 sm:pt-10 pb-24 sm:pb-6 mt-auto border-t-0">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-6">
             <div className="col-span-2 md:col-span-1 flex flex-col items-start">
               <img src={logoWhite} alt="Medical Masters" className="h-6 sm:h-7 mb-3" />
-              <p className="text-[11px] sm:text-xs text-slate-100/90 mb-3 max-w-xs leading-relaxed text-left">
+              <p className="text-[11px] sm:text-xs text-white mb-3 max-w-xs leading-relaxed text-left">
                 {t('landingFooter.brandDescription')}
               </p>
               <SocialIcons socialLinks={socialLinks} />
@@ -136,12 +136,12 @@ export function UnifiedFooter({ variant }: Props) {
             <FooterLinkColumn title={t('landingFooter.legal')} links={footerLinks.legal} />
           </div>
 
-          <div className="border-t border-white/20 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-slate-100/85">{footerLinks.copyright}</p>
+          <div className="border-t border-white/30 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-white font-medium">{footerLinks.copyright}</p>
             {footerLinks.show_status_badge && (
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/15 border border-green-400/40">
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/25 border border-green-400/60">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-green-300 font-bold text-xs">{t('landingFooter.allSystems')}</span>
+                <span className="text-green-200 font-bold text-xs">{t('landingFooter.allSystems')}</span>
               </div>
             )}
           </div>
@@ -151,12 +151,12 @@ export function UnifiedFooter({ variant }: Props) {
   }
 
   return (
-    <footer className="bg-[#0b1d45] pt-12 sm:pt-20 pb-8 sm:pb-10 text-slate-100 border-t border-transparent font-light text-sm">
+    <footer className="bg-[#0b1d45] pt-12 sm:pt-20 pb-8 sm:pb-10 text-white border-t border-transparent text-sm">
       <div className="container mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 sm:gap-10 mb-10 sm:mb-16">
           <div className="col-span-2">
             <img src={logoWhite} alt="Medical Logo" className="h-8 mb-4 sm:mb-6" />
-            <p className="mb-4 sm:mb-6 max-w-sm text-slate-100/90 text-xs sm:text-sm">
+            <p className="mb-4 sm:mb-6 max-w-sm text-white text-xs sm:text-sm">
               {t('landingFooter.brandDescription')}
             </p>
             <SocialIcons socialLinks={socialLinks} />
@@ -168,13 +168,13 @@ export function UnifiedFooter({ variant }: Props) {
           <FooterLinkColumn title={t('landingFooter.legal')} links={footerLinks.legal} />
         </div>
 
-        <div className="border-t border-white/20 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs sm:text-sm text-center sm:text-left text-slate-100/85">{footerLinks.copyright}</p>
+        <div className="border-t border-white/30 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-xs sm:text-sm text-center sm:text-left text-white font-medium">{footerLinks.copyright}</p>
           {footerLinks.show_status_badge && (
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/15 border border-green-400/40">
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/25 border border-green-400/60">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-green-300 font-bold text-xs">{t('landingFooter.allSystems')}</span>
+                <span className="text-green-200 font-bold text-xs">{t('landingFooter.allSystems')}</span>
               </div>
             </div>
           )}
