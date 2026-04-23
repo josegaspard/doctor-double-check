@@ -701,7 +701,7 @@ export default function Onboarding() {
     const RoleIcon = getRoleIcon();
     return (
       <AppBackground className="min-h-screen flex flex-col">
-      <header className="border-b border-border bg-card/95 backdrop-blur">
+      <header className="relative z-10">
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               <Link to="/" className="flex items-center">
@@ -806,9 +806,9 @@ export default function Onboarding() {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-border bg-card py-4 mt-auto">
+        <footer className="relative z-10 py-4 mt-auto">
           <div className="container mx-auto px-4 text-center">
-            <p className="text-xs text-muted-foreground">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
+            <p className="text-xs text-white/75">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
           </div>
         </footer>
       </AppBackground>
@@ -819,7 +819,7 @@ export default function Onboarding() {
 
   return (
     <AppBackground className="min-h-screen flex flex-col">
-      <header className="border-b border-border bg-card/95 backdrop-blur">
+      <header className="relative z-10">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center">
@@ -1584,9 +1584,9 @@ export default function Onboarding() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card py-4 mt-auto">
+      <footer className="relative z-10 py-4 mt-auto">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-muted-foreground">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
+          <p className="text-xs text-white/75">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
         </div>
       </footer>
     </AppBackground>
