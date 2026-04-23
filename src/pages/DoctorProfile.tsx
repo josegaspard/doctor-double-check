@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard, Clock, Shield, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard, Clock, Shield, CheckCircle, Bell } from 'lucide-react';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
@@ -704,25 +704,24 @@ export default function DoctorProfile() {
           </CardContent>
         </Card>
 
-        {/* How it works — separate lightweight section */}
-        <div className="mt-3 p-4 bg-muted/30 rounded-lg">
-          <h4 className="text-sm font-semibold text-foreground mb-3">{t('doctorProfile.howItWorks')}</h4>
-          <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-            <div className="text-center space-y-1">
-              <span className="text-lg">1️⃣</span>
-              <p className="font-medium text-foreground">{t('doctorProfile.step1Title')}</p>
-              <p className="leading-tight">{t('doctorProfile.step1Desc')}</p>
-            </div>
-            <div className="text-center space-y-1">
-              <span className="text-lg">2️⃣</span>
-              <p className="font-medium text-foreground">{t('doctorProfile.step2Title')}</p>
-              <p className="leading-tight">{t('doctorProfile.step2Desc')}</p>
-            </div>
-            <div className="text-center space-y-1">
-              <span className="text-lg">3️⃣</span>
-              <p className="font-medium text-foreground">{t('doctorProfile.step3Title')}</p>
-              <p className="leading-tight">{t('doctorProfile.step3Desc')}</p>
-            </div>
+        {/* How it works — premium card */}
+        <div className="mt-3 p-5 bg-card border border-border rounded-xl shadow-sm">
+          <h4 className="text-base font-semibold text-foreground mb-4">{t('doctorProfile.howItWorks')}</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-0 md:divide-x divide-border">
+            {[
+              { num: 1, Icon: Bell, title: t('doctorProfile.step1Title'), desc: t('doctorProfile.step1Desc') },
+              { num: 2, Icon: Star, title: t('doctorProfile.step2Title'), desc: t('doctorProfile.step2Desc') },
+              { num: 3, Icon: MessageSquare, title: t('doctorProfile.step3Title'), desc: t('doctorProfile.step3Desc') },
+            ].map(({ num, Icon, title, desc }) => (
+              <div key={num} className="flex flex-col items-center text-center px-2 md:px-4 not-last:border-b md:not-last:border-b-0 not-last:pb-4 md:not-last:pb-0 not-last:border-border">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#163a83] to-[#00768b] flex items-center justify-center text-white font-bold text-sm mb-2 shadow-md">
+                  {num}
+                </div>
+                <Icon className="w-5 h-5 text-[#163a83] mb-2" />
+                <p className="text-sm font-semibold text-foreground mb-1">{title}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
+              </div>
+            ))}
           </div>
         </div>
 

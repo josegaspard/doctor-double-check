@@ -479,16 +479,19 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               {isAuthenticated && user && role !== 'visitor' ? (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="gap-1 sm:gap-2 px-2 sm:px-3">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 sm:gap-2 h-9 px-2 sm:px-3 rounded-md bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                         {role === 'doctor' ? (
-                          <Stethoscope className="w-4 h-4 text-primary" />
+                          <Stethoscope className="w-4 h-4 text-white" />
                         ) : (
-                          <User className="w-4 h-4 text-primary" />
+                          <User className="w-4 h-4 text-white" />
                         )}
                       </div>
-                      <span className="text-xs sm:text-sm max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
-                    </Button>
+                      <span className="text-xs sm:text-sm font-medium text-white max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
+                    </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-64">
                     <DropdownMenuLabel className="font-normal">
