@@ -662,14 +662,20 @@
 
 /* ============================================================
    APP BACKGROUND IMAGE MODE — "modo noche" global
-   Cuando el toggle "app_background" = "image" está activo,
-   el wrapper raíz tiene la clase .app-bg-image.
-   Aplica también a pantallas standalone (Login, Onboarding, etc.)
+   Toggle "app_background" = "image" → wrapper raíz con clase .app-bg-image.
+   Aplica a MainLayout y a pantallas standalone (Login, Onboarding, etc.)
+
+   Regla UX maestra:
+     Fondo oscuro  → texto/icono claro
+     Fondo claro   → texto/icono oscuro
+     Hover nunca puede reducir contraste
+     Selected nunca puede dejar blanco sobre blanco
    ============================================================ */
 
-/* Color base + comportamiento de la imagen.
-   En desktop: attachment fixed (efecto parallax).
-   En móvil: scroll (evita el bug de iOS con `fixed`). */
+/* ---------- 0. Listas reutilizables de "no afectar superficies claras" ---------- */
+/* Para mantener legibilidad: cualquier elemento dentro de superficie blanca/coloreada
+   queda excluido de las reglas globales (mantiene su contraste original). */
+
 .app-bg-image {
   background-color: #0b1d45;
   background-attachment: fixed;
@@ -680,7 +686,13 @@
   }
 }
 
-/* Header: nav links / botones en blanco para contraste sobre #0b1d45 */
+/* ---------- 1. Header standalone (Login, Onboarding, etc.) ---------- */
+/* Quita cualquier rastro de barra blanca: header siempre fundido al azul */
+.app-bg-image > header {
+  background-color: #0b1d45 !important;
+  border-bottom: 0 !important;
+  backdrop-filter: none !important;
+}
 .app-bg-image > header a,
 .app-bg-image > header button {
   color: rgba(255, 255, 255, 0.92);
@@ -690,7 +702,7 @@
   color: #ffffff;
 }
 .app-bg-image > header .text-muted-foreground {
-  color: rgba(255, 255, 255, 0.65) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 .app-bg-image > header .text-foreground {
   color: #ffffff !important;
@@ -698,8 +710,12 @@
 .app-bg-image > header svg {
   color: rgba(255, 255, 255, 0.92);
 }
+.app-bg-image > header button:hover svg,
+.app-bg-image > header a:hover svg {
+  color: #ffffff;
+}
 
-/* Bottom nav móvil: mismo color de fondo que el footer */
+/* ---------- 2. Bottom nav móvil ---------- */
 .app-bg-image > nav.fixed.bottom-0 {
   background-color: rgba(11, 29, 69, 0.97) !important;
   border-top-color: rgba(255, 255, 255, 0.08) !important;
@@ -713,23 +729,16 @@
   color: hsl(195, 90%, 70%) !important;
 }
 
-/* Footer fundido con el fondo: cero línea visible entre <main> y <footer> */
+/* ---------- 3. Footer standalone fundido ---------- */
 .app-bg-image > footer {
   border-top: 0 !important;
+  background-color: #0b1d45 !important;
 }
 .app-bg-image > footer .border-t {
-  border-top-color: rgba(255, 255, 255, 0.08) !important;
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* ------------------------------------------------------------
-   CONTRASTE GLOBAL — títulos, textos, links, botones, iconos sueltos
-   NO afectan elementos dentro de cards/popovers/dialogs/banners de color.
-   ------------------------------------------------------------ */
-
-/* Selector base de "elemento suelto" → no está dentro de superficie blanca/de color */
-/* Reutilizamos en cada bloque la misma lista :not(:where(...)) */
-
-/* Títulos sueltos en blanco con sombra */
+/* ---------- 4. Headings sueltos ---------- */
 .app-bg-image :where(h1, h2, h3, h4):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -746,10 +755,10 @@
   [data-radix-popper-content-wrapper] *
 )) {
   color: #ffffff !important;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
-/* Texto muted suelto → blanco semi-translúcido */
+/* ---------- 5. Texto muted suelto ---------- */
 .app-bg-image :where(.text-muted-foreground):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -765,7 +774,7 @@
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
-/* Texto foreground suelto → blanco */
+/* ---------- 6. Texto foreground suelto ---------- */
 .app-bg-image :where(.text-foreground):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -779,7 +788,7 @@
   color: #ffffff !important;
 }
 
-/* text-primary suelto → cyan claro legible sobre azul */
+/* ---------- 7. text-primary suelto → cyan claro ---------- */
 .app-bg-image :where(.text-primary):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -793,10 +802,10 @@
   [role="menu"] *,
   [data-radix-popper-content-wrapper] *
 )) {
-  color: hsl(195, 90%, 75%) !important;
+  color: hsl(195, 90%, 78%) !important;
 }
 
-/* Iconos SVG sueltos en main → blanco semi */
+/* ---------- 8. Iconos sueltos en main (NO dentro de botones/enlaces) ---------- */
 .app-bg-image > main svg:not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -817,7 +826,7 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* Links sueltos: azul claro legible */
+/* ---------- 9. Links sueltos ---------- */
 .app-bg-image :where(a):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -829,7 +838,7 @@
   [role="menu"] *,
   [data-radix-popper-content-wrapper] *
 )) {
-  color: hsl(210, 100%, 82%);
+  color: hsl(210, 100%, 84%);
 }
 .app-bg-image :where(a):not(:where(
   [class*="bg-card"] *,
@@ -842,8 +851,14 @@
   color: #ffffff;
 }
 
-/* Botones ghost sueltos sobre azul: texto blanco + hover translúcido */
-.app-bg-image button[class*="hover:bg-accent"]:not(:where(
+/* ---------- 10. BOTONES — ghost / link / outline / default ----------
+   Estrategia: cualquier botón "suelto" sobre fondo azul tiene texto blanco
+   en reposo. En hover, los que se vuelven blancos por dentro fuerzan texto/icono
+   azul oscuro para evitar "blanco sobre blanco".
+*/
+
+/* 10a. Ghost suelto (transparente → blanco) */
+.app-bg-image button[class*="hover:bg-accent"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   header *,
@@ -851,9 +866,19 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )) {
-  color: #ffffff;
+  color: #ffffff !important;
 }
-.app-bg-image button[class*="hover:bg-accent"]:not(:where(
+.app-bg-image button[class*="hover:bg-accent"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  header *,
+  nav *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)) svg {
+  color: #ffffff !important;
+}
+.app-bg-image button[class*="hover:bg-accent"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   header *,
@@ -861,11 +886,11 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )):hover {
-  background-color: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.14) !important;
   color: #ffffff !important;
 }
 
-/* Botones outline sueltos: borde blanco translúcido */
+/* 10b. Outline suelto: texto blanco en reposo, OSCURO en hover (porque fondo se vuelve casi blanco) */
 .app-bg-image button[class*="border-input"]:not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -874,9 +899,19 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )) {
-  border-color: rgba(255, 255, 255, 0.3) !important;
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+.app-bg-image button[class*="border-input"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  header *,
+  nav *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)) svg {
+  color: #ffffff !important;
 }
 .app-bg-image button[class*="border-input"]:not(:where(
   [class*="bg-card"] *,
@@ -886,10 +921,44 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )):hover {
-  background-color: rgba(255, 255, 255, 0.12) !important;
+  background-color: #ffffff !important;
+  color: #0b1d45 !important;
+  border-color: #ffffff !important;
+}
+.app-bg-image button[class*="border-input"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  header *,
+  nav *,
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)):hover svg {
+  color: #0b1d45 !important;
 }
 
-/* Inputs / textareas / selects sueltos sobre azul */
+/* 10c. Link variant suelto */
+.app-bg-image button[class*="text-primary"][class*="underline-offset"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  header *,
+  footer *,
+  nav *,
+  [role="dialog"] *
+)) {
+  color: hsl(195, 90%, 80%) !important;
+}
+.app-bg-image button[class*="text-primary"][class*="underline-offset"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  header *,
+  footer *,
+  nav *,
+  [role="dialog"] *
+)):hover {
+  color: #ffffff !important;
+}
+
+/* ---------- 11. Inputs / textareas / selects sueltos ---------- */
 .app-bg-image > main input:not([type="checkbox"]):not([type="radio"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -920,21 +989,37 @@
   color: rgba(255, 255, 255, 0.55) !important;
 }
 
-/* Tabs (TabsList) sueltos */
+/* ---------- 12. Tabs sueltas ---------- */
 .app-bg-image > main [role="tablist"]:not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *
 )) {
   background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
 }
 .app-bg-image > main [role="tab"]:not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *
 )) {
-  color: rgba(255, 255, 255, 0.75) !important;
+  color: rgba(255, 255, 255, 0.78) !important;
 }
+.app-bg-image > main [role="tab"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *
+)) svg {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+.app-bg-image > main [role="tab"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *
+)):hover {
+  color: #ffffff !important;
+}
+/* Tab activo: fondo blanco → texto e iconos OSCUROS (regla anti blanco-sobre-blanco) */
 .app-bg-image > main [role="tab"][data-state="active"]:not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -943,8 +1028,15 @@
   background-color: #ffffff !important;
   color: #0b1d45 !important;
 }
+.app-bg-image > main [role="tab"][data-state="active"]:not(:where(
+  [class*="bg-card"] *,
+  [class*="bg-popover"] *,
+  [role="dialog"] *
+)) svg {
+  color: #0b1d45 !important;
+}
 
-/* Skeletons sueltos */
+/* ---------- 13. Skeletons sueltos ---------- */
 .app-bg-image > main :where(.bg-muted):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -954,7 +1046,7 @@
   background-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* Separadores sueltos */
+/* ---------- 14. Separadores sueltos ---------- */
 .app-bg-image > main :where(.border-border, .border-t, .border-b, .border-input):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -965,14 +1057,30 @@
   border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
-/* Badges secondary/outline sueltos */
-.app-bg-image > main [class*="bg-secondary"]:not(:where(
+/* ---------- 15. Badges secondary sueltos ---------- */
+.app-bg-image > main [class*="bg-secondary"]:not(button):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *
 )) {
   background-color: rgba(255, 255, 255, 0.15) !important;
   color: #ffffff !important;
+}
+
+/* ---------- 16. SAFETY NET: cualquier elemento con fondo blanco sólido
+   forzado debe garantizar texto/icono oscuro (anti blanco-sobre-blanco).
+   Esto cubre pills/buttons/badges que el usuario o un componente pinte blanco. */
+.app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not(:where(
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)) {
+  color: #0b1d45 !important;
+}
+.app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not(:where(
+  [role="dialog"] *,
+  [data-radix-popper-content-wrapper] *
+)) svg {
+  color: #0b1d45 !important;
 }
 
 
