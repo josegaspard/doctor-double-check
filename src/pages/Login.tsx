@@ -186,11 +186,11 @@ export default function Login() {
   return (
     <AppBackground className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="relative z-10">
+      <header className="app-shell-header">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="text-white hover:bg-white/15 hover:text-white">
+              <Button variant="outline" size="icon" onClick={() => navigate('/')} className="app-shell-icon-button">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
@@ -258,10 +258,10 @@ export default function Login() {
                       {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('login.loginTab')}
                     </Button>
                     
-                    <Button 
-                      type="button" 
-                      variant="link" 
-                      className="w-full text-muted-foreground"
+                      <Button 
+                        type="button" 
+                        variant="link" 
+                        className="w-full justify-center text-white/85 hover:text-white"
                       onClick={handleForgotPassword}
                       disabled={resetLoading}
                     >
@@ -272,7 +272,7 @@ export default function Login() {
                   
                   <div className="relative my-4 sm:my-6">
                     <Separator />
-                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-dark/80 px-2 text-xs text-white/75 backdrop-blur-sm">
                       {t('login.orContinueWith')}
                     </span>
                   </div>
@@ -321,7 +321,7 @@ export default function Login() {
                           {registerEmail}
                         </p>
                       </div>
-                      <Alert className="text-left">
+                      <Alert className="border-white/15 bg-white/5 text-left">
                         <Mail className="h-4 w-4" />
                         <AlertTitle>{t('login.confirmEmail')}</AlertTitle>
                         <AlertDescription>
@@ -434,7 +434,7 @@ export default function Login() {
                     
                     <div className="relative my-4 sm:my-6">
                       <Separator />
-                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-dark/80 px-2 text-xs text-white/75 backdrop-blur-sm">
                         {t('login.orContinueWith')}
                       </span>
                     </div>
