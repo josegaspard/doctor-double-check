@@ -464,14 +464,14 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               {/* Notifications - hidden on mobile (in bottom nav) */}
               {isAuthenticated && <span className="hidden sm:block"><NotificationBell /></span>}
               
-              {/* Wallet — fondo blanco con texto/icono oscuro garantizado por safety net */}
+              {/* Wallet — superficie clara: usa clase semántica, sin variant outline */}
               {(role === 'patient' || role === 'resident') && (
-                <Link to="/wallet" className="hidden sm:flex items-center">
-                  <Button variant="outline" size="sm" className="gap-1.5 h-9 items-center px-2.5 bg-white text-[#0b1d45] border-white/0 hover:bg-slate-100 hover:text-[#0b1d45]">
-                    <Wallet className="w-4 h-4" />
-                    <span className="hidden xl:inline"><AnimatedBalance balance={balance} /></span>
-                    <span className="xl:hidden"><AnimatedBalance balance={balance} /></span>
-                  </Button>
+                <Link to="/wallet" className="hidden sm:flex items-center app-header-surface-button">
+                  <span className="inline-flex gap-1.5 h-9 items-center px-3 rounded-md font-semibold text-sm bg-white text-[#0b1d45] hover:bg-slate-100 transition-colors shadow-sm">
+                    <Wallet className="w-4 h-4 text-[#0b1d45]" />
+                    <span className="hidden xl:inline text-[#0b1d45]"><AnimatedBalance balance={balance} /></span>
+                    <span className="xl:hidden text-[#0b1d45]"><AnimatedBalance balance={balance} /></span>
+                  </span>
                 </Link>
               )}
 
