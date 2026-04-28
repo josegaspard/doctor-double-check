@@ -420,6 +420,25 @@ export function ChatMessagesPanel({
                   </button>
                 )}
 
+                {replyTo && (
+                  <div className="flex items-start justify-between gap-2 p-2 rounded-lg bg-muted/60 border-l-2 border-primary">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-semibold text-primary">
+                        Respondiendo a {replyTo.senderName || 'mensaje'}
+                      </p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{replyTo.content.slice(0, 160)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setReplyTo(null)}
+                      aria-label="Cancelar respuesta"
+                      className="text-muted-foreground hover:text-foreground text-xs px-2 py-1 rounded hover:bg-muted"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex gap-2 items-center">
                   <Input
                     ref={inputRef}
