@@ -448,6 +448,12 @@ export default function VideoCall() {
             isDoctor={isDoctor}
           />
         )}
+        <PostConsultationSummaryDialog
+          open={showPostConsult}
+          onOpenChange={setShowPostConsult}
+          consultationId={consultationId}
+          onSaved={() => navigate('/chat')}
+        />
       </div>
     );
   }
