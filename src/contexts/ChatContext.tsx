@@ -39,6 +39,9 @@ export interface ChatMessage {
   content: string;
   isRead: boolean;
   createdAt: Date;
+  replyToId?: string;
+  replyToContent?: string;
+  replyToSenderName?: string;
 }
 
 interface ChatContextType {
@@ -51,7 +54,7 @@ interface ChatContextType {
     isDoubleCheck?: boolean,
     originalConsultationId?: string
   ) => Promise<{ success: boolean; session?: ChatSession; error?: string }>;
-  sendMessage: (sessionId: string, content: string) => Promise<void>;
+  sendMessage: (sessionId: string, content: string, replyToId?: string) => Promise<void>;
   getSession: (sessionId: string) => ChatSession | undefined;
   getSessionMessages: (sessionId: string) => ChatMessage[];
   getSessionsByUser: () => ChatSession[];
