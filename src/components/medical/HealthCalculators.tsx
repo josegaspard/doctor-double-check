@@ -16,7 +16,7 @@ import {
 // BMI Calculator with OMS Visual Table
 // ═══════════════════════════════════════════════════
 const BMI_RANGES = [
-  { min: 0, max: 16, label: 'Delgadez severa', color: 'bg-blue-600', textColor: 'text-blue-600', risk: 'Alto' },
+  { min: 0, max: 16, label: 'Bajo peso', color: 'bg-blue-600', textColor: 'text-blue-600', risk: 'Alto' },
   { min: 16, max: 17, label: 'Delgadez moderada', color: 'bg-blue-400', textColor: 'text-blue-500', risk: 'Moderado' },
   { min: 17, max: 18.5, label: 'Delgadez leve', color: 'bg-sky-400', textColor: 'text-sky-500', risk: 'Bajo' },
   { min: 18.5, max: 25, label: 'Normal', color: 'bg-emerald-500', textColor: 'text-emerald-600', risk: 'Normal' },
@@ -739,15 +739,12 @@ export function HealthCalculators() {
       </div>
 
       <Tabs defaultValue="imc" className="space-y-4">
-        <TabsList className="w-full grid grid-cols-3 sm:grid-cols-6 gap-1 h-auto p-1">
+        <TabsList className="w-full grid grid-cols-3 sm:grid-cols-5 gap-1 h-auto p-1">
           <TabsTrigger value="imc" className="text-[10px] sm:text-xs gap-1 py-1.5">
             <Scale className="w-3 h-3" /> IMC
           </TabsTrigger>
           <TabsTrigger value="cardio" className="text-[10px] sm:text-xs gap-1 py-1.5">
             <Heart className="w-3 h-3" /> Cardio
-          </TabsTrigger>
-          <TabsTrigger value="glasgow" className="text-[10px] sm:text-xs gap-1 py-1.5">
-            <Brain className="w-3 h-3" /> Glasgow
           </TabsTrigger>
           <TabsTrigger value="renal" className="text-[10px] sm:text-xs gap-1 py-1.5">
             <Droplets className="w-3 h-3" /> Renal
@@ -765,9 +762,6 @@ export function HealthCalculators() {
         </TabsContent>
         <TabsContent value="cardio">
           <CardiovascularRisk />
-        </TabsContent>
-        <TabsContent value="glasgow">
-          <GlasgowScale />
         </TabsContent>
         <TabsContent value="renal">
           <CreatinineClearance />
