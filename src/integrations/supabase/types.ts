@@ -2772,6 +2772,73 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_vaccinations: {
+        Row: {
+          application_date: string | null
+          applied: boolean
+          child_id: string | null
+          created_at: string
+          dose_number: number
+          id: string
+          last_reminded_at: string | null
+          lot: string | null
+          notes: string | null
+          patient_id: string
+          updated_at: string
+          vaccine_key: string
+        }
+        Insert: {
+          application_date?: string | null
+          applied?: boolean
+          child_id?: string | null
+          created_at?: string
+          dose_number?: number
+          id?: string
+          last_reminded_at?: string | null
+          lot?: string | null
+          notes?: string | null
+          patient_id: string
+          updated_at?: string
+          vaccine_key: string
+        }
+        Update: {
+          application_date?: string | null
+          applied?: boolean
+          child_id?: string | null
+          created_at?: string
+          dose_number?: number
+          id?: string
+          last_reminded_at?: string | null
+          lot?: string | null
+          notes?: string | null
+          patient_id?: string
+          updated_at?: string
+          vaccine_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_vaccinations_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_vaccinations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_vaccinations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payout_settings: {
         Row: {
           auto_payout_enabled: boolean | null
@@ -2942,6 +3009,7 @@ export type Database = {
           storage_used_bytes: number
           updated_at: string
           username: string | null
+          vaccine_reminders_enabled: boolean
         }
         Insert: {
           avatar_url?: string | null
@@ -2960,6 +3028,7 @@ export type Database = {
           storage_used_bytes?: number
           updated_at?: string
           username?: string | null
+          vaccine_reminders_enabled?: boolean
         }
         Update: {
           avatar_url?: string | null
@@ -2978,6 +3047,7 @@ export type Database = {
           storage_used_bytes?: number
           updated_at?: string
           username?: string | null
+          vaccine_reminders_enabled?: boolean
         }
         Relationships: []
       }
