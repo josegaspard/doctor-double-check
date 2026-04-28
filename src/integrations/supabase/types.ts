@@ -810,6 +810,33 @@ export type Database = {
           },
         ]
       }
+      disclaimer_acceptances: {
+        Row: {
+          accepted_at: string
+          context: Json | null
+          disclaimer_key: string
+          disclaimer_version: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          context?: Json | null
+          disclaimer_key: string
+          disclaimer_version?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          context?: Json | null
+          disclaimer_key?: string
+          disclaimer_version?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       doctor_availability: {
         Row: {
           created_at: string
