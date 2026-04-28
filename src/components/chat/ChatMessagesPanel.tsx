@@ -38,9 +38,13 @@ interface ChatMessage {
   id: string;
   sessionId: string;
   senderId: string;
+  senderName?: string;
   content: string;
   createdAt: Date;
   isRead: boolean;
+  replyToId?: string;
+  replyToContent?: string;
+  replyToSenderName?: string;
 }
 
 interface Props {
