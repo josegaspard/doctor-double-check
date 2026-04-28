@@ -69,6 +69,7 @@ const COUNTRY_CODES = [
 ];
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
+import { VaccinationSchedule } from '@/components/medical/VaccinationSchedule';
 import { ResidentBalanceCard } from '@/components/resident/ResidentBalanceCard';
 
 type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired' | null;
@@ -846,6 +847,9 @@ export default function UserProfile() {
 
         {/* Clinical History Card - Patient Only */}
         {role === 'patient' && <PatientClinicalHistoryCard />}
+
+        {/* Vaccination Schedule - Patient Only */}
+        {role === 'patient' && <VaccinationSchedule />}
 
         {/* Professional Profile Card - Doctor */}
         {role === 'doctor' && doctorProfile && (
