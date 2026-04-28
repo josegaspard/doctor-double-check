@@ -489,39 +489,76 @@ export default function VideoCall() {
                     {t('videoCall.withParticipant')} <span className="font-semibold text-foreground">{otherParticipantName}</span>
                   </p>
                 )}
+
+                {/* Doctor credentials — visible to patient (and as confirmation to doctor) */}
+                {doctorCreds && (
+                  <div className="mt-3 mb-4 p-3 rounded-lg bg-primary/5 border border-primary/20 max-w-md w-full text-left">
+                    <p className="text-xs uppercase tracking-wide text-primary mb-1 flex items-center gap-1">
+                      <BadgeCheck className="w-3 h-3" /> Médico tratante
+                    </p>
+                    <p className="text-sm font-semibold">{doctorCreds.name}</p>
+                    {doctorCreds.specialty && <p className="text-xs text-muted-foreground">{doctorCreds.specialty}</p>}
+                    <div className="flex flex-wrap gap-3 mt-1 text-[11px] text-muted-foreground">
+                      {doctorCreds.cedula && <span>Cédula: <strong>{doctorCreds.cedula}</strong></span>}
+                      {doctorCreds.cofepris && <span>COFEPRIS: <strong>{doctorCreds.cofepris}</strong></span>}
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-sm text-muted-foreground mb-8 max-w-md">
-                  {isDoctor ? t('videoCall.doctorStartInfo') : t('videoCall.patientJoinInfo')}
+                  {isDoctor
+                    ? t('videoCall.doctorStartInfo')
+                    : (autoJoin
+                        ? t('videoCall.patientJoinInfo')
+                        : 'Espera a que tu médico inicie la videollamada. Recibirás una notificación.')}
                 </p>
-                <Button size="lg" onClick={handleStart} className="gap-2 px-8 h-12 text-base">
-                  <Video className="w-5 h-5" />
-                  {isDoctor ? t('videoCall.startButton') : t('videoCall.joinButton')}
-                </Button>
+
+                {/* Patient can only JOIN (autoJoin), never start. Doctor can always start. */}
+                {(isDoctor || autoJoin) ? (
+                  <Button size="lg" onClick={handleStart} className="gap-2 px-8 h-12 text-base">
+                    <Video className="w-5 h-5" />
+                    {isDoctor ? t('videoCall.startButton') : t('videoCall.joinButton')}
+                  </Button>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground italic">Esperando que el médico inicie…</p>
+                  </div>
+                )}
               </div>
             )}
 
             {isInCall && (
-              <div className="relative bg-black rounded-lg overflow-hidden">
-                <div className="w-full aspect-video">
-                  {videoLayoutJSX}
+              <div className={isDoctor ? "grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0" : ""}>
+                <div className="relative bg-black rounded-lg overflow-hidden">
+                  <div className="w-full aspect-video">
+                    {videoLayoutJSX}
+                  </div>
+                  <AnimatePresence>
+                    {showChat && (
+                      <VideoCallChat messages={chatMessages} onSend={handleSendChat} onClose={() => setShowChat(false)} />
+                    )}
+                  </AnimatePresence>
+                  <VideoCallControls
+                    isMuted={isMuted}
+                    isCameraOff={isCameraOff}
+                    isScreenSharing={isScreenSharing}
+                    timeElapsed={timer.timeElapsed}
+                    onToggleMute={toggleMute}
+                    onToggleCamera={toggleCamera}
+                    onToggleScreenShare={toggleScreenShare}
+                    onToggleChat={() => setShowChat(!showChat)}
+                    onEndCall={handleEndCall}
+                    showChat={showChat}
+                    isDoctor={isDoctor}
+                  />
                 </div>
-                <AnimatePresence>
-                  {showChat && (
-                    <VideoCallChat messages={chatMessages} onSend={handleSendChat} onClose={() => setShowChat(false)} />
-                  )}
-                </AnimatePresence>
-                <VideoCallControls
-                  isMuted={isMuted}
-                  isCameraOff={isCameraOff}
-                  isScreenSharing={isScreenSharing}
-                  timeElapsed={timer.timeElapsed}
-                  onToggleMute={toggleMute}
-                  onToggleCamera={toggleCamera}
-                  onToggleScreenShare={toggleScreenShare}
-                  onToggleChat={() => setShowChat(!showChat)}
-                  onEndCall={handleEndCall}
-                  showChat={showChat}
-                  isDoctor={isDoctor}
-                />
+                {/* Lateral patient record panel — doctor only, desktop */}
+                {isDoctor && (
+                  <div className="hidden lg:block bg-card border-l">
+                    <PatientRecordPanel patientId={patientId} enabled={isDoctor} />
+                  </div>
+                )}
               </div>
             )}
 
@@ -537,7 +574,15 @@ export default function VideoCall() {
                 <p className="text-sm text-muted-foreground mb-6">
                   {t('videoCall.callEndedWith').replace('{name}', otherParticipantName)}
                 </p>
-                <Button onClick={() => navigate('/chat')}>{t('videoCall.backToChat')}</Button>
+                <div className="flex gap-2">
+                  {isDoctor && (
+                    <Button variant="outline" onClick={() => setShowPostConsult(true)}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Informe post-consulta
+                    </Button>
+                  )}
+                  <Button onClick={() => navigate('/chat')}>{t('videoCall.backToChat')}</Button>
+                </div>
               </div>
             )}
 
@@ -555,6 +600,14 @@ export default function VideoCall() {
             )}
           </CardContent>
         </Card>
+
+        {/* Post-consultation summary dialog (auto-opens for doctor on hangup) */}
+        <PostConsultationSummaryDialog
+          open={showPostConsult}
+          onOpenChange={setShowPostConsult}
+          consultationId={consultationId}
+          onSaved={() => navigate('/chat')}
+        />
       </div>
     </MainLayout>
   );
