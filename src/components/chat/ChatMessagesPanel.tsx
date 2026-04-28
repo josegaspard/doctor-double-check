@@ -57,7 +57,7 @@ interface Props {
   isMobile: boolean;
   hidden?: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSend: () => void;
+  onSend: (replyToId?: string) => void;
   onCloseSession: () => void;
   onBack?: () => void;
   onFileUploaded: (url: string, name: string, type: string) => void;
