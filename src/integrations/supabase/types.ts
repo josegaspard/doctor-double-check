@@ -444,6 +444,84 @@ export type Database = {
         }
         Relationships: []
       }
+      child_profiles: {
+        Row: {
+          allergies: string | null
+          blood_type: string | null
+          chronic_conditions: string | null
+          created_at: string
+          current_medications: string | null
+          date_of_birth: string
+          extended_data: Json
+          height_cm: number | null
+          id: string
+          inherited_user_id: string | null
+          invited_at: string | null
+          name: string
+          notes: string | null
+          parent_id: string
+          sex: string | null
+          updated_at: string
+          vaccines: Json
+          weight_kg: number | null
+        }
+        Insert: {
+          allergies?: string | null
+          blood_type?: string | null
+          chronic_conditions?: string | null
+          created_at?: string
+          current_medications?: string | null
+          date_of_birth: string
+          extended_data?: Json
+          height_cm?: number | null
+          id?: string
+          inherited_user_id?: string | null
+          invited_at?: string | null
+          name: string
+          notes?: string | null
+          parent_id: string
+          sex?: string | null
+          updated_at?: string
+          vaccines?: Json
+          weight_kg?: number | null
+        }
+        Update: {
+          allergies?: string | null
+          blood_type?: string | null
+          chronic_conditions?: string | null
+          created_at?: string
+          current_medications?: string | null
+          date_of_birth?: string
+          extended_data?: Json
+          height_cm?: number | null
+          id?: string
+          inherited_user_id?: string | null
+          invited_at?: string | null
+          name?: string
+          notes?: string | null
+          parent_id?: string
+          sex?: string | null
+          updated_at?: string
+          vaccines?: Json
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_profiles_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_profiles_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinical_case_comments: {
         Row: {
           author_id: string
@@ -2566,6 +2644,7 @@ export type Database = {
           date_of_birth: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          extended_data: Json
           family_cancer: boolean | null
           family_cancer_detail: string | null
           family_diabetes: boolean | null
@@ -2610,6 +2689,7 @@ export type Database = {
           date_of_birth?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          extended_data?: Json
           family_cancer?: boolean | null
           family_cancer_detail?: string | null
           family_diabetes?: boolean | null
@@ -2654,6 +2734,7 @@ export type Database = {
           date_of_birth?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          extended_data?: Json
           family_cancer?: boolean | null
           family_cancer_detail?: string | null
           family_diabetes?: boolean | null
