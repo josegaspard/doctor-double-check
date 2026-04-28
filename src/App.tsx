@@ -88,6 +88,7 @@ const AdminSiteSettings = React.lazy(() => import("./pages/AdminSiteSettings"));
 const AdminRefunds = React.lazy(() => import("./pages/AdminRefunds"));
 const AdminPayoutSettings = React.lazy(() => import("./pages/AdminPayoutSettings"));
 const AdminPayouts = React.lazy(() => import("./pages/AdminPayouts"));
+const SubscribersList = React.lazy(() => import("./pages/SubscribersList"));
 const AdminInvoiceReview = React.lazy(() => import("./pages/AdminInvoiceReview"));
 const Onboarding = React.lazy(() => import("./pages/Onboarding"));
 const DoctorBankAccount = React.lazy(() => import("./pages/DoctorBankAccount"));
@@ -212,6 +213,7 @@ const App = () => {
                       <Route path="/doctor/recordings" element={<DoctorRecordings />} />
                       <Route path="/doctor/content" element={<DoctorContentLibrary />} />
                       <Route path="/doctor/go-live" element={<DoctorGoLive />} />
+                      <Route path="/doctor/subscribers" element={<SubscribersList />} />
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />
                       <Route path="/medical-record" element={<MedicalRecord />} />
