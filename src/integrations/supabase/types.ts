@@ -4259,6 +4259,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      search_patients_for_doctor: {
+        Args: { p_limit?: number; p_term: string }
+        Returns: {
+          avatar_url: string
+          country_code: string
+          email: string
+          name: string
+          user_id: string
+        }[]
+      }
       user_has_vault_access: {
         Args: { p_file_id: string; p_user_id: string }
         Returns: boolean
