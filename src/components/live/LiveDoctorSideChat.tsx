@@ -71,7 +71,7 @@ export function LiveDoctorSideChat({ liveId }: LiveDoctorSideChatProps) {
       console.error('side-chat load error', error);
       return;
     }
-    setMessages((data || []) as SideMessage[]);
+    setMessages(((data || []) as unknown) as SideMessage[]);
   }, [liveId, allowed]);
 
   useEffect(() => {
