@@ -65,12 +65,12 @@ export function useDisclaimer(disclaimerKey: string = 'disclaimer_orientacion_me
 
   const accept = async (context: Record<string, unknown> = {}) => {
     if (!user) return false;
-    const { error } = await supabase.from('disclaimer_acceptances').insert({
+    const { error } = await supabase.from('disclaimer_acceptances').insert([{
       user_id: user.id,
       disclaimer_key: disclaimerKey,
       disclaimer_version: content.version,
-      context,
-    });
+      context: context as never,
+    }]);
     if (!error) setAccepted(true);
     return !error;
   };
