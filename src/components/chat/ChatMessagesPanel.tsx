@@ -102,6 +102,7 @@ export function ChatMessagesPanel({
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [paywallProcessing, setPaywallProcessing] = useState(false);
   const [paywallError, setPaywallError] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const { t } = useLanguage();
   const { user } = useAuth();
   const { balance, canAfford } = useWallet();
@@ -221,7 +222,8 @@ export function ChatMessagesPanel({
       setPaywallOpen(true);
       return;
     }
-    onSend();
+    onSend(replyTo?.id);
+    setReplyTo(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -361,9 +363,10 @@ export function ChatMessagesPanel({
                 {messages.map(msg => (
                   <ChatMessageBubble
                     key={msg.id}
-                    message={msg}
+                    message={msg as any}
                     isOwn={msg.senderId === userId}
                     isSessionClosed={isClosed}
+                    onReply={isClosed ? undefined : (m) => setReplyTo(m as any)}
                   />
                 ))}
                 {otherUserTyping && !isClosed && (
