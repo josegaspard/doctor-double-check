@@ -224,9 +224,9 @@ export default function Chat() {
 
   useEffect(() => { setSelectedSession(null); }, [activeTab]);
 
-  const handleSend = async () => {
+  const handleSend = async (replyToId?: string) => {
     if (!newMessage.trim() || !selectedSession || isSessionClosed) return;
-    await sendMessage(selectedSession, newMessage.trim());
+    await sendMessage(selectedSession, newMessage.trim(), replyToId);
     setNewMessage('');
     setIsTyping(false);
   };
