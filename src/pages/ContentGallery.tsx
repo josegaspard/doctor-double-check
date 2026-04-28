@@ -511,7 +511,7 @@ export default function ContentGallery() {
                 </TabsTrigger>
                 <TabsTrigger value="purchased" className="gap-1.5 text-xs sm:text-sm">
                   <ShoppingBag className="w-3.5 h-3.5" />
-                  {language === 'es' ? 'Comprados' : 'Purchased'}
+                  {language === 'es' ? 'Pagado' : 'Paid'}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
