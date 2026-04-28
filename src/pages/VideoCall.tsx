@@ -201,6 +201,9 @@ export default function VideoCall() {
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState<InCallMessage[]>([]);
   const [otherParticipantName, setOtherParticipantName] = useState('');
+  const [patientId, setPatientId] = useState<string | null>(null);
+  const [doctorCreds, setDoctorCreds] = useState<{ name: string; specialty: string | null; cedula: string | null; cofepris: string | null } | null>(null);
+  const [showPostConsult, setShowPostConsult] = useState(false);
 
   const dailyContainerRef = useRef<HTMLDivElement>(null);
   const chatChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
