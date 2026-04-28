@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Image, Download, ExternalLink } from 'lucide-react';
+import { FileText, Image, Download, ExternalLink, Reply, CornerDownRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChatMessage } from '@/contexts/ChatContext';
@@ -11,9 +11,10 @@ interface ChatMessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
   isSessionClosed: boolean;
+  onReply?: (message: ChatMessage) => void;
 }
 
-export function ChatMessageBubble({ message, isOwn, isSessionClosed }: ChatMessageBubbleProps) {
+export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: ChatMessageBubbleProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   // Stable per-bubble watermark sessionId — one per video preview, persists across re-renders
@@ -133,7 +134,16 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed }: ChatMessa
   };
 
   return (
-    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}>
+    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group items-end gap-1`}>
+      {!isOwn && onReply && !isSessionClosed && (
+        <button
+          onClick={() => onReply(message)}
+          aria-label="Responder a este mensaje"
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
+        >
+          <Reply className="w-3.5 h-3.5" />
+        </button>
+      )}
       <div className={`
         relative max-w-[85%] sm:max-w-[75%] px-4 py-2.5 
         ${isOwn 
@@ -149,6 +159,15 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed }: ChatMessa
             }`
         }
       `}>
+        {message.replyToId && message.replyToContent && (
+          <div className={`mb-2 pl-2 border-l-2 ${isOwn ? 'border-white/40' : 'border-primary/40'} text-xs opacity-80`}>
+            <div className="flex items-center gap-1 font-medium">
+              <CornerDownRight className="w-3 h-3" />
+              <span>{message.replyToSenderName || 'Mensaje'}</span>
+            </div>
+            <p className="line-clamp-2 mt-0.5 italic">{message.replyToContent.slice(0, 140)}</p>
+          </div>
+        )}
         {renderMessageContent(message.content)}
         <p className={`
           text-[10px] mt-1.5 flex items-center justify-end gap-1
@@ -160,6 +179,15 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed }: ChatMessa
           {format(message.createdAt, 'dd MMM, HH:mm', { locale: es })}
         </p>
       </div>
+      {isOwn && onReply && !isSessionClosed && (
+        <button
+          onClick={() => onReply(message)}
+          aria-label="Responder a este mensaje"
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
+        >
+          <Reply className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Radio, Upload, UserCircle, Newspaper, MessageSquare, ShoppingBag } from 'lucide-react';
+import { Radio, Upload, UserCircle, Newspaper, MessageSquare, ShoppingBag, Users } from 'lucide-react';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
 
 interface Props {
@@ -70,6 +70,15 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
       requiresApproval: false,
       onClick: () => navigate('/chat'),
       buttonLabel: 'Ver Chats',
+    },
+    {
+      title: 'Mis suscriptores',
+      description: 'Consulta quién está suscrito a tu contenido',
+      icon: Users,
+      color: 'primary',
+      requiresApproval: false,
+      onClick: () => navigate('/doctor/subscribers'),
+      buttonLabel: 'Ver lista',
     },
   ];
 

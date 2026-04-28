@@ -38,9 +38,13 @@ interface ChatMessage {
   id: string;
   sessionId: string;
   senderId: string;
+  senderName?: string;
   content: string;
   createdAt: Date;
   isRead: boolean;
+  replyToId?: string;
+  replyToContent?: string;
+  replyToSenderName?: string;
 }
 
 interface Props {
@@ -57,7 +61,7 @@ interface Props {
   isMobile: boolean;
   hidden?: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSend: () => void;
+  onSend: (replyToId?: string) => void;
   onCloseSession: () => void;
   onBack?: () => void;
   onFileUploaded: (url: string, name: string, type: string) => void;
@@ -102,6 +106,7 @@ export function ChatMessagesPanel({
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [paywallProcessing, setPaywallProcessing] = useState(false);
   const [paywallError, setPaywallError] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const { t } = useLanguage();
   const { user } = useAuth();
   const { balance, canAfford } = useWallet();
@@ -221,7 +226,8 @@ export function ChatMessagesPanel({
       setPaywallOpen(true);
       return;
     }
-    onSend();
+    onSend(replyTo?.id);
+    setReplyTo(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -361,9 +367,10 @@ export function ChatMessagesPanel({
                 {messages.map(msg => (
                   <ChatMessageBubble
                     key={msg.id}
-                    message={msg}
+                    message={msg as any}
                     isOwn={msg.senderId === userId}
                     isSessionClosed={isClosed}
+                    onReply={isClosed ? undefined : (m) => setReplyTo(m as any)}
                   />
                 ))}
                 {otherUserTyping && !isClosed && (
@@ -415,6 +422,25 @@ export function ChatMessagesPanel({
                         : 'Comprar'}
                     </Badge>
                   </button>
+                )}
+
+                {replyTo && (
+                  <div className="flex items-start justify-between gap-2 p-2 rounded-lg bg-muted/60 border-l-2 border-primary">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-semibold text-primary">
+                        Respondiendo a {replyTo.senderName || 'mensaje'}
+                      </p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{replyTo.content.slice(0, 160)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setReplyTo(null)}
+                      aria-label="Cancelar respuesta"
+                      className="text-muted-foreground hover:text-foreground text-xs px-2 py-1 rounded hover:bg-muted"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 )}
 
                 <div className="flex gap-2 items-center">

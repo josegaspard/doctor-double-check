@@ -364,6 +364,7 @@ export type Database = {
           created_at: string
           id: string
           is_read: boolean
+          reply_to_id: string | null
           sender_id: string
           session_id: string
         }
@@ -372,6 +373,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean
+          reply_to_id?: string | null
           sender_id: string
           session_id: string
         }
@@ -380,10 +382,18 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean
+          reply_to_id?: string | null
           sender_id?: string
           session_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chat_messages_session_id_fkey"
             columns: ["session_id"]
@@ -1975,6 +1985,54 @@ export type Database = {
             columns: ["live_id"]
             isOneToOne: false
             referencedRelation: "lives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_doctor_chat: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          live_id: string
+          reply_to_id: string | null
+          user_id: string
+          user_name: string
+          user_specialty: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          live_id: string
+          reply_to_id?: string | null
+          user_id: string
+          user_name: string
+          user_specialty?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          live_id?: string
+          reply_to_id?: string | null
+          user_id?: string
+          user_name?: string
+          user_specialty?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_doctor_chat_live_id_fkey"
+            columns: ["live_id"]
+            isOneToOne: false
+            referencedRelation: "lives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_doctor_chat_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "live_doctor_chat"
             referencedColumns: ["id"]
           },
         ]
@@ -4172,6 +4230,20 @@ export type Database = {
           total_consultations: number
           total_count: number
           user_id: string
+        }[]
+      }
+      get_my_subscribers: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email: string
+          expires_at: string
+          is_active: boolean
+          name: string
+          price_paid: number
+          subscriber_id: string
+          tier: Database["public"]["Enums"]["subscription_tier"]
         }[]
       }
       get_price_for_user: {

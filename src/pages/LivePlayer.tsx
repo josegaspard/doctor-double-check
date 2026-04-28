@@ -18,6 +18,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { LiveChat } from '@/components/live/LiveChat';
+import { LiveDoctorSideChat } from '@/components/live/LiveDoctorSideChat';
 import { AnimatedViewerCount } from '@/components/live/AnimatedViewerCount';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -652,6 +653,13 @@ export default function LivePlayer() {
             {showChat && (
               <div className="h-[300px] sm:h-[350px] lg:h-[400px]">
                 <LiveChat liveId={live.id} isOwner={isOwner} liveStartedAt={live.startedAt} />
+              </div>
+            )}
+
+            {/* Side-chat: only doctors and residents see this private channel */}
+            {(role === 'doctor' || role === 'resident') && (
+              <div className="h-[260px] sm:h-[300px]">
+                <LiveDoctorSideChat liveId={live.id} />
               </div>
             )}
 

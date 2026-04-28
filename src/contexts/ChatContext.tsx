@@ -39,6 +39,9 @@ export interface ChatMessage {
   content: string;
   isRead: boolean;
   createdAt: Date;
+  replyToId?: string;
+  replyToContent?: string;
+  replyToSenderName?: string;
 }
 
 interface ChatContextType {
@@ -51,7 +54,7 @@ interface ChatContextType {
     isDoubleCheck?: boolean,
     originalConsultationId?: string
   ) => Promise<{ success: boolean; session?: ChatSession; error?: string }>;
-  sendMessage: (sessionId: string, content: string) => Promise<void>;
+  sendMessage: (sessionId: string, content: string, replyToId?: string) => Promise<void>;
   getSession: (sessionId: string) => ChatSession | undefined;
   getSessionMessages: (sessionId: string) => ChatMessage[];
   getSessionsByUser: () => ChatSession[];
@@ -221,18 +224,25 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           .in('id', senderIds);
 
         const profileMap = new Map(profiles?.map(p => [p.id, p.name]) || []);
+        const msgMap = new Map(messagesData.map((m: any) => [m.id, m]));
 
         setMessages(prev => ({
           ...prev,
-          [sessionId]: messagesData.map(m => ({
-            id: m.id,
-            sessionId: m.session_id,
-            senderId: m.sender_id,
-            senderName: profileMap.get(m.sender_id),
-            content: m.content,
-            isRead: m.is_read,
-            createdAt: new Date(m.created_at),
-          })),
+          [sessionId]: messagesData.map((m: any) => {
+            const replyMsg = m.reply_to_id ? msgMap.get(m.reply_to_id) as any : null;
+            return {
+              id: m.id,
+              sessionId: m.session_id,
+              senderId: m.sender_id,
+              senderName: profileMap.get(m.sender_id),
+              content: m.content,
+              isRead: m.is_read,
+              createdAt: new Date(m.created_at),
+              replyToId: m.reply_to_id || undefined,
+              replyToContent: replyMsg?.content,
+              replyToSenderName: replyMsg ? profileMap.get(replyMsg.sender_id) : undefined,
+            };
+          }),
         }));
       }
     } catch (error) {
@@ -259,7 +269,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },
         async (payload) => {
-          const newMessage = payload.new as { id: string; session_id: string; sender_id: string; content: string; is_read: boolean; created_at: string };
+          const newMessage = payload.new as { id: string; session_id: string; sender_id: string; content: string; is_read: boolean; created_at: string; reply_to_id?: string | null };
           
           // Fetch sender name for the new message
           let senderName: string | undefined;
@@ -276,6 +286,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             const existing = prev[newMessage.session_id] || [];
             // Avoid duplicates
             if (existing.some(m => m.id === newMessage.id)) return prev;
+            const replyMsg = newMessage.reply_to_id ? existing.find(m => m.id === newMessage.reply_to_id) : null;
             return {
               ...prev,
               [newMessage.session_id]: [...existing, {
@@ -286,6 +297,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 content: newMessage.content,
                 isRead: newMessage.is_read,
                 createdAt: new Date(newMessage.created_at),
+                replyToId: newMessage.reply_to_id || undefined,
+                replyToContent: replyMsg?.content,
+                replyToSenderName: replyMsg?.senderName,
               }],
             };
           });
@@ -402,7 +416,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const sendMessage = async (sessionId: string, content: string) => {
+  const sendMessage = async (sessionId: string, content: string, replyToId?: string) => {
     if (!user?.id) return;
 
     // Validate message content
@@ -423,7 +437,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           session_id: sessionId,
           sender_id: user.id,
           content: trimmed,
-        });
+          reply_to_id: replyToId || null,
+        } as any);
 
       // Update session last message — preview limpio (📷 Foto / 📎 Archivo / 📋 Receta) en lugar de [Imagen: ...]
       const { formatMessagePreview } = await import('@/lib/utils');
