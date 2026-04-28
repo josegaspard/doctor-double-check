@@ -469,13 +469,13 @@ export default function ContentGallery() {
               {/* Access filter FIRST */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Acceso' : 'Access'}
+                  {language === 'es' ? 'Filtros' : 'Filters'}
                 </h4>
                 <div className="space-y-0.5">
                   {[
                     { value: 'all', label: language === 'es' ? 'Todo' : 'All', icon: Globe },
                     { value: 'new', label: language === 'es' ? 'Gratis' : 'Free', icon: Sparkles },
-                    { value: 'purchased', label: language === 'es' ? 'Comprados' : 'Purchased', icon: ShoppingBag },
+                    { value: 'purchased', label: language === 'es' ? 'Pagado' : 'Paid', icon: ShoppingBag },
                   ].map(tab => (
                     <button
                       key={tab.value}
@@ -493,71 +493,6 @@ export default function ContentGallery() {
                 </div>
               </div>
 
-              <div className="border-t border-border my-3" />
-
-              {/* Specialties */}
-              <div>
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Especialidad' : 'Specialty'}
-                </h4>
-                <SearchableFilter
-                  options={specialtyOptions}
-                  value={selectedSpecialty}
-                  onChange={setSelectedSpecialty}
-                  placeholder={language === 'es' ? 'Especialidad' : 'Specialty'}
-                  searchPlaceholder={language === 'es' ? 'Buscar especialidad...' : 'Search specialty...'}
-                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
-                  icon={Stethoscope}
-                  allLabel={language === 'es' ? 'Todas' : 'All'}
-                />
-              </div>
-
-              <div className="border-t border-border my-3" />
-
-              {/* Content Type */}
-              <div>
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Tipo de contenido' : 'Content Type'}
-                </h4>
-                <div className="space-y-0.5">
-                  {CONTENT_TYPES.map(ct => (
-                    <button
-                      key={ct.value}
-                      onClick={() => setTypeFilter(ct.value)}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                        typeFilter === ct.value
-                          ? 'bg-accent text-accent-foreground shadow-sm'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <ct.icon className="w-3 h-3 flex-shrink-0" />
-                      {ct.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Categories (dynamic) */}
-              {categories.length > 0 && (
-                <>
-                  <div className="border-t border-border my-3" />
-                  <div>
-                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                      {language === 'es' ? 'Categorías' : 'Categories'}
-                    </h4>
-                    <SearchableFilter
-                      options={categories}
-                      value={categoryFilter === 'all' ? '' : categoryFilter}
-                      onChange={(val) => setCategoryFilter(val || 'all')}
-                      placeholder={language === 'es' ? 'Categoría' : 'Category'}
-                      searchPlaceholder={language === 'es' ? 'Buscar categoría...' : 'Search category...'}
-                      emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
-                      icon={Tag}
-                      allLabel={language === 'es' ? 'Todas' : 'All'}
-                    />
-                  </div>
-                </>
-              )}
             </aside>
           )}
 
@@ -576,7 +511,7 @@ export default function ContentGallery() {
                 </TabsTrigger>
                 <TabsTrigger value="purchased" className="gap-1.5 text-xs sm:text-sm">
                   <ShoppingBag className="w-3.5 h-3.5" />
-                  {language === 'es' ? 'Comprados' : 'Purchased'}
+                  {language === 'es' ? 'Pagado' : 'Paid'}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
