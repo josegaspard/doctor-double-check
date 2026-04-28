@@ -363,7 +363,11 @@ export default function VideoCall() {
   const handleEndCall = useCallback(async () => {
     timer.stop();
     endCall();
-  }, [endCall, timer]);
+    // Doctor: open post-consultation summary dialog automatically
+    if (isDoctor && consultationId) {
+      setTimeout(() => setShowPostConsult(true), 400);
+    }
+  }, [endCall, timer, isDoctor, consultationId]);
 
   const handleSendChat = (text: string) => {
     chatChannelRef.current?.send({
