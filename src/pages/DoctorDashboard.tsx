@@ -27,6 +27,7 @@ import { DoctorQuickActions } from '@/components/doctor/DoctorQuickActions';
 import { DoctorStatusAlert } from '@/components/doctor/DoctorStatusAlert';
 import { DoctorProfileCard } from '@/components/doctor/DoctorProfileCard';
 import { DoctorPatientsList } from '@/components/doctor/DoctorPatientsList';
+import { DoctorPatientSearch } from '@/components/doctor/DoctorPatientSearch';
 import { DoctorResidentRequests } from '@/components/doctor/DoctorResidentRequests';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -125,6 +126,7 @@ export default function DoctorDashboard() {
             {/* ── PACIENTES ── */}
             <section className="space-y-3">
               <SectionHeader>Pacientes</SectionHeader>
+              <DoctorPatientSearch />
               <DoctorPatientsList />
             </section>
 

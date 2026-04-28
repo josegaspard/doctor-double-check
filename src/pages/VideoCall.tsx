@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VideoCallControls } from '@/components/videocall/VideoCallControls';
 import { VideoCallChat } from '@/components/videocall/VideoCallChat';
-import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { PatientRecordPanel } from '@/components/videocall/PatientRecordPanel';
+import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
+import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle, BadgeCheck, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 import type { DailyCall } from '@daily-co/daily-js';
@@ -199,6 +201,9 @@ export default function VideoCall() {
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState<InCallMessage[]>([]);
   const [otherParticipantName, setOtherParticipantName] = useState('');
+  const [patientId, setPatientId] = useState<string | null>(null);
+  const [doctorCreds, setDoctorCreds] = useState<{ name: string; specialty: string | null; cedula: string | null; cofepris: string | null } | null>(null);
+  const [showPostConsult, setShowPostConsult] = useState(false);
 
   const dailyContainerRef = useRef<HTMLDivElement>(null);
   const chatChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -236,7 +241,7 @@ export default function VideoCall() {
     };
   }, [callObject, callState]);
 
-  // Fetch other participant name
+  // Fetch other participant name + doctor credentials + patient id (for record panel)
   useEffect(() => {
     if (!consultationId) return;
     (async () => {
@@ -245,10 +250,30 @@ export default function VideoCall() {
         .select('doctor_id, patient_id')
         .eq('id', consultationId)
         .single();
-      if (data) {
-        const otherId = isDoctor ? data.patient_id : data.doctor_id;
-        const { data: profile } = await supabase.from('profiles').select('name').eq('id', otherId).single();
-        setOtherParticipantName(profile?.name || t('videoCall.participant'));
+      if (!data) return;
+      setPatientId(data.patient_id);
+      const otherId = isDoctor ? data.patient_id : data.doctor_id;
+      const { data: profile } = await supabase.from('profiles').select('name').eq('id', otherId).single();
+      setOtherParticipantName(profile?.name || t('videoCall.participant'));
+
+      // Doctor credentials (visible to patient and doctor)
+      const { data: doctorProfile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', data.doctor_id)
+        .maybeSingle();
+      const { data: dp } = await supabase
+        .from('doctor_profiles')
+        .select('specialty, cedula_profesional, cofepris_permit')
+        .eq('user_id', data.doctor_id)
+        .maybeSingle();
+      if (doctorProfile && dp) {
+        setDoctorCreds({
+          name: doctorProfile.name || '',
+          specialty: dp.specialty,
+          cedula: dp.cedula_profesional,
+          cofepris: dp.cofepris_permit,
+        });
       }
     })();
   }, [consultationId, isDoctor]);
@@ -338,7 +363,11 @@ export default function VideoCall() {
   const handleEndCall = useCallback(async () => {
     timer.stop();
     endCall();
-  }, [endCall, timer]);
+    // Doctor: open post-consultation summary dialog automatically
+    if (isDoctor && consultationId) {
+      setTimeout(() => setShowPostConsult(true), 400);
+    }
+  }, [endCall, timer, isDoctor, consultationId]);
 
   const handleSendChat = (text: string) => {
     chatChannelRef.current?.send({
@@ -419,6 +448,12 @@ export default function VideoCall() {
             isDoctor={isDoctor}
           />
         )}
+        <PostConsultationSummaryDialog
+          open={showPostConsult}
+          onOpenChange={setShowPostConsult}
+          consultationId={consultationId}
+          onSaved={() => navigate('/chat')}
+        />
       </div>
     );
   }
@@ -460,39 +495,76 @@ export default function VideoCall() {
                     {t('videoCall.withParticipant')} <span className="font-semibold text-foreground">{otherParticipantName}</span>
                   </p>
                 )}
+
+                {/* Doctor credentials — visible to patient (and as confirmation to doctor) */}
+                {doctorCreds && (
+                  <div className="mt-3 mb-4 p-3 rounded-lg bg-primary/5 border border-primary/20 max-w-md w-full text-left">
+                    <p className="text-xs uppercase tracking-wide text-primary mb-1 flex items-center gap-1">
+                      <BadgeCheck className="w-3 h-3" /> Médico tratante
+                    </p>
+                    <p className="text-sm font-semibold">{doctorCreds.name}</p>
+                    {doctorCreds.specialty && <p className="text-xs text-muted-foreground">{doctorCreds.specialty}</p>}
+                    <div className="flex flex-wrap gap-3 mt-1 text-[11px] text-muted-foreground">
+                      {doctorCreds.cedula && <span>Cédula: <strong>{doctorCreds.cedula}</strong></span>}
+                      {doctorCreds.cofepris && <span>COFEPRIS: <strong>{doctorCreds.cofepris}</strong></span>}
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-sm text-muted-foreground mb-8 max-w-md">
-                  {isDoctor ? t('videoCall.doctorStartInfo') : t('videoCall.patientJoinInfo')}
+                  {isDoctor
+                    ? t('videoCall.doctorStartInfo')
+                    : (autoJoin
+                        ? t('videoCall.patientJoinInfo')
+                        : 'Espera a que tu médico inicie la videollamada. Recibirás una notificación.')}
                 </p>
-                <Button size="lg" onClick={handleStart} className="gap-2 px-8 h-12 text-base">
-                  <Video className="w-5 h-5" />
-                  {isDoctor ? t('videoCall.startButton') : t('videoCall.joinButton')}
-                </Button>
+
+                {/* Patient can only JOIN (autoJoin), never start. Doctor can always start. */}
+                {(isDoctor || autoJoin) ? (
+                  <Button size="lg" onClick={handleStart} className="gap-2 px-8 h-12 text-base">
+                    <Video className="w-5 h-5" />
+                    {isDoctor ? t('videoCall.startButton') : t('videoCall.joinButton')}
+                  </Button>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground italic">Esperando que el médico inicie…</p>
+                  </div>
+                )}
               </div>
             )}
 
             {isInCall && (
-              <div className="relative bg-black rounded-lg overflow-hidden">
-                <div className="w-full aspect-video">
-                  {videoLayoutJSX}
+              <div className={isDoctor ? "grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0" : ""}>
+                <div className="relative bg-black rounded-lg overflow-hidden">
+                  <div className="w-full aspect-video">
+                    {videoLayoutJSX}
+                  </div>
+                  <AnimatePresence>
+                    {showChat && (
+                      <VideoCallChat messages={chatMessages} onSend={handleSendChat} onClose={() => setShowChat(false)} />
+                    )}
+                  </AnimatePresence>
+                  <VideoCallControls
+                    isMuted={isMuted}
+                    isCameraOff={isCameraOff}
+                    isScreenSharing={isScreenSharing}
+                    timeElapsed={timer.timeElapsed}
+                    onToggleMute={toggleMute}
+                    onToggleCamera={toggleCamera}
+                    onToggleScreenShare={toggleScreenShare}
+                    onToggleChat={() => setShowChat(!showChat)}
+                    onEndCall={handleEndCall}
+                    showChat={showChat}
+                    isDoctor={isDoctor}
+                  />
                 </div>
-                <AnimatePresence>
-                  {showChat && (
-                    <VideoCallChat messages={chatMessages} onSend={handleSendChat} onClose={() => setShowChat(false)} />
-                  )}
-                </AnimatePresence>
-                <VideoCallControls
-                  isMuted={isMuted}
-                  isCameraOff={isCameraOff}
-                  isScreenSharing={isScreenSharing}
-                  timeElapsed={timer.timeElapsed}
-                  onToggleMute={toggleMute}
-                  onToggleCamera={toggleCamera}
-                  onToggleScreenShare={toggleScreenShare}
-                  onToggleChat={() => setShowChat(!showChat)}
-                  onEndCall={handleEndCall}
-                  showChat={showChat}
-                  isDoctor={isDoctor}
-                />
+                {/* Lateral patient record panel — doctor only, desktop */}
+                {isDoctor && (
+                  <div className="hidden lg:block bg-card border-l">
+                    <PatientRecordPanel patientId={patientId} enabled={isDoctor} />
+                  </div>
+                )}
               </div>
             )}
 
@@ -508,7 +580,15 @@ export default function VideoCall() {
                 <p className="text-sm text-muted-foreground mb-6">
                   {t('videoCall.callEndedWith').replace('{name}', otherParticipantName)}
                 </p>
-                <Button onClick={() => navigate('/chat')}>{t('videoCall.backToChat')}</Button>
+                <div className="flex gap-2">
+                  {isDoctor && (
+                    <Button variant="outline" onClick={() => setShowPostConsult(true)}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Informe post-consulta
+                    </Button>
+                  )}
+                  <Button onClick={() => navigate('/chat')}>{t('videoCall.backToChat')}</Button>
+                </div>
               </div>
             )}
 
@@ -526,6 +606,14 @@ export default function VideoCall() {
             )}
           </CardContent>
         </Card>
+
+        {/* Post-consultation summary dialog (auto-opens for doctor on hangup) */}
+        <PostConsultationSummaryDialog
+          open={showPostConsult}
+          onOpenChange={setShowPostConsult}
+          consultationId={consultationId}
+          onSaved={() => navigate('/chat')}
+        />
       </div>
     </MainLayout>
   );
