@@ -241,7 +241,7 @@ export default function VideoCall() {
     };
   }, [callObject, callState]);
 
-  // Fetch other participant name
+  // Fetch other participant name + doctor credentials + patient id (for record panel)
   useEffect(() => {
     if (!consultationId) return;
     (async () => {
@@ -250,10 +250,30 @@ export default function VideoCall() {
         .select('doctor_id, patient_id')
         .eq('id', consultationId)
         .single();
-      if (data) {
-        const otherId = isDoctor ? data.patient_id : data.doctor_id;
-        const { data: profile } = await supabase.from('profiles').select('name').eq('id', otherId).single();
-        setOtherParticipantName(profile?.name || t('videoCall.participant'));
+      if (!data) return;
+      setPatientId(data.patient_id);
+      const otherId = isDoctor ? data.patient_id : data.doctor_id;
+      const { data: profile } = await supabase.from('profiles').select('name').eq('id', otherId).single();
+      setOtherParticipantName(profile?.name || t('videoCall.participant'));
+
+      // Doctor credentials (visible to patient and doctor)
+      const { data: doctorProfile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', data.doctor_id)
+        .maybeSingle();
+      const { data: dp } = await supabase
+        .from('doctor_profiles')
+        .select('specialty, cedula_profesional, cofepris_permit')
+        .eq('user_id', data.doctor_id)
+        .maybeSingle();
+      if (doctorProfile && dp) {
+        setDoctorCreds({
+          name: doctorProfile.name || '',
+          specialty: dp.specialty,
+          cedula: dp.cedula_profesional,
+          cofepris: dp.cofepris_permit,
+        });
       }
     })();
   }, [consultationId, isDoctor]);
