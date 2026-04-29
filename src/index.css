@@ -216,6 +216,70 @@
 }
 
 @layer components {
+  .app-header-bar {
+    background-color: hsl(var(--dark));
+    color: hsl(var(--dark-foreground));
+  }
+
+  .app-header-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    border-radius: calc(var(--radius) - 0.125rem);
+    border: 1px solid hsl(var(--background) / 0.75);
+    background-color: hsl(var(--background));
+    color: hsl(var(--primary));
+    box-shadow: 0 8px 20px -12px hsl(var(--dark) / 0.55);
+    transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .app-header-control:hover {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--primary));
+    border-color: hsl(var(--background));
+  }
+
+  .app-header-nav-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    border: 1px solid hsl(var(--background) / 0.22);
+    background-color: hsl(var(--background) / 0.12);
+    color: hsl(var(--dark-foreground) / 0.86);
+    box-shadow: 0 8px 20px -14px hsl(var(--dark) / 0.5);
+  }
+
+  .app-header-nav-link:hover {
+    color: hsl(var(--dark-foreground));
+    border-color: hsl(var(--background) / 0.36);
+    background-color: hsl(var(--background) / 0.2);
+  }
+
+  .app-header-nav-active {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    border: 1px solid hsl(var(--background));
+    color: hsl(var(--primary));
+    background-color: hsl(var(--background));
+    box-shadow: 0 8px 20px -12px hsl(var(--dark) / 0.55);
+  }
+
+  .app-header-cta {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: 1px solid hsl(var(--primary));
+    box-shadow: 0 8px 20px -12px hsl(var(--dark) / 0.55);
+  }
+
+  .app-header-cta:hover {
+    background-color: hsl(var(--primary) / 0.9);
+    color: hsl(var(--primary-foreground));
+  }
+
   /* Medical Badge Styles */
   .badge-live {
     @apply bg-live text-live-foreground animate-pulse;
@@ -823,6 +887,46 @@
 .app-bg-image header :is(button, a)[class*="bg-card"]:hover svg,
 .app-bg-image header :is(button, a)[class*="bg-white"]:hover svg {
   color: #0b1d45 !important;
+}
+
+.app-bg-image header .app-header-control,
+.app-bg-image header :is(button, a).app-header-control {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--primary)) !important;
+  border-color: hsl(var(--background) / 0.75) !important;
+}
+
+.app-bg-image header .app-header-control svg,
+.app-bg-image header .app-header-control * {
+  color: hsl(var(--primary)) !important;
+}
+
+.app-bg-image header .app-header-control:hover {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--primary)) !important;
+}
+
+.app-bg-image header .app-header-nav-active,
+.app-bg-image header :is(a, button).app-header-nav-active {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--primary)) !important;
+}
+
+.app-bg-image header .app-header-nav-active svg,
+.app-bg-image header .app-header-nav-active * {
+  color: hsl(var(--primary)) !important;
+}
+
+.app-bg-image header .app-header-cta,
+.app-bg-image header :is(button, a).app-header-cta {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border-color: hsl(var(--primary)) !important;
+}
+
+.app-bg-image header .app-header-cta svg,
+.app-bg-image header .app-header-cta * {
+  color: hsl(var(--primary-foreground)) !important;
 }
 
 /* ---------- 2. Bottom nav móvil ---------- */

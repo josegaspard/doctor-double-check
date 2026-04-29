@@ -277,7 +277,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       <header
         className={`sticky top-0 z-50 backdrop-blur ${
           useImageBackground
-            ? 'bg-[#0b1d45] text-white border-b-0'
+            ? 'app-header-bar border-b-0'
             : 'border-b border-border bg-card/95 supports-[backdrop-filter]:bg-card/60'
         }`}
       >
@@ -394,7 +394,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
             {/* Desktop Nav — split: 6 main items visible + "Más" dropdown for the rest */}
             <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start mx-1 lg:mx-2 min-w-0">
-              <div className="flex items-center gap-0.5 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
                 {filteredNavItems.slice(0, 6).map((item) => {
                   const isActive = location.pathname === item.href;
                   const isPanelItem = item.href === '/doctor/dashboard';
@@ -402,22 +402,15 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     <Link
                       key={item.href}
                       to={item.href}
-                      className={`relative flex items-center gap-1 px-1.5 lg:px-2 py-1.5 rounded-md text-[11px] xl:text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      className={`relative flex items-center gap-1.5 px-2 lg:px-3 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                         isActive
-                          ? 'text-primary'
+                          ? 'app-header-nav-active'
                           : isPanelItem
-                            ? 'bg-primary/10 text-primary hover:bg-primary/15'
-                            : 'text-white/80 hover:bg-white/10 hover:text-white'
+                            ? 'app-header-control px-2 lg:px-3'
+                            : 'app-header-nav-link'
                       }`}
                     >
-                      {isActive && (
-                        <motion.span
-                          layoutId="nav-pill"
-                          className="absolute inset-0 bg-white rounded-md shadow-sm"
-                          transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                        />
-                      )}
-                      <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10 hidden xl:block" />
+                      <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10" />
                       <span className="relative z-10">{t(item.shortLabelKey || item.labelKey)}</span>
                     </Link>
                   );
@@ -428,7 +421,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
-                        className="flex items-center gap-1 px-1.5 lg:px-2 py-1.5 rounded-md text-[11px] xl:text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all whitespace-nowrap flex-shrink-0"
+                        className="app-header-nav-link flex items-center gap-1.5 px-2 lg:px-3 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0"
                         aria-label={t('nav.more')}
                       >
                         <MoreHorizontal className="w-3.5 h-3.5" />
@@ -442,7 +435,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                           <DropdownMenuItem
                             key={item.href}
                             onClick={() => navigate(item.href)}
-                            className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary/10 text-primary' : ''}`}
+                            className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary text-primary-foreground' : ''}`}
                           >
                             <item.icon className="w-4 h-4 mr-2" />
                             {t(item.labelKey)}
@@ -468,10 +461,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               {/* Wallet — superficie clara: usa clase semántica, sin variant outline */}
               {(role === 'patient' || role === 'resident') && (
                 <Link to="/wallet" className="hidden sm:flex items-center app-header-surface-button">
-                  <span className="inline-flex gap-1.5 h-9 items-center px-3 rounded-md font-semibold text-sm bg-white text-[#0b1d45] hover:bg-slate-100 transition-colors shadow-sm">
-                    <Wallet className="w-4 h-4 text-[#0b1d45]" />
-                    <span className="hidden xl:inline text-[#0b1d45]"><AnimatedBalance balance={balance} /></span>
-                    <span className="xl:hidden text-[#0b1d45]"><AnimatedBalance balance={balance} /></span>
+                  <span className="app-header-control gap-1.5 px-3 font-semibold text-sm">
+                    <Wallet className="w-4 h-4" />
+                    <span className="hidden xl:inline"><AnimatedBalance balance={balance} /></span>
+                    <span className="xl:hidden"><AnimatedBalance balance={balance} /></span>
                   </span>
                 </Link>
               )}
@@ -482,16 +475,16 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1.5 sm:gap-2 h-9 px-2 sm:px-3 rounded-md bg-white text-primary border border-white shadow-sm hover:bg-slate-100 transition-colors"
+                      className="app-header-control gap-1.5 sm:gap-2 px-2 sm:px-3"
                     >
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                         {role === 'doctor' ? (
-                          <Stethoscope className="w-4 h-4 text-primary" />
+                          <Stethoscope className="w-4 h-4" />
                         ) : (
-                          <User className="w-4 h-4 text-primary" />
+                          <User className="w-4 h-4" />
                         )}
                       </div>
-                      <span className="text-xs sm:text-sm font-semibold text-primary max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
+                      <span className="text-xs sm:text-sm font-semibold max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-64">
@@ -531,7 +524,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button onClick={() => navigate('/login')} size="sm" className="gap-2">
+                <Button onClick={() => navigate('/login')} size="sm" className="app-header-cta h-11 gap-2 px-4 text-base font-semibold">
                   <LogIn className="w-4 h-4" />
                   <span className="hidden sm:inline">{t('nav.login')}</span>
                 </Button>
@@ -577,8 +570,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     isActive ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >
-                  <div className="relative">
-                    <TabIcon className={`w-5 h-5 ${isActive ? 'text-primary' : ''}`} />
+                  <div className={`relative inline-flex items-center justify-center h-9 w-12 rounded-md transition-colors ${isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-transparent'}`}>
+                    <TabIcon className={`w-5 h-5 ${isActive ? 'text-primary-foreground' : ''}`} />
                     {badgeCount > 0 && (
                       <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                         {badgeCount > 99 ? '99+' : badgeCount}
@@ -588,13 +581,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <span className={`text-[10px] font-medium leading-tight ${isActive ? 'text-primary' : ''}`}>
                     {tab.label}
                   </span>
-                  {isActive && (
-                    <motion.div
-                      layoutId="bottom-nav-indicator"
-                      className="absolute top-0 w-10 h-[3px] bg-primary rounded-full"
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    />
-                  )}
                 </Link>
               );
             })}
@@ -606,7 +592,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 moreSheetOpen ? 'text-primary' : 'text-muted-foreground'
               }`}
             >
-              <MoreHorizontal className="w-5 h-5" />
+              <span className={`inline-flex items-center justify-center h-9 w-12 rounded-md transition-colors ${moreSheetOpen ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-transparent'}`}>
+                <MoreHorizontal className="w-5 h-5" />
+              </span>
               <span className="text-[10px] font-medium leading-tight">{t('nav.more')}</span>
             </button>
           </div>
