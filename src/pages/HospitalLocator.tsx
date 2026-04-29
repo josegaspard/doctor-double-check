@@ -375,15 +375,18 @@ export default function HospitalLocator() {
         {/* Desktop: Type chips + Sort inline */}
         <div className="hidden sm:flex items-center justify-between gap-3 mb-4">
           <div className="flex gap-2 flex-wrap">
-            {typeChips.map(chip => (
-              <button
-                key={chip.value}
-                onClick={() => setFilterType(chip.value)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${filterType === chip.value ? chip.color + ' shadow-md scale-105' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}
-              >
-                {chip.icon} {chip.label}
-              </button>
-            ))}
+            {typeChips.map(chip => {
+              const isActive = filterType === chip.value;
+              return (
+                <button
+                  key={chip.value}
+                  onClick={() => setFilterType(chip.value)}
+                  className={`mm-chip ${isActive ? `mm-chip-active ${chip.activeBg}` : ''}`}
+                >
+                  <span aria-hidden>{chip.icon}</span> {chip.label}
+                </button>
+              );
+            })}
           </div>
           <div className="flex items-center gap-2">
             <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
