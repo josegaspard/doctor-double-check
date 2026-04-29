@@ -407,13 +407,13 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                           ? 'text-primary'
                           : isPanelItem
                             ? 'bg-primary/10 text-primary hover:bg-primary/15'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            : 'text-white/80 hover:bg-white/10 hover:text-white'
                       }`}
                     >
                       {isActive && (
                         <motion.span
                           layoutId="nav-pill"
-                          className={isPanelItem ? 'absolute inset-0 bg-primary/20 rounded-md' : 'absolute inset-0 bg-primary/10 rounded-md'}
+                          className="absolute inset-0 bg-white rounded-md shadow-sm"
                           transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                         />
                       )}
@@ -482,16 +482,16 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1.5 sm:gap-2 h-9 px-2 sm:px-3 rounded-md bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
+                      className="inline-flex items-center gap-1.5 sm:gap-2 h-9 px-2 sm:px-3 rounded-md bg-white text-primary border border-white shadow-sm hover:bg-slate-100 transition-colors"
                     >
-                      <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                         {role === 'doctor' ? (
-                          <Stethoscope className="w-4 h-4 text-white" />
+                          <Stethoscope className="w-4 h-4 text-primary" />
                         ) : (
-                          <User className="w-4 h-4 text-white" />
+                          <User className="w-4 h-4 text-primary" />
                         )}
                       </div>
-                      <span className="text-xs sm:text-sm font-medium text-white max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
+                      <span className="text-xs sm:text-sm font-semibold text-primary max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-64">
