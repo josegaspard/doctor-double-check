@@ -192,12 +192,12 @@ export default function HospitalLocator() {
     setExpandedId(expandedId === h.id ? null : h.id);
   };
 
-  // Filter chips for quick type selection
+  // Filter chips for quick type selection — usan utilidades .mm-chip / .mm-chip-active
   const typeChips = [
-    { value: 'all', label: es ? 'Todos' : 'All', icon: '🏥', color: 'bg-muted text-foreground' },
-    { value: 'public', label: es ? 'Público' : 'Public', icon: '🏥', color: 'bg-blue-600 text-white' },
-    { value: 'private', label: es ? 'Privado' : 'Private', icon: '🏨', color: 'bg-purple-600 text-white' },
-    { value: 'clinic', label: es ? 'Clínica' : 'Clinic', icon: '🩺', color: 'bg-teal-600 text-white' },
+    { value: 'all', label: es ? 'Todos' : 'All', icon: '🏥', activeBg: 'bg-primary' },
+    { value: 'public', label: es ? 'Público' : 'Public', icon: '🏥', activeBg: 'bg-blue-600' },
+    { value: 'private', label: es ? 'Privado' : 'Private', icon: '🏨', activeBg: 'bg-purple-600' },
+    { value: 'clinic', label: es ? 'Clínica' : 'Clinic', icon: '🩺', activeBg: 'bg-teal-600' },
   ];
 
   const FilterPanel = () => (
