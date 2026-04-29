@@ -571,7 +571,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   }`}
                 >
                   <div className={`relative inline-flex items-center justify-center h-9 w-12 rounded-md transition-colors ${isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-transparent'}`}>
-                    <TabIcon className={`w-5 h-5 ${isActive ? 'text-primary' : ''}`} />
+                    <TabIcon className={`w-5 h-5 ${isActive ? 'text-primary-foreground' : ''}`} />
                     {badgeCount > 0 && (
                       <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                         {badgeCount > 99 ? '99+' : badgeCount}
