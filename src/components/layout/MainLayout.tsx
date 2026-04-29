@@ -277,7 +277,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       <header
         className={`sticky top-0 z-50 backdrop-blur ${
           useImageBackground
-            ? 'bg-[#0b1d45] text-white border-b-0'
+            ? 'app-header-bar border-b-0'
             : 'border-b border-border bg-card/95 supports-[backdrop-filter]:bg-card/60'
         }`}
       >
@@ -404,19 +404,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       to={item.href}
                       className={`relative flex items-center gap-1 px-1.5 lg:px-2 py-1.5 rounded-md text-[11px] xl:text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                         isActive
-                          ? 'text-primary'
+                          ? 'app-header-nav-active'
                           : isPanelItem
-                            ? 'bg-primary/10 text-primary hover:bg-primary/15'
-                            : 'text-white/80 hover:bg-white/10 hover:text-white'
+                            ? 'app-header-control px-2 min-h-0 h-auto'
+                            : 'app-header-nav-link'
                       }`}
                     >
-                      {isActive && (
-                        <motion.span
-                          layoutId="nav-pill"
-                          className="absolute inset-0 bg-white rounded-md shadow-sm"
-                          transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                        />
-                      )}
                       <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10 hidden xl:block" />
                       <span className="relative z-10">{t(item.shortLabelKey || item.labelKey)}</span>
                     </Link>
@@ -428,7 +421,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
-                        className="flex items-center gap-1 px-1.5 lg:px-2 py-1.5 rounded-md text-[11px] xl:text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all whitespace-nowrap flex-shrink-0"
+                        className="app-header-nav-link flex items-center gap-1 px-1.5 lg:px-2 py-1.5 rounded-md text-[11px] xl:text-xs font-medium transition-all whitespace-nowrap flex-shrink-0"
                         aria-label={t('nav.more')}
                       >
                         <MoreHorizontal className="w-3.5 h-3.5" />
@@ -442,7 +435,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                           <DropdownMenuItem
                             key={item.href}
                             onClick={() => navigate(item.href)}
-                            className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary/10 text-primary' : ''}`}
+                            className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary text-primary-foreground' : ''}`}
                           >
                             <item.icon className="w-4 h-4 mr-2" />
                             {t(item.labelKey)}
