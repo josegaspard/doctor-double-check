@@ -226,7 +226,7 @@ export const es = {
     welcome: 'Bienvenido',
     activeLives: 'Lives Activos',
     totalRecordings: 'Grabaciones',
-    vaultAccess: 'Acceso Vault',
+    vaultAccess: 'Bóveda médica',
     rating: 'Rating',
     startLive: 'Iniciar Live',
     uploadContent: 'Subir Contenido',

@@ -261,7 +261,7 @@ export default function Login() {
                       <Button 
                         type="button" 
                         variant="link" 
-                        className="w-full justify-center text-white/85 hover:text-white"
+                        className="w-full justify-center text-white font-medium underline underline-offset-4 hover:text-white hover:opacity-90"
                       onClick={handleForgotPassword}
                       disabled={resetLoading}
                     >

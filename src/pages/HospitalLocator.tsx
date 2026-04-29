@@ -19,6 +19,7 @@ import {
   ChevronDown, ChevronUp, MessageSquare, Sparkles, SlidersHorizontal, X, ArrowUpDown,
   ExternalLink, Heart
 } from 'lucide-react';
+import HospitalDoctorsList from '@/components/hospitals/HospitalDoctorsList';
 
 const ZONES = ['Centro', 'Norte', 'Sur', 'Poniente', 'Oriente'];
 
@@ -647,6 +648,15 @@ export default function HospitalLocator() {
                                 </div>
                               ))}
                             </div>
+
+                            {/* Doctors related to this hospital (by specialty overlap) */}
+                            <HospitalDoctorsList
+                              hospitalId={h.id}
+                              hospitalName={h.name}
+                              specialties={h.specialties || []}
+                              zone={h.zone}
+                              language={language}
+                            />
                           </div>
                         )}
                       </CardContent>

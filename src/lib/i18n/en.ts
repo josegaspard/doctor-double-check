@@ -226,7 +226,7 @@ export const en = {
     welcome: 'Welcome',
     activeLives: 'Active Lives',
     totalRecordings: 'Recordings',
-    vaultAccess: 'Vault Access',
+    vaultAccess: 'Medical Vault',
     rating: 'Rating',
     startLive: 'Start Live',
     uploadContent: 'Upload Content',

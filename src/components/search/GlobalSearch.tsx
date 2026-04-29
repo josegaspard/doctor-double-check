@@ -226,7 +226,7 @@ export function GlobalSearch() {
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 text-muted-foreground md:hidden"
+        className="h-9 w-9 bg-white/10 border border-white/25 text-white hover:bg-white/20 md:hidden"
         onClick={() => setOpen(true)}
       >
         <Search className="w-4 h-4" />
@@ -236,7 +236,7 @@ export function GlobalSearch() {
       <Button
         variant="ghost"
         size="icon"
-        className="hidden md:flex 2xl:hidden h-8 w-8 text-muted-foreground"
+        className="hidden md:flex 2xl:hidden h-9 w-9 bg-white/10 border border-white/25 text-white hover:bg-white/20"
         onClick={() => setOpen(true)}
       >
         <Search className="w-4 h-4" />
