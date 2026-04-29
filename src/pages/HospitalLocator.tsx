@@ -327,11 +327,11 @@ export default function HospitalLocator() {
               <p className="text-sm text-muted-foreground">{es ? 'Directorio de hospitales y clínicas en México' : 'Hospital & clinic directory in Mexico'}</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Building2 className="w-3.5 h-3.5 text-blue-500" />{hospitals.length} {es ? 'hospitales' : 'hospitals'}</span>
-            <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Star className="w-3.5 h-3.5 text-yellow-500" />{es ? 'Información verificada' : 'Verified info'}</span>
-            {userLoc && <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Navigation className="w-3.5 h-3.5 text-green-500" />{es ? 'Ubicación activa' : 'Location active'}</span>}
-            <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Heart className="w-3.5 h-3.5 text-rose-500" />{activeDoctorsCount} {es ? 'doctores activos' : 'active doctors'}</span>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span className="mm-stat-pill"><Building2 className="w-3.5 h-3.5 text-blue-600" />{hospitals.length} {es ? 'hospitales' : 'hospitals'}</span>
+            <span className="mm-stat-pill"><Star className="w-3.5 h-3.5 text-yellow-500" />{es ? 'Información verificada' : 'Verified info'}</span>
+            {userLoc && <span className="mm-stat-pill"><Navigation className="w-3.5 h-3.5 text-green-600" />{es ? 'Ubicación activa' : 'Location active'}</span>}
+            <span className="mm-stat-pill"><Heart className="w-3.5 h-3.5 text-rose-500" />{activeDoctorsCount} {es ? 'doctores activos' : 'active doctors'}</span>
           </div>
         </div>
 
