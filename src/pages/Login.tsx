@@ -433,7 +433,7 @@ export default function Login() {
                     
                     <div className="relative my-4 sm:my-6">
                       <Separator />
-                     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-dark/80 px-2 text-xs text-white/75 backdrop-blur-sm">
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-card px-2 text-xs text-muted-foreground">
                         {t('login.orContinueWith')}
                       </span>
                     </div>
