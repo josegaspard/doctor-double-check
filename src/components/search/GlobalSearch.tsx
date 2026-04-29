@@ -226,30 +226,30 @@ export function GlobalSearch() {
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-9 bg-white/10 border border-white/25 text-white hover:bg-white/20 md:hidden"
+        className="app-header-control md:hidden"
         onClick={() => setOpen(true)}
       >
-        <Search className="w-4 h-4" />
+        <Search className="w-5 h-5" />
       </Button>
       
       {/* Trigger: Tablet/Desktop icon (md to 2xl) */}
       <Button
         variant="ghost"
         size="icon"
-        className="hidden md:flex 2xl:hidden h-9 w-9 bg-white/10 border border-white/25 text-white hover:bg-white/20"
+        className="app-header-control hidden md:flex 2xl:hidden"
         onClick={() => setOpen(true)}
       >
-        <Search className="w-4 h-4" />
+        <Search className="w-5 h-5" />
       </Button>
       
       {/* Trigger: Desktop search bar (2xl+ only) */}
       <button
         onClick={() => setOpen(true)}
-        className="hidden 2xl:flex items-center gap-1.5 h-8 px-2 rounded-lg border border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-[10px] w-[100px]"
+        className="app-header-control hidden 2xl:flex gap-2 px-3 w-[132px] text-sm font-semibold"
       >
-        <Search className="w-3 h-3 flex-shrink-0" />
+        <Search className="w-4 h-4 flex-shrink-0" />
         <span className="truncate">{t('common.search')}</span>
-        <kbd className="ml-auto inline-flex items-center rounded border border-border bg-muted px-1 py-0.5 text-[9px] font-mono text-muted-foreground">
+        <kbd className="ml-auto inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-mono text-primary">
           ⌘K
         </kbd>
       </button>
