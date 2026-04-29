@@ -1,77 +1,56 @@
-Entendido. Voy a corregirlo con una regla única de contraste, no con parches aislados.
+Entendido. El problema central no es solo un número del calendario: es que con la imagen de fondo azul cualquier texto/icono suelto que use `text-muted-foreground`, `text-foreground`, `bg-muted/50`, bordes suaves o botones ghost puede quedar con bajo contraste. Voy a corregirlo con una lógica única, no con parches aislados.
 
 Plan de implementación:
 
-1. Corregir inmediatamente el link de “Olvidaste tu contraseña”
-   - En `Login.tsx`, quitar `text-white` y `hover:text-white` del botón/link.
-   - Dejarlo como link visible sobre tarjeta clara: azul primario, subrayado, hover azul más oscuro.
-   - Asegurar que no quede afectado por las reglas globales de `.app-bg-image`.
+1. Arreglar `/doctor/availability` de forma directa
+   - Rehacer el contraste del `CalendarGrid` usado en disponibilidad.
+   - Los números de los días serán visibles siempre:
+     - días del mes: blanco/alto contraste sobre el fondo azul.
+     - día actual: círculo azul claro/blanco con texto que contraste.
+     - días fuera del mes: visibles pero atenuados, no casi invisibles.
+   - Los nombres de días, horas, líneas y celdas usarán colores pensados para fondo oscuro.
+   - La grilla tendrá un contenedor semitransparente oscuro o “glass” para que la imagen de fondo no compita con los números.
+   - Los estados hover no bajarán el contraste.
 
-2. Crear una lógica visual reutilizable para botones/chips sobre fondo azul
-   - Agregar clases globales compactas y consistentes en `src/index.css`, por ejemplo:
-     - botón/chip claro: fondo blanco o blanco translúcido + texto azul oscuro.
-     - botón/chip activo: fondo azul primario + texto blanco.
-     - botón secundario claro: fondo `#eef4ff` / blanco translúcido + texto azul oscuro, nunca texto blanco.
-   - Ajustar la “safety net” global para que cualquier elemento con fondo claro (`bg-white`, `bg-background`, `bg-muted`, `bg-card`, `bg-accent`, `bg-light`, etc.) fuerce texto/iconos oscuros cuando esté fuera de cards/dialogs.
-   - Evitar que botones claros terminen con blanco sobre blanco, incluyendo hover.
+2. Unificar la lógica visual de calendario en todas sus vistas
+   - Mes, semana y día tendrán la misma regla:
+     - texto principal visible.
+     - texto secundario visible.
+     - bordes visibles.
+     - celdas con fondo sutil oscuro.
+     - eventos con colores sólidos y texto blanco.
+   - La barra de leyenda, toolbar, tabs y botones de navegación de `/doctor/availability` seguirán el mismo sistema de contraste.
 
-3. Arreglar `/hospital-locator` según las capturas
-   - Cambiar los chips de tipo hospital y los badges del hero para que no usen fondo gris claro con texto blanco.
-   - Aplicar la misma lógica a:
-     - “Todos / Público / Privado / Clínica”
-     - “20 hospitales / Información verificada / Ubicación activa / doctores activos”
-     - filtros laterales y filtros mobile donde haya fondos claros/translúcidos.
-   - Mantener colores de hospital coherentes:
-     - Público: azul
-     - Privado: morado
-     - Clínica: teal
-   - Estado inactivo: claro/translúcido con texto azul oscuro legible.
-   - Estado activo: color fuerte con texto blanco.
+3. Corregir el calendario pequeño del selector de fecha
+   - El componente global `src/components/ui/calendar.tsx` recibirá clases más seguras para que DayPicker no muestre días casi invisibles.
+   - En popovers/dialogs claros seguirá usando texto oscuro correcto.
+   - Sobre fondos oscuros o transparentes, se evitarán `text-muted-foreground/50` demasiado tenues.
 
-4. Añadir doctores “por completo” dentro de `/hospital-locator`
-   - Reemplazar el componente actual `HospitalDoctorsList` para que sea más completo y se parezca más a una lista real, no solo mini filas.
-   - Mostrar dentro del hospital expandido:
-     - avatar/iniciales
-     - nombre
-     - especialidad
-     - rating
-     - consultas
-     - ubicación si existe
-     - estado disponible/no disponible si los horarios existen
-     - botón “Ver perfil”
-   - Usar la ruta correcta de perfil médico (`/doctor/:id`) para alinearlo con el directorio actual.
-   - Mejorar la consulta de datos para traer más campos de `doctor_profiles` y `profiles`.
-   - Mantener fallback: si no hay doctores por especialidad, mostrar doctores aprobados top-rated y un botón al directorio completo.
+4. Crear utilidades globales de contraste para superficies sobre imagen
+   - Agregar clases reutilizables en `src/index.css`, por ejemplo:
+     - `.mm-dark-panel`: panel oscuro translúcido para contenido sobre imagen.
+     - `.mm-dark-border`: borde visible sobre fondo azul.
+     - `.mm-on-image-text`: texto principal blanco.
+     - `.mm-on-image-muted`: texto secundario blanco con opacidad suficiente.
+     - `.mm-on-image-control`: botón/control compacto, visible y consistente.
+   - Aplicarlas primero donde está el fallo real: disponibilidad/calendarios.
 
-5. Unificar onboarding y register con la misma lógica visual
-   - En `Onboarding.tsx`, aplicar el mismo sistema a:
-     - selector de rol
-     - círculos de progreso
-     - botones outline/ghost
-     - botón de ubicación
-     - botón de enviar/verificar teléfono
-     - tarjetas/paneles informativos
-   - En la pestaña register dentro de `Login.tsx`, asegurar que botones, separadores y Google button tengan contraste correcto y no dependan de texto blanco sobre fondos claros.
-   - Mantener tamaños razonables; no agrandar botones ni header.
+5. Reforzar la “safety net” global sin romper cards/dialogs
+   - Ajustar reglas de `.app-bg-image` para que textos e iconos sueltos dentro de `main` no queden azul oscuro sobre imagen azul.
+   - Mantener la excepción para cards, dialogs y popovers claros, donde el texto debe seguir oscuro.
+   - Añadir protección para fondos translúcidos claros (`bg-muted/50`, `bg-accent/20`, `bg-white/10`, etc.) para que nunca terminen con texto invisible.
 
-6. Revisión visual posterior
-   - Revisar en la preview al menos:
-     - `/login` pestaña login y register
-     - `/onboarding`
-     - `/hospital-locator` desktop al ancho actual 1106x736
-     - un hospital expandido con doctores
-   - Verificar específicamente:
-     - no haya texto blanco sobre fondos claros
-     - iconos visibles sin hover
-     - botones activos/inactivos consistentes
-     - chips no gigantes
-     - doctores dentro de hospitales se ven como una lista completa y usable
+6. Revisión visual obligatoria
+   - Verificar `/doctor/availability` en el viewport actual aproximado `1106x736`.
+   - Revisar vista mensual, semanal y diaria.
+   - Abrir el modal de crear disponibilidad y revisar selector de fecha.
+   - Confirmar que números, días, horas, iconos, tabs y botones se leen sin hover.
+   - Hacer una revisión rápida de otros elementos sobre la imagen para que respeten la misma lógica global de contraste.
 
 Archivos previstos:
-- `src/pages/Login.tsx`
-- `src/pages/Onboarding.tsx`
-- `src/pages/HospitalLocator.tsx`
-- `src/components/hospitals/HospitalDoctorsList.tsx`
+- `src/components/availability/CalendarGrid.tsx`
+- `src/pages/DoctorAvailability.tsx`
+- `src/components/ui/calendar.tsx`
 - `src/index.css`
 
-No haré cambios de base de datos para esto; es UI y consulta de datos ya existentes.
+No se requieren cambios de base de datos. Es una corrección visual/global de contraste.

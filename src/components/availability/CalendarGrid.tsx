@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, format, isSameMonth, isSameDay, isToday,
-  addDays, startOfDay,
+  eachDayOfInterval, format, isSameMonth, isToday,
+  addDays,
 } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { DoctorAvailability } from '@/hooks/useDoctorAvailability';
@@ -53,12 +53,12 @@ function EventChip({ availability, onClick, isManaging, isSelected, onToggleSele
     <button
       onClick={handleClick}
       className={cn(
-        'w-full text-left rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-medium truncate flex items-center gap-1 transition-all hover:opacity-80',
+        'w-full text-left rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold truncate flex items-center gap-1 transition-all hover:opacity-90 shadow-sm',
         config.color, config.text,
         isCancelled && 'opacity-40 line-through',
-        isManaging && 'ring-2 ring-offset-1',
-        isManaging && isSelected && 'ring-primary',
-        isManaging && !isSelected && 'ring-transparent',
+        isManaging && 'ring-2 ring-offset-1 ring-offset-transparent',
+        isManaging && isSelected && 'ring-white',
+        isManaging && !isSelected && 'ring-white/40',
       )}
       title={`${availability.title} — ${format(availability.scheduledAt, 'HH:mm')}`}
     >
@@ -78,6 +78,13 @@ function EventChip({ availability, onClick, isManaging, isSelected, onToggleSele
   );
 }
 
+/**
+ * Contraste:
+ * - El componente vive sobre la imagen de fondo azul → usamos colores explícitos
+ *   (blanco / blanco translúcido) en lugar de tokens semánticos que pueden quedar
+ *   invisibles. Las celdas tienen un panel oscuro translúcido para máxima
+ *   legibilidad de los números.
+ */
 function MonthView({ currentDate, availabilities, language, onDayClick, onEventClick, isManaging, selectedIds, onToggleSelect }: Omit<CalendarGridProps, 'viewMode'>) {
   const locale = language === 'es' ? es : enUS;
   const monthStart = startOfMonth(currentDate);
@@ -93,7 +100,6 @@ function MonthView({ currentDate, availabilities, language, onDayClick, onEventC
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(a);
     });
-    // Sort each day's events by time
     map.forEach(events => events.sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime()));
     return map;
   }, [availabilities]);
@@ -103,11 +109,11 @@ function MonthView({ currentDate, availabilities, language, onDayClick, onEventC
   );
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
+    <div className="mm-calendar-panel">
       {/* Header */}
-      <div className="grid grid-cols-7 bg-muted/50">
+      <div className="grid grid-cols-7 mm-calendar-header">
         {weekDays.map(day => (
-          <div key={day} className="text-center text-xs font-semibold text-muted-foreground py-2 border-b border-border">
+          <div key={day} className="text-center text-xs font-bold uppercase tracking-wide py-2 mm-calendar-cell-border">
             {day}
           </div>
         ))}
@@ -125,15 +131,16 @@ function MonthView({ currentDate, availabilities, language, onDayClick, onEventC
               key={key}
               onClick={() => onDayClick(day)}
               className={cn(
-                'min-h-[80px] sm:min-h-[100px] border-b border-r border-border p-1 cursor-pointer transition-colors hover:bg-accent/30',
-                !inMonth && 'bg-muted/30',
-                idx % 7 === 0 && 'border-l-0',
+                'min-h-[80px] sm:min-h-[100px] mm-calendar-cell p-1 cursor-pointer transition-colors',
+                !inMonth && 'mm-calendar-cell-out',
+                idx % 7 === 0 && 'mm-calendar-cell-first',
               )}
             >
               <div className={cn(
-                'text-xs sm:text-sm font-medium mb-1 w-6 h-6 flex items-center justify-center rounded-full',
-                today && 'bg-primary text-primary-foreground',
-                !inMonth && 'text-muted-foreground/50',
+                'text-xs sm:text-sm font-bold mb-1 w-7 h-7 flex items-center justify-center rounded-full',
+                today && 'mm-calendar-today',
+                !today && inMonth && 'text-white',
+                !today && !inMonth && 'text-white/45',
               )}>
                 {format(day, 'd')}
               </div>
@@ -142,7 +149,7 @@ function MonthView({ currentDate, availabilities, language, onDayClick, onEventC
                   <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} isManaging={isManaging} isSelected={selectedIds?.has(event.id)} onToggleSelect={onToggleSelect} />
                 ))}
                 {dayEvents.length > 3 && (
-                  <p className="text-[10px] text-muted-foreground pl-1.5">+{dayEvents.length - 3} más</p>
+                  <p className="text-[10px] text-white/75 pl-1.5 font-medium">+{dayEvents.length - 3}</p>
                 )}
               </div>
             </div>
@@ -157,7 +164,7 @@ function WeekView({ currentDate, availabilities, language, onDayClick, onEventCl
   const locale = language === 'es' ? es : enUS;
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) });
-  const hours = Array.from({ length: 16 }, (_, i) => i + 6); // 6:00-21:00
+  const hours = Array.from({ length: 16 }, (_, i) => i + 6);
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, DoctorAvailability[]>();
@@ -170,24 +177,21 @@ function WeekView({ currentDate, availabilities, language, onDayClick, onEventCl
   }, [availabilities]);
 
   return (
-    <div className="border border-border rounded-lg overflow-auto">
+    <div className="mm-calendar-panel overflow-auto">
       <div className="min-w-[600px]">
         {/* Header */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] bg-muted/50 sticky top-0 z-10">
-          <div className="border-b border-r border-border" />
+        <div className="grid grid-cols-[60px_repeat(7,1fr)] mm-calendar-header sticky top-0 z-10">
+          <div className="mm-calendar-cell-border" />
           {days.map(day => (
             <div
               key={day.toISOString()}
               onClick={() => onDayClick(day)}
-              className={cn(
-                'text-center py-2 border-b border-r border-border cursor-pointer hover:bg-accent/30',
-                isToday(day) && 'bg-primary/10',
-              )}
+              className="text-center py-2 mm-calendar-cell-border cursor-pointer hover:bg-white/5"
             >
-              <div className="text-[10px] text-muted-foreground uppercase">{format(day, 'EEE', { locale })}</div>
+              <div className="text-[10px] text-white/75 uppercase font-semibold">{format(day, 'EEE', { locale })}</div>
               <div className={cn(
-                'text-sm font-semibold w-7 h-7 mx-auto flex items-center justify-center rounded-full',
-                isToday(day) && 'bg-primary text-primary-foreground',
+                'text-sm font-bold w-7 h-7 mx-auto flex items-center justify-center rounded-full text-white',
+                isToday(day) && 'mm-calendar-today',
               )}>
                 {format(day, 'd')}
               </div>
@@ -197,7 +201,7 @@ function WeekView({ currentDate, availabilities, language, onDayClick, onEventCl
         {/* Time grid */}
         {hours.map(hour => (
           <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)]">
-            <div className="text-[10px] text-muted-foreground text-right pr-2 pt-1 border-r border-border h-12 border-b">
+            <div className="text-[10px] text-white/80 text-right pr-2 pt-1 mm-calendar-cell-border h-12 font-medium">
               {`${hour.toString().padStart(2, '0')}:00`}
             </div>
             {days.map(day => {
@@ -209,7 +213,7 @@ function WeekView({ currentDate, availabilities, language, onDayClick, onEventCl
                 <div
                   key={`${key}-${hour}`}
                   onClick={() => onDayClick(day)}
-                  className="h-12 border-b border-r border-border p-0.5 cursor-pointer hover:bg-accent/20"
+                  className="h-12 mm-calendar-cell p-0.5 cursor-pointer"
                 >
                   {dayEvents.map(event => (
                     <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} isManaging={isManaging} isSelected={selectedIds?.has(event.id)} onToggleSelect={onToggleSelect} />
@@ -225,16 +229,16 @@ function WeekView({ currentDate, availabilities, language, onDayClick, onEventCl
 }
 
 function DayView({ currentDate, availabilities, language, onDayClick, onEventClick, isManaging, selectedIds, onToggleSelect }: Omit<CalendarGridProps, 'viewMode'>) {
-  const hours = Array.from({ length: 18 }, (_, i) => i + 5); // 5:00-22:00
+  const hours = Array.from({ length: 18 }, (_, i) => i + 5);
   const dayKey = format(currentDate, 'yyyy-MM-dd');
   const dayEvents = availabilities.filter(a => format(a.scheduledAt, 'yyyy-MM-dd') === dayKey);
 
   return (
-    <div className="border border-border rounded-lg overflow-auto">
-      <div className="bg-muted/50 px-4 py-3 border-b border-border text-center">
+    <div className="mm-calendar-panel overflow-auto">
+      <div className="mm-calendar-header px-4 py-3 text-center">
         <div className={cn(
-          'text-lg font-semibold',
-          isToday(currentDate) && 'text-primary',
+          'text-lg font-bold',
+          isToday(currentDate) ? 'text-white' : 'text-white',
         )}>
           {format(currentDate, language === 'es' ? "EEEE d 'de' MMMM" : 'EEEE, MMMM d', {
             locale: language === 'es' ? es : enUS,
@@ -244,12 +248,12 @@ function DayView({ currentDate, availabilities, language, onDayClick, onEventCli
       {hours.map(hour => {
         const hourEvents = dayEvents.filter(e => e.scheduledAt.getHours() === hour);
         return (
-          <div key={hour} className="grid grid-cols-[60px_1fr] border-b border-border">
-            <div className="text-xs text-muted-foreground text-right pr-3 pt-1.5 border-r border-border h-16">
+          <div key={hour} className="grid grid-cols-[60px_1fr]">
+            <div className="text-xs text-white/80 text-right pr-3 pt-1.5 mm-calendar-cell-border h-16 font-medium">
               {`${hour.toString().padStart(2, '0')}:00`}
             </div>
             <div
-              className="h-16 p-1 cursor-pointer hover:bg-accent/20 space-y-0.5"
+              className="h-16 mm-calendar-cell p-1 cursor-pointer space-y-0.5"
               onClick={() => onDayClick(currentDate)}
             >
               {hourEvents.map(event => (
