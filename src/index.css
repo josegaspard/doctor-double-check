@@ -243,15 +243,26 @@
   }
 
   .app-header-nav-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    border: 1px solid hsl(var(--background) / 0.22);
+    background-color: hsl(var(--background) / 0.12);
     color: hsl(var(--dark-foreground) / 0.86);
+    box-shadow: 0 8px 20px -14px hsl(var(--dark) / 0.5);
   }
 
   .app-header-nav-link:hover {
     color: hsl(var(--dark-foreground));
-    background-color: hsl(var(--background) / 0.14);
+    border-color: hsl(var(--background) / 0.36);
+    background-color: hsl(var(--background) / 0.2);
   }
 
   .app-header-nav-active {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    border: 1px solid hsl(var(--background));
     color: hsl(var(--primary));
     background-color: hsl(var(--background));
     box-shadow: 0 8px 20px -12px hsl(var(--dark) / 0.55);
