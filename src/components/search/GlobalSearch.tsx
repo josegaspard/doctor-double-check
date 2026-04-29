@@ -229,7 +229,7 @@ export function GlobalSearch() {
         className="app-header-control md:hidden"
         onClick={() => setOpen(true)}
       >
-        <Search className="w-5 h-5" />
+        <Search className="w-4 h-4" />
       </Button>
       
       {/* Trigger: Tablet/Desktop icon (md to 2xl) */}
@@ -239,15 +239,15 @@ export function GlobalSearch() {
         className="app-header-control hidden md:flex 2xl:hidden"
         onClick={() => setOpen(true)}
       >
-        <Search className="w-5 h-5" />
+        <Search className="w-4 h-4" />
       </Button>
       
       {/* Trigger: Desktop search bar (2xl+ only) */}
       <button
         onClick={() => setOpen(true)}
-        className="app-header-control hidden 2xl:flex gap-2 px-3 w-[132px] text-sm font-semibold"
+        className="app-header-control hidden 2xl:flex gap-1.5 px-2.5 w-[116px] text-xs font-semibold"
       >
-        <Search className="w-4 h-4 flex-shrink-0" />
+        <Search className="w-3.5 h-3.5 flex-shrink-0" />
         <span className="truncate">{t('common.search')}</span>
         <kbd className="ml-auto inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-mono text-primary">
           ⌘K
