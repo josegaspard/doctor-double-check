@@ -45,9 +45,9 @@ export function LanguageSwitcher({ className }: { className?: string }) {
         <button
           type="button"
           aria-label={t('settings.language') || 'Language'}
-          className={`shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-md text-white hover:bg-white/12 transition-colors ${className || ''}`}
+          className={`shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-md bg-white text-primary border border-white/40 shadow-sm hover:bg-slate-100 transition-colors ${className || ''}`}
         >
-          <Globe className="h-5 w-5 text-white" />
+          <Globe className="h-5 w-5 text-primary" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-48 p-1.5">
