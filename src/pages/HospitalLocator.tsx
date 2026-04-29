@@ -206,15 +206,18 @@ export default function HospitalLocator() {
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Tipo' : 'Type'}</p>
         <div className="grid grid-cols-2 gap-1.5">
-          {typeChips.map(chip => (
-            <button
-              key={chip.value}
-              onClick={() => setFilterType(chip.value)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 text-center ${filterType === chip.value ? chip.color + ' shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}
-            >
-              {chip.icon} {chip.label}
-            </button>
-          ))}
+          {typeChips.map(chip => {
+            const isActive = filterType === chip.value;
+            return (
+              <button
+                key={chip.value}
+                onClick={() => setFilterType(chip.value)}
+                className={`mm-chip justify-center w-full ${isActive ? `mm-chip-active ${chip.activeBg}` : ''}`}
+              >
+                <span aria-hidden>{chip.icon}</span> {chip.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
