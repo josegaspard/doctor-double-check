@@ -461,10 +461,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               {/* Wallet — superficie clara: usa clase semántica, sin variant outline */}
               {(role === 'patient' || role === 'resident') && (
                 <Link to="/wallet" className="hidden sm:flex items-center app-header-surface-button">
-                  <span className="inline-flex gap-1.5 h-9 items-center px-3 rounded-md font-semibold text-sm bg-white text-[#0b1d45] hover:bg-slate-100 transition-colors shadow-sm">
-                    <Wallet className="w-4 h-4 text-[#0b1d45]" />
-                    <span className="hidden xl:inline text-[#0b1d45]"><AnimatedBalance balance={balance} /></span>
-                    <span className="xl:hidden text-[#0b1d45]"><AnimatedBalance balance={balance} /></span>
+                  <span className="app-header-control gap-1.5 px-3 font-semibold text-sm">
+                    <Wallet className="w-4 h-4" />
+                    <span className="hidden xl:inline"><AnimatedBalance balance={balance} /></span>
+                    <span className="xl:hidden"><AnimatedBalance balance={balance} /></span>
                   </span>
                 </Link>
               )}
@@ -475,16 +475,16 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1.5 sm:gap-2 h-9 px-2 sm:px-3 rounded-md bg-white text-primary border border-white shadow-sm hover:bg-slate-100 transition-colors"
+                      className="app-header-control gap-1.5 sm:gap-2 px-2 sm:px-3"
                     >
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                         {role === 'doctor' ? (
-                          <Stethoscope className="w-4 h-4 text-primary" />
+                          <Stethoscope className="w-4 h-4" />
                         ) : (
-                          <User className="w-4 h-4 text-primary" />
+                          <User className="w-4 h-4" />
                         )}
                       </div>
-                      <span className="text-xs sm:text-sm font-semibold text-primary max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
+                      <span className="text-xs sm:text-sm font-semibold max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-64">
@@ -524,7 +524,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button onClick={() => navigate('/login')} size="sm" className="gap-2">
+                <Button onClick={() => navigate('/login')} size="sm" className="app-header-cta h-11 gap-2 px-4 text-base font-semibold">
                   <LogIn className="w-4 h-4" />
                   <span className="hidden sm:inline">{t('nav.login')}</span>
                 </Button>
