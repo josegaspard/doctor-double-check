@@ -570,7 +570,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     isActive ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >
-                  <div className="relative">
+                  <div className={`relative inline-flex items-center justify-center h-9 w-12 rounded-md transition-colors ${isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-transparent'}`}>
                     <TabIcon className={`w-5 h-5 ${isActive ? 'text-primary' : ''}`} />
                     {badgeCount > 0 && (
                       <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
@@ -581,13 +581,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <span className={`text-[10px] font-medium leading-tight ${isActive ? 'text-primary' : ''}`}>
                     {tab.label}
                   </span>
-                  {isActive && (
-                    <motion.div
-                      layoutId="bottom-nav-indicator"
-                      className="absolute top-0 w-10 h-[3px] bg-primary rounded-full"
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    />
-                  )}
                 </Link>
               );
             })}
@@ -599,7 +592,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 moreSheetOpen ? 'text-primary' : 'text-muted-foreground'
               }`}
             >
-              <MoreHorizontal className="w-5 h-5" />
+              <span className={`inline-flex items-center justify-center h-9 w-12 rounded-md transition-colors ${moreSheetOpen ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-transparent'}`}>
+                <MoreHorizontal className="w-5 h-5" />
+              </span>
               <span className="text-[10px] font-medium leading-tight">{t('nav.more')}</span>
             </button>
           </div>
