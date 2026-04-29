@@ -367,6 +367,81 @@
     box-shadow: 0 1px 2px hsl(var(--dark) / 0.08);
   }
 
+  /* ============================================================
+     CALENDAR / GRID sobre fondo azul
+     Lógica única: panel oscuro translúcido, números siempre visibles,
+     bordes contrastados, hover sutil, día actual con círculo blanco.
+     Funciona también si el fondo es blanco (cards/dialogs lo neutralizan).
+     ============================================================ */
+  .mm-calendar-panel {
+    background-color: rgba(11, 29, 69, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    backdrop-filter: blur(2px);
+  }
+  .mm-calendar-header {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+  }
+  .mm-calendar-cell {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    transition: background-color 140ms ease;
+  }
+  .mm-calendar-cell:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+  .mm-calendar-cell-out {
+    background-color: rgba(0, 0, 0, 0.18);
+  }
+  .mm-calendar-cell-first {
+    border-left: 0;
+  }
+  .mm-calendar-cell-border {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    border-right: 1px solid rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+  }
+  .mm-calendar-today {
+    background-color: #ffffff !important;
+    color: hsl(var(--primary)) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+  }
+
+  /* Cuando el calendario vive sobre un fondo blanco (card/dialog),
+     neutraliza el panel oscuro para no romper la legibilidad. */
+  [class*="bg-card"] .mm-calendar-panel,
+  [class*="bg-popover"] .mm-calendar-panel,
+  [class*="bg-background"] .mm-calendar-panel,
+  [role="dialog"] .mm-calendar-panel,
+  [data-radix-popper-content-wrapper] .mm-calendar-panel {
+    background-color: transparent;
+    border-color: hsl(var(--border));
+    backdrop-filter: none;
+  }
+  [class*="bg-card"] .mm-calendar-cell,
+  [role="dialog"] .mm-calendar-cell,
+  [data-radix-popper-content-wrapper] .mm-calendar-cell {
+    color: hsl(var(--dark));
+    border-color: hsl(var(--border));
+  }
+
+  /* ============================================================
+     Utilidades reutilizables sobre imagen azul (legibilidad pareja)
+     ============================================================ */
+  .mm-on-image-text { color: #ffffff !important; }
+  .mm-on-image-muted { color: rgba(255, 255, 255, 0.82) !important; }
+  .mm-dark-panel {
+    background-color: rgba(11, 29, 69, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 0.75rem;
+    color: #ffffff;
+    backdrop-filter: blur(2px);
+  }
+  .mm-dark-border { border-color: rgba(255, 255, 255, 0.2) !important; }
+
   /* Link de auth — debe quedar azul siempre, NUNCA blanco
      Esto sobrevive a las reglas globales de .app-bg-image */
   .auth-link-inline,
