@@ -878,6 +878,46 @@
   color: #0b1d45 !important;
 }
 
+.app-bg-image header .app-header-control,
+.app-bg-image header :is(button, a).app-header-control {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--primary)) !important;
+  border-color: hsl(var(--background) / 0.75) !important;
+}
+
+.app-bg-image header .app-header-control svg,
+.app-bg-image header .app-header-control * {
+  color: hsl(var(--primary)) !important;
+}
+
+.app-bg-image header .app-header-control:hover {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--primary)) !important;
+}
+
+.app-bg-image header .app-header-nav-active,
+.app-bg-image header :is(a, button).app-header-nav-active {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--primary)) !important;
+}
+
+.app-bg-image header .app-header-nav-active svg,
+.app-bg-image header .app-header-nav-active * {
+  color: hsl(var(--primary)) !important;
+}
+
+.app-bg-image header .app-header-cta,
+.app-bg-image header :is(button, a).app-header-cta {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border-color: hsl(var(--primary)) !important;
+}
+
+.app-bg-image header .app-header-cta svg,
+.app-bg-image header .app-header-cta * {
+  color: hsl(var(--primary-foreground)) !important;
+}
+
 /* ---------- 2. Bottom nav móvil ---------- */
 .app-bg-image > nav.fixed.bottom-0 {
   background-color: rgba(11, 29, 69, 0.97) !important;
