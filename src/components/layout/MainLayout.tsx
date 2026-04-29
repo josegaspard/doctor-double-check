@@ -282,7 +282,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         }`}
       >
         <div className="container mx-auto px-4">
-          <div className="flex h-14 items-center justify-between">
+            <div className="flex h-12 items-center justify-between">
             {/* Logo & Mobile Menu */}
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Hamburger menu - hidden on mobile (replaced by bottom nav), visible on tablet */}
@@ -383,12 +383,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
               {/* Logo on mobile - small */}
               <Link to="/lives" className="flex sm:hidden items-center">
-                <img src={logoMedicalMasters} alt="Medical Masters" className="h-7 w-auto" loading="lazy" decoding="async" />
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-6 w-auto" loading="lazy" decoding="async" />
               </Link>
 
               {/* Logo - hidden on md, visible on lg+ */}
               <Link to="/lives" className="hidden lg:flex items-center">
-                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 xl:h-10 w-auto" loading="lazy" decoding="async" />
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-7 xl:h-8 w-auto" loading="lazy" decoding="async" />
               </Link>
             </div>
 
@@ -402,11 +402,11 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     <Link
                       key={item.href}
                       to={item.href}
-                      className={`relative flex items-center gap-1.5 px-2 lg:px-3 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                      className={`relative flex items-center gap-1.5 px-2 lg:px-2.5 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                         isActive
                           ? 'app-header-nav-active'
                           : isPanelItem
-                            ? 'app-header-control px-2 lg:px-3'
+                            ? 'app-header-control px-2 lg:px-2.5'
                             : 'app-header-nav-link'
                       }`}
                     >
@@ -421,7 +421,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
-                        className="app-header-nav-link flex items-center gap-1.5 px-2 lg:px-3 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0"
+                        className="app-header-nav-link flex items-center gap-1.5 px-2 lg:px-2.5 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0"
                         aria-label={t('nav.more')}
                       >
                         <MoreHorizontal className="w-3.5 h-3.5" />
@@ -449,7 +449,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             </nav>
 
             {/* Right Side */}
-            <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5">
               {/* Global Search */}
               <GlobalSearch />
               
@@ -461,8 +461,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               {/* Wallet — superficie clara: usa clase semántica, sin variant outline */}
               {(role === 'patient' || role === 'resident') && (
                 <Link to="/wallet" className="hidden sm:flex items-center app-header-surface-button">
-                  <span className="app-header-control gap-1.5 px-3 font-semibold text-sm">
-                    <Wallet className="w-4 h-4" />
+                    <span className="app-header-control gap-1.5 px-2.5 font-semibold text-xs">
+                    <Wallet className="w-3.5 h-3.5" />
                     <span className="hidden xl:inline"><AnimatedBalance balance={balance} /></span>
                     <span className="xl:hidden"><AnimatedBalance balance={balance} /></span>
                   </span>
@@ -475,13 +475,13 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="app-header-control gap-1.5 sm:gap-2 px-2 sm:px-3"
+                      className="app-header-control gap-1.5 px-2 sm:px-2.5"
                     >
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                         {role === 'doctor' ? (
-                          <Stethoscope className="w-4 h-4" />
+                          <Stethoscope className="w-3.5 h-3.5" />
                         ) : (
-                          <User className="w-4 h-4" />
+                          <User className="w-3.5 h-3.5" />
                         )}
                       </div>
                       <span className="text-xs sm:text-sm font-semibold max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
@@ -524,8 +524,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button onClick={() => navigate('/login')} size="sm" className="app-header-cta h-11 gap-2 px-4 text-base font-semibold">
-                  <LogIn className="w-4 h-4" />
+                <Button onClick={() => navigate('/login')} size="sm" className="app-header-cta h-9 gap-1.5 px-3 text-sm font-semibold">
+                  <LogIn className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">{t('nav.login')}</span>
                 </Button>
               )}
