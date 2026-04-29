@@ -258,21 +258,20 @@ export default function Login() {
                       {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('login.loginTab')}
                     </Button>
                     
-                      <Button 
-                        type="button" 
-                        variant="link" 
-                        className="w-full justify-center text-white font-medium underline underline-offset-4 hover:text-white hover:opacity-90"
-                      onClick={handleForgotPassword}
-                      disabled={resetLoading}
-                    >
-                      {resetLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      {t('login.forgotPassword')}
-                    </Button>
+                      <button
+                        type="button"
+                        onClick={handleForgotPassword}
+                        disabled={resetLoading}
+                        className="auth-link-inline w-full justify-center inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80 underline underline-offset-4 disabled:opacity-60"
+                      >
+                        {resetLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        {t('login.forgotPassword')}
+                      </button>
                   </form>
                   
                   <div className="relative my-4 sm:my-6">
                     <Separator />
-                     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-dark/80 px-2 text-xs text-white/75 backdrop-blur-sm">
+                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-card px-2 text-xs text-muted-foreground">
                       {t('login.orContinueWith')}
                     </span>
                   </div>
@@ -434,7 +433,7 @@ export default function Login() {
                     
                     <div className="relative my-4 sm:my-6">
                       <Separator />
-                     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-dark/80 px-2 text-xs text-white/75 backdrop-blur-sm">
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-card px-2 text-xs text-muted-foreground">
                         {t('login.orContinueWith')}
                       </span>
                     </div>

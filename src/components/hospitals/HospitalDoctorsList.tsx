@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Star, Stethoscope, ChevronRight } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Star, Stethoscope, ChevronRight, MessageCircle, MapPin, Clock, Loader2 } from 'lucide-react';
 
 interface HospitalDoctorsListProps {
   hospitalId: string;
@@ -19,48 +21,72 @@ interface DoctorRow {
   rating: number;
   total_consultations: number;
   location: string | null;
+  office_hours_start: string | null;
+  office_hours_end: string | null;
+  office_days: string[] | null;
   name: string | null;
   avatar_url: string | null;
 }
 
+function isAvailableNow(d: DoctorRow) {
+  if (!d.office_days || !d.office_hours_start || !d.office_hours_end) return false;
+  const now = new Date();
+  const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
+  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  return d.office_days.includes(day) && time >= d.office_hours_start && time <= d.office_hours_end;
+}
+
+function getInitials(name: string) {
+  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
 /**
- * Lists doctors related to a hospital by overlapping specialty.
- * Falls back to top-rated approved doctors if no specialty match.
+ * Lista completa de doctores relacionados a un hospital.
+ * Une por especialidad; si no hay match, trae top-rated aprobados como fallback.
  */
 export default function HospitalDoctorsList({
   hospitalId,
-  hospitalName,
   specialties,
-  zone,
   language,
 }: HospitalDoctorsListProps) {
   const navigate = useNavigate();
   const es = language === 'es';
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [usedFallback, setUsedFallback] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       setLoading(true);
       try {
-        let query = supabase
-          .from('doctor_profiles')
-          .select('id, user_id, specialty, rating, total_consultations, location')
-          .eq('status', 'approved')
-          .order('rating', { ascending: false })
-          .limit(6);
+        let docs: any[] = [];
+        let fallback = false;
 
         if (specialties && specialties.length > 0) {
-          query = query.in('specialty', specialties as any);
+          const { data } = await supabase
+            .from('doctor_profiles')
+            .select('id, user_id, specialty, rating, total_consultations, location, office_hours_start, office_hours_end, office_days')
+            .eq('status', 'approved')
+            .in('specialty', specialties as any)
+            .order('rating', { ascending: false })
+            .limit(8);
+          docs = data || [];
         }
 
-        const { data: docs, error } = await query;
-        if (error) throw error;
-        if (cancelled) return;
+        if (docs.length === 0) {
+          const { data } = await supabase
+            .from('doctor_profiles')
+            .select('id, user_id, specialty, rating, total_consultations, location, office_hours_start, office_hours_end, office_days')
+            .eq('status', 'approved')
+            .order('rating', { ascending: false })
+            .limit(6);
+          docs = data || [];
+          fallback = docs.length > 0;
+        }
 
-        const userIds = (docs || []).map((d) => d.user_id);
-        let profilesMap: Record<string, { name: string | null; avatar_url: string | null }> = {};
+        const userIds = docs.map((d) => d.user_id);
+        const profilesMap: Record<string, { name: string | null; avatar_url: string | null }> = {};
         if (userIds.length > 0) {
           const { data: profs } = await supabase
             .from('profiles')
@@ -71,18 +97,24 @@ export default function HospitalDoctorsList({
           });
         }
 
-        const merged: DoctorRow[] = (docs || []).map((d) => ({
+        const merged: DoctorRow[] = docs.map((d) => ({
           id: d.id,
           user_id: d.user_id,
           specialty: d.specialty,
           rating: Number(d.rating) || 0,
           total_consultations: d.total_consultations || 0,
           location: d.location,
+          office_hours_start: d.office_hours_start,
+          office_hours_end: d.office_hours_end,
+          office_days: d.office_days,
           name: profilesMap[d.user_id]?.name || null,
           avatar_url: profilesMap[d.user_id]?.avatar_url || null,
         }));
 
-        if (!cancelled) setDoctors(merged);
+        if (!cancelled) {
+          setDoctors(merged);
+          setUsedFallback(fallback);
+        }
       } catch (e) {
         console.warn('[HospitalDoctorsList] error', e);
         if (!cancelled) setDoctors([]);
@@ -98,7 +130,8 @@ export default function HospitalDoctorsList({
 
   if (loading) {
     return (
-      <div className="mt-4 p-4 rounded-lg bg-muted/40 border border-border">
+      <div className="mt-4 p-4 rounded-lg bg-muted/40 border border-border flex items-center gap-2">
+        <Loader2 className="w-4 h-4 animate-spin text-primary" />
         <p className="text-sm text-muted-foreground">{es ? 'Cargando médicos...' : 'Loading doctors...'}</p>
       </div>
     );
@@ -124,11 +157,16 @@ export default function HospitalDoctorsList({
 
   return (
     <div className="mt-4">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
         <h4 className="text-sm font-semibold flex items-center gap-2">
           <Stethoscope className="w-4 h-4 text-primary" />
           {es ? 'Médicos relacionados' : 'Related doctors'}
-          <span className="text-xs font-normal text-muted-foreground">({doctors.length})</span>
+          <Badge variant="secondary" className="text-[10px] h-5">{doctors.length}</Badge>
+          {usedFallback && (
+            <span className="text-[10px] font-normal text-muted-foreground">
+              {es ? '(sugeridos por rating)' : '(suggested by rating)'}
+            </span>
+          )}
         </h4>
         <Button
           variant="ghost"
@@ -143,34 +181,65 @@ export default function HospitalDoctorsList({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {doctors.map((d) => (
-          <button
-            key={d.id}
-            onClick={() => navigate(`/doctors/${d.user_id}`)}
-            className="flex items-center gap-3 p-2.5 rounded-lg bg-card border border-border hover:border-primary/50 hover:bg-muted/40 transition-all text-left"
-          >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {d.avatar_url ? (
-                <img src={d.avatar_url} alt={d.name || 'Doctor'} className="w-full h-full object-cover" loading="lazy" />
-              ) : (
-                <Stethoscope className="w-5 h-5 text-primary" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
-                {d.name ? (es ? `Dr. ${d.name}` : `Dr. ${d.name}`) : (es ? 'Médico verificado' : 'Verified doctor')}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">{d.specialty}</p>
-              <div className="flex items-center gap-1 mt-0.5">
-                <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                <span className="text-[11px] text-muted-foreground">
-                  {d.rating > 0 ? d.rating.toFixed(1) : '—'} · {d.total_consultations} {es ? 'consultas' : 'consults'}
-                </span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {doctors.map((d) => {
+          const available = isAvailableNow(d);
+          return (
+            <button
+              key={d.id}
+              onClick={() => navigate(`/doctor/${d.user_id}`)}
+              className="text-left p-3 rounded-lg bg-card border border-border hover:border-primary/50 hover:shadow-sm transition-all"
+            >
+              <div className="flex items-start gap-3">
+                <div className="relative flex-shrink-0">
+                  <Avatar className="w-12 h-12 border border-border">
+                    <AvatarImage src={d.avatar_url || undefined} alt={d.name || 'Doctor'} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                      {getInitials(d.name || 'Dr')}
+                    </AvatarFallback>
+                  </Avatar>
+                  {available && (
+                    <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-success border-2 border-card" aria-label={es ? 'Disponible' : 'Available'} />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate text-foreground">
+                    {d.name ? `Dr. ${d.name}` : (es ? 'Médico verificado' : 'Verified doctor')}
+                  </p>
+                  <p className="text-xs text-primary/80 font-medium truncate">{d.specialty}</p>
+                  <div className="mt-1 flex items-center flex-wrap gap-x-2.5 gap-y-1 text-[11px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-0.5">
+                      <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                      <span className="font-medium text-foreground">{d.rating > 0 ? d.rating.toFixed(1) : '—'}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-0.5">
+                      <MessageCircle className="w-3 h-3" />
+                      {d.total_consultations}
+                    </span>
+                    {d.location && (
+                      <span className="inline-flex items-center gap-0.5 truncate max-w-[120px]">
+                        <MapPin className="w-3 h-3" />
+                        <span className="truncate">{d.location}</span>
+                      </span>
+                    )}
+                    {available ? (
+                      <span className="inline-flex items-center gap-0.5 text-success font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                        {es ? 'Disponible' : 'Available'}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-0.5">
+                        <Clock className="w-3 h-3" />
+                        {es ? 'No disponible' : 'Unavailable'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

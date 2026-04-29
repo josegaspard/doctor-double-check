@@ -192,12 +192,12 @@ export default function HospitalLocator() {
     setExpandedId(expandedId === h.id ? null : h.id);
   };
 
-  // Filter chips for quick type selection
+  // Filter chips for quick type selection — usan utilidades .mm-chip / .mm-chip-active
   const typeChips = [
-    { value: 'all', label: es ? 'Todos' : 'All', icon: '🏥', color: 'bg-muted text-foreground' },
-    { value: 'public', label: es ? 'Público' : 'Public', icon: '🏥', color: 'bg-blue-600 text-white' },
-    { value: 'private', label: es ? 'Privado' : 'Private', icon: '🏨', color: 'bg-purple-600 text-white' },
-    { value: 'clinic', label: es ? 'Clínica' : 'Clinic', icon: '🩺', color: 'bg-teal-600 text-white' },
+    { value: 'all', label: es ? 'Todos' : 'All', icon: '🏥', activeBg: 'bg-primary' },
+    { value: 'public', label: es ? 'Público' : 'Public', icon: '🏥', activeBg: 'bg-blue-600' },
+    { value: 'private', label: es ? 'Privado' : 'Private', icon: '🏨', activeBg: 'bg-purple-600' },
+    { value: 'clinic', label: es ? 'Clínica' : 'Clinic', icon: '🩺', activeBg: 'bg-teal-600' },
   ];
 
   const FilterPanel = () => (
@@ -206,15 +206,18 @@ export default function HospitalLocator() {
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Tipo' : 'Type'}</p>
         <div className="grid grid-cols-2 gap-1.5">
-          {typeChips.map(chip => (
-            <button
-              key={chip.value}
-              onClick={() => setFilterType(chip.value)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 text-center ${filterType === chip.value ? chip.color + ' shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}
-            >
-              {chip.icon} {chip.label}
-            </button>
-          ))}
+          {typeChips.map(chip => {
+            const isActive = filterType === chip.value;
+            return (
+              <button
+                key={chip.value}
+                onClick={() => setFilterType(chip.value)}
+                className={`mm-chip justify-center w-full ${isActive ? `mm-chip-active ${chip.activeBg}` : ''}`}
+              >
+                <span aria-hidden>{chip.icon}</span> {chip.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -324,11 +327,11 @@ export default function HospitalLocator() {
               <p className="text-sm text-muted-foreground">{es ? 'Directorio de hospitales y clínicas en México' : 'Hospital & clinic directory in Mexico'}</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Building2 className="w-3.5 h-3.5 text-blue-500" />{hospitals.length} {es ? 'hospitales' : 'hospitals'}</span>
-            <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Star className="w-3.5 h-3.5 text-yellow-500" />{es ? 'Información verificada' : 'Verified info'}</span>
-            {userLoc && <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Navigation className="w-3.5 h-3.5 text-green-500" />{es ? 'Ubicación activa' : 'Location active'}</span>}
-            <span className="flex items-center gap-1 bg-background/60 rounded-full px-2.5 py-1"><Heart className="w-3.5 h-3.5 text-rose-500" />{activeDoctorsCount} {es ? 'doctores activos' : 'active doctors'}</span>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span className="mm-stat-pill"><Building2 className="w-3.5 h-3.5 text-blue-600" />{hospitals.length} {es ? 'hospitales' : 'hospitals'}</span>
+            <span className="mm-stat-pill"><Star className="w-3.5 h-3.5 text-yellow-500" />{es ? 'Información verificada' : 'Verified info'}</span>
+            {userLoc && <span className="mm-stat-pill"><Navigation className="w-3.5 h-3.5 text-green-600" />{es ? 'Ubicación activa' : 'Location active'}</span>}
+            <span className="mm-stat-pill"><Heart className="w-3.5 h-3.5 text-rose-500" />{activeDoctorsCount} {es ? 'doctores activos' : 'active doctors'}</span>
           </div>
         </div>
 
@@ -372,15 +375,18 @@ export default function HospitalLocator() {
         {/* Desktop: Type chips + Sort inline */}
         <div className="hidden sm:flex items-center justify-between gap-3 mb-4">
           <div className="flex gap-2 flex-wrap">
-            {typeChips.map(chip => (
-              <button
-                key={chip.value}
-                onClick={() => setFilterType(chip.value)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${filterType === chip.value ? chip.color + ' shadow-md scale-105' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}
-              >
-                {chip.icon} {chip.label}
-              </button>
-            ))}
+            {typeChips.map(chip => {
+              const isActive = filterType === chip.value;
+              return (
+                <button
+                  key={chip.value}
+                  onClick={() => setFilterType(chip.value)}
+                  className={`mm-chip ${isActive ? `mm-chip-active ${chip.activeBg}` : ''}`}
+                >
+                  <span aria-hidden>{chip.icon}</span> {chip.label}
+                </button>
+              );
+            })}
           </div>
           <div className="flex items-center gap-2">
             <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
