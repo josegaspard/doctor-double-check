@@ -394,7 +394,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
             {/* Desktop Nav — split: 6 main items visible + "Más" dropdown for the rest */}
             <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start mx-1 lg:mx-2 min-w-0">
-              <div className="flex items-center gap-0.5 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
                 {filteredNavItems.slice(0, 6).map((item) => {
                   const isActive = location.pathname === item.href;
                   const isPanelItem = item.href === '/doctor/dashboard';
@@ -402,15 +402,15 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     <Link
                       key={item.href}
                       to={item.href}
-                      className={`relative flex items-center gap-1 px-1.5 lg:px-2 py-1.5 rounded-md text-[11px] xl:text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      className={`relative flex items-center gap-1.5 px-2 lg:px-3 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                         isActive
                           ? 'app-header-nav-active'
                           : isPanelItem
-                            ? 'app-header-control px-2 min-h-0 h-auto'
+                            ? 'app-header-control px-2 lg:px-3'
                             : 'app-header-nav-link'
                       }`}
                     >
-                      <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10 hidden xl:block" />
+                      <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10" />
                       <span className="relative z-10">{t(item.shortLabelKey || item.labelKey)}</span>
                     </Link>
                   );
@@ -421,7 +421,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
-                        className="app-header-nav-link flex items-center gap-1 px-1.5 lg:px-2 py-1.5 rounded-md text-[11px] xl:text-xs font-medium transition-all whitespace-nowrap flex-shrink-0"
+                        className="app-header-nav-link flex items-center gap-1.5 px-2 lg:px-3 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0"
                         aria-label={t('nav.more')}
                       >
                         <MoreHorizontal className="w-3.5 h-3.5" />
