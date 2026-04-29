@@ -216,6 +216,59 @@
 }
 
 @layer components {
+  .app-header-bar {
+    background-color: hsl(var(--dark));
+    color: hsl(var(--dark-foreground));
+  }
+
+  .app-header-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    border-radius: calc(var(--radius) - 0.125rem);
+    border: 1px solid hsl(var(--background) / 0.75);
+    background-color: hsl(var(--background));
+    color: hsl(var(--primary));
+    box-shadow: 0 8px 20px -12px hsl(var(--dark) / 0.55);
+    transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .app-header-control:hover {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--primary));
+    border-color: hsl(var(--background));
+  }
+
+  .app-header-nav-link {
+    color: hsl(var(--dark-foreground) / 0.86);
+  }
+
+  .app-header-nav-link:hover {
+    color: hsl(var(--dark-foreground));
+    background-color: hsl(var(--background) / 0.14);
+  }
+
+  .app-header-nav-active {
+    color: hsl(var(--primary));
+    background-color: hsl(var(--background));
+    box-shadow: 0 8px 20px -12px hsl(var(--dark) / 0.55);
+  }
+
+  .app-header-cta {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: 1px solid hsl(var(--primary));
+    box-shadow: 0 8px 20px -12px hsl(var(--dark) / 0.55);
+  }
+
+  .app-header-cta:hover {
+    background-color: hsl(var(--primary) / 0.9);
+    color: hsl(var(--primary-foreground));
+  }
+
   /* Medical Badge Styles */
   .badge-live {
     @apply bg-live text-live-foreground animate-pulse;
