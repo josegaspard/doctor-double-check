@@ -1,70 +1,77 @@
-## Objetivo
+Entendido. Voy a corregirlo con una regla única de contraste, no con parches aislados.
 
-Atender 6 ítems de UX/funcional + relación doctor↔hospital.
+Plan de implementación:
 
----
+1. Corregir inmediatamente el link de “Olvidaste tu contraseña”
+   - En `Login.tsx`, quitar `text-white` y `hover:text-white` del botón/link.
+   - Dejarlo como link visible sobre tarjeta clara: azul primario, subrayado, hover azul más oscuro.
+   - Asegurar que no quede afectado por las reglas globales de `.app-bg-image`.
 
-### 1. Re-login al cerrar todas las ventanas
+2. Crear una lógica visual reutilizable para botones/chips sobre fondo azul
+   - Agregar clases globales compactas y consistentes en `src/index.css`, por ejemplo:
+     - botón/chip claro: fondo blanco o blanco translúcido + texto azul oscuro.
+     - botón/chip activo: fondo azul primario + texto blanco.
+     - botón secundario claro: fondo `#eef4ff` / blanco translúcido + texto azul oscuro, nunca texto blanco.
+   - Ajustar la “safety net” global para que cualquier elemento con fondo claro (`bg-white`, `bg-background`, `bg-muted`, `bg-card`, `bg-accent`, `bg-light`, etc.) fuerce texto/iconos oscuros cuando esté fuera de cards/dialogs.
+   - Evitar que botones claros terminen con blanco sobre blanco, incluyendo hover.
 
-Hoy la sesión persiste en `localStorage` (Supabase + `mm_cached_user`), por eso al volver el usuario sigue logueado.
+3. Arreglar `/hospital-locator` según las capturas
+   - Cambiar los chips de tipo hospital y los badges del hero para que no usen fondo gris claro con texto blanco.
+   - Aplicar la misma lógica a:
+     - “Todos / Público / Privado / Clínica”
+     - “20 hospitales / Información verificada / Ubicación activa / doctores activos”
+     - filtros laterales y filtros mobile donde haya fondos claros/translúcidos.
+   - Mantener colores de hospital coherentes:
+     - Público: azul
+     - Privado: morado
+     - Clínica: teal
+   - Estado inactivo: claro/translúcido con texto azul oscuro legible.
+   - Estado activo: color fuerte con texto blanco.
 
-**Cambio:** que la sesión muera al cerrar todas las pestañas (tipo "session-only").
+4. Añadir doctores “por completo” dentro de `/hospital-locator`
+   - Reemplazar el componente actual `HospitalDoctorsList` para que sea más completo y se parezca más a una lista real, no solo mini filas.
+   - Mostrar dentro del hospital expandido:
+     - avatar/iniciales
+     - nombre
+     - especialidad
+     - rating
+     - consultas
+     - ubicación si existe
+     - estado disponible/no disponible si los horarios existen
+     - botón “Ver perfil”
+   - Usar la ruta correcta de perfil médico (`/doctor/:id`) para alinearlo con el directorio actual.
+   - Mejorar la consulta de datos para traer más campos de `doctor_profiles` y `profiles`.
+   - Mantener fallback: si no hay doctores por especialidad, mostrar doctores aprobados top-rated y un botón al directorio completo.
 
-- En `src/integrations/supabase/client.ts` (auto-generado) NO se puede tocar. Alternativa: en `src/main.tsx` o un nuevo `src/lib/sessionGuard.ts`, al boot detectar si es una "nueva sesión de navegador" usando `sessionStorage` (que sí muere al cerrar todas las pestañas) como flag. Si no existe el flag → ejecutar `supabase.auth.signOut()` antes de hidratar y limpiar `mm_cached_user`. Setear el flag inmediatamente después.
-- Mantener excepción para visitantes (`medicalMasters_visitor` en sessionStorage) y para flujos OAuth en curso (no signOut si la URL trae `code=` / hash con `access_token`).
-- Resultado: refrescar la pestaña no cierra sesión; cerrar todas sí.
+5. Unificar onboarding y register con la misma lógica visual
+   - En `Onboarding.tsx`, aplicar el mismo sistema a:
+     - selector de rol
+     - círculos de progreso
+     - botones outline/ghost
+     - botón de ubicación
+     - botón de enviar/verificar teléfono
+     - tarjetas/paneles informativos
+   - En la pestaña register dentro de `Login.tsx`, asegurar que botones, separadores y Google button tengan contraste correcto y no dependan de texto blanco sobre fondos claros.
+   - Mantener tamaños razonables; no agrandar botones ni header.
 
-### 2. Visibilidad de iconos y textos
+6. Revisión visual posterior
+   - Revisar en la preview al menos:
+     - `/login` pestaña login y register
+     - `/onboarding`
+     - `/hospital-locator` desktop al ancho actual 1106x736
+     - un hospital expandido con doctores
+   - Verificar específicamente:
+     - no haya texto blanco sobre fondos claros
+     - iconos visibles sin hover
+     - botones activos/inactivos consistentes
+     - chips no gigantes
+     - doctores dentro de hospitales se ven como una lista completa y usable
 
-- **`LanguageSwitcher`** (`src/components/settings/LanguageSwitcher.tsx`): el botón usa fondo `bg-white/12` solo en hover y en headers oscuros se pierde. Darle un fondo permanente sutil (`bg-white/10 border border-white/20`) cuando se renderiza sobre header oscuro (Login/Landing) y mantener variant claro dentro de MainLayout. En la captura se ve un cuadrado sólido — replicar ese contenedor blanco con icono primary cuando esté sobre fondo oscuro: `bg-white text-primary` opcional vía `variant`.
-- **"¿Olvidaste tu contraseña?"** en `src/pages/Login.tsx` línea 264: cambiar `text-white/85` → `text-white underline-offset-4 hover:underline font-medium` para alto contraste (ya no se selecciona para verlo).
-- **Icono perfil doctor (Stethoscope "Dr.")** en MainLayout: hoy es transparente con borde fino. Aplicar `bg-white/15 border-white/40 text-white` o un look píldora con fondo blanco-translúcido más visible.
-- **Icono campana / búsqueda** del header: añadir `bg-white/10` permanente para que se note sin hover.
+Archivos previstos:
+- `src/pages/Login.tsx`
+- `src/pages/Onboarding.tsx`
+- `src/pages/HospitalLocator.tsx`
+- `src/components/hospitals/HospitalDoctorsList.tsx`
+- `src/index.css`
 
-### 3. Renombrar "Acceso Vault"
-
-`src/lib/i18n/es.ts` línea 229: `vaultAccess: 'Acceso Vault'` → `'Bóveda médica'` (y EN equivalente `'Medical vault'`). Verificar que es el único lugar en `/doctor/dashboard`.
-
-### 4. Calendario legible
-
-`src/components/ui/calendar.tsx`: los días aparecen casi invisibles sobre el fondo azul oscuro de la app porque el `day` hereda `text-muted-foreground` del ghost button. Cambios:
-- `head_cell`: `text-muted-foreground` → `text-foreground/80 font-semibold`
-- `day`: añadir `text-foreground` explícito; outside `opacity-50` → `opacity-40 text-foreground`
-- `day_today`: ya tiene `bg-accent`, reforzar con `font-bold ring-1 ring-primary/30`
-- Mejorar contraste de números no seleccionados con `text-foreground` en lugar de heredar.
-
-### 5. Lista de doctores dentro de Hospitales
-
-**Problema de datos:** `hospitals` no tiene relación con `profiles`. No existe columna `hospital_id` en doctores.
-
-**Decisión:** mostrar doctores **filtrados por especialidad y zona del hospital** (mejor proxy disponible sin migración). Cuando el usuario expande un hospital, debajo de las reseñas mostrar un bloque "Doctores relacionados" con:
-- Query a `profiles` donde `role='doctor'`, `verified=true`, especialidad ∈ `hospital.specialties`, limit 6.
-- Card horizontal compacta (avatar, nombre, especialidad, rating, botón "Ver perfil").
-- Link "Ver todos en /doctors?specialty=X" para ir al directorio completo.
-
-Componente nuevo: `src/components/hospitals/HospitalDoctorsList.tsx`. Se inserta en `HospitalLocator.tsx` dentro del bloque expandido.
-
-(Si el cliente luego quiere asociación real médico↔hospital, eso requiere migración futura `profiles.hospital_id` o tabla `doctor_hospitals` — fuera del alcance de esta iteración.)
-
-### 6. Item activo del header con fondo blanco
-
-`src/components/layout/MainLayout.tsx` línea 405-419: hoy el activo usa `text-primary` + pill `bg-primary/10`. Cambiar a:
-- Activo: `bg-white text-primary` (la pill `motion.span` pasa a `bg-white shadow-sm`)
-- No activo: queda igual.
-- Aplicar también al panel doctor activo (variant blanca con borde primary).
-- Mismo patrón en bottom-nav móvil (línea 564+) si aplica: activo con fondo blanco redondeado.
-
----
-
-## Archivos a modificar / crear
-
-- `src/main.tsx` o nuevo `src/lib/sessionGuard.ts` (re-login)
-- `src/components/settings/LanguageSwitcher.tsx` (visibilidad)
-- `src/pages/Login.tsx` (link "olvidaste contraseña")
-- `src/components/layout/MainLayout.tsx` (icono Dr, activo blanco, campana/search)
-- `src/lib/i18n/es.ts` + `en.ts` (renombrar vault)
-- `src/components/ui/calendar.tsx` (contraste días)
-- `src/components/hospitals/HospitalDoctorsList.tsx` (nuevo)
-- `src/pages/HospitalLocator.tsx` (integrar lista doctores)
-
-Sin migraciones. Sin nuevas dependencias.
+No haré cambios de base de datos para esto; es UI y consulta de datos ya existentes.
