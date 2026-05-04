@@ -46,7 +46,7 @@ export default function ArcoRights() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from('arco_requests').insert(parsed.data);
+    const { error } = await supabase.from('arco_requests').insert(parsed.data as any);
     setSubmitting(false);
     if (error) {
       toast.error('No se pudo enviar la solicitud. Intenta de nuevo.');
