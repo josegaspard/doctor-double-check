@@ -15,6 +15,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { PushNotificationToggle } from '@/components/notifications/PushNotificationToggle';
 import { MySubscriptions } from '@/components/subscriptions/MySubscriptions';
 import { ReferralProgram } from '@/components/referrals/ReferralProgram';
+import { MfaSettings } from '@/components/settings/MfaSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -371,6 +372,9 @@ export default function Settings() {
               </p>
             </CardContent>
           </Card>
+
+          {/* MFA / 2FA */}
+          <MfaSettings />
 
           {/* My Subscriptions */}
           <MySubscriptions />
