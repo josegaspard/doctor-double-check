@@ -301,6 +301,48 @@ export type Database = {
         }
         Relationships: []
       }
+      arco_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          description: string
+          email: string
+          full_name: string
+          id: string
+          identification_url: string | null
+          request_type: string
+          resolved_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          description: string
+          email: string
+          full_name: string
+          id?: string
+          identification_url?: string | null
+          request_type: string
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string
+          email?: string
+          full_name?: string
+          id?: string
+          identification_url?: string | null
+          request_type?: string
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cedula_verifications: {
         Row: {
           anio_registro: number | null
