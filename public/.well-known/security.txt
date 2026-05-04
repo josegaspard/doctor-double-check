@@ -1,0 +1,11 @@
+Contact: mailto:seguridad@medical-masters.com
+Expires: 2027-01-01T00:00:00.000Z
+Preferred-Languages: es, en
+Canonical: https://medical-masters.com/.well-known/security.txt
+Policy: https://medical-masters.com/security
+Acknowledgments: https://medical-masters.com/security#acknowledgments
+
+# Medical Masters · Coordinated Vulnerability Disclosure
+# Si descubres una vulnerabilidad, por favor repórtala de forma privada al
+# correo de contacto. Pedimos un tiempo razonable (90 días) para remediar
+# antes de divulgación pública. Agradecemos a quienes reporten de buena fe.

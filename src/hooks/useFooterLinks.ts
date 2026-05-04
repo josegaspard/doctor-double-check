@@ -27,10 +27,11 @@ const DEFAULT_FOOTER: FooterLinksData = {
     { label: 'Contacto', href: '/contact' },
   ],
   legal: [
-    { label: 'Privacidad', href: '/privacy' },
+    { label: 'Aviso de Privacidad', href: '/privacy' },
     { label: 'Términos', href: '/terms' },
     { label: 'Seguridad', href: '/security' },
     { label: 'Cumplimiento', href: '/compliance' },
+    { label: 'Derechos ARCO', href: '/arco' },
     { label: 'Reportar', href: '/report-issue' },
   ],
   copyright: '2025 Medical Masters. Todos los derechos reservados.',
