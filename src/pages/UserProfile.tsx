@@ -1071,6 +1071,7 @@ export default function UserProfile() {
                 </div>
               </CardContent>
             </Card>
+            {user?.id && <DoctorCredentialsCard userId={user.id} />}
           </motion.div>
         )}
 
