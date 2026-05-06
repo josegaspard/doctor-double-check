@@ -1,107 +1,114 @@
-# Plan: Ajustes UX/UI y funcionalidad solicitados
+# Plan — Cierre de pendientes + Auditoría de Seguridad
 
-Voy a abordar 11 cambios agrupados por área. Cada uno tiene inicio, lógica y cierre claros (sin TODOs colgando).
+## Parte 1 — Pendientes funcionales (frontend)
 
----
+### 1.1 Fix build error: `HospitalLocator.tsx`
+Eliminar las 2 referencias huérfanas a `typeChips` (líneas 360 y 390). Como el cliente pidió hardcodear "Privado/México", el bloque de chips de tipo de hospital queda obsoleto:
+- Línea ~360: borrar el `.map(chip => ...)` completo (ya no hay selector de tipo).
+- Línea ~390: reemplazar el chip del filtro activo por una etiqueta estática "Privado · México" o eliminarlo.
 
-## 1. `/profile` — Ficha pública del doctor más completa
-**Mostrar siempre (cuando el doctor lo tenga):**
-- Universidad de medicina (`titulo_medicina` / nuevo campo `university`)
-- Especialidad(es) — soportar múltiples
-- Hospitales/clínicas donde trabaja
-- Cédula profesional + estado (badge ya existe)
-- Cédula de especialidad + estado (nuevo campo `cedula_especialidad`)
+### 1.2 Header — orden y dropdown "Más"
+En `src/components/layout/` (Header):
+- Items principales visibles: **Live · Contenido Premium · Medical Masters · Educación · Chat · Disponibilidad**.
+- Dropdown **"Más"** (shadcn `DropdownMenu`) con: Hospitales, Directorio, Doble Check, Recetas, Vault, Noticias, Suministros, Reuniones.
+- Mobile: drawer reordenado con la misma jerarquía.
 
-**Cambios:**
-- Migración: añadir a `doctor_profiles` las columnas `university text`, `secondary_specialties text[]`, `workplaces jsonb` (array de `{name, type, city}`), `cedula_especialidad text`, `cedula_especialidad_status text`, `cedula_especialidad_rejection_reason text`.
-- Actualizar `fetchUserProfile.ts` y tipos.
-- En `DoctorProfile.tsx`: nueva sección "Credenciales y trayectoria" con grid de chips (Universidad, Especialidades, Lugares de trabajo) y dos `CredentialStatusBadge` (cédula prof. + cédula esp.).
-- En `Onboarding` y `Settings` (sección doctor): inputs para editar estos datos.
-- Admin: en `AdminCredentials.tsx` agregar revisión de cédula de especialidad (mismo flujo aprobado/rechazado).
+### 1.3 `/profile` — Sección de credenciales
+En `DoctorProfile.tsx` añadir card **"Credenciales profesionales"** que lea/edite los nuevos campos del migration ya aplicado:
+- `university` (input)
+- `secondary_specialties` (multi-select usando `specialties.ts`)
+- `workplaces` (lista editable: nombre + ciudad + tipo Hospital/Clínica)
+- `cedula_especialidad` + estado de validación (badge: pending/approved/rejected con motivo)
+- Botón "Validar cédula de especialidad" → reusa edge function existente de validación SEP cambiando endpoint a "especialidad".
 
----
+### 1.4 `/doctor/vault` — Modal "Agregar paciente"
+En `DoctorVault.tsx`:
+- Botón "Agregar paciente" abre `Dialog` con tabs:
+  - **Tab 1 — Buscar registrado**: input que llama RPC `search_patients_for_doctor` (ya existe).
+  - **Tab 2 — Crear externo**: form (nombre, edad, sexo, teléfono, email, notas) → INSERT en `external_patients` (tabla ya creada).
+- Validación con zod (nombre min 2, email opcional válido, teléfono opcional E.164).
+- Lista de pacientes muestra mezcla de registrados + externos con badge diferenciador.
 
-## 2. `/recordings` — Simplificar filtro ACCESO
-- En `RecordingsGrid.tsx` reducir `ContentFilter` a `'all' | 'free' | 'purchased'`.
-- Eliminar opciones "De Pago" y "Sin Comprar" del menú lateral y de la lógica de filtrado.
+### 1.5 `/lives` — Gating visitante + tab "Programar"
+**Gating** (`LivePlayer.tsx`):
+- Detectar visitante anónimo → permitir 60s de preview, luego overlay bloqueante con CTA **"Crear cuenta gratis para seguir viendo"** → redirect a `/login?mode=signup&redirect=/lives/{id}`.
+- Counter usando `useEffect` + cleanup; reproducir/pausar via Daily.co API.
 
----
+**Tab Programar** (`DoctorGoLive.tsx`):
+- Añadir `Tabs` con: "Empezar ahora" | "Programar curso".
+- Tab Programar: form (título, descripción, fecha+hora, precio, categoría) → INSERT live con `status='scheduled'` y `scheduled_at` (columna ya existe).
+- Mostrar lista de lives programados del doctor con acciones (editar/cancelar/iniciar).
 
-## 3. `/doctor/vault` — Agregar pacientes manualmente
-- En el tab "Mis Pacientes" añadir botón **"Agregar paciente"** que abre un modal:
-  - Buscar por email/teléfono → si existe, vincular.
-  - Si no existe, crear paciente "externo" (registro en nueva tabla `external_patients` con `doctor_id, name, email, phone, notes`) que aparece junto a los pacientes reales.
-- Migración: tabla `external_patients` con RLS (solo el doctor dueño lee/escribe).
-- Reflejarlos en la lista existente con badge "Externo".
-
----
-
-## 4. `/hospital-locator` — Solo hospitales privados de México + scroll lateral de doctores
-- Forzar filtro fijo `country = 'MX'` y `type = 'private'`. Quitar selector Público/Clínica del UI; dejar solo "Privados".
-- En el panel de detalle del hospital, la sección **"Médicos relacionados"** pasa de grid a **carrusel horizontal scrolleable** (`overflow-x-auto snap-x` con tarjetas `min-w-[260px]`), flechas prev/next en desktop, swipe en móvil. Cada tarjeta mantiene avatar, nombre, especialidad, rating y CTA.
-
----
-
-## 5. Header global — Reorganización
-Items principales visibles (en este orden):
-`Live` · `Contenido Premium` · `Medical Masters` · `Education` · `Chat` · `Disponibilidad` · `Más ▾`
-
-El menú **Más** (Popover/Dropdown) contiene el resto: Doctores, Hospitales, Marketplace, Noticias, Ayuda, Recetas, Vault, etc. (según rol). Refactor en `components/layout/Header*.tsx`.
+### 1.6 Widget "Mis notas" en `DoctorDashboard`
+- Card con últimas 5 entradas de `doctor_notes` (tabla ya creada).
+- Quick-add inline (textarea + botón guardar).
+- Link "Ver todas" → futura `/doctor/notes` (placeholder o expandible inline).
 
 ---
 
-## 6. Landing `/` — "Seguridad Militar" → "Seguridad de nivel empresarial"
-- Renombrar bloque a **"Seguridad de grado bancario"** con copy real: cifrado AES-256 en reposo, TLS 1.3 en tránsito, RLS por usuario, cumplimiento NOM-024-SSA3, auditoría completa. Ícono `ShieldCheck`. Quitar referencia "militar".
+## Parte 2 — Auditoría de Seguridad (pre-pruebas del cliente)
 
----
+### 2.1 Acciones automatizadas
+1. Ejecutar `supabase--linter` → resolver TODO error/warning (RLS faltante, funciones sin `search_path`, índices, etc.).
+2. Ejecutar `security--run_security_scan` → review completo de findings.
+3. Revisar todas las tablas creadas en últimos 7 días (`external_patients`, `doctor_notes`) para confirmar RLS estricta.
 
-## 7. Landing `/` — Quitar "AI Assistant"
-- Eliminar tarjeta "AI Assistant / Pre-diagnóstico y triaje automatizado" del grid de features. Reacomodar grid (3 cols → mantener simetría).
+### 2.2 Checklist manual de hardening
 
----
+**Auth & Sesiones**
+- Confirmar `password_hibp_enabled = true` (leaked password protection).
+- Confirmar OTP expiry ≤ 10 min.
+- Verificar que `handle_new_user` bloquea self-signup como `admin` (ya validado en trigger).
+- Confirmar `Browser Re-login` (sessionStorage flag) sigue activo en `main.tsx`.
 
-## 8. Landing `/` — Reemplazar copy falso por información real
-Auditar `Landing.tsx` y sustituir cifras/claims inventados por datos reales del producto:
-- Especialidades disponibles (≈35 reales, leídas de `specialties.ts`)
-- Funciones reales: Orientación médica por video, Contenido Premium, Reuniones (recetas), Directorio de hospitales, Chat médico, Vault clínico, Verificación SEP/COFEPRIS.
-- Si una métrica no se puede comprobar (ej. "10,000 doctores"), reemplazar por copy cualitativo ("Doctores verificados con cédula validada por SEP").
+**RLS y datos sensibles**
+- `external_patients`: solo el doctor creador puede SELECT/UPDATE/DELETE.
+- `doctor_notes`: solo el dueño.
+- `vault_files` + `vault_access`: confirmar política basada en `user_has_vault_access`.
+- `prescriptions`: confirmar restricción por país (mem://constraints/prescription-country-restriction).
+- `consultations`, `chat_sessions`, `messages`: solo participantes.
+- `wallet_transactions`: bloquear INSERT directo desde cliente (solo via RPC `SECURITY DEFINER`).
+- `doctor_profiles.pending_earnings/total_earnings`: bloquear UPDATE directo del cliente.
+- `user_roles`: ningún UPDATE/INSERT desde cliente (solo admin via service role).
 
----
+**Edge Functions**
+- Verificar firma HMAC en: `stripe-webhook`, `daily-webhook`, `cloudflare-webhook`, `veriff-webhook`.
+- Confirmar `verify_jwt = false` SOLO en webhooks públicos.
+- Validar input con zod en endpoints que reciben body.
+- Rate limiting: confirmar SMS Vonage (1/día onboarding, 2/día OTP).
 
-## 9. Gating de visitantes en Lives gratis
-- En `LivePlayer.tsx` (cuando `role === 'visitor'`): después de N segundos (ej. 60s) o al intentar interactuar (chat/like), mostrar **overlay persistente "Crea tu cuenta gratis para seguir viendo"** con CTA grande a `/login?mode=register`. El visitante puede cerrar y seguir viendo solo el video, pero el CTA se mantiene fijo en esquina inferior. Sin descarga, sin grabación local.
-- Bloquear cualquier `download` attribute / context menu en el reproductor para visitantes (ya implementado para PDFs, replicar para video).
+**Storage**
+- `vault-files`, `prescriptions`, `identity-documents`, `doctor-credentials`, `medical-history`, `doctor-invoices`, `report-attachments`, `recordings`, `documents`: privados con RLS por `(storage.foldername(name))[1] = auth.uid()::text` o equivalente.
+- `doctor-content`: granular por `is_public` + suscripción/compra.
+- Verificar buckets públicos solo contienen assets no-sensibles (`avatars`, `thumbnails`, `email-assets`, `ad-creatives`).
 
----
+**Frontend hardening**
+- Confirmar protección de PDFs/videos: blob URLs, `#toolbar=0`, contextmenu deshabilitado, `nodownload` (mem://features/content-protection-policy).
+- Confirmar overlay anti-screenshot en contenido premium (si aplica).
+- CSP/headers: revisar si hay headers configurables.
 
-## 10. Programar curso (lives futuros)
-- En `DoctorGoLive.tsx` añadir tab **"Programar"** con datepicker + hora + título + precio + descripción → inserta en `lives` con `status='scheduled'` y `scheduled_at`.
-- En `LivesGrid` agregar sección **"Próximamente"** que lista los `scheduled` con countdown y botón "Recordarme" (crea notificación push + email).
+**Privacidad y reglas de negocio**
+- Bloqueo paciente↔residente (mem://architecture/access-control-and-paywalls).
+- Marketplace bloqueado para pacientes.
+- Residentes no pueden cobrar consultas.
+- OTP vault requiere consulta activa o historial de chat.
 
----
-
-## 11. Notas visibles en el panel del doctor
-- En `DoctorDashboard.tsx` agregar widget **"Mis notas"** que lista las últimas notas clínicas (`consultation_notes` / `medical_summaries`) con scroll, click → abre la consulta correspondiente.
-- Si hay tabla `doctor_notes` privada, leerla; si no, crear migración mínima `doctor_notes (doctor_id, patient_id, content, created_at)` con RLS dueño-only y CRUD inline.
+### 2.3 Entregable
+Reporte final en chat con:
+- Lista de hallazgos del linter/scanner + estado (fixed/accepted).
+- Tabla de RLS por tabla sensible.
+- Confirmación de webhooks firmados.
+- Cualquier hallazgo crítico → fix inmediato vía migration.
 
 ---
 
 ## Orden de ejecución
-1. Migraciones DB (tareas 1, 3, 11) — una sola migración consolidada.
-2. Refactor Header (5).
-3. Landing copy (6, 7, 8).
-4. Recordings filtro (2).
-5. Hospital Locator (4).
-6. Profile doctor (1).
-7. Vault pacientes (3 frontend).
-8. Lives visitante + programar (9, 10).
-9. Dashboard notas (11).
+1. Fix build error (1.1) — desbloquea preview.
+2. Auditoría de seguridad (2.1, 2.2) — prioridad porque el cliente prueba HOY.
+3. Header (1.2).
+4. Profile credenciales (1.3).
+5. Vault add patient (1.4).
+6. Lives gating + scheduling (1.5).
+7. Dashboard notes widget (1.6).
 
-## Detalles técnicos
-- Todas las nuevas columnas/tablas con RLS estricta (dueño o admin).
-- Header responsive: en móvil colapsa todo en hamburguesa; "Más" solo aplica desktop ≥ md.
-- Carrusel de doctores: usar `embla-carousel-react` (ya en proyecto si existe) o scroll nativo con `scroll-snap`.
-- Sin descarga: `controlsList="nodownload noremoteplayback"`, `onContextMenu={e=>e.preventDefault()}`, sin botón share-as-file.
-- Copy en español, manteniendo glosario: "Orientación médica", "Contenido Premium", "Reuniones".
-
-¿Apruebas para implementar todo en este orden?
+¿Apruebas para implementar en este orden?
