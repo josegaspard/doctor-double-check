@@ -2289,6 +2289,7 @@ export type Database = {
           peak_viewers: number
           questions_count: number
           recording_price: number | null
+          scheduled_at: string | null
           specialty: string
           started_at: string
           status: Database["public"]["Enums"]["live_status"]
@@ -2315,6 +2316,7 @@ export type Database = {
           peak_viewers?: number
           questions_count?: number
           recording_price?: number | null
+          scheduled_at?: string | null
           specialty: string
           started_at?: string
           status?: Database["public"]["Enums"]["live_status"]
@@ -2341,6 +2343,7 @@ export type Database = {
           peak_viewers?: number
           questions_count?: number
           recording_price?: number | null
+          scheduled_at?: string | null
           specialty?: string
           started_at?: string
           status?: Database["public"]["Enums"]["live_status"]
@@ -4578,7 +4581,12 @@ export type Database = {
         | "verified"
         | "failed"
         | "expired"
-      live_status: "live" | "ended" | "processing_recording" | "recording_ready"
+      live_status:
+        | "live"
+        | "ended"
+        | "processing_recording"
+        | "recording_ready"
+        | "scheduled"
       notification_type:
         | "doctor_live"
         | "doctor_availability"
@@ -4747,7 +4755,13 @@ export const Constants = {
         "failed",
         "expired",
       ],
-      live_status: ["live", "ended", "processing_recording", "recording_ready"],
+      live_status: [
+        "live",
+        "ended",
+        "processing_recording",
+        "recording_ready",
+        "scheduled",
+      ],
       notification_type: [
         "doctor_live",
         "doctor_availability",
