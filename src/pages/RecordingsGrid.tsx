@@ -36,7 +36,7 @@ import {
   User,
 } from 'lucide-react';
 
-type ContentFilter = 'all' | 'free' | 'paid' | 'purchased' | 'not_purchased';
+type ContentFilter = 'all' | 'free' | 'purchased';
 
 import { SPECIALTIES_FILTER as SPECIALTIES } from '@/lib/specialties';
 
@@ -95,9 +95,7 @@ export default function RecordingsGrid() {
     const owned = ownsRecording(rec);
     switch (contentFilter) {
       case 'free': return rec.price === 0;
-      case 'paid': return rec.price > 0;
       case 'purchased': return owned && rec.price > 0;
-      case 'not_purchased': return !owned && rec.price > 0;
       default: return true;
     }
   });
@@ -138,9 +136,7 @@ export default function RecordingsGrid() {
   const filterOptions: { key: ContentFilter; label: string; icon: React.ReactNode }[] = [
     { key: 'all', label: t('ads.filterAll'), icon: <Library className="w-3.5 h-3.5" /> },
     { key: 'free', label: t('ads.filterFree'), icon: <Gift className="w-3.5 h-3.5" /> },
-    { key: 'paid', label: t('ads.filterPaid'), icon: <Sparkles className="w-3.5 h-3.5" /> },
     { key: 'purchased', label: t('ads.filterPurchased'), icon: <ShoppingBag className="w-3.5 h-3.5" /> },
-    { key: 'not_purchased', label: t('ads.filterNotPurchased'), icon: <Lock className="w-3.5 h-3.5" /> },
   ];
 
   return (
