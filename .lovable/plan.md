@@ -1,157 +1,107 @@
-## Mega-plan de seguridad — Medical Masters
+# Plan: Ajustes UX/UI y funcionalidad solicitados
 
-Aplico TODO lo que es accionable desde el código/configuración. Lo que requiere abogado, pentest externo o infraestructura fuera de Lovable Cloud queda explícitamente fuera de alcance (al final).
-
----
-
-### FASE 1 — Quick wins (sin UI nueva)
-
-**1.1 Activar HIBP (Have I Been Pwned) en Auth**
-- Activar `password_hibp_enabled: true` vía `configure_auth`.
-- Bloquea contraseñas filtradas en signup y cambio de contraseña.
-
-**1.2 Política de contraseñas robusta**
-- Subir `password_min_length` a 12 (NIST SP 800-63B).
-- Mantener requisitos actuales de complejidad.
-
-**1.3 `/.well-known/security.txt`**
-- Crear `public/.well-known/security.txt` con: contacto, política, idioma, expiración.
-- Apuntar contacto a `seguridad@medical-masters.com` (o el que el usuario indique).
-
-**1.4 Permissions-Policy + meta headers de seguridad complementarios**
-- En `index.html` agregar `<meta http-equiv="Permissions-Policy">` limitando geolocation, payment, usb, etc. (cámara/micrófono se permiten en self para videoconsulta).
-- Agregar `<meta name="referrer" content="strict-origin-when-cross-origin">`.
-
-**1.5 Aviso de Privacidad LFPDPPP visible**
-- Verificar `UnifiedFooter` y onboarding linkean a `/privacy`.
-- Si falta link en onboarding/registro, agregarlo.
-- Añadir mención explícita "Aviso de Privacidad" (no solo "Privacidad").
-
-**1.6 Source maps off en producción**
-- Confirmar `vite.config.ts`: añadir `build.sourcemap: false` explícito.
+Voy a abordar 11 cambios agrupados por área. Cada uno tiene inicio, lógica y cierre claros (sin TODOs colgando).
 
 ---
 
-### FASE 2 — Página ARCO (LFPDPPP)
+## 1. `/profile` — Ficha pública del doctor más completa
+**Mostrar siempre (cuando el doctor lo tenga):**
+- Universidad de medicina (`titulo_medicina` / nuevo campo `university`)
+- Especialidad(es) — soportar múltiples
+- Hospitales/clínicas donde trabaja
+- Cédula profesional + estado (badge ya existe)
+- Cédula de especialidad + estado (nuevo campo `cedula_especialidad`)
 
-**2.1 Nueva página `/arco`**
-- Formulario público para ejercer derechos de Acceso, Rectificación, Cancelación, Oposición.
-- Campos: nombre, email, identificación adjunta, tipo de derecho, descripción.
-- Validación con Zod (longitudes, sanitización).
-- Inserta en nueva tabla `arco_requests` (RLS: solo admin puede leer; insert público con rate-limit lógico via UNIQUE(email, día)).
-- Notifica por email al equipo via `send-verification-email` o nueva función `notify-arco-request`.
-
-**2.2 Link en footer**
-- Agregar "Derechos ARCO" en `UnifiedFooter` → `/arco`.
-
----
-
-### FASE 3 — MFA (TOTP) opcional para todos, obligatorio para admins
-
-**3.1 UI en `Settings`**
-- Sección "Autenticación de dos factores".
-- Enroll TOTP via `supabase.auth.mfa.enroll({ factorType: 'totp' })`.
-- QR + verificación de 6 dígitos.
-- Lista de factores activos + opción unenroll.
-
-**3.2 Challenge en login**
-- Tras `signInWithPassword`, si `currentLevel !== 'aal2'` y hay factor TOTP, mostrar paso de challenge.
-- `supabase.auth.mfa.challenge` + `verify`.
-
-**3.3 Enforcement para admins**
-- Hook `useRequireMFA` que redirige a `/settings?mfa=required` si rol admin sin AAL2.
-- Aplicar en `AdminDashboard` y rutas `/admin/*`.
-
-**3.4 Banner sugerencia MFA para doctores**
-- En `DoctorDashboard` mostrar banner dismissible si no tienen MFA (no obligatorio inicialmente, evita romper flujo).
+**Cambios:**
+- Migración: añadir a `doctor_profiles` las columnas `university text`, `secondary_specialties text[]`, `workplaces jsonb` (array de `{name, type, city}`), `cedula_especialidad text`, `cedula_especialidad_status text`, `cedula_especialidad_rejection_reason text`.
+- Actualizar `fetchUserProfile.ts` y tipos.
+- En `DoctorProfile.tsx`: nueva sección "Credenciales y trayectoria" con grid de chips (Universidad, Especialidades, Lugares de trabajo) y dos `CredentialStatusBadge` (cédula prof. + cédula esp.).
+- En `Onboarding` y `Settings` (sección doctor): inputs para editar estos datos.
+- Admin: en `AdminCredentials.tsx` agregar revisión de cédula de especialidad (mismo flujo aprobado/rechazado).
 
 ---
 
-### FASE 4 — Hardening de cabeceras y validaciones
-
-**4.1 Validación Zod faltante en Edge Functions críticas**
-- Auditar `create-consultation-checkout`, `create-chat-checkout`, `purchase-recording-wallet`, `claim-cedula`, `notify-new-chat`.
-- Añadir `z.object({...}).safeParse` en cada handler que aún reciba `await req.json()` sin validar.
-
-**4.2 Logs scrub**
-- Revisar Edge Functions: ningún `console.log` debe imprimir contenido de mensajes de chat, contraseñas, tokens, ni datos clínicos.
-- Reemplazar con `logger` o eliminar.
-
-**4.3 SRI en scripts externos**
-- gtag y Google Fonts en `index.html`: añadir `integrity` + `crossorigin` donde el proveedor lo soporte (fonts CSS sí; gtag no admite SRI por su naturaleza dinámica — documentar excepción en comentario).
-
-**4.4 Eliminar leaks en errores**
-- `NotFound.tsx` y páginas de error: confirmar que no muestran stack traces.
+## 2. `/recordings` — Simplificar filtro ACCESO
+- En `RecordingsGrid.tsx` reducir `ContentFilter` a `'all' | 'free' | 'purchased'`.
+- Eliminar opciones "De Pago" y "Sin Comprar" del menú lateral y de la lógica de filtrado.
 
 ---
 
-### FASE 5 — Subdominio y DNS (instrucciones al usuario, no código)
-
-Documentar en un nuevo `SECURITY.md`:
-- Cómo agregar registros CAA en su registrador.
-- Cómo activar DNSSEC.
-- Cómo verificar HSTS preload (https://hstspreload.org).
-- Cómo activar Cloudflare WAF y Bot Fight Mode.
-- Cómo correr `securityheaders.com` y `ssllabs.com` para auditar.
+## 3. `/doctor/vault` — Agregar pacientes manualmente
+- En el tab "Mis Pacientes" añadir botón **"Agregar paciente"** que abre un modal:
+  - Buscar por email/teléfono → si existe, vincular.
+  - Si no existe, crear paciente "externo" (registro en nueva tabla `external_patients` con `doctor_id, name, email, phone, notes`) que aparece junto a los pacientes reales.
+- Migración: tabla `external_patients` con RLS (solo el doctor dueño lee/escribe).
+- Reflejarlos en la lista existente con badge "Externo".
 
 ---
 
-### Detalles técnicos
-
-**DB migration nueva** (`arco_requests`):
-```sql
-create table public.arco_requests (
-  id uuid primary key default gen_random_uuid(),
-  full_name text not null check (length(full_name) between 2 and 200),
-  email text not null check (length(email) <= 255),
-  request_type text not null check (request_type in ('access','rectification','cancellation','opposition')),
-  description text not null check (length(description) between 10 and 5000),
-  identification_url text,
-  status text not null default 'pending',
-  created_at timestamptz not null default now()
-);
-alter table public.arco_requests enable row level security;
-create policy "anyone can submit ARCO" on public.arco_requests for insert with check (true);
-create policy "admins read ARCO" on public.arco_requests for select using (public.has_role(auth.uid(), 'admin'));
-create policy "admins update ARCO" on public.arco_requests for update using (public.has_role(auth.uid(), 'admin'));
-```
-
-**security.txt**:
-```
-Contact: mailto:seguridad@medical-masters.com
-Expires: 2027-01-01T00:00:00.000Z
-Preferred-Languages: es, en
-Canonical: https://medical-masters.com/.well-known/security.txt
-Policy: https://medical-masters.com/security
-```
-
-**Permissions-Policy meta**:
-```html
-<meta http-equiv="Permissions-Policy" content="geolocation=(self), camera=(self), microphone=(self), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()">
-```
+## 4. `/hospital-locator` — Solo hospitales privados de México + scroll lateral de doctores
+- Forzar filtro fijo `country = 'MX'` y `type = 'private'`. Quitar selector Público/Clínica del UI; dejar solo "Privados".
+- En el panel de detalle del hospital, la sección **"Médicos relacionados"** pasa de grid a **carrusel horizontal scrolleable** (`overflow-x-auto snap-x` con tarjetas `min-w-[260px]`), flechas prev/next en desktop, swipe en móvil. Cada tarjeta mantiene avatar, nombre, especialidad, rating y CTA.
 
 ---
 
-### Fuera de alcance (requieren acción externa)
+## 5. Header global — Reorganización
+Items principales visibles (en este orden):
+`Live` · `Contenido Premium` · `Medical Masters` · `Education` · `Chat` · `Disponibilidad` · `Más ▾`
 
-- **TLS, HSTS preload, CAA, DNSSEC**: configuración DNS / Cloudflare por el usuario.
-- **CSP estricto con nonces**: incompatible con inyecciones runtime de Lovable; requiere mover a self-host.
-- **NOM-024 / NOM-004 / COFEPRIS / HIPAA / ISO 27001**: certificación legal externa.
-- **Pentest, bug bounty**: contratación externa.
-- **Rate limiting custom**: política de Lovable Cloud (no hay primitivos aún).
-- **WAF rules, SIEM, bastion hosts**: Cloudflare/infra del usuario.
-- **PCI-DSS**: ya cubierto por Stripe Checkout (no procesamos tarjetas).
+El menú **Más** (Popover/Dropdown) contiene el resto: Doctores, Hospitales, Marketplace, Noticias, Ayuda, Recetas, Vault, etc. (según rol). Refactor en `components/layout/Header*.tsx`.
 
 ---
 
-### Orden de ejecución una vez aprobado
+## 6. Landing `/` — "Seguridad Militar" → "Seguridad de nivel empresarial"
+- Renombrar bloque a **"Seguridad de grado bancario"** con copy real: cifrado AES-256 en reposo, TLS 1.3 en tránsito, RLS por usuario, cumplimiento NOM-024-SSA3, auditoría completa. Ícono `ShieldCheck`. Quitar referencia "militar".
 
-1. Migración DB (`arco_requests`) + `configure_auth` (HIBP + min length 12).
-2. Archivos estáticos: `security.txt`, meta tags en `index.html`, `vite.config.ts` sourcemap off.
-3. Footer: link Aviso de Privacidad + ARCO.
-4. Página `/arco` + ruta + Edge Function `notify-arco-request`.
-5. UI MFA en Settings + challenge en Login + enforcement admins.
-6. Validaciones Zod faltantes + scrub de logs en Edge Functions.
-7. `SECURITY.md` con guía DNS/Cloudflare.
+---
 
-¿Apruebas para arrancar?
+## 7. Landing `/` — Quitar "AI Assistant"
+- Eliminar tarjeta "AI Assistant / Pre-diagnóstico y triaje automatizado" del grid de features. Reacomodar grid (3 cols → mantener simetría).
+
+---
+
+## 8. Landing `/` — Reemplazar copy falso por información real
+Auditar `Landing.tsx` y sustituir cifras/claims inventados por datos reales del producto:
+- Especialidades disponibles (≈35 reales, leídas de `specialties.ts`)
+- Funciones reales: Orientación médica por video, Contenido Premium, Reuniones (recetas), Directorio de hospitales, Chat médico, Vault clínico, Verificación SEP/COFEPRIS.
+- Si una métrica no se puede comprobar (ej. "10,000 doctores"), reemplazar por copy cualitativo ("Doctores verificados con cédula validada por SEP").
+
+---
+
+## 9. Gating de visitantes en Lives gratis
+- En `LivePlayer.tsx` (cuando `role === 'visitor'`): después de N segundos (ej. 60s) o al intentar interactuar (chat/like), mostrar **overlay persistente "Crea tu cuenta gratis para seguir viendo"** con CTA grande a `/login?mode=register`. El visitante puede cerrar y seguir viendo solo el video, pero el CTA se mantiene fijo en esquina inferior. Sin descarga, sin grabación local.
+- Bloquear cualquier `download` attribute / context menu en el reproductor para visitantes (ya implementado para PDFs, replicar para video).
+
+---
+
+## 10. Programar curso (lives futuros)
+- En `DoctorGoLive.tsx` añadir tab **"Programar"** con datepicker + hora + título + precio + descripción → inserta en `lives` con `status='scheduled'` y `scheduled_at`.
+- En `LivesGrid` agregar sección **"Próximamente"** que lista los `scheduled` con countdown y botón "Recordarme" (crea notificación push + email).
+
+---
+
+## 11. Notas visibles en el panel del doctor
+- En `DoctorDashboard.tsx` agregar widget **"Mis notas"** que lista las últimas notas clínicas (`consultation_notes` / `medical_summaries`) con scroll, click → abre la consulta correspondiente.
+- Si hay tabla `doctor_notes` privada, leerla; si no, crear migración mínima `doctor_notes (doctor_id, patient_id, content, created_at)` con RLS dueño-only y CRUD inline.
+
+---
+
+## Orden de ejecución
+1. Migraciones DB (tareas 1, 3, 11) — una sola migración consolidada.
+2. Refactor Header (5).
+3. Landing copy (6, 7, 8).
+4. Recordings filtro (2).
+5. Hospital Locator (4).
+6. Profile doctor (1).
+7. Vault pacientes (3 frontend).
+8. Lives visitante + programar (9, 10).
+9. Dashboard notas (11).
+
+## Detalles técnicos
+- Todas las nuevas columnas/tablas con RLS estricta (dueño o admin).
+- Header responsive: en móvil colapsa todo en hamburguesa; "Más" solo aplica desktop ≥ md.
+- Carrusel de doctores: usar `embla-carousel-react` (ya en proyecto si existe) o scroll nativo con `scroll-snap`.
+- Sin descarga: `controlsList="nodownload noremoteplayback"`, `onContextMenu={e=>e.preventDefault()}`, sin botón share-as-file.
+- Copy en español, manteniendo glosario: "Orientación médica", "Contenido Premium", "Reuniones".
+
+¿Apruebas para implementar todo en este orden?

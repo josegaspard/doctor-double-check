@@ -1245,6 +1245,75 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_notes: {
+        Row: {
+          content: string
+          created_at: string
+          doctor_id: string
+          external_patient_id: string | null
+          id: string
+          patient_id: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          doctor_id: string
+          external_patient_id?: string | null
+          id?: string
+          patient_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          doctor_id?: string
+          external_patient_id?: string | null
+          id?: string
+          patient_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_notes_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_notes_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_notes_external_patient_id_fkey"
+            columns: ["external_patient_id"]
+            isOneToOne: false
+            referencedRelation: "external_patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctor_payouts: {
         Row: {
           amount: number
@@ -1305,6 +1374,9 @@ export type Database = {
           badge_override: string | null
           bio: string | null
           can_publish_news: boolean
+          cedula_especialidad: string | null
+          cedula_especialidad_rejection_reason: string | null
+          cedula_especialidad_status: string | null
           cedula_profesional: string | null
           cedula_rejection_reason: string | null
           cedula_status:
@@ -1330,14 +1402,17 @@ export type Database = {
           pending_earnings: number | null
           rank_override: string | null
           rating: number
+          secondary_specialties: string[] | null
           signature_url: string | null
           specialty: string
           status: Database["public"]["Enums"]["doctor_status"]
           stripe_account_id: string | null
           total_consultations: number
           total_earnings: number | null
+          university: string | null
           updated_at: string
           user_id: string
+          workplaces: Json | null
         }
         Insert: {
           available_for_clinical_sessions?: boolean
@@ -1345,6 +1420,9 @@ export type Database = {
           badge_override?: string | null
           bio?: string | null
           can_publish_news?: boolean
+          cedula_especialidad?: string | null
+          cedula_especialidad_rejection_reason?: string | null
+          cedula_especialidad_status?: string | null
           cedula_profesional?: string | null
           cedula_rejection_reason?: string | null
           cedula_status?:
@@ -1370,14 +1448,17 @@ export type Database = {
           pending_earnings?: number | null
           rank_override?: string | null
           rating?: number
+          secondary_specialties?: string[] | null
           signature_url?: string | null
           specialty: string
           status?: Database["public"]["Enums"]["doctor_status"]
           stripe_account_id?: string | null
           total_consultations?: number
           total_earnings?: number | null
+          university?: string | null
           updated_at?: string
           user_id: string
+          workplaces?: Json | null
         }
         Update: {
           available_for_clinical_sessions?: boolean
@@ -1385,6 +1466,9 @@ export type Database = {
           badge_override?: string | null
           bio?: string | null
           can_publish_news?: boolean
+          cedula_especialidad?: string | null
+          cedula_especialidad_rejection_reason?: string | null
+          cedula_especialidad_status?: string | null
           cedula_profesional?: string | null
           cedula_rejection_reason?: string | null
           cedula_status?:
@@ -1410,14 +1494,17 @@ export type Database = {
           pending_earnings?: number | null
           rank_override?: string | null
           rating?: number
+          secondary_specialties?: string[] | null
           signature_url?: string | null
           specialty?: string
           status?: Database["public"]["Enums"]["doctor_status"]
           stripe_account_id?: string | null
           total_consultations?: number
           total_earnings?: number | null
+          university?: string | null
           updated_at?: string
           user_id?: string
+          workplaces?: Json | null
         }
         Relationships: [
           {
@@ -1657,6 +1744,54 @@ export type Database = {
           used_at?: string | null
         }
         Relationships: []
+      }
+      external_patients: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_patients_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_patients_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       featured_events: {
         Row: {
@@ -2154,6 +2289,7 @@ export type Database = {
           peak_viewers: number
           questions_count: number
           recording_price: number | null
+          scheduled_at: string | null
           specialty: string
           started_at: string
           status: Database["public"]["Enums"]["live_status"]
@@ -2180,6 +2316,7 @@ export type Database = {
           peak_viewers?: number
           questions_count?: number
           recording_price?: number | null
+          scheduled_at?: string | null
           specialty: string
           started_at?: string
           status?: Database["public"]["Enums"]["live_status"]
@@ -2206,6 +2343,7 @@ export type Database = {
           peak_viewers?: number
           questions_count?: number
           recording_price?: number | null
+          scheduled_at?: string | null
           specialty?: string
           started_at?: string
           status?: Database["public"]["Enums"]["live_status"]
@@ -4443,7 +4581,12 @@ export type Database = {
         | "verified"
         | "failed"
         | "expired"
-      live_status: "live" | "ended" | "processing_recording" | "recording_ready"
+      live_status:
+        | "live"
+        | "ended"
+        | "processing_recording"
+        | "recording_ready"
+        | "scheduled"
       notification_type:
         | "doctor_live"
         | "doctor_availability"
@@ -4612,7 +4755,13 @@ export const Constants = {
         "failed",
         "expired",
       ],
-      live_status: ["live", "ended", "processing_recording", "recording_ready"],
+      live_status: [
+        "live",
+        "ended",
+        "processing_recording",
+        "recording_ready",
+        "scheduled",
+      ],
       notification_type: [
         "doctor_live",
         "doctor_availability",
