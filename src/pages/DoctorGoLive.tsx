@@ -478,7 +478,20 @@ export default function DoctorGoLive() {
 
   return (
     <MainLayout>
-      <LiveSetupForm onStartLive={handleStartLive} isCreating={isCreating} />
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
+        <Tabs defaultValue="now" className="w-full">
+          <TabsList className="grid grid-cols-2 mb-4 max-w-md">
+            <TabsTrigger value="now" className="gap-2"><Radio className="w-4 h-4" /> Transmitir ahora</TabsTrigger>
+            <TabsTrigger value="schedule" className="gap-2"><CalendarClock className="w-4 h-4" /> Programar curso</TabsTrigger>
+          </TabsList>
+          <TabsContent value="now">
+            <LiveSetupForm onStartLive={handleStartLive} isCreating={isCreating} />
+          </TabsContent>
+          <TabsContent value="schedule">
+            <ScheduleCourseForm />
+          </TabsContent>
+        </Tabs>
+      </div>
     </MainLayout>
   );
 }
