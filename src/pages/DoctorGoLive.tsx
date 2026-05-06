@@ -478,44 +478,35 @@ export default function DoctorGoLive() {
 
   return (
     <MainLayout>
-      <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/5 pointer-events-none" />
-        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-primary/15 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-[600px] h-[600px] rounded-full bg-accent/10 blur-3xl pointer-events-none" />
-        <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{
-            backgroundImage:
-              'linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-          }}
-        />
-        <div className="relative container mx-auto px-4 py-8 max-w-4xl">
-          <div className="mb-6 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-3">
-              <Radio className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-medium text-primary">Estudio en vivo</span>
-            </div>
-            <h1 className="font-heading text-2xl md:text-3xl font-bold text-foreground">
-              Comparte tu conocimiento
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Transmite ahora o programa una sesión para tu audiencia
-            </p>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-6 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-3">
+            <Radio className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-medium text-primary">Estudio en vivo</span>
           </div>
-          <Tabs defaultValue="now" className="w-full">
-            <TabsList className="grid grid-cols-2 mb-4 max-w-md mx-auto">
-              <TabsTrigger value="now" className="gap-2"><Radio className="w-4 h-4" /> Transmitir ahora</TabsTrigger>
-              <TabsTrigger value="schedule" className="gap-2"><CalendarClock className="w-4 h-4" /> Programar curso</TabsTrigger>
-            </TabsList>
-            <TabsContent value="now">
-              <LiveSetupForm onStartLive={handleStartLive} isCreating={isCreating} />
-            </TabsContent>
-            <TabsContent value="schedule">
-              <ScheduleCourseForm />
-            </TabsContent>
-          </Tabs>
+          <h1 className="font-heading text-2xl md:text-3xl font-bold text-foreground">
+            Comparte tu conocimiento
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Transmite ahora o programa una sesión para tu audiencia
+          </p>
         </div>
+        <Tabs defaultValue="now" className="w-full">
+          <TabsList className="grid grid-cols-2 mb-4 max-w-md mx-auto">
+            <TabsTrigger value="now" className="gap-2"><Radio className="w-4 h-4" /> Transmitir ahora</TabsTrigger>
+            <TabsTrigger value="schedule" className="gap-2"><CalendarClock className="w-4 h-4" /> Programar curso</TabsTrigger>
+          </TabsList>
+          <TabsContent value="now">
+            <div className="rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg p-4 sm:p-6">
+              <LiveSetupForm onStartLive={handleStartLive} isCreating={isCreating} />
+            </div>
+          </TabsContent>
+          <TabsContent value="schedule">
+            <div className="rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg p-4 sm:p-6">
+              <ScheduleCourseForm />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );
