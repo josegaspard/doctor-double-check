@@ -324,6 +324,11 @@ export default function DoctorVault() {
         file={selectedFile}
         viewOnly={true}
       />
+
+      <AddPatientModal
+        open={showAddPatient}
+        onOpenChange={setShowAddPatient}
+      />
     </MainLayout>
   );
 }
