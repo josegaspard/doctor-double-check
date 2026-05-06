@@ -11,12 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Folder, FileText, Image, ArrowLeft, Lock, User, Users,
-  Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail,
+  Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail, UserPlus,
 } from 'lucide-react';
 import { VaultAuditPanel } from '@/components/vault/VaultAuditPanel';
 import { VaultFile } from '@/contexts/VaultContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
+import { AddPatientModal } from '@/components/doctor/AddPatientModal';
 
 interface PatientPaymentSummary {
   patientEmail: string | null;
@@ -37,6 +38,7 @@ export default function DoctorVault() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [autoOpenHandled, setAutoOpenHandled] = useState(false);
   const [paymentsByPatient, setPaymentsByPatient] = useState<Record<string, PatientPaymentSummary>>({});
+  const [showAddPatient, setShowAddPatient] = useState(false);
 
   const accessibleFiles = getAccessibleFiles(user?.id || '');
 
@@ -133,13 +135,21 @@ export default function DoctorVault() {
           Volver al Panel
         </Button>
 
-        <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
-          <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-          {t('nav.doctorVault')}
-        </h1>
-        <p className="text-sm text-muted-foreground mb-6">
-          Expedientes médicos a los que tienes acceso por autorización del paciente. Aquí también verás el contacto de cobros y los totales pagados por cada paciente.
-        </p>
+        <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+          <div>
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+              {t('nav.doctorVault')}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
+              Expedientes médicos a los que tienes acceso por autorización del paciente. Aquí también verás el contacto de cobros y los totales pagados por cada paciente.
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setShowAddPatient(true)} className="gap-2 flex-shrink-0">
+            <UserPlus className="w-4 h-4" />
+            Agregar paciente
+          </Button>
+        </div>
 
         {/* Info Banner */}
         <Card className="mb-6 bg-info/10 border-info/30">
@@ -313,6 +323,11 @@ export default function DoctorVault() {
         }}
         file={selectedFile}
         viewOnly={true}
+      />
+
+      <AddPatientModal
+        open={showAddPatient}
+        onOpenChange={setShowAddPatient}
       />
     </MainLayout>
   );

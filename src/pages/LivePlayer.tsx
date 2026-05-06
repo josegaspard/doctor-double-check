@@ -20,6 +20,7 @@ import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { LiveChat } from '@/components/live/LiveChat';
 import { LiveDoctorSideChat } from '@/components/live/LiveDoctorSideChat';
 import { AnimatedViewerCount } from '@/components/live/AnimatedViewerCount';
+import { LiveVisitorGate } from '@/components/live/LiveVisitorGate';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -506,6 +507,7 @@ export default function LivePlayer() {
                   className={mobileFullscreen ? 'relative bg-black overflow-hidden group w-full h-full' : undefined}
                 />
                 <DynamicWatermark email={user?.email} userId={user?.id} />
+                <LiveVisitorGate isVisitor={role === 'visitor' || !user} livePath={`/live/${id}`} freeSeconds={60} />
               </div>
             ) : (
               <div className="relative aspect-video bg-black rounded-xl overflow-hidden no-context-menu">
