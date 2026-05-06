@@ -11,12 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Folder, FileText, Image, ArrowLeft, Lock, User, Users,
-  Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail,
+  Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail, UserPlus,
 } from 'lucide-react';
 import { VaultAuditPanel } from '@/components/vault/VaultAuditPanel';
 import { VaultFile } from '@/contexts/VaultContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
+import { AddPatientModal } from '@/components/doctor/AddPatientModal';
 
 interface PatientPaymentSummary {
   patientEmail: string | null;
