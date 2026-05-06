@@ -29,6 +29,7 @@ import { DoctorProfileCard } from '@/components/doctor/DoctorProfileCard';
 import { DoctorPatientsList } from '@/components/doctor/DoctorPatientsList';
 import { DoctorPatientSearch } from '@/components/doctor/DoctorPatientSearch';
 import { DoctorResidentRequests } from '@/components/doctor/DoctorResidentRequests';
+import { MyNotesWidget } from '@/components/doctor/MyNotesWidget';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -122,6 +123,12 @@ export default function DoctorDashboard() {
 
             {/* ── SOLICITUDES DE RESIDENTES ── */}
             <DoctorResidentRequests />
+
+            {/* ── MIS NOTAS ── */}
+            <section className="space-y-3">
+              <SectionHeader>Mis notas privadas</SectionHeader>
+              <MyNotesWidget />
+            </section>
 
             {/* ── PACIENTES ── */}
             <section className="space-y-3">
