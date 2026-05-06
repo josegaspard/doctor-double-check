@@ -181,66 +181,62 @@ export default function HospitalDoctorsList({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {doctors.map((d) => {
-          const available = isAvailableNow(d);
-          return (
-            <button
-              key={d.id}
-              onClick={() => navigate(`/doctor/${d.user_id}`)}
-              className="text-left p-3 rounded-lg bg-card border border-border hover:border-primary/50 hover:shadow-sm transition-all"
-            >
-              <div className="flex items-start gap-3">
-                <div className="relative flex-shrink-0">
-                  <Avatar className="w-12 h-12 border border-border">
-                    <AvatarImage src={d.avatar_url || undefined} alt={d.name || 'Doctor'} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                      {getInitials(d.name || 'Dr')}
-                    </AvatarFallback>
-                  </Avatar>
-                  {available && (
-                    <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-success border-2 border-card" aria-label={es ? 'Disponible' : 'Available'} />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate text-foreground">
-                    {d.name ? `Dr. ${d.name}` : (es ? 'Médico verificado' : 'Verified doctor')}
-                  </p>
-                  <p className="text-xs text-primary/80 font-medium truncate">{d.specialty}</p>
-                  <div className="mt-1 flex items-center flex-wrap gap-x-2.5 gap-y-1 text-[11px] text-muted-foreground">
-                    <span className="inline-flex items-center gap-0.5">
-                      <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                      <span className="font-medium text-foreground">{d.rating > 0 ? d.rating.toFixed(1) : '—'}</span>
-                    </span>
-                    <span className="inline-flex items-center gap-0.5">
-                      <MessageCircle className="w-3 h-3" />
-                      {d.total_consultations}
-                    </span>
-                    {d.location && (
-                      <span className="inline-flex items-center gap-0.5 truncate max-w-[120px]">
-                        <MapPin className="w-3 h-3" />
-                        <span className="truncate">{d.location}</span>
-                      </span>
-                    )}
-                    {available ? (
-                      <span className="inline-flex items-center gap-0.5 text-success font-medium">
-                        <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                        {es ? 'Disponible' : 'Available'}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-0.5">
-                        <Clock className="w-3 h-3" />
-                        {es ? 'No disponible' : 'Unavailable'}
-                      </span>
+      <div className="-mx-1 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+        <div className="flex gap-2.5 px-1 pb-1">
+          {doctors.map((d) => {
+            const available = isAvailableNow(d);
+            return (
+              <button
+                key={d.id}
+                onClick={() => navigate(`/doctor/${d.user_id}`)}
+                className="snap-start flex-shrink-0 w-[260px] text-left p-3 rounded-lg bg-card border border-border hover:border-primary/50 hover:shadow-sm transition-all"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="relative flex-shrink-0">
+                    <Avatar className="w-12 h-12 border border-border">
+                      <AvatarImage src={d.avatar_url || undefined} alt={d.name || 'Doctor'} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                        {getInitials(d.name || 'Dr')}
+                      </AvatarFallback>
+                    </Avatar>
+                    {available && (
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-success border-2 border-card" aria-label={es ? 'Disponible' : 'Available'} />
                     )}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate text-foreground">
+                      {d.name ? `Dr. ${d.name}` : (es ? 'Médico verificado' : 'Verified doctor')}
+                    </p>
+                    <p className="text-xs text-primary/80 font-medium truncate">{d.specialty}</p>
+                    <div className="mt-1 flex items-center flex-wrap gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                      <span className="inline-flex items-center gap-0.5">
+                        <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                        <span className="font-medium text-foreground">{d.rating > 0 ? d.rating.toFixed(1) : '—'}</span>
+                      </span>
+                      <span className="inline-flex items-center gap-0.5">
+                        <MessageCircle className="w-3 h-3" />
+                        {d.total_consultations}
+                      </span>
+                      {available ? (
+                        <span className="inline-flex items-center gap-0.5 text-success font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                          {es ? 'Disponible' : 'Available'}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-0.5">
+                          <Clock className="w-3 h-3" />
+                          {es ? 'No disp.' : 'Unavailable'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
-              </div>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </div>
+      <p className="mt-1 text-[10px] text-muted-foreground text-center">{es ? '← Desliza para ver más médicos →' : '← Swipe to see more doctors →'}</p>
     </div>
   );
 }

@@ -45,7 +45,7 @@ export default function HospitalLocator() {
   const [reviews, setReviews] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState('all');
+  const [filterType, setFilterType] = useState('private');
   const [filterZone, setFilterZone] = useState('all');
   const [filterSpecialty, setFilterSpecialty] = useState('all');
   const [filterMinRating, setFilterMinRating] = useState(0);
@@ -72,7 +72,7 @@ export default function HospitalLocator() {
     const fetchData = async () => {
       setLoading(true);
       const [{ data: h }, { data: r }, { count: docCount }] = await Promise.all([
-        supabase.from('hospitals').select('*').eq('is_active', true).order('name'),
+        supabase.from('hospitals').select('*').eq('is_active', true).eq('type', 'private').or('country_code.eq.MX,country_code.is.null').order('name'),
         supabase.from('hospital_reviews').select('*'),
         supabase.from('doctor_profiles').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
       ]);
@@ -192,32 +192,14 @@ export default function HospitalLocator() {
     setExpandedId(expandedId === h.id ? null : h.id);
   };
 
-  // Filter chips for quick type selection — usan utilidades .mm-chip / .mm-chip-active
-  const typeChips = [
-    { value: 'all', label: es ? 'Todos' : 'All', icon: '🏥', activeBg: 'bg-primary' },
-    { value: 'public', label: es ? 'Público' : 'Public', icon: '🏥', activeBg: 'bg-blue-600' },
-    { value: 'private', label: es ? 'Privado' : 'Private', icon: '🏨', activeBg: 'bg-purple-600' },
-    { value: 'clinic', label: es ? 'Clínica' : 'Clinic', icon: '🩺', activeBg: 'bg-teal-600' },
-  ];
-
+  // Solo hospitales privados de México
   const FilterPanel = () => (
     <div className="space-y-6">
-      {/* Type */}
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Tipo' : 'Type'}</p>
-        <div className="grid grid-cols-2 gap-1.5">
-          {typeChips.map(chip => {
-            const isActive = filterType === chip.value;
-            return (
-              <button
-                key={chip.value}
-                onClick={() => setFilterType(chip.value)}
-                className={`mm-chip justify-center w-full ${isActive ? `mm-chip-active ${chip.activeBg}` : ''}`}
-              >
-                <span aria-hidden>{chip.icon}</span> {chip.label}
-              </button>
-            );
-          })}
+        <div className="px-3 py-2 rounded-lg bg-purple-600/10 border border-purple-600/30 flex items-center gap-2">
+          <span aria-hidden>🏨</span>
+          <span className="text-sm font-medium text-purple-700 dark:text-purple-300">{es ? 'Hospitales privados de México' : 'Private hospitals in Mexico'}</span>
         </div>
       </div>
 
