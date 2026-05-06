@@ -507,6 +507,7 @@ export default function LivePlayer() {
                   className={mobileFullscreen ? 'relative bg-black overflow-hidden group w-full h-full' : undefined}
                 />
                 <DynamicWatermark email={user?.email} userId={user?.id} />
+                <LiveVisitorGate isVisitor={role === 'visitor' || !user} livePath={`/live/${id}`} freeSeconds={60} />
               </div>
             ) : (
               <div className="relative aspect-video bg-black rounded-xl overflow-hidden no-context-menu">
