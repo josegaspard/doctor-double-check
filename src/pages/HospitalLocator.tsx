@@ -354,21 +354,12 @@ export default function HospitalLocator() {
           </Sheet>
         </div>
 
-        {/* Desktop: Type chips + Sort inline */}
+        {/* Desktop: Sort inline (filtros hardcodeados a Privado · México) */}
         <div className="hidden sm:flex items-center justify-between gap-3 mb-4">
           <div className="flex gap-2 flex-wrap">
-            {typeChips.map(chip => {
-              const isActive = filterType === chip.value;
-              return (
-                <button
-                  key={chip.value}
-                  onClick={() => setFilterType(chip.value)}
-                  className={`mm-chip ${isActive ? `mm-chip-active ${chip.activeBg}` : ''}`}
-                >
-                  <span aria-hidden>{chip.icon}</span> {chip.label}
-                </button>
-              );
-            })}
+            <span className="mm-chip mm-chip-active bg-purple-500/10 text-purple-700 dark:text-purple-300">
+              {es ? '🏥 Hospitales privados · México' : '🏥 Private hospitals · Mexico'}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
@@ -385,11 +376,6 @@ export default function HospitalLocator() {
         {/* Mobile: active filter chips */}
         {activeFilterCount > 0 && (
           <div className="flex gap-2 mb-3 overflow-x-auto pb-1 sm:hidden">
-            {filterType !== 'all' && (
-              <Badge variant="secondary" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer" onClick={() => setFilterType('all')}>
-                {typeChips.find(c => c.value === filterType)?.label} <X className="w-2.5 h-2.5" />
-              </Badge>
-            )}
             {filterZone !== 'all' && (
               <Badge variant="secondary" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer" onClick={() => setFilterZone('all')}>
                 {filterZone} <X className="w-2.5 h-2.5" />
