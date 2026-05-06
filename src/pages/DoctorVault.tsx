@@ -38,6 +38,7 @@ export default function DoctorVault() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [autoOpenHandled, setAutoOpenHandled] = useState(false);
   const [paymentsByPatient, setPaymentsByPatient] = useState<Record<string, PatientPaymentSummary>>({});
+  const [showAddPatient, setShowAddPatient] = useState(false);
 
   const accessibleFiles = getAccessibleFiles(user?.id || '');
 
