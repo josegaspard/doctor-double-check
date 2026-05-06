@@ -20,6 +20,7 @@ import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { LiveChat } from '@/components/live/LiveChat';
 import { LiveDoctorSideChat } from '@/components/live/LiveDoctorSideChat';
 import { AnimatedViewerCount } from '@/components/live/AnimatedViewerCount';
+import { LiveVisitorGate } from '@/components/live/LiveVisitorGate';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
