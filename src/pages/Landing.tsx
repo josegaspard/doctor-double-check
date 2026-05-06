@@ -372,9 +372,9 @@ export default function Landing() {
 
               <div className="lg:w-2/3 space-y-12 relative pl-8 border-l-2 border-slate-100">
                 {[
-                  { step: '01', title: 'Onboarding & Configuración', desc: 'Personalizamos la plataforma con tu identidad corporativa (Marca blanca). Configuramos las sedes, consultorios y especialidades.', color: 'border-[#00768b]' },
-                  { step: '02', title: 'Migración de Datos HL7', desc: 'Nuestro equipo de ingeniería importa tus expedientes antiguos, limpiando duplicados y estandarizando formatos bajo norma HL7/FHIR.', color: 'border-[#aed3d9]' },
-                  { step: '03', title: 'Capacitación & Go Live', desc: 'Sesiones de entrenamiento por roles. Lanzamiento controlado y soporte 24/7 durante la primera semana operativa.', color: 'border-[#163a83]' },
+                  { step: '01', title: 'Crea tu cuenta y verifica tu cédula', desc: 'Registro gratis con email o Google. Si eres médico, validamos tu cédula profesional con la SEP. Identidad biométrica opcional vía Veriff.', color: 'border-[#00768b]' },
+                  { step: '02', title: 'Atiende, transmite o consulta', desc: 'Doctores: orientación por video, lives en HD, contenido premium grabado, recetas digitales firmadas. Pacientes: agenda con doctores verificados y guarda tu expediente en el vault.', color: 'border-[#aed3d9]' },
+                  { step: '03', title: 'Cobra y crece tu práctica', desc: 'Pagos en MXN con Stripe + wallet interno, depósitos SPEI a tu CLABE, facturación a tus pacientes, suscripciones de seguidores y subs premium para tus contenidos.', color: 'border-[#163a83]' },
                 ].map((item) => (
                   <div key={item.step} className="relative group">
                     <span className={`absolute -left-[41px] top-0 w-5 h-5 rounded-full bg-white border-4 ${item.color} group-hover:scale-125 transition-transform`} />
@@ -390,28 +390,24 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Testimonials Section */}
+        {/* Lo que incluye Medical Masters */}
         <section id="reviews" className="py-24 bg-white border-t border-slate-100">
           <div className="container mx-auto px-6">
-            <h2 className="text-3xl lg:text-4xl font-bold text-center mb-16 text-[#163a83]">Colegas y Pacientes Confían en Nosotros</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <h2 className="text-3xl lg:text-4xl font-bold text-center mb-4 text-[#163a83]">Todo lo que incluye Medical Masters</h2>
+            <p className="text-center text-slate-500 mb-16 max-w-2xl mx-auto">Funciones que hoy ya están en producción dentro de la plataforma.</p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { text: '"He reducido mi tiempo administrativo en un 40%. La herramienta de IA para notas clínicas es impresionante, entiende perfectamente la terminología médica."', name: 'Dr. Carlos Méndez', role: 'Cardiólogo, Hospital Angeles', initials: 'CM', gradient: 'from-[#839ed5] to-[#163a83]' },
-                { text: '"El sistema de videoconsultas es increíble. Mis pacientes en zonas rurales ahora tienen acceso a especialistas sin viajar cientos de kilómetros."', name: 'Dra. Lucía Fernández', role: 'Médico General, Clínica Satélite', initials: 'LF', gradient: 'from-[#00768b] to-[#0b1d45]' },
-                { text: '"Por primera vez siento que tengo el control de mi salud. Puedo ver mi historial, mis estudios y hablar con mi médico sin esperas."', name: 'María Rodríguez', role: 'Paciente, CDMX', initials: 'MR', gradient: 'from-[#aed3d9] to-[#00768b]' },
-              ].map((review, idx) => (
-                <div key={idx} className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-all duration-300">
-                  <div className="flex items-center gap-1 text-yellow-400 mb-4 text-sm">
-                    {[1,2,3,4,5].map(s => <Star key={s} className="w-4 h-4 fill-current" />)}
-                  </div>
-                  <p className="text-slate-600 mb-6 italic leading-relaxed">{review.text}</p>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-full border-2 border-white shadow-sm bg-gradient-to-br ${review.gradient} flex items-center justify-center text-white font-bold text-sm`}>{review.initials}</div>
-                    <div>
-                      <p className="font-bold text-slate-900">{review.name}</p>
-                      <p className="text-sm text-slate-500">{review.role}</p>
-                    </div>
-                  </div>
+                { title: 'Orientación médica por video', desc: 'Sesiones 1:1 por Daily.co con grabación opcional, chat persistente 30 días y resumen clínico al cierre.', icon: <Video className="w-5 h-5" /> },
+                { title: 'Lives y Contenido Premium', desc: 'Transmite en vivo en HD con chat moderado y monetiza grabaciones por compra única o suscripción.', icon: <PlayCircle className="w-5 h-5" /> },
+                { title: 'Reuniones (Recetas digitales)', desc: 'Recetas firmadas con cédula y QR de validación. Restringidas al país del paciente.', icon: <Check className="w-5 h-5" /> },
+                { title: 'Vault clínico privado', desc: 'Pacientes guardan estudios y autorizan acceso por OTP. Auditoría completa de accesos.', icon: <Lock className="w-5 h-5" /> },
+                { title: 'Directorio de hospitales', desc: 'Hospitales privados de México con doctores relacionados, distancia y reseñas.', icon: <Hospital className="w-5 h-5" /> },
+                { title: 'Verificación de cédula SEP', desc: 'Validación oficial de cédula profesional y permisos COFEPRIS antes de aprobar al doctor.', icon: <ShieldCheck className="w-5 h-5" /> },
+              ].map((f) => (
+                <div key={f.title} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-[#00768b]/30 transition-all duration-300">
+                  <div className="w-11 h-11 rounded-xl bg-[#163a83]/10 text-[#163a83] flex items-center justify-center mb-4">{f.icon}</div>
+                  <h3 className="font-bold text-slate-900 mb-2">{f.title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{f.desc}</p>
                 </div>
               ))}
             </div>
