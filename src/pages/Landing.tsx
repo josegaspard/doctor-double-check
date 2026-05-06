@@ -144,23 +144,19 @@ export default function Landing() {
               </h1>
 
               <p className="text-lg lg:text-xl text-slate-300 font-light max-w-xl leading-relaxed">
-                Orquestación clínica inteligente. Conectamos talento médico, datos de pacientes y flujos financieros en una única interfaz segura y elegante.
+                Plataforma médica para México: orientación por video con doctores verificados, contenido premium en vivo, expediente clínico privado y red profesional con cédula validada por SEP.
               </p>
 
               {/* Social Proof */}
               <div className="flex items-center gap-4 pt-2 pb-2">
                 <div className="flex -space-x-3">
-                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#839ed5] to-[#163a83] flex items-center justify-center text-white text-xs font-bold">CM</div>
-                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#00768b] to-[#0b1d45] flex items-center justify-center text-white text-xs font-bold">LF</div>
-                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#aed3d9] to-[#00768b] flex items-center justify-center text-white text-xs font-bold">MR</div>
-                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#163a83] to-[#839ed5] flex items-center justify-center text-white text-xs font-bold">JP</div>
-                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-[#00768b] text-white flex items-center justify-center text-xs font-bold">+5k</div>
+                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#839ed5] to-[#163a83] flex items-center justify-center text-white"><Stethoscope className="w-4 h-4" /></div>
+                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#00768b] to-[#0b1d45] flex items-center justify-center text-white"><Hospital className="w-4 h-4" /></div>
+                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#aed3d9] to-[#00768b] flex items-center justify-center text-white"><UserRound className="w-4 h-4" /></div>
                 </div>
                 <div className="flex flex-col">
-                  <div className="flex text-yellow-400 text-[10px] gap-0.5">
-                    <Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" />
-                  </div>
-                  <span className="text-sm font-medium text-white">Usuarios activos</span>
+                  <span className="text-sm font-medium text-white">Doctores · Residentes · Pacientes</span>
+                  <span className="text-[11px] text-slate-400">Identidad y cédula verificadas</span>
                 </div>
               </div>
 
@@ -183,15 +179,15 @@ export default function Landing() {
                 </button>
               </div>
 
-              {/* Stats */}
+              {/* Stats reales */}
               <div className="pt-8 flex gap-8 border-t border-white/10">
                 <div>
-                  <p className="text-3xl font-bold text-white">98<span className="text-[#aed3d9] text-xl">%</span></p>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider">Precisión Dx</p>
+                  <p className="text-3xl font-bold text-white">35<span className="text-[#aed3d9] text-xl">+</span></p>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider">Especialidades</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-white">15<span className="text-[#aed3d9] text-xl">m+</span></p>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider">Pacientes</p>
+                  <p className="text-3xl font-bold text-white">100<span className="text-[#aed3d9] text-xl">%</span></p>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider">Cédulas verificadas SEP</p>
                 </div>
               </div>
             </div>
@@ -296,18 +292,17 @@ export default function Landing() {
                   <div className="w-16 h-16 bg-[#163a83] rounded-2xl flex items-center justify-center text-white text-2xl mb-8 shadow-lg shadow-[#163a83]/30">
                     <Network className="w-7 h-7" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Interconexión Neural</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Un ecosistema, no una app</h3>
                   <p className="text-gray-500 leading-relaxed mb-6">
-                    Algoritmos de enrutamiento clínico que dirigen cada caso al especialista más adecuado en milisegundos. La plataforma aprende de cada interacción para mejorar la precisión diagnóstica.
+                    Orientación médica por video, contenido premium grabado, recetas digitales con firma, vault clínico privado y directorio de hospitales — todo en una sola plataforma para doctores, residentes y pacientes en México.
                   </p>
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center gap-4">
                     <div className="flex -space-x-3">
-                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#839ed5] to-[#163a83] flex items-center justify-center text-white text-xs font-bold">CM</div>
-                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#00768b] to-[#0b1d45] flex items-center justify-center text-white text-xs font-bold">LF</div>
-                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#aed3d9] to-[#00768b] flex items-center justify-center text-white text-xs font-bold">MR</div>
-                      <div className="w-10 h-10 rounded-full border-2 border-white bg-[#00768b] text-white flex items-center justify-center text-xs font-bold">+5k</div>
+                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#839ed5] to-[#163a83] flex items-center justify-center text-white text-xs font-bold"><Stethoscope className="w-4 h-4" /></div>
+                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#00768b] to-[#0b1d45] flex items-center justify-center text-white text-xs font-bold"><Hospital className="w-4 h-4" /></div>
+                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#aed3d9] to-[#00768b] flex items-center justify-center text-white text-xs font-bold"><UserRound className="w-4 h-4" /></div>
                     </div>
-                    <span className="text-sm font-bold text-[#00768b]">Red de +5,000 expertos</span>
+                    <span className="text-sm font-bold text-[#00768b]">Doctores con cédula validada por SEP</span>
                   </div>
                 </div>
               </div>
@@ -316,29 +311,21 @@ export default function Landing() {
                 <ShieldCheck className="absolute -bottom-4 -right-4 w-32 h-32 text-white/5 group-hover:text-white/10 transition-colors" />
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-6">
-                    <h3 className="text-xl font-bold">Seguridad Militar</h3>
+                    <h3 className="text-xl font-bold">Seguridad de grado bancario</h3>
                     <Lock className="w-5 h-5 text-[#aed3d9]" />
                   </div>
                   <p className="text-blue-100 text-sm leading-relaxed">
-                    Encriptación AES-256 en reposo y tránsito. Cumplimiento total HIPAA, GDPR y HITECH. Sus datos son inviolables.
+                    Cifrado AES-256 en reposo y TLS 1.3 en tránsito. Row-Level Security por usuario, auditoría completa de accesos al expediente y cumplimiento NOM-024-SSA3.
                   </p>
                 </div>
               </div>
 
-              <div className="md:col-span-2 lg:col-span-1 bg-white rounded-3xl p-8 shadow-sm border border-slate-100 group hover:border-[#839ed5]/50 transition-colors">
+              <div className="md:col-span-2 lg:col-span-2 bg-white rounded-3xl p-8 shadow-sm border border-slate-100 group hover:border-[#839ed5]/50 transition-colors">
                 <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 mb-6 group-hover:scale-110 transition-transform">
                   <Zap className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Velocidad Real</h3>
-                <p className="text-sm text-gray-500">Latencia &lt; 20ms en videoconsultas HD.</p>
-              </div>
-
-              <div className="md:col-span-2 lg:col-span-1 bg-white rounded-3xl p-8 shadow-sm border border-slate-100 group hover:border-[#839ed5]/50 transition-colors">
-                <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 mb-6 group-hover:scale-110 transition-transform">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">AI Assistant</h3>
-                <p className="text-sm text-gray-500">Pre-diagnóstico y triaje automatizado.</p>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Video en HD sin descargas</h3>
+                <p className="text-sm text-gray-500">Lives y orientaciones por Daily.co con baja latencia. Contenido protegido: nada se puede descargar.</p>
               </div>
             </div>
           </div>
