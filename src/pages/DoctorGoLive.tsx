@@ -12,9 +12,11 @@ import { LiveSetupForm, LiveConfig } from '@/components/live/LiveSetupForm';
 import { LiveStreamView } from '@/components/live/LiveStreamView';
 import { LiveDialogs } from '@/components/live/LiveDialogs';
 import { EndingLiveModal } from '@/components/live/EndingLiveModal';
+import { ScheduleCourseForm } from '@/components/live/ScheduleCourseForm';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Video, Loader2 } from 'lucide-react';
+import { Video, Loader2, Radio, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
 import Daily from '@daily-co/daily-js';
 
