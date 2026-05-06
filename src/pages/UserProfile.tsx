@@ -71,6 +71,7 @@ import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor
 import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
 import { VaccinationSchedule } from '@/components/medical/VaccinationSchedule';
 import { ResidentBalanceCard } from '@/components/resident/ResidentBalanceCard';
+import { DoctorCredentialsCard } from '@/components/profile/DoctorCredentialsCard';
 
 type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired' | null;
 
