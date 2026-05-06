@@ -8132,3 +8132,254 @@ ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
 
 \unrestrict MGHWYAcBCMLQnAtPOt1Q6uC5NaNgdD3fODiq5gptKtDFphi1AwbXGXoa6Z8flog
 
+
+-- ============================================================
+-- STORAGE BUCKETS
+-- ============================================================
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('ad-creatives', 'ad-creatives', 't', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('avatars', 'avatars', 't', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('doctor-content', 'doctor-content', 'f', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('doctor-credentials', 'doctor-credentials', 'f', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('doctor-invoices', 'doctor-invoices', 'f', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('documents', 'documents', 'f', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('email-assets', 'email-assets', 't', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('identity-documents', 'identity-documents', 'f', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('medical-history', 'medical-history', 'f', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('prescriptions', 'prescriptions', 'f', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('recordings', 'recordings', 'f', 524288000) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('report-attachments', 'report-attachments', 'f', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('thumbnails', 'thumbnails', 't', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES ('vault-files', 'vault-files', 'f', NULL) ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- STORAGE POLICIES
+-- ============================================================
+DROP POLICY IF EXISTS "Ad creatives public read by path" ON storage.objects;
+CREATE POLICY "Ad creatives public read by path" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'ad-creatives'::text) AND ((storage.foldername(name))[1] IS NOT NULL)));
+DROP POLICY IF EXISTS "Admin documents access" ON storage.objects;
+CREATE POLICY "Admin documents access" ON storage.objects FOR ALL TO public
+  USING (((bucket_id = 'documents'::text) AND has_role(auth.uid(), 'admin'::app_role)));
+DROP POLICY IF EXISTS "Admins can view all credentials" ON storage.objects;
+CREATE POLICY "Admins can view all credentials" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'doctor-credentials'::text) AND has_role(auth.uid(), 'admin'::app_role)));
+DROP POLICY IF EXISTS "Admins can view all doctor content" ON storage.objects;
+CREATE POLICY "Admins can view all doctor content" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'doctor-content'::text) AND has_role(auth.uid(), 'admin'::app_role)));
+DROP POLICY IF EXISTS "Admins can view all invoices storage" ON storage.objects;
+CREATE POLICY "Admins can view all invoices storage" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'doctor-invoices'::text) AND has_role(auth.uid(), 'admin'::app_role)));
+DROP POLICY IF EXISTS "Admins can view all recording files" ON storage.objects;
+CREATE POLICY "Admins can view all recording files" ON storage.objects FOR SELECT TO authenticated
+  USING (((bucket_id = 'recordings'::text) AND has_role(auth.uid(), 'admin'::app_role)));
+DROP POLICY IF EXISTS "Admins can view all report attachments" ON storage.objects;
+CREATE POLICY "Admins can view all report attachments" ON storage.objects FOR SELECT TO authenticated
+  USING (((bucket_id = 'report-attachments'::text) AND has_role(auth.uid(), 'admin'::app_role)));
+DROP POLICY IF EXISTS "Authenticated can upload ad creatives" ON storage.objects;
+CREATE POLICY "Authenticated can upload ad creatives" ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK ((bucket_id = 'ad-creatives'::text));
+DROP POLICY IF EXISTS "Authenticated users can delete news images" ON storage.objects;
+CREATE POLICY "Authenticated users can delete news images" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'thumbnails'::text) AND ((storage.foldername(name))[1] = 'news'::text) AND (auth.uid() IS NOT NULL)));
+DROP POLICY IF EXISTS "Authenticated users can update news images" ON storage.objects;
+CREATE POLICY "Authenticated users can update news images" ON storage.objects FOR UPDATE TO public
+  USING (((bucket_id = 'thumbnails'::text) AND ((storage.foldername(name))[1] = 'news'::text) AND (auth.uid() IS NOT NULL)));
+DROP POLICY IF EXISTS "Authenticated users can upload news images" ON storage.objects;
+CREATE POLICY "Authenticated users can upload news images" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'thumbnails'::text) AND ((storage.foldername(name))[1] = 'news'::text) AND (auth.uid() IS NOT NULL)));
+DROP POLICY IF EXISTS "Authenticated users can upload report attachments" ON storage.objects;
+CREATE POLICY "Authenticated users can upload report attachments" ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (((bucket_id = 'report-attachments'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text)));
+DROP POLICY IF EXISTS "Authenticated users can view public doctor content" ON storage.objects;
+CREATE POLICY "Authenticated users can view public doctor content" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'doctor-content'::text) AND (auth.role() = 'authenticated'::text) AND (EXISTS ( SELECT 1
+   FROM doctor_content dc
+  WHERE ((dc.file_url ~~ (('%'::text || storage.filename(objects.name)) || '%'::text)) AND (dc.is_public = true))))));
+DROP POLICY IF EXISTS "Avatar images public read by path" ON storage.objects;
+CREATE POLICY "Avatar images public read by path" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] IS NOT NULL)));
+DROP POLICY IF EXISTS "Chat file delete" ON storage.objects;
+CREATE POLICY "Chat file delete" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'documents'::text) AND ((storage.foldername(name))[1] = 'chat'::text) AND ((storage.foldername(name))[3] = (auth.uid())::text)));
+DROP POLICY IF EXISTS "Chat file upload" ON storage.objects;
+CREATE POLICY "Chat file upload" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'documents'::text) AND (auth.uid() IS NOT NULL) AND ((storage.foldername(name))[1] = 'chat'::text) AND ((storage.foldername(name))[3] = (auth.uid())::text)));
+DROP POLICY IF EXISTS "Chat file view" ON storage.objects;
+CREATE POLICY "Chat file view" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'documents'::text) AND (auth.uid() IS NOT NULL)));
+DROP POLICY IF EXISTS "Chat participants can view session documents" ON storage.objects;
+CREATE POLICY "Chat participants can view session documents" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'documents'::text) AND ((storage.foldername(name))[1] = 'chat'::text) AND (EXISTS ( SELECT 1
+   FROM chat_sessions cs
+  WHERE (((cs.id)::text = (storage.foldername(objects.name))[2]) AND ((cs.participant1_id = auth.uid()) OR (cs.participant2_id = auth.uid())))))));
+DROP POLICY IF EXISTS "Creators can upload thumbnails" ON storage.objects;
+CREATE POLICY "Creators can upload thumbnails" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'thumbnails'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can delete own content" ON storage.objects;
+CREATE POLICY "Doctors can delete own content" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'doctor-content'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can delete own credentials" ON storage.objects;
+CREATE POLICY "Doctors can delete own credentials" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'doctor-credentials'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can delete own invoices" ON storage.objects;
+CREATE POLICY "Doctors can delete own invoices" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'doctor-invoices'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can delete own prescription files" ON storage.objects;
+CREATE POLICY "Doctors can delete own prescription files" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'prescriptions'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text)));
+DROP POLICY IF EXISTS "Doctors can delete own recordings" ON storage.objects;
+CREATE POLICY "Doctors can delete own recordings" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'recordings'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can delete own signatures" ON storage.objects;
+CREATE POLICY "Doctors can delete own signatures" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'documents'::text) AND ((storage.foldername(name))[1] = 'signatures'::text) AND ((storage.foldername(name))[2] = (auth.uid())::text) AND is_approved_doctor(auth.uid())));
+DROP POLICY IF EXISTS "Doctors can manage own content" ON storage.objects;
+CREATE POLICY "Doctors can manage own content" ON storage.objects FOR UPDATE TO public
+  USING (((bucket_id = 'doctor-content'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can update own signatures" ON storage.objects;
+CREATE POLICY "Doctors can update own signatures" ON storage.objects FOR UPDATE TO public
+  USING (((bucket_id = 'documents'::text) AND ((storage.foldername(name))[1] = 'signatures'::text) AND ((storage.foldername(name))[2] = (auth.uid())::text) AND is_approved_doctor(auth.uid())));
+DROP POLICY IF EXISTS "Doctors can upload content" ON storage.objects;
+CREATE POLICY "Doctors can upload content" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'doctor-content'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can upload own credentials" ON storage.objects;
+CREATE POLICY "Doctors can upload own credentials" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'doctor-credentials'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can upload own invoices" ON storage.objects;
+CREATE POLICY "Doctors can upload own invoices" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'doctor-invoices'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can upload prescription files" ON storage.objects;
+CREATE POLICY "Doctors can upload prescription files" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'prescriptions'::text) AND (auth.uid() IS NOT NULL) AND has_role(auth.uid(), 'doctor'::app_role)));
+DROP POLICY IF EXISTS "Doctors can upload recordings" ON storage.objects;
+CREATE POLICY "Doctors can upload recordings" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'recordings'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]) AND ((EXISTS ( SELECT 1
+   FROM doctor_profiles
+  WHERE ((doctor_profiles.user_id = auth.uid()) AND (doctor_profiles.status = 'approved'::doctor_status)))) OR (EXISTS ( SELECT 1
+   FROM resident_profiles
+  WHERE ((resident_profiles.user_id = auth.uid()) AND (resident_profiles.status = 'approved'::doctor_status)))))));
+DROP POLICY IF EXISTS "Doctors can upload signatures" ON storage.objects;
+CREATE POLICY "Doctors can upload signatures" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'documents'::text) AND ((storage.foldername(name))[1] = 'signatures'::text) AND ((storage.foldername(name))[2] = (auth.uid())::text) AND is_approved_doctor(auth.uid())));
+DROP POLICY IF EXISTS "Doctors can view own content files" ON storage.objects;
+CREATE POLICY "Doctors can view own content files" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'doctor-content'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can view own credentials" ON storage.objects;
+CREATE POLICY "Doctors can view own credentials" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'doctor-credentials'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can view own invoices" ON storage.objects;
+CREATE POLICY "Doctors can view own invoices" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'doctor-invoices'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can view own recording files" ON storage.objects;
+CREATE POLICY "Doctors can view own recording files" ON storage.objects FOR SELECT TO authenticated
+  USING (((bucket_id = 'recordings'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Doctors can view own signatures" ON storage.objects;
+CREATE POLICY "Doctors can view own signatures" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'documents'::text) AND ((storage.foldername(name))[1] = 'signatures'::text) AND ((storage.foldername(name))[2] = (auth.uid())::text)));
+DROP POLICY IF EXISTS "Email assets public read by path" ON storage.objects;
+CREATE POLICY "Email assets public read by path" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'email-assets'::text) AND ((storage.foldername(name))[1] IS NOT NULL)));
+DROP POLICY IF EXISTS "Owners can delete ad creatives" ON storage.objects;
+CREATE POLICY "Owners can delete ad creatives" ON storage.objects FOR DELETE TO authenticated
+  USING (((bucket_id = 'ad-creatives'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Owners can update ad creatives" ON storage.objects;
+CREATE POLICY "Owners can update ad creatives" ON storage.objects FOR UPDATE TO authenticated
+  USING (((bucket_id = 'ad-creatives'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Patients can access own medical history" ON storage.objects;
+CREATE POLICY "Patients can access own medical history" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'medical-history'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Patients can access own vault files" ON storage.objects;
+CREATE POLICY "Patients can access own vault files" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'vault-files'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Patients can delete own medical history" ON storage.objects;
+CREATE POLICY "Patients can delete own medical history" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'medical-history'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Patients can delete own vault files" ON storage.objects;
+CREATE POLICY "Patients can delete own vault files" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'vault-files'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Patients can upload medical history" ON storage.objects;
+CREATE POLICY "Patients can upload medical history" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'medical-history'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Patients can upload vault files" ON storage.objects;
+CREATE POLICY "Patients can upload vault files" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'vault-files'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Purchasers can view recording files" ON storage.objects;
+CREATE POLICY "Purchasers can view recording files" ON storage.objects FOR SELECT TO authenticated
+  USING (((bucket_id = 'recordings'::text) AND (EXISTS ( SELECT 1
+   FROM (purchases p
+     JOIN recordings r ON ((r.id = p.recording_id)))
+  WHERE ((p.user_id = auth.uid()) AND ((r.video_url = objects.name) OR (storage.filename(r.video_url) = storage.filename(objects.name))))))));
+DROP POLICY IF EXISTS "Thumbnails public read by path" ON storage.objects;
+CREATE POLICY "Thumbnails public read by path" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'thumbnails'::text) AND ((storage.foldername(name))[1] IS NOT NULL)));
+DROP POLICY IF EXISTS "Users can access own documents" ON storage.objects;
+CREATE POLICY "Users can access own documents" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'documents'::text) AND ((auth.uid())::text = (storage.foldername(name))[2])));
+DROP POLICY IF EXISTS "Users can delete own avatar" ON storage.objects;
+CREATE POLICY "Users can delete own avatar" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Users can delete their own identity documents" ON storage.objects;
+CREATE POLICY "Users can delete their own identity documents" ON storage.objects FOR DELETE TO public
+  USING (((bucket_id = 'identity-documents'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Users can update own avatar" ON storage.objects;
+CREATE POLICY "Users can update own avatar" ON storage.objects FOR UPDATE TO public
+  USING (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Users can upload own avatar" ON storage.objects;
+CREATE POLICY "Users can upload own avatar" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Users can upload their own identity documents" ON storage.objects;
+CREATE POLICY "Users can upload their own identity documents" ON storage.objects FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'identity-documents'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+DROP POLICY IF EXISTS "Users can view own report attachments" ON storage.objects;
+CREATE POLICY "Users can view own report attachments" ON storage.objects FOR SELECT TO authenticated
+  USING (((bucket_id = 'report-attachments'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text)));
+DROP POLICY IF EXISTS "Users can view prescription files" ON storage.objects;
+CREATE POLICY "Users can view prescription files" ON storage.objects FOR SELECT TO authenticated
+  USING (((bucket_id = 'prescriptions'::text) AND (auth.uid() IS NOT NULL) AND (((storage.foldername(name))[1] = (auth.uid())::text) OR has_role(auth.uid(), 'admin'::app_role) OR (EXISTS ( SELECT 1
+   FROM prescriptions p
+  WHERE ((p.patient_id = auth.uid()) AND (storage.filename(p.file_url) = storage.filename(objects.name))))))));
+DROP POLICY IF EXISTS "Users can view their own identity documents" ON storage.objects;
+CREATE POLICY "Users can view their own identity documents" ON storage.objects FOR SELECT TO public
+  USING (((bucket_id = 'identity-documents'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR has_role(auth.uid(), 'admin'::app_role))));
+DROP POLICY IF EXISTS "doctor-content restricted read" ON storage.objects;
+CREATE POLICY "doctor-content restricted read" ON storage.objects FOR SELECT TO authenticated
+  USING (((bucket_id = 'doctor-content'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR has_role(auth.uid(), 'admin'::app_role) OR (EXISTS ( SELECT 1
+   FROM doctor_content dc
+  WHERE ((storage.filename(dc.file_url) = storage.filename(objects.name)) AND (((dc.is_public = true) AND ((dc.price IS NULL) OR (dc.price = (0)::numeric))) OR (dc.creator_id = auth.uid()) OR ((dc.is_public = true) AND (has_role(auth.uid(), 'doctor'::app_role) OR has_role(auth.uid(), 'admin'::app_role))))))))));
+
+-- ============================================================
+-- PG_CRON JOBS (require pg_cron extension; run after schema)
+-- Replace SUPABASE_URL and ANON_KEY with new project values
+-- ============================================================
+-- CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- CREATE EXTENSION IF NOT EXISTS pg_net;
+
+SELECT cron.schedule(
+  'send-availability-reminders',
+  '*/5 * * * *',
+  $$SELECT net.http_post(
+    url := 'https://NEW_PROJECT.supabase.co/functions/v1/send-availability-reminders',
+    headers := '{"Content-Type":"application/json","Authorization":"Bearer NEW_ANON_KEY"}'::jsonb,
+    body := '{}'::jsonb
+  );$$
+);
+
+SELECT cron.schedule(
+  'trigger-post-consultation-ratings',
+  '*/5 * * * *',
+  $$SELECT net.http_post(
+    url := 'https://NEW_PROJECT.supabase.co/functions/v1/trigger-post-consultation-ratings',
+    headers := '{"Content-Type":"application/json","Authorization":"Bearer NEW_ANON_KEY"}'::jsonb,
+    body := '{}'::jsonb
+  );$$
+);
+
+SELECT cron.schedule(
+  'send-vaccination-reminders-daily',
+  '0 9 * * *',
+  $$SELECT net.http_post(
+    url := 'https://NEW_PROJECT.supabase.co/functions/v1/send-vaccination-reminders',
+    headers := '{"Content-Type":"application/json","apikey":"NEW_ANON_KEY"}'::jsonb,
+    body := jsonb_build_object('time', now())
+  );$$
+);
