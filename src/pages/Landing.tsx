@@ -21,6 +21,7 @@ import {
   UserRound,
   Dna,
   Hospital,
+  Video,
 } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 
