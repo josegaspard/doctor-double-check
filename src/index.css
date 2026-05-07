@@ -242,6 +242,12 @@
     border-color: hsl(var(--background));
   }
 
+  .app-header-control .notification-count-badge,
+  .app-bg-image header .app-header-control .notification-count-badge {
+    background-color: hsl(var(--destructive)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+  }
+
   .app-header-nav-link {
     display: inline-flex;
     align-items: center;
