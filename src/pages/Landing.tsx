@@ -39,7 +39,7 @@ export default function Landing() {
   const navigate = useNavigate();
   const { user, role, isAuthenticated, isLoading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
-  const [billingMode, setBillingMode] = useState<'monthly' | 'annual'>('monthly');
+  
   const [showDemoModal, setShowDemoModal] = useState(false);
 
   // If user is already logged in, redirect to app
