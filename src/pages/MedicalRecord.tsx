@@ -664,6 +664,17 @@ export default function MedicalRecord() {
                 ].map(item => {
                   const boolKey = `family_${item.key}` as keyof ClinicalData;
                   const detailKey = `family_${item.key}_detail` as keyof ClinicalData;
+                  const isDiabetes = item.key === 'diabetes';
+                  // For diabetes, parse detail as JSON {type, relationship, notes}
+                  let dbDetail: { type?: string; relationship?: string; notes?: string } = {};
+                  if (isDiabetes) {
+                    const raw = (data[detailKey] as string) || '';
+                    try { dbDetail = raw ? JSON.parse(raw) : {}; } catch { dbDetail = { notes: raw }; }
+                  }
+                  const setDbDetail = (patch: Partial<typeof dbDetail>) => {
+                    const next = { ...dbDetail, ...patch };
+                    update(detailKey, JSON.stringify(next));
+                  };
                   return (
                     <div key={item.key} className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -674,13 +685,56 @@ export default function MedicalRecord() {
                         />
                       </div>
                       {data[boolKey] && (
-                        <Textarea
-                          placeholder={`Detalle sobre ${item.label.toLowerCase()} en la familia...`}
-                          value={data[detailKey] as string}
-                          onChange={e => update(detailKey, e.target.value)}
-                          rows={2}
-                          className="text-sm"
-                        />
+                        isDiabetes ? (
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-[11px] text-muted-foreground">Tipo de diabetes</Label>
+                                <Select value={dbDetail.type || ''} onValueChange={v => setDbDetail({ type: v })}>
+                                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="type1">Tipo 1</SelectItem>
+                                    <SelectItem value="type2">Tipo 2</SelectItem>
+                                    <SelectItem value="gestational">Gestacional</SelectItem>
+                                    <SelectItem value="prediabetes">Prediabetes</SelectItem>
+                                    <SelectItem value="unknown">No sé</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-[11px] text-muted-foreground">Parentesco familiar</Label>
+                                <Select value={dbDetail.relationship || ''} onValueChange={v => setDbDetail({ relationship: v })}>
+                                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="father">Padre</SelectItem>
+                                    <SelectItem value="mother">Madre</SelectItem>
+                                    <SelectItem value="sibling">Hermano(a)</SelectItem>
+                                    <SelectItem value="grandparent">Abuelo(a)</SelectItem>
+                                    <SelectItem value="uncle_aunt">Tío(a)</SelectItem>
+                                    <SelectItem value="cousin">Primo(a)</SelectItem>
+                                    <SelectItem value="child">Hijo(a)</SelectItem>
+                                    <SelectItem value="other">Otro</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <Textarea
+                              placeholder="Detalles adicionales..."
+                              value={dbDetail.notes || ''}
+                              onChange={e => setDbDetail({ notes: e.target.value })}
+                              rows={2}
+                              className="text-sm"
+                            />
+                          </div>
+                        ) : (
+                          <Textarea
+                            placeholder={`Detalle sobre ${item.label.toLowerCase()} en la familia...`}
+                            value={data[detailKey] as string}
+                            onChange={e => update(detailKey, e.target.value)}
+                            rows={2}
+                            className="text-sm"
+                          />
+                        )
                       )}
                     </div>
                   );
