@@ -385,7 +385,7 @@ export default function Landing() {
                       <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#00768b] to-[#0b1d45] flex items-center justify-center text-white text-xs font-bold"><Hospital className="w-4 h-4" /></div>
                       <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#aed3d9] to-[#00768b] flex items-center justify-center text-white text-xs font-bold"><UserRound className="w-4 h-4" /></div>
                     </div>
-                    <span className="text-sm font-bold text-[#00768b]">Doctores con cédula validada por SEP</span>
+                    <span className="text-sm font-bold text-[#00768b]">Doctores con credenciales verificadas</span>
                   </div>
                 </div>
               </div>
@@ -394,11 +394,11 @@ export default function Landing() {
                 <ShieldCheck className="absolute -bottom-4 -right-4 w-32 h-32 text-white/5 group-hover:text-white/10 transition-colors" />
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-6">
-                    <h3 className="text-xl font-bold">Seguridad de grado bancario</h3>
+                    <h3 className="text-xl font-bold">Seguridad clínica y control de acceso</h3>
                     <Lock className="w-5 h-5 text-[#aed3d9]" />
                   </div>
                   <p className="text-blue-100 text-sm leading-relaxed">
-                    Cifrado AES-256 en reposo y TLS 1.3 en tránsito. Row-Level Security por usuario, auditoría completa de accesos al expediente y cumplimiento NOM-024-SSA3.
+                    Expedientes protegidos, permisos por paciente, autorización temporal para consultar documentos y auditoría completa de cada acceso clínico.
                   </p>
                 </div>
               </div>
@@ -408,7 +408,7 @@ export default function Landing() {
                   <Zap className="w-5 h-5" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Video en HD sin descargas</h3>
-                <p className="text-sm text-gray-500">Lives y orientaciones por Daily.co con baja latencia. Contenido protegido: nada se puede descargar.</p>
+                <p className="text-sm text-gray-500">Lives y orientaciones en tiempo real con baja latencia. Contenido protegido para evitar descargas no autorizadas.</p>
               </div>
             </div>
           </div>
