@@ -65,14 +65,6 @@ export default function Landing() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const getPricing = () => {
-    if (billingMode === 'annual') {
-      return { personal: '$279', personalPeriod: '/año', family: '$759', familyPeriod: '/año' };
-    }
-    return { personal: '$29', personalPeriod: '/mes', family: '$79', familyPeriod: '/mes' };
-  };
-
-  const pricing = getPricing();
 
   return (
     <div className="font-sans text-slate-800 bg-slate-50 overflow-x-hidden relative selection:bg-[#00768b] selection:text-white">
