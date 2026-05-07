@@ -571,7 +571,7 @@ export default function Landing() {
                 <p className="text-slate-400 text-sm mb-6">Pagas por orientación o contenido que consumes, en MXN.</p>
                 <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">Crear cuenta</Link>
                 <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Vault clínico privado con OTP</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Expediente clínico privado con autorización temporal</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Chat de 30 días tras orientación</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Wallet en MXN, multimoneda en display</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Recetas digitales firmadas</li>
@@ -589,7 +589,7 @@ export default function Landing() {
                 <p className="text-blue-100 text-sm mb-6">Define tus precios. Cobra por orientación, suscripciones y contenido premium.</p>
                 <Link to="/app" className="block w-full py-3 rounded-xl bg-white text-[#163a83] text-center font-bold hover:shadow-xl transition-all">Verificar mi cédula</Link>
                 <ul className="mt-8 space-y-3 text-sm text-blue-50">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Validación oficial SEP + Veriff</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Validación de cédula e identidad médica</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Orientación 1:1 + lives en HD</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Contenido premium por compra o suscripción</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Depósitos SPEI a tu CLABE</li>
@@ -616,7 +616,7 @@ export default function Landing() {
             </div>
 
             <p className="text-center text-slate-400 text-xs mt-10 max-w-2xl mx-auto">
-              Recetas restringidas al país del paciente. Residentes no pueden cobrar consultas. Pacientes no acceden al marketplace B2B médico.
+               Recetas restringidas al país del paciente. Residentes no pueden cobrar consultas. Pacientes no acceden al marketplace médico profesional.
             </p>
           </div>
         </section>
@@ -633,7 +633,7 @@ export default function Landing() {
               Medicina verificada, en México.
             </h2>
             <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto font-light">
-              Doctores con cédula validada por SEP, pacientes con expediente cifrado y residentes conectados a la red. Todo en una sola plataforma.
+               Doctores con credenciales verificadas, pacientes con expediente protegido y residentes conectados a la red. Todo en una sola plataforma.
             </p>
             
             <div className="flex flex-col md:flex-row justify-center gap-6">
@@ -649,7 +649,7 @@ export default function Landing() {
             </div>
             
             <p className="mt-8 text-sm text-blue-200/60">
-              Registro gratis • Validación SEP en minutos • Cumplimiento NOM-024-SSA3
+               Registro gratis • Verificación médica • Seguridad clínica
             </p>
           </div>
         </section>
