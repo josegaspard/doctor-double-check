@@ -505,74 +505,75 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Pricing Section */}
+        {/* Pricing / Modelo de negocio REAL */}
         <section id="pricing" className="py-24 bg-gradient-to-b from-[#0b1d45] to-[#163a83] relative overflow-hidden">
           <div className="container mx-auto px-6 relative z-10">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-white mb-4">Planes para cada necesidad</h2>
-              <p className="text-slate-400 max-w-2xl mx-auto">Desde profesionales independientes hasta grandes redes hospitalarias.</p>
-              
-              <div className="mt-8 inline-flex p-1 rounded-xl bg-white/5 border border-white/10">
-                <button 
-                  onClick={() => setBillingMode('monthly')}
-                  className={`px-6 py-2 rounded-lg text-sm transition-all ${billingMode === 'monthly' ? 'bg-[#00768b] text-white font-bold shadow-lg' : 'text-slate-300 hover:text-white'}`}
-                >
-                  Mensual
-                </button>
-                <button 
-                  onClick={() => setBillingMode('annual')}
-                  className={`px-6 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${billingMode === 'annual' ? 'bg-[#00768b] text-white font-bold shadow-lg' : 'text-slate-300 hover:text-white'}`}
-                >
-                  Anual <span className="text-[10px] bg-yellow-400 text-black px-2 py-0.5 rounded-full font-bold">-20%</span>
-                </button>
-              </div>
+              <span className="text-[#aed3d9] font-bold tracking-widest text-xs uppercase mb-4 block">Modelo transparente</span>
+              <h2 className="text-4xl font-bold text-white mb-4">Sin mensualidades. Pagas solo lo que usas.</h2>
+              <p className="text-slate-300 max-w-2xl mx-auto">
+                Crear cuenta es gratis para doctores, residentes y pacientes. Cada doctor define el precio de sus servicios.
+              </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {/* Pacientes */}
               <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#00768b]/50 transition-all duration-300">
-                <h3 className="text-xl font-bold text-[#aed3d9]">Personal</h3>
+                <h3 className="text-xl font-bold text-[#aed3d9]">Pacientes</h3>
                 <div className="my-4">
-                  <span className="text-4xl font-bold text-white">{pricing.personal}</span>
-                  <span className="text-slate-400">{pricing.personalPeriod}</span>
+                  <span className="text-4xl font-bold text-white">Gratis</span>
+                  <span className="text-slate-400"> registro</span>
                 </div>
-                <p className="text-slate-400 text-sm mb-6">Para profesionales de salud independientes.</p>
-                <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">Empezar Ahora</Link>
+                <p className="text-slate-400 text-sm mb-6">Pagas por orientación o contenido que consumes, en MXN.</p>
+                <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">Crear cuenta</Link>
                 <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> 50 Consultas / Mes</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Historia Clínica Electrónica</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Recordatorios SMS</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Vault clínico privado con OTP</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Chat de 30 días tras orientación</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Wallet en MXN, multimoneda en display</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Recetas digitales firmadas</li>
                 </ul>
               </div>
 
+              {/* Doctores */}
               <div className="bg-gradient-to-b from-[#00768b] to-[#163a83] rounded-3xl p-8 border-2 border-[#aed3d9]/50 shadow-2xl relative transform scale-105 z-10">
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-yellow-400 text-xs font-bold text-black rounded-full uppercase tracking-wider">Más Popular</span>
-                <h3 className="text-xl font-bold text-white">Familiar / Clínica</h3>
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-yellow-400 text-xs font-bold text-black rounded-full uppercase tracking-wider">Para médicos</span>
+                <h3 className="text-xl font-bold text-white">Doctores verificados</h3>
                 <div className="my-4">
-                  <span className="text-4xl font-bold text-white">{pricing.family}</span>
-                  <span className="text-blue-100">{pricing.familyPeriod}</span>
+                  <span className="text-4xl font-bold text-white">0%</span>
+                  <span className="text-blue-100"> alta · comisión por transacción</span>
                 </div>
-                <p className="text-blue-100 text-sm mb-6">Para clínicas con múltiples profesionales.</p>
-                <Link to="/app" className="block w-full py-3 rounded-xl bg-white text-[#163a83] text-center font-bold hover:shadow-xl transition-all">Seleccionar Plan</Link>
+                <p className="text-blue-100 text-sm mb-6">Define tus precios. Cobra por orientación, suscripciones y contenido premium.</p>
+                <Link to="/app" className="block w-full py-3 rounded-xl bg-white text-[#163a83] text-center font-bold hover:shadow-xl transition-all">Verificar mi cédula</Link>
                 <ul className="mt-8 space-y-3 text-sm text-blue-50">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Consultas Ilimitadas</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Asistente IA 24/7</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Monitoreo Remoto</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Prioridad en Urgencias</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Validación oficial SEP + Veriff</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Orientación 1:1 + lives en HD</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Contenido premium por compra o suscripción</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Depósitos SPEI a tu CLABE</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Wallet interno + facturación</li>
                 </ul>
               </div>
 
+              {/* Residentes */}
               <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#00768b]/50 transition-all duration-300">
-                <h3 className="text-xl font-bold text-[#aed3d9]">Corporativo</h3>
-                <div className="my-4"><span className="text-4xl font-bold text-white">Custom</span></div>
-                <p className="text-slate-400 text-sm mb-6">Para empresas y grandes colectivos.</p>
-                <Link to="/contact" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">Contactar Ventas</Link>
+                <h3 className="text-xl font-bold text-[#aed3d9]">Residentes</h3>
+                <div className="my-4">
+                  <span className="text-4xl font-bold text-white">-50%</span>
+                  <span className="text-slate-400"> en todo</span>
+                </div>
+                <p className="text-slate-400 text-sm mb-6">Acceso reducido a contenido y networking médico verificado.</p>
+                <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">Soy residente</Link>
                 <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> API Empresarial</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Dashboard de Analytics</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Gestor de Cuenta Dedicado</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> 50% off en contenido y lives</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Networking con doctores verificados</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Expedientes clínicos personales</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Grupos y sesiones clínicas</li>
                 </ul>
               </div>
             </div>
+
+            <p className="text-center text-slate-400 text-xs mt-10 max-w-2xl mx-auto">
+              Recetas restringidas al país del paciente. Residentes no pueden cobrar consultas. Pacientes no acceden al marketplace B2B médico.
+            </p>
           </div>
         </section>
 
@@ -585,10 +586,10 @@ export default function Landing() {
 
           <div className="container mx-auto px-6 relative z-10 text-center">
             <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight">
-              ¿Listo para elevar el estándar?
+              Medicina verificada, en México.
             </h2>
             <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto font-light">
-              Únete a las más de 500 instituciones que ya han digitalizado su futuro con nosotros.
+              Doctores con cédula validada por SEP, pacientes con expediente cifrado y residentes conectados a la red. Todo en una sola plataforma.
             </p>
             
             <div className="flex flex-col md:flex-row justify-center gap-6">
@@ -596,15 +597,15 @@ export default function Landing() {
                 to="/app" 
                 className="px-10 py-5 bg-white text-[#163a83] font-bold text-lg rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:shadow-[0_0_60px_rgba(255,255,255,0.6)] hover:scale-105 transition-all duration-300"
               >
-                Acceder a la Plataforma
+                Crear cuenta gratis
               </Link>
               <Link to="/contact" className="px-10 py-5 border border-white/30 text-white font-bold text-lg rounded-full hover:bg-white/10 transition-all">
-                Hablar con Ventas
+                Hablar con el equipo
               </Link>
             </div>
             
             <p className="mt-8 text-sm text-blue-200/60">
-              No credit card required for demo • HIPAA Compliant • Cancel anytime
+              Registro gratis • Validación SEP en minutos • Cumplimiento NOM-024-SSA3
             </p>
           </div>
         </section>
