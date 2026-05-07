@@ -523,6 +523,7 @@ export default function MedicalRecord() {
                   <div className="space-y-2 mt-2">
                     {CHRONIC_CONDITIONS_LIST.map(condition => {
                       const item = data.chronic_conditions_list[condition] || { active: false, detail: '' };
+                      const isDiabetes = condition === 'Diabetes';
                       return (
                         <div key={condition} className="space-y-1">
                           <div className="flex items-center gap-2">
@@ -532,9 +533,28 @@ export default function MedicalRecord() {
                             <Label className="text-sm cursor-pointer">{condition}</Label>
                           </div>
                           {item.active && (
-                            <Input placeholder="Fecha de diagnóstico, tratamiento..." className="ml-6 text-sm" value={item.detail} onChange={e => {
-                              setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, detail: e.target.value } } }));
-                            }} />
+                            <div className="ml-6 space-y-1.5">
+                              {isDiabetes && (
+                                <Select
+                                  value={(item as any).diabetes_type || ''}
+                                  onValueChange={(v) => {
+                                    setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_type: v } as any } }));
+                                  }}
+                                >
+                                  <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Tipo de diabetes" /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="type1">Tipo 1</SelectItem>
+                                    <SelectItem value="type2">Tipo 2</SelectItem>
+                                    <SelectItem value="gestational">Gestacional</SelectItem>
+                                    <SelectItem value="prediabetes">Prediabetes</SelectItem>
+                                    <SelectItem value="other">Otro</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              <Input placeholder="Fecha de diagnóstico, tratamiento..." className="text-sm" value={item.detail} onChange={e => {
+                                setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, detail: e.target.value } } }));
+                              }} />
+                            </div>
                           )}
                         </div>
                       );
