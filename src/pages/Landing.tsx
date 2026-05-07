@@ -437,37 +437,89 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Workflow Section */}
+        {/* Para cada perfil — Doctores, Residentes, Pacientes */}
         <section id="workflow" className="py-24 bg-white relative">
           <div className="container mx-auto px-6">
-            <div className="flex flex-col lg:flex-row gap-16">
-              <div className="lg:w-1/3">
-                <div className="lg:sticky lg:top-32">
-                  <h2 className="text-4xl font-bold text-[#163a83] mb-6">Implementación sin fricción</h2>
-                  <p className="text-slate-600 mb-8 leading-relaxed">
-                    Sabemos que cambiar de software es doloroso. Por eso hemos creado un proceso de migración asistida que garantiza <span className="font-bold">cero pérdida de datos</span> y una curva de aprendizaje mínima.
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <span className="text-[#00768b] font-bold tracking-widest text-xs uppercase mb-4 block">Una plataforma, tres perfiles</span>
+              <h2 className="text-4xl font-bold text-[#163a83] mb-4">Hecho para doctores, residentes y pacientes</h2>
+              <p className="text-slate-600 leading-relaxed">
+                Desde una segunda opinión hasta retransmisiones quirúrgicas en directo: cada perfil entra a la misma red con las herramientas que necesita.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+              {/* Doctores */}
+              <div className="group relative bg-gradient-to-br from-[#163a83] to-[#0b1d45] rounded-3xl p-8 text-white shadow-xl overflow-hidden">
+                <Stethoscope className="absolute -bottom-6 -right-6 w-40 h-40 text-white/5 group-hover:text-white/10 transition-colors" />
+                <div className="relative z-10">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#aed3d9]" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#aed3d9]">Doctores</span>
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">Atiende, transmite y monetiza</h3>
+                  <p className="text-blue-100/90 text-sm leading-relaxed mb-6">
+                    Cédula validada por SEP, identidad opcional con Veriff. Construye tu práctica digital y cobra en MXN con depósitos SPEI directos a tu CLABE.
                   </p>
-                  <Link to="/app" className="group inline-flex items-center gap-3 text-lg font-bold text-[#00768b]">
-                    Agendar migración <span className="bg-blue-50 p-2 rounded-full group-hover:translate-x-2 transition-transform"><ArrowRight className="w-4 h-4" /></span>
+                  <ul className="space-y-2.5 text-sm text-blue-50">
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> Orientación médica 1:1 por video</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> Lives en HD y contenido premium grabado</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> Recetas firmadas con cédula y QR</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> Suscriptores, wallet y facturación</li>
+                  </ul>
+                  <Link to="/for-doctors" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#aed3d9] hover:text-white transition-colors">
+                    Soy doctor <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
 
-              <div className="lg:w-2/3 space-y-12 relative pl-8 border-l-2 border-slate-100">
-                {[
-                  { step: '01', title: 'Crea tu cuenta y verifica tu cédula', desc: 'Registro gratis con email o Google. Si eres médico, validamos tu cédula profesional con la SEP. Identidad biométrica opcional vía Veriff.', color: 'border-[#00768b]' },
-                  { step: '02', title: 'Atiende, transmite o consulta', desc: 'Doctores: orientación por video, lives en HD, contenido premium grabado, recetas digitales firmadas. Pacientes: agenda con doctores verificados y guarda tu expediente en el vault.', color: 'border-[#aed3d9]' },
-                  { step: '03', title: 'Cobra y crece tu práctica', desc: 'Pagos en MXN con Stripe + wallet interno, depósitos SPEI a tu CLABE, facturación a tus pacientes, suscripciones de seguidores y subs premium para tus contenidos.', color: 'border-[#163a83]' },
-                ].map((item) => (
-                  <div key={item.step} className="relative group">
-                    <span className={`absolute -left-[41px] top-0 w-5 h-5 rounded-full bg-white border-4 ${item.color} group-hover:scale-125 transition-transform`} />
-                    <div className="bg-slate-50 p-8 rounded-2xl group-hover:bg-white group-hover:shadow-xl transition-all border border-transparent group-hover:border-slate-100">
-                      <span className="text-xs font-bold text-[#00768b] uppercase tracking-widest mb-2 block">Paso {item.step}</span>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-3">{item.title}</h3>
-                      <p className="text-gray-500">{item.desc}</p>
-                    </div>
+              {/* Residentes */}
+              <div className="group relative bg-white rounded-3xl p-8 border border-slate-100 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[#aed3d9]/30 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-125 duration-700" />
+                <div className="relative z-10">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00768b]/10 border border-[#00768b]/20 mb-5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00768b]" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#00768b]">Residentes</span>
                   </div>
-                ))}
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Aprende y conecta con la red</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed mb-6">
+                    Acceso reducido al ecosistema con 50% de descuento en lives y contenido premium. Networking formal con doctores verificados.
+                  </p>
+                  <ul className="space-y-2.5 text-sm text-gray-700">
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> 50% off en todo el contenido</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> Sesiones clínicas y grupos privados</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> Solicitud formal a doctores tratantes</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> Expedientes clínicos personales</li>
+                  </ul>
+                  <Link to="/for-residents" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#00768b] hover:text-[#163a83] transition-colors">
+                    Soy residente <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <p className="mt-3 text-[11px] text-slate-500">Los residentes no pueden cobrar ni emitir recetas.</p>
+                </div>
+              </div>
+
+              {/* Pacientes */}
+              <div className="group relative bg-gradient-to-br from-[#aed3d9]/40 to-[#839ed5]/30 rounded-3xl p-8 border border-[#aed3d9]/40 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                <HeartPulse className="absolute -bottom-6 -right-6 w-40 h-40 text-white/30 group-hover:text-white/50 transition-colors" />
+                <div className="relative z-10">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/60 border border-white/80 mb-5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#163a83]" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#163a83]">Pacientes</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Tu salud, en tus manos</h3>
+                  <p className="text-gray-700 text-sm leading-relaxed mb-6">
+                    Encuentra doctores con cédula validada, agenda orientación por video y guarda tu expediente cifrado. Tú decides quién accede y por cuánto tiempo.
+                  </p>
+                  <ul className="space-y-2.5 text-sm text-gray-800">
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Segunda opinión con especialistas</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Chat persistente 30 días tras la sesión</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Vault clínico con autorización OTP</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Recetas digitales válidas en tu país</li>
+                  </ul>
+                  <Link to="/for-patients" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#163a83] hover:text-[#0b1d45] transition-colors">
+                    Soy paciente <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
