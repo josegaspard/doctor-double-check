@@ -193,7 +193,9 @@ export default function Login() {
               <Button variant="outline" size="icon" onClick={() => navigate('/')} className="app-shell-icon-button">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
+              <button type="button" onClick={() => navigate('/')} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-sm" aria-label="Inicio">
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
+              </button>
             </div>
             <LanguageSwitcher className="text-white hover:text-white hover:bg-white/15" />
           </div>
