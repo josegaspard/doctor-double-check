@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { HealthCalculators } from '@/components/medical/HealthCalculators';
+import { VaccinationSchedule } from '@/components/medical/VaccinationSchedule';
 import { ConsultationSummaryCard } from '@/components/chat/ConsultationSummaryCard';
 import {
   User, Heart, Wine, Syringe, Upload, Calculator,
