@@ -342,13 +342,13 @@ export default function Landing() {
         <div className="flex w-[300%] sm:w-[200%] animate-scroll">
           {[1, 2].map((i) => (
             <div key={i} className="flex w-1/2 justify-around items-center gap-4 sm:gap-0 px-4 sm:px-0">
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" /> SEP</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Lock className="w-3 h-3 sm:w-4 sm:h-4" /> COFEPRIS</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Video className="w-3 h-3 sm:w-4 sm:h-4" /> Daily.co</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" /> Cloudflare Stream</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Zap className="w-3 h-3 sm:w-4 sm:h-4" /> Stripe</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><UserRound className="w-3 h-3 sm:w-4 sm:h-4" /> Veriff</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><HeartPulse className="w-3 h-3 sm:w-4 sm:h-4" /> NOM-024-SSA3</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" /> Cédula validada</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><UserRound className="w-3 h-3 sm:w-4 sm:h-4" /> Identidad biométrica</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Video className="w-3 h-3 sm:w-4 sm:h-4" /> Lives de doctores</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" /> Contenido premium</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Lock className="w-3 h-3 sm:w-4 sm:h-4" /> Vault clínico</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Check className="w-3 h-3 sm:w-4 sm:h-4" /> Recetas digitales</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><HeartPulse className="w-3 h-3 sm:w-4 sm:h-4" /> Pagos en MXN</span>
             </div>
           ))}
         </div>
