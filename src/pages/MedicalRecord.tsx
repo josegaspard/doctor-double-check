@@ -1024,46 +1024,9 @@ export default function MedicalRecord() {
             </Card>
           </TabsContent>
 
-          {/* ── VACUNAS ── */}
+          {/* ── VACUNAS — Cartilla oficial MX por edades + recordatorios ── */}
           <TabsContent value="vaccines" className="space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Syringe className="w-4 h-4 text-primary" />
-                  Cartilla de Vacunación
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-3">
-                  {VACCINES.map(v => {
-                    const vData = data.vaccines[v.key] || { applied: false, doses: '', date: '' };
-                    return (
-                      <div key={v.key} className="p-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors space-y-2">
-                        <div className="flex items-center gap-3">
-                          <Checkbox checked={vData.applied} onCheckedChange={() => toggleVaccine(v.key)} />
-                          <Label className="text-sm cursor-pointer flex-1">{v.label}</Label>
-                          {vData.applied && (
-                            <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/30">Aplicada</Badge>
-                          )}
-                        </div>
-                        {vData.applied && (
-                          <div className="flex gap-2 ml-6">
-                            <div className="flex-1">
-                              <Label className="text-[10px] text-muted-foreground">Dosis</Label>
-                              <Input placeholder="Ej: 2 de 3" value={vData.doses} onChange={e => updateVaccineField(v.key, 'doses', e.target.value)} className="h-8 text-xs" />
-                            </div>
-                            <div className="flex-1">
-                              <Label className="text-[10px] text-muted-foreground">Fecha</Label>
-                              <Input type="date" value={vData.date} onChange={e => updateVaccineField(v.key, 'date', e.target.value)} className="h-8 text-xs" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+            <VaccinationSchedule childDob={data.date_of_birth || undefined} />
           </TabsContent>
 
           {/* ── SUBIR ESTUDIOS ── */}
