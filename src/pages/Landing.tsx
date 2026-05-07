@@ -385,7 +385,7 @@ export default function Landing() {
                       <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#00768b] to-[#0b1d45] flex items-center justify-center text-white text-xs font-bold"><Hospital className="w-4 h-4" /></div>
                       <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#aed3d9] to-[#00768b] flex items-center justify-center text-white text-xs font-bold"><UserRound className="w-4 h-4" /></div>
                     </div>
-                    <span className="text-sm font-bold text-[#00768b]">Doctores con cédula validada por SEP</span>
+                    <span className="text-sm font-bold text-[#00768b]">Doctores con credenciales verificadas</span>
                   </div>
                 </div>
               </div>
@@ -394,11 +394,11 @@ export default function Landing() {
                 <ShieldCheck className="absolute -bottom-4 -right-4 w-32 h-32 text-white/5 group-hover:text-white/10 transition-colors" />
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-6">
-                    <h3 className="text-xl font-bold">Seguridad de grado bancario</h3>
+                    <h3 className="text-xl font-bold">Seguridad clínica y control de acceso</h3>
                     <Lock className="w-5 h-5 text-[#aed3d9]" />
                   </div>
                   <p className="text-blue-100 text-sm leading-relaxed">
-                    Cifrado AES-256 en reposo y TLS 1.3 en tránsito. Row-Level Security por usuario, auditoría completa de accesos al expediente y cumplimiento NOM-024-SSA3.
+                    Expedientes protegidos, permisos por paciente, autorización temporal para consultar documentos y auditoría completa de cada acceso clínico.
                   </p>
                 </div>
               </div>
@@ -408,7 +408,7 @@ export default function Landing() {
                   <Zap className="w-5 h-5" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Video en HD sin descargas</h3>
-                <p className="text-sm text-gray-500">Lives y orientaciones por Daily.co con baja latencia. Contenido protegido: nada se puede descargar.</p>
+                <p className="text-sm text-gray-500">Lives y orientaciones en tiempo real con baja latencia. Contenido protegido para evitar descargas no autorizadas.</p>
               </div>
             </div>
           </div>
@@ -459,7 +459,7 @@ export default function Landing() {
                   </div>
                   <h3 className="text-2xl font-bold mb-3">Atiende, transmite y monetiza</h3>
                   <p className="text-blue-100/90 text-sm leading-relaxed mb-6">
-                    Cédula validada por SEP, identidad opcional con Veriff. Construye tu práctica digital y cobra en MXN con depósitos SPEI directos a tu CLABE.
+                    Verifica tus credenciales médicas, construye tu práctica digital y cobra en MXN con depósitos directos a tu cuenta.
                   </p>
                   <ul className="space-y-2.5 text-sm text-blue-50">
                     <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> Orientación médica 1:1 por video</li>
@@ -513,7 +513,7 @@ export default function Landing() {
                   <ul className="space-y-2.5 text-sm text-gray-800">
                     <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Segunda opinión con especialistas</li>
                     <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Chat persistente 30 días tras la sesión</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Vault clínico con autorización OTP</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Expediente clínico con autorización temporal</li>
                     <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Recetas digitales válidas en tu país</li>
                   </ul>
                   <Link to="/for-patients" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#163a83] hover:text-[#0b1d45] transition-colors">
@@ -532,12 +532,12 @@ export default function Landing() {
             <p className="text-center text-slate-500 mb-16 max-w-2xl mx-auto">Funciones que hoy ya están en producción dentro de la plataforma.</p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { title: 'Orientación médica por video', desc: 'Sesiones 1:1 por Daily.co con grabación opcional, chat persistente 30 días y resumen clínico al cierre.', icon: <Video className="w-5 h-5" /> },
+                { title: 'Orientación médica por video', desc: 'Sesiones 1:1 con grabación opcional, chat persistente 30 días y resumen clínico al cierre.', icon: <Video className="w-5 h-5" /> },
                 { title: 'Lives y Contenido Premium', desc: 'Transmite en vivo en HD con chat moderado y monetiza grabaciones por compra única o suscripción.', icon: <PlayCircle className="w-5 h-5" /> },
                 { title: 'Reuniones (Recetas digitales)', desc: 'Recetas firmadas con cédula y QR de validación. Restringidas al país del paciente.', icon: <Check className="w-5 h-5" /> },
-                { title: 'Vault clínico privado', desc: 'Pacientes guardan estudios y autorizan acceso por OTP. Auditoría completa de accesos.', icon: <Lock className="w-5 h-5" /> },
+                { title: 'Expediente clínico privado', desc: 'Pacientes guardan estudios y autorizan el acceso por tiempo limitado. Auditoría completa de accesos.', icon: <Lock className="w-5 h-5" /> },
                 { title: 'Directorio de hospitales', desc: 'Hospitales privados de México con doctores relacionados, distancia y reseñas.', icon: <Hospital className="w-5 h-5" /> },
-                { title: 'Verificación de cédula SEP', desc: 'Validación oficial de cédula profesional y permisos COFEPRIS antes de aprobar al doctor.', icon: <ShieldCheck className="w-5 h-5" /> },
+                { title: 'Verificación médica', desc: 'Revisión de cédula profesional, identidad y permisos antes de aprobar al doctor.', icon: <ShieldCheck className="w-5 h-5" /> },
               ].map((f) => (
                 <div key={f.title} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-[#00768b]/30 transition-all duration-300">
                   <div className="w-11 h-11 rounded-xl bg-[#163a83]/10 text-[#163a83] flex items-center justify-center mb-4">{f.icon}</div>
@@ -571,7 +571,7 @@ export default function Landing() {
                 <p className="text-slate-400 text-sm mb-6">Pagas por orientación o contenido que consumes, en MXN.</p>
                 <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">Crear cuenta</Link>
                 <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Vault clínico privado con OTP</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Expediente clínico privado con autorización temporal</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Chat de 30 días tras orientación</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Wallet en MXN, multimoneda en display</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Recetas digitales firmadas</li>
@@ -589,7 +589,7 @@ export default function Landing() {
                 <p className="text-blue-100 text-sm mb-6">Define tus precios. Cobra por orientación, suscripciones y contenido premium.</p>
                 <Link to="/app" className="block w-full py-3 rounded-xl bg-white text-[#163a83] text-center font-bold hover:shadow-xl transition-all">Verificar mi cédula</Link>
                 <ul className="mt-8 space-y-3 text-sm text-blue-50">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Validación oficial SEP + Veriff</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Validación de cédula e identidad médica</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Orientación 1:1 + lives en HD</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Contenido premium por compra o suscripción</li>
                   <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Depósitos SPEI a tu CLABE</li>
@@ -616,7 +616,7 @@ export default function Landing() {
             </div>
 
             <p className="text-center text-slate-400 text-xs mt-10 max-w-2xl mx-auto">
-              Recetas restringidas al país del paciente. Residentes no pueden cobrar consultas. Pacientes no acceden al marketplace B2B médico.
+               Recetas restringidas al país del paciente. Residentes no pueden cobrar consultas. Pacientes no acceden al marketplace médico profesional.
             </p>
           </div>
         </section>
@@ -633,7 +633,7 @@ export default function Landing() {
               Medicina verificada, en México.
             </h2>
             <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto font-light">
-              Doctores con cédula validada por SEP, pacientes con expediente cifrado y residentes conectados a la red. Todo en una sola plataforma.
+               Doctores con credenciales verificadas, pacientes con expediente protegido y residentes conectados a la red. Todo en una sola plataforma.
             </p>
             
             <div className="flex flex-col md:flex-row justify-center gap-6">
@@ -649,7 +649,7 @@ export default function Landing() {
             </div>
             
             <p className="mt-8 text-sm text-blue-200/60">
-              Registro gratis • Validación SEP en minutos • Cumplimiento NOM-024-SSA3
+               Registro gratis • Verificación médica • Seguridad clínica
             </p>
           </div>
         </section>
