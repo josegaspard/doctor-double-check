@@ -459,7 +459,7 @@ export default function Landing() {
                   </div>
                   <h3 className="text-2xl font-bold mb-3">Atiende, transmite y monetiza</h3>
                   <p className="text-blue-100/90 text-sm leading-relaxed mb-6">
-                    Cédula validada por SEP, identidad opcional con Veriff. Construye tu práctica digital y cobra en MXN con depósitos SPEI directos a tu CLABE.
+                    Verifica tus credenciales médicas, construye tu práctica digital y cobra en MXN con depósitos directos a tu cuenta.
                   </p>
                   <ul className="space-y-2.5 text-sm text-blue-50">
                     <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> Orientación médica 1:1 por video</li>
@@ -513,7 +513,7 @@ export default function Landing() {
                   <ul className="space-y-2.5 text-sm text-gray-800">
                     <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Segunda opinión con especialistas</li>
                     <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Chat persistente 30 días tras la sesión</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Vault clínico con autorización OTP</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Expediente clínico con autorización temporal</li>
                     <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Recetas digitales válidas en tu país</li>
                   </ul>
                   <Link to="/for-patients" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#163a83] hover:text-[#0b1d45] transition-colors">
@@ -532,12 +532,12 @@ export default function Landing() {
             <p className="text-center text-slate-500 mb-16 max-w-2xl mx-auto">Funciones que hoy ya están en producción dentro de la plataforma.</p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { title: 'Orientación médica por video', desc: 'Sesiones 1:1 por Daily.co con grabación opcional, chat persistente 30 días y resumen clínico al cierre.', icon: <Video className="w-5 h-5" /> },
+                { title: 'Orientación médica por video', desc: 'Sesiones 1:1 con grabación opcional, chat persistente 30 días y resumen clínico al cierre.', icon: <Video className="w-5 h-5" /> },
                 { title: 'Lives y Contenido Premium', desc: 'Transmite en vivo en HD con chat moderado y monetiza grabaciones por compra única o suscripción.', icon: <PlayCircle className="w-5 h-5" /> },
                 { title: 'Reuniones (Recetas digitales)', desc: 'Recetas firmadas con cédula y QR de validación. Restringidas al país del paciente.', icon: <Check className="w-5 h-5" /> },
-                { title: 'Vault clínico privado', desc: 'Pacientes guardan estudios y autorizan acceso por OTP. Auditoría completa de accesos.', icon: <Lock className="w-5 h-5" /> },
+                { title: 'Expediente clínico privado', desc: 'Pacientes guardan estudios y autorizan el acceso por tiempo limitado. Auditoría completa de accesos.', icon: <Lock className="w-5 h-5" /> },
                 { title: 'Directorio de hospitales', desc: 'Hospitales privados de México con doctores relacionados, distancia y reseñas.', icon: <Hospital className="w-5 h-5" /> },
-                { title: 'Verificación de cédula SEP', desc: 'Validación oficial de cédula profesional y permisos COFEPRIS antes de aprobar al doctor.', icon: <ShieldCheck className="w-5 h-5" /> },
+                { title: 'Verificación médica', desc: 'Revisión de cédula profesional, identidad y permisos antes de aprobar al doctor.', icon: <ShieldCheck className="w-5 h-5" /> },
               ].map((f) => (
                 <div key={f.title} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-[#00768b]/30 transition-all duration-300">
                   <div className="w-11 h-11 rounded-xl bg-[#163a83]/10 text-[#163a83] flex items-center justify-center mb-4">{f.icon}</div>
