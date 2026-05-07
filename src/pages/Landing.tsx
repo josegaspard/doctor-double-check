@@ -4,6 +4,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { DemoVideoModal } from '@/components/landing/DemoVideoModal';
 import logoWhite from '@/assets/logo-medical-masters-white.png';
 import logoBlue from '@/assets/logo-medical-masters.png';
+import heroBgDesktop from '@/assets/landing/hero-bg-desktop.png';
+import heroBgMobile from '@/assets/landing/hero-bg-mobile.png';
+import iconConsultas from '@/assets/landing/icons/CONSULTAS.svg';
+import iconEducacion from '@/assets/landing/icons/EDUCACION.svg';
+import iconUsuarios from '@/assets/landing/icons/USUARIOS.svg';
+import iconRetransmision from '@/assets/landing/icons/RETRANSMISION.svg';
+import iconGlobal from '@/assets/landing/icons/GLOBAL.svg';
+import iconMedicos from '@/assets/landing/icons/MEDICOS.svg';
+import iconStream from '@/assets/landing/icons/STREAM.svg';
 import {
   ArrowRight,
   Star,
@@ -21,6 +30,7 @@ import {
   UserRound,
   Dna,
   Hospital,
+  Activity,
   Video,
 } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
@@ -121,134 +131,213 @@ export default function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <header className="relative min-h-screen flex items-end pt-20 overflow-hidden bg-[#163a83] mb-[-1px]">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d45] via-[#163a83] to-[#00768b]" />
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%23163a83' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E\")" }} />
-          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)", backgroundSize: "32px 32px" }} />
-        </div>
+      <header className="relative h-[100svh] min-h-[640px] max-h-[1024px] overflow-hidden bg-[#0b1d45] mb-[-1px]">
+        {/* Background image — desktop + mobile */}
+        <picture className="absolute inset-0 z-0">
+          <source media="(max-width: 767px)" srcSet={heroBgMobile} />
+          <img src={heroBgDesktop} alt="" className="w-full h-full object-cover object-center" />
+        </picture>
 
-        <div className="container mx-auto px-6 lg:px-12 relative z-10 h-full">
-          <div className="flex flex-col lg:flex-row items-center h-full">
-            <div className="w-full lg:w-1/2 space-y-8 py-12 lg:py-24 animate-fade-in relative z-20">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+        {/* Gradient overlay for readability of left-side text */}
+        <div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0b1d45]/95 via-[#0b1d45]/70 to-[#0b1d45]/10 md:from-[#0b1d45]/85 md:via-[#0b1d45]/40 md:to-transparent" />
+        {/* Bottom fade so the floating row of feature cards sits on a dark base */}
+        <div className="absolute inset-x-0 bottom-0 h-40 z-[1] bg-gradient-to-t from-[#0b1d45]/95 to-transparent" />
+
+        <div className="container mx-auto px-5 sm:px-6 lg:px-12 relative z-10 h-full flex flex-col pt-16 sm:pt-20 lg:pt-24 pb-44 sm:pb-44 lg:pb-32">
+          {/* Top stats bar — visible md+ */}
+          <div className="hidden md:flex absolute top-24 lg:top-24 left-1/2 -translate-x-1/2 items-center gap-5 lg:gap-8 px-5 py-2.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-xl">
+            <div className="flex items-center gap-2">
+              <img src={iconGlobal} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
+              <div className="leading-tight">
+                <p className="text-sm lg:text-base font-bold text-white">+120</p>
+                <p className="text-[9px] lg:text-[10px] uppercase tracking-wider text-slate-300">Países conectados</p>
+              </div>
+            </div>
+            <div className="w-px h-7 bg-white/15" />
+            <div className="flex items-center gap-2">
+              <img src={iconMedicos} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
+              <div className="leading-tight">
+                <p className="text-sm lg:text-base font-bold text-white">+50,000</p>
+                <p className="text-[9px] lg:text-[10px] uppercase tracking-wider text-slate-300">Médicos activos</p>
+              </div>
+            </div>
+            <div className="w-px h-7 bg-white/15" />
+            <div className="flex items-center gap-2">
+              <img src={iconStream} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
+              <div className="leading-tight">
+                <p className="text-sm lg:text-base font-bold text-white">Streaming</p>
+                <p className="text-[9px] lg:text-[10px] uppercase tracking-wider text-slate-300">en tiempo real</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-10 items-start lg:items-center flex-1 min-h-0">
+            {/* LEFT: copy + CTAs (kept narrower so floating cards have room beside it) */}
+            <div className="relative z-20 animate-fade-in space-y-2.5 sm:space-y-3 lg:space-y-5 max-w-md xl:max-w-lg 2xl:max-w-xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00768b]/15 border border-[#aed3d9]/30 backdrop-blur-md">
                 <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#aed3d9] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#aed3d9]" />
                 </span>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#aed3d9]">v4.0 Live System</span>
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#aed3d9]">LIVE</span>
+                <span className="text-[10px] sm:text-[11px] font-medium text-white/80 hidden xs:inline">· Consultas y retransmisiones en tiempo real</span>
               </div>
 
-              <h1 className="text-5xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight">
-                Siempre una <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] via-white to-[#839ed5]">Segunda Opinión.</span>
+              <h1 className="text-[26px] sm:text-3xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.05] tracking-tight">
+                La Medicina,<br />Sin Fronteras.<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] via-[#00768b] to-[#839ed5]">En Tiempo Real.</span>
               </h1>
 
-              <p className="text-lg lg:text-xl text-slate-300 font-light max-w-xl leading-relaxed">
-                Plataforma médica para México: orientación por video con doctores verificados, contenido premium en vivo, expediente clínico privado y red profesional con cédula validada por SEP.
+              <p className="text-xs sm:text-sm lg:text-base text-slate-200/90 font-light leading-relaxed">
+                Consultas en vivo, formación médica y colaboración global en una única plataforma inteligente.
+              </p>
+              <p className="text-xs sm:text-sm text-slate-300/80 font-light leading-relaxed hidden lg:block">
+                Conectamos médicos, hospitales y conocimiento en todo el mundo. Desde una segunda opinión hasta retransmisiones quirúrgicas en directo.
               </p>
 
-              {/* Social Proof */}
-              <div className="flex items-center gap-4 pt-2 pb-2">
-                <div className="flex -space-x-3">
-                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#839ed5] to-[#163a83] flex items-center justify-center text-white"><Stethoscope className="w-4 h-4" /></div>
-                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#00768b] to-[#0b1d45] flex items-center justify-center text-white"><Hospital className="w-4 h-4" /></div>
-                  <div className="w-10 h-10 rounded-full border-2 border-[#0b1d45] bg-gradient-to-br from-[#aed3d9] to-[#00768b] flex items-center justify-center text-white"><UserRound className="w-4 h-4" /></div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-white">Doctores · Residentes · Pacientes</span>
-                  <span className="text-[11px] text-slate-400">Identidad y cédula verificadas</span>
-                </div>
-              </div>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-5 pt-4">
-                <Link 
-                  to="/app" 
-                  className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-[#163a83] bg-white rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:-translate-y-1 transition-all duration-300"
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-1">
+                <Link
+                  to="/app"
+                  className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-bold text-white bg-[#00768b] rounded-full shadow-[0_0_30px_rgba(0,118,139,0.45)] hover:bg-[#00879f] hover:shadow-[0_0_45px_rgba(0,118,139,0.7)] hover:-translate-y-0.5 transition-all duration-300"
                 >
-                  <span>Entrar a la aplicación</span>
-                  <ArrowRight className="w-5 h-5 ml-3" />
+                  <ArrowRight className="w-4 h-4 mr-2 -ml-0.5 rotate-[-45deg]" />
+                  <span>Acceder a la Plataforma</span>
                 </Link>
-                
-                <button 
+                <button
                   onClick={() => setShowDemoModal(true)}
-                  className="inline-flex items-center justify-center px-8 py-4 text-base font-medium text-white border border-white/20 rounded-xl hover:bg-white/10 transition-all backdrop-blur-md group"
+                  className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium text-white border border-white/25 rounded-full hover:bg-white/10 hover:border-white/50 transition-all backdrop-blur-md group"
                 >
-                  <PlayCircle className="w-5 h-5 mr-3 text-[#aed3d9] group-hover:scale-110 transition-transform" />
-                  Demo Interactiva
+                  <PlayCircle className="w-4 h-4 mr-2 text-[#aed3d9] group-hover:scale-110 transition-transform" />
+                  Ver Demo en Vivo
                 </button>
               </div>
 
-              {/* Stats reales */}
-              <div className="pt-8 flex gap-8 border-t border-white/10">
-                <div>
-                  <p className="text-3xl font-bold text-white">35<span className="text-[#aed3d9] text-xl">+</span></p>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider">Especialidades</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-white">100<span className="text-[#aed3d9] text-xl">%</span></p>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider">Cédulas verificadas SEP</p>
-                </div>
+              {/* MOBILE-only stat cards 2x2 — clean, readable, doctor stays visible behind */}
+              <div className="grid grid-cols-2 gap-2.5 mt-3 md:hidden">
+                {[
+                  { img: iconGlobal, value: '+120', label: 'Países conectados' },
+                  { img: iconMedicos, value: '+50K', label: 'Médicos activos' },
+                  { img: iconStream, value: '1,248', label: 'Consultas hoy', trend: '+15%' },
+                  { img: iconRetransmision, value: 'LIVE', label: '3.2K viendo ahora', live: true },
+                ].map((s, i) => (
+                  <div key={i} className="relative bg-white/10 backdrop-blur-xl px-3 py-2.5 rounded-xl border border-white/15 shadow-xl flex items-center gap-2.5">
+                    <div className="shrink-0 w-9 h-9 rounded-lg bg-gradient-to-br from-[#00768b]/40 to-[#163a83]/40 border border-[#aed3d9]/20 flex items-center justify-center">
+                      <img src={s.img} alt="" className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1">
+                        <p className="text-base font-bold text-white leading-none">{s.value}</p>
+                        {s.trend && <span className="text-[10px] font-bold text-emerald-300">{s.trend}</span>}
+                        {s.live && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
+                      </div>
+                      <p className="text-[10px] text-slate-300/85 mt-0.5 leading-tight">{s.label}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Right Content - Hero Image */}
-            <div className="w-full lg:w-[60%] relative h-[600px] lg:h-screen flex items-end justify-center lg:justify-end overflow-visible">
-              <div className="absolute bottom-0 right-10 w-[80%] h-[70%] bg-[#00768b]/20 rounded-full filter blur-[100px] animate-pulse" />
-              
-              <div className="relative z-10 w-full h-full flex items-end justify-center lg:justify-end overflow-visible">
-                <img 
-                  src="https://i.imgur.com/YqgQSDV.png" 
-                  alt="Doctora Especialista" 
-                  loading="lazy"
-                  style={{ height: '140%', maxHeight: 'none' }}
-                  className="absolute bottom-0 right-0 lg:-right-20 w-auto object-contain object-bottom drop-shadow-2xl z-10 pointer-events-none"
-                />
+            {/* RIGHT column placeholder so the grid stays balanced. Cards live in the absolute layer below. */}
+            <div className="hidden md:block" />
+          </div>
 
-                {/* Floating Card - Heart Rate */}
-                <div className="absolute top-[30%] left-0 lg:left-0 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-20 max-w-[160px] border border-white/50 shadow-xl animate-float" style={{ animationDuration: '6s' }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="p-2 bg-red-100 rounded-lg text-red-500"><HeartPulse className="w-4 h-4" /></div>
-                    <span className="text-xs font-bold text-gray-500">Live</span>
+          {/* Floating cards — absolute over the whole hero, spread to extreme left/right so the doctor stays clear */}
+          <div className="hidden md:block absolute inset-0 pointer-events-none z-10">
+            {/* TOP LEFT-OF-DOCTOR — Mosaic of 4 doctors. Sits in the gap between text and doctor body, hidden on lg where there is no gap */}
+            <div className="absolute top-[172px] xl:top-[188px] left-1/2 xl:left-[44%] 2xl:left-[40%] -translate-x-1/2 xl:translate-x-0 hidden xl:block pointer-events-auto bg-white/10 backdrop-blur-xl p-2.5 rounded-xl border border-white/15 shadow-2xl animate-float w-[150px] 2xl:w-[170px]" style={{ animationDuration: '7s' }}>
+              <div className="grid grid-cols-2 gap-1">
+                {[
+                  { from: '#839ed5', to: '#163a83', initials: 'CM' },
+                  { from: '#00768b', to: '#0b1d45', initials: 'LF' },
+                  { from: '#aed3d9', to: '#00768b', initials: 'MR' },
+                  { from: '#163a83', to: '#839ed5', initials: 'JP' },
+                ].map((d, i) => (
+                  <div key={i} className="aspect-video rounded flex items-center justify-center text-white text-[9px] font-bold relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${d.from}, ${d.to})` }}>
+                    <span className="opacity-90">{d.initials}</span>
+                    <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-400" />
                   </div>
-                  <p className="text-xl font-bold text-gray-800">72 <span className="text-sm font-normal text-gray-500">bpm</span></p>
-                  <svg className="w-full h-8 text-red-400" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
-                  </svg>
-                </div>
-
-                {/* Floating Card - Record Ready */}
-                <div className="absolute bottom-24 right-4 lg:right-12 bg-white/65 backdrop-blur-xl p-4 rounded-2xl z-30 flex items-center gap-3 border-l-4 border-green-500 shadow-2xl animate-float" style={{ animationDuration: '4s' }}>
-                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
-                    <Check className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-800">Expediente Listo</p>
-                    <p className="text-xs text-gray-500">Sincronizado</p>
-                  </div>
-                </div>
-
-                {/* Floating Card - App Status */}
-                <div className="absolute top-[20%] right-0 lg:-right-8 bg-white/65 backdrop-blur-xl p-3 rounded-xl z-20 flex flex-col gap-2 border border-white/50 shadow-lg animate-float" style={{ animationDuration: '5s' }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#163a83] flex items-center justify-center text-white shadow-md">
-                      <Smartphone className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-800">Medical App</p>
-                      <p className="text-[10px] text-green-600 font-bold"><span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block mr-1" />Activa</p>
-                    </div>
-                  </div>
-                  <div className="flex items-end justify-between h-6 w-full gap-1 mt-1 px-1">
-                    <div className="w-1.5 bg-blue-200 h-[40%] rounded-t-sm" />
-                    <div className="w-1.5 bg-blue-300 h-[70%] rounded-t-sm" />
-                    <div className="w-1.5 bg-[#00768b] h-[50%] rounded-t-sm" />
-                    <div className="w-1.5 bg-[#163a83] h-[90%] rounded-t-sm" />
-                    <div className="w-1.5 bg-blue-300 h-[60%] rounded-t-sm" />
-                  </div>
-                </div>
+                ))}
               </div>
+              <div className="flex items-center gap-1 mt-1.5 text-[10px] text-white/85">
+                <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-medium">122 médicos conectados</span>
+              </div>
+            </div>
+
+            {/* TOP RIGHT — LIVE doctor card */}
+            <div className="absolute top-24 lg:top-28 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl animate-float overflow-hidden w-[150px] lg:w-[170px]" style={{ animationDuration: '6s', animationDelay: '0.4s' }}>
+              <div className="aspect-video bg-gradient-to-br from-[#00768b] to-[#163a83] relative flex items-center justify-center">
+                <Stethoscope className="w-8 h-8 text-white/70" />
+                <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />LIVE
+                </span>
+              </div>
+            </div>
+
+            {/* MID RIGHT — Vital signs (further right edge) */}
+            <div className="absolute top-1/2 -translate-y-1/2 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl p-2.5 lg:p-3 rounded-xl border border-white/15 shadow-2xl animate-float w-[150px] lg:w-[170px]" style={{ animationDuration: '5s', animationDelay: '0.8s' }}>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[11px] font-medium text-white/85">Signos Vitales</span>
+                <HeartPulse className="w-3 h-3 text-rose-300" />
+              </div>
+              <p className="text-[9px] text-slate-300/80 mb-0.5">En tiempo real</p>
+              <p className="text-xl font-bold text-white leading-none">72 <span className="text-[10px] font-normal text-slate-300/80">bpm</span></p>
+              <svg className="w-full h-5 text-rose-300 mt-1" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
+              </svg>
+            </div>
+
+            {/* BOTTOM RIGHT — Surgical Live */}
+            <div className="absolute bottom-32 lg:bottom-32 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl animate-float overflow-hidden w-[170px] lg:w-[190px]" style={{ animationDuration: '5.5s', animationDelay: '1.6s' }}>
+              <div className="aspect-[16/8] bg-gradient-to-br from-[#163a83] via-[#0b1d45] to-[#00768b] relative">
+                <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />LIVE
+                </span>
+                <Activity className="absolute inset-0 m-auto w-7 h-7 text-white/40" />
+              </div>
+              <div className="p-2">
+                <p className="text-[10px] font-bold text-white leading-tight">Retransmisión Quirúrgica</p>
+                <p className="text-[9px] text-slate-300/80 mt-0.5 flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                  3.2K Espectadores
+                </p>
+              </div>
+            </div>
+
+            {/* BOTTOM LEFT-OF-DOCTOR — Activity Global. Same gap rules as Mosaic */}
+            <div className="absolute bottom-32 xl:bottom-36 left-1/2 xl:left-[44%] 2xl:left-[40%] -translate-x-1/2 xl:translate-x-0 hidden xl:block pointer-events-auto bg-white/10 backdrop-blur-xl p-2.5 lg:p-3 rounded-xl border border-white/15 shadow-2xl animate-float w-[150px] 2xl:w-[170px]" style={{ animationDuration: '6.5s', animationDelay: '1.2s' }}>
+              <p className="text-[11px] font-medium text-white/85 mb-1.5">Actividad Global</p>
+              <div className="h-8 rounded bg-[#0b1d45]/40 mb-1.5 flex items-end justify-around px-1 gap-0.5">
+                {[40, 70, 55, 85, 60, 90, 45, 75, 65, 95].map((h, i) => (
+                  <div key={i} className="w-0.5 lg:w-1 bg-[#aed3d9]/80 rounded-t" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+              <div className="flex items-baseline justify-between">
+                <p className="text-[10px] text-slate-300/80">Consultas hoy</p>
+                <p className="text-xs font-bold text-white">1,248 <span className="text-[9px] text-emerald-300">+15%</span></p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom feature row - 4 cards */}
+          <div className="absolute left-4 right-4 sm:left-6 sm:right-6 lg:left-12 lg:right-12 bottom-3 sm:bottom-4 lg:bottom-6 z-20">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl lg:rounded-2xl p-2.5 sm:p-3 lg:p-4 shadow-2xl">
+              {[
+                { icon: iconEducacion, title: 'Educación Médica', desc: 'Accede a cursos, webinars y contenidos de expertos líderes.' },
+                { icon: iconConsultas, title: 'Consultas en Línea', desc: 'Segundas opiniones y consultas especializadas en tiempo real.' },
+                { icon: iconUsuarios, title: 'Red de Residentes', desc: 'Conecta, colabora y crece junto a miles de médicos residentes.' },
+                { icon: iconRetransmision, title: 'Retransmisiones Live', desc: 'Cirugías, eventos y conferencias en vivo desde cualquier parte.' },
+              ].map((f, i) => (
+                <div key={i} className="flex items-start gap-2 sm:gap-2.5 lg:gap-3">
+                  <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg bg-gradient-to-br from-[#00768b]/40 to-[#163a83]/40 border border-[#aed3d9]/20 flex items-center justify-center">
+                    <img src={f.icon} alt="" className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] sm:text-xs lg:text-sm font-bold text-white leading-tight">{f.title}</p>
+                    <p className="text-[9px] sm:text-[10px] lg:text-[11px] text-slate-300/85 leading-snug mt-0.5 hidden lg:block">{f.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
