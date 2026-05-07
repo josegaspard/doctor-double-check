@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { HealthCalculators } from '@/components/medical/HealthCalculators';
+import { VaccinationSchedule } from '@/components/medical/VaccinationSchedule';
 import { ConsultationSummaryCard } from '@/components/chat/ConsultationSummaryCard';
 import {
   User, Heart, Wine, Syringe, Upload, Calculator,
@@ -522,6 +523,7 @@ export default function MedicalRecord() {
                   <div className="space-y-2 mt-2">
                     {CHRONIC_CONDITIONS_LIST.map(condition => {
                       const item = data.chronic_conditions_list[condition] || { active: false, detail: '' };
+                      const isDiabetes = condition === 'Diabetes';
                       return (
                         <div key={condition} className="space-y-1">
                           <div className="flex items-center gap-2">
@@ -531,9 +533,28 @@ export default function MedicalRecord() {
                             <Label className="text-sm cursor-pointer">{condition}</Label>
                           </div>
                           {item.active && (
-                            <Input placeholder="Fecha de diagnóstico, tratamiento..." className="ml-6 text-sm" value={item.detail} onChange={e => {
-                              setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, detail: e.target.value } } }));
-                            }} />
+                            <div className="ml-6 space-y-1.5">
+                              {isDiabetes && (
+                                <Select
+                                  value={(item as any).diabetes_type || ''}
+                                  onValueChange={(v) => {
+                                    setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_type: v } as any } }));
+                                  }}
+                                >
+                                  <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Tipo de diabetes" /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="type1">Tipo 1</SelectItem>
+                                    <SelectItem value="type2">Tipo 2</SelectItem>
+                                    <SelectItem value="gestational">Gestacional</SelectItem>
+                                    <SelectItem value="prediabetes">Prediabetes</SelectItem>
+                                    <SelectItem value="other">Otro</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              <Input placeholder="Fecha de diagnóstico, tratamiento..." className="text-sm" value={item.detail} onChange={e => {
+                                setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, detail: e.target.value } } }));
+                              }} />
+                            </div>
                           )}
                         </div>
                       );
@@ -643,6 +664,17 @@ export default function MedicalRecord() {
                 ].map(item => {
                   const boolKey = `family_${item.key}` as keyof ClinicalData;
                   const detailKey = `family_${item.key}_detail` as keyof ClinicalData;
+                  const isDiabetes = item.key === 'diabetes';
+                  // For diabetes, parse detail as JSON {type, relationship, notes}
+                  let dbDetail: { type?: string; relationship?: string; notes?: string } = {};
+                  if (isDiabetes) {
+                    const raw = (data[detailKey] as string) || '';
+                    try { dbDetail = raw ? JSON.parse(raw) : {}; } catch { dbDetail = { notes: raw }; }
+                  }
+                  const setDbDetail = (patch: Partial<typeof dbDetail>) => {
+                    const next = { ...dbDetail, ...patch };
+                    update(detailKey, JSON.stringify(next));
+                  };
                   return (
                     <div key={item.key} className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -653,13 +685,56 @@ export default function MedicalRecord() {
                         />
                       </div>
                       {data[boolKey] && (
-                        <Textarea
-                          placeholder={`Detalle sobre ${item.label.toLowerCase()} en la familia...`}
-                          value={data[detailKey] as string}
-                          onChange={e => update(detailKey, e.target.value)}
-                          rows={2}
-                          className="text-sm"
-                        />
+                        isDiabetes ? (
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-[11px] text-muted-foreground">Tipo de diabetes</Label>
+                                <Select value={dbDetail.type || ''} onValueChange={v => setDbDetail({ type: v })}>
+                                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="type1">Tipo 1</SelectItem>
+                                    <SelectItem value="type2">Tipo 2</SelectItem>
+                                    <SelectItem value="gestational">Gestacional</SelectItem>
+                                    <SelectItem value="prediabetes">Prediabetes</SelectItem>
+                                    <SelectItem value="unknown">No sé</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-[11px] text-muted-foreground">Parentesco familiar</Label>
+                                <Select value={dbDetail.relationship || ''} onValueChange={v => setDbDetail({ relationship: v })}>
+                                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="father">Padre</SelectItem>
+                                    <SelectItem value="mother">Madre</SelectItem>
+                                    <SelectItem value="sibling">Hermano(a)</SelectItem>
+                                    <SelectItem value="grandparent">Abuelo(a)</SelectItem>
+                                    <SelectItem value="uncle_aunt">Tío(a)</SelectItem>
+                                    <SelectItem value="cousin">Primo(a)</SelectItem>
+                                    <SelectItem value="child">Hijo(a)</SelectItem>
+                                    <SelectItem value="other">Otro</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <Textarea
+                              placeholder="Detalles adicionales..."
+                              value={dbDetail.notes || ''}
+                              onChange={e => setDbDetail({ notes: e.target.value })}
+                              rows={2}
+                              className="text-sm"
+                            />
+                          </div>
+                        ) : (
+                          <Textarea
+                            placeholder={`Detalle sobre ${item.label.toLowerCase()} en la familia...`}
+                            value={data[detailKey] as string}
+                            onChange={e => update(detailKey, e.target.value)}
+                            rows={2}
+                            className="text-sm"
+                          />
+                        )
                       )}
                     </div>
                   );
@@ -715,34 +790,22 @@ export default function MedicalRecord() {
                 <CardTitle className="text-sm">Hábitos y Estilo de Vida</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {[
-                  { key: 'habit_alcohol' as const, amountKey: 'habit_alcohol_amount' as const, label: 'Alcohol', icon: '🍷', placeholder: 'Ej: 2 copas por ocasión' },
-                  { key: 'habit_smoking' as const, amountKey: 'habit_smoking_amount' as const, label: 'Cigarro', icon: '🚬', placeholder: 'Ej: 5 cigarros/día' },
-                  { key: 'habit_vaping' as const, amountKey: 'habit_vaping_amount' as const, label: 'Vape', icon: '💨', placeholder: 'Ej: 1 pod cada 2 días' },
-                  { key: 'habit_hookah' as const, amountKey: 'habit_hookah_amount' as const, label: 'Arguile/Hookah', icon: '🫧', placeholder: 'Ej: 1 sesión por semana' },
-                  { key: 'habit_drugs' as const, amountKey: 'habit_drugs_amount' as const, label: 'Drogas recreativas', icon: '💊', placeholder: 'Tipo y cantidad' },
-                  { key: 'habit_exercise' as const, amountKey: 'habit_exercise_amount' as const, label: 'Ejercicio', icon: '🏃', placeholder: 'Ej: 30 min × 4 días' },
-                ].map(item => {
-                  const isPositive = data[item.key] !== 'never' && data[item.key] !== '';
+                {/* ALCOHOL */}
+                {(() => {
+                  const isPositive = data.habit_alcohol !== 'never' && data.habit_alcohol !== '';
+                  // amount stored as JSON {beverage, amount}
+                  let parsed: { beverage?: string; amount?: string } = {};
+                  try { parsed = data.habit_alcohol_amount ? JSON.parse(data.habit_alcohol_amount) : {}; } catch { parsed = { amount: data.habit_alcohol_amount }; }
+                  const setAlcohol = (patch: Partial<typeof parsed>) => update('habit_alcohol_amount', JSON.stringify({ ...parsed, ...patch }));
                   return (
-                    <div key={item.key} className="rounded-lg border border-border p-3 space-y-3">
+                    <div className="rounded-lg border border-border p-3 space-y-3">
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-lg">{item.icon}</span>
-                          <Label className="text-sm font-medium">{item.label}</Label>
-                        </div>
+                        <div className="flex items-center gap-2"><span className="text-lg">🍷</span><Label className="text-sm font-medium">Alcoholismo</Label></div>
                         <Select
                           value={isPositive ? 'positive' : 'negative'}
                           onValueChange={v => {
-                            if (v === 'negative') {
-                              update(item.key, 'never');
-                              update(item.amountKey, '');
-                            } else {
-                              // Default to "occasionally" when switching to positive
-                              if (data[item.key] === 'never' || !data[item.key]) {
-                                update(item.key, 'occasionally');
-                              }
-                            }
+                            if (v === 'negative') { update('habit_alcohol', 'never'); update('habit_alcohol_amount', ''); }
+                            else if (data.habit_alcohol === 'never' || !data.habit_alcohol) update('habit_alcohol', 'occasionally');
                           }}
                         >
                           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
@@ -753,76 +816,217 @@ export default function MedicalRecord() {
                         </Select>
                       </div>
                       {isPositive && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-7">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pl-7">
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Bebida</Label>
+                            <Select value={parsed.beverage || ''} onValueChange={v => setAlcohol({ beverage: v })}>
+                              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="beer">Cerveza</SelectItem>
+                                <SelectItem value="wine">Vino</SelectItem>
+                                <SelectItem value="spirits">Destilados</SelectItem>
+                                <SelectItem value="cocktails">Cócteles</SelectItem>
+                                <SelectItem value="mixed">Mezcla</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <div>
                             <Label className="text-[11px] text-muted-foreground">Frecuencia</Label>
-                            <Select value={data[item.key]} onValueChange={v => update(item.key, v)}>
+                            <Select value={data.habit_alcohol} onValueChange={v => update('habit_alcohol', v)}>
                               <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => (
-                                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                                ))}
+                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
                             <Label className="text-[11px] text-muted-foreground">Cantidad</Label>
-                            <Input
-                              placeholder={item.placeholder}
-                              value={data[item.amountKey]}
-                              onChange={e => update(item.amountKey, e.target.value)}
-                              className="h-9 text-xs"
-                            />
+                            <Input placeholder="Ej: 2 copas" value={parsed.amount || ''} onChange={e => setAlcohol({ amount: e.target.value })} className="h-9 text-xs" />
                           </div>
                         </div>
                       )}
                     </div>
                   );
-                })}
+                })()}
+
+                {/* TABAQUISMO — grupo cigarro/vape/arguile */}
+                {(() => {
+                  const anyPositive = ['habit_smoking','habit_vaping','habit_hookah'].some(k => data[k as keyof ClinicalData] !== 'never' && data[k as keyof ClinicalData] !== '');
+                  return (
+                    <div className="rounded-lg border border-border p-3 space-y-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2"><span className="text-lg">🚬</span><Label className="text-sm font-medium">Tabaquismo</Label></div>
+                        <Select
+                          value={anyPositive ? 'positive' : 'negative'}
+                          onValueChange={v => {
+                            if (v === 'negative') {
+                              ['habit_smoking','habit_vaping','habit_hookah'].forEach(k => { update(k as any, 'never'); update((k + '_amount') as any, ''); });
+                            } else {
+                              if (data.habit_smoking === 'never') update('habit_smoking', 'occasionally');
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="negative">Negativo</SelectItem>
+                            <SelectItem value="positive">Positivo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {anyPositive && (
+                        <div className="space-y-2 pl-7">
+                          {[
+                            { key: 'habit_smoking' as const, amountKey: 'habit_smoking_amount' as const, label: 'Cigarro', icon: '🚬', placeholder: '5 cig/día' },
+                            { key: 'habit_vaping' as const, amountKey: 'habit_vaping_amount' as const, label: 'Vape', icon: '💨', placeholder: '1 pod / 2 días' },
+                            { key: 'habit_hookah' as const, amountKey: 'habit_hookah_amount' as const, label: 'Arguile/Hookah', icon: '🫧', placeholder: '1 sesión/sem' },
+                          ].map(sub => {
+                            const subActive = data[sub.key] !== 'never' && data[sub.key] !== '';
+                            return (
+                              <div key={sub.key} className="rounded-md border border-border/60 p-2 space-y-2 bg-muted/20">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2"><span>{sub.icon}</span><Label className="text-xs font-medium">{sub.label}</Label></div>
+                                  <Switch checked={subActive} onCheckedChange={v => {
+                                    if (!v) { update(sub.key, 'never'); update(sub.amountKey, ''); }
+                                    else update(sub.key, 'occasionally');
+                                  }} />
+                                </div>
+                                {subActive && (
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <Select value={data[sub.key]} onValueChange={v => update(sub.key, v)}>
+                                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                      <SelectContent>
+                                        {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                                      </SelectContent>
+                                    </Select>
+                                    <Input placeholder={sub.placeholder} value={data[sub.amountKey]} onChange={e => update(sub.amountKey, e.target.value)} className="h-8 text-xs" />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* OTRAS DROGAS */}
+                {(() => {
+                  const isPositive = data.habit_drugs !== 'never' && data.habit_drugs !== '';
+                  let parsed: { type?: string; amount?: string } = {};
+                  try { parsed = data.habit_drugs_amount ? JSON.parse(data.habit_drugs_amount) : {}; } catch { parsed = { amount: data.habit_drugs_amount }; }
+                  const setDrugs = (patch: Partial<typeof parsed>) => update('habit_drugs_amount', JSON.stringify({ ...parsed, ...patch }));
+                  return (
+                    <div className="rounded-lg border border-border p-3 space-y-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2"><span className="text-lg">💊</span><Label className="text-sm font-medium">Otras drogas</Label></div>
+                        <Select
+                          value={isPositive ? 'positive' : 'negative'}
+                          onValueChange={v => {
+                            if (v === 'negative') { update('habit_drugs', 'never'); update('habit_drugs_amount', ''); }
+                            else if (data.habit_drugs === 'never') update('habit_drugs', 'occasionally');
+                          }}
+                        >
+                          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="negative">Negativo</SelectItem>
+                            <SelectItem value="positive">Positivo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {isPositive && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pl-7">
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Tipo</Label>
+                            <Input placeholder="Ej: marihuana, cocaína..." value={parsed.type || ''} onChange={e => setDrugs({ type: e.target.value })} className="h-9 text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Frecuencia</Label>
+                            <Select value={data.habit_drugs} onValueChange={v => update('habit_drugs', v)}>
+                              <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Cantidad</Label>
+                            <Input placeholder="Cantidad" value={parsed.amount || ''} onChange={e => setDrugs({ amount: e.target.value })} className="h-9 text-xs" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* ACTIVIDAD FÍSICA */}
+                {(() => {
+                  const isPositive = data.habit_exercise !== 'never' && data.habit_exercise !== '';
+                  let parsed: { type?: string; amount?: string } = {};
+                  try { parsed = data.habit_exercise_amount ? JSON.parse(data.habit_exercise_amount) : {}; } catch { parsed = { amount: data.habit_exercise_amount }; }
+                  const setEx = (patch: Partial<typeof parsed>) => update('habit_exercise_amount', JSON.stringify({ ...parsed, ...patch }));
+                  return (
+                    <div className="rounded-lg border border-border p-3 space-y-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2"><span className="text-lg">🏃</span><Label className="text-sm font-medium">Actividad física</Label></div>
+                        <Select
+                          value={isPositive ? 'positive' : 'negative'}
+                          onValueChange={v => {
+                            if (v === 'negative') { update('habit_exercise', 'never'); update('habit_exercise_amount', ''); }
+                            else if (data.habit_exercise === 'never') update('habit_exercise', 'weekly');
+                          }}
+                        >
+                          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="negative">Sedentario</SelectItem>
+                            <SelectItem value="positive">Activo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {isPositive && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pl-7">
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Tipo de ejercicio</Label>
+                            <Select value={parsed.type || ''} onValueChange={v => setEx({ type: v })}>
+                              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="cardio">Cardio</SelectItem>
+                                <SelectItem value="strength">Fuerza/Pesas</SelectItem>
+                                <SelectItem value="hiit">HIIT</SelectItem>
+                                <SelectItem value="yoga">Yoga/Pilates</SelectItem>
+                                <SelectItem value="sports">Deportes</SelectItem>
+                                <SelectItem value="walking">Caminata</SelectItem>
+                                <SelectItem value="cycling">Ciclismo</SelectItem>
+                                <SelectItem value="swimming">Natación</SelectItem>
+                                <SelectItem value="mixed">Mixto</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Frecuencia</Label>
+                            <Select value={data.habit_exercise} onValueChange={v => update('habit_exercise', v)}>
+                              <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Duración / Cantidad</Label>
+                            <Input placeholder="Ej: 30 min × 4 días" value={parsed.amount || ''} onChange={e => setEx({ amount: e.target.value })} className="h-9 text-xs" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* ── VACUNAS ── */}
+          {/* ── VACUNAS — Cartilla oficial MX por edades + recordatorios ── */}
           <TabsContent value="vaccines" className="space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Syringe className="w-4 h-4 text-primary" />
-                  Cartilla de Vacunación
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-3">
-                  {VACCINES.map(v => {
-                    const vData = data.vaccines[v.key] || { applied: false, doses: '', date: '' };
-                    return (
-                      <div key={v.key} className="p-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors space-y-2">
-                        <div className="flex items-center gap-3">
-                          <Checkbox checked={vData.applied} onCheckedChange={() => toggleVaccine(v.key)} />
-                          <Label className="text-sm cursor-pointer flex-1">{v.label}</Label>
-                          {vData.applied && (
-                            <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/30">Aplicada</Badge>
-                          )}
-                        </div>
-                        {vData.applied && (
-                          <div className="flex gap-2 ml-6">
-                            <div className="flex-1">
-                              <Label className="text-[10px] text-muted-foreground">Dosis</Label>
-                              <Input placeholder="Ej: 2 de 3" value={vData.doses} onChange={e => updateVaccineField(v.key, 'doses', e.target.value)} className="h-8 text-xs" />
-                            </div>
-                            <div className="flex-1">
-                              <Label className="text-[10px] text-muted-foreground">Fecha</Label>
-                              <Input type="date" value={vData.date} onChange={e => updateVaccineField(v.key, 'date', e.target.value)} className="h-8 text-xs" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+            <VaccinationSchedule childDob={data.date_of_birth || undefined} />
           </TabsContent>
 
           {/* ── SUBIR ESTUDIOS ── */}
