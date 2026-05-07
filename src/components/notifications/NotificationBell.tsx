@@ -194,12 +194,9 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" className="app-header-control relative">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-4 min-w-4 px-1 p-0 flex items-center justify-center text-[10px] font-bold !text-white border-2 border-background shadow-sm"
-            >
+            <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 p-0 flex items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-primary-foreground border-2 border-background shadow-sm">
               {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
+            </span>
           )}
         </Button>
       </PopoverTrigger>
