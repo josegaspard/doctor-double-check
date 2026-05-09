@@ -27,23 +27,27 @@ Deno.serve(async (req) => {
 
     let event: Stripe.Event;
 
-    if (webhookSecret && signature) {
-      try {
-        event = await stripe.webhooks.constructEventAsync(
-          body,
-          signature,
-          webhookSecret,
-          undefined,
-          Stripe.createSubtleCryptoProvider()
-        );
-        logStep("Webhook signature verified");
-      } catch (err) {
-        logStep("Webhook signature verification failed", { error: err instanceof Error ? err.message : err });
-        return new Response(JSON.stringify({ error: "Webhook signature verification failed" }), { status: 400 });
-      }
-    } else {
-      event = JSON.parse(body);
-      logStep("Webhook parsed without signature verification (dev mode)");
+    // SECURITY: signature verification is REQUIRED in production. No "dev mode" bypass.
+    if (!webhookSecret) {
+      logStep("FATAL: STRIPE_WEBHOOK_SECRET not configured");
+      return new Response(JSON.stringify({ error: "Webhook secret not configured" }), { status: 500 });
+    }
+    if (!signature) {
+      logStep("Rejected: missing stripe-signature header");
+      return new Response(JSON.stringify({ error: "Missing signature" }), { status: 401 });
+    }
+    try {
+      event = await stripe.webhooks.constructEventAsync(
+        body,
+        signature,
+        webhookSecret,
+        undefined,
+        Stripe.createSubtleCryptoProvider()
+      );
+      logStep("Webhook signature verified");
+    } catch (err) {
+      logStep("Webhook signature verification failed", { error: err instanceof Error ? err.message : err });
+      return new Response(JSON.stringify({ error: "Webhook signature verification failed" }), { status: 400 });
     }
 
     logStep("Event type", { type: event.type });
