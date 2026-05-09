@@ -286,53 +286,40 @@ export function useLocalRecording() {
 
       setState(prev => ({ ...prev, uploadProgress: 50 }));
 
-      const videoRef = `storage:${filePath}`;
       console.log('[LocalRecording] Video stored at path:', filePath);
 
       setState(prev => ({ ...prev, uploadProgress: 75 }));
 
       const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
-      const payload = {
-        live_id: params.liveId,
-        doctor_id: params.doctorId,
-        title: params.title,
-        description: params.description || null,
-        specialty: params.specialty,
-        tags: params.tags || [],
-        price: params.price,
-        duration,
-        video_url: videoRef,
-        thumbnail_url: params.thumbnailUrl || null as string | null,
-      };
+      // Create the recordings DB row server-side via edge function so that any
+      // client RLS / JWT-expiry issue cannot leave us with an orphan storage file.
+      const { data: saveData, error: saveError } = await supabase.functions.invoke('save-recording', {
+        body: {
+          liveId: params.liveId,
+          storagePath: filePath,
+          duration,
+          price: params.price,
+          title: params.title,
+          description: params.description || null,
+          specialty: params.specialty,
+          tags: params.tags || [],
+          thumbnailUrl: params.thumbnailUrl || null,
+        },
+      });
 
-      const query = params.recordingId
-        ? supabase
-            .from('recordings')
-            .update(payload)
-            .eq('id', params.recordingId)
-            .eq('doctor_id', params.doctorId)
-            .select()
-            .single()
-        : supabase
-            .from('recordings')
-            .insert(payload)
-            .select()
-            .single();
-
-      const { data: recording, error: dbError } = await query;
-
-      if (dbError) {
-        console.error('[LocalRecording] DB insert error:', dbError);
-        throw dbError;
+      if (saveError || !saveData?.ok) {
+        const detail = (saveError as any)?.message || saveData?.error || 'unknown';
+        console.error('[LocalRecording] save-recording failed:', detail, saveData);
+        throw new Error(`No se pudo registrar la grabación: ${detail}`);
       }
 
       setState(prev => ({ ...prev, uploadProgress: 100, isUploading: false }));
 
-      console.log('[LocalRecording] ✅ Upload complete, recording ID:', recording.id);
+      console.log('[LocalRecording] ✅ Upload complete, recording ID:', saveData.recordingId);
       toast.success('Grabación guardada exitosamente');
 
-      return { success: true, recordingId: recording.id };
+      return { success: true, recordingId: saveData.recordingId };
     } catch (error: any) {
       console.error('[LocalRecording] Upload failed:', error);
       setState(prev => ({ ...prev, isUploading: false }));
