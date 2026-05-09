@@ -501,13 +501,20 @@ export default function DoctorRecordings() {
   };
 
   const deleteRecordingFully = async (recording: Recording) => {
-    // 1. Delete video file from storage
+    // 1. Delete video file from storage. Supports two video_url shapes:
+    //    a) "storage:<path>" — internal ref produced by daily-webhook / end-daily-room
+    //    b) full https URL pointing at /storage/v1/object/public/recordings/<path>
     if (recording.videoUrl) {
       try {
-        const url = new URL(recording.videoUrl);
-        const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/recordings\/(.+)/);
-        if (pathMatch?.[1]) {
-          const filePath = decodeURIComponent(pathMatch[1]);
+        let filePath: string | null = null;
+        if (recording.videoUrl.startsWith('storage:')) {
+          filePath = recording.videoUrl.replace(/^storage:/, '');
+        } else {
+          const url = new URL(recording.videoUrl);
+          const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/recordings\/(.+)/);
+          if (pathMatch?.[1]) filePath = decodeURIComponent(pathMatch[1]);
+        }
+        if (filePath) {
           await supabase.storage.from('recordings').remove([filePath]);
         }
       } catch (storageErr) {
@@ -524,14 +531,18 @@ export default function DoctorRecordings() {
         .eq('file_url', recording.videoUrl);
     }
 
-    // 3. Delete the recording from DB
-    const { error } = await supabase
+    // 3. Delete the recording from DB. Use count to detect RLS / ownership mismatch
+    //    (silent 0-row deletes were previously masking failures).
+    const { error, count } = await supabase
       .from('recordings')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('id', recording.id)
       .eq('doctor_id', user?.id);
 
     if (error) throw error;
+    if (!count || count === 0) {
+      throw new Error('No se pudo eliminar: la grabación no te pertenece o ya fue eliminada');
+    }
   };
 
   const handleConfirmDelete = async () => {

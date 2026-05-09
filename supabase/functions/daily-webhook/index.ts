@@ -11,11 +11,9 @@ const logStep = (step: string, details?: any) => {
   console.log(`[DAILY-WEBHOOK] ${step}${detailsStr}`);
 };
 
-// Helper function to find a live by room name
 async function findLiveByRoomName(supabaseClient: any, roomName: string) {
   if (!roomName) return null;
 
-  // First try direct match on daily_room_name
   const { data: directMatch } = await supabaseClient
     .from('lives')
     .select('*')
@@ -26,7 +24,6 @@ async function findLiveByRoomName(supabaseClient: any, roomName: string) {
     return directMatch[0];
   }
 
-  // Fallback: parse liveId from room name pattern: live-{liveId.slice(0,8)}-{timestamp}
   const liveIdPrefix = roomName?.split('-')[1];
   if (liveIdPrefix) {
     const { data: prefixMatch } = await supabaseClient
@@ -43,6 +40,48 @@ async function findLiveByRoomName(supabaseClient: any, roomName: string) {
   return null;
 }
 
+// Downloads Daily.co recording from temp signed URL and uploads to Supabase Storage.
+// Returns a permanent storage ref like "storage:<doctorId>/<liveId>-<ts>.mp4" or null on failure.
+async function downloadAndPersistRecording(
+  supabaseClient: any,
+  downloadLink: string,
+  doctorId: string,
+  liveId: string,
+): Promise<string | null> {
+  try {
+    logStep("Downloading Daily.co recording", { liveId });
+    const res = await fetch(downloadLink);
+    if (!res.ok) {
+      logStep("Download failed", { status: res.status });
+      return null;
+    }
+    const arrayBuffer = await res.arrayBuffer();
+    const sizeMB = (arrayBuffer.byteLength / 1024 / 1024).toFixed(2);
+    logStep("Download complete", { sizeMB });
+
+    const filename = `${liveId}-${Date.now()}.mp4`;
+    const storagePath = `${doctorId}/${filename}`;
+
+    const { error: uploadError } = await supabaseClient.storage
+      .from('recordings')
+      .upload(storagePath, new Uint8Array(arrayBuffer), {
+        contentType: 'video/mp4',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      logStep("Upload to Storage failed", { error: uploadError.message, sizeMB });
+      return null;
+    }
+
+    logStep("Uploaded to Storage", { storagePath, sizeMB });
+    return `storage:${storagePath}`;
+  } catch (err) {
+    logStep("downloadAndPersistRecording error", { error: String(err) });
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -51,14 +90,11 @@ Deno.serve(async (req) => {
   try {
     logStep("Webhook received");
 
-    // Verify Daily.co webhook HMAC signature
     const dailyWebhookSecret = Deno.env.get("DAILY_WEBHOOK_SECRET");
     const dailySignature = req.headers.get("x-webhook-signature");
     const rawBody = await req.text();
 
     if (dailyWebhookSecret) {
-      // Daily sends: "x-webhook-signature: t=<timestamp>,v1=<sig>" where sig = HMAC-SHA256(`${t}.${rawBody}`, secret) hex.
-      // Legacy fallback: also accept raw hex digest of rawBody alone.
       let valid = false;
       if (dailySignature) {
         const parts = Object.fromEntries(
@@ -75,7 +111,6 @@ Deno.serve(async (req) => {
             .digest("hex");
           if (expected === v1) valid = true;
         }
-        // Legacy raw-hex fallback
         if (!valid) {
           const legacy = createHmac("sha256", dailyWebhookSecret).update(rawBody).digest("hex");
           if (legacy === dailySignature) valid = true;
@@ -98,7 +133,6 @@ Deno.serve(async (req) => {
     const eventType = payload.event;
     logStep("Event type", { eventType });
 
-    // Handle different Daily.co webhook events
     switch (eventType) {
       case "recording.started": {
         const roomName = payload.room_name;
@@ -132,49 +166,62 @@ Deno.serve(async (req) => {
         const recordingId = payload.recording_id;
         const downloadLink = payload.download_link;
         const duration = payload.duration || 0;
-        
-        logStep("Recording ready", { roomName, recordingId, duration, downloadLink });
+
+        logStep("Recording ready", { roomName, recordingId, duration });
 
         const live = await findLiveByRoomName(supabaseClient, roomName);
-        if (live) {
-          // Update live status
+        if (!live) {
+          logStep("No matching live found for recording.ready-to-download");
+          break;
+        }
+
+        // Download from Daily (URL expires in ~120s) and persist to Supabase Storage
+        const persistedRef = downloadLink
+          ? await downloadAndPersistRecording(supabaseClient, downloadLink, live.doctor_id, live.id)
+          : null;
+
+        if (!persistedRef) {
+          logStep("Failed to persist recording — leaving live in processing state");
           await supabaseClient
             .from('lives')
-            .update({ status: 'recording_ready' })
+            .update({ status: 'recording_failed' })
             .eq('id', live.id);
+          break;
+        }
 
-          // Check if recording already exists
-          const { data: existingRecording } = await supabaseClient
+        await supabaseClient
+          .from('lives')
+          .update({ status: 'recording_ready' })
+          .eq('id', live.id);
+
+        const { data: existingRecording } = await supabaseClient
+          .from('recordings')
+          .select('id')
+          .eq('live_id', live.id)
+          .maybeSingle();
+
+        if (!existingRecording) {
+          await supabaseClient
             .from('recordings')
-            .select('id')
-            .eq('live_id', live.id)
-            .maybeSingle();
-
-          if (!existingRecording) {
-            // Create recording entry
-            await supabaseClient
-              .from('recordings')
-              .insert({
-                live_id: live.id,
-                doctor_id: live.doctor_id,
-                title: live.title,
-                description: live.description,
-                specialty: live.specialty,
-                tags: live.tags,
-                duration: Math.ceil(duration / 60), // Convert seconds to minutes
-                price: live.recording_price || 99,
-                video_url: downloadLink,
-                thumbnail_url: live.thumbnail_url,
-              });
-            logStep("Recording created", { liveId: live.id });
-          } else {
-            // Update existing recording with video URL
-            await supabaseClient
-              .from('recordings')
-              .update({ video_url: downloadLink })
-              .eq('id', existingRecording.id);
-            logStep("Recording updated with video URL", { recordingId: existingRecording.id });
-          }
+            .insert({
+              live_id: live.id,
+              doctor_id: live.doctor_id,
+              title: live.title,
+              description: live.description,
+              specialty: live.specialty,
+              tags: live.tags,
+              duration: Math.ceil(duration / 60),
+              price: live.recording_price || 0,
+              video_url: persistedRef,
+              thumbnail_url: live.thumbnail_url,
+            });
+          logStep("Recording row created with permanent URL", { liveId: live.id });
+        } else {
+          await supabaseClient
+            .from('recordings')
+            .update({ video_url: persistedRef, duration: Math.ceil(duration / 60) })
+            .eq('id', existingRecording.id);
+          logStep("Recording row updated with permanent URL", { recordingId: existingRecording.id });
         }
         break;
       }

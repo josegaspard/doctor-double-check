@@ -113,16 +113,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get recordings from Daily.co if saving is enabled
-    // NOTE: Recording only works with paid Daily.co plans
+    // Get recordings from Daily.co if saving is enabled.
+    // Daily's access-link is a temporary signed URL (~120s TTL) — we must download
+    // the bytes immediately and persist them to Supabase Storage. Otherwise the
+    // recordings.video_url goes stale and playback breaks for users.
     let recordingUrl: string | null = null;
     let recordingDuration = 0;
 
     if (saveRecording && roomName) {
       try {
         logStep("Checking for recordings", { roomName });
-        
-        // List recordings for this room
+
         const recordingsResponse = await fetch(
           `https://api.daily.co/v1/recordings?room_name=${roomName}`,
           {
@@ -138,11 +139,9 @@ Deno.serve(async (req) => {
           logStep("Recordings fetched", { count: recordingsCount });
 
           if (recordingsData.data && recordingsData.data.length > 0) {
-            // Get the most recent recording
             const latestRecording = recordingsData.data[0];
             recordingDuration = Math.round(latestRecording.duration || 0);
 
-            // Get download link
             const downloadResponse = await fetch(
               `https://api.daily.co/v1/recordings/${latestRecording.id}/access-link`,
               {
@@ -154,8 +153,34 @@ Deno.serve(async (req) => {
 
             if (downloadResponse.ok) {
               const downloadData = await downloadResponse.json();
-              recordingUrl = downloadData.download_link;
-              logStep("Recording URL obtained", { duration: recordingDuration });
+              const tempLink = downloadData.download_link as string;
+              logStep("Got temp link, downloading bytes", { duration: recordingDuration });
+
+              try {
+                const videoRes = await fetch(tempLink);
+                if (videoRes.ok) {
+                  const buf = await videoRes.arrayBuffer();
+                  const sizeMB = (buf.byteLength / 1024 / 1024).toFixed(2);
+                  const filename = `${liveId}-${Date.now()}.mp4`;
+                  const storagePath = `${live.doctor_id}/${filename}`;
+                  const { error: upErr } = await supabaseAdmin.storage
+                    .from('recordings')
+                    .upload(storagePath, new Uint8Array(buf), {
+                      contentType: 'video/mp4',
+                      upsert: true,
+                    });
+                  if (upErr) {
+                    logStep("Storage upload failed", { error: upErr.message, sizeMB });
+                  } else {
+                    recordingUrl = `storage:${storagePath}`;
+                    logStep("Recording persisted to Storage", { storagePath, sizeMB });
+                  }
+                } else {
+                  logStep("Failed to fetch video bytes", { status: videoRes.status });
+                }
+              } catch (e) {
+                logStep("Error downloading/uploading video", { error: String(e) });
+              }
             } else {
               logStep("Could not get recording access link");
             }
