@@ -8,6 +8,9 @@ interface LocalRecordingState {
   isUploading: boolean;
   uploadProgress: number;
   recordingDuration: number;
+  chunkCount: number;
+  bytesRecorded: number;
+  lastError: string | null;
 }
 
 /**
@@ -23,6 +26,9 @@ export function useLocalRecording() {
     isUploading: false,
     uploadProgress: 0,
     recordingDuration: 0,
+    chunkCount: 0,
+    bytesRecorded: 0,
+    lastError: null,
   });
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -142,6 +148,12 @@ export function useLocalRecording() {
           if (event.data.size > 0) {
             recordedChunksRef.current.push(event.data);
             console.log('[LocalRecording] Chunk received:', event.data.size, 'bytes');
+            setState(prev => ({
+              ...prev,
+              chunkCount: prev.chunkCount + 1,
+              bytesRecorded: prev.bytesRecorded + event.data.size,
+              hasRecording: true,
+            }));
           }
         };
 
@@ -165,8 +177,10 @@ export function useLocalRecording() {
           }
         };
 
-        mediaRecorder.onerror = (event) => {
+        mediaRecorder.onerror = (event: any) => {
+          const msg = event?.error?.message || event?.error?.name || 'MediaRecorder error';
           console.error('[LocalRecording] Error:', event);
+          setState(prev => ({ ...prev, lastError: msg, isRecording: false }));
           cleanupCanvasPipeline();
           setState(prev => ({ ...prev, isRecording: false }));
         };
@@ -195,11 +209,15 @@ export function useLocalRecording() {
         isRecording: true,
         hasRecording: false,
         recordingDuration: 0,
+        chunkCount: 0,
+        bytesRecorded: 0,
+        lastError: null,
       }));
 
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('[LocalRecording] Failed to start:', error);
+      setState(prev => ({ ...prev, lastError: error?.message || 'Failed to start MediaRecorder', isRecording: false }));
       cleanupCanvasPipeline();
       return false;
     }

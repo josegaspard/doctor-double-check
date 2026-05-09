@@ -448,8 +448,30 @@ export default function DoctorGoLive() {
   const isMobileStable = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 
   if (isLive && liveData) {
+    // Recording diagnostic overlay — shows the doctor in real time whether
+    // MediaRecorder is actually accumulating bytes. If chunkCount stays at 0
+    // for >10s, recording is silently broken and they can stop early.
+    const recDiag = enableRecording ? (
+      <div className="fixed top-3 right-3 z-[60] rounded-lg bg-black/85 backdrop-blur-md border border-white/15 text-white text-[11px] font-mono px-3 py-2 shadow-2xl pointer-events-none select-none">
+        <div className="flex items-center gap-2">
+          <span className={`inline-block w-2 h-2 rounded-full ${localRecording.chunkCount > 0 ? 'bg-red-500 animate-pulse' : (localRecording.isRecording ? 'bg-yellow-400 animate-pulse' : 'bg-gray-500')}`} />
+          <span>{localRecording.chunkCount > 0 ? 'REC' : (localRecording.isRecording ? 'WAIT' : 'OFF')}</span>
+        </div>
+        <div className="mt-1 leading-tight">
+          chunks: {localRecording.chunkCount}<br/>
+          {(localRecording.bytesRecorded / 1024 / 1024).toFixed(2)} MB
+        </div>
+        {localRecording.lastError && (
+          <div className="mt-1 text-red-300 max-w-[180px] whitespace-normal">
+            ⚠ {localRecording.lastError}
+          </div>
+        )}
+      </div>
+    ) : null;
+
     const liveContent = (
       <>
+        {recDiag}
         <LiveStreamView
           liveData={liveData}
           elapsedTime={elapsedTime}
