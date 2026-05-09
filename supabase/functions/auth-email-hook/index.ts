@@ -1,7 +1,16 @@
+// MIGRATION 2026-05-08: Lovable Cloud → external Supabase. Resend SDK + standardwebhooks.
+// To revert: swap LOVABLE-LEGACY <-> NATIVE-IMPL blocks below.
+
+// ─── LOVABLE-LEGACY (kept for rollback) ─────────────────────────────────────
+// import { sendLovableEmail, parseEmailWebhookPayload } from 'npm:@lovable.dev/email-js'
+// import { WebhookError, verifyWebhookRequest } from 'npm:@lovable.dev/webhooks-js'
+
+// ─── NATIVE-IMPL (active, post-migration) ───────────────────────────────────
+import { Resend } from 'npm:resend@4.0.0'
+import { Webhook } from 'npm:standardwebhooks@1.0.0'
+
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
-import { sendLovableEmail, parseEmailWebhookPayload } from 'npm:@lovable.dev/email-js'
-import { WebhookError, verifyWebhookRequest } from 'npm:@lovable.dev/webhooks-js'
 import { createClient } from 'npm:@supabase/supabase-js@2.49.4'
 import { SignupEmail } from '../_shared/email-templates/signup.tsx'
 import { InviteEmail } from '../_shared/email-templates/invite.tsx'
@@ -111,10 +120,17 @@ async function handlePreview(req: Request): Promise<Response> {
     return new Response(null, { headers: previewCorsHeaders })
   }
 
-  const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  // ─── LOVABLE-LEGACY (kept for rollback) ───────────────────────────────────
+  // const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  // const authHeader = req.headers.get('Authorization')
+  // if (!apiKey || authHeader !== `Bearer ${apiKey}`) { return 401 }
+
+  // ─── NATIVE-IMPL (active, post-migration) ─────────────────────────────────
+  // Auth preview endpoint with service role key (admin-only access)
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const authHeader = req.headers.get('Authorization')
 
-  if (!apiKey || authHeader !== `Bearer ${apiKey}`) {
+  if (!serviceKey || authHeader !== `Bearer ${serviceKey}`) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { ...previewCorsHeaders, 'Content-Type': 'application/json' },
@@ -152,10 +168,23 @@ async function handlePreview(req: Request): Promise<Response> {
 
 // Webhook handler
 async function handleWebhook(req: Request): Promise<Response> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  // ─── LOVABLE-LEGACY (kept for rollback) ───────────────────────────────────
+  // const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  // if (!apiKey) { return 500 }
+  // let payload, run_id
+  // try {
+  //   const verified = await verifyWebhookRequest({ req, secret: apiKey, parser: parseEmailWebhookPayload })
+  //   payload = verified.payload; run_id = payload.run_id
+  // } catch (error) {
+  //   if (error instanceof WebhookError) { switch (error.code) { ...invalid_signature/timestamp/payload/json } }
+  //   return 400
+  // }
 
-  if (!apiKey) {
-    console.error('LOVABLE_API_KEY not configured')
+  // ─── NATIVE-IMPL (active, post-migration) ─────────────────────────────────
+  // Standard webhooks (Supabase Auth Email Hook). Secret format: "v1,whsec_<base64>"; standardwebhooks expects only the base64 part.
+  const sendEmailHookSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET')
+  if (!sendEmailHookSecret) {
+    console.error('SEND_EMAIL_HOOK_SECRET not configured')
     return new Response(
       JSON.stringify({ error: 'Server configuration error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -165,39 +194,39 @@ async function handleWebhook(req: Request): Promise<Response> {
   let payload: any
   let run_id = ''
   try {
-    const verified = await verifyWebhookRequest({
-      req,
-      secret: apiKey,
-      parser: parseEmailWebhookPayload,
-    })
-    payload = verified.payload
-    run_id = payload.run_id
-  } catch (error) {
-    if (error instanceof WebhookError) {
-      switch (error.code) {
-        case 'invalid_signature':
-        case 'missing_timestamp':
-        case 'invalid_timestamp':
-        case 'stale_timestamp':
-          console.error('Invalid webhook signature', { error: error.message })
-          return new Response(JSON.stringify({ error: 'Invalid signature' }), {
-            status: 401,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          })
-        case 'invalid_payload':
-        case 'invalid_json':
-          console.error('Invalid webhook payload', { error: error.message })
-          return new Response(
-            JSON.stringify({ error: 'Invalid webhook payload' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
+    const whSecret = sendEmailHookSecret.replace(/^v1,/, '')
+    const wh = new Webhook(whSecret)
+    const body = await req.text()
+    const headers = {
+      'webhook-id': req.headers.get('webhook-id') ?? '',
+      'webhook-timestamp': req.headers.get('webhook-timestamp') ?? '',
+      'webhook-signature': req.headers.get('webhook-signature') ?? '',
+    }
+    payload = wh.verify(body, headers) as any
+    // Supabase Auth Email Hook payload shape doesn't include run_id; synthesize one for logging
+    run_id = `${payload?.user?.id ?? 'unknown'}-${Date.now()}`
+    // Adapt payload to legacy shape used downstream
+    if (payload?.user && payload?.email_data) {
+      payload = {
+        version: '1',
+        run_id,
+        data: {
+          action_type: payload.email_data.email_action_type,
+          email: payload.user.email,
+          new_email: payload.user.new_email,
+          token: payload.email_data.token,
+          token_hash: payload.email_data.token_hash,
+          url: `${payload.email_data.site_url}/auth/v1/verify?token=${payload.email_data.token_hash}&type=${payload.email_data.email_action_type}&redirect_to=${encodeURIComponent(payload.email_data.redirect_to ?? '/')}`,
+          callback_url: payload.email_data.callback_url ?? '',
+          user_id: payload.user.id,
+        },
       }
     }
-
-    console.error('Webhook verification failed', { error })
+  } catch (error) {
+    console.error('Webhook verification failed', { error: error instanceof Error ? error.message : String(error) })
     return new Response(
-      JSON.stringify({ error: 'Invalid webhook payload' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Invalid signature or payload' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 
@@ -271,24 +300,42 @@ async function handleWebhook(req: Request): Promise<Response> {
     })
   }
 
-  let result: { message_id?: string }
+  // ─── LOVABLE-LEGACY (kept for rollback) ─────────────────────────────────
+  // let result
+  // try {
+  //   result = await sendLovableEmail(
+  //     { run_id, to: payload.data.email, from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+  //       sender_domain: SENDER_DOMAIN, subject, html, text, purpose: 'transactional' },
+  //     { apiKey, sendUrl: callbackUrl }
+  //   )
+  // } catch (error) { return 500 }
+
+  // ─── NATIVE-IMPL (active, post-migration) ───────────────────────────────
+  const resendApiKey = Deno.env.get('RESEND_API_KEY')
+  if (!resendApiKey) {
+    console.error('RESEND_API_KEY not configured')
+    return new Response(JSON.stringify({ error: 'Email service not configured' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+  const resend = new Resend(resendApiKey)
+  const fromEmail = Deno.env.get('FROM_EMAIL') || 'onboarding@resend.dev'
+
+  let result: { message_id?: string } = {}
   try {
-    result = await sendLovableEmail(
-      {
-        run_id,
-        to: payload.data.email,
-        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-        sender_domain: SENDER_DOMAIN,
-        subject,
-        html,
-        text,
-        purpose: 'transactional',
-      },
-      { apiKey, sendUrl: callbackUrl }
-    )
+    const sent = await resend.emails.send({
+      from: `${SITE_NAME} <${fromEmail}>`,
+      to: payload.data.email,
+      subject,
+      html,
+      text,
+    })
+    if (sent.error) throw new Error(sent.error.message ?? 'Resend send failed')
+    result = { message_id: sent.data?.id }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to send email'
-    console.error('Email API error', { error: message, run_id })
+    console.error('Resend API error', { error: message, run_id })
     return new Response(JSON.stringify({ error: 'Failed to send email' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

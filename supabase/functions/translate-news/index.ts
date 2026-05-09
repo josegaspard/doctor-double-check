@@ -1,3 +1,6 @@
+// MIGRATION 2026-05-08: AI gateway switched from Lovable → Gemini API direct.
+// To revert: swap the LOVABLE-LEGACY block (uncomment) with the NATIVE-IMPL block (comment).
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -10,7 +13,7 @@ serve(async (req) => {
 
   try {
     const { title, content, targetLang } = await req.json();
-    
+
     if (!title || !content || !targetLang) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
@@ -18,55 +21,72 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    const targetLangName = targetLang === 'en' ? 'English' : 'Spanish';
+
+    // ─── LOVABLE-LEGACY (kept for rollback) ─────────────────────────────────
+    // const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    // if (!LOVABLE_API_KEY) {
+    //   return new Response(JSON.stringify({ error: "Translation service not configured" }), {
+    //     status: 500,
+    //     headers: { ...corsHeaders, "Content-Type": "application/json" },
+    //   });
+    // }
+    // const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    //   method: "POST",
+    //   headers: {
+    //     Authorization: `Bearer ${LOVABLE_API_KEY}`,
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify({
+    //     model: "google/gemini-3-flash-preview",
+    //     messages: [
+    //       { role: "system", content: `You are a professional medical translator...` },
+    //       { role: "user", content: `Translate this article:\n\nTitle: ${title}\n\nContent (HTML): ${content}` },
+    //     ],
+    //     tools: [{ type: "function", function: { name: "return_translation", parameters: { ... } } }],
+    //     tool_choice: { type: "function", function: { name: "return_translation" } },
+    //   }),
+    // });
+    // ... legacy parsing of tool_calls[0].function.arguments
+
+    // ─── NATIVE-IMPL (active, post-migration) ───────────────────────────────
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) {
       return new Response(JSON.stringify({ error: "Translation service not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const targetLangName = targetLang === 'en' ? 'English' : 'Spanish';
+    const systemPrompt = `You are a professional medical translator. Translate the following medical news article to ${targetLangName}. Preserve all HTML formatting tags exactly as they are. Only translate the text content, not HTML tags or attributes. Return ONLY a JSON object with "title" and "content" fields, no markdown wrapping.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content: `You are a professional medical translator. Translate the following medical news article to ${targetLangName}. Preserve all HTML formatting tags exactly as they are. Only translate the text content, not HTML tags or attributes. Return a JSON object with "title" and "content" fields.`,
-          },
-          {
-            role: "user",
-            content: `Translate this article:\n\nTitle: ${title}\n\nContent (HTML): ${content}`,
-          },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "return_translation",
-              description: "Return the translated article title and HTML content",
-              parameters: {
-                type: "object",
-                properties: {
-                  title: { type: "string", description: "Translated title" },
-                  content: { type: "string", description: "Translated HTML content" },
-                },
-                required: ["title", "content"],
-                additionalProperties: false,
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: `Translate this article:\n\nTitle: ${title}\n\nContent (HTML): ${content}` }],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                content: { type: "string" },
               },
+              required: ["title", "content"],
             },
           },
-        ],
-        tool_choice: { type: "function", function: { name: "return_translation" } },
-      }),
-    });
+        }),
+      },
+    );
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -75,14 +95,8 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
+      console.error("Gemini API error:", response.status, errText);
       return new Response(JSON.stringify({ error: "Translation failed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -90,13 +104,17 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    
-    if (toolCall?.function?.arguments) {
-      const translated = JSON.parse(toolCall.function.arguments);
-      return new Response(JSON.stringify(translated), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (text) {
+      try {
+        const translated = JSON.parse(text);
+        return new Response(JSON.stringify(translated), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (parseErr) {
+        console.error("Failed to parse Gemini JSON response:", text);
+      }
     }
 
     return new Response(JSON.stringify({ error: "Unexpected response format" }), {
