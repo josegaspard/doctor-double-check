@@ -318,6 +318,17 @@ export default function DoctorGoLive() {
 
       // Background save: upload recording if doctor chose to save
       const localBlob = localRecording.getRecordingBlob();
+
+      // If the doctor asked to save but the recorder produced no bytes, surface a
+      // sticky error instead of silently navigating away — otherwise the doctor
+      // arrives at /recordings, sees nothing, and can't tell what went wrong.
+      if (saveAsPremium && (!localBlob || localBlob.size === 0)) {
+        toast.error(
+          'La grabación local no capturó video. Esto puede ocurrir si el navegador bloqueó el MediaRecorder o si la conexión cayó. El live quedó registrado pero no hay archivo que subir.',
+          { duration: 15000 }
+        );
+      }
+
       if (saveAsPremium && localBlob && localBlob.size > 0) {
         // Start upload in background — don't await, navigate immediately
         const liveId = liveData.id;
@@ -480,9 +491,9 @@ export default function DoctorGoLive() {
     <MainLayout>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-3">
-            <Radio className="w-3.5 h-3.5 text-primary" />
-            <span className="text-xs font-medium text-primary">Estudio en vivo</span>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary text-primary-foreground border border-primary shadow-md mb-3">
+            <Radio className="w-3.5 h-3.5" />
+            <span className="text-xs font-semibold tracking-wide">Estudio en vivo</span>
           </div>
           <h1 className="font-heading text-2xl md:text-3xl font-bold text-foreground">
             Comparte tu conocimiento

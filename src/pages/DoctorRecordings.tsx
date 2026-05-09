@@ -327,6 +327,28 @@ export default function DoctorRecordings() {
     fetchPastLives();
   }, [fetchMyRecordings, fetchPastLives]);
 
+  // Auto-recover orphan recording files. If a previous live's MediaRecorder
+  // upload succeeded but the DB row never got created (RLS / JWT mid-live),
+  // this scans the doctor's storage folder and creates the missing rows.
+  useEffect(() => {
+    if (!user?.id || role !== 'doctor') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('scan-orphan-recordings');
+        if (cancelled || error) return;
+        if (data?.recovered > 0) {
+          toast.success(`${data.recovered} grabación(es) recuperada(s) automáticamente`);
+          await fetchMyRecordings();
+          await refreshRecordings();
+        }
+      } catch {
+        // best-effort, no UI noise on failure
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id, role, fetchMyRecordings, refreshRecordings]);
+
   const allRecordings = recordings;
   
   const specialties = [...new Set(allRecordings.map(r => r.specialty))];
