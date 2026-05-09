@@ -148,12 +148,12 @@ export default function RecordingsGrid() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
                     <PlayCircle className="w-5 h-5 text-primary" />
                   </div>
                   {doctorName ? `${t('recordings.recordingsOf')} ${doctorName}` : t('recordings.premiumContent')}
                 </h1>
-                <p className="text-muted-foreground text-sm mt-1.5 ml-11">
+                <p className="text-foreground/70 text-sm mt-1.5 ml-11">
                   {filteredRecordings.length} {t('recordings.title').toLowerCase()}
                   {doctorFilter && (
                     <Button variant="link" size="sm" className="ml-2 p-0 h-auto text-xs" onClick={() => navigate('/recordings')}>

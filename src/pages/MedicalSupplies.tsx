@@ -238,11 +238,11 @@ export default function MedicalSupplies() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Hero */}
-        <div className="mb-6 rounded-2xl bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent p-5 sm:p-8">
+        <div className="mb-6 rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent p-5 sm:p-8">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center"><Package className="w-6 h-6 text-primary" /></div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold">{es ? 'Material Médico' : 'Medical Supplies'}</h1>
+            <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0"><Package className="w-6 h-6 text-primary" /></div>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">{es ? 'Material Médico' : 'Medical Supplies'}</h1>
               <p className="text-sm text-muted-foreground">{es ? 'Marketplace de insumos y equipos médicos' : 'Medical equipment & supplies marketplace'}</p>
             </div>
           </div>
@@ -251,8 +251,8 @@ export default function MedicalSupplies() {
             <span className="flex items-center gap-1"><Store className="w-3.5 h-3.5" />{vendors.length} {es ? 'proveedores' : 'vendors'}</span>
           </div>
           <div className="mt-4 flex gap-2 flex-wrap">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/vendor/dashboard')} className="text-xs gap-1"><Store className="w-3.5 h-3.5" />{es ? '¿Eres proveedor? Vende aquí' : 'Are you a vendor? Sell here'}</Button>
-            {user && <Button variant="outline" size="sm" onClick={() => navigate('/my-orders')} className="text-xs gap-1"><ClipboardList className="w-3.5 h-3.5" />{es ? 'Mis Compras' : 'My Orders'}</Button>}
+            <Button variant="outline" size="sm" onClick={() => navigate('/vendor/dashboard')} className="text-xs gap-1"><Store className="w-3.5 h-3.5" />{es ? '¿Eres proveedor? Vende aquí' : 'Are you a vendor? Sell here'}</Button>
+            {user && <Button variant="default" size="sm" onClick={() => navigate('/my-orders')} className="text-xs gap-1"><ClipboardList className="w-3.5 h-3.5" />{es ? 'Mis Compras' : 'My Orders'}</Button>}
           </div>
         </div>
 
