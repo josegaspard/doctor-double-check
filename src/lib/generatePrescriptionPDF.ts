@@ -42,7 +42,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
   `).join('');
 
   // Use the deployed logo URL
-  const logoUrl = 'https://doc-seek-relay.lovable.app/lovable-uploads/logo-medical-masters.png';
+  const logoUrl = 'https://medical-masters.com/icon-512.png?v=11';
 
   return `
 <!DOCTYPE html>

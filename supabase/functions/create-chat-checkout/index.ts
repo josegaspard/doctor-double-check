@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       .single();
 
     const highlightSeconds = liveData?.chat_highlight_seconds || 120;
-    const originUrl = req.headers.get("origin") || "https://doc-seek-relay.lovable.app";
+    const originUrl = req.headers.get("origin") || "https://medical-masters.com";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

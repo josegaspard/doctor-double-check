@@ -61,7 +61,7 @@ serve(async (req) => {
 
     // Get callback URL from request body (optional)
     const body = await req.json().catch(() => ({}));
-    const callbackUrl = body.callback_url || "https://doc-seek-relay.lovable.app/identity-verification";
+    const callbackUrl = body.callback_url || "https://medical-masters.com/identity-verification";
 
     // Create Veriff session
     const veriffResponse = await fetch("https://stationapi.veriff.com/v1/sessions/", {

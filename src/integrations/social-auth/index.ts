@@ -11,7 +11,7 @@
 //   extraParams?: Record<string, string>;
 // };
 //
-// export const lovable = {
+// export const socialAuth = {
 //   auth: {
 //     signInWithOAuth: async (
 //       provider: "google" | "apple",
@@ -41,7 +41,7 @@ type SignInOptions = {
   extraParams?: Record<string, string>;
 };
 
-export const lovable = {
+export const socialAuth = {
   auth: {
     signInWithOAuth: async (
       provider: "google" | "apple",
