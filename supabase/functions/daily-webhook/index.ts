@@ -57,10 +57,31 @@ Deno.serve(async (req) => {
     const rawBody = await req.text();
 
     if (dailyWebhookSecret) {
-      const expectedSignature = createHmac("sha256", dailyWebhookSecret)
-        .update(rawBody)
-        .digest("hex");
-      if (!dailySignature || dailySignature !== expectedSignature) {
+      // Daily sends: "x-webhook-signature: t=<timestamp>,v1=<sig>" where sig = HMAC-SHA256(`${t}.${rawBody}`, secret) hex.
+      // Legacy fallback: also accept raw hex digest of rawBody alone.
+      let valid = false;
+      if (dailySignature) {
+        const parts = Object.fromEntries(
+          dailySignature.split(",").map((p) => {
+            const idx = p.indexOf("=");
+            return idx > 0 ? [p.slice(0, idx).trim(), p.slice(idx + 1).trim()] : [p, ""];
+          })
+        );
+        const t = parts.t;
+        const v1 = parts.v1;
+        if (t && v1) {
+          const expected = createHmac("sha256", dailyWebhookSecret)
+            .update(`${t}.${rawBody}`)
+            .digest("hex");
+          if (expected === v1) valid = true;
+        }
+        // Legacy raw-hex fallback
+        if (!valid) {
+          const legacy = createHmac("sha256", dailyWebhookSecret).update(rawBody).digest("hex");
+          if (legacy === dailySignature) valid = true;
+        }
+      }
+      if (!valid) {
         logStep("Unauthorized: invalid or missing Daily webhook signature");
         return new Response("Unauthorized", { status: 401, headers: corsHeaders });
       }
