@@ -144,7 +144,7 @@ export default function RecordingsGrid() {
       <div className="relative min-h-screen overflow-hidden">
         <div className="relative z-10 container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
           {/* Hero Header Card */}
-          <div className="mb-6 rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent p-5 sm:p-6 backdrop-blur-sm">
+          <div className="mb-6 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/25 via-secondary/15 to-card/60 p-5 sm:p-6 backdrop-blur-md shadow-lg dark:shadow-black/40">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">

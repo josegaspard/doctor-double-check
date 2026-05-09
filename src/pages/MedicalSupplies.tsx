@@ -238,7 +238,7 @@ export default function MedicalSupplies() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Hero */}
-        <div className="mb-6 rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent p-5 sm:p-8">
+        <div className="mb-6 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/25 via-secondary/15 to-card/60 backdrop-blur-md shadow-lg dark:shadow-black/40 p-5 sm:p-8">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0"><Package className="w-6 h-6 text-primary" /></div>
             <div className="min-w-0">
