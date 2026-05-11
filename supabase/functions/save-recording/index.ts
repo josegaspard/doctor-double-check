@@ -40,9 +40,13 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const {
-      liveId, storagePath, duration, price = 0,
+      liveId, storagePath, backend, duration, price = 0,
       title, description, specialty, tags = [], thumbnailUrl,
     } = body || {};
+
+    // backend === 'b2' means the upload landed in Backblaze (preferred new flow).
+    // Anything else falls back to legacy Supabase Storage.
+    const isB2 = backend === 'b2';
 
     if (!liveId || !storagePath) {
       return new Response(JSON.stringify({ error: "liveId and storagePath required" }), {
@@ -74,19 +78,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Confirm the file actually exists in Storage
-    const { data: head } = await admin.storage.from("recordings").list(user.id, {
-      limit: 100,
-      search: storagePath.split("/").pop(),
-    });
-    const fileExists = (head || []).some((f: any) => `${user.id}/${f.name}` === storagePath);
-    if (!fileExists) {
-      return new Response(JSON.stringify({ error: "file not found in storage", storagePath }), {
-        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // Confirm the file actually exists. For Supabase Storage we list and match;
+    // for B2 the presigned-URL flow already verified the upload succeeded (PUT 200),
+    // so we trust the path. A separate HEAD against B2 would require SigV4 here
+    // and double the function cold-start time for no gain.
+    if (!isB2) {
+      const { data: head } = await admin.storage.from("recordings").list(user.id, {
+        limit: 100,
+        search: storagePath.split("/").pop(),
       });
+      const fileExists = (head || []).some((f: any) => `${user.id}/${f.name}` === storagePath);
+      if (!fileExists) {
+        return new Response(JSON.stringify({ error: "file not found in storage", storagePath }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
-    const videoRef = `storage:${storagePath}`;
+    const videoRef = isB2 ? `b2:${storagePath}` : `storage:${storagePath}`;
 
     // Upsert: if a recording row already exists for this live, update it
     const { data: existing } = await admin

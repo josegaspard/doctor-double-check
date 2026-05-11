@@ -287,26 +287,38 @@ export function useLocalRecording() {
       const fileExtension = blob.type.includes('mp4') ? 'mp4' : 'webm';
       const fileName = `${params.liveId}-${Date.now()}.${fileExtension}`;
       const filePath = `${params.doctorId}/${fileName}`;
+      const contentType = blob.type || `video/${fileExtension}`;
 
-      console.log('[LocalRecording] Uploading to path:', filePath);
+      console.log('[LocalRecording] Requesting B2 presigned PUT url for:', filePath);
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('recordings')
-        .upload(filePath, blob, {
-          contentType: blob.type,
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error('[LocalRecording] Upload error:', uploadError);
-        throw uploadError;
+      // Step 1: ask edge function for a presigned PUT URL (scoped to <doctorId>/*)
+      const { data: presigned, error: presignError } = await supabase.functions.invoke('b2-presigned-url', {
+        body: { operation: 'put', path: filePath, contentType },
+      });
+      if (presignError || !presigned?.url) {
+        console.error('[LocalRecording] presigned-url error:', presignError, presigned);
+        throw new Error(`No se pudo obtener URL de subida: ${(presignError as any)?.message || presigned?.error || 'unknown'}`);
       }
 
-      setState(prev => ({ ...prev, uploadProgress: 50 }));
+      setState(prev => ({ ...prev, uploadProgress: 25 }));
 
-      console.log('[LocalRecording] Video stored at path:', filePath);
+      // Step 2: PUT the blob directly to B2 (no double bandwidth through edge function)
+      const putRes = await fetch(presigned.url, {
+        method: 'PUT',
+        headers: { 'Content-Type': contentType },
+        body: blob,
+      });
+      if (!putRes.ok) {
+        const errText = await putRes.text().catch(() => '');
+        console.error('[LocalRecording] B2 PUT failed:', putRes.status, errText);
+        throw new Error(`Subida a B2 falló (HTTP ${putRes.status}): ${errText.slice(0, 200)}`);
+      }
 
-      setState(prev => ({ ...prev, uploadProgress: 75 }));
+      setState(prev => ({ ...prev, uploadProgress: 70 }));
+
+      console.log('[LocalRecording] Video stored on B2:', filePath);
+
+      setState(prev => ({ ...prev, uploadProgress: 85 }));
 
       const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
@@ -316,6 +328,7 @@ export function useLocalRecording() {
         body: {
           liveId: params.liveId,
           storagePath: filePath,
+          backend: 'b2',
           duration,
           price: params.price,
           title: params.title,

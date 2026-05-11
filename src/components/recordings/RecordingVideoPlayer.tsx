@@ -21,17 +21,27 @@ function isStorageRef(url: string) {
   return url.startsWith('storage:');
 }
 
+function isB2Ref(url: string) {
+  return url.startsWith('b2:');
+}
+
 function getStoragePath(url: string) {
   return url.replace(/^storage:/, '');
+}
+
+function getB2Path(url: string) {
+  return url.replace(/^b2:/, '');
 }
 
 /**
  * Player que soporta:
  * - Cloudflare (UID / pending:UID) via CloudflareRecordingPlayer
- * - Almacenamiento (storage:path) via signed URL + HTML5 video
+ * - Almacenamiento Supabase Storage (storage:path) via signed URL + HTML5 video
+ * - Backblaze B2 (b2:path) via edge function presigned URL + HTML5 video
  */
 export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, onTimeUpdate, autoPlay }: RecordingVideoPlayerProps) {
   const storagePath = useMemo(() => (isStorageRef(videoUrl) ? getStoragePath(videoUrl) : null), [videoUrl]);
+  const b2Path = useMemo(() => (isB2Ref(videoUrl) ? getB2Path(videoUrl) : null), [videoUrl]);
   const { user, supabaseUser } = useAuth();
   // Generate a unique sessionId per mount — persists across signed URL renewals
   const sessionId = useMemo(
@@ -50,19 +60,34 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const fetchSignedUrl = useCallback(async () => {
-    if (!storagePath) return;
+    if (!storagePath && !b2Path) return;
 
     setIsLoading(true);
     setError(null);
     setExpired(false);
     try {
+      if (b2Path) {
+        // B2 path → call edge function for presigned GET URL
+        const { data, error: invokeErr } = await supabase.functions.invoke('b2-presigned-url', {
+          body: { operation: 'get', path: b2Path },
+        });
+        if (invokeErr || !data?.url) {
+          const detail = (invokeErr as any)?.message || data?.error || 'No se pudo obtener URL del video';
+          throw new Error(detail);
+        }
+        setSignedUrl(data.url);
+        setUrlGeneratedAt(Date.now());
+        return;
+      }
+
+      // Legacy Supabase Storage path
       const { data, error: signError } = await supabase.storage
         .from('recordings')
-        .createSignedUrl(storagePath, 60 * 60); // 1h
+        .createSignedUrl(storagePath!, 60 * 60); // 1h
 
       if (signError) {
         // Fallback: if bucket is public, public URL will work.
-        const { data: publicUrlData } = supabase.storage.from('recordings').getPublicUrl(storagePath);
+        const { data: publicUrlData } = supabase.storage.from('recordings').getPublicUrl(storagePath!);
         if (publicUrlData?.publicUrl) {
           setSignedUrl(publicUrlData.publicUrl);
           setUrlGeneratedAt(Date.now());
@@ -75,16 +100,16 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
       setUrlGeneratedAt(Date.now());
     } catch (e: any) {
       console.error('[RecordingVideoPlayer] Signed URL error:', e);
-      setError('No se pudo cargar el video desde almacenamiento');
+      setError(e?.message || 'No se pudo cargar el video desde almacenamiento');
     } finally {
       setIsLoading(false);
     }
-  }, [storagePath]);
+  }, [storagePath, b2Path]);
 
   useEffect(() => {
-    if (!storagePath) return;
+    if (!storagePath && !b2Path) return;
     fetchSignedUrl();
-  }, [storagePath, fetchSignedUrl]);
+  }, [storagePath, b2Path, fetchSignedUrl]);
 
   const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const vid = e.currentTarget;
@@ -93,7 +118,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
     }
   };
 
-  if (!storagePath) {
+  if (!storagePath && !b2Path) {
     return (
       <div className="relative">
         <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} autoPlay={autoPlay} />

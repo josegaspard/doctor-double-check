@@ -523,21 +523,28 @@ export default function DoctorRecordings() {
   };
 
   const deleteRecordingFully = async (recording: Recording) => {
-    // 1. Delete video file from storage. Supports two video_url shapes:
-    //    a) "storage:<path>" — internal ref produced by daily-webhook / end-daily-room
-    //    b) full https URL pointing at /storage/v1/object/public/recordings/<path>
+    // 1. Delete video file from storage. Supports three video_url shapes:
+    //    a) "b2:<path>"        — Backblaze B2 (current preferred)
+    //    b) "storage:<path>"   — Supabase Storage (legacy)
+    //    c) full https URL pointing at /storage/v1/object/public/recordings/<path>
     if (recording.videoUrl) {
       try {
-        let filePath: string | null = null;
-        if (recording.videoUrl.startsWith('storage:')) {
-          filePath = recording.videoUrl.replace(/^storage:/, '');
+        if (recording.videoUrl.startsWith('b2:')) {
+          await supabase.functions.invoke('b2-delete-object', {
+            body: { path: recording.videoUrl.replace(/^b2:/, '') },
+          });
         } else {
-          const url = new URL(recording.videoUrl);
-          const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/recordings\/(.+)/);
-          if (pathMatch?.[1]) filePath = decodeURIComponent(pathMatch[1]);
-        }
-        if (filePath) {
-          await supabase.storage.from('recordings').remove([filePath]);
+          let filePath: string | null = null;
+          if (recording.videoUrl.startsWith('storage:')) {
+            filePath = recording.videoUrl.replace(/^storage:/, '');
+          } else {
+            const url = new URL(recording.videoUrl);
+            const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/recordings\/(.+)/);
+            if (pathMatch?.[1]) filePath = decodeURIComponent(pathMatch[1]);
+          }
+          if (filePath) {
+            await supabase.storage.from('recordings').remove([filePath]);
+          }
         }
       } catch (storageErr) {
         console.warn('Could not delete video file from storage:', storageErr);
