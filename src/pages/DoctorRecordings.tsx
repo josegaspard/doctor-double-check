@@ -785,9 +785,14 @@ export default function DoctorRecordings() {
     exportToCSV(lives.map(pastLiveToCSVRow), `lives-pasados-${new Date().toISOString().slice(0, 10)}`);
   };
 
+  // Returns a numeric duration string. Rows that genuinely don't have a
+  // duration yet are handled inline below ("Procesando…" / "Sin video"), so
+  // this helper never needs to express that state — it would poison the
+  // aggregate "Duración Total" stat when any single row is 0/null.
   const formatDuration = (seconds: number) => {
-    if (seconds <= 0) return 'Procesando...';
-    const totalMinutes = Math.floor(seconds / 60);
+    const s = Math.max(0, Math.floor(Number(seconds) || 0));
+    const totalMinutes = Math.floor(s / 60);
+    if (totalMinutes < 1) return `${s} s`;
     if (totalMinutes < 60) return `${totalMinutes} min`;
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
@@ -1156,7 +1161,13 @@ export default function DoctorRecordings() {
                           <div className="flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
-                              {recording.videoUrl?.startsWith('pending:') ? 'Procesando…' : !recording.videoUrl ? 'Sin video' : formatDuration(recording.duration)}
+                              {recording.videoUrl?.startsWith('pending:')
+                                ? 'Procesando…'
+                                : !recording.videoUrl
+                                  ? 'Sin video'
+                                  : recording.duration > 0
+                                    ? formatDuration(recording.duration)
+                                    : '—'}
                             </span>
                             <span className="flex items-center gap-1">
                               <DollarSign className="w-3 h-3" />

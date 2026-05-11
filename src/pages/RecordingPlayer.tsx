@@ -161,8 +161,25 @@ export default function RecordingPlayer() {
   };
 
   const handleDurationUpdate = (newDuration: number) => {
-    if (recording && recording.duration !== newDuration) {
-      setRecording(prev => prev ? { ...prev, duration: newDuration } : null);
+    if (!recording || newDuration <= 0) return;
+    if (recording.duration === newDuration) return;
+    setRecording(prev => prev ? { ...prev, duration: newDuration } : null);
+
+    // Backfill duration in DB when the owner watches their own recording and
+    // the stored value is 0/missing. Older rows (pre-duration capture or
+    // failed save-recording metadata) get healed silently as the doctor
+    // navigates through their library.
+    const isOwner = supabaseUser?.id && recording.doctorId === supabaseUser.id;
+    const needsBackfill = !recording.duration || recording.duration <= 0;
+    if (isOwner && needsBackfill) {
+      supabase
+        .from('recordings')
+        .update({ duration: newDuration })
+        .eq('id', recording.id)
+        .eq('doctor_id', supabaseUser.id)
+        .then(({ error }) => {
+          if (error) console.warn('[RecordingPlayer] Failed to backfill duration:', error.message);
+        });
     }
   };
 
