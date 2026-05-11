@@ -277,7 +277,7 @@ async function handleWebhook(req: Request): Promise<Response> {
       } else if (allowed === false) {
         console.warn('Auth email rate-limited', { emailType, email: payload.data.email, run_id })
         // Return 200 silently so we don't leak existence of the email
-        return new Response(JSON.stringify({ ok: true, rate_limited: true }), {
+        return new Response(JSON.stringify({}), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
@@ -373,8 +373,11 @@ async function handleWebhook(req: Request): Promise<Response> {
 
   console.log('Email sent successfully', { message_id: result.message_id, run_id })
 
+  // Supabase Auth send_email hook spec: success response must be { error: null }
+  // or empty {}. Returning anything else triggers "Invalid payload sent to hook"
+  // even though the email actually went out.
   return new Response(
-    JSON.stringify({ success: true, message_id: result.message_id }),
+    JSON.stringify({}),
     { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }
