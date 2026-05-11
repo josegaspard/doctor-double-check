@@ -160,25 +160,25 @@ export default function RoleSelector() {
           {/* Features */}
           <div className="mt-6 md:mt-12 grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="text-center">
-              <div className="w-10 h-10 mx-auto rounded-full bg-success/10 flex items-center justify-center mb-2">
+              <div className="w-10 h-10 mx-auto rounded-full bg-white shadow-md ring-1 ring-black/5 flex items-center justify-center mb-2">
                 <Video className="w-5 h-5 text-success" />
               </div>
               <p className="text-xs text-muted-foreground">{t('roleSelector.freeLives')}</p>
             </div>
             <div className="text-center">
-              <div className="w-10 h-10 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-2">
+              <div className="w-10 h-10 mx-auto rounded-full bg-white shadow-md ring-1 ring-black/5 flex items-center justify-center mb-2">
                 <Stethoscope className="w-5 h-5 text-primary" />
               </div>
               <p className="text-xs text-muted-foreground">{t('roleSelector.verifiedDoctors')}</p>
             </div>
             <div className="text-center">
-              <div className="w-10 h-10 mx-auto rounded-full bg-info/10 flex items-center justify-center mb-2">
+              <div className="w-10 h-10 mx-auto rounded-full bg-white shadow-md ring-1 ring-black/5 flex items-center justify-center mb-2">
                 <Lock className="w-5 h-5 text-info" />
               </div>
               <p className="text-xs text-muted-foreground">{t('roleSelector.secureVault')}</p>
             </div>
             <div className="text-center">
-              <div className="w-10 h-10 mx-auto rounded-full bg-live/10 flex items-center justify-center mb-2">
+              <div className="w-10 h-10 mx-auto rounded-full bg-white shadow-md ring-1 ring-black/5 flex items-center justify-center mb-2">
                 <Heart className="w-5 h-5 text-live" />
               </div>
               <p className="text-xs text-muted-foreground">{t('roleSelector.oneOnOneChat')}</p>
