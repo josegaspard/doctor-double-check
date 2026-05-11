@@ -320,14 +320,10 @@ async function handleWebhook(req: Request): Promise<Response> {
     subject = 'Confirma tu correo - Bienvenido Residente - Medical Masters'
   }
 
-  const callbackUrl = payload.data.callback_url
-  if (!callbackUrl) {
-    console.error('No callback_url in payload', { run_id })
-    return new Response(JSON.stringify({ error: 'Missing callback_url in payload' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
+  // Note: callback_url is no longer required post-Lovable migration. We send
+  // via Resend directly using RESEND_API_KEY below; the Supabase Auth Email
+  // Hook payload doesn't include callback_url so checking for it would 400
+  // every real signup.
 
   // ─── LOVABLE-LEGACY (kept for rollback) ─────────────────────────────────
   // let result
