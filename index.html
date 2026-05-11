@@ -44,10 +44,9 @@
     <!-- Preload background image for instant render (modo imagen del app) -->
     <link rel="preload" as="image" href="/app-bg.jpg" fetchpriority="high" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" /></noscript>
+    <!-- Fonts: self-hosted via @fontsource (bundled by Vite). No external CDN
+         dependency — eliminates the SRI gap flagged in the OWASP review for
+         Google Fonts. CSS imported in src/main.tsx -->
 
     <!-- Favicons (Google SERP requires .ico + multi-resolution sizes) -->
     <link rel="icon" href="/favicon.ico?v=13" sizes="any" />
