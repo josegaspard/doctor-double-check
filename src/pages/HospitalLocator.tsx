@@ -72,7 +72,7 @@ export default function HospitalLocator() {
     const fetchData = async () => {
       setLoading(true);
       const [{ data: h }, { data: r }, { count: docCount }] = await Promise.all([
-        supabase.from('hospitals').select('*').eq('is_active', true).in('type', ['private', 'clinic']).or('country_code.eq.MX,country_code.is.null').order('name'),
+        supabase.from('hospitals').select('*').eq('is_active', true).in('type', ['private', 'clinic']).order('name'),
         supabase.from('hospital_reviews').select('*'),
         supabase.from('doctor_profiles').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
       ]);
