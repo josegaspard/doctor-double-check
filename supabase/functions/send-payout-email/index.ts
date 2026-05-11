@@ -1,16 +1,18 @@
 import { Resend } from "npm:resend@2.0.0";
+import { requireAdminOrCron, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // SECURITY (2026-05-11 audit): admin JWT or x-cron-secret. Previously open Resend relay.
+  try { await requireAdminOrCron(req); } catch (__e) {
+    if (__e instanceof AuthError) return __e.toResponse();
+    return new Response(JSON.stringify({ error: 'auth failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   try {

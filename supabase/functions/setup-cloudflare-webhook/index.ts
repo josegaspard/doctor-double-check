@@ -1,8 +1,4 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
+import { requireAdminJWT, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SETUP-CLOUDFLARE-WEBHOOK] ${step}${detailsStr}`);
@@ -11,6 +7,12 @@ const logStep = (step: string, details?: any) => {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // SECURITY (2026-05-11 audit): admin-only. Previously open.
+  try { await requireAdminJWT(req); } catch (__e) {
+    if (__e instanceof AuthError) return __e.toResponse();
+    return new Response(JSON.stringify({ error: 'auth failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   try {

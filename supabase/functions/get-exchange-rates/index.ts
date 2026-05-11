@@ -1,13 +1,18 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
+import { requireUserJWT, requireCronSecret, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // SECURITY (2026-05-11 audit): authenticated user OR scheduled cron caller.
+  try {
+    if (req.headers.get('x-cron-secret')) requireCronSecret(req);
+    else await requireUserJWT(req);
+  } catch (__e) {
+    if (__e instanceof AuthError) return __e.toResponse();
+    return new Response(JSON.stringify({ error: 'auth failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   try {

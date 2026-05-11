@@ -36,18 +36,25 @@ serve(async (req) => {
     }
 
     const rawBody = await req.text();
-    
-    // Verify HMAC signature
+
+    // SECURITY: HMAC is MANDATORY. Previously the verify branch only ran when
+    // a signature header was present, which meant an attacker could simply omit
+    // the header to bypass verification entirely and forge KYC approvals.
     const signature = req.headers.get("x-hmac-signature") || "";
-    if (signature) {
-      const isValid = await verifyHmac(rawBody, signature, VERIFF_SHARED_SECRET);
-      if (!isValid) {
-        console.error("Invalid HMAC signature");
-        return new Response(JSON.stringify({ error: "Invalid signature" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    if (!signature) {
+      console.error("Missing HMAC signature header");
+      return new Response(JSON.stringify({ error: "Missing signature" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const isValid = await verifyHmac(rawBody, signature, VERIFF_SHARED_SECRET);
+    if (!isValid) {
+      console.error("Invalid HMAC signature");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const payload = JSON.parse(rawBody);

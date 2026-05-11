@@ -25,8 +25,8 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
     if (userErr || !user) throw new Error("Unauthorized");
 
-    const { liveId, amount, messageContent, userName } = await req.json();
-    if (!liveId || !amount || !messageContent) throw new Error("Missing required fields");
+    const { liveId, messageContent, userName } = await req.json();
+    if (!liveId || !messageContent) throw new Error("Missing required fields");
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
       apiVersion: "2023-10-16",
@@ -45,14 +45,21 @@ Deno.serve(async (req) => {
       customerId = customer.id;
     }
 
-    // Fetch live settings for highlight duration
+    // SECURITY (2026-05-11 audit): amount comes from DB, NOT from body.
+    // Previously a user could pass amount=0.01 (or negative-rounded) and
+    // get a chat highlight at the wrong price.
     const { data: liveData } = await supabase
       .from("lives")
-      .select("title, chat_highlight_seconds")
+      .select("title, chat_highlight_seconds, chat_highlight_price")
       .eq("id", liveId)
       .single();
+    if (!liveData) throw new Error("Live not found");
 
-    const highlightSeconds = liveData?.chat_highlight_seconds || 120;
+    const highlightSeconds = liveData.chat_highlight_seconds || 120;
+    const amount = Number((liveData as any).chat_highlight_price ?? 0);
+    if (!amount || amount < 5 || amount > 5000) {
+      throw new Error("Chat highlight price not configured");
+    }
     const originUrl = req.headers.get("origin") || "https://medical-masters.com";
 
     const session = await stripe.checkout.sessions.create({

@@ -39,6 +39,24 @@ Deno.serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // SECURITY (2026-05-11 audit): rate-limit Stripe session creation per user
+    // to stop enumeration / Stripe quota abuse / mass tab abandonment.
+    const rlSupabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const { data: allowed, error: rlErr } = await rlSupabase.rpc(
+      "check_and_record_rate_limit",
+      { p_bucket: "wallet_checkout", p_key: user.id, p_max: 10, p_window_seconds: 600 }
+    );
+    if (rlErr) {
+      logStep("rate-limit RPC error (allowing through)", { err: rlErr.message });
+    } else if (allowed === false) {
+      return new Response(JSON.stringify({ error: "Too many checkout attempts. Wait a few minutes." }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const body = await req.json().catch(() => ({}));
     const amountRaw = body?.amount;
     const amount = typeof amountRaw === 'string' ? Number.parseInt(amountRaw, 10) : Number(amountRaw);

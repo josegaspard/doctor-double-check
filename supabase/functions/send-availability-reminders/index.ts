@@ -1,11 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-
+import { requireCronSecret, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SEND-AVAILABILITY-REMINDERS] ${step}${detailsStr}`);
@@ -18,6 +13,12 @@ const generateUnsubscribeToken = (subscriberId: string, doctorId: string, type: 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // SECURITY (2026-05-11 audit): scheduled-only. x-cron-secret header required.
+  try { requireCronSecret(req); } catch (__e) {
+    if (__e instanceof AuthError) return __e.toResponse();
+    return new Response(JSON.stringify({ error: 'auth failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   try {

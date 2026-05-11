@@ -4,11 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
+import { requireCronSecret, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 // Mirror of src/lib/vaccinationSchemeMX.ts (kept minimal — only fields needed)
 type Dose = { doseNumber: number; ageMonths: number; label: string };
 type V = { key: string; name: string; ageGroup: string; doses: Dose[] };
@@ -65,6 +61,12 @@ const REMIND_INTERVAL_DAYS = 30; // do not re-notify within 30 days for same dos
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  // SECURITY (2026-05-11 audit): scheduled-only. x-cron-secret header required.
+  try { requireCronSecret(req); } catch (__e) {
+    if (__e instanceof AuthError) return __e.toResponse();
+    return new Response(JSON.stringify({ error: 'auth failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

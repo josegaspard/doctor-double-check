@@ -24,9 +24,25 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { campaign_id, amount } = await req.json();
-    if (!campaign_id || !amount || amount <= 0) {
-      throw new Error("Invalid campaign_id or amount");
+    const { campaign_id, amount: requestedAmount } = await req.json();
+    if (!campaign_id) throw new Error("campaign_id required");
+
+    // SECURITY (2026-05-11 audit): bound amount and cross-check ownership.
+    // Previously only `amount > 0` was checked, allowing tiny floats or
+    // overflow-large values, and the caller's relation to the campaign
+    // wasn't verified.
+    const amount = Number(requestedAmount);
+    if (!Number.isFinite(amount) || amount < 100 || amount > 1000000) {
+      throw new Error("Amount must be between 100 and 1,000,000 MXN");
+    }
+    const { data: campaign, error: campErr } = await supabase
+      .from("ad_campaigns")
+      .select("advertiser_id, status")
+      .eq("id", campaign_id)
+      .single();
+    if (campErr || !campaign) throw new Error("Campaign not found");
+    if (campaign.advertiser_id !== user.id) {
+      throw new Error("Forbidden — not your campaign");
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {

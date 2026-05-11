@@ -127,7 +127,12 @@ function renderVideoTracks(container: HTMLDivElement, co: DailyCall) {
         waitingEl = document.createElement('div');
         waitingEl.setAttribute('data-role', 'waiting');
         waitingEl.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;';
-        waitingEl.innerHTML = `<p style="color:rgba(255,255,255,0.7);font-size:14px;">${remote.user_name || 'Participante'} conectado (sin video)</p>`;
+        // SECURITY: build DOM with textContent so remote.user_name (controlled
+        // by the other Daily.co participant) cannot inject HTML/script.
+        const p = document.createElement('p');
+        p.style.cssText = 'color:rgba(255,255,255,0.7);font-size:14px;';
+        p.textContent = `${remote.user_name || 'Participante'} conectado (sin video)`;
+        waitingEl.appendChild(p);
         container.prepend(waitingEl);
       }
     }

@@ -49,6 +49,17 @@ async function downloadAndPersistRecording(
   liveId: string,
 ): Promise<string | null> {
   try {
+    // SECURITY: SSRF allowlist. download_link arrives in a verified Daily
+    // webhook payload but we still pin the host so a compromised Daily
+    // payload (or a future bug that skips sig verification) can't redirect
+    // us to fetch internal services.
+    const u = new URL(downloadLink);
+    const allowedHosts = ['daily.co', 'daily-recordings.s3.amazonaws.com'];
+    const hostOk = allowedHosts.some(h => u.hostname === h || u.hostname.endsWith('.' + h));
+    if (u.protocol !== 'https:' || !hostOk) {
+      logStep("Refused download — host not in allowlist", { host: u.hostname });
+      return null;
+    }
     logStep("Downloading Daily.co recording", { liveId });
     const res = await fetch(downloadLink);
     if (!res.ok) {
@@ -94,34 +105,47 @@ Deno.serve(async (req) => {
     const dailySignature = req.headers.get("x-webhook-signature");
     const rawBody = await req.text();
 
-    if (dailyWebhookSecret) {
-      let valid = false;
-      if (dailySignature) {
-        const parts = Object.fromEntries(
-          dailySignature.split(",").map((p) => {
-            const idx = p.indexOf("=");
-            return idx > 0 ? [p.slice(0, idx).trim(), p.slice(idx + 1).trim()] : [p, ""];
-          })
-        );
-        const t = parts.t;
-        const v1 = parts.v1;
-        if (t && v1) {
-          const expected = createHmac("sha256", dailyWebhookSecret)
-            .update(`${t}.${rawBody}`)
-            .digest("hex");
-          if (expected === v1) valid = true;
-        }
-        if (!valid) {
-          const legacy = createHmac("sha256", dailyWebhookSecret).update(rawBody).digest("hex");
-          if (legacy === dailySignature) valid = true;
+    // SECURITY: fail-closed. Previously fell through to "skip verification"
+    // when DAILY_WEBHOOK_SECRET was unset, which let an attacker forge
+    // recording-ready events (and ride the function's service-role outbound
+    // fetch to download_link → SSRF).
+    if (!dailyWebhookSecret) {
+      logStep("DAILY_WEBHOOK_SECRET not configured — rejecting");
+      return new Response("Server not configured", { status: 500, headers: corsHeaders });
+    }
+    let valid = false;
+    if (dailySignature) {
+      const parts = Object.fromEntries(
+        dailySignature.split(",").map((p) => {
+          const idx = p.indexOf("=");
+          return idx > 0 ? [p.slice(0, idx).trim(), p.slice(idx + 1).trim()] : [p, ""];
+        })
+      );
+      const t = parts.t;
+      const v1 = parts.v1;
+      if (t && v1) {
+        const expected = createHmac("sha256", dailyWebhookSecret)
+          .update(`${t}.${rawBody}`)
+          .digest("hex");
+        // constant-time compare
+        if (expected.length === v1.length) {
+          let diff = 0;
+          for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ v1.charCodeAt(i);
+          if (diff === 0) valid = true;
         }
       }
       if (!valid) {
-        logStep("Unauthorized: invalid or missing Daily webhook signature");
-        return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+        const legacy = createHmac("sha256", dailyWebhookSecret).update(rawBody).digest("hex");
+        if (legacy.length === dailySignature.length) {
+          let diff = 0;
+          for (let i = 0; i < legacy.length; i++) diff |= legacy.charCodeAt(i) ^ dailySignature.charCodeAt(i);
+          if (diff === 0) valid = true;
+        }
       }
-    } else {
-      logStep("WARNING: DAILY_WEBHOOK_SECRET not set, skipping signature verification");
+    }
+    if (!valid) {
+      logStep("Unauthorized: invalid or missing Daily webhook signature");
+      return new Response("Unauthorized", { status: 401, headers: corsHeaders });
     }
 
     const supabaseClient = createClient(

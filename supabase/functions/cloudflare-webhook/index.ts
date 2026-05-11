@@ -18,10 +18,22 @@ Deno.serve(async (req) => {
   try {
     logStep("Webhook received");
 
-    // Verify Cloudflare webhook signature
+    // Verify Cloudflare webhook signature (constant-time compare).
+    // SECURITY: previously used `===` on a shared static secret, leaking
+    // length+content via timing. Switched to byte-wise XOR compare.
     const webhookSecret = Deno.env.get("CLOUDFLARE_WEBHOOK_SECRET");
-    const signature = req.headers.get("cf-webhook-auth");
-    if (!webhookSecret || !signature || signature !== webhookSecret) {
+    const signature = req.headers.get("cf-webhook-auth") || "";
+    if (!webhookSecret) {
+      logStep("CLOUDFLARE_WEBHOOK_SECRET not configured — rejecting");
+      return new Response("Server not configured", { status: 500, headers: corsHeaders });
+    }
+    let sigOk = signature.length === webhookSecret.length;
+    if (sigOk) {
+      let diff = 0;
+      for (let i = 0; i < signature.length; i++) diff |= signature.charCodeAt(i) ^ webhookSecret.charCodeAt(i);
+      sigOk = diff === 0;
+    }
+    if (!sigOk) {
       logStep("Unauthorized: invalid or missing webhook signature");
       return new Response("Unauthorized", { status: 401, headers: corsHeaders });
     }

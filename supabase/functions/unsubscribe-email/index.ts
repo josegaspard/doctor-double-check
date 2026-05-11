@@ -10,19 +10,72 @@ const logStep = (step: string, details?: any) => {
   console.log(`[UNSUBSCRIBE-EMAIL] ${step}${detailsStr}`);
 };
 
-// Simple encoding for unsubscribe token (subscriber_id:doctor_id:type)
-const decodeToken = (token: string): { subscriberId: string; doctorId: string; type: string } | null => {
+// HMAC-signed unsubscribe token: base64url(payload).base64url(sig)
+// payload = `${subscriberId}:${doctorId}:${type}`
+// sig = HMAC-SHA256(EMAIL_UNSUBSCRIBE_SECRET, payload)
+//
+// SECURITY: previously the token was plain base64 of the payload — anyone
+// could craft a token for any (subscriber, creator) pair and silently
+// unsubscribe arbitrary users. Now signed with a server-side secret.
+const b64urlEncode = (data: ArrayBuffer | string): string => {
+  const bytes = typeof data === 'string'
+    ? new TextEncoder().encode(data)
+    : new Uint8Array(data);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+const b64urlDecode = (s: string): string => {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  return atob(s);
+};
+async function hmacSign(secret: string, payload: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload));
+  return b64urlEncode(sig);
+}
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+async function decodeToken(token: string): Promise<{ subscriberId: string; doctorId: string; type: string } | null> {
   try {
-    const decoded = atob(token);
-    const [subscriberId, doctorId, type] = decoded.split(':');
-    if (subscriberId && doctorId && type) {
-      return { subscriberId, doctorId, type };
-    }
+    const secret = Deno.env.get('EMAIL_UNSUBSCRIBE_SECRET') || '';
+    if (!secret) return null;
+    const dot = token.indexOf('.');
+    if (dot <= 0) return null;
+    const payloadB64 = token.slice(0, dot);
+    const sigB64 = token.slice(dot + 1);
+    const payload = b64urlDecode(payloadB64);
+    const expectedSig = await hmacSign(secret, payload);
+    if (!timingSafeEqual(sigB64, expectedSig)) return null;
+    const [subscriberId, doctorId, type] = payload.split(':');
+    if (subscriberId && doctorId && type) return { subscriberId, doctorId, type };
     return null;
   } catch {
     return null;
   }
-};
+}
+// Helper exported for the email-sending functions to mint correctly-signed
+// tokens. Same algo as decodeToken's verification.
+export async function generateUnsubscribeToken(
+  subscriberId: string, doctorId: string, type: string,
+): Promise<string> {
+  const secret = Deno.env.get('EMAIL_UNSUBSCRIBE_SECRET') || '';
+  if (!secret) throw new Error('EMAIL_UNSUBSCRIBE_SECRET not configured');
+  const payload = `${subscriberId}:${doctorId}:${type}`;
+  const sig = await hmacSign(secret, payload);
+  return `${b64urlEncode(payload)}.${sig}`;
+}
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -41,7 +94,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const decoded = decodeToken(token);
+    const decoded = await decodeToken(token);
     if (!decoded) {
       return new Response(
         generateErrorPage('Token de desuscripción expirado o no válido'),

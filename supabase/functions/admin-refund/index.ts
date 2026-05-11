@@ -59,6 +59,39 @@ Deno.serve(async (req) => {
       throw new Error("user_id and amount are required");
     }
 
+    // SECURITY (2026-05-11 audit): cap refund at the source transaction's
+    // remaining refundable amount. Previously a compromised admin token (or
+    // bug elsewhere) could refund more than what was originally charged.
+    if (transaction_id) {
+      const { data: srcTx } = await supabaseAdmin
+        .from("wallet_transactions")
+        .select("amount, user_id")
+        .eq("id", transaction_id)
+        .single();
+      if (!srcTx) throw new Error("Source transaction not found");
+      if (srcTx.user_id !== user_id) throw new Error("Transaction does not belong to that user");
+
+      const { data: priorRefunds } = await supabaseAdmin
+        .from("wallet_transactions")
+        .select("amount")
+        .eq("metadata->>original_transaction_id", transaction_id)
+        .eq("type", "refund")
+        .eq("status", "paid");
+      const alreadyRefunded = (priorRefunds || []).reduce(
+        (acc, r: any) => acc + Number(r.amount || 0),
+        0,
+      );
+      const maxRefundable = Number(srcTx.amount) - alreadyRefunded;
+      if (Number(amount) > maxRefundable + 0.001) {
+        throw new Error(
+          `Refund exceeds remaining refundable amount (max ${maxRefundable.toFixed(2)})`,
+        );
+      }
+    }
+    if (Number(amount) <= 0 || !Number.isFinite(Number(amount))) {
+      throw new Error("amount must be a positive number");
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-03-31.basil" });
 
     let stripeRefundId = null;
