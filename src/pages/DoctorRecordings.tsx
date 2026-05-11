@@ -171,6 +171,7 @@ export default function DoctorRecordings() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isCleaningOrphans, setIsCleaningOrphans] = useState(false);
 
   // Bulk Selection (Past Lives)
   const [plSelectionMode, setPlSelectionMode] = useState(false);
@@ -528,12 +529,18 @@ export default function DoctorRecordings() {
     //    b) "storage:<path>"   — Supabase Storage (legacy)
     //    c) full https URL pointing at /storage/v1/object/public/recordings/<path>
     if (recording.videoUrl) {
-      try {
-        if (recording.videoUrl.startsWith('b2:')) {
-          await supabase.functions.invoke('b2-delete-object', {
-            body: { path: recording.videoUrl.replace(/^b2:/, '') },
-          });
-        } else {
+      if (recording.videoUrl.startsWith('b2:')) {
+        // Surface B2 delete failures — silent swallow used to leave orphan
+        // files in the bucket while the DB row was already gone.
+        const { data, error: b2Err } = await supabase.functions.invoke('b2-delete-object', {
+          body: { path: recording.videoUrl.replace(/^b2:/, '') },
+        });
+        if (b2Err || (data && (data as any).error)) {
+          const detail = (b2Err as any)?.message || (data as any)?.error || 'b2-delete-object failed';
+          throw new Error(`No se pudo borrar el archivo en Backblaze: ${detail}`);
+        }
+      } else {
+        try {
           let filePath: string | null = null;
           if (recording.videoUrl.startsWith('storage:')) {
             filePath = recording.videoUrl.replace(/^storage:/, '');
@@ -545,9 +552,9 @@ export default function DoctorRecordings() {
           if (filePath) {
             await supabase.storage.from('recordings').remove([filePath]);
           }
+        } catch (storageErr) {
+          console.warn('Could not delete legacy storage file:', storageErr);
         }
-      } catch (storageErr) {
-        console.warn('Could not delete video file from storage:', storageErr);
       }
     }
 
@@ -589,6 +596,32 @@ export default function DoctorRecordings() {
       toast.error(error.message || 'Error al eliminar la grabación');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleCleanupOrphans = async () => {
+    setIsCleaningOrphans(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cleanup-b2-orphans', {
+        body: { dryRun: false },
+      });
+      if (error || (data as any)?.error) {
+        const detail = (error as any)?.message || (data as any)?.error || 'cleanup failed';
+        throw new Error(detail);
+      }
+      const d = data as { totalInB2: number; orphans: number; deleted: string[]; failed: any[] };
+      if (d.orphans === 0) {
+        toast.success(`No hay huérfanos. ${d.totalInB2} archivo(s) en B2, todos referenciados.`);
+      } else if (d.failed.length === 0) {
+        toast.success(`Limpieza OK: ${d.deleted.length} huérfano(s) borrado(s) de Backblaze.`);
+      } else {
+        toast.error(`Borrados ${d.deleted.length}, fallaron ${d.failed.length}. Ver consola.`);
+        console.warn('Cleanup failures:', d.failed);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Error en la limpieza de huérfanos');
+    } finally {
+      setIsCleaningOrphans(false);
     }
   };
 
@@ -1028,6 +1061,17 @@ export default function DoctorRecordings() {
                         {selectionMode ? 'Cancelar' : 'Seleccionar'}
                       </Button>
                     )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCleanupOrphans}
+                      disabled={isCleaningOrphans}
+                      className="gap-1.5"
+                      title="Borra archivos en Backblaze que ya no tienen grabación asociada"
+                    >
+                      {isCleaningOrphans ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      Limpiar huérfanos
+                    </Button>
                   </div>
                 </CardTitle>
               </CardHeader>
