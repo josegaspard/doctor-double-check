@@ -166,11 +166,17 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Owners get a 1h URL (they edit/manage their own content).
+      // Buyers/free-viewers get a 15min URL — short enough that sharing the URL
+      // with a non-purchaser doesn't give long playback access, long enough to
+      // start playback comfortably. The frontend (RecordingVideoPlayer) auto-
+      // renews these URLs in-place, so users never see the difference.
+      const expiresSec = isOwner ? 3600 : 900;
       const url = await presignS3Url({
         method: "GET", endpoint: ENDPOINT, region: REGION, bucket: BUCKET, key: path,
-        keyId: KEY_ID, secret: SECRET, expiresSec: 3600,
+        keyId: KEY_ID, secret: SECRET, expiresSec,
       });
-      return new Response(JSON.stringify({ url, expiresSec: 3600 }), {
+      return new Response(JSON.stringify({ url, expiresSec }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

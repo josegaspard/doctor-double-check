@@ -56,6 +56,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [urlGeneratedAt, setUrlGeneratedAt] = useState<number>(0);
+  const [urlTtlSec, setUrlTtlSec] = useState<number>(3600);
   const [expired, setExpired] = useState(false);
   const [retryAttempt, setRetryAttempt] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -83,6 +84,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
           const detail = (invokeErr as any)?.message || data?.error || 'No se pudo obtener URL del video';
           throw new Error(detail);
         }
+        if (typeof data.expiresSec === 'number') setUrlTtlSec(data.expiresSec);
         return data.url as string;
       }
       const { data, error: signError } = await supabase.storage
@@ -124,18 +126,18 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
     fetchSignedUrl(0);
   }, [storagePath, b2Path, fetchSignedUrl]);
 
-  // Pre-renew signed URL ~50min after generation so playback continues seamlessly.
-  // B2/Supabase signed URLs expire after 1h; refreshing early avoids the user
-  // ever hitting a 403 mid-playback.
+  // Pre-renew the signed URL at 80% of its real TTL so playback never hits
+  // a 403. Backend returns 15min for non-owners (shorter blast-radius on URL
+  // sharing) and 1h for owners; we honor whatever it returns.
   useEffect(() => {
-    if (!urlGeneratedAt) return;
-    const renewMs = 50 * 60 * 1000;
+    if (!urlGeneratedAt || !urlTtlSec) return;
+    const renewMs = Math.max(60_000, Math.floor(urlTtlSec * 1000 * 0.8));
     const timeout = setTimeout(() => {
       console.log('[RecordingVideoPlayer] Pre-renewing signed URL before expiry');
       fetchSignedUrl(0);
     }, renewMs);
     return () => clearTimeout(timeout);
-  }, [urlGeneratedAt, fetchSignedUrl]);
+  }, [urlGeneratedAt, urlTtlSec, fetchSignedUrl]);
 
   const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const vid = e.currentTarget;
@@ -196,8 +198,8 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
           if (onTimeUpdate) onTimeUpdate(Math.floor((e.currentTarget as HTMLVideoElement).currentTime));
         }}
         onError={(e) => {
-          // Detect signed URL expiration (TTL ~1h)
-          if (urlGeneratedAt && Date.now() - urlGeneratedAt > 55 * 60 * 1000) {
+          // Detect signed URL expiration based on the real TTL we got back.
+          if (urlGeneratedAt && Date.now() - urlGeneratedAt > urlTtlSec * 1000 * 0.95) {
             setExpired(true);
             return;
           }

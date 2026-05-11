@@ -23,68 +23,124 @@ Deno.serve(async (req) => {
       throw new Error("DAILY_API_KEY is not configured");
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-    // Authenticate user (optional - visitors can watch lives)
+    // Resolve caller identity (optional for live viewers)
     let userId: string | undefined;
     let userName = 'Visitante';
 
     const authHeader = req.headers.get("Authorization");
     if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      const { data: userData } = await supabaseClient.auth.getUser(token);
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: userData } = await userClient.auth.getUser();
       if (userData?.user) {
         userId = userData.user.id;
         logStep("User authenticated", { userId });
-
-        // Get user profile with robust fallback
-        const { data: profile } = await supabaseClient
+        const { data: profile } = await userClient
           .from("profiles")
           .select("name")
           .eq("id", userId)
           .single();
-
         userName = profile?.name
           || userData.user.user_metadata?.name
           || (userData.user.email ? userData.user.email.split('@')[0] : 'Usuario');
-      } else {
-        logStep("No valid user session, proceeding as visitor");
       }
-    } else {
-      logStep("No auth header, proceeding as visitor");
     }
 
-    // Parse request body
     const { roomName, isOwner = false, enableMedia = false } = await req.json();
     if (!roomName) throw new Error("roomName is required");
 
-    logStep("Creating token", { roomName, isOwner, enableMedia, userName, isVisitor: !userId });
+    // Authorize the join against DB state:
+    //   - Live rooms (lives.daily_room_name = roomName): public viewers allowed,
+    //     only the live's doctor can claim isOwner.
+    //   - Consultation rooms (consultations.video_room_name = roomName): require
+    //     auth AND caller must be patient_id or doctor_id; isOwner only allowed
+    //     for the doctor.
+    // Any other roomName is rejected — prevents random join via leaked room
+    // names that don't map to a tracked resource.
+    const admin = createClient(supabaseUrl, serviceKey);
 
-    // Configure token properties
+    const { data: liveRow } = await admin
+      .from("lives")
+      .select("id, doctor_id, status")
+      .eq("daily_room_name", roomName)
+      .maybeSingle();
+
+    let isConsultation = false;
+    let consultationOwnerId: string | null = null;
+    if (!liveRow) {
+      const { data: consultRow } = await admin
+        .from("consultations")
+        .select("id, patient_id, doctor_id, status")
+        .eq("video_room_name", roomName)
+        .maybeSingle();
+
+      if (!consultRow) {
+        logStep("Room not found in lives or consultations — rejected", { roomName });
+        return new Response(
+          JSON.stringify({ success: false, error: "Room not authorized" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      isConsultation = true;
+      consultationOwnerId = consultRow.doctor_id;
+
+      if (!userId) {
+        logStep("Consultation requires auth", { roomName });
+        return new Response(
+          JSON.stringify({ success: false, error: "Authentication required for consultation" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const isParticipant = userId === consultRow.patient_id || userId === consultRow.doctor_id;
+      if (!isParticipant) {
+        logStep("User not a participant in consultation", { roomName, userId });
+        return new Response(
+          JSON.stringify({ success: false, error: "Not a participant in this consultation" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (isOwner && userId !== consultRow.doctor_id) {
+        // Only the doctor can claim owner privileges on the consultation room
+        return new Response(
+          JSON.stringify({ success: false, error: "Only the doctor can join as owner" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else {
+      // Live room
+      if (isOwner && userId !== liveRow.doctor_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Only the live's doctor can join as owner" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    logStep("Authorized", { roomName, kind: isConsultation ? 'consultation' : 'live', userId, isOwner });
+
     const tokenProperties: Record<string, any> = {
       room_name: roomName,
       is_owner: isOwner,
       ...(userId && { user_id: userId }),
       user_name: userName,
-      // Token expires in 24 hours
       exp: Math.floor(Date.now() / 1000) + 86400,
       start_video_off: !enableMedia,
       start_audio_off: !enableMedia,
     };
 
-    // Create meeting token for the viewer
     const tokenResponse = await fetch("https://api.daily.co/v1/meeting-tokens", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${dailyApiKey}`,
       },
-      body: JSON.stringify({
-        properties: tokenProperties,
-      }),
+      body: JSON.stringify({ properties: tokenProperties }),
     });
 
     if (!tokenResponse.ok) {
@@ -94,27 +150,18 @@ Deno.serve(async (req) => {
     }
 
     const tokenData = await tokenResponse.json();
-    logStep("Viewer token created successfully");
+    logStep("Token created successfully");
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        token: tokenData.token,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
+      JSON.stringify({ success: true, token: tokenData.token }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
 });

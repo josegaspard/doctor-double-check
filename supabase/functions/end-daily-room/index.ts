@@ -46,26 +46,58 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const { liveId, roomName, saveRecording = false } = await req.json();
-    
-    // If no liveId, this is a consultation-only room deletion
+
+    // If no liveId, this is a consultation-only room deletion.
+    // Verify caller owns the consultation (was patient or doctor) before
+    // deleting — otherwise anyone with a leaked roomName could nuke calls.
     if (!liveId) {
       logStep("Consultation-only room deletion", { roomName });
-      
-      if (roomName) {
-        try {
-          const deleteResponse = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
-            method: "DELETE",
-            headers: { "Authorization": `Bearer ${dailyApiKey}` },
-          });
-          if (deleteResponse.ok) {
-            logStep("Daily.co room deleted (consultation)", { roomName });
-          } else {
-            logStep("Warning: Could not delete room", { roomName });
-          }
-        } catch (roomError) {
-          logStep("Warning: Error deleting room", { error: String(roomError) });
-        }
+
+      if (!roomName) {
+        return new Response(
+          JSON.stringify({ success: false, error: "roomName required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
+
+      const { data: consult } = await supabaseAdmin
+        .from("consultations")
+        .select("id, patient_id, doctor_id")
+        .eq("video_room_name", roomName)
+        .maybeSingle();
+
+      if (!consult) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Consultation not found for this room" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (consult.patient_id !== userId && consult.doctor_id !== userId) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Not a participant in this consultation" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      try {
+        const deleteResponse = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${dailyApiKey}` },
+        });
+        if (deleteResponse.ok) {
+          logStep("Daily.co room deleted (consultation)", { roomName });
+        } else {
+          logStep("Warning: Could not delete room", { roomName });
+        }
+      } catch (roomError) {
+        logStep("Warning: Error deleting room", { error: String(roomError) });
+      }
+
+      // Clear room fields on the consultation so the waiting banner disappears
+      await supabaseAdmin
+        .from("consultations")
+        .update({ video_room_name: null, video_room_url: null })
+        .eq("id", consult.id);
 
       return new Response(
         JSON.stringify({ success: true, status: "ended" }),

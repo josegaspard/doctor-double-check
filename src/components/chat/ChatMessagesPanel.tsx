@@ -21,6 +21,7 @@ import { ChatHeader } from '@/components/chat/ChatHeader';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { CallWaitingBanner } from '@/components/videocall/CallWaitingBanner';
+import { ConsultationRefundBanner } from '@/components/chat/ConsultationRefundBanner';
 import { ConsultationSummaryCard } from '@/components/chat/ConsultationSummaryCard';
 import { ChatSession } from '@/contexts/ChatContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -360,6 +361,19 @@ export function ChatMessagesPanel({
               <CallWaitingBanner
                 doctorName={getDisplayInfo(session).name}
                 consultationId={consultationId}
+              />
+            )}
+
+            {/* No-show refund banner — patient can refund after 24h without doctor reply */}
+            {!isClosed && userRole === 'patient' && consultationId && getDoctorId(session) && (
+              <ConsultationRefundBanner
+                consultationId={consultationId}
+                patientId={userId || ''}
+                doctorId={getDoctorId(session) as string}
+                currentUserId={userId}
+                userRole={userRole}
+                sessionCreatedAt={(session as any).createdAt || (session as any).created_at}
+                messages={messages}
               />
             )}
             <ScrollArea className="flex-1 min-h-0 px-3 sm:px-4 py-4">

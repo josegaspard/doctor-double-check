@@ -81,11 +81,15 @@ export function LiveConsultationBooking({
           return;
         }
 
-        // Use existing RPC
-        const { data, error } = await supabase.rpc('process_consultation_purchase', {
+        // book_live_consultation atomically reserves a slot on the live AND
+        // delegates to process_consultation_purchase. Prevents the
+        // double-spend / over-booking race that existed when paid_chats_count
+        // was incremented from the client after the RPC returned.
+        const { data, error } = await supabase.rpc('book_live_consultation', {
           p_doctor_id: doctorId,
           p_amount: consultationFee,
           p_patient_name: user.name || 'Paciente',
+          p_live_id: liveId,
         });
 
         if (error) throw error;
@@ -118,14 +122,7 @@ export function LiveConsultationBooking({
           status: 'completed',
         });
 
-        // Increment paid_chats_count on the live
-        await supabase.rpc('increment_viewer_count', { p_live_id: liveId }).then(() => {
-          // Use direct update instead
-        });
-        await supabase
-          .from('lives')
-          .update({ paid_chats_count: paidChatsCount + 1 })
-          .eq('id', liveId);
+        // paid_chats_count is now incremented atomically inside book_live_consultation
 
         // Send enhanced notification
         await supabase.from('notifications').insert({
