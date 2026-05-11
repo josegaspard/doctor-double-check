@@ -15,7 +15,7 @@ interface Props {
   messages: { senderId: string }[];
 }
 
-const NO_SHOW_HOURS = 24;
+const NO_SHOW_HOURS = 72;
 
 /**
  * Shows a refund banner to the patient when the doctor has not replied to
@@ -77,7 +77,7 @@ export function ConsultationRefundBanner({
       <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
       <div className="flex-1 text-sm">
         <p className="font-medium text-amber-900 dark:text-amber-200">
-          El doctor no ha respondido en más de 24 horas
+          El doctor no ha respondido en más de 72 horas
         </p>
         <p className="text-amber-800/80 dark:text-amber-200/70 text-xs mt-0.5">
           Puedes solicitar un reembolso completo a tu saldo.
