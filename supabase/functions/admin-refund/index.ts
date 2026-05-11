@@ -132,6 +132,21 @@ Deno.serve(async (req) => {
 
       logStep("Stripe refund completed", { userId: user_id, amount });
 
+      await supabaseAdmin.from("admin_audit_logs").insert({
+        admin_id: userData.user.id,
+        action: "refund_stripe",
+        target_user_id: user_id,
+        target_resource_id: transaction_id || null,
+        target_resource_type: "wallet_transaction",
+        amount,
+        reason: reason || null,
+        metadata: {
+          stripe_payment_intent_id,
+          stripe_refund_id: stripeRefundId,
+          refund_request_id: refund_request_id || null,
+        },
+      });
+
       return new Response(
         JSON.stringify({ success: true, message: "Reembolso a Stripe procesado", stripe_refund_id: stripeRefundId, refund_method: "stripe" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -306,6 +321,17 @@ Deno.serve(async (req) => {
     });
 
     logStep("Wallet refund completed", { userId: user_id, amount });
+
+    await supabaseAdmin.from("admin_audit_logs").insert({
+      admin_id: userData.user.id,
+      action: "refund_wallet",
+      target_user_id: user_id,
+      target_resource_id: transaction_id || null,
+      target_resource_type: "wallet_transaction",
+      amount,
+      reason: reason || null,
+      metadata: { refund_request_id: refund_request_id || null },
+    });
 
     return new Response(
       JSON.stringify({ success: true, message: "Reembolso a billetera procesado", refund_method: "wallet" }),

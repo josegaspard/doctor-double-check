@@ -150,6 +150,29 @@ Deno.serve(async (req) => {
       throw new Error("Formato de cédula inválido. Debe contener 7-8 dígitos");
     }
 
+    // Per-user rate limit: 10 cedula lookups / hour. Stops brute-force
+    // enumeration of cedula numbers via this endpoint.
+    {
+      const admin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+      const { data: allowed, error: rlErr } = await admin.rpc("check_and_record_rate_limit", {
+        p_bucket: "verify_cedula_sep",
+        p_key: userId,
+        p_max: 10,
+        p_window_seconds: 3600,
+      });
+      if (rlErr) {
+        console.warn("Rate-limit check error (allowing through):", rlErr.message);
+      } else if (allowed === false) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Demasiados intentos. Intenta de nuevo en una hora." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Try RapidAPI first (faster, more reliable), then SEP Solr as fallback
     let matchedDoc = await tryRapidApi(cedula);
     if (!matchedDoc) {

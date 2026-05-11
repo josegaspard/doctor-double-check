@@ -258,6 +258,35 @@ async function handleWebhook(req: Request): Promise<Response> {
     )
   }
 
+  // Per-email rate limit on recovery/email_change/signup so an attacker can't
+  // flood a target's inbox by repeatedly POSTing to /auth endpoints.
+  if (['recovery', 'email_change', 'signup', 'invite'].includes(emailType) && payload.data.email) {
+    try {
+      const sb = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+      const { data: allowed, error: rlErr } = await sb.rpc('check_and_record_rate_limit', {
+        p_bucket: `auth_email_${emailType}`,
+        p_key: String(payload.data.email).toLowerCase(),
+        p_max: emailType === 'recovery' ? 3 : 5,
+        p_window_seconds: 3600,
+      })
+      if (rlErr) {
+        console.warn('Rate-limit RPC error (allowing through)', { error: rlErr.message, run_id })
+      } else if (allowed === false) {
+        console.warn('Auth email rate-limited', { emailType, email: payload.data.email, run_id })
+        // Return 200 silently so we don't leak existence of the email
+        return new Response(JSON.stringify({ ok: true, rate_limited: true }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    } catch (e) {
+      console.warn('Rate-limit unexpected error (allowing through)', { error: String(e), run_id })
+    }
+  }
+
   // Build template props
   const templateProps: Record<string, any> = {
     siteName: SITE_NAME,

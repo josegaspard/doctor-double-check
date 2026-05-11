@@ -221,6 +221,39 @@ Deno.serve(async (req: Request): Promise<Response> => {
     await purge('followers_followed', supabaseAdmin.from('followers').delete().eq('followed_id', userId));
 
     // ------ IDENTITY & ONBOARDING ------
+    // Before deleting identity_verifications rows, grab any file_urls so we
+    // can purge the actual files from Storage. Otherwise PII docs (cedulas,
+    // ID scans) stay in the bucket forever.
+    try {
+      const { data: idFiles } = await supabaseAdmin
+        .from('identity_verifications')
+        .select('metadata, file_url')
+        .eq('user_id', userId);
+      const filePaths: string[] = [];
+      for (const r of (idFiles ?? []) as any[]) {
+        if (r.file_url && typeof r.file_url === 'string') filePaths.push(r.file_url);
+        const mdUrl = r?.metadata?.file_url;
+        if (mdUrl && typeof mdUrl === 'string') filePaths.push(mdUrl);
+      }
+      const storagePaths = filePaths
+        .map(u => {
+          try {
+            const m = u.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+?)(\?|$)/);
+            return m ? { bucket: m[1], path: decodeURIComponent(m[2]) } : null;
+          } catch { return null; }
+        })
+        .filter(Boolean) as { bucket: string; path: string }[];
+      const byBucket = storagePaths.reduce<Record<string, string[]>>((acc, f) => {
+        (acc[f.bucket] ||= []).push(f.path);
+        return acc;
+      }, {});
+      for (const [bucket, paths] of Object.entries(byBucket)) {
+        const { error: rmErr } = await supabaseAdmin.storage.from(bucket).remove(paths);
+        if (rmErr) console.warn(`[delete-user] Storage purge failed for ${bucket}:`, rmErr.message);
+      }
+    } catch (e) {
+      console.warn('[delete-user] Identity file cleanup failed (non-fatal):', e);
+    }
     await purge('identity_verifications', supabaseAdmin.from('identity_verifications').delete().eq('user_id', userId));
     await purge('onboarding_progress', supabaseAdmin.from('onboarding_progress').delete().eq('user_id', userId));
     await purge('entitlements', supabaseAdmin.from('entitlements').delete().eq('user_id', userId));

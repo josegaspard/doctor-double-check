@@ -50,9 +50,31 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Webhook signature verification failed" }), { status: 400 });
     }
 
-    logStep("Event type", { type: event.type });
+    logStep("Event type", { type: event.type, id: event.id });
 
     const db = supabaseAdmin();
+
+    // Event-level idempotency: INSERT the event.id with a UNIQUE constraint.
+    // If the insert fails because the row already exists, this is a replay
+    // (Stripe retries failed deliveries for up to 3 days). Skip handling
+    // entirely so we never double-credit, double-renew, or double-notify.
+    const { error: idempErr } = await db
+      .from("stripe_webhook_events")
+      .insert({ event_id: event.id, event_type: event.type, status: "processing" });
+
+    if (idempErr) {
+      const msg = (idempErr as any)?.message || String(idempErr);
+      if (msg.includes("duplicate key") || (idempErr as any)?.code === "23505") {
+        logStep("Replay detected — already processed, skipping", { eventId: event.id });
+        return new Response(JSON.stringify({ received: true, replay: true }), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      logStep("Failed to record event for idempotency", { error: msg });
+      // Don't block delivery — fall through; in worst case we retry idempotency
+      // on the next replay.
+    }
 
     // Handle checkout.session.completed
     if (event.type === "checkout.session.completed") {
@@ -84,7 +106,7 @@ Deno.serve(async (req) => {
 
     if (event.type === "invoice.payment_succeeded") {
       const invoice = event.data.object as Stripe.Invoice;
-      await handleInvoicePaymentSucceeded(db, invoice);
+      await handleInvoicePaymentSucceeded(db, stripe, invoice);
     }
 
     // FIX #2: Handle subscription cancellations - fetch customer from Stripe API
@@ -96,6 +118,19 @@ Deno.serve(async (req) => {
     if (event.type === "account.updated") {
       const account = event.data.object as Stripe.Account;
       await handleAccountUpdated(db, account);
+    }
+
+    // Stripe sends checkout.session.expired ~30min after creation if the user
+    // never paid. For marketplace orders this means the reserved stock must
+    // be restored, otherwise abandoned checkouts permanently lock inventory.
+    if (event.type === "checkout.session.expired") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      if (session.metadata?.type === "marketplace_purchase") {
+        await handleMarketplaceCheckoutExpired(db, session);
+      }
+      if (session.metadata?.type === "ad_purchase") {
+        await handleAdCheckoutExpired(db, session);
+      }
     }
 
     // Handle payout events (Stripe sends payout.paid/payout.failed for bank transfers)
@@ -115,6 +150,12 @@ Deno.serve(async (req) => {
       await handleTransferUpdate(db, transfer);
     }
 
+    // Mark idempotency row as processed so we have a healthy audit trail.
+    await db
+      .from("stripe_webhook_events")
+      .update({ status: "processed", processed_at: new Date().toISOString() })
+      .eq("event_id", event.id);
+
     return new Response(JSON.stringify({ received: true }), {
       headers: { "Content-Type": "application/json" },
       status: 200,
@@ -122,6 +163,15 @@ Deno.serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
+    // Best-effort: mark this event as failed so retries can detect prior errors
+    try {
+      const db = supabaseAdmin();
+      const sigHeader = req.headers.get("stripe-signature") || "";
+      const evId = sigHeader.match(/v1=([a-f0-9]+)/)?.[1]; // not the event id, but best we have
+      if (evId) {
+        await db.from("stripe_webhook_events").update({ status: "failed", error: errorMessage }).eq("event_id", evId);
+      }
+    } catch {}
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { "Content-Type": "application/json" },
       status: 500,
@@ -566,6 +616,30 @@ async function handleAccountUpdated(db: ReturnType<typeof supabaseAdmin>, accoun
     .eq("user_id", bankAccount.doctor_id);
 
   logStep("Account status updated", { doctorId: bankAccount.doctor_id, status });
+
+  // If Stripe restricted the account, surface that to the doctor in-app
+  // immediately. Without this they discover the freeze only when a payout
+  // fails — often weeks later.
+  if (status === "restricted") {
+    const disabledReason = account.requirements?.disabled_reason || "verification_pending";
+    const currentlyDue = (account.requirements?.currently_due || []).slice(0, 5).join(", ");
+    try {
+      await db.from("notifications").insert({
+        user_id: bankAccount.doctor_id,
+        type: "system",
+        title: "⚠️ Cuenta de cobros restringida",
+        message: `Stripe ha restringido tus pagos: ${disabledReason}.${currentlyDue ? ` Faltan: ${currentlyDue}.` : ""} Completa la verificación en Configuración para reactivar tus payouts.`,
+        data: {
+          stripe_account_id: account.id,
+          disabled_reason: disabledReason,
+          currently_due: account.requirements?.currently_due || [],
+          url: "/doctor/payouts",
+        },
+      });
+    } catch (e) {
+      logStep("Failed to insert restricted notification", { error: e instanceof Error ? e.message : e });
+    }
+  }
 }
 
 // Handle transfer.created/updated - mark payout as processing or completed
@@ -664,16 +738,28 @@ async function handlePayoutFailed(
   }
 }
 
-async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin>, invoice: Stripe.Invoice) {
+async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin>, stripe: Stripe, invoice: Stripe.Invoice) {
   if (!invoice.subscription || invoice.billing_reason === 'subscription_create') {
     logStep("Skipping invoice - not a renewal", { reason: invoice.billing_reason });
     return;
   }
 
-  logStep("Processing subscription renewal", { 
-    subscriptionId: invoice.subscription, 
-    customerId: invoice.customer 
+  logStep("Processing subscription renewal", {
+    subscriptionId: invoice.subscription,
+    customerId: invoice.customer,
+    invoiceId: invoice.id,
   });
+
+  // Fetch the actual Stripe subscription so we can use its real
+  // current_period_end timestamp. Doing local "+1 month" math drifts a day or
+  // two over Stripe's calendar and eventually creates gaps/overlaps.
+  let stripeSub: Stripe.Subscription | null = null;
+  try {
+    const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
+    stripeSub = await stripe.subscriptions.retrieve(subId);
+  } catch (e) {
+    logStep("Could not retrieve subscription from Stripe, will fall back to +1 month", { error: e instanceof Error ? e.message : e });
+  }
 
   const customerEmail = invoice.customer_email;
   if (!customerEmail) {
@@ -706,8 +792,11 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
   }
 
   for (const sub of subscriptions) {
-    const newExpiresAt = new Date();
-    newExpiresAt.setMonth(newExpiresAt.getMonth() + 1);
+    // Prefer Stripe's current_period_end (authoritative). Fall back to +1
+    // month if we couldn't fetch the subscription for any reason.
+    const newExpiresAt = stripeSub?.current_period_end
+      ? new Date(stripeSub.current_period_end * 1000)
+      : (() => { const d = new Date(); d.setMonth(d.getMonth() + 1); return d; })();
 
     await db
       .from("subscriptions")
@@ -719,8 +808,10 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
 
     logStep("Subscription renewed", { subscriptionId: sub.id, newExpiresAt });
 
-    // FIX #1: Use atomic credit
-    await creditDoctorEarningsAtomic(db, sub.creator_id, sub.price_paid, "subscription_renewal", null);
+    // creditDoctorEarningsAtomic is itself idempotent on (subscription_id,
+    // invoice_id) — and the outer webhook event idempotency stops re-entry,
+    // so this is safe under Stripe replay.
+    await creditDoctorEarningsAtomic(db, sub.creator_id, sub.price_paid, "subscription_renewal", invoice.id || null);
 
     await db
       .from("notifications")
@@ -729,7 +820,7 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
         type: "subscription_update",
         title: "🔄 Suscripción renovada",
         message: `Un suscriptor ha renovado su suscripción ${sub.tier}`,
-        data: { subscriber_id: userId, tier: sub.tier },
+        data: { subscriber_id: userId, tier: sub.tier, invoice_id: invoice.id },
       });
   }
 }
@@ -972,4 +1063,76 @@ async function handleMarketplacePurchase(db: ReturnType<typeof supabaseAdmin>, s
   }
 
   logStep("Marketplace purchase completed", { buyerId, productId, orderId: order?.id });
+}
+
+// Restore stock + mark order abandoned when a marketplace checkout expires.
+// Stock was decremented up-front in create-marketplace-checkout; if the user
+// never paid, we must release that hold or inventory leaks forever.
+async function handleMarketplaceCheckoutExpired(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const productId = session.metadata?.product_id;
+  const quantityStr = session.metadata?.quantity;
+  if (!productId || !quantityStr) {
+    logStep("Marketplace expired: missing product/quantity metadata", { sessionId: session.id });
+    return;
+  }
+  const quantity = parseInt(quantityStr, 10);
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    logStep("Marketplace expired: invalid quantity", { quantityStr });
+    return;
+  }
+
+  // Only restore if the order is still pending (not paid by a late webhook race)
+  const { data: order } = await db
+    .from("marketplace_orders")
+    .select("id, status")
+    .eq("stripe_session_id", session.id)
+    .maybeSingle();
+
+  if (!order) {
+    logStep("Marketplace expired: no order found", { sessionId: session.id });
+    return;
+  }
+  if (order.status !== "pending") {
+    logStep("Marketplace expired: order not pending, skipping restore", { sessionId: session.id, status: order.status });
+    return;
+  }
+
+  // Restore stock atomically. Use RPC if available, fallback to SQL.
+  const { error: restoreErr } = await db.rpc("restore_marketplace_stock", {
+    p_product_id: productId,
+    p_quantity: quantity,
+  });
+  if (restoreErr) {
+    // Fallback: read-modify-write (acceptable because expiry is rare)
+    const { data: prod } = await db
+      .from("marketplace_products")
+      .select("stock")
+      .eq("id", productId)
+      .single();
+    if (prod) {
+      await db.from("marketplace_products").update({ stock: prod.stock + quantity }).eq("id", productId);
+    }
+  }
+
+  await db
+    .from("marketplace_orders")
+    .update({ status: "abandoned" })
+    .eq("id", order.id);
+
+  logStep("Marketplace expired: stock restored", { productId, quantity, orderId: order.id });
+}
+
+// Mark an abandoned ad_payment when its checkout session expires so we don't
+// keep stale "pending" rows forever and so we can clean them up later.
+async function handleAdCheckoutExpired(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const { error } = await db
+    .from("ad_payments")
+    .update({ status: "abandoned" })
+    .eq("stripe_session_id", session.id)
+    .eq("status", "pending");
+  if (error) {
+    logStep("Error marking ad_payment as abandoned", { error: error.message, sessionId: session.id });
+  } else {
+    logStep("ad_payment marked abandoned", { sessionId: session.id });
+  }
 }

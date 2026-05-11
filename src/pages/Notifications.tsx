@@ -217,9 +217,12 @@ export default function Notifications() {
                       </div>
                     )}
                     <Card
-                      className={`cursor-pointer hover:shadow-md transition-all active:scale-[0.98] ${
-                        isSelecting && selectedIds.has(notification.id) ? 'ring-2 ring-primary/30 bg-primary/5' :
-                        !notification.isRead ? 'border-primary/30 bg-primary/5' : ''
+                      className={`cursor-pointer transition-all active:scale-[0.98] ${
+                        isSelecting && selectedIds.has(notification.id)
+                          ? 'ring-2 ring-primary bg-primary/10 border-primary/50'
+                          : !notification.isRead
+                            ? 'bg-card border-l-4 border-l-primary border-primary/20 shadow-sm hover:shadow-md hover:bg-accent/30'
+                            : 'bg-card/60 hover:bg-card hover:shadow-sm'
                       }`}
                       onClick={() => handleClick(notification)}
                     >
@@ -235,14 +238,14 @@ export default function Notifications() {
                               />
                             </div>
                           )}
-                          <span className="text-xl mt-0.5">{getNotificationIcon(notification.type)}</span>
+                          <span className="text-xl mt-0.5 flex-shrink-0">{getNotificationIcon(notification.type)}</span>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-sm">{stripLeadingEmoji(notification.title)}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium text-sm flex-1 min-w-0">{stripLeadingEmoji(notification.title)}</p>
                               {!notification.isRead && (
-                                <Badge variant="default" className="text-xs px-1.5 py-0">
+                                <span className="flex-shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap leading-none">
                                   {t('notificationsPage.new')}
-                                </Badge>
+                                </span>
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">

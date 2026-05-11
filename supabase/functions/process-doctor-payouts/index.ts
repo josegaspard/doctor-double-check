@@ -162,6 +162,32 @@ Deno.serve(async (req) => {
           invoiceId = invoice?.id || null;
         }
 
+        // Fresh-fetch the Stripe Connect account before issuing a transfer.
+        // payouts_enabled in our DB can drift if account.updated webhooks
+        // missed delivery; transferring to a restricted/unverified account
+        // either fails outright or leaves money frozen at Stripe.
+        try {
+          const accountFresh = await stripe.accounts.retrieve(doctor.stripe_account_id!);
+          if (!accountFresh.details_submitted || !accountFresh.payouts_enabled || accountFresh.requirements?.disabled_reason) {
+            console.warn(`Doctor ${doctor.user_id} Connect account not payout-ready`, {
+              details_submitted: accountFresh.details_submitted,
+              payouts_enabled: accountFresh.payouts_enabled,
+              disabled_reason: accountFresh.requirements?.disabled_reason,
+            });
+            // Sync our local copy so future runs reflect Stripe truth
+            await supabaseAdmin
+              .from("doctor_profiles")
+              .update({ stripe_payouts_enabled: !!accountFresh.payouts_enabled, stripe_charges_enabled: !!accountFresh.charges_enabled })
+              .eq("user_id", doctor.user_id);
+            errors.push(`${doctor.user_id}: Stripe Connect account not payout-ready (${accountFresh.requirements?.disabled_reason || 'pending requirements'})`);
+            continue;
+          }
+        } catch (accErr: any) {
+          console.error(`Failed to fetch Stripe account for ${doctor.user_id}:`, accErr?.message);
+          errors.push(`${doctor.user_id}: could not verify Stripe account`);
+          continue;
+        }
+
         // Calculate payout amount (after commission)
         const commissionRate = payoutSettings.commission_percentage / 100;
         const grossAmount = doctor.pending_earnings;

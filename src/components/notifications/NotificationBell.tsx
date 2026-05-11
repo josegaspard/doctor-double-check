@@ -135,11 +135,14 @@ function NotificationItem({
         <span className="text-xl">{getNotificationIcon()}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-medium text-sm truncate">{stripLeadingEmoji(notification.title)}</p>
+            <p className="font-medium text-sm truncate flex-1 min-w-0">{stripLeadingEmoji(notification.title)}</p>
             {!notification.isRead && (
-              <Badge variant="default" className="text-xs px-1.5 py-0">
+              <span
+                className="flex-shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap leading-none"
+                aria-label={language === 'es' ? 'Nuevo' : 'New'}
+              >
                 {language === 'es' ? 'Nuevo' : 'New'}
-              </Badge>
+              </span>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
