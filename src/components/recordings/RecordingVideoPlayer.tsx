@@ -57,17 +57,25 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   const [error, setError] = useState<string | null>(null);
   const [urlGeneratedAt, setUrlGeneratedAt] = useState<number>(0);
   const [expired, setExpired] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const MAX_AUTO_RETRIES = 3;
 
-  const fetchSignedUrl = useCallback(async () => {
+  // Resilient signed URL fetcher with exponential backoff retry chain:
+  //   attempt 1: immediate
+  //   attempt 2: 500ms later
+  //   attempt 3: 1500ms later
+  //   attempt 4: 3500ms later
+  // After exhaustion shows the manual "Reintentar" UI.
+  const fetchSignedUrl = useCallback(async (attempt: number = 0): Promise<void> => {
     if (!storagePath && !b2Path) return;
 
     setIsLoading(true);
     setError(null);
     setExpired(false);
-    try {
+
+    const tryGet = async (): Promise<string | null> => {
       if (b2Path) {
-        // B2 path → call edge function for presigned GET URL
         const { data, error: invokeErr } = await supabase.functions.invoke('b2-presigned-url', {
           body: { operation: 'get', path: b2Path },
         });
@@ -75,41 +83,59 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
           const detail = (invokeErr as any)?.message || data?.error || 'No se pudo obtener URL del video';
           throw new Error(detail);
         }
-        setSignedUrl(data.url);
-        setUrlGeneratedAt(Date.now());
-        return;
+        return data.url as string;
       }
-
-      // Legacy Supabase Storage path
       const { data, error: signError } = await supabase.storage
         .from('recordings')
-        .createSignedUrl(storagePath!, 60 * 60); // 1h
-
+        .createSignedUrl(storagePath!, 60 * 60);
       if (signError) {
-        // Fallback: if bucket is public, public URL will work.
         const { data: publicUrlData } = supabase.storage.from('recordings').getPublicUrl(storagePath!);
-        if (publicUrlData?.publicUrl) {
-          setSignedUrl(publicUrlData.publicUrl);
-          setUrlGeneratedAt(Date.now());
-          return;
-        }
+        if (publicUrlData?.publicUrl) return publicUrlData.publicUrl;
         throw signError;
       }
+      return data.signedUrl;
+    };
 
-      setSignedUrl(data.signedUrl);
-      setUrlGeneratedAt(Date.now());
+    try {
+      const url = await tryGet();
+      if (url) {
+        setSignedUrl(url);
+        setUrlGeneratedAt(Date.now());
+        setRetryAttempt(0);
+      }
     } catch (e: any) {
-      console.error('[RecordingVideoPlayer] Signed URL error:', e);
-      setError(e?.message || 'No se pudo cargar el video desde almacenamiento');
+      console.warn(`[RecordingVideoPlayer] Signed URL attempt ${attempt + 1} failed:`, e?.message);
+      if (attempt < MAX_AUTO_RETRIES) {
+        const backoffMs = [500, 1500, 3500][attempt] ?? 3500;
+        setRetryAttempt(attempt + 1);
+        setTimeout(() => fetchSignedUrl(attempt + 1), backoffMs);
+        return;
+      }
+      console.error('[RecordingVideoPlayer] Signed URL exhausted retries:', e);
+      setError(e?.message || 'No se pudo cargar el video despues de varios intentos');
     } finally {
-      setIsLoading(false);
+      if (attempt >= MAX_AUTO_RETRIES) setIsLoading(false);
+      else if (attempt === 0) setIsLoading(false);
     }
   }, [storagePath, b2Path]);
 
   useEffect(() => {
     if (!storagePath && !b2Path) return;
-    fetchSignedUrl();
+    fetchSignedUrl(0);
   }, [storagePath, b2Path, fetchSignedUrl]);
+
+  // Pre-renew signed URL ~50min after generation so playback continues seamlessly.
+  // B2/Supabase signed URLs expire after 1h; refreshing early avoids the user
+  // ever hitting a 403 mid-playback.
+  useEffect(() => {
+    if (!urlGeneratedAt) return;
+    const renewMs = 50 * 60 * 1000;
+    const timeout = setTimeout(() => {
+      console.log('[RecordingVideoPlayer] Pre-renewing signed URL before expiry');
+      fetchSignedUrl(0);
+    }, renewMs);
+    return () => clearTimeout(timeout);
+  }, [urlGeneratedAt, fetchSignedUrl]);
 
   const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const vid = e.currentTarget;
@@ -135,7 +161,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
           <p className="text-muted-foreground mb-4">
             {expired ? 'Sesión expirada — recarga la URL para continuar viendo' : error}
           </p>
-          <Button onClick={fetchSignedUrl} variant="outline">
+          <Button onClick={() => { setRetryAttempt(0); fetchSignedUrl(0); }} variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />
             {expired ? 'Renovar sesión' : 'Reintentar'}
           </Button>
@@ -169,10 +195,22 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
         onTimeUpdate={(e) => {
           if (onTimeUpdate) onTimeUpdate(Math.floor((e.currentTarget as HTMLVideoElement).currentTime));
         }}
-        onError={() => {
+        onError={(e) => {
           // Detect signed URL expiration (TTL ~1h)
           if (urlGeneratedAt && Date.now() - urlGeneratedAt > 55 * 60 * 1000) {
             setExpired(true);
+            return;
+          }
+          // On generic video error, auto-regenerate the signed URL once before
+          // showing the error UI. Handles transient network blips + URL races
+          // (the "F5 fixed it" scenario the user reported).
+          const vid = e.currentTarget as HTMLVideoElement;
+          const errCode = vid.error?.code;
+          console.warn('[RecordingVideoPlayer] video onError code:', errCode);
+          if (retryAttempt < MAX_AUTO_RETRIES) {
+            console.log('[RecordingVideoPlayer] Auto-retry: regenerating signed URL');
+            setRetryAttempt(prev => prev + 1);
+            setTimeout(() => fetchSignedUrl(0), 600);
             return;
           }
           const isWebm = storagePath?.endsWith('.webm');
