@@ -170,6 +170,9 @@ export default function Doctors() {
   const [selectedUniversity, setSelectedUniversity] = useState('');
   const [universities, setUniversities] = useState<string[]>([]);
   const [universityDoctorIds, setUniversityDoctorIds] = useState<Set<string> | null>(null);
+  const [selectedHospital, setSelectedHospital] = useState('');
+  const [hospitals, setHospitals] = useState<string[]>([]);
+  const [hospitalDoctorIds, setHospitalDoctorIds] = useState<Set<string> | null>(null);
   const [, setTick] = useState(0);
   // Resident connection states
   const [residentConnections, setResidentConnections] = useState<Record<string, string>>({});
@@ -229,6 +232,41 @@ export default function Doctors() {
     };
     fetchUniDoctors();
   }, [selectedUniversity]);
+
+  // Fetch hospitals (from doctor_experience: current job orgs)
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      const { data } = await supabase
+        .from('doctor_experience')
+        .select('organization')
+        .eq('status', 'approved')
+        .eq('is_current', true);
+      if (data) {
+        const unique = [...new Set(data.map((d: any) => d.organization).filter(Boolean))].sort();
+        setHospitals(unique as string[]);
+      }
+    };
+    fetchHospitals();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedHospital) {
+      setHospitalDoctorIds(null);
+      return;
+    }
+    const fetchHospitalDoctors = async () => {
+      const { data } = await supabase
+        .from('doctor_experience')
+        .select('doctor_id')
+        .eq('status', 'approved')
+        .eq('is_current', true)
+        .eq('organization', selectedHospital);
+      if (data) {
+        setHospitalDoctorIds(new Set((data as any[]).map(d => d.doctor_id)));
+      }
+    };
+    fetchHospitalDoctors();
+  }, [selectedHospital]);
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60_000);
@@ -471,9 +509,9 @@ export default function Doctors() {
               <SlidersHorizontal className="w-3.5 h-3.5" />
               {t('doctors.moreFilters')}
               <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
-              {(minRating > 0 || selectedLevel || minConsultations > 0 || selectedContinent || selectedCountry || selectedUniversity) && (
+              {(minRating > 0 || selectedLevel || minConsultations > 0 || selectedContinent || selectedCountry || selectedUniversity || selectedHospital) && (
                 <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
-                  {[minRating > 0, selectedLevel, minConsultations > 0, selectedContinent, selectedCountry, selectedUniversity].filter(Boolean).length}
+                  {[minRating > 0, selectedLevel, minConsultations > 0, selectedContinent, selectedCountry, selectedUniversity, selectedHospital].filter(Boolean).length}
                 </Badge>
               )}
             </button>
@@ -593,7 +631,7 @@ export default function Doctors() {
 
                 <div className="w-px h-6 bg-border hidden sm:block" />
 
-                {/* University/Hospital */}
+                {/* University */}
                 {universities.length > 0 && (
                   <div className="flex items-center gap-1.5">
                     <GraduationCap className="w-3.5 h-3.5 text-muted-foreground" />
@@ -610,15 +648,33 @@ export default function Doctors() {
                     </select>
                   </div>
                 )}
+
+                {/* Hospital de práctica (PDF 1 Fase 2) */}
+                {hospitals.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Stethoscope className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">Hospital</span>
+                    <select
+                      value={selectedHospital}
+                      onChange={(e) => setSelectedHospital(e.target.value)}
+                      className="h-7 text-xs rounded-md border bg-card px-2 py-1 max-w-[180px]"
+                    >
+                      <option value="">Todos los hospitales</option>
+                      {hospitals.map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               {/* Reset */}
-              {(minRating > 0 || selectedLevel || minConsultations > 0 || selectedContinent || selectedCountry || selectedUniversity) && (
+              {(minRating > 0 || selectedLevel || minConsultations > 0 || selectedContinent || selectedCountry || selectedUniversity || selectedHospital) && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 text-[10px] px-2 text-muted-foreground"
-                  onClick={() => { setMinRating(0); setSelectedLevel(''); setMinConsultations(0); setSelectedContinent(''); setSelectedCountry(''); setSelectedUniversity(''); }}
+                  onClick={() => { setMinRating(0); setSelectedLevel(''); setMinConsultations(0); setSelectedContinent(''); setSelectedCountry(''); setSelectedUniversity(''); setSelectedHospital(''); }}
                 >
                   {t('doctors.clearFilters')}
                 </Button>
@@ -769,6 +825,8 @@ export default function Doctors() {
                 }
                 // University filter
                 if (universityDoctorIds && !universityDoctorIds.has(d.user_id)) return false;
+                // Hospital filter (PDF 1 Fase 2)
+                if (hospitalDoctorIds && !hospitalDoctorIds.has(d.user_id)) return false;
                 return true;
               }).map(doctor => {
                 const isAvailable = isDoctorAvailableNow(doctor);

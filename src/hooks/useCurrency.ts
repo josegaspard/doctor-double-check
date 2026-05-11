@@ -42,9 +42,28 @@ export function detectCountry(): string {
 
 export function useCurrency() {
   const { user } = useAuth();
-  const userCurrency = (user as any)?.currencyCode || 'MXN';
+  // Manual override (profiles.preferred_currency) takes precedence over auto-detection
+  const { data: preferred } = useQuery({
+    queryKey: ['preferred-currency', (user as any)?.id],
+    queryFn: async () => {
+      if (!(user as any)?.id) return null;
+      const { data } = await supabase.from('profiles').select('preferred_currency').eq('id', (user as any).id).single();
+      return (data as any)?.preferred_currency || null;
+    },
+    enabled: !!(user as any)?.id,
+    staleTime: 60 * 60 * 1000,
+  });
+
+  const userCurrency = preferred || (user as any)?.currencyCode || 'MXN';
   const userCountry = (user as any)?.countryCode || 'MX';
-  const userFlag = (user as any)?.countryFlag || '🇲🇽';
+  // Flag follows manual currency selection when overridden
+  const flagFromCurrency = Object.values(COUNTRY_CURRENCIES).find(c => c.currency === userCurrency)?.flag;
+  const userFlag = (preferred && flagFromCurrency) || (user as any)?.countryFlag || '🇲🇽';
+
+  const setPreferredCurrency = async (currency: string) => {
+    if (!(user as any)?.id) return;
+    await supabase.from('profiles').update({ preferred_currency: currency } as any).eq('id', (user as any).id);
+  };
 
   const { data: rates } = useQuery({
     queryKey: ['exchange-rates'],
@@ -83,5 +102,7 @@ export function useCurrency() {
     rates,
     convertFromMXN,
     formatPrice,
+    setPreferredCurrency,
+    isManualOverride: !!preferred,
   };
 }

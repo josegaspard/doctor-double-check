@@ -535,21 +535,60 @@ export default function MedicalRecord() {
                           {item.active && (
                             <div className="ml-6 space-y-1.5">
                               {isDiabetes && (
-                                <Select
-                                  value={(item as any).diabetes_type || ''}
-                                  onValueChange={(v) => {
-                                    setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_type: v } as any } }));
-                                  }}
-                                >
-                                  <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Tipo de diabetes" /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="type1">Tipo 1</SelectItem>
-                                    <SelectItem value="type2">Tipo 2</SelectItem>
-                                    <SelectItem value="gestational">Gestacional</SelectItem>
-                                    <SelectItem value="prediabetes">Prediabetes</SelectItem>
-                                    <SelectItem value="other">Otro</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <div>
+                                    <Label className="text-[11px] text-muted-foreground">Tipo de diabetes</Label>
+                                    <Select
+                                      value={(item as any).diabetes_type || ''}
+                                      onValueChange={(v) => {
+                                        setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_type: v } as any } }));
+                                      }}
+                                    >
+                                      <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="type1">Tipo 1</SelectItem>
+                                        <SelectItem value="type2">Tipo 2</SelectItem>
+                                        <SelectItem value="gestational">Gestacional</SelectItem>
+                                        <SelectItem value="prediabetes">Prediabetes</SelectItem>
+                                        <SelectItem value="other">Otro</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div>
+                                    <Label className="text-[11px] text-muted-foreground">Parentesco familiar</Label>
+                                    {(() => {
+                                      const relatives: string[] = ((item as any).diabetes_relatives as string[]) || [];
+                                      const toggle = (key: string) => {
+                                        const next = relatives.includes(key) ? relatives.filter(r => r !== key) : [...relatives, key];
+                                        setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_relatives: next } as any } }));
+                                      };
+                                      const RELATIVES = [
+                                        { key: 'father', label: 'Padre' },
+                                        { key: 'mother', label: 'Madre' },
+                                        { key: 'sibling', label: 'Hermano(a)' },
+                                        { key: 'grandparent', label: 'Abuelo(a)' },
+                                        { key: 'uncle_aunt', label: 'Tío(a)' },
+                                        { key: 'cousin', label: 'Primo(a)' },
+                                        { key: 'child', label: 'Hijo(a)' },
+                                        { key: 'none', label: 'Ninguno' },
+                                      ];
+                                      return (
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {RELATIVES.map(r => (
+                                            <button
+                                              key={r.key}
+                                              type="button"
+                                              onClick={() => toggle(r.key)}
+                                              className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${relatives.includes(r.key) ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:bg-muted'}`}
+                                            >
+                                              {r.label}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                </div>
                               )}
                               <Input placeholder="Fecha de diagnóstico, tratamiento..." className="text-sm" value={item.detail} onChange={e => {
                                 setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, detail: e.target.value } } }));

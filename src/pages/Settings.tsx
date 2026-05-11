@@ -16,6 +16,7 @@ import { PushNotificationToggle } from '@/components/notifications/PushNotificat
 import { MySubscriptions } from '@/components/subscriptions/MySubscriptions';
 import { ReferralProgram } from '@/components/referrals/ReferralProgram';
 import { MfaSettings } from '@/components/settings/MfaSettings';
+import { CurrencySelector } from '@/components/currency/CurrencySelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -135,6 +136,24 @@ export default function Settings() {
                   🇺🇸 {t('settings.english')}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Currency (Multi-currency PDF 1 Fase 2) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                {language === 'es' ? 'Moneda' : 'Currency'}
+              </CardTitle>
+              <CardDescription>
+                {language === 'es'
+                  ? 'Los precios se mostrarán convertidos automáticamente desde MXN.'
+                  : 'Prices will be auto-converted from MXN.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CurrencySelector />
             </CardContent>
           </Card>
 

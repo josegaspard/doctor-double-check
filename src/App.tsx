@@ -280,10 +280,14 @@ const App = () => {
                       <Route path="/admin/featured" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminFeatured /></AccessGuard>} />
                       <Route path="/admin/qa-checklist" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminQAChecklist /></AccessGuard>} />
                       <Route path="/psychology" element={<PsychologyDirectory />} />
+                      <Route path="/psicologia" element={<PsychologyDirectory />} />
                       <Route path="/nutrition" element={<NutritionDirectory />} />
+                      <Route path="/nutricion" element={<NutritionDirectory />} />
                       <Route path="/for-residents" element={<ForResidents />} />
                       <Route path="/access-denied" element={<AccessDenied />} />
                       <Route path="/emergency" element={<EmergencyDoctors />} />
+                      <Route path="/emergencia" element={<EmergencyDoctors />} />
+                      <Route path="/doctores" element={<Doctors />} />
                       <Route path="/arco" element={<ArcoRights />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
