@@ -67,8 +67,7 @@ export function useDaily() {
       setRoom(null);
       return true;
     } catch (error: any) {
-      console.error('Error ending Daily room:', error);
-      toast.error('Error al terminar sala');
+      console.warn('end-daily-room non-fatal:', error);
       return false;
     } finally {
       setIsLoading(false);

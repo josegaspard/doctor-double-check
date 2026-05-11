@@ -18,7 +18,7 @@ export function getPasswordStrength(password: string): {
   requirements: PasswordRequirement[];
 } {
   const requirements: PasswordRequirement[] = [
-    { label: 'Al menos 8 caracteres', met: password.length >= 8 },
+    { label: 'Al menos 12 caracteres', met: password.length >= 12 },
     { label: 'Una letra minúscula', met: /[a-z]/.test(password) },
     { label: 'Una letra mayúscula', met: /[A-Z]/.test(password) },
     { label: 'Un número', met: /[0-9]/.test(password) },
