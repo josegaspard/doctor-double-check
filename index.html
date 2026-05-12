@@ -7,11 +7,9 @@
     <meta name="description" content="Plataforma de telemedicina en México con médicos certificados. Consultas en vivo, lives quirúrgicos, recetas digitales y expediente clínico seguro. Regístrate gratis." />
     <meta name="keywords" content="telemedicina México, doctores en línea, consulta médica online, médicos certificados, expediente clínico digital, recetas digitales, segunda opinión médica, lives quirúrgicos, formación médica continua, residentes médicos" />
     <meta name="author" content="Medical Masters" />
-    <!-- PRIVATE APP: no public access. Block all indexing across crawlers. -->
-    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
-    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
-    <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet" />
-    <meta name="googlebot-news" content="noindex, nofollow" />
+    <!-- Public landing only. All non-home routes are noindex'd via X-Robots-Tag header
+         in vercel.json + robots.txt Disallow. The home meta below tells crawlers it is indexable. -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#163a83" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -33,7 +31,7 @@
     <meta property="og:locale" content="es_MX" />
     <meta property="og:url" content="https://medical-masters.com/" />
     <meta property="og:site_name" content="Medical Masters" />
-    <meta property="og:image" content="https://medical-masters.com/icon-512.png?v=14" />
+    <meta property="og:image" content="https://medical-masters.com/icon-512.png?v=15" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
     <meta property="og:image:type" content="image/png" />
@@ -43,7 +41,7 @@
     <meta name="twitter:site" content="@MedicalMasters" />
     <meta name="twitter:title" content="Medical Masters | Telemedicina con doctores verificados en México" />
     <meta name="twitter:description" content="Plataforma de telemedicina mexicana: consultas, lives quirúrgicos, recetas digitales y expediente clínico para pacientes, doctores y residentes." />
-    <meta name="twitter:image" content="https://medical-masters.com/icon-512.png?v=14" />
+    <meta name="twitter:image" content="https://medical-masters.com/icon-512.png?v=15" />
 
     <!-- Preload background image for instant render (modo imagen del app) -->
     <link rel="preload" as="image" href="/app-bg.jpg" fetchpriority="high" />
@@ -53,12 +51,12 @@
          Google Fonts. CSS imported in src/main.tsx -->
 
     <!-- Favicons (Google SERP requires .ico + multi-resolution sizes) -->
-    <link rel="icon" href="/favicon.ico?v=14" sizes="any" />
-    <link rel="icon" type="image/png" sizes="48x48" href="/favicon.png?v=14" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=14" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=14" />
-    <link rel="shortcut icon" href="/favicon.ico?v=14" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=14" />
+    <link rel="icon" href="/favicon.ico?v=15" sizes="any" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon.png?v=15" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=15" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=15" />
+    <link rel="shortcut icon" href="/favicon.ico?v=15" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=15" />
     <link rel="manifest" href="/manifest.json" />
 
     <script type="application/ld+json">
@@ -68,8 +66,8 @@
       "name": "Medical Masters",
       "alternateName": "Medical Masters MX",
       "url": "https://medical-masters.com/",
-      "logo": "https://medical-masters.com/icon-512.png?v=14",
-      "image": "https://medical-masters.com/icon-512.png?v=14",
+      "logo": "https://medical-masters.com/icon-512.png?v=15",
+      "image": "https://medical-masters.com/icon-512.png?v=15",
       "description": "Plataforma médica para doctores, residentes y pacientes: orientación médica en vivo, lives de doctores, contenido premium, recetas digitales y expediente clínico seguro.",
       "areaServed": {
         "@type": "Country",

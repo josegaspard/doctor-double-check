@@ -1,3 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Medical Masters is a private, login-only application. No public URLs are indexable. -->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://medical-masters.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

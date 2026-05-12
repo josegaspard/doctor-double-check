@@ -1,6 +1,24 @@
 # Medical Masters - https://medical-masters.com
-# PRIVATE APPLICATION — login required. No public content.
-# All crawling and indexing is disallowed for every user agent.
+# Public-facing: ONLY the home (landing). Everything else is a private app.
 
 User-agent: *
+Allow: /$
+Allow: /favicon.ico
+Allow: /favicon.png
+Allow: /apple-touch-icon.png
+Allow: /icon-16.png
+Allow: /icon-32.png
+Allow: /icon-72.png
+Allow: /icon-96.png
+Allow: /icon-128.png
+Allow: /icon-144.png
+Allow: /icon-152.png
+Allow: /icon-192.png
+Allow: /icon-384.png
+Allow: /icon-512.png
+Allow: /manifest.json
+Allow: /sitemap.xml
+Allow: /robots.txt
 Disallow: /
+
+Sitemap: https://medical-masters.com/sitemap.xml
