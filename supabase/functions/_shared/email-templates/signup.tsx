@@ -45,7 +45,7 @@ export const SignupEmail = ({
       <Container style={wrapper}>
         <Section style={header}>
           <Img
-            src="https://jbthjpnxiwnegzgfzfth.supabase.co/storage/v1/object/public/email-assets/logo-white.png"
+            src="https://medical-masters.com/email-logo-white.png"
             width="180"
             alt="Medical Masters"
             style={{ margin: '0 auto' }}
