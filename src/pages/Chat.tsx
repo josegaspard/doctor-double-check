@@ -351,8 +351,8 @@ export default function Chat() {
               {t('chat.premiumService')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button onClick={() => navigate('/wallet')}>{t('chat.viewOptions')}</Button>
-              <Button variant="outline" onClick={() => navigate('/lives')}>{t('chat.goToLives')}</Button>
+              <Button onClick={() => navigate('/doctors')}>{t('chat.viewOptions')}</Button>
+              <Button variant="outline" onClick={() => navigate('/wallet')}>{t('chat.goToLives')}</Button>
             </div>
           </Card>
         </div>
