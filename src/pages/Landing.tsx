@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 import { DemoVideoModal } from '@/components/landing/DemoVideoModal';
 import logoWhite from '@/assets/logo-medical-masters-white.png';
 import logoBlue from '@/assets/logo-medical-masters.png';
@@ -36,42 +35,9 @@ import {
 import { LandingFooter } from '@/components/landing/LandingFooter';
 
 export default function Landing() {
-  const navigate = useNavigate();
-  const { user, role, isAuthenticated, isLoading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   
   const [showDemoModal, setShowDemoModal] = useState(false);
-
-  // Private mode: anyone not authenticated is forced to /login.
-  // Authenticated users are routed to their role dashboard.
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (!isAuthenticated || !user) {
-      navigate('/login', { replace: true });
-      return;
-    }
-
-    if (role === 'doctor') {
-      navigate('/doctor/dashboard', { replace: true });
-    } else if (role === 'admin') {
-      navigate('/admin', { replace: true });
-    } else {
-      navigate('/lives', { replace: true });
-    }
-  }, [isLoading, isAuthenticated, user?.id, role, navigate]);
-
-  // Don't render the public landing markup at all — this site is private.
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700">
-        <div className="text-center">
-          <div className="w-10 h-10 mx-auto mb-4 rounded-full border-2 border-slate-300 border-t-[#00768b] animate-spin" />
-          <p className="text-sm">Redirigiendo al inicio de sesión…</p>
-        </div>
-      </div>
-    );
-  }
 
   // Scroll effect for navbar
   useEffect(() => {
