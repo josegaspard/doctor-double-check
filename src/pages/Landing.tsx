@@ -42,10 +42,15 @@ export default function Landing() {
   
   const [showDemoModal, setShowDemoModal] = useState(false);
 
-  // If user is already logged in, redirect to app
+  // Private mode: anyone not authenticated is forced to /login.
+  // Authenticated users are routed to their role dashboard.
   useEffect(() => {
     if (isLoading) return;
-    if (!isAuthenticated || !user) return;
+
+    if (!isAuthenticated || !user) {
+      navigate('/login', { replace: true });
+      return;
+    }
 
     if (role === 'doctor') {
       navigate('/doctor/dashboard', { replace: true });
@@ -55,6 +60,18 @@ export default function Landing() {
       navigate('/lives', { replace: true });
     }
   }, [isLoading, isAuthenticated, user?.id, role, navigate]);
+
+  // Don't render the public landing markup at all — this site is private.
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700">
+        <div className="text-center">
+          <div className="w-10 h-10 mx-auto mb-4 rounded-full border-2 border-slate-300 border-t-[#00768b] animate-spin" />
+          <p className="text-sm">Redirigiendo al inicio de sesión…</p>
+        </div>
+      </div>
+    );
+  }
 
   // Scroll effect for navbar
   useEffect(() => {
