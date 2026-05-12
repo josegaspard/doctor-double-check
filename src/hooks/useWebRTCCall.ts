@@ -15,6 +15,9 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
   const callObjectRef = useRef<DailyCall | null>(null);
   const isCleanedUpRef = useRef(false);
   const isInitializingRef = useRef(false);
+  // Grace timer used to tolerate brief remote disconnects (wifi blip)
+  // before tearing down the call. Cleared if the remote rejoins.
+  const remoteLeftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -24,6 +27,10 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
   const doCleanup = useCallback(async () => {
     console.log('[Daily] 🧹 Cleanup');
     isCleanedUpRef.current = true;
+    if (remoteLeftTimerRef.current) {
+      clearTimeout(remoteLeftTimerRef.current);
+      remoteLeftTimerRef.current = null;
+    }
     const co = callObjectRef.current;
     if (co) {
       try {
@@ -37,8 +44,10 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     }
   }, []);
 
-  // Poll for room to be ready (patient side)
-  const waitForRoom = useCallback(async (consultationId: string, maxAttempts = 10): Promise<{ roomName: string; roomUrl: string }> => {
+  // Poll for room to be ready (patient side). 30 × 1.5s = up to 45s, which
+  // forgives a slow doctor-side `create-daily-room` round-trip (Daily API +
+  // edge function cold-start can take 5-15s on first call).
+  const waitForRoom = useCallback(async (consultationId: string, maxAttempts = 30): Promise<{ roomName: string; roomUrl: string }> => {
     for (let i = 0; i < maxAttempts; i++) {
       console.log(`[Daily] Polling for room... attempt ${i + 1}/${maxAttempts}`);
       const { data } = await supabase
@@ -135,26 +144,37 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
         }
       });
 
-      co.on('participant-joined', () => {
+      co.on('participant-joined', (event: any) => {
         console.log('[Daily] 👤 Participant joined');
+        // If a remote rejoined while a grace timer was pending, cancel the
+        // pending teardown — this was just a brief wifi blip.
+        if (event?.participant && !event.participant.local && remoteLeftTimerRef.current) {
+          console.log('[Daily] Remote rejoined within grace window — cancelling teardown');
+          clearTimeout(remoteLeftTimerRef.current);
+          remoteLeftTimerRef.current = null;
+        }
       });
 
-      co.on('participant-left', async (event: any) => {
+      co.on('participant-left', (event: any) => {
         console.log('[Daily] 👤 Participant left');
-        if (event?.participant && !event.participant.local) {
-          console.log('[Daily] Remote participant left — ending call');
-          if (!isCleanedUpRef.current) {
-            setCallState('ended');
-            // Clear video room fields so CallWaitingBanner disappears
-            if (consultationId) {
-              await supabase.from('consultations').update({
-                video_room_name: null,
-                video_room_url: null,
-              }).eq('id', consultationId);
-            }
-            doCleanup();
+        if (!event?.participant || event.participant.local) return;
+        if (isCleanedUpRef.current) return;
+        // Grace window: tolerate brief reconnects (network flap, app
+        // backgrounded). If the remote does not return in 10s, tear down.
+        if (remoteLeftTimerRef.current) clearTimeout(remoteLeftTimerRef.current);
+        remoteLeftTimerRef.current = setTimeout(async () => {
+          remoteLeftTimerRef.current = null;
+          if (isCleanedUpRef.current) return;
+          console.log('[Daily] Remote did not return — ending call');
+          setCallState('ended');
+          if (consultationId) {
+            await supabase.from('consultations').update({
+              video_room_name: null,
+              video_room_url: null,
+            }).eq('id', consultationId);
           }
-        }
+          doCleanup();
+        }, 10000);
       });
 
       co.on('error', (event) => {
