@@ -207,6 +207,14 @@ async function handleWebhook(req: Request): Promise<Response> {
     run_id = `${payload?.user?.id ?? 'unknown'}-${Date.now()}`
     // Adapt payload to legacy shape used downstream
     if (payload?.user && payload?.email_data) {
+      // Supabase populates email_data.site_url inconsistently (sometimes with /auth/v1 baked in,
+      // producing a duplicated path). Build the verify URL using SUPABASE_URL from env instead.
+      const projectUrl = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/$/, '')
+      // Always land users on /email-confirmed on the prod domain so the SPA can pick up
+      // the session and route them to /onboarding (or directly to their panel if onboarding
+      // was already completed). We ignore the incoming redirect_to (which is often just the
+      // Auth Site URL root and would dump the user on the public landing).
+      const safeRedirectTo = `https://${ROOT_DOMAIN}/email-confirmed`
       payload = {
         version: '1',
         run_id,
@@ -216,7 +224,7 @@ async function handleWebhook(req: Request): Promise<Response> {
           new_email: payload.user.new_email,
           token: payload.email_data.token,
           token_hash: payload.email_data.token_hash,
-          url: `${payload.email_data.site_url}/auth/v1/verify?token=${payload.email_data.token_hash}&type=${payload.email_data.email_action_type}&redirect_to=${encodeURIComponent(payload.email_data.redirect_to ?? '/')}`,
+          url: `${projectUrl}/auth/v1/verify?token=${payload.email_data.token_hash}&type=${payload.email_data.email_action_type}&redirect_to=${encodeURIComponent(safeRedirectTo)}`,
           callback_url: payload.email_data.callback_url ?? '',
           user_id: payload.user.id,
         },
