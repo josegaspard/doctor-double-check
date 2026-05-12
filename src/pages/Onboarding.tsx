@@ -185,9 +185,26 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { user, supabaseUser, refreshUser, isLoading: authLoading } = useAuth();
   const { t, language } = useLanguage();
-  
+
+  const resolveInitialRole = (): OnboardingRole => {
+    const r = (user?.role || (supabaseUser?.user_metadata as any)?.role) as OnboardingRole | undefined;
+    return r === 'doctor' || r === 'resident' || r === 'patient' ? r : 'patient';
+  };
+
   const [step, setStep] = useState(1);
-  const [selectedRole, setSelectedRole] = useState<OnboardingRole>('patient');
+  const [selectedRole, setSelectedRole] = useState<OnboardingRole>(resolveInitialRole);
+  const [roleHydrated, setRoleHydrated] = useState(false);
+
+  // Hydrate role from auth context once the user object is available (it loads async).
+  // Only override before the user manually changes anything (i.e. on first hydration).
+  useEffect(() => {
+    if (roleHydrated) return;
+    const r = (user?.role || (supabaseUser?.user_metadata as any)?.role) as OnboardingRole | undefined;
+    if (r === 'doctor' || r === 'resident' || r === 'patient') {
+      setSelectedRole(r);
+      setRoleHydrated(true);
+    }
+  }, [user?.role, supabaseUser, roleHydrated]);
   const [specialty, setSpecialty] = useState('');
   const [institution, setInstitution] = useState('');
   const [license, setLicense] = useState('');
@@ -205,7 +222,11 @@ export default function Onboarding() {
   const [doctorLocation, setDoctorLocation] = useState('');
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [username, setUsername] = useState('');
-  const [selectedCountry, setSelectedCountry] = useState(() => detectCountry());
+  // Default a MX (app de telemedicina mexicana). Si el navegador es de otra región el usuario puede cambiar.
+  const [selectedCountry, setSelectedCountry] = useState(() => {
+    const detected = detectCountry();
+    return COUNTRY_CURRENCIES['MX'] && detected === 'US' ? 'MX' : detected;
+  });
   
   // Phone verification state
   const [phoneNumber, setPhoneNumber] = useState('');
