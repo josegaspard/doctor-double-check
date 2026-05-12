@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       logStep("Found Stripe customer", { customerId });
     }
 
-    const origin = req.headers.get("origin") || "https://cirugiaesteticauribe.com";
+    const origin = req.headers.get("origin") || "https://medical-masters.com";
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/settings`,

@@ -82,13 +82,15 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         throw new Error('El doctor no está disponible para Segunda Opinión');
       }
 
-      // 1. Process wallet purchase
+      // SECURITY (2026-05-11): atomic patient debit + doctor credit in one RPC.
+      // Previously two separate calls left a window where a malicious patient
+      // could call credit_doctor_earnings directly to inflate earnings w/o paying.
       const { data: purchaseResult, error: purchaseError } = await supabase.rpc(
-        'process_wallet_purchase',
+        'process_double_check_purchase' as any,
         {
+          p_doctor_id: doctor.userId,
           p_amount: doctor.consultationFee,
           p_description: `Segunda Opinión con ${doctor.name}`,
-          p_metadata: { type: 'double_check', doctor_id: doctor.userId },
         }
       );
 
@@ -98,7 +100,6 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         throw new Error(result?.error || 'Error en el pago');
       }
 
-      // Show debit notification
       toast.success(`Se debitaron $${result.amount_charged} de tu wallet. Nuevo saldo: $${result.new_balance}`);
 
       // 2. Create consultation record
@@ -140,25 +141,8 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           expires_at: expiresAt.toISOString(),
         });
 
-      // 6. Credit doctor earnings atomically
-      const amountCharged = result.amount_charged || doctor.consultationFee;
-      const { data: newPending, error: rpcError } = await supabase.rpc("credit_doctor_earnings", {
-        p_doctor_id: doctor.userId,
-        p_amount: amountCharged,
-      });
-
-      if (!rpcError && newPending !== -1) {
-        await supabase
-          .from('wallet_transactions')
-          .insert({
-            user_id: doctor.userId,
-            type: 'earning',
-            amount: amountCharged,
-            description: `Ganancia por Segunda Opinión`,
-            status: 'paid',
-            metadata: { source: 'double_check', patient_id: user.id, consultation_id: consultation.id },
-          });
-      }
+      // Doctor earnings + earning transaction were already credited atomically
+      // inside process_double_check_purchase above.
 
       // 7. Notify doctor
       await supabase

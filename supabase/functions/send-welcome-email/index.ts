@@ -21,7 +21,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const appUrl = "https://cirugiaesteticauribe.com";
+    const appUrl = "https://medical-masters.com";
     const { email, name, role }: WelcomeEmailRequest = await req.json();
 
     const roleMessages = {
@@ -68,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
     const message = roleMessages[role] || roleMessages.patient;
 
     const emailResponse = await resend.emails.send({
-      from: "Medical Masters <no-reply@cirugiaesteticauribe.com>",
+      from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <no-reply@medical-masters.com>",
       to: [email],
       subject: message.subject,
       html: `

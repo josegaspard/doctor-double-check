@@ -446,33 +446,22 @@ export default function AdminPayouts() {
             if (error) throw error;
             if (!data?.success) throw new Error(data?.error || 'Error processing');
           } else {
-            const now = new Date().toISOString().split('T')[0];
-            const { error: insertError } = await supabase.from('doctor_payouts').insert({
-              doctor_id: doctor.user_id,
-              amount: netAmount,
-              status: 'paid',
-              paid_at: new Date().toISOString(),
-              period_start: now,
-              period_end: now,
-              stripe_transfer_id: manualReference ? `manual_${manualReference}` : `manual_${Date.now()}`,
-            });
-            if (insertError) throw insertError;
-
-            const { error: rpcError } = await supabase.rpc('process_doctor_payout' as any, {
-              p_doctor_id: doctor.user_id,
-              p_payout_amount: netAmount,
-              p_gross_amount: doctor.pending_earnings,
-            });
-            if (rpcError) throw rpcError;
-
-            // Notify doctor in-app
-            await supabase.from('notifications').insert({
-              user_id: doctor.user_id,
-              type: 'system',
-              title: '💰 Pago procesado',
-              message: `Se ha registrado un pago de $${netAmount.toFixed(2)} MXN${manualNotes ? ` - ${manualNotes}` : ''}`,
-              data: { amount: netAmount, method: 'manual', reference: manualReference },
-            });
+            // SECURITY (2026-05-11): admin-only edge function does the
+            // insert+RPC+notification atomically with admin JWT gate.
+            const { data: payoutData, error: payoutErr } = await supabase.functions.invoke(
+              'admin-record-manual-payout',
+              {
+                body: {
+                  doctor_id: doctor.user_id,
+                  net_amount: netAmount,
+                  gross_amount: doctor.pending_earnings,
+                  reference: manualReference || undefined,
+                  notes: manualNotes || undefined,
+                },
+              }
+            );
+            if (payoutErr) throw payoutErr;
+            if (!payoutData?.success) throw new Error(payoutData?.error || 'Error processing manual payout');
           }
 
           // Send email notification to doctor

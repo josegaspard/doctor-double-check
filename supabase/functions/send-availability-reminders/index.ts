@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
 
     let totalEmailsSent = 0;
     const baseUrl = supabaseUrl.replace('.supabase.co', '.functions.supabase.co');
-    const appUrl = "https://cirugiaesteticauribe.com";
+    const appUrl = "https://medical-masters.com";
 
     for (const availability of upcomingAvailabilities) {
       const { data: doctorProfile } = await supabase
@@ -183,7 +183,7 @@ Deno.serve(async (req: Request) => {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                from: 'Medical Masters <no-reply@cirugiaesteticauribe.com>',
+                from: Deno.env.get('FROM_EMAIL') ?? 'Medical Masters <no-reply@medical-masters.com>',
                 to: [profile.email],
                 subject,
                 html,

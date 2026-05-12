@@ -48,7 +48,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const appUrl = "https://cirugiaesteticauribe.com";
+    const appUrl = "https://medical-masters.com";
     logStep("Processing content notification request");
 
     const supabaseClient = createClient(
@@ -131,7 +131,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       
       try {
         await resend.emails.send({
-          from: "Medical Masters <no-reply@cirugiaesteticauribe.com>",
+          from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <no-reply@medical-masters.com>",
           to: [profile.email],
           subject,
           html: `

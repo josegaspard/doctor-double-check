@@ -44,11 +44,11 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 const SITE_NAME = "Medical Masters"
-const SENDER_DOMAIN = "notify.cirugiaesteticauribe.com"
-const ROOT_DOMAIN = "cirugiaesteticauribe.com"
-const FROM_DOMAIN = "cirugiaesteticauribe.com"
+const SENDER_DOMAIN = "notify.medical-masters.com"
+const ROOT_DOMAIN = "medical-masters.com"
+const FROM_DOMAIN = "medical-masters.com"
 
-const SAMPLE_PROJECT_URL = "https://cirugiaesteticauribe.com"
+const SAMPLE_PROJECT_URL = "https://medical-masters.com"
 const SAMPLE_EMAIL = "user@example.test"
 const SAMPLE_DATA: Record<string, object> = {
   signup: {

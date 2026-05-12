@@ -283,7 +283,7 @@ function generateConfirmationPage(token: string, doctorName: string, type: strin
       <p style="font-size: 14px;">Seguirás siendo suscriptor y podrás acceder al contenido, solo dejarás de recibir emails.</p>
 
       <div class="buttons">
-        <a href="https://cirugiaesteticauribe.com/settings" class="btn btn-secondary">Cancelar</a>
+        <a href="https://medical-masters.com/settings" class="btn btn-secondary">Cancelar</a>
         <a href="${baseUrl}/unsubscribe-email?token=${token}&action=confirm" class="btn btn-primary">Confirmar Desuscripción</a>
       </div>
     </div>
@@ -349,7 +349,7 @@ function generateSuccessPage(token: string, doctorName: string, type: string): s
         <p>¿Cambiaste de opinión? Puedes volver a activar las notificaciones:</p>
         <div class="buttons">
           <a href="${baseUrl}/unsubscribe-email?token=${token}&action=resubscribe" class="btn btn-secondary">🔔 Volver a Suscribirme</a>
-          <a href="https://cirugiaesteticauribe.com/settings" class="btn btn-primary">Ir a Configuración</a>
+          <a href="https://medical-masters.com/settings" class="btn btn-primary">Ir a Configuración</a>
         </div>
       </div>
     </div>
@@ -404,7 +404,7 @@ function generateResubscribeSuccessPage(doctorName: string, type: string): strin
       <h2>Te has re-suscrito correctamente</h2>
       <p>Volverás a recibir <strong>${typeLabel}</strong> de <strong>${doctorName}</strong> por email.</p>
       <p style="font-size: 14px;">¡Gracias por seguir con nosotros! No te perderás ninguna actualización importante.</p>
-      <a href="https://cirugiaesteticauribe.com" class="btn">Ir a la App</a>
+      <a href="https://medical-masters.com" class="btn">Ir a la App</a>
     </div>
     <div class="footer">
       © 2026 Medical Masters. Todos los derechos reservados.
@@ -444,7 +444,7 @@ function generateErrorPage(message: string): string {
     </div>
     <div class="content">
       <p>${message}</p>
-      <a href="https://cirugiaesteticauribe.com" class="btn">Ir al Inicio</a>
+      <a href="https://medical-masters.com" class="btn">Ir al Inicio</a>
     </div>
     <div class="footer">
       © 2026 Medical Masters. Todos los derechos reservados.

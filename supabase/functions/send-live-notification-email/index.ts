@@ -101,7 +101,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const baseUrl = Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.functions.supabase.co') || '';
-    const appUrl = "https://cirugiaesteticauribe.com";
+    const appUrl = "https://medical-masters.com";
 
     let sentCount = 0;
     let failedCount = 0;
@@ -174,7 +174,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       try {
         await resend.emails.send({
-          from: "Medical Masters <no-reply@cirugiaesteticauribe.com>",
+          from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <no-reply@medical-masters.com>",
           to: [profile.email],
           subject,
           html,

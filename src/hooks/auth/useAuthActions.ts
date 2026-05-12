@@ -65,7 +65,7 @@ export function useAuthActions(
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: 'https://cirugiaesteticauribe.com/email-confirmed',
+          emailRedirectTo: 'https://medical-masters.com/email-confirmed',
           data: {
             name: data.name,
             role: data.role,

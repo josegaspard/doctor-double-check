@@ -22,7 +22,6 @@ interface WalletContextType {
   balance: number;
   transactions: Transaction[];
   isLoading: boolean;
-  topUp: (amount: number) => Promise<{ success: boolean; error?: string }>;
   purchase: (amount: number, description: string, metadata?: any) => Promise<{ success: boolean; error?: string }>;
   canAfford: (amount: number) => boolean;
   getEffectivePrice: (amount: number) => number;
@@ -156,34 +155,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     await refreshUser();
   };
 
-  const topUp = async (amount: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.id) return { success: false, error: tContext('contextErrors.notAuthenticated') };
-    if (amount <= 0) return { success: false, error: tContext('contextErrors.invalidAmount') };
-
-    setIsLoading(true);
-    try {
-      // Use secure server-side function for wallet operations
-      const { data, error } = await supabase.rpc('process_wallet_topup', {
-        p_amount: amount,
-      });
-
-      if (error) throw error;
-      
-      const result = data as { success: boolean; error?: string; new_balance?: number };
-      
-      if (!result.success) {
-        setIsLoading(false);
-        return { success: false, error: result.error || tContext('contextErrors.topUpError') };
-      }
-
-      await refreshWallet();
-      setIsLoading(false);
-      return { success: true };
-    } catch (error: any) {
-      setIsLoading(false);
-      return { success: false, error: error.message || tContext('contextErrors.topUpError') };
-    }
-  };
+  // SECURITY (2026-05-11): direct wallet top-up via RPC removed. All top-ups
+  // must go through Stripe checkout → stripe-webhook → credit_wallet_balance
+  // (service-role only). The old RPC was reachable by any logged-in user.
 
   const purchase = async (
     amount: number,
@@ -241,7 +215,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         balance,
         transactions,
         isLoading,
-        topUp,
         purchase,
         canAfford,
         getEffectivePrice,
@@ -258,7 +231,6 @@ const WALLET_DEFAULTS: WalletContextType = {
   balance: 0,
   transactions: [],
   isLoading: false,
-  topUp: async () => ({ success: false, error: 'Context not ready' }),
   purchase: async () => ({ success: false, error: 'Context not ready' }),
   canAfford: () => false,
   getEffectivePrice: (a: number) => a,
