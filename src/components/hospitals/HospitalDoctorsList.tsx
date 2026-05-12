@@ -63,7 +63,27 @@ export default function HospitalDoctorsList({
         let docs: any[] = [];
         let fallback = false;
 
-        if (specialties && specialties.length > 0) {
+        // 1) Explicit assignments via hospital_doctors pivot (admin-managed)
+        const { data: pivot } = await supabase
+          .from('hospital_doctors')
+          .select('doctor_id, is_primary, sort_order')
+          .eq('hospital_id', hospitalId)
+          .order('is_primary', { ascending: false })
+          .order('sort_order', { ascending: true });
+
+        const pivotIds = ((pivot as any[]) || []).map((p) => p.doctor_id);
+        if (pivotIds.length > 0) {
+          const { data } = await supabase
+            .from('doctor_profiles')
+            .select('id, user_id, specialty, rating, total_consultations, location, office_hours_start, office_hours_end, office_days')
+            .eq('status', 'approved')
+            .in('id', pivotIds);
+          const orderIndex: Record<string, number> = {};
+          pivotIds.forEach((id, i) => { orderIndex[id] = i; });
+          docs = ((data as any[]) || []).slice().sort((a, b) => (orderIndex[a.id] ?? 999) - (orderIndex[b.id] ?? 999));
+        }
+
+        if (docs.length === 0 && specialties && specialties.length > 0) {
           const { data } = await supabase
             .from('doctor_profiles')
             .select('id, user_id, specialty, rating, total_consultations, location, office_hours_start, office_hours_end, office_days')

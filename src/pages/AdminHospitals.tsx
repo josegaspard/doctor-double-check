@@ -14,7 +14,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, Building2, Star, MapPin, Phone, Globe, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Building2, Star, MapPin, Phone, Globe, Loader2, Stethoscope, Check } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Hospital {
   id: string;
@@ -52,6 +54,15 @@ export default function AdminHospitals() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyHospital);
   const [saving, setSaving] = useState(false);
+
+  // Doctor assignment modal state
+  const [docsDialogHospital, setDocsDialogHospital] = useState<Hospital | null>(null);
+  const [allDoctors, setAllDoctors] = useState<any[]>([]);
+  const [assignedIds, setAssignedIds] = useState<Set<string>>(new Set());
+  const [primaryIds, setPrimaryIds] = useState<Set<string>>(new Set());
+  const [docsSearch, setDocsSearch] = useState('');
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [docsSaving, setDocsSaving] = useState(false);
 
   useEffect(() => {
     if (role && role !== 'admin') { navigate('/'); }
@@ -110,6 +121,81 @@ export default function AdminHospitals() {
     await supabase.from('hospitals').update({ is_active: !active } as any).eq('id', id);
     fetchHospitals();
   };
+
+  const openDoctorsDialog = async (h: Hospital) => {
+    setDocsDialogHospital(h);
+    setDocsSearch('');
+    setDocsLoading(true);
+    const [{ data: docs }, { data: profs }, { data: assigned }] = await Promise.all([
+      supabase.from('doctor_profiles').select('id, user_id, specialty, rating, status').eq('status', 'approved').order('rating', { ascending: false }),
+      supabase.from('profiles').select('id, name, avatar_url'),
+      supabase.from('hospital_doctors').select('doctor_id, is_primary').eq('hospital_id', h.id),
+    ]);
+    const profMap: Record<string, any> = {};
+    (profs || []).forEach((p: any) => { profMap[p.id] = p; });
+    const merged = (docs || []).map((d: any) => ({
+      ...d,
+      name: profMap[d.user_id]?.name || null,
+      avatar_url: profMap[d.user_id]?.avatar_url || null,
+    }));
+    setAllDoctors(merged);
+    setAssignedIds(new Set(((assigned as any[]) || []).map((a) => a.doctor_id)));
+    setPrimaryIds(new Set(((assigned as any[]) || []).filter((a) => a.is_primary).map((a) => a.doctor_id)));
+    setDocsLoading(false);
+  };
+
+  const toggleAssign = (doctorId: string) => {
+    setAssignedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(doctorId)) { next.delete(doctorId); setPrimaryIds((p) => { const q = new Set(p); q.delete(doctorId); return q; }); }
+      else next.add(doctorId);
+      return next;
+    });
+  };
+
+  const togglePrimary = (doctorId: string) => {
+    setPrimaryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(doctorId)) next.delete(doctorId);
+      else { next.add(doctorId); setAssignedIds((a) => new Set(a).add(doctorId)); }
+      return next;
+    });
+  };
+
+  const saveDoctorAssignments = async () => {
+    if (!docsDialogHospital) return;
+    setDocsSaving(true);
+    const hospitalId = docsDialogHospital.id;
+    const { data: existing } = await supabase.from('hospital_doctors').select('doctor_id').eq('hospital_id', hospitalId);
+    const existingIds = new Set(((existing as any[]) || []).map((e) => e.doctor_id));
+    const toAdd = [...assignedIds].filter((id) => !existingIds.has(id));
+    const toRemove = [...existingIds].filter((id) => !assignedIds.has(id));
+
+    if (toRemove.length > 0) {
+      await supabase.from('hospital_doctors').delete().eq('hospital_id', hospitalId).in('doctor_id', toRemove);
+    }
+    if (toAdd.length > 0) {
+      const rows = toAdd.map((doctor_id, i) => ({
+        hospital_id: hospitalId, doctor_id, is_primary: primaryIds.has(doctor_id), sort_order: i,
+      }));
+      await supabase.from('hospital_doctors').insert(rows as any);
+    }
+    // Sync is_primary flag for already-present rows
+    const stillAssigned = [...assignedIds].filter((id) => existingIds.has(id));
+    for (const id of stillAssigned) {
+      await supabase.from('hospital_doctors').update({ is_primary: primaryIds.has(id) } as any).eq('hospital_id', hospitalId).eq('doctor_id', id);
+    }
+
+    toast.success(es ? 'Doctores actualizados' : 'Doctors updated');
+    setDocsSaving(false);
+    setDocsDialogHospital(null);
+  };
+
+  const filteredDocs = allDoctors.filter((d) => {
+    if (!docsSearch) return true;
+    const q = docsSearch.toLowerCase();
+    return (d.name || '').toLowerCase().includes(q) || (d.specialty || '').toLowerCase().includes(q);
+  });
 
   const filtered = hospitals.filter(h => {
     if (filterType !== 'all' && h.type !== filterType) return false;
@@ -182,6 +268,10 @@ export default function AdminHospitals() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
+                    <Button variant="ghost" size="sm" className="gap-1.5 h-8 px-2" onClick={() => openDoctorsDialog(h)} title={es ? 'Doctores' : 'Doctors'}>
+                      <Stethoscope className="w-4 h-4" />
+                      <span className="hidden sm:inline text-xs">{es ? 'Doctores' : 'Doctors'}</span>
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => openEdit(h)}><Pencil className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => toggleActive(h.id, h.is_active)}>
                       <span className={`w-2 h-2 rounded-full ${h.is_active ? 'bg-green-500' : 'bg-muted-foreground'}`} />
@@ -237,6 +327,95 @@ export default function AdminHospitals() {
               <Button onClick={handleSave} disabled={saving} className="w-full">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingId ? (es ? 'Guardar Cambios' : 'Save Changes') : (es ? 'Crear Hospital' : 'Create Hospital'))}
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!docsDialogHospital} onOpenChange={(open) => !open && setDocsDialogHospital(null)}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Stethoscope className="w-5 h-5 text-primary" />
+                {es ? 'Doctores en' : 'Doctors at'} {docsDialogHospital?.name}
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground">
+                {es
+                  ? 'Asigna los médicos que atienden en esta clínica. Marca como principal a los destacados.'
+                  : 'Assign doctors who practice at this clinic. Mark featured ones as primary.'}
+              </p>
+            </DialogHeader>
+
+            <div className="relative mb-2 flex-shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder={es ? 'Buscar por nombre o especialidad...' : 'Search by name or specialty...'}
+                value={docsSearch}
+                onChange={(e) => setDocsSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <div className="flex-1 overflow-y-auto -mx-1 px-1 space-y-1">
+              {docsLoading ? (
+                <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+              ) : filteredDocs.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-8">{es ? 'Sin doctores aprobados' : 'No approved doctors'}</p>
+              ) : (
+                filteredDocs.map((d: any) => {
+                  const assigned = assignedIds.has(d.id);
+                  const primary = primaryIds.has(d.id);
+                  return (
+                    <div
+                      key={d.id}
+                      className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors ${
+                        assigned ? 'border-primary/40 bg-primary/5' : 'border-border bg-card hover:bg-muted/40'
+                      }`}
+                    >
+                      <Checkbox checked={assigned} onCheckedChange={() => toggleAssign(d.id)} />
+                      <Avatar className="w-9 h-9 border border-border">
+                        <AvatarImage src={d.avatar_url || undefined} alt={d.name || 'Doctor'} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                          {(d.name || 'Dr').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{d.name ? `Dr. ${d.name}` : (es ? 'Médico' : 'Doctor')}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {d.specialty}
+                          {Number(d.rating) > 0 && (
+                            <span className="inline-flex items-center gap-0.5 ml-2">
+                              <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                              {Number(d.rating).toFixed(1)}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <Button
+                        variant={primary ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-7 text-[11px] gap-1"
+                        onClick={() => togglePrimary(d.id)}
+                        disabled={!assigned && !primary}
+                      >
+                        {primary && <Check className="w-3 h-3" />}
+                        {es ? 'Principal' : 'Primary'}
+                      </Button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-3 mt-2 border-t flex-shrink-0">
+              <p className="text-xs text-muted-foreground">
+                {assignedIds.size} {es ? 'seleccionados' : 'selected'}
+              </p>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => setDocsDialogHospital(null)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+                <Button onClick={saveDoctorAssignments} disabled={docsSaving}>
+                  {docsSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : (es ? 'Guardar' : 'Save')}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

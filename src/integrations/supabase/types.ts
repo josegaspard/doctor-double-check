@@ -1945,6 +1945,51 @@ export type Database = {
         }
         Relationships: []
       }
+      hospital_doctors: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          hospital_id: string
+          id: string
+          is_primary: boolean
+          position: string | null
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          hospital_id: string
+          id?: string
+          is_primary?: boolean
+          position?: string | null
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          hospital_id?: string
+          id?: string
+          is_primary?: boolean
+          position?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_doctors_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospital_doctors_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hospital_reviews: {
         Row: {
           comment: string | null
