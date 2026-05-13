@@ -47,5 +47,15 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Medical Masters necesita acceso a tu cámara para videoconsultas con tu médico y para grabaciones de contenido educativo.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Medical Masters necesita acceso al micrófono para que puedas hablar con tu médico durante las consultas por video y para mensajes de voz.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Medical Masters necesita acceso a tus fotos para que puedas adjuntar imágenes médicas (radiografías, estudios, recetas) en tu expediente clínico.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Medical Masters guarda recetas digitales y reportes médicos en tu galería cuando lo solicitas.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Medical Masters usa tu ubicación para mostrarte hospitales y médicos cercanos.</string>
 </dict>
 </plist>

@@ -16,6 +16,7 @@ export function IncomingCallProvider({ children }: { children: React.ReactNode }
           doctorSpecialty={incomingCall.doctorSpecialty}
           doctorAvatar={incomingCall.doctorAvatar}
           consultationId={incomingCall.consultationId}
+          doctorId={incomingCall.doctorId}
         />
       )}
     </>

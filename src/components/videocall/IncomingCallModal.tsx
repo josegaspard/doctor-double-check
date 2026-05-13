@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Phone, PhoneOff, Stethoscope } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 interface IncomingCallModalProps {
   open: boolean;
@@ -13,6 +14,7 @@ interface IncomingCallModalProps {
   doctorSpecialty?: string;
   doctorAvatar?: string;
   consultationId: string;
+  doctorId?: string;
 }
 
 // Generate a ringtone using Web Audio API
@@ -65,10 +67,32 @@ export function IncomingCallModal({
   doctorSpecialty,
   doctorAvatar,
   consultationId,
+  doctorId,
 }: IncomingCallModalProps) {
   const navigate = useNavigate();
   const [ringCount, setRingCount] = useState(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
+
+  // Notify the doctor that the patient rejected / didn't answer so their UI can stop waiting.
+  const notifyDoctorRejection = useCallback(
+    (reason: 'rejected' | 'no_answer') => {
+      if (!doctorId) return;
+      supabase
+        .channel(`call-status-${doctorId}`)
+        .send({
+          type: 'broadcast',
+          event: 'call_rejected',
+          payload: { consultationId, reason },
+        })
+        .catch((e) => console.warn('call_rejected broadcast failed', e));
+    },
+    [doctorId, consultationId],
+  );
+
+  const handleReject = useCallback(() => {
+    notifyDoctorRejection('rejected');
+    onClose();
+  }, [notifyDoctorRejection, onClose]);
 
   // Ringtone sound
   useEffect(() => {
@@ -84,12 +108,15 @@ export function IncomingCallModal({
     return () => clearInterval(interval);
   }, [open]);
 
-  // Auto-dismiss after 60 seconds
+  // Auto-dismiss after 60 seconds — broadcast 'no_answer' to doctor before closing
   useEffect(() => {
     if (!open) return;
-    const timeout = setTimeout(onClose, 60000);
+    const timeout = setTimeout(() => {
+      notifyDoctorRejection('no_answer');
+      onClose();
+    }, 60000);
     return () => clearTimeout(timeout);
-  }, [open, onClose]);
+  }, [open, onClose, notifyDoctorRejection]);
 
   // Vibrate on mobile
   useEffect(() => {
@@ -110,7 +137,7 @@ export function IncomingCallModal({
     name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(o) => !o && handleReject()}>
       <DialogContent className="sm:max-w-sm w-[calc(100vw-2rem)] p-0 overflow-hidden border-0 rounded-3xl bg-gradient-to-b from-[hsl(220,40%,13%)] to-[hsl(220,40%,8%)] text-white shadow-2xl shadow-black/50 [&>button]:text-white/70 [&>button:hover]:text-white">
         <div className="flex flex-col items-center py-8 sm:py-10 px-6">
           {/* Pulsing ring effect */}
@@ -155,7 +182,7 @@ export function IncomingCallModal({
               <Button
                 size="lg"
                 className="rounded-full w-16 h-16 sm:w-18 sm:h-18 bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/40 border-0 active:scale-95 transition-transform"
-                onClick={onClose}
+                onClick={handleReject}
               >
                 <PhoneOff className="w-7 h-7 text-white" />
               </Button>

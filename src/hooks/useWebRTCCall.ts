@@ -275,6 +275,30 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     }
   }, [isScreenSharing]);
 
+  // Cycle front/back camera on devices that support it (mobile, mostly).
+  const switchCamera = useCallback(async () => {
+    const co: any = callObjectRef.current;
+    if (!co) return;
+    try {
+      if (typeof co.cycleCamera === 'function') {
+        await co.cycleCamera();
+        return;
+      }
+      // Fallback: enumerate devices and pick the other camera
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter((d) => d.kind === 'videoinput');
+      if (cameras.length < 2) return;
+      const current = await co.getInputDevices?.();
+      const currentId = current?.camera?.deviceId;
+      const other = cameras.find((c) => c.deviceId !== currentId);
+      if (other) {
+        await co.setInputDevicesAsync({ videoDeviceId: other.deviceId });
+      }
+    } catch (e) {
+      console.warn('[Daily] camera switch failed:', e);
+    }
+  }, []);
+
   return {
     callState,
     localStream: null as MediaStream | null,
@@ -289,6 +313,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
     toggleMute,
     toggleCamera,
     toggleScreenShare,
+    switchCamera,
     callObject,
   };
 }

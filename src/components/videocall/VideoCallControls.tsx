@@ -11,6 +11,7 @@ import {
   MonitorOff,
   MessageSquare,
   Clock,
+  RefreshCw,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -25,6 +26,7 @@ interface VideoCallControlsProps {
   onToggleScreenShare: () => void;
   onToggleChat: () => void;
   onEndCall: () => void;
+  onSwitchCamera?: () => void;
   showChat: boolean;
   isDoctor?: boolean;
 }
@@ -39,6 +41,7 @@ export function VideoCallControls({
   onToggleScreenShare,
   onToggleChat,
   onEndCall,
+  onSwitchCamera,
   showChat,
   isDoctor = false,
 }: VideoCallControlsProps) {
@@ -92,6 +95,19 @@ export function VideoCallControls({
         >
           {isCameraOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
         </Button>
+
+        {/* Switch camera — mobile only */}
+        {isMobile && onSwitchCamera && !isCameraOff && (
+          <Button
+            variant="ghost"
+            size="lg"
+            className="rounded-full w-11 h-11 sm:w-14 sm:h-14 bg-white/20 hover:bg-white/30 text-white"
+            onClick={onSwitchCamera}
+            title="Cambiar cámara"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </Button>
+        )}
 
         {/* Screen Share — only for doctors on desktop */}
         {isDoctor && !isMobile && (

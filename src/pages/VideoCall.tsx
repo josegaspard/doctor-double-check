@@ -197,7 +197,7 @@ export default function VideoCall() {
     callState,
     isMuted, isCameraOff, isScreenSharing,
     startCall, joinCall, endCall, resetCall,
-    toggleMute, toggleCamera, toggleScreenShare,
+    toggleMute, toggleCamera, toggleScreenShare, switchCamera,
     callObject,
   } = useWebRTCCall(consultationId, user?.id || null);
 
@@ -317,8 +317,37 @@ export default function VideoCall() {
     if (timer.isNearEnd && timer.timeRemaining === 300) toast.warning(t('videoCall.fiveMinWarning'));
   }, [timer.isNearEnd, timer.timeRemaining]);
 
+  const [permissionError, setPermissionError] = useState<null | 'denied' | 'no_devices'>(null);
+
+  // Probe camera+mic permissions BEFORE we hit Daily.co so we can show the user
+  // a helpful message ("enable in browser settings") instead of a generic error.
+  const probePermissions = useCallback(async (): Promise<boolean> => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      // Release tracks immediately — Daily will request its own.
+      stream.getTracks().forEach((t) => t.stop());
+      setPermissionError(null);
+      return true;
+    } catch (e: any) {
+      const name = e?.name || '';
+      if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
+        setPermissionError('denied');
+      } else if (name === 'NotFoundError' || name === 'OverconstrainedError' || name === 'DevicesNotFoundError') {
+        setPermissionError('no_devices');
+      } else {
+        setPermissionError('denied'); // generic fallback — still actionable
+      }
+      console.warn('[VideoCall] permission probe failed', e);
+      return false;
+    }
+  }, []);
+
   const handleStart = useCallback(async () => {
     if (!consultationId || !user?.id || callState !== 'idle') return;
+
+    // Permission gate: surface a clear modal rather than silent failure.
+    const ok = await probePermissions();
+    if (!ok) return;
 
     if (isDoctor) {
       const { data: consultation } = await supabase
@@ -341,6 +370,7 @@ export default function VideoCall() {
           message: `${user.name} ${t('videoCall.withParticipant')}`,
           data: {
             consultationId,
+            doctorId: user.id,
             doctorName: user.name,
             doctorSpecialty: doctorProfile?.specialty,
             doctorAvatar: user.avatarUrl,
@@ -352,6 +382,7 @@ export default function VideoCall() {
           event: 'incoming_call',
           payload: {
             consultationId,
+            doctorId: user.id,
             doctorName: user.name,
             doctorSpecialty: doctorProfile?.specialty,
             doctorAvatar: user.avatarUrl,
@@ -397,6 +428,31 @@ export default function VideoCall() {
       handleStart();
     }
   }, [autoJoin, callState, consultationId, handleStart]);
+
+  // Doctor side: listen for patient rejection / no-answer so we stop waiting and notify the doctor.
+  useEffect(() => {
+    if (!isDoctor || !user?.id) return;
+    const channel = supabase
+      .channel(`call-status-${user.id}`)
+      .on('broadcast', { event: 'call_rejected' }, (payload) => {
+        const data = payload?.payload as { consultationId?: string; reason?: string } | undefined;
+        if (!data || data.consultationId !== consultationId) return;
+        // Stop the waiting state on the doctor side
+        try { endCall(); } catch (_) {}
+        timer.stop();
+        if (data.reason === 'no_answer') {
+          toast.warning('El paciente no contestó la videollamada. Le enviamos un correo para que vea tu intento de llamada.');
+          // Fire-and-forget email + push notification to the patient
+          supabase.functions.invoke('send-missed-call-email', {
+            body: { consultationId },
+          }).catch((e) => console.warn('missed-call email failed', e));
+        } else {
+          toast.info('El paciente rechazó la videollamada.');
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isDoctor, user?.id, consultationId, endCall, timer]);
 
   if (!consultationId) {
     return (
@@ -449,6 +505,7 @@ export default function VideoCall() {
             onToggleScreenShare={toggleScreenShare}
             onToggleChat={() => setShowChat(!showChat)}
             onEndCall={handleEndCall}
+            onSwitchCamera={switchCamera}
             showChat={showChat}
             isDoctor={isDoctor}
           />
@@ -560,6 +617,7 @@ export default function VideoCall() {
                     onToggleScreenShare={toggleScreenShare}
                     onToggleChat={() => setShowChat(!showChat)}
                     onEndCall={handleEndCall}
+                    onSwitchCamera={switchCamera}
                     showChat={showChat}
                     isDoctor={isDoctor}
                   />
@@ -607,6 +665,33 @@ export default function VideoCall() {
                   No se pudo establecer la conexión. Verifica tu cámara/micrófono e intenta de nuevo.
                 </p>
                 <Button onClick={() => resetCall()}>Reintentar</Button>
+              </div>
+            )}
+
+            {permissionError && (
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-gradient-to-b from-muted/30 to-background">
+                <div className="w-20 h-20 rounded-full bg-amber-500/10 flex items-center justify-center mb-6">
+                  <AlertTriangle className="w-10 h-10 text-amber-500" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground mb-2">
+                  {permissionError === 'denied' ? 'Necesitamos acceso a tu cámara y micrófono' : 'No detectamos cámara o micrófono'}
+                </h2>
+                <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                  {permissionError === 'denied' ? (
+                    <>
+                      Tu navegador está bloqueando el acceso. Habilita los permisos desde el ícono <strong>candado</strong> en la barra
+                      de direcciones (Chrome/Edge/Brave) o ajustes del sitio (Safari) y vuelve a intentar.
+                    </>
+                  ) : (
+                    <>
+                      Conecta una cámara y micrófono o, si estás en móvil, asegúrate de haber concedido los permisos del sistema operativo a esta app/navegador.
+                    </>
+                  )}
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => { setPermissionError(null); navigate(-1); }}>Volver al chat</Button>
+                  <Button onClick={async () => { setPermissionError(null); await handleStart(); }}>Reintentar</Button>
+                </div>
               </div>
             )}
           </CardContent>

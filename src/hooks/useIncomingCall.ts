@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface IncomingCallData {
   consultationId: string;
+  doctorId: string;
   doctorName: string;
   doctorSpecialty?: string;
   doctorAvatar?: string;
@@ -64,6 +65,7 @@ export function useIncomingCall() {
             if (consultationId && !dismissedRef.current.has(consultationId)) {
               setIncomingCall({
                 consultationId,
+                doctorId: notification.data?.doctorId || '',
                 doctorName: notification.data?.doctorName || 'Doctor',
                 doctorSpecialty: notification.data?.doctorSpecialty,
                 doctorAvatar: notification.data?.doctorAvatar,
