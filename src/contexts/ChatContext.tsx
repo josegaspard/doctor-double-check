@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { tContext } from '@/lib/i18n-context';
+import { formatMessagePreview } from '@/lib/utils';
 
 export type ChatParticipantType = 'patient' | 'doctor' | 'resident';
 export type ChatStatus = 'active' | 'closed';
@@ -430,48 +431,100 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Pintamos un mensaje optimista de inmediato con un id temporal para que
+    // el remitente vea su mensaje sin esperar el round-trip a Supabase.
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const optimistic = {
+      id: tempId,
+      sessionId,
+      senderId: user.id,
+      senderName: user.name,
+      content: trimmed,
+      isRead: false,
+      createdAt: new Date(),
+      replyToId: replyToId || undefined,
+    };
+    setMessages(prev => ({
+      ...prev,
+      [sessionId]: [...(prev[sessionId] || []), optimistic],
+    }));
+
     try {
-      await supabase
+      // INSERT y traemos la fila final → reemplazamos el optimistic con la real.
+      const { data: inserted, error: insertError } = await supabase
         .from('chat_messages')
         .insert({
           session_id: sessionId,
           sender_id: user.id,
           content: trimmed,
           reply_to_id: replyToId || null,
-        } as any);
+        } as any)
+        .select('id, created_at, is_read')
+        .single();
 
-      // Update session last message — preview limpio (📷 Foto / 📎 Archivo / 📋 Receta) en lugar de [Imagen: ...]
-      const { formatMessagePreview } = await import('@/lib/utils');
-      const previewMessage = formatMessagePreview(trimmed, 100);
+      if (insertError) throw insertError;
+
+      if (inserted) {
+        setMessages(prev => {
+          const existing = prev[sessionId] || [];
+          // Si realtime ya entregó el mensaje real, descartamos el optimistic.
+          if (existing.some(m => m.id === (inserted as any).id)) {
+            return { ...prev, [sessionId]: existing.filter(m => m.id !== tempId) };
+          }
+          return {
+            ...prev,
+            [sessionId]: existing.map(m =>
+              m.id === tempId
+                ? {
+                    ...m,
+                    id: (inserted as any).id as string,
+                    createdAt: new Date((inserted as any).created_at as string),
+                    isRead: !!(inserted as any).is_read,
+                  }
+                : m
+            ),
+          };
+        });
+      }
+
+      // Metadata del session: fire-and-forget. El usuario no necesita esperar
+      // esto para ver su mensaje; el sidebar se actualiza por realtime/fetch.
       const session = sessions.find(s => s.id === sessionId);
       if (session) {
         const isParticipant1 = session.participant1Id === user.id;
-        
-        // Get current unread counts from DB to ensure accuracy
-        const { data: currentSession } = await supabase
-          .from('chat_sessions')
-          .select('unread_count_1, unread_count_2')
-          .eq('id', sessionId)
-          .single();
-        
-        const unread1 = currentSession?.unread_count_1 || 0;
-        const unread2 = currentSession?.unread_count_2 || 0;
-        
-        await supabase
-          .from('chat_sessions')
-          .update({
-            last_message: previewMessage,
-            last_message_at: new Date().toISOString(),
-            // Increment the OTHER participant's unread count
-            ...(isParticipant1 
-              ? { unread_count_2: unread2 + 1 }
-              : { unread_count_1: unread1 + 1 }
-            ),
-          })
-          .eq('id', sessionId);
+        const previewMessage = formatMessagePreview(trimmed, 100);
+        void (async () => {
+          try {
+            const { data: currentSession } = await supabase
+              .from('chat_sessions')
+              .select('unread_count_1, unread_count_2')
+              .eq('id', sessionId)
+              .single();
+            const unread1 = currentSession?.unread_count_1 || 0;
+            const unread2 = currentSession?.unread_count_2 || 0;
+            await supabase
+              .from('chat_sessions')
+              .update({
+                last_message: previewMessage,
+                last_message_at: new Date().toISOString(),
+                ...(isParticipant1
+                  ? { unread_count_2: unread2 + 1 }
+                  : { unread_count_1: unread1 + 1 }
+                ),
+              })
+              .eq('id', sessionId);
+          } catch (err) {
+            console.error('Error updating chat_sessions metadata:', err);
+          }
+        })();
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      // Rollback del mensaje optimista si el INSERT falló
+      setMessages(prev => ({
+        ...prev,
+        [sessionId]: (prev[sessionId] || []).filter(m => m.id !== tempId),
+      }));
     }
   };
 

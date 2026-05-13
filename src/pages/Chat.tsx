@@ -224,11 +224,13 @@ export default function Chat() {
 
   useEffect(() => { setSelectedSession(null); }, [activeTab]);
 
-  const handleSend = async (replyToId?: string) => {
+  const handleSend = (replyToId?: string) => {
     if (!newMessage.trim() || !selectedSession || isSessionClosed) return;
-    await sendMessage(selectedSession, newMessage.trim(), replyToId);
+    const content = newMessage.trim();
+    // Limpiamos input + typing AL INSTANTE; sendMessage hace render optimista.
     setNewMessage('');
     setIsTyping(false);
+    void sendMessage(selectedSession, content, replyToId);
   };
 
   const handleCloseSession = async () => {

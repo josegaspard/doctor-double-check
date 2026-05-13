@@ -130,18 +130,9 @@ export function ChatSessionItem({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0">
-              {canOpenDoctorProfile ? (
-                <button
-                  type="button"
-                  onClick={onDoctorProfileClick}
-                  className="font-semibold text-sm truncate text-left hover:text-primary transition-colors focus:outline-none"
-                  title={t('common.viewProfile')}
-                >
-                  {displayInfo.name}
-                </button>
-              ) : (
-                <p className="font-semibold text-sm truncate">{displayInfo.name}</p>
-              )}
+              {/* Nombre del doctor en sidebar: NO clickeable.
+                  Acceso al perfil sólo desde el header del chat (ChatHeader). */}
+              <p className="font-semibold text-sm truncate">{displayInfo.name}</p>
               {session.isDoubleCheck && (
                 <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 gap-0.5 flex-shrink-0">
                   <CheckCheck className="w-3 h-3" />
