@@ -16,11 +16,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const authContext = useContext(AuthContext);
   const supabaseUser = authContext?.supabaseUser ?? null;
   const [language, setLanguageState] = useState<SupportedLanguage>(() => {
-    // Check cached preference first
     const cached = typeof window !== 'undefined' ? localStorage.getItem('preferred_language') : null;
-    if (cached === 'es' || cached === 'en') return cached;
+    if (cached === 'es' || cached === 'en' || cached === 'pt' || cached === 'fr') return cached;
     // Auto-detect from browser language
-    if (typeof navigator !== 'undefined' && navigator.language?.startsWith('en')) return 'en';
+    if (typeof navigator !== 'undefined') {
+      const l = navigator.language?.slice(0, 2).toLowerCase();
+      if (l === 'en' || l === 'pt' || l === 'fr') return l as SupportedLanguage;
+    }
     return 'es';
   });
 
@@ -29,8 +31,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const loadLanguage = async () => {
       // First check localStorage for cached preference
       const cached = localStorage.getItem('preferred_language');
-      if (cached === 'es' || cached === 'en') {
-        setLanguageState(cached);
+      if (cached === 'es' || cached === 'en' || cached === 'pt' || cached === 'fr') {
+        setLanguageState(cached as SupportedLanguage);
       }
 
       // If user is logged in, fetch from database

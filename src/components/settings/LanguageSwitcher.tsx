@@ -34,7 +34,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   const { language, setLanguage, t } = useLanguage();
   const [open, setOpen] = useState(false);
 
-  const handleSelect = (lang: 'es' | 'en') => {
+  const handleSelect = (lang: 'es' | 'en' | 'pt' | 'fr') => {
     setLanguage(lang);
     setOpen(false);
   };
@@ -53,13 +53,23 @@ export function LanguageSwitcher({ className }: { className?: string }) {
       <PopoverContent align="end" className="w-48 p-1.5">
         <LanguageOption
           selected={language === 'es'}
-          label={`🇪🇸 ${t('settings.spanish')}`}
+          label={`🇪🇸 ${t('settings.spanish') || 'Español'}`}
           onClick={() => handleSelect('es')}
         />
         <LanguageOption
           selected={language === 'en'}
-          label={`🇺🇸 ${t('settings.english')}`}
+          label={`🇺🇸 ${t('settings.english') || 'English'}`}
           onClick={() => handleSelect('en')}
+        />
+        <LanguageOption
+          selected={language === 'pt'}
+          label={`🇧🇷 Português`}
+          onClick={() => handleSelect('pt')}
+        />
+        <LanguageOption
+          selected={language === 'fr'}
+          label={`🇫🇷 Français`}
+          onClick={() => handleSelect('fr')}
         />
       </PopoverContent>
     </Popover>
