@@ -1062,6 +1062,30 @@ async function handleMarketplacePurchase(db: ReturnType<typeof supabaseAdmin>, s
     }
   }
 
+  // Notify admins of the new purchase (non-blocking)
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    await fetch(`${supabaseUrl}/functions/v1/notify-admin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+      body: JSON.stringify({
+        type: "new_purchase",
+        data: {
+          buyerEmail: buyer?.email || "—",
+          buyerName: buyer?.name || "Usuario",
+          productName: product?.name || "Producto",
+          amount: totalAmount,
+          currency: "MXN",
+          orderId: order?.id,
+        },
+      }),
+    });
+    logStep("Admin notified of new purchase", { orderId: order?.id });
+  } catch (e) {
+    logStep("Error notifying admin of purchase (non-critical)", { error: e instanceof Error ? e.message : e });
+  }
+
   logStep("Marketplace purchase completed", { buyerId, productId, orderId: order?.id });
 }
 

@@ -638,7 +638,7 @@ export default function Onboarding() {
       // Refresh user data
       await refreshUser();
 
-      // Send welcome email
+      // Send welcome email + admin notification for doctor/resident pending review
       try {
         const { data: profileData } = await supabase
           .from('profiles')
@@ -654,9 +654,37 @@ export default function Onboarding() {
               role: selectedRole,
             },
           });
+
+          // Notify admins about new doctor/resident signups (patients don't need admin review)
+          if (selectedRole === 'doctor') {
+            await supabase.functions.invoke('notify-admin', {
+              body: {
+                type: 'doctor_signup',
+                data: {
+                  userName: profileData.name,
+                  userEmail: profileData.email,
+                  specialty,
+                  license,
+                },
+              },
+            });
+          } else if (selectedRole === 'resident') {
+            await supabase.functions.invoke('notify-admin', {
+              body: {
+                type: 'resident_signup',
+                data: {
+                  userName: profileData.name,
+                  userEmail: profileData.email,
+                  institution,
+                  specialty,
+                  year,
+                },
+              },
+            });
+          }
         }
       } catch (emailErr) {
-        console.error('Welcome email error:', emailErr);
+        console.error('Welcome/admin email error:', emailErr);
         // Don't block onboarding for email failure
       }
 

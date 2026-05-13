@@ -81,7 +81,7 @@ export default function ReportIssue() {
     setIsSubmitting(true);
     try {
       const attachmentUrls = await uploadAttachments();
-      const { error } = await supabase.from('reports').insert({
+      const { data: inserted, error } = await supabase.from('reports').insert({
         reporter_id: user?.id || '00000000-0000-0000-0000-000000000000',
         content_type: 'platform_report',
         content_id: null,
@@ -90,9 +90,29 @@ export default function ReportIssue() {
         description: result.data.description,
         contact_email: result.data.contactEmail || null,
         attachment_urls: attachmentUrls.length > 0 ? attachmentUrls : null,
-      } as any);
+      } as any).select('id').single();
 
       if (error) throw error;
+
+      // Notify admins (non-blocking)
+      try {
+        await supabase.functions.invoke('notify-admin', {
+          body: {
+            type: 'new_report',
+            data: {
+              reporterEmail: (user as any)?.email || result.data.contactEmail || 'anónimo',
+              reporterName: (user as any)?.name || 'anónimo',
+              reportType: result.data.type,
+              contentType: 'platform_report',
+              description: `${result.data.subject}\n\n${result.data.description}`,
+              reportId: (inserted as any)?.id || 'unknown',
+            },
+          },
+        });
+      } catch (notifyErr) {
+        console.warn('admin notify failed (non-blocking)', notifyErr);
+      }
+
       setSubmitted(true);
     } catch (err) {
       console.error('Error submitting report:', err);

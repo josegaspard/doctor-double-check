@@ -8,7 +8,18 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Globe, Bell, Shield, CheckCircle, Mail, CreditCard, Loader2, ExternalLink, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, Globe, Bell, Shield, CheckCircle, Mail, CreditCard, Loader2, ExternalLink, Moon, Sun, Trash2, AlertTriangle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -28,6 +39,30 @@ export default function Settings() {
   const { preferences, updatePreferences } = useNotifications();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'ELIMINAR') {
+      toast.error('Escribe ELIMINAR para confirmar');
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-account', {
+        body: { confirmation: 'ELIMINAR' },
+      });
+      if (error) throw error;
+      await supabase.auth.signOut();
+      toast.success('Tu cuenta fue eliminada. Lamentamos verte partir.');
+      window.location.replace('/');
+    } catch (err: any) {
+      console.error('delete account failed', err);
+      toast.error(err?.message || 'No se pudo eliminar la cuenta. Intenta más tarde.');
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchVerification = async () => {
@@ -400,6 +435,73 @@ export default function Settings() {
 
           {/* Referral Program */}
           <ReferralProgram />
+
+          {/* Danger Zone — Account Deletion (Apple App Store + Google Play requirement) */}
+          <Card className="border-destructive/40 bg-destructive/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Eliminar mi cuenta
+              </CardTitle>
+              <CardDescription>
+                Esta acción es <strong>permanente</strong> e irreversible. Se eliminarán tu perfil,
+                expediente clínico, conversaciones, suscripciones, contenido publicado y todo registro
+                asociado. No podrás recuperarlo después.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="destructive"
+                className="gap-2"
+                onClick={() => { setDeleteConfirmText(''); setDeleteDialogOpen(true); }}
+              >
+                <Trash2 className="w-4 h-4" />
+                Eliminar mi cuenta permanentemente
+              </Button>
+            </CardContent>
+          </Card>
+
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="w-5 h-5" />
+                  ¿Eliminar tu cuenta?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                  <span className="block">
+                    Esta acción es <strong>irreversible</strong>. Perderás acceso permanente a:
+                  </span>
+                  <ul className="list-disc pl-5 text-sm space-y-1">
+                    <li>Tu expediente clínico y datos médicos</li>
+                    <li>Historial de consultas, chats y videollamadas</li>
+                    <li>Suscripciones activas (no se reembolsan automáticamente)</li>
+                    <li>Compras, wallet y contenido publicado</li>
+                  </ul>
+                  <span className="block pt-2">
+                    Escribe <code className="px-1 py-0.5 bg-muted rounded font-mono">ELIMINAR</code> abajo para confirmar.
+                  </span>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Input
+                placeholder="Escribe ELIMINAR"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                autoComplete="off"
+                disabled={isDeleting}
+              />
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmText !== 'ELIMINAR' || isDeleting}
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                >
+                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Eliminar permanentemente'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </MainLayout>
