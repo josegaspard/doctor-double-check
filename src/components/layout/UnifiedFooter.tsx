@@ -72,7 +72,7 @@ function SocialIcons({ socialLinks, className = '' }: { socialLinks: any; classN
           aria-label={key}
           className="group w-9 h-9 rounded-full border-2 border-white/70 bg-white/15 shadow-sm flex items-center justify-center hover:bg-white hover:border-white transition-colors"
         >
-          <Icon className="w-4 h-4 text-white group-hover:text-[#0b1d45]" />
+          <Icon className="w-4 h-4 text-white group-hover:text-[#163a83]" />
         </a>
       ))}
     </div>
@@ -119,7 +119,7 @@ export function UnifiedFooter({ variant }: Props) {
 
   if (variant === 'app') {
     return (
-      <footer className="bg-[#0b1d45] text-white pt-8 sm:pt-10 pb-24 sm:pb-6 mt-auto border-t-0">
+      <footer className="bg-[#163a83] text-white pt-8 sm:pt-10 pb-24 sm:pb-6 mt-auto border-t-0">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-6">
             <div className="col-span-2 md:col-span-1 flex flex-col items-start">
@@ -151,7 +151,7 @@ export function UnifiedFooter({ variant }: Props) {
   }
 
   return (
-    <footer className="bg-[#0b1d45] pt-12 sm:pt-20 pb-8 sm:pb-10 text-white border-t border-transparent text-sm">
+    <footer className="bg-[#163a83] pt-12 sm:pt-20 pb-8 sm:pb-10 text-white border-t border-transparent text-sm">
       <div className="container mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 sm:gap-10 mb-10 sm:mb-16">
           <div className="col-span-2">

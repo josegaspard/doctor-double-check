@@ -17,152 +17,165 @@
 
 @layer base {
   :root {
-    /* Primary - Deep Blue #163a83 */
-    --primary: 218 72% 30%;
+    /* ============================================================
+       MEDICAL MASTERS — BRANDBOOK 2026
+       PRIMARIOS: Blue Lagoon #00768B · Uranus #AED3D9
+       SECUNDARIOS: Metallic Blue #163A83 · Comfort Blue #839ED5
+       Lógica de contraste:
+         · BG/cards blancos → texto Metallic Blue (foreground)
+         · Acciones principales → Blue Lagoon (primary)
+         · Surfaces oscuras / chrome → Metallic Blue (dark)
+         · Acentos suaves / pills → Uranus, Comfort Blue
+       ============================================================ */
+
+    /* Primary — Blue Lagoon #00768B (color principal de marca) */
+    --primary: 189 100% 27%;
     --primary-foreground: 0 0% 100%;
-    
-    /* Secondary - Teal Blue #00768b */
-    --secondary: 188 100% 27%;
+
+    /* Secondary — Metallic Blue #163A83 (soporte profundo) */
+    --secondary: 220 71% 30%;
     --secondary-foreground: 0 0% 100%;
-    
-    /* Background - Pure white for better contrast */
+
+    /* Background — blanco puro para máximo contraste con tipografía Metallic Blue */
     --background: 0 0% 100%;
-    --foreground: 223 75% 16%;
-    
-    /* Cards - Surface #f8fafc for subtle distinction */
-    --card: 210 40% 98%;
-    --card-foreground: 223 75% 16%;
-    
+    --foreground: 220 71% 30%;
+
+    /* Cards — superficie casi blanca con tinte teal mínimo */
+    --card: 187 40% 98%;
+    --card-foreground: 220 71% 30%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 223 75% 16%;
-    
-    /* Muted - Light Cyan #aed3d9 at 20% for subtlety */
-    --muted: 187 35% 95%;
-    --muted-foreground: 223 40% 35%;
-    
-    /* Accent - Periwinkle #839ed5 */
-    --accent: 220 47% 68%;
+    --popover-foreground: 220 71% 30%;
+
+    /* Muted — Uranus diluido como fondo neutral suave */
+    --muted: 187 45% 95%;
+    --muted-foreground: 220 40% 38%;
+
+    /* Accent — Comfort Blue #839ED5 (acento periwinkle del brandbook) */
+    --accent: 220 50% 67%;
     --accent-foreground: 0 0% 100%;
-    
+
     /* Destructive */
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    
+
     /* Success */
     --success: 142 72% 42%;
     --success-foreground: 0 0% 100%;
-    
+
     /* Warning */
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    
-    /* Info - Teal Blue (same as secondary) */
-    --info: 188 100% 27%;
+
+    /* Info — Blue Lagoon (mismo tono que primary, mensajes informativos) */
+    --info: 189 100% 27%;
     --info-foreground: 0 0% 100%;
-    
+
     /* Premium gold */
     --premium: 45 93% 47%;
     --premium-foreground: 0 0% 10%;
-    
+
     /* Live indicator */
     --live: 0 84% 60%;
     --live-foreground: 0 0% 100%;
-    
-    /* Doctor verified - uses secondary teal */
-    --verified: 188 100% 27%;
+
+    /* Verified — Blue Lagoon (insignia médico verificado en color marca) */
+    --verified: 189 100% 27%;
     --verified-foreground: 0 0% 100%;
-    
-    /* Light cyan for subtle backgrounds #aed3d9 */
+
+    /* Light — Uranus #AED3D9 (tinte claro de marca para fondos sutiles) */
     --light: 187 35% 76%;
-    --light-foreground: 223 75% 16%;
-    
-    /* Dark - Night Blue #0b1d45 */
-    --dark: 223 75% 16%;
+    --light-foreground: 220 71% 30%;
+
+    /* Dark — Metallic Blue #163A83 (sustituye al antiguo Night Blue para chrome oscuro) */
+    --dark: 220 71% 30%;
     --dark-foreground: 0 0% 100%;
-    
-    /* Borders - softer for white backgrounds */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 218 72% 30%;
-    
+
+    /* Borders — Uranus diluido para bordes sutiles sobre fondos claros */
+    --border: 187 30% 88%;
+    --input: 187 30% 88%;
+    --ring: 189 100% 27%;
+
     --radius: 0.75rem;
-    
-    /* Sidebar */
+
+    /* Sidebar — surface blanca con acciones Blue Lagoon */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 223 75% 16%;
-    --sidebar-primary: 218 72% 30%;
+    --sidebar-foreground: 220 71% 30%;
+    --sidebar-primary: 189 100% 27%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 223 75% 16%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 218 72% 30%;
+    --sidebar-accent: 187 45% 96%;
+    --sidebar-accent-foreground: 220 71% 30%;
+    --sidebar-border: 187 30% 88%;
+    --sidebar-ring: 189 100% 27%;
   }
 
   .dark {
-    /* Primary - Deep Blue lighter for dark mode */
-    --primary: 218 65% 50%;
+    /* Dark mode con la misma paleta brandbook, sólo aclarados para legibilidad */
+
+    /* Primary — Blue Lagoon aclarado */
+    --primary: 189 70% 48%;
     --primary-foreground: 0 0% 100%;
-    
-    /* Secondary - Teal Blue lighter */
-    --secondary: 188 80% 35%;
+
+    /* Secondary — Metallic Blue aclarado */
+    --secondary: 220 60% 52%;
     --secondary-foreground: 0 0% 100%;
-    
-    /* Background - Night Blue #0b1d45 */
-    --background: 223 75% 8%;
-    --foreground: 187 35% 90%;
-    
-    --card: 223 70% 12%;
-    --card-foreground: 187 35% 90%;
-    
-    --popover: 223 70% 12%;
-    --popover-foreground: 187 35% 90%;
-    
-    --muted: 223 50% 18%;
-    --muted-foreground: 187 25% 60%;
-    
-    /* Accent - Periwinkle */
-    --accent: 220 47% 45%;
+
+    /* Background — Metallic Blue muy oscurecido */
+    --background: 220 71% 10%;
+    --foreground: 187 35% 92%;
+
+    --card: 220 60% 14%;
+    --card-foreground: 187 35% 92%;
+
+    --popover: 220 60% 14%;
+    --popover-foreground: 187 35% 92%;
+
+    --muted: 220 45% 20%;
+    --muted-foreground: 187 25% 65%;
+
+    /* Accent — Comfort Blue (más visible sobre dark) */
+    --accent: 220 50% 60%;
     --accent-foreground: 0 0% 100%;
-    
+
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
-    
+
     --success: 142 60% 40%;
     --success-foreground: 0 0% 100%;
-    
+
     --warning: 38 80% 45%;
     --warning-foreground: 0 0% 100%;
-    
-    --info: 188 80% 35%;
+
+    --info: 189 70% 48%;
     --info-foreground: 0 0% 100%;
-    
+
     --premium: 45 85% 50%;
     --premium-foreground: 0 0% 10%;
-    
+
     --live: 0 75% 55%;
     --live-foreground: 0 0% 100%;
-    
-    --verified: 188 80% 35%;
+
+    --verified: 189 70% 48%;
     --verified-foreground: 0 0% 100%;
-    
-    --light: 187 30% 30%;
+
+    --light: 187 30% 35%;
     --light-foreground: 0 0% 100%;
-    
-    --dark: 223 75% 10%;
+
+    --dark: 220 71% 12%;
     --dark-foreground: 0 0% 100%;
-    
-    --border: 223 50% 22%;
-    --input: 223 50% 22%;
-    --ring: 218 65% 50%;
-    
-    --sidebar-background: 223 70% 10%;
-    --sidebar-foreground: 187 35% 85%;
-    --sidebar-primary: 218 65% 50%;
+
+    --border: 220 45% 24%;
+    --input: 220 45% 24%;
+    --ring: 189 70% 48%;
+
+    --sidebar-background: 220 60% 12%;
+    --sidebar-foreground: 187 35% 88%;
+    --sidebar-primary: 189 70% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 223 50% 18%;
-    --sidebar-accent-foreground: 187 35% 80%;
-    --sidebar-border: 223 50% 20%;
-    --sidebar-ring: 218 65% 50%;
+    --sidebar-accent: 220 45% 20%;
+    --sidebar-accent-foreground: 187 35% 82%;
+    --sidebar-border: 220 45% 22%;
+    --sidebar-ring: 189 70% 48%;
   }
 }
 
@@ -380,7 +393,7 @@
      Funciona también si el fondo es blanco (cards/dialogs lo neutralizan).
      ============================================================ */
   .mm-calendar-panel {
-    background-color: rgba(11, 29, 69, 0.55);
+    background-color: rgba(22, 58, 131, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 0.75rem;
     overflow: hidden;
@@ -440,7 +453,7 @@
   .mm-on-image-text { color: #ffffff !important; }
   .mm-on-image-muted { color: rgba(255, 255, 255, 0.82) !important; }
   .mm-dark-panel {
-    background-color: rgba(11, 29, 69, 0.55);
+    background-color: rgba(22, 58, 131, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 0.75rem;
     color: #ffffff;
@@ -966,7 +979,8 @@
    ============================================================ */
 
 .app-bg-image {
-  background-color: #0b1d45;
+  /* Fallback Blue Lagoon (tono dominante del brandbook gradient) */
+  background-color: #00768b;
   background-attachment: fixed;
 }
 @media (max-width: 768px) {
@@ -978,7 +992,7 @@
 /* ---------- 1. Header standalone y MainLayout ---------- */
 /* Quita cualquier rastro de barra blanca: header siempre fundido al azul */
 .app-bg-image > header {
-  background-color: #0b1d45 !important;
+  background-color: #163a83 !important;
   border-bottom: 0 !important;
   backdrop-filter: none !important;
 }
@@ -1017,32 +1031,32 @@
 .app-bg-image header :is(button, a)[class*="bg-background"],
 .app-bg-image header :is(button, a)[class*="bg-card"],
 .app-bg-image header :is(button, a)[class*="bg-white"] {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 .app-bg-image header :is(button, a)[class*="border-input"] svg,
 .app-bg-image header :is(button, a)[class*="bg-background"] svg,
 .app-bg-image header :is(button, a)[class*="bg-card"] svg,
 .app-bg-image header :is(button, a)[class*="bg-white"] svg {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 .app-bg-image header :is(button, a)[class*="border-input"] *,
 .app-bg-image header :is(button, a)[class*="bg-background"] *,
 .app-bg-image header :is(button, a)[class*="bg-card"] *,
 .app-bg-image header :is(button, a)[class*="bg-white"] * {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 .app-bg-image header :is(button, a)[class*="border-input"]:hover,
 .app-bg-image header :is(button, a)[class*="bg-background"]:hover,
 .app-bg-image header :is(button, a)[class*="bg-card"]:hover,
 .app-bg-image header :is(button, a)[class*="bg-white"]:hover {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
   background-color: #ffffff !important;
 }
 .app-bg-image header :is(button, a)[class*="border-input"]:hover svg,
 .app-bg-image header :is(button, a)[class*="bg-background"]:hover svg,
 .app-bg-image header :is(button, a)[class*="bg-card"]:hover svg,
 .app-bg-image header :is(button, a)[class*="bg-white"]:hover svg {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 
 .app-bg-image header .app-header-control,
@@ -1087,7 +1101,7 @@
 
 /* ---------- 2. Bottom nav móvil ---------- */
 .app-bg-image > nav.fixed.bottom-0 {
-  background-color: rgba(11, 29, 69, 0.97) !important;
+  background-color: rgba(22, 58, 131, 0.97) !important;
   border-top-color: rgba(255, 255, 255, 0.08) !important;
 }
 .app-bg-image > nav.fixed.bottom-0 a,
@@ -1102,7 +1116,7 @@
 /* ---------- 3. Footer standalone fundido ---------- */
 .app-bg-image > footer {
   border-top: 0 !important;
-  background-color: #0b1d45 !important;
+  background-color: #163a83 !important;
 }
 .app-bg-image > footer .border-t {
   border-top-color: transparent !important;
@@ -1302,7 +1316,7 @@
   [data-radix-popper-content-wrapper] *
 )):hover {
   background-color: #ffffff !important;
-  color: #0b1d45 !important;
+  color: #163a83 !important;
   border-color: #ffffff !important;
 }
 .app-bg-image button[class*="border-input"]:not(:where(
@@ -1313,7 +1327,7 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )):hover svg {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 
 /* 10c. Link variant suelto */
@@ -1418,14 +1432,14 @@
   [role="dialog"] *
 )) {
   background-color: #ffffff !important;
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 .app-bg-image > main [role="tab"][data-state="active"]:not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *
 )) svg {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 
 /* ---------- 13. Skeletons sueltos ---------- */
@@ -1475,7 +1489,7 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )):hover {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 .app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not([class*="hover:bg-white"]):not(:where(
   [role="dialog"] *,
@@ -1485,7 +1499,7 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )):hover svg {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 
 /* 16b. Botones outline (border-input) y cualquier botón con bg-background/bg-card:
@@ -1502,9 +1516,9 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )) {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
   background-color: #ffffff !important;
-  border-color: rgba(11, 29, 69, 0.2) !important;
+  border-color: rgba(22, 58, 131, 0.2) !important;
 }
 .app-bg-image :is(button, a)[class*="border-input"]:not(:where(
   [class*="bg-card"] *,
@@ -1518,7 +1532,7 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )) svg {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 .app-bg-image :is(button, a)[class*="border-input"]:not(:where(
   [class*="bg-card"] *,
@@ -1533,8 +1547,8 @@
   [data-radix-popper-content-wrapper] *
 )):hover {
   background-color: #f1f5f9 !important;
-  color: #0b1d45 !important;
-  border-color: rgba(11, 29, 69, 0.3) !important;
+  color: #163a83 !important;
+  border-color: rgba(22, 58, 131, 0.3) !important;
 }
 .app-bg-image :is(button, a)[class*="border-input"]:not(:where(
   [class*="bg-card"] *,
@@ -1548,7 +1562,7 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )):hover svg {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 
 /* 16c. SAFETY NET: cualquier botón ghost cuyo HOVER se vuelve claro.
@@ -1559,14 +1573,14 @@
 .app-bg-image :is(button, a)[class*="hover:bg-secondary"]:hover,
 .app-bg-image :is(button, a)[class*="hover:bg-background"]:hover,
 .app-bg-image :is(button, a)[class*="hover:bg-card"]:hover {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 .app-bg-image :is(button, a)[class*="hover:bg-accent"]:hover svg,
 .app-bg-image :is(button, a)[class*="hover:bg-muted"]:hover svg,
 .app-bg-image :is(button, a)[class*="hover:bg-secondary"]:hover svg,
 .app-bg-image :is(button, a)[class*="hover:bg-background"]:hover svg,
 .app-bg-image :is(button, a)[class*="hover:bg-card"]:hover svg {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 
 /* ---------- 17. Footer global: contraste premium MÁXIMO ---------- */
@@ -1591,7 +1605,7 @@
 /* Footer iconos sociales: fuerza blanco en reposo, oscuro en hover (bg blanco) */
 .app-bg-image footer a.group:hover svg,
 .app-bg-image footer a:hover[class*="hover:bg-white"] svg {
-  color: #0b1d45 !important;
+  color: #163a83 !important;
 }
 
 /* ---------- 18. Bottom nav móvil: iconos activos visibles ---------- */
@@ -1602,7 +1616,7 @@
 
 /* ---------- 19. MobileBackHeader fundido al fondo azul ---------- */
 .app-bg-image .app-back-header {
-  background-color: #0b1d45 !important;
+  background-color: #163a83 !important;
   border: 0 !important;
 }
 .app-bg-image .app-back-header button {

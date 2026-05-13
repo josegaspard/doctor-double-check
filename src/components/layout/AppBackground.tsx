@@ -2,7 +2,7 @@ import React from 'react';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
 import { DecorativeBackground } from '@/components/layout/DecorativeBackground';
 
-// 🎨 FUENTE ÚNICA DEL FONDO DE LA APP
+// 🎨 FUENTE ÚNICA DEL FONDO DE LA APP — Brandbook 2026 (gradient Blue Lagoon → Uranus + marca M).
 // La imagen vive en `public/app-bg.jpg` (servida directamente sin hash) y se
 // pre-carga desde `index.html` con <link rel="preload"> para máxima velocidad.
 // Para cambiarla:
@@ -21,8 +21,10 @@ interface AppBackgroundProps {
 
 /**
  * Wrapper único que aplica el fondo global de la app:
- * - Modo "image" (default): color sólido `#0b1d45` como fallback inmediato
- *   + imagen azul + overlay sutil + clase `.app-bg-image`
+ * - Modo "image" (default): Blue Lagoon `#00768b` como fallback inmediato
+ *   + brandbook gradient (Blue Lagoon → Uranus con marca M) + overlay Metallic Blue
+ *   que oscurece la mitad clara del gradient para mantener contraste AA con
+ *   tipografía blanca en chrome/hero.
  *   (CSS en index.css refuerza contraste de títulos, links, botones, iconos, etc.)
  * - Modo "white" (toggle admin): degradado claro + DecorativeBackground.
  *
@@ -44,8 +46,8 @@ export const AppBackground = React.forwardRef<HTMLDivElement, AppBackgroundProps
         style={
           useImageBackground
             ? {
-                // Color sólido bajo la imagen → cero pantalla blanca antes de descargar
-                backgroundColor: '#0b1d45',
+                // Fallback Blue Lagoon (tono dominante del brandbook) — cero flash blanco
+                backgroundColor: '#00768b',
                 backgroundImage: `url(${BG_URL})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
@@ -58,7 +60,13 @@ export const AppBackground = React.forwardRef<HTMLDivElement, AppBackgroundProps
         {useImageBackground && !withoutOverlay && (
           <div
             aria-hidden="true"
-            className="fixed inset-0 pointer-events-none z-0 bg-black/30"
+            className="fixed inset-0 pointer-events-none z-0"
+            // Overlay Metallic Blue diagonal: más opaco sobre la mitad derecha
+            // (Uranus claro del gradient) para garantizar contraste con texto blanco.
+            style={{
+              background:
+                'linear-gradient(135deg, rgba(22, 58, 131, 0.32) 0%, rgba(22, 58, 131, 0.55) 100%)',
+            }}
           />
         )}
         {!useImageBackground && <DecorativeBackground />}
