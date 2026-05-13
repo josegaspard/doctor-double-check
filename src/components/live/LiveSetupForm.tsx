@@ -288,11 +288,14 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
               options={SPECIALTIES}
               value={specialty}
               onChange={setSpecialty}
-              placeholder="Especialidad"
+              placeholder="Selecciona tu especialidad médica"
               searchPlaceholder="Buscar especialidad..."
               icon={Stethoscope}
               allLabel=""
             />
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Elige la especialidad principal de tu transmisión para que los pacientes te encuentren.
+            </p>
           </div>
         </section>
 

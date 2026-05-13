@@ -231,9 +231,13 @@ export default function DoctorAvailabilityPage() {
 
   const isPast = selectedEvent ? selectedEvent.scheduledAt < new Date() : false;
   const eventTypeConfig: Record<string, { color: string; icon: typeof Video; label: string }> = {
-    live: { color: 'bg-red-500/10 text-red-500', icon: Video, label: 'Live' },
-    consultation: { color: 'bg-blue-500/10 text-blue-500', icon: MessageSquare, label: language === 'es' ? 'Orientación' : 'Consultation' },
-    office_hours: { color: 'bg-emerald-500/10 text-emerald-500', icon: Clock, label: language === 'es' ? 'Disponible' : 'Available' },
+    // 3 tipos de evento en paleta brandbook (distintos entre sí):
+    //   live → Metallic Blue (--secondary) — el más prominente
+    //   consultation → Blue Lagoon (--primary)
+    //   office_hours → Comfort Blue (--accent)
+    live: { color: 'bg-secondary/15 text-secondary', icon: Video, label: 'Live' },
+    consultation: { color: 'bg-primary/10 text-primary', icon: MessageSquare, label: language === 'es' ? 'Orientación' : 'Consultation' },
+    office_hours: { color: 'bg-accent/15 text-accent', icon: Clock, label: language === 'es' ? 'Disponible' : 'Available' },
   };
 
   return (
@@ -298,9 +302,9 @@ export default function DoctorAvailabilityPage() {
         {/* Legend */}
         <div className="flex flex-wrap gap-3 mb-4">
           {[
-            { color: 'bg-red-500', label: 'Live' },
-            { color: 'bg-blue-500', label: language === 'es' ? 'Orientación' : 'Consultation' },
-            { color: 'bg-emerald-500', label: language === 'es' ? 'Disponible' : 'Available' },
+            { color: 'bg-secondary', label: 'Live' },
+            { color: 'bg-primary', label: language === 'es' ? 'Orientación' : 'Consultation' },
+            { color: 'bg-accent', label: language === 'es' ? 'Disponible' : 'Available' },
           ].map(item => (
             <div key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <div className={cn('w-3 h-3 rounded-sm', item.color)} />
@@ -382,13 +386,13 @@ export default function DoctorAvailabilityPage() {
                       <p className="text-sm text-muted-foreground">{selectedEvent.description}</p>
                     )}
                     {selectedEvent.notificationsSent && (
-                      <div className="flex items-center gap-1 text-xs text-green-600">
+                      <div className="flex items-center gap-1 text-xs text-success">
                         <Send className="h-3 w-3" />
                         {language === 'es' ? 'Notificaciones enviadas' : 'Notifications sent'}
                       </div>
                     )}
                     {selectedEvent.reminderSent && (
-                      <div className="flex items-center gap-1 text-xs text-blue-600">
+                      <div className="flex items-center gap-1 text-xs text-primary">
                         <Bell className="h-3 w-3" />
                         {language === 'es' ? 'Recordatorio enviado' : 'Reminder sent'}
                       </div>
@@ -434,9 +438,9 @@ export default function DoctorAvailabilityPage() {
                 <Label className="text-xs sm:text-sm">{language === 'es' ? 'Tipo' : 'Type'}</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: 'live' as AvailabilityType, icon: Video, label: 'Live', color: 'text-red-500 border-red-500 bg-red-500/10' },
-                    { value: 'consultation' as AvailabilityType, icon: MessageSquare, label: language === 'es' ? 'Orientación' : 'Consultation', color: 'text-blue-500 border-blue-500 bg-blue-500/10' },
-                    { value: 'office_hours' as AvailabilityType, icon: Clock, label: language === 'es' ? 'Disponible' : 'Available', color: 'text-emerald-500 border-emerald-500 bg-emerald-500/10' },
+                    { value: 'live' as AvailabilityType, icon: Video, label: 'Live', color: 'text-secondary border-secondary bg-secondary/15' },
+                    { value: 'consultation' as AvailabilityType, icon: MessageSquare, label: language === 'es' ? 'Orientación' : 'Consultation', color: 'text-primary border-primary bg-primary/10' },
+                    { value: 'office_hours' as AvailabilityType, icon: Clock, label: language === 'es' ? 'Disponible' : 'Available', color: 'text-accent border-accent bg-accent/15' },
                   ].map(opt => (
                     <button
                       key={opt.value}

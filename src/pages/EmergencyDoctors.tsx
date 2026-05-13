@@ -65,39 +65,47 @@ export default function EmergencyDoctors() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
-        {/* Hero */}
-        <div className="mb-6 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-destructive/10 via-destructive/5 to-warning/10 border-2 border-destructive/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="relative">
-              <div className="w-14 h-14 rounded-2xl bg-destructive/20 flex items-center justify-center">
-                <Plus className="w-7 h-7 text-destructive" strokeWidth={3} />
+        {/* Hero — paleta brandbook (Blue Lagoon primary + Metallic Blue secondary).
+            Sobre el fondo app-bg-image (gradient teal del brandbook) un panel sólido
+            con vidrio + degradado primary→secondary para máxima legibilidad. */}
+        <div className="mb-6 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-primary to-secondary text-primary-foreground shadow-xl border border-primary/30 overflow-hidden relative">
+          {/* Decoración Uranus en esquinas */}
+          <div aria-hidden className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-light/15 blur-2xl" />
+          <div aria-hidden className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-accent/20 blur-2xl" />
+
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/30">
+                  <Plus className="w-7 h-7 text-white" strokeWidth={3} />
+                </div>
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-success animate-pulse border-2 border-primary" />
               </div>
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-success animate-pulse border-2 border-background" />
+              <div>
+                <h1 className="font-heading text-xl sm:text-2xl font-bold text-white">
+                  {t('emergency.title')}
+                </h1>
+                <p className="text-sm text-white/85">{t('emergency.subtitle')}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
-                {t('emergency.title')}
-              </h1>
-              <p className="text-sm text-muted-foreground">{t('emergency.subtitle')}</p>
+            <p className="text-sm text-white/80 max-w-lg mb-4">
+              {t('emergency.description')}
+            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Badge className="bg-white/15 text-white border-white/30 backdrop-blur-sm gap-1.5 hover:bg-white/20">
+                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                {doctors.length} {t('emergency.availableCount')}
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1 bg-white/10 border-white/40 text-white hover:bg-white hover:text-primary backdrop-blur-sm"
+                onClick={fetchAvailableDoctors}
+              >
+                <RefreshCw className="w-3 h-3" />
+                {t('emergency.refresh')}
+              </Button>
             </div>
-          </div>
-          <p className="text-sm text-muted-foreground/80 max-w-lg mb-4">
-            {t('emergency.description')}
-          </p>
-          <div className="flex items-center gap-3">
-            <Badge className="bg-success/20 text-success border-success/30 gap-1">
-              <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              {doctors.length} {t('emergency.availableCount')}
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs gap-1"
-              onClick={fetchAvailableDoctors}
-            >
-              <RefreshCw className="w-3 h-3" />
-              {t('emergency.refresh')}
-            </Button>
           </div>
         </div>
 

@@ -18,6 +18,7 @@ import { ActiveLiveProvider } from "@/contexts/ActiveLiveContext";
 import React, { Suspense, useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { SplashScreen } from "@/components/SplashScreen";
+import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 
 // Wrapper that only mounts heavy providers when the user is authenticated
 function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
@@ -196,6 +197,7 @@ const App = () => {
               <BrowserRouter>
                 <ScrollToTop />
                 <AuthenticatedProviders>
+                  <ChunkErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       <Route path="/" element={<Landing />} />
@@ -300,6 +302,7 @@ const App = () => {
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>
+                  </ChunkErrorBoundary>
                 </AuthenticatedProviders>
               </BrowserRouter>
             </TooltipProvider>

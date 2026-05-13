@@ -436,29 +436,43 @@ export default function Settings() {
           {/* Referral Program */}
           <ReferralProgram />
 
-          {/* Danger Zone — Account Deletion (Apple App Store + Google Play requirement) */}
-          <Card className="border-destructive/40 bg-destructive/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="w-5 h-5" />
-                Eliminar mi cuenta
-              </CardTitle>
-              <CardDescription>
-                Esta acción es <strong>permanente</strong> e irreversible. Se eliminarán tu perfil,
-                expediente clínico, conversaciones, suscripciones, contenido publicado y todo registro
-                asociado. No podrás recuperarlo después.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                variant="destructive"
-                className="gap-2"
-                onClick={() => { setDeleteConfirmText(''); setDeleteDialogOpen(true); }}
-              >
-                <Trash2 className="w-4 h-4" />
-                Eliminar mi cuenta permanentemente
-              </Button>
-            </CardContent>
+          {/* Danger Zone — Account Deletion (Apple App Store + Google Play requirement).
+              Diseño: card sólido con borde izquierdo destructive grueso + header con icono
+              circular sobre fondo destructive sólido. Mejor contraste sobre fondo teal app. */}
+          <Card className="border-destructive/30 bg-card shadow-md overflow-hidden">
+            <div className="flex">
+              <div aria-hidden className="w-1.5 bg-destructive flex-shrink-0" />
+              <div className="flex-1">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-destructive/15 flex items-center justify-center flex-shrink-0">
+                      <AlertTriangle className="w-5 h-5 text-destructive" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg sm:text-xl text-destructive mb-1">
+                        Eliminar mi cuenta
+                      </CardTitle>
+                      <CardDescription className="text-sm text-muted-foreground">
+                        Esta acción es <strong className="text-foreground">permanente</strong> e
+                        irreversible. Se eliminarán tu perfil, expediente clínico, conversaciones,
+                        suscripciones, contenido publicado y todo registro asociado. No podrás
+                        recuperarlo después.
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-2">
+                  <Button
+                    variant="destructive"
+                    className="gap-2 w-full sm:w-auto"
+                    onClick={() => { setDeleteConfirmText(''); setDeleteDialogOpen(true); }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Eliminar mi cuenta permanentemente
+                  </Button>
+                </CardContent>
+              </div>
+            </div>
           </Card>
 
           <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

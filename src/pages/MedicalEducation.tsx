@@ -281,9 +281,15 @@ export default function MedicalEducation() {
           )}
         </div>
 
-        <Card className="mb-4 bg-info/5 border-info/30">
-          <CardContent className="p-3 text-xs text-muted-foreground">
-            <strong className="text-info">Espacio profesional.</strong> Anonimiza siempre los datos del paciente. El contenido es solo visible para doctores y residentes verificados.
+        {/* Aviso "Espacio profesional" — panel sólido para que destaque sobre el fondo
+            teal del brandbook (antes con bg-info/5 se perdía completamente). */}
+        <Card className="mb-4 bg-card border-l-4 border-l-secondary border border-secondary/20 shadow-sm">
+          <CardContent className="p-3 text-xs text-foreground flex items-start gap-2">
+            <span aria-hidden className="mt-0.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold flex-shrink-0">🔒</span>
+            <span>
+              <strong className="text-secondary font-semibold">Espacio profesional.</strong>{' '}
+              <span className="text-muted-foreground">Anonimiza siempre los datos del paciente. El contenido es solo visible para doctores y residentes verificados.</span>
+            </span>
           </CardContent>
         </Card>
 
