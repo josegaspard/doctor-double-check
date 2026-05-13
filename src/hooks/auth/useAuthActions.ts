@@ -40,10 +40,10 @@ export function useAuthActions(
     setSupabaseUser(null);
     sessionStorage.removeItem('medicalMasters_visitor');
     
-    // Sign out from Supabase FIRST, then redirect
+    // Sign out from Supabase FIRST, then redirect a la landing pública.
     await supabase.auth.signOut();
-    
-    window.location.replace('/lives');
+
+    window.location.replace('/');
   };
 
   const loginAsVisitor = () => {

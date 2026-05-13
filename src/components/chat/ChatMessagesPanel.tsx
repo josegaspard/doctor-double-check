@@ -490,6 +490,12 @@ export function ChatMessagesPanel({
                     <Send className="w-5 h-5" />
                   </Button>
                 </div>
+
+                {/* Disclaimer médico — visible pero sutil (requisito legal cliente).
+                    Reemplaza al banner amber prominente que rompía el layout. */}
+                <p className="text-[11px] leading-tight text-muted-foreground text-center px-1 select-none">
+                  ⚠️ Orientación médica — no sustituye consulta presencial. Urgencias: 911.
+                </p>
               </div>
             )}
           </CardContent>

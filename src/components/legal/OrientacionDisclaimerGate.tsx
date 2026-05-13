@@ -17,15 +17,20 @@ interface Props {
   context?: Record<string, unknown>;
   /** Children render only after acceptance (or if disabled) */
   children: React.ReactNode;
-  /** Show the persistent short banner above children */
+  /**
+   * Show the persistent short banner above children.
+   * Default false — el banner amber rompía el layout del Chat (grid 2 columnas) y
+   * comía altura del panel. La aceptación queda registrada con el modal inicial y
+   * el disclaimer se sigue mostrando como línea sutil dentro del propio chat.
+   */
   showBanner?: boolean;
 }
 
 /**
- * Mandatory acceptance modal + persistent banner for the
- * "Orientación médica" disclaimer.
+ * Mandatory acceptance modal for the "Orientación médica" disclaimer.
+ * Sin DOM extra cuando ya está aceptado → grid padre ve children como única celda.
  */
-export function OrientacionDisclaimerGate({ context, children, showBanner = true }: Props) {
+export function OrientacionDisclaimerGate({ context, children, showBanner = false }: Props) {
   const { content, accepted, loading, accept } = useDisclaimer();
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -79,23 +84,14 @@ export function OrientacionDisclaimerGate({ context, children, showBanner = true
         </DialogContent>
       </Dialog>
 
-      {accepted && (
-        // Wrapper único en grid-rows [auto, 1fr]:
-        //   · El banner ocupa su altura natural (auto)
-        //   · El ChatMessagesPanel hereda la altura completa de la celda padre
-        //     (1fr de la fila), evitando que colapse a alto cero.
-        // Hereda min-h-0 + h-full para que la celda padre del Chat (CSS Grid)
-        // le imponga la altura disponible.
-        <div className="grid grid-rows-[auto_1fr] min-h-0 h-full w-full overflow-hidden">
-          {showBanner && (
-            <div className="rounded-md border border-amber-300/40 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-900 dark:text-amber-100 flex items-start gap-2 mb-2">
-              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden />
-              <span>{content.short}</span>
-            </div>
-          )}
-          <div className="min-h-0 h-full overflow-hidden">{children}</div>
+      {accepted && showBanner && (
+        <div className="rounded-md border border-amber-300/40 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-900 dark:text-amber-100 flex items-start gap-2 mb-2">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden />
+          <span>{content.short}</span>
         </div>
       )}
+
+      {accepted ? children : null}
     </>
   );
 }
