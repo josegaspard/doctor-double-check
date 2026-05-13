@@ -197,9 +197,9 @@ export default function HospitalLocator() {
     <div className="space-y-6">
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Tipo' : 'Type'}</p>
-        <div className="px-3 py-2 rounded-lg bg-purple-600/10 border border-purple-600/30 flex items-center gap-2">
+        <div className="px-3 py-2 rounded-lg bg-secondary/10 border border-secondary/30 flex items-center gap-2">
           <span aria-hidden>🏨</span>
-          <span className="text-sm font-medium text-purple-700 dark:text-purple-300">{es ? 'Hospitales privados de México' : 'Private hospitals in Mexico'}</span>
+          <span className="text-sm font-medium text-secondary">{es ? 'Hospitales privados de México' : 'Private hospitals in Mexico'}</span>
         </div>
       </div>
 
@@ -241,7 +241,7 @@ export default function HospitalLocator() {
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Calificación mínima' : 'Min. Rating'}</p>
         <div className="grid grid-cols-5 gap-1.5">
           {[0, 3, 3.5, 4, 4.5].map(r => (
-            <button key={r} onClick={() => setFilterMinRating(r)} className={`py-2 rounded-lg text-xs font-medium transition-all duration-200 text-center ${filterMinRating === r ? 'bg-yellow-400/20 text-yellow-700 border-2 border-yellow-400 shadow-sm ring-1 ring-yellow-400/30' : 'bg-muted/60 text-muted-foreground hover:bg-muted border border-transparent'}`}>
+            <button key={r} onClick={() => setFilterMinRating(r)} className={`py-2 rounded-lg text-xs font-medium transition-all duration-200 text-center ${filterMinRating === r ? 'bg-secondary/15 text-secondary border-2 border-secondary shadow-sm ring-1 ring-secondary/30' : 'bg-muted/60 text-muted-foreground hover:bg-muted border border-transparent'}`}>
               {r === 0 ? (es ? 'Todo' : 'All') : `${r}+`}
             </button>
           ))}
@@ -299,9 +299,9 @@ export default function HospitalLocator() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Hero */}
-        <div className="mb-6 rounded-2xl bg-gradient-to-br from-blue-600/10 via-primary/5 to-teal-500/10 p-5 sm:p-8 border border-primary/10">
+        <div className="mb-6 rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 p-5 sm:p-8 border border-primary/10">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -310,10 +310,10 @@ export default function HospitalLocator() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
-            <span className="mm-stat-pill"><Building2 className="w-3.5 h-3.5 text-blue-600" />{hospitals.length} {es ? 'hospitales' : 'hospitals'}</span>
-            <span className="mm-stat-pill"><Star className="w-3.5 h-3.5 text-yellow-500" />{es ? 'Información verificada' : 'Verified info'}</span>
-            {userLoc && <span className="mm-stat-pill"><Navigation className="w-3.5 h-3.5 text-green-600" />{es ? 'Ubicación activa' : 'Location active'}</span>}
-            <span className="mm-stat-pill"><Heart className="w-3.5 h-3.5 text-rose-500" />{activeDoctorsCount} {es ? 'doctores activos' : 'active doctors'}</span>
+            <span className="mm-stat-pill"><Building2 className="w-3.5 h-3.5 text-primary" />{hospitals.length} {es ? 'hospitales' : 'hospitals'}</span>
+            <span className="mm-stat-pill"><Star className="w-3.5 h-3.5 text-secondary" />{es ? 'Información verificada' : 'Verified info'}</span>
+            {userLoc && <span className="mm-stat-pill"><Navigation className="w-3.5 h-3.5 text-primary" />{es ? 'Ubicación activa' : 'Location active'}</span>}
+            <span className="mm-stat-pill"><Heart className="w-3.5 h-3.5 text-accent" />{activeDoctorsCount} {es ? 'doctores activos' : 'active doctors'}</span>
           </div>
         </div>
 
@@ -357,7 +357,7 @@ export default function HospitalLocator() {
         {/* Desktop: Sort inline (filtros hardcodeados a Privado · México) */}
         <div className="hidden sm:flex items-center justify-between gap-3 mb-4">
           <div className="flex gap-2 flex-wrap">
-            <span className="mm-chip mm-chip-active bg-purple-500/10 text-purple-700 dark:text-purple-300">
+            <span className="mm-chip mm-chip-active bg-secondary/15 text-secondary">
               {es ? '🏥 Hospitales privados · México' : '🏥 Private hospitals · Mexico'}
             </span>
           </div>
@@ -445,7 +445,7 @@ export default function HospitalLocator() {
                   return (
                     <Card
                       key={h.id}
-                      className={`overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 group ${isFeatured ? 'ring-2 ring-yellow-400/60 shadow-yellow-100/40' : ''}`}
+                      className={`overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 group ${isFeatured ? 'ring-2 ring-accent/60 shadow-accent/20' : ''}`}
                       style={{ animationDelay: `${idx * 50}ms` }}
                     >
                       {/* Image */}
@@ -459,12 +459,12 @@ export default function HospitalLocator() {
                           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                           {/* Overlays */}
                           <div className="absolute top-2.5 left-2.5 flex gap-1.5">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold backdrop-blur-sm ${h.type === 'public' ? 'bg-blue-600/90 text-white' : h.type === 'private' ? 'bg-purple-600/90 text-white' : 'bg-teal-600/90 text-white'}`}>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold backdrop-blur-sm ${h.type === 'public' ? 'bg-primary/90 text-primary-foreground' : h.type === 'private' ? 'bg-secondary/90 text-secondary-foreground' : 'bg-accent/90 text-accent-foreground'}`}>
                               {h.type === 'public' ? (es ? '🏥 Público' : '🏥 Public') : h.type === 'private' ? (es ? '🏨 Privado' : '🏨 Private') : (es ? '🩺 Clínica' : '🩺 Clinic')}
                             </span>
                           </div>
                           {isFeatured && (
-                            <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-yellow-400/90 text-yellow-900 backdrop-blur-sm flex items-center gap-1 shadow-lg">
+                            <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-accent/90 text-accent-foreground backdrop-blur-sm flex items-center gap-1 shadow-lg">
                               <Sparkles className="w-3 h-3" /> {featuredLabel}
                             </span>
                           )}
@@ -479,11 +479,11 @@ export default function HospitalLocator() {
                         </div>
                       ) : (
                         <div className="relative px-4 pt-3 flex items-center justify-between">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${h.type === 'public' ? 'bg-blue-600/10 text-blue-700' : h.type === 'private' ? 'bg-purple-600/10 text-purple-700' : 'bg-teal-600/10 text-teal-700'}`}>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${h.type === 'public' ? 'bg-primary/10 text-primary' : h.type === 'private' ? 'bg-secondary/10 text-secondary' : 'bg-accent/15 text-accent'}`}>
                             {h.type === 'public' ? (es ? '🏥 Público' : '🏥 Public') : h.type === 'private' ? (es ? '🏨 Privado' : '🏨 Private') : (es ? '🩺 Clínica' : '🩺 Clinic')}
                           </span>
                           {isFeatured && (
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-yellow-400/20 text-yellow-700 flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-accent/15 text-accent flex items-center gap-1">
                               <Sparkles className="w-3 h-3" /> {featuredLabel}
                             </span>
                           )}
@@ -500,7 +500,7 @@ export default function HospitalLocator() {
                           <div className="flex items-center gap-1.5 mb-2">
                             <div className="flex">
                               {[1,2,3,4,5].map(s => (
-                                <Star key={s} className={`w-3 h-3 ${s <= Math.round(h.avg_rating) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`} />
+                                <Star key={s} className={`w-3 h-3 ${s <= Math.round(h.avg_rating) ? 'fill-accent text-accent' : 'text-muted-foreground/30'}`} />
                               ))}
                             </div>
                             <span className="text-xs font-semibold">{h.avg_rating.toFixed(1)}</span>
@@ -548,12 +548,12 @@ export default function HospitalLocator() {
                         <div className="flex gap-2">
                           {h.lat && h.lng && (
                             <>
-                              <Button size="sm" className="flex-1 text-xs gap-1.5 h-8 bg-blue-600 hover:bg-blue-700 text-white" asChild>
+                              <Button size="sm" className="flex-1 text-xs gap-1.5 h-8 bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
                                 <a href={`https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}`} target="_blank" rel="noopener noreferrer">
                                   <Navigation className="w-3.5 h-3.5" /> Maps
                                 </a>
                               </Button>
-                              <Button size="sm" className="flex-1 text-xs gap-1.5 h-8 border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800" asChild>
+                              <Button size="sm" className="flex-1 text-xs gap-1.5 h-8 border border-secondary/30 text-secondary bg-secondary/10 hover:bg-secondary/20" asChild>
                                 <a href={`https://www.waze.com/ul?ll=${h.lat},${h.lng}&navigate=yes`} target="_blank" rel="noopener noreferrer">
                                   <Navigation className="w-3.5 h-3.5" /> Waze
                                 </a>
@@ -612,7 +612,7 @@ export default function HospitalLocator() {
                                 <div key={rv.id} className="bg-muted/50 rounded-lg p-2.5 mb-1.5">
                                   <div className="flex items-center gap-1 mb-1">
                                     {[1,2,3,4,5].map(s => (
-                                      <Star key={s} className={`w-3 h-3 ${s <= rv.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`} />
+                                      <Star key={s} className={`w-3 h-3 ${s <= rv.rating ? 'fill-accent text-accent' : 'text-muted-foreground/30'}`} />
                                     ))}
                                     <span className="text-[10px] text-muted-foreground ml-1">
                                       {new Date(rv.created_at).toLocaleDateString()}
@@ -652,7 +652,7 @@ export default function HospitalLocator() {
                 <div className="flex gap-1">
                   {[1,2,3,4,5].map(s => (
                     <button key={s} onClick={() => setReviewForm(f => ({ ...f, rating: s }))} className="p-1 transition-transform hover:scale-110">
-                      <Star className={`w-7 h-7 ${s <= reviewForm.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`} />
+                      <Star className={`w-7 h-7 ${s <= reviewForm.rating ? 'fill-accent text-accent' : 'text-muted-foreground/30'}`} />
                     </button>
                   ))}
                 </div>
