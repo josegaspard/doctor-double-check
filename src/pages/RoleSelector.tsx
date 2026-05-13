@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -22,23 +22,9 @@ export default function RoleSelector() {
   const { loginAsVisitor, user, role, isAuthenticated, isLoading } = useAuth();
   const { t, translations } = useLanguage();
 
-  // If user is already logged in, never show RoleSelector again.
-  useEffect(() => {
-    if (isLoading) return;
-    if (!isAuthenticated || !user) return;
-
-    if (role === 'doctor') {
-      navigate('/doctor/dashboard', { replace: true });
-      return;
-    }
-    if (role === 'admin') {
-      navigate('/admin', { replace: true });
-      return;
-    }
-
-    // patient / resident / visitor
-    navigate('/lives', { replace: true });
-  }, [isLoading, isAuthenticated, user?.id, role, navigate]);
+  // /app debe ser SIEMPRE el selector de tipo de usuario.
+  // Aunque el usuario ya esté autenticado, mostramos las cards para que pueda
+  // elegir explícitamente qué tipo de usuario es. Sin auto-redirect.
 
   if (isLoading) {
     return (
@@ -97,9 +83,23 @@ export default function RoleSelector() {
     if (option.action === 'visitor') {
       loginAsVisitor();
       navigate('/lives');
-    } else {
-      navigate('/login', { state: { preferredRole: option.role } });
+      return;
     }
+
+    // Si ya está autenticado, mandar al panel correspondiente al rol que clickeó
+    // sin bouncear por /login (eso descarta su sesión y rompe el flujo).
+    if (isAuthenticated && user) {
+      if (option.role === 'doctor') {
+        navigate(role === 'doctor' ? '/doctor/dashboard' : '/lives');
+        return;
+      }
+      // patient / resident — su home es /lives
+      navigate('/lives');
+      return;
+    }
+
+    // Solo bouncea a /login si el usuario NO está autenticado
+    navigate('/login', { state: { preferredRole: option.role } });
   };
 
   return (
