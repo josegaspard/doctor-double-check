@@ -230,8 +230,9 @@
 
 @layer components {
   .app-header-bar {
-    background-color: hsl(var(--dark));
-    color: hsl(var(--dark-foreground));
+    /* Header en Blue Lagoon (--primary del brandbook) en lugar de Metallic Blue */
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
   }
 
   .app-header-control {
@@ -288,15 +289,16 @@
   }
 
   .app-header-cta {
-    background-color: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
-    border: 1px solid hsl(var(--primary));
+    /* Header es Blue Lagoon; el CTA usa Metallic Blue (--secondary) para destacar */
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    border: 1px solid hsl(var(--secondary));
     box-shadow: 0 6px 14px -10px hsl(var(--dark) / 0.45);
   }
 
   .app-header-cta:hover {
-    background-color: hsl(var(--primary) / 0.9);
-    color: hsl(var(--primary-foreground));
+    background-color: hsl(var(--secondary) / 0.9);
+    color: hsl(var(--secondary-foreground));
   }
 
   /* Medical Badge Styles */
@@ -990,9 +992,9 @@
 }
 
 /* ---------- 1. Header standalone y MainLayout ---------- */
-/* Quita cualquier rastro de barra blanca: header siempre fundido al azul */
+/* Header en Blue Lagoon (brandbook: chrome principal) */
 .app-bg-image > header {
-  background-color: #163a83 !important;
+  background-color: #00768b !important;
   border-bottom: 0 !important;
   backdrop-filter: none !important;
 }
@@ -1100,9 +1102,10 @@
 }
 
 /* ---------- 2. Bottom nav móvil ---------- */
+/* Bottom nav en Blue Lagoon (simétrico con header/footer) */
 .app-bg-image > nav.fixed.bottom-0 {
-  background-color: rgba(22, 58, 131, 0.97) !important;
-  border-top-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: rgba(0, 118, 139, 0.97) !important;
+  border-top-color: rgba(255, 255, 255, 0.12) !important;
 }
 .app-bg-image > nav.fixed.bottom-0 a,
 .app-bg-image > nav.fixed.bottom-0 button {
@@ -1110,13 +1113,14 @@
 }
 .app-bg-image > nav.fixed.bottom-0 a.text-primary,
 .app-bg-image > nav.fixed.bottom-0 .text-primary {
-  color: hsl(195, 90%, 70%) !important;
+  color: #AED3D9 !important;
 }
 
 /* ---------- 3. Footer standalone fundido ---------- */
+/* Footer en Blue Lagoon (brandbook: chrome principal, simétrico con header) */
 .app-bg-image > footer {
   border-top: 0 !important;
-  background-color: #163a83 !important;
+  background-color: #00768b !important;
 }
 .app-bg-image > footer .border-t {
   border-top-color: transparent !important;
@@ -1186,7 +1190,7 @@
   [role="menu"] *,
   [data-radix-popper-content-wrapper] *
 )) {
-  color: hsl(195, 90%, 78%) !important;
+  color: #AED3D9 !important;
 }
 
 /* ---------- 8. Iconos sueltos en main (NO dentro de botones/enlaces) ---------- */
@@ -1222,7 +1226,7 @@
   [role="menu"] *,
   [data-radix-popper-content-wrapper] *
 )) {
-  color: hsl(210, 100%, 84%);
+  color: #AED3D9;
 }
 .app-bg-image :where(a):not(:where(
   [class*="bg-card"] *,
@@ -1339,7 +1343,7 @@
   nav *,
   [role="dialog"] *
 )) {
-  color: hsl(195, 90%, 80%) !important;
+  color: #AED3D9 !important;
 }
 .app-bg-image button[class*="text-primary"][class*="underline-offset"]:not(:where(
   [class*="bg-card"] *,
@@ -1616,7 +1620,7 @@
 
 /* ---------- 19. MobileBackHeader fundido al fondo azul ---------- */
 .app-bg-image .app-back-header {
-  background-color: #163a83 !important;
+  background-color: #00768b !important;
   border: 0 !important;
 }
 .app-bg-image .app-back-header button {

@@ -26,7 +26,7 @@ export function SplashScreen({ onFinish }: { onFinish: () => void }) {
   return (
     <div
       className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-opacity duration-500 ${fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-      style={{ background: 'linear-gradient(135deg, #163a83 0%, #163a83 45%, #00768b 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #00768b 0%, #00768b 50%, #AED3D9 100%)' }}
     >
       {/* Floating background blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

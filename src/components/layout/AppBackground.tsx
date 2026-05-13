@@ -57,18 +57,7 @@ export const AppBackground = React.forwardRef<HTMLDivElement, AppBackgroundProps
             : undefined
         }
       >
-        {useImageBackground && !withoutOverlay && (
-          <div
-            aria-hidden="true"
-            className="fixed inset-0 pointer-events-none z-0"
-            // Overlay Metallic Blue diagonal: más opaco sobre la mitad derecha
-            // (Uranus claro del gradient) para garantizar contraste con texto blanco.
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(22, 58, 131, 0.32) 0%, rgba(22, 58, 131, 0.55) 100%)',
-            }}
-          />
-        )}
+        {/* Overlay eliminado por orden del cliente: la imagen brandbook se muestra tal cual. */}
         {!useImageBackground && <DecorativeBackground />}
         {children}
       </div>

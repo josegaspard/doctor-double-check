@@ -14,7 +14,6 @@ import { ChatMessagesPanel } from '@/components/chat/ChatMessagesPanel';
 import { MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
-import { OrientacionDisclaimerGate } from '@/components/legal/OrientacionDisclaimerGate';
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -442,35 +441,8 @@ export default function Chat() {
             hidden={showMobileChat}
           />
 
-          {role === 'patient' && selectedSession ? (
-            <OrientacionDisclaimerGate context={{ session_id: selectedSession }}>
-              <ChatMessagesPanel
-                session={selectedSessionData}
-                messages={messages}
-                userId={user?.id}
-                userRole={role}
-                newMessage={newMessage}
-                isClosed={isSessionClosed || false}
-                isClosing={isClosingSession}
-                otherUserTyping={otherUserTyping}
-                activeTab={activeTab}
-                consultationId={consultationId}
-                isMobile={isMobile}
-                hidden={showMobileList}
-                onInputChange={handleInputChange}
-                onSend={handleSend}
-                onCloseSession={handleCloseSession}
-                onBack={() => setSelectedSession(null)}
-                onFileUploaded={handleFileUploaded}
-                getDoctorId={getDoctorIdForSession}
-                getDisplayInfo={getSessionDisplayInfo}
-                formatOfficeHours={formatOfficeHours}
-                isWithinOfficeHours={isWithinOfficeHours}
-                onDoctorProfileClick={goToDoctorProfile}
-              />
-            </OrientacionDisclaimerGate>
-          ) : (
-            <ChatMessagesPanel
+          {/* Disclaimer orientación médica removido por orden del cliente. */}
+          <ChatMessagesPanel
               session={selectedSessionData}
               messages={messages}
               userId={user?.id}
@@ -494,7 +466,6 @@ export default function Chat() {
               isWithinOfficeHours={isWithinOfficeHours}
               onDoctorProfileClick={goToDoctorProfile}
             />
-          )}
         </div>
       </div>
 
