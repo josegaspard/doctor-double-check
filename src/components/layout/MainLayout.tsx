@@ -271,7 +271,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   return (
     <AppBackground
       ref={ref}
-      className="min-h-screen flex flex-col overflow-x-hidden"
+      className="min-h-screen flex flex-col overflow-x-clip"
     >
       {/* Header — usa color del footer cuando el fondo es imagen */}
       <header
@@ -538,7 +538,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       <MobileBackHeader />
 
       {/* Main Content - add bottom padding on mobile for tab bar */}
-      <main className="flex-1 pb-[72px] sm:pb-0 overflow-x-hidden min-h-[calc(100vh-56px-72px)] sm:min-h-0 relative z-10">
+      <main className="flex-1 pb-[72px] sm:pb-0 overflow-x-clip min-h-[calc(100vh-56px-72px)] sm:min-h-0 relative z-10">
         <motion.div
           key={location.pathname}
           initial={{ opacity: 0 }}
