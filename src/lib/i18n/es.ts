@@ -620,6 +620,11 @@ export const es = {
     weakPassword: 'La contraseña es demasiado débil. Cumple con los requisitos indicados.',
     registerError: 'Error al registrarse',
     notAuthenticated: 'No autenticado',
+    invalidCredentials: 'Correo o contraseña incorrectos',
+    emailNotConfirmed: 'Confirma tu correo antes de iniciar sesión',
+    userAlreadyExists: 'Ya existe una cuenta con ese correo',
+    tooManyRequests: 'Demasiados intentos. Espera unos minutos e intenta de nuevo',
+    userNotFound: 'No existe una cuenta con ese correo',
   },
   // Purchase messages
   purchaseMessages: {

@@ -620,6 +620,11 @@ export const en = {
     weakPassword: 'Password is too weak. Meet the requirements listed.',
     registerError: 'Error registering',
     notAuthenticated: 'Not authenticated',
+    invalidCredentials: 'Incorrect email or password',
+    emailNotConfirmed: 'Please confirm your email before signing in',
+    userAlreadyExists: 'An account with this email already exists',
+    tooManyRequests: 'Too many attempts. Please wait a few minutes and try again',
+    userNotFound: 'No account exists with that email',
   },
   // Purchase messages
   purchaseMessages: {

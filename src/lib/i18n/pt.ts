@@ -624,6 +624,11 @@ export const pt = {
     weakPassword: 'La senha es demasiado débil. Cumple com los requisitos indicados.',
     registerError: 'Error al cadastrar-se',
     notAuthenticated: 'Não autenticado',
+    invalidCredentials: 'E-mail ou senha incorretos',
+    emailNotConfirmed: 'Confirma teu e-mail antes de entrar',
+    userAlreadyExists: 'Já existe uma conta com esse e-mail',
+    tooManyRequests: 'Demasiadas tentativas. Espera uns minutos e tenta de novo',
+    userNotFound: 'Não existe uma conta com esse e-mail',
   },
   // Purchase messages
   purchaseMessages: {

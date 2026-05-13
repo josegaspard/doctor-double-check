@@ -22,6 +22,7 @@ import { PasswordStrength, getPasswordStrength } from '@/components/ui/password-
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { AppBackground } from '@/components/layout/AppBackground';
+import { translateAuthError } from '@/lib/translateAuthError';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -132,7 +133,9 @@ export default function Login() {
         navigate('/lives');
       }
     } else {
-      setLoginError(result.error || t('authErrors.loginError'));
+      // Traducimos el mensaje crudo de Supabase ("Invalid login credentials", etc.)
+      // al idioma activo. Si no reconocemos el error, cae al genérico traducido.
+      setLoginError(translateAuthError(result.error, t));
     }
   };
 
@@ -151,7 +154,7 @@ export default function Login() {
     if (result.success) {
       setResetEmailSent(true);
     } else {
-      setLoginError(result.error || t('authErrors.resetError'));
+      setLoginError(translateAuthError(result.error, t) || t('authErrors.resetError'));
     }
   };
 
@@ -184,7 +187,7 @@ export default function Login() {
       return;
     }
 
-    setRegisterError(result.error || t('authErrors.registerError'));
+    setRegisterError(translateAuthError(result.error, t) || t('authErrors.registerError'));
   };
 
   return (
