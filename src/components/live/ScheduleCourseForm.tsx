@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ const SPECIALTIES = ['Cardiología', 'Pediatría', 'Ginecología', 'Dermatologí
 export function ScheduleCourseForm() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -62,7 +64,17 @@ export function ScheduleCourseForm() {
       setTitle(''); setDescription(''); setScheduledAt('');
       navigate('/doctor/recordings?tab=lives-pasados');
     } catch (e: any) {
-      toast.error(e.message || 'Error al programar el curso');
+      // RLS de Postgres: el doctor no está aprobado para crear lives/cursos.
+      const rawMsg: string = e?.message || '';
+      const isRls =
+        e?.code === '42501' ||
+        /row-level security/i.test(rawMsg) ||
+        /violates row-level/i.test(rawMsg);
+      if (isRls) {
+        toast.error(t('contextErrors.notVerifiedToCreateLive'));
+      } else {
+        toast.error(rawMsg || 'Error al programar el curso');
+      }
     } finally {
       setSubmitting(false);
     }

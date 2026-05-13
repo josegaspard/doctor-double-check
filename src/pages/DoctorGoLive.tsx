@@ -275,7 +275,18 @@ export default function DoctorGoLive() {
       console.error('Error starting live:', error);
       stream.getTracks().forEach(t => t.stop());
       setLocalStream(null);
-      toast.error(error.message || t('doctorGoLive.startError'));
+      // RLS de Postgres rechaza el INSERT si el doctor no está aprobado.
+      // Traducimos a un mensaje accionable en lugar del raw "row-level security".
+      const rawMsg: string = error?.message || '';
+      const isRls =
+        error?.code === '42501' ||
+        /row-level security/i.test(rawMsg) ||
+        /violates row-level/i.test(rawMsg);
+      if (isRls) {
+        toast.error(t('contextErrors.notVerifiedToCreateLive'));
+      } else {
+        toast.error(rawMsg || t('doctorGoLive.startError'));
+      }
     } finally {
       setIsCreating(false);
     }
