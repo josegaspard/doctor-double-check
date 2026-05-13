@@ -257,12 +257,15 @@ export default function DoctorUpload() {
       setUploadedContent(prev => [{ id: contentData.id, type: getFileType(selectedFile), title, description, category, isPublic, audienceType, uploadedAt: new Date(), fileUrl: fileName }, ...prev]);
       setShowSuccess(true);
 
-      if (isPublic) {
-        await supabase.rpc('notify_subscribers', { p_doctor_id: user.id, p_notification_type: 'new_content', p_title: `Nuevo contenido: ${title}`, p_message: `${user.name} ha subido nuevo contenido en ${category}`, p_data: { content_id: contentData.id, type: getFileType(selectedFile) } });
-        supabase.functions.invoke('send-content-notification-email', { body: { doctorId: user.id, doctorName: user.name, contentId: contentData.id, contentTitle: title.trim(), contentType: getFileType(selectedFile), category } }).catch(err => console.error('Error sending email notifications:', err));
-      }
+      // Public content goes through admin moderation BEFORE notifying subscribers.
+      // Subscriber notification + email now fires from AdminContentModeration when approved.
 
-      toast({ title: 'Contenido subido', description: isPublic ? 'Se notificó a tus suscriptores' : 'Guardado como privado' });
+      toast({
+        title: 'Contenido enviado a revisión',
+        description: isPublic
+          ? 'Tu contenido será publicado tras la aprobación del equipo de Medical Masters (normalmente 24h).'
+          : 'Guardado como privado. Solo tú puedes verlo.',
+      });
       setSelectedFile(null); setTitle(''); setDescription(''); setCategory(''); setIsPublic(true); setAudienceType('all');
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error: any) {

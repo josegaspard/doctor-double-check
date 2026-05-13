@@ -84,6 +84,10 @@ const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
 const Terms = React.lazy(() => import("./pages/Terms"));
 const Privacy = React.lazy(() => import("./pages/Privacy"));
 const AdminReports = React.lazy(() => import("./pages/AdminReports"));
+const AdminContentModeration = React.lazy(() => import("./pages/AdminContentModeration"));
+const BookAppointment = React.lazy(() => import("./pages/BookAppointment"));
+const MyAppointments = React.lazy(() => import("./pages/MyAppointments"));
+const VendorProducts = React.lazy(() => import("./pages/VendorProducts"));
 const AdminSiteSettings = React.lazy(() => import("./pages/AdminSiteSettings"));
 const AdminRefunds = React.lazy(() => import("./pages/AdminRefunds"));
 const AdminPayoutSettings = React.lazy(() => import("./pages/AdminPayoutSettings"));
@@ -234,6 +238,10 @@ const App = () => {
                       <Route path="/admin/users" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminUsers /></AccessGuard>} />
                       <Route path="/admin/analytics" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminAnalytics /></AccessGuard>} />
                       <Route path="/admin/reports" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminReports /></AccessGuard>} />
+                      <Route path="/admin/content-moderation" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminContentModeration /></AccessGuard>} />
+                      <Route path="/book/:doctorId" element={<BookAppointment />} />
+                      <Route path="/my-appointments" element={<MyAppointments />} />
+                      <Route path="/vendor/products" element={<VendorProducts />} />
                       <Route path="/admin/site-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminSiteSettings /></AccessGuard>} />
                       <Route path="/admin/refunds" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminRefunds /></AccessGuard>} />
                       <Route path="/admin/payout-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminPayoutSettings /></AccessGuard>} />
