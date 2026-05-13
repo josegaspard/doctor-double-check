@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard, Clock, Shield, CheckCircle, Bell } from 'lucide-react';
+import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard, Clock, Shield, CheckCircle, Bell, Calendar as CalendarIcon } from 'lucide-react';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
@@ -677,6 +677,19 @@ export default function DoctorProfile() {
                       )
                 }
               </Button>
+
+              {/* Schedule appointment (patients only — does not block UI for others) */}
+              {(role === 'patient' || role === 'visitor') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5"
+                  onClick={() => navigate(`/book/${doctor.id}`)}
+                >
+                  <CalendarIcon className="w-4 h-4 text-primary" />
+                  Reservar cita
+                </Button>
+              )}
 
               {/* Secondary actions — stacked on mobile, row on sm+ */}
               <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[1fr_1fr_auto] sm:gap-2">
