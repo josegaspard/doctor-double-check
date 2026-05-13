@@ -725,6 +725,7 @@ export const en = {
     streamUidMissing: 'Stream UID not found for this live',
     endLiveError: 'Error ending and saving the recording',
     createLiveError: 'Error creating live',
+    notVerifiedToCreateLive: 'You need to verify your account before starting lives',
     endLiveGenericError: 'Error ending live',
     invalidAmount: 'Invalid amount',
     topUpError: 'Error topping up',

@@ -658,7 +658,21 @@ export function LivesProvider({ children }: { children: ReactNode }) {
 
       return { success: true, liveId: newLive.id };
     } catch (error: any) {
-      return { success: false, error: error.message || tContext('contextErrors.createLiveError') };
+      // Postgres RLS violation (code 42501 o mensaje "row-level security"):
+      // significa que la BD rechazó el INSERT porque el usuario no es un
+      // doctor aprobado. Traducimos a un mensaje accionable para el usuario.
+      const rawMsg: string = error?.message || '';
+      const isRls =
+        error?.code === '42501' ||
+        /row-level security/i.test(rawMsg) ||
+        /violates row-level/i.test(rawMsg);
+      if (isRls) {
+        return {
+          success: false,
+          error: tContext('contextErrors.notVerifiedToCreateLive'),
+        };
+      }
+      return { success: false, error: rawMsg || tContext('contextErrors.createLiveError') };
     }
   };
 

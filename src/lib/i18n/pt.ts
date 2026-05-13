@@ -729,6 +729,7 @@ export const pt = {
     streamUidMissing: 'Não se encomtró el stream UID para este live',
     endLiveError: 'Error al finalizar e salvar la grabación',
     createLiveError: 'Error al crear live',
+    notVerifiedToCreateLive: 'Precisas verificar tua conta antes de iniciar lives',
     endLiveGenericError: 'Error al terminar live',
     invalidAmount: 'Monto inválido',
     topUpError: 'Error al recargar',

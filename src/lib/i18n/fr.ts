@@ -729,6 +729,7 @@ export const fr = {
     streamUidMissing: 'Non se enavectró el stream UID pour este live',
     endLiveError: 'Error al finalizar et enregistrer la grabación',
     createLiveError: 'Error al crear live',
+    notVerifiedToCreateLive: 'Vous devez vérifier votre compte avant de démarrer des lives',
     endLiveGenericError: 'Error al terminar live',
     invalidAmount: 'Monto inválido',
     topUpError: 'Error al recargar',
