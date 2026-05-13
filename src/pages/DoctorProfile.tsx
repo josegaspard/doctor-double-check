@@ -795,8 +795,33 @@ export default function DoctorProfile() {
                 </CardContent>
               </Card>
 
+              {/* Recargar Wallet — solo cuando hay saldo insuficiente */}
+              {!canAfford(doctor.consultationFee) && (
+                <Card
+                  className="cursor-pointer hover:border-primary transition-colors border-dashed"
+                  onClick={() => { setShowPaymentModal(false); navigate('/wallet'); }}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Wallet className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{t('doctorProfile.topUpBalance')}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {t('doctorProfile.topUpBalanceDesc')}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">{t('doctorProfile.topUpAction')}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Card Payment Option */}
-              <Card 
+              <Card
                 className="cursor-pointer hover:border-primary transition-colors"
                 onClick={handleStripePayment}
               >
