@@ -25,6 +25,7 @@ import {
 import { ContentAudience } from '@/components/content/AudienceSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const CONTENT_CATEGORIES = [
   'Alergología', 'Anestesiología', 'Angiología', 'Cardiología', 'Cirugía General',
@@ -65,6 +66,7 @@ export default function DoctorUpload() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -387,7 +389,7 @@ export default function DoctorUpload() {
               <Label>Categoría *</Label>
               <Select value={category} onValueChange={setCategory} disabled={!isApproved}>
                 <SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger>
-                <SelectContent>{CONTENT_CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                <SelectContent>{CONTENT_CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{t(`medical.category.${cat}`)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             

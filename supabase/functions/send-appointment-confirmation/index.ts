@@ -1,0 +1,121 @@
+// Sends an email to the patient when a doctor confirms their appointment request,
+// plus an in-app notification.
+import { Resend } from "npm:resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>";
+const APP_URL = "https://medical-masters.com";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+function formatDate(iso: string) {
+  try {
+    return new Date(iso).toLocaleString("es-MX", {
+      weekday: "long", year: "numeric", month: "long", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+Deno.serve(async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const { appointmentId } = await req.json();
+    if (!appointmentId) {
+      return new Response(JSON.stringify({ error: "Missing appointmentId" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(supabaseUrl, serviceKey);
+
+    const { data: appt } = await admin
+      .from("appointments")
+      .select("id, patient_id, doctor_id, scheduled_at, reason, status")
+      .eq("id", appointmentId)
+      .single();
+
+    if (!appt) {
+      return new Response(JSON.stringify({ error: "appointment not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const [{ data: patient }, { data: doctor }] = await Promise.all([
+      admin.from("profiles").select("email, name").eq("id", appt.patient_id).single(),
+      admin.from("profiles").select("name").eq("id", appt.doctor_id).single(),
+    ]);
+
+    const when = formatDate(appt.scheduled_at);
+    const doctorName = doctor?.name || "tu médico";
+
+    if (patient?.email) {
+      const subject = `✅ Cita confirmada con el Dr. ${doctorName}`;
+      const html = `
+        <!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/></head>
+        <body style="margin:0;background:#fff;font-family:Inter,Arial,sans-serif;">
+          <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+            <div style="background:linear-gradient(135deg,#163a83,#00768b);padding:32px 24px;text-align:center;">
+              <img src="${APP_URL}/email-logo-white.png" width="180" alt="Medical Masters" style="margin:0 auto;" />
+            </div>
+            <div style="padding:32px 24px;color:#1e293b;">
+              <h1 style="margin:0 0 16px;font-size:22px;color:#163a83;">✅ Tu cita está confirmada</h1>
+              <p style="font-size:16px;line-height:1.6;">Hola ${patient.name || ""},</p>
+              <p style="font-size:16px;line-height:1.6;">
+                El <strong>Dr. ${doctorName}</strong> confirmó tu cita.
+              </p>
+              <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin:16px 0;">
+                <p style="margin:0 0 6px;font-size:14px;color:#0c4a6e;"><strong>Fecha y hora</strong></p>
+                <p style="margin:0;font-size:14px;color:#0c4a6e;">${when}</p>
+                ${appt.reason ? `<p style="margin:8px 0 0;font-size:14px;color:#0c4a6e;"><strong>Motivo:</strong> ${appt.reason}</p>` : ""}
+              </div>
+              <div style="text-align:center;margin-top:24px;">
+                <a href="${APP_URL}/my-appointments" style="display:inline-block;background:#163a83;color:#fff;padding:14px 28px;border-radius:12px;font-weight:600;text-decoration:none;">Ver mis citas</a>
+              </div>
+              <p style="font-size:13px;color:#64748b;margin-top:24px;text-align:center;">
+                Recibirás un recordatorio antes de la consulta. Si necesitas cancelar, hazlo desde Mis Citas con al menos 2 horas de anticipación.
+              </p>
+            </div>
+          </div>
+        </body></html>
+      `;
+
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [patient.email],
+        subject,
+        html,
+      });
+    }
+
+    await admin.from("notifications").insert({
+      user_id: appt.patient_id,
+      type: "appointment_confirmed" as any,
+      title: "✅ Cita confirmada",
+      message: `El Dr. ${doctorName} confirmó tu cita para ${when}`,
+      data: { appointmentId: appt.id, doctorId: appt.doctor_id, scheduledAt: appt.scheduled_at },
+    });
+
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("send-appointment-confirmation error", err);
+    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});

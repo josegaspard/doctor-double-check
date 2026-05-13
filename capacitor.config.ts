@@ -24,6 +24,26 @@ const config: CapacitorConfig = {
       style: 'DARK',
       backgroundColor: '#0F172A',
     },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+    LocalNotifications: {
+      iconColor: '#163a83',
+    },
+    Keyboard: {
+      resize: 'body',
+      style: 'DARK',
+      resizeOnFullScreen: true,
+    },
+  },
+  ios: {
+    contentInset: 'automatic',
+    limitsNavigationsToAppBoundDomains: false,
+  },
+  android: {
+    allowMixedContent: false,
+    captureInput: true,
+    webContentsDebuggingEnabled: false,
   },
 };
 

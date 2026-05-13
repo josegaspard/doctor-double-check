@@ -219,7 +219,7 @@ function ConsultationSummariesSection({ patientId }: { patientId: string }) {
 
 export default function MedicalRecord() {
   const { user, role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [data, setData] = useState<ClinicalData>(DEFAULT_DATA);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -500,7 +500,7 @@ export default function MedicalRecord() {
                     <Select value={data.blood_type} onValueChange={v => update('blood_type', v)}>
                       <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                       <SelectContent>
-                        {BLOOD_TYPES.map(bt => <SelectItem key={bt} value={bt}>{bt}</SelectItem>)}
+                        {BLOOD_TYPES.map(bt => <SelectItem key={bt} value={bt}>{t(`medical.bloodType.${bt}`)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -530,7 +530,7 @@ export default function MedicalRecord() {
                             <Checkbox checked={item.active} onCheckedChange={(v) => {
                               setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, active: !!v } } }));
                             }} />
-                            <Label className="text-sm cursor-pointer">{condition}</Label>
+                            <Label className="text-sm cursor-pointer">{t(`medical.chronicCondition.${condition}`)}</Label>
                           </div>
                           {item.active && (
                             <div className="ml-6 space-y-1.5">
@@ -695,11 +695,11 @@ export default function MedicalRecord() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { key: 'diabetes', label: 'Diabetes' },
-                  { key: 'hypertension', label: 'Hipertensión' },
-                  { key: 'cancer', label: 'Cáncer' },
-                  { key: 'heart_disease', label: 'Enfermedad cardíaca' },
-                  { key: 'mental_illness', label: 'Enfermedad mental' },
+                  { key: 'diabetes', label: t('medical.familyMain.diabetes') },
+                  { key: 'hypertension', label: t('medical.familyMain.hypertension') },
+                  { key: 'cancer', label: t('medical.familyMain.cancer') },
+                  { key: 'heart_disease', label: t('medical.familyMain.heart_disease') },
+                  { key: 'mental_illness', label: t('medical.familyMain.mental_illness') },
                 ].map(item => {
                   const boolKey = `family_${item.key}` as keyof ClinicalData;
                   const detailKey = `family_${item.key}_detail` as keyof ClinicalData;
@@ -767,7 +767,7 @@ export default function MedicalRecord() {
                           </div>
                         ) : (
                           <Textarea
-                            placeholder={`Detalle sobre ${item.label.toLowerCase()} en la familia...`}
+                            placeholder={`${t('medical.familyDetailPrefix')} ${item.label.toLowerCase()}...`}
                             value={data[detailKey] as string}
                             onChange={e => update(detailKey, e.target.value)}
                             rows={2}
@@ -782,10 +782,11 @@ export default function MedicalRecord() {
                 {/* Extended family conditions */}
                 {EXTRA_FAMILY_CONDITIONS.map(item => {
                   const val = data.extra_family[item.key] || { active: false, detail: '' };
+                  const localizedLabel = t(`medical.familyCondition.${item.key}`);
                   return (
                     <div key={item.key} className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label className="text-sm font-medium">{item.label}</Label>
+                        <Label className="text-sm font-medium">{localizedLabel}</Label>
                         <Switch
                           checked={val.active}
                           onCheckedChange={v => {
@@ -798,7 +799,7 @@ export default function MedicalRecord() {
                       </div>
                       {val.active && (
                         <Textarea
-                          placeholder={`Detalle sobre ${item.label.toLowerCase()} en la familia...`}
+                          placeholder={`${t('medical.familyDetailPrefix')} ${localizedLabel.toLowerCase()}...`}
                           value={val.detail}
                           onChange={e => {
                             setData(prev => ({
@@ -874,7 +875,7 @@ export default function MedicalRecord() {
                             <Select value={data.habit_alcohol} onValueChange={v => update('habit_alcohol', v)}>
                               <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medical.frequency.${o.value}`)}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>
@@ -934,7 +935,7 @@ export default function MedicalRecord() {
                                     <Select value={data[sub.key]} onValueChange={v => update(sub.key, v)}>
                                       <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                                       <SelectContent>
-                                        {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                                        {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medical.frequency.${o.value}`)}</SelectItem>)}
                                       </SelectContent>
                                     </Select>
                                     <Input placeholder={sub.placeholder} value={data[sub.amountKey]} onChange={e => update(sub.amountKey, e.target.value)} className="h-8 text-xs" />
@@ -984,7 +985,7 @@ export default function MedicalRecord() {
                             <Select value={data.habit_drugs} onValueChange={v => update('habit_drugs', v)}>
                               <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medical.frequency.${o.value}`)}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>
@@ -1046,7 +1047,7 @@ export default function MedicalRecord() {
                             <Select value={data.habit_exercise} onValueChange={v => update('habit_exercise', v)}>
                               <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medical.frequency.${o.value}`)}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>

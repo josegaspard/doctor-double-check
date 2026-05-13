@@ -107,6 +107,10 @@ export default function IdentityVerification() {
     if (!user?.id) return;
     setIsStartingVeriff(true);
 
+    // Try Veriff first (paid, primary provider). If it fails because the
+    // subscription is paused (503 from edge function), fall back to Didit
+    // (free tier alternative). When Veriff is reactivated, this fallback
+    // automatically goes dormant.
     try {
       const { data, error } = await supabase.functions.invoke('create-veriff-session', {
         body: {
@@ -114,27 +118,42 @@ export default function IdentityVerification() {
         },
       });
 
-      if (error) throw error;
-      if (!data?.session_url) throw new Error('No session URL returned');
+      if (!error && data?.session_url) {
+        toast.info(
+          language === 'es'
+            ? 'Redirigiendo a la verificación biométrica...'
+            : 'Redirecting to biometric verification...'
+        );
+        window.location.href = data.session_url;
+        setTimeout(fetchVerification, 3000);
+        return;
+      }
+      throw error ?? new Error('Veriff unavailable');
+    } catch (veriffErr) {
+      console.warn('Veriff unavailable, trying Didit fallback:', veriffErr);
 
-      // Navigate directly to Veriff (avoids popup blockers on mobile/WebView)
-      toast.info(
-        language === 'es'
-          ? 'Redirigiendo a la verificación biométrica...'
-          : 'Redirecting to biometric verification...'
-      );
-      window.location.href = data.session_url;
+      try {
+        const { data: dData, error: dErr } = await supabase.functions.invoke('kyc-didit-start', {});
+        if (dErr) throw dErr;
+        if (!dData?.verification_url) throw new Error('No Didit verification URL');
 
-      // Refresh after a short delay
-      setTimeout(fetchVerification, 3000);
-    } catch (error: any) {
-      console.error('Veriff error:', error);
-      toast.error(
-        language === 'es'
-          ? 'Error al iniciar verificación. Puedes usar la verificación manual.'
-          : 'Error starting verification. You can use manual verification.'
-      );
-      setShowManualUpload(true);
+        toast.info(
+          language === 'es'
+            ? 'Iniciando verificación biométrica...'
+            : 'Starting biometric verification...'
+        );
+        window.location.href = dData.verification_url;
+        setTimeout(fetchVerification, 3000);
+        return;
+      } catch (diditErr: any) {
+        console.error('Both Veriff and Didit failed:', diditErr);
+        toast.error(
+          language === 'es'
+            ? 'No se pudo iniciar la verificación automática. Puedes subir tus documentos manualmente.'
+            : 'Could not start automatic verification. You can upload your documents manually.'
+        );
+        setShowManualUpload(true);
+      }
     } finally {
       setIsStartingVeriff(false);
     }

@@ -123,8 +123,14 @@ export default function MyAppointments() {
 
   const confirmAppt = async (id: string) => {
     const { error } = await supabase.from('appointments').update({ status: 'confirmed' } as any).eq('id', id);
-    if (error) toast.error(error.message);
-    else { toast.success('Cita confirmada'); fetchAppts(); }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Cita confirmada');
+    supabase.functions.invoke('send-appointment-confirmation', { body: { appointmentId: id } })
+      .catch((e) => console.warn('send-appointment-confirmation failed:', e));
+    fetchAppts();
   };
 
   return (
