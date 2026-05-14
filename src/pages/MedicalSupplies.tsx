@@ -47,7 +47,7 @@ export default function MedicalSupplies() {
   const [quantity, setQuantity] = useState(1);
   const { featuredIds, featuredMap, trackImpression, trackClick } = useFeaturedListings('product');
   const impressionTrackerRef = useRef(new Set());
-  const { balance: walletBalance, canAfford, refresh: refreshWallet } = useWallet();
+  const { balance: walletBalance, canAfford, refreshWallet } = useWallet();
 
   useEffect(() => {
     const fetchAll = async () => {
