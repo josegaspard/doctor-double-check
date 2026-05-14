@@ -94,17 +94,18 @@ export default function RoleSelector() {
 
   return (
     <div className="min-h-screen flex flex-col relative" style={{ background: '#0a1f47' }}>
-      {/* Header */}
-      <header className="relative z-40 px-4 sm:px-8 py-3 sm:py-5 flex-shrink-0">
+      {/* Header — mobile: en flujo normal. Desktop (lg+): floating absolute */}
+      <header className="relative lg:absolute lg:top-0 lg:left-0 lg:right-0 z-40 px-4 sm:px-8 py-3 sm:py-5 flex-shrink-0">
         <div className="flex items-center justify-between">
           <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 sm:h-10 w-auto drop-shadow-lg" />
           <LanguageSwitcher className="bg-white/10 hover:bg-white/20 text-white border-white/20" />
         </div>
       </header>
 
-      {/* Título en flujo normal — no overlap con las cards en mobile */}
-      <div className="relative z-30 px-4 pt-2 pb-5 sm:pb-7 text-center flex-shrink-0">
-        <p className="text-xs sm:text-sm md:text-base text-white/85 mb-1.5 drop-shadow">
+      {/* Título — mobile/tablet: en flujo normal (no overlap con cards stacked).
+          Desktop (lg+): absolute floating sobre las 4 columnas full-height */}
+      <div className="relative lg:absolute lg:top-24 lg:left-0 lg:right-0 z-30 px-4 pt-2 pb-5 sm:pb-7 lg:py-0 text-center flex-shrink-0 pointer-events-none">
+        <p className="text-xs sm:text-sm md:text-base text-white/85 mb-1.5 lg:mb-2 drop-shadow">
           {t('roleSelector.title')}
         </p>
         <h1 className="font-heading text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg max-w-2xl mx-auto leading-tight px-2">
@@ -112,9 +113,8 @@ export default function RoleSelector() {
         </h1>
       </div>
 
-      {/* Mobile: 1 columna stack vertical, scroll natural.
-          Tablet (sm): 2x2 grid. Desktop (lg): 4 columnas full-height */}
-      <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:min-h-0">
+      {/* Mobile: 1 col stack. Tablet (sm): 2x2. Desktop (lg): 4 col full-height */}
+      <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:min-h-screen">
         {roleOptions.map((option, idx) => {
           const Icon = option.icon;
           return (
@@ -122,7 +122,7 @@ export default function RoleSelector() {
               key={option.id}
               type="button"
               onClick={() => handleRoleSelect(option)}
-              className={`group relative overflow-hidden text-left min-h-[140px] sm:min-h-[280px] lg:min-h-[calc(100vh-180px)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/40 ${
+              className={`group relative overflow-hidden text-left min-h-[140px] sm:min-h-[280px] lg:min-h-screen focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/40 ${
                 idx < roleOptions.length - 1 ? 'lg:border-r border-white/10' : ''
               } border-b border-white/10 sm:border-b-0 ${idx < 2 ? 'sm:border-b sm:border-white/10 lg:border-b-0' : ''}`}
               aria-label={option.title}
@@ -134,7 +134,7 @@ export default function RoleSelector() {
               />
               <div className="absolute inset-0 bg-[#0a1f47]/80 group-hover:bg-[#0a1f47]/30 transition-colors duration-500" />
 
-              <div className="relative z-10 h-full min-h-[140px] sm:min-h-[280px] lg:min-h-[calc(100vh-180px)] flex flex-col items-center justify-center px-5 py-5 sm:py-8 text-center">
+              <div className="relative z-10 h-full min-h-[140px] sm:min-h-[280px] lg:min-h-screen flex flex-col items-center justify-center px-5 py-5 sm:py-8 text-center">
                 <div className="mb-2 sm:mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-1">
                   <Icon className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white drop-shadow-lg" strokeWidth={1.5} />
                 </div>
