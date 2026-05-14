@@ -16,8 +16,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
-import { Package, Search, Loader2, ShoppingCart, Store, Phone, Globe, MapPin, Sparkles, SlidersHorizontal, X, ArrowUpDown, ClipboardList } from 'lucide-react';
+import { Package, Search, Loader2, ShoppingCart, Store, Phone, Globe, MapPin, Sparkles, SlidersHorizontal, X, ArrowUpDown, ClipboardList, Wallet, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useWallet } from '@/contexts/WalletContext';
 
 type SortMode = 'featured' | 'price_asc' | 'price_desc' | 'name' | 'newest';
 
@@ -46,6 +47,7 @@ export default function MedicalSupplies() {
   const [quantity, setQuantity] = useState(1);
   const { featuredIds, featuredMap, trackImpression, trackClick } = useFeaturedListings('product');
   const impressionTrackerRef = useRef(new Set());
+  const { balance: walletBalance, canAfford, refresh: refreshWallet } = useWallet();
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -120,6 +122,42 @@ export default function MedicalSupplies() {
         throw new Error(data?.error || 'No checkout URL returned');
       }
     } catch (err) { toast.error(err.message); }
+    setPurchasing(false);
+  };
+
+  const handleWalletPurchase = async () => {
+    if (!pendingProduct || !shippingForm.name || !shippingForm.city) {
+      toast.error(es ? 'Nombre y ciudad son obligatorios' : 'Name and city are required');
+      return;
+    }
+    const total = pendingProduct.price * quantity;
+    if (!canAfford(total)) {
+      toast.error(es ? 'Saldo insuficiente en tu wallet' : 'Insufficient wallet balance');
+      return;
+    }
+    setPurchasing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('purchase-marketplace-wallet', {
+        body: {
+          product_id: pendingProduct.id,
+          quantity,
+          shipping: shippingForm,
+        },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(es ? '¡Compra realizada con wallet!' : 'Purchase paid with wallet!');
+        await refreshWallet();
+        setShippingDialog(false);
+        setPendingProduct(null);
+        setShippingForm({ name: '', phone: '', city: '', state: '', zip: '', notes: '' });
+        navigate('/orders');
+      } else {
+        throw new Error(data?.error || 'Wallet purchase failed');
+      }
+    } catch (err: any) {
+      toast.error(err.message || String(err));
+    }
     setPurchasing(false);
   };
 
@@ -267,7 +305,7 @@ export default function MedicalSupplies() {
             <div className="flex gap-2 mb-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder={es ? 'Buscar productos...' : 'Search products...'} value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-10" />
+                <Input placeholder={es ? 'Buscar productos...' : 'Search products...'} value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-11 bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary placeholder:text-muted-foreground" />
                 {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>}
               </div>
               <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
@@ -428,10 +466,53 @@ export default function MedicalSupplies() {
                 </div>
               )}
 
-              <Button onClick={handlePurchase} disabled={purchasing || !shippingForm.name || !shippingForm.city} className="w-full gap-2">
-                {purchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}
-                {es ? 'Proceder al Pago' : 'Proceed to Payment'}
-              </Button>
+              {/* Payment methods: wallet + card */}
+              {pendingProduct && (() => {
+                const total = pendingProduct.price * quantity;
+                const affordable = canAfford(total);
+                return (
+                  <div className="space-y-2 pt-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {es ? 'Método de pago' : 'Payment method'}
+                    </p>
+                    <Button
+                      onClick={handleWalletPurchase}
+                      disabled={purchasing || !shippingForm.name || !shippingForm.city || !affordable}
+                      className="w-full h-11 gap-2"
+                      variant={affordable ? 'default' : 'outline'}
+                    >
+                      {purchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
+                      {affordable
+                        ? (es ? `Pagar con Wallet — $${total.toLocaleString()}` : `Pay with Wallet — $${total.toLocaleString()}`)
+                        : (es
+                            ? `Saldo insuficiente ($${walletBalance.toLocaleString()})`
+                            : `Insufficient balance ($${walletBalance.toLocaleString()})`)}
+                    </Button>
+                    {!affordable && (
+                      <Button
+                        variant="ghost"
+                        className="w-full h-8 text-xs"
+                        onClick={() => navigate('/wallet')}
+                        type="button"
+                      >
+                        {es ? 'Recargar Wallet' : 'Top up Wallet'}
+                      </Button>
+                    )}
+                    <Button
+                      onClick={handlePurchase}
+                      disabled={purchasing || !shippingForm.name || !shippingForm.city}
+                      variant="outline"
+                      className="w-full h-11 gap-2"
+                    >
+                      {purchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                      {es ? 'Pagar con Tarjeta (Stripe)' : 'Pay with Card (Stripe)'}
+                    </Button>
+                    <p className="text-[10px] text-center text-muted-foreground pt-1">
+                      {es ? 'Saldo Wallet:' : 'Wallet balance:'} ${walletBalance.toLocaleString()} MXN
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           </DialogContent>
         </Dialog>

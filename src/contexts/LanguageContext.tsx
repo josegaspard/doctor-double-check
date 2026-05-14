@@ -17,11 +17,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const supabaseUser = authContext?.supabaseUser ?? null;
   const [language, setLanguageState] = useState<SupportedLanguage>(() => {
     const cached = typeof window !== 'undefined' ? localStorage.getItem('preferred_language') : null;
-    if (cached === 'es' || cached === 'en' || cached === 'pt' || cached === 'fr') return cached;
+    if (cached === 'es' || cached === 'en') return cached;
+    // Legacy users with pt/fr stored get migrated back to ES (PT/FR retired).
+    if (cached === 'pt' || cached === 'fr') {
+      try { localStorage.setItem('preferred_language', 'es'); } catch {}
+      return 'es';
+    }
     // Auto-detect from browser language
     if (typeof navigator !== 'undefined') {
       const l = navigator.language?.slice(0, 2).toLowerCase();
-      if (l === 'en' || l === 'pt' || l === 'fr') return l as SupportedLanguage;
+      if (l === 'en') return 'en';
     }
     return 'es';
   });
@@ -31,8 +36,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const loadLanguage = async () => {
       // First check localStorage for cached preference
       const cached = localStorage.getItem('preferred_language');
-      if (cached === 'es' || cached === 'en' || cached === 'pt' || cached === 'fr') {
+      if (cached === 'es' || cached === 'en') {
         setLanguageState(cached as SupportedLanguage);
+      } else if (cached === 'pt' || cached === 'fr') {
+        // Migrate retired locales back to ES.
+        setLanguageState('es');
+        try { localStorage.setItem('preferred_language', 'es'); } catch {}
       }
 
       // If user is logged in, fetch from database
@@ -44,9 +53,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           .single();
 
         if (data?.preferred_language) {
-          const lang = data.preferred_language as SupportedLanguage;
+          const raw = data.preferred_language;
+          const lang: SupportedLanguage = raw === 'en' ? 'en' : 'es';
           setLanguageState(lang);
           localStorage.setItem('preferred_language', lang);
+          // Persist migration back to DB if the user had PT/FR stored.
+          if (raw !== 'es' && raw !== 'en' && supabaseUser?.id) {
+            supabase.from('profiles').update({ preferred_language: lang }).eq('id', supabaseUser.id).then(() => {});
+          }
         }
       }
     };

@@ -121,7 +121,7 @@ export function UnifiedFooter({ variant }: Props) {
     return (
       <footer className="bg-[#00768b] text-white pt-8 sm:pt-10 pb-24 sm:pb-6 mt-auto border-t-0">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-6">
             <div className="col-span-2 md:col-span-1 flex flex-col items-start">
               <img src={logoWhite} alt="Medical Masters" className="h-6 sm:h-7 mb-3" />
               <p className="text-[11px] sm:text-xs text-white mb-3 max-w-xs leading-relaxed text-left">
@@ -153,8 +153,8 @@ export function UnifiedFooter({ variant }: Props) {
   return (
     <footer className="bg-[#00768b] pt-12 sm:pt-20 pb-8 sm:pb-10 text-white border-t border-transparent text-sm">
       <div className="container mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 sm:gap-10 mb-10 sm:mb-16">
-          <div className="col-span-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-6 sm:gap-10 mb-10 sm:mb-16">
+          <div className="col-span-2 md:col-span-2 xl:col-span-2">
             <img src={logoWhite} alt="Medical Logo" className="h-8 mb-4 sm:mb-6" />
             <p className="mb-4 sm:mb-6 max-w-sm text-white text-xs sm:text-sm">
               {t('landingFooter.brandDescription')}

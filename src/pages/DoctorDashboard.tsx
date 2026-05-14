@@ -140,7 +140,7 @@ export default function DoctorDashboard() {
             {/* ── FINANZAS ── */}
             <section className="space-y-3">
               <SectionHeader>Finanzas</SectionHeader>
-              <div className="grid gap-3 lg:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2">
                 <EarningsCard />
                 <FundHoldsCard />
               </div>
@@ -149,7 +149,7 @@ export default function DoctorDashboard() {
             {/* ── COMUNICACIONES ── */}
             <section className="space-y-3">
               <SectionHeader>Comunicaciones</SectionHeader>
-              <div className="grid gap-3 lg:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2">
                 <EmailStatsCard />
                 <EmailHistoryCard />
               </div>
@@ -176,7 +176,7 @@ export default function DoctorDashboard() {
                   </Card>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-3 sm:space-y-4 mt-3">
-                  <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+                  <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
                     <OfficeHoursConfig />
                     <SignatureUpload />
                   </div>

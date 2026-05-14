@@ -324,7 +324,7 @@ export default function HospitalLocator() {
             <Input
               placeholder={es ? 'Buscar hospital, dirección o especialidad...' : 'Search hospital, address or specialty...'}
               value={search} onChange={e => setSearch(e.target.value)}
-              className="pl-9 h-10"
+              className="pl-9 h-11 bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary placeholder:text-muted-foreground"
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">

@@ -471,7 +471,7 @@ export default function Doctors() {
               placeholder={t('inputs.searchDoctors')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 bg-card border-border shadow-sm focus-visible:ring-primary/40 text-sm placeholder:text-muted-foreground/70"
+              className="pl-10 h-11 bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary text-sm placeholder:text-muted-foreground"
             />
           </div>
           <Button
@@ -694,13 +694,13 @@ export default function Doctors() {
           const availableDoctors = doctors.filter(isDoctorAvailableNow);
           if (availableDoctors.length === 0) return null;
           return (
-            <div className="mb-4 p-3 sm:p-4 rounded-xl bg-card shadow-md border border-emerald-500/40 ring-1 ring-emerald-500/10">
+            <div className="mb-4 p-3 sm:p-4 rounded-xl bg-card shadow-md border border-primary/40 ring-1 ring-primary/10">
               {/* Mobile: stack vertical (icon+title, badges row below). Desktop: row inline */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 mb-3">
                 <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                  <div className="relative w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 shadow-md">
-                    <Plus className="w-5 h-5 text-white" strokeWidth={3} />
-                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-card animate-pulse" />
+                  <div className="relative w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-md">
+                    <Plus className="w-5 h-5 text-primary-foreground" strokeWidth={3} />
+                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-secondary ring-2 ring-card animate-pulse" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-sm sm:text-base font-bold text-foreground leading-tight">{t('doctors.emergencyTitle')}</h3>
@@ -708,16 +708,16 @@ export default function Doctors() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
-                  <Badge className="text-[11px] gap-1.5 px-2.5 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-500/40 font-bold whitespace-nowrap">
+                  <Badge className="text-[11px] gap-1.5 px-2.5 py-1 bg-primary/15 text-primary dark:bg-primary/25 dark:text-primary-foreground border border-primary/40 font-bold whitespace-nowrap">
                     <span className="relative flex w-2 h-2">
-                      <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />
-                      <span className="relative w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-60" />
+                      <span className="relative w-2 h-2 rounded-full bg-primary" />
                     </span>
                     {availableDoctors.length}
                   </Badge>
                   <Button
                     size="sm"
-                    className="h-9 px-3 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold shadow-md whitespace-nowrap"
+                    className="h-9 px-3 text-xs gap-1.5 bg-secondary hover:bg-secondary/90 active:bg-secondary/80 text-secondary-foreground font-semibold shadow-md whitespace-nowrap"
                     onClick={(e) => { e.stopPropagation(); navigate('/emergency'); }}
                   >
                     <Plus className="w-3.5 h-3.5" strokeWidth={3} />
@@ -742,11 +742,11 @@ export default function Doctors() {
                     <button
                       key={doc.id}
                       onClick={() => navigate(`/doctor/${doc.user_id}`)}
-                      className="flex-shrink-0 snap-start flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-card border border-success/20 hover:border-success/50 transition-colors min-w-[230px]"
+                      className="flex-shrink-0 snap-start flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-card border border-primary/20 hover:border-primary/50 transition-colors min-w-[210px] sm:min-w-[230px]"
                     >
-                      <Avatar className="w-8 h-8 border border-success/30">
+                      <Avatar className="w-8 h-8 border border-primary/30">
                         <AvatarImage src={doc.avatar_url || undefined} />
-                        <AvatarFallback className="bg-success/10 text-success text-xs font-bold">
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
                           {getInitials(doc.name || 'Dr')}
                         </AvatarFallback>
                       </Avatar>

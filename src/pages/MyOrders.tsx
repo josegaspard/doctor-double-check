@@ -143,7 +143,7 @@ export default function MyOrders() {
                 placeholder={es ? 'Buscar por producto...' : 'Search by product...'}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-9 h-9 text-sm"
+                className="pl-9 h-10 text-sm bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary placeholder:text-muted-foreground"
               />
             </div>
           </div>

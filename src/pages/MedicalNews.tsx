@@ -281,7 +281,7 @@ export default function MedicalNews() {
         {/* Search */}
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder={t('medicalNews.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={t('medicalNews.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-11 bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary placeholder:text-muted-foreground" />
         </div>
 
         {/* Sort filters */}

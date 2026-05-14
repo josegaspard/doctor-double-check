@@ -386,9 +386,14 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-6 w-auto" loading="lazy" decoding="async" />
               </Link>
 
-              {/* Logo - hidden on md, visible on lg+ */}
-              <Link to="/lives" className="hidden lg:flex items-center">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-7 xl:h-8 w-auto" loading="lazy" decoding="async" />
+              {/* Logo on tablet - compact */}
+              <Link to="/lives" className="hidden sm:flex md:hidden items-center">
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-6 w-auto" loading="lazy" decoding="async" />
+              </Link>
+
+              {/* Logo - desktop+ */}
+              <Link to="/lives" className="hidden md:flex items-center">
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-6 lg:h-7 xl:h-8 w-auto" loading="lazy" decoding="async" />
               </Link>
             </div>
 

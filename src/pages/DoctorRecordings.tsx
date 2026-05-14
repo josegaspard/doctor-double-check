@@ -63,7 +63,7 @@ import { Slider } from '@/components/ui/slider';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useIsCompact } from '@/hooks/use-mobile';
 import {
   Video,
   ArrowLeft,
@@ -127,6 +127,7 @@ export default function DoctorRecordings() {
   const { t } = useLanguage();
   const { refreshRecordings } = useLives();
   const isMobile = useIsMobile();
+  const isCompact = useIsCompact();
 
   // Tab from URL param
   const initialTab = searchParams.get('tab') === 'lives-pasados' ? 'lives-pasados' : 'grabaciones';
@@ -1043,15 +1044,15 @@ export default function DoctorRecordings() {
 
             {/* Recordings Table */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-base sm:text-lg">
                   <span className="flex items-center gap-2">
-                    <Video className="w-5 h-5" />
+                    <Video className="w-4 h-4 sm:w-5 sm:h-5" />
                     Grabaciones
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {hasActiveFilters && (
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="text-[10px] sm:text-xs">
                         {myRecordings.length} de {allRecordings.length}
                       </Badge>
                     )}
@@ -1060,10 +1061,10 @@ export default function DoctorRecordings() {
                         variant={selectionMode ? "default" : "outline"}
                         size="sm"
                         onClick={toggleSelectionMode}
-                        className="gap-1.5"
+                        className="gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 text-xs"
                       >
-                        {selectionMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                        {selectionMode ? 'Cancelar' : 'Seleccionar'}
+                        {selectionMode ? <CheckSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                        <span className="hidden xs:inline">{selectionMode ? 'Cancelar' : 'Seleccionar'}</span>
                       </Button>
                     )}
                     <Button
@@ -1071,11 +1072,12 @@ export default function DoctorRecordings() {
                       size="sm"
                       onClick={handleCleanupOrphans}
                       disabled={isCleaningOrphans}
-                      className="gap-1.5"
+                      className="gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 text-xs"
                       title="Borra archivos en Backblaze que ya no tienen grabación asociada"
                     >
-                      {isCleaningOrphans ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                      Limpiar huérfanos
+                      {isCleaningOrphans ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                      <span className="hidden sm:inline">Limpiar huérfanos</span>
+                      <span className="sm:hidden">Limpiar</span>
                     </Button>
                   </div>
                 </CardTitle>
@@ -1092,9 +1094,9 @@ export default function DoctorRecordings() {
                       Ir al Dashboard
                     </Button>
                   </div>
-                ) : isMobile ? (
-                  /* Mobile: Card layout */
-                  <div className="space-y-3">
+                ) : isCompact ? (
+                  /* Mobile + Tablet: Card layout (1 col mobile, 2 col tablet) */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {myRecordings.map((recording) => {
                       const stats = getStats(recording.id);
                       const isSelected = selectedIds.has(recording.id);
@@ -1500,8 +1502,8 @@ export default function DoctorRecordings() {
                       Aquí aparecerán los lives que no fueron guardados como grabación
                     </p>
                   </div>
-                ) : isMobile ? (
-                  <div className="space-y-3">
+                ) : isCompact ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {pastLives.map(live => {
                       const isSelected = selectedPastLiveIds.has(live.id);
                       return (
