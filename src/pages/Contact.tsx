@@ -8,9 +8,8 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Mail, MapPin, Phone, Send, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LandingFooter } from '@/components/landing/LandingFooter';
+import MainLayout from '@/components/layout/MainLayout';
 import { toast } from 'sonner';
-import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 
 interface ContactInfo {
   email: string;
@@ -82,23 +81,8 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 sm:py-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="flex-shrink-0">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <img src={logoMedicalMasters} alt="Medical Masters" className="h-7 sm:h-8 w-auto" />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="flex-1 container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-4xl">
+    <MainLayout>
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-4xl">
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-xl sm:text-2xl font-bold mb-2">
             {language === 'es' ? 'Contacto' : 'Contact'}
@@ -247,8 +231,6 @@ export default function Contact() {
           </Card>
         </div>
       </main>
-
-      <LandingFooter />
-    </div>
+    </MainLayout>
   );
 }

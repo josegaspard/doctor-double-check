@@ -12,11 +12,13 @@ import { Package, Loader2, Truck, CheckCircle2, Clock, XCircle, ChevronDown, Che
 import { toast } from 'sonner';
 
 const STATUS_CONFIG = {
-  pending: { label_es: 'Pendiente', label_en: 'Pending', icon: Clock, color: 'bg-warning text-warning border-warning', dotColor: 'bg-warning' },
-  paid: { label_es: 'Pagado', label_en: 'Paid', icon: CheckCircle2, color: 'bg-primary text-primary border-primary', dotColor: 'bg-primary' },
-  shipped: { label_es: 'Enviado', label_en: 'Shipped', icon: Truck, color: 'bg-secondary text-secondary border-secondary', dotColor: 'bg-secondary' },
-  delivered: { label_es: 'Entregado', label_en: 'Delivered', icon: CheckCircle2, color: 'bg-success text-success border-success', dotColor: 'bg-success' },
-  cancelled: { label_es: 'Cancelado', label_en: 'Cancelled', icon: XCircle, color: 'bg-destructive text-destructive border-destructive', dotColor: 'bg-destructive' },
+  // Badge style: fondo tintado + texto sólido + borde para que SE VEA en cards blancos.
+  // Antes con bg-X text-X (mismo color) el texto era invisible.
+  pending:   { label_es: 'Pendiente', label_en: 'Pending',   icon: Clock,        color: 'bg-warning/15 text-warning border-warning/40',                  dotColor: 'bg-warning' },
+  paid:      { label_es: 'Pagado',    label_en: 'Paid',      icon: CheckCircle2, color: 'bg-primary/15 text-primary border-primary/40',                  dotColor: 'bg-primary' },
+  shipped:   { label_es: 'Enviado',   label_en: 'Shipped',   icon: Truck,        color: 'bg-secondary/15 text-secondary border-secondary/40',            dotColor: 'bg-secondary' },
+  delivered: { label_es: 'Entregado', label_en: 'Delivered', icon: CheckCircle2, color: 'bg-accent/15 text-accent border-accent/40',                     dotColor: 'bg-accent' },
+  cancelled: { label_es: 'Cancelado', label_en: 'Cancelled', icon: XCircle,      color: 'bg-destructive/15 text-destructive border-destructive/40',     dotColor: 'bg-destructive' },
 };
 
 const TIMELINE_STEPS = ['pending', 'paid', 'shipped', 'delivered'];
@@ -73,35 +75,38 @@ export default function MyOrders() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
-        {/* Header */}
-        <div className="mb-6 rounded-2xl bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent p-5 sm:p-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
-              <ShoppingBag className="w-6 h-6 text-primary" />
+        {/* Header — panel sólido brand para que destaque sobre el fondo teal del brandbook */}
+        <div className="mb-6 rounded-2xl bg-gradient-to-br from-primary to-secondary text-primary-foreground p-5 sm:p-8 shadow-xl border border-primary/30 overflow-hidden relative">
+          <div aria-hidden className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-light/25 blur-2xl pointer-events-none" />
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-light/25 border border-light/40 backdrop-blur-sm flex items-center justify-center">
+                <ShoppingBag className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-primary-foreground">{es ? 'Mis Compras' : 'My Orders'}</h1>
+                <p className="text-sm text-light">{es ? 'Historial y seguimiento de pedidos' : 'Order history & tracking'}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold">{es ? 'Mis Compras' : 'My Orders'}</h1>
-              <p className="text-sm text-muted-foreground">{es ? 'Historial y seguimiento de pedidos' : 'Order history & tracking'}</p>
-            </div>
-          </div>
 
-          {/* Stats */}
-          {orders.length > 0 && (
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl bg-card/80 backdrop-blur p-3 text-center">
-                <p className="text-lg sm:text-xl font-bold">{stats.total}</p>
-                <p className="text-[10px] text-muted-foreground">{es ? 'Pedidos' : 'Orders'}</p>
+            {/* Stats — cards sólidas sobre el header brand */}
+            {orders.length > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl bg-light/20 border border-light/40 backdrop-blur p-3 text-center">
+                  <p className="text-lg sm:text-xl font-bold text-primary-foreground">{stats.total}</p>
+                  <p className="text-[10px] text-light">{es ? 'Pedidos' : 'Orders'}</p>
+                </div>
+                <div className="rounded-xl bg-light/20 border border-light/40 backdrop-blur p-3 text-center">
+                  <p className="text-lg sm:text-xl font-bold text-primary-foreground">${stats.totalSpent.toLocaleString()}</p>
+                  <p className="text-[10px] text-light">{es ? 'Total gastado' : 'Total spent'}</p>
+                </div>
+                <div className="rounded-xl bg-light/20 border border-light/40 backdrop-blur p-3 text-center">
+                  <p className="text-lg sm:text-xl font-bold text-primary-foreground">{stats.active}</p>
+                  <p className="text-[10px] text-light">{es ? 'En curso' : 'Active'}</p>
+                </div>
               </div>
-              <div className="rounded-xl bg-card/80 backdrop-blur p-3 text-center">
-                <p className="text-lg sm:text-xl font-bold text-primary">${stats.totalSpent.toLocaleString()}</p>
-                <p className="text-[10px] text-muted-foreground">{es ? 'Total gastado' : 'Total spent'}</p>
-              </div>
-              <div className="rounded-xl bg-card/80 backdrop-blur p-3 text-center">
-                <p className="text-lg sm:text-xl font-bold text-warning">{stats.active}</p>
-                <p className="text-[10px] text-muted-foreground">{es ? 'En curso' : 'Active'}</p>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Filters */}

@@ -9,9 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, ShieldCheck, Loader2, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { LandingFooter } from '@/components/landing/LandingFooter';
+import MainLayout from '@/components/layout/MainLayout';
 import { toast } from 'sonner';
-import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 
 const arcoSchema = z.object({
   full_name: z.string().trim().min(2, 'Nombre demasiado corto').max(200),
@@ -57,17 +56,8 @@ export default function ArcoRights() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} aria-label="Volver">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <img src={logoMedicalMasters} alt="Medical Masters" className="h-7" />
-        </div>
-      </header>
-
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+    <MainLayout>
+      <main className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="flex items-center gap-3 mb-2">
           <ShieldCheck className="w-7 h-7 text-primary" />
           <h1 className="text-2xl font-bold text-foreground">Derechos ARCO</h1>
@@ -175,8 +165,6 @@ export default function ArcoRights() {
           </Card>
         )}
       </main>
-
-      <LandingFooter />
-    </div>
+    </MainLayout>
   );
 }

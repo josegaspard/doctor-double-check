@@ -337,7 +337,7 @@ export function ChatMessagesPanel({
   }, [consultationId, isClosed]);
 
   return (
-    <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-gradient-to-b from-primary/50 to-primary/30 dark:from-primary/[0.06] dark:to-secondary/[0.04] w-full max-w-full ${hidden ? 'hidden md:flex' : 'flex'}`}>
+    <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-card w-full max-w-full ${hidden ? 'hidden md:flex' : 'flex'}`}>
       {session ? (
         <>
           <ChatHeader
@@ -355,7 +355,7 @@ export function ChatMessagesPanel({
             consultationId={consultationId}
           />
 
-          <CardContent className="flex-1 p-0 flex flex-col min-h-0 overflow-hidden bg-gradient-to-b from-primary/60 via-primary/40 to-primary/50 dark:from-primary/15 dark:via-secondary/10 dark:to-primary/15">
+          <CardContent className="flex-1 p-0 flex flex-col min-h-0 overflow-hidden bg-card">
             {/* Active video call banner */}
             {activeVideoRoom && !isClosed && userRole === 'patient' && consultationId && (
               <CallWaitingBanner

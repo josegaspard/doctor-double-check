@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Building2, Shield, Users, BarChart3, Headphones, Globe, CheckCircle, Zap } from 'lucide-react';
-import logoBlue from '@/assets/logo-medical-masters.png';
-import { LandingFooter } from '@/components/landing/LandingFooter';
+import MainLayout from '@/components/layout/MainLayout';
 
 const features = [
   {
@@ -49,25 +48,7 @@ const trustedBy = [
 
 export default function Enterprise() {
   return (
-    <div className="font-sans text-slate-800 bg-slate-50 min-h-screen selection:bg-[#00768b] selection:text-white">
-      {/* Navigation */}
-      <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-lg shadow-sm border-b border-gray-100">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-          <div className="flex justify-between items-center h-14 sm:h-20">
-            <Link to="/" className="flex items-center gap-2">
-              <img src={logoBlue} alt="Logo" className="h-8 sm:h-10 object-contain" />
-            </Link>
-            <Link 
-              to="/" 
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Volver al inicio</span>
-              <span className="sm:hidden">Volver</span>
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <MainLayout>
 
       {/* Hero */}
       <header className="relative pt-20 sm:pt-32 pb-12 sm:pb-24 bg-gradient-to-br from-[#163a83] via-[#00768b] to-[#163a83]">
@@ -232,7 +213,6 @@ export default function Enterprise() {
         </div>
       </section>
 
-      <LandingFooter />
-    </div>
+      </MainLayout>
   );
 }

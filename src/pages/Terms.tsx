@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LandingFooter } from '@/components/landing/LandingFooter';
-import logoMedicalMasters from '@/assets/logo-medical-masters.png';
+import MainLayout from '@/components/layout/MainLayout';
 import DOMPurify from 'dompurify';
 
 interface LegalContent {
@@ -99,30 +98,17 @@ Para cualquier consulta sobre estos términos, puede contactarnos a través de l
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <MainLayout>
+        <div className="min-h-[50vh] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 sm:py-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hidden sm:flex flex-shrink-0">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <img src={logoMedicalMasters} alt="Medical Masters" className="h-7 sm:h-8 w-auto" />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="flex-1 container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-3xl">
+    <MainLayout>
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-3xl">
         <Card>
           <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -144,8 +130,6 @@ Para cualquier consulta sobre estos términos, puede contactarnos a través de l
           </CardContent>
         </Card>
       </main>
-
-      <LandingFooter />
-    </div>
+    </MainLayout>
   );
 }

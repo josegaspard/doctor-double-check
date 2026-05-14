@@ -312,35 +312,38 @@ export default function VendorDashboard() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
-        {/* Header */}
-        <div className="mb-6 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-              <Store className="w-6 h-6 text-primary" />
+        {/* Header — panel sólido brand para que destaque sobre fondo teal del brandbook */}
+        <div className="mb-6 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-primary to-secondary text-primary-foreground shadow-xl border border-primary/30 overflow-hidden relative">
+          <div aria-hidden className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-light/25 blur-2xl pointer-events-none" />
+          <div className="relative flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-light/25 border border-light/40 backdrop-blur-sm flex items-center justify-center">
+              <Store className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold">{vendor.name}</h1>
-              <p className="text-sm text-muted-foreground">{es ? 'Panel de vendedor' : 'Vendor dashboard'}</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-primary-foreground">{vendor.name}</h1>
+              <p className="text-sm text-light">{es ? 'Panel de vendedor' : 'Vendor dashboard'}</p>
             </div>
-            <Badge variant="default" className="ml-auto">{es ? 'Aprobado' : 'Approved'}</Badge>
+            <Badge className="ml-auto bg-light/25 text-primary-foreground border-light/40 backdrop-blur-sm">{es ? 'Aprobado' : 'Approved'}</Badge>
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats — cards sólidas con borde brand para que se vean */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
-            { icon: Package, label: es ? 'Productos Activos' : 'Active Products', value: activeProducts, color: 'text-primary' },
-            { icon: ShoppingCart, label: es ? 'Pedidos Totales' : 'Total Orders', value: orders.length, color: 'text-primary' },
-            { icon: Clock, label: es ? 'Pendientes Envío' : 'Pending Shipment', value: pendingOrders, color: 'text-warning' },
-            { icon: DollarSign, label: es ? 'Ingresos' : 'Revenue', value: `$${totalRevenue.toLocaleString()}`, color: 'text-success' },
+            { icon: Package,      label: es ? 'Productos Activos' : 'Active Products', value: activeProducts,                       iconColor: 'text-primary',   bgColor: 'bg-primary/10',   border: 'border-primary/30' },
+            { icon: ShoppingCart, label: es ? 'Pedidos Totales' : 'Total Orders',      value: orders.length,                        iconColor: 'text-secondary', bgColor: 'bg-secondary/10', border: 'border-secondary/30' },
+            { icon: Clock,        label: es ? 'Pendientes Envío' : 'Pending Shipment', value: pendingOrders,                        iconColor: 'text-accent',    bgColor: 'bg-accent/15',    border: 'border-accent/30' },
+            { icon: DollarSign,   label: es ? 'Ingresos' : 'Revenue',                  value: `$${totalRevenue.toLocaleString()}`,  iconColor: 'text-primary',   bgColor: 'bg-primary/10',   border: 'border-primary/30' },
           ].map((s, i) => (
-            <Card key={i}>
+            <Card key={i} className={`${s.border} shadow-sm`}>
               <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <s.icon className={`w-4 h-4 ${s.color}`} />
-                  <span className="text-xs text-muted-foreground">{s.label}</span>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className={`w-7 h-7 rounded-lg ${s.bgColor} flex items-center justify-center flex-shrink-0`}>
+                    <s.icon className={`w-4 h-4 ${s.iconColor}`} />
+                  </div>
+                  <span className="text-[11px] text-muted-foreground leading-tight">{s.label}</span>
                 </div>
-                <p className="text-xl font-bold">{s.value}</p>
+                <p className="text-xl font-bold text-foreground">{s.value}</p>
               </CardContent>
             </Card>
           ))}
