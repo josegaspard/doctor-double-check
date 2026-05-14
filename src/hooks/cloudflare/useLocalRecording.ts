@@ -374,6 +374,12 @@ export function useLocalRecording() {
         throw new Error(`No se pudo registrar la grabación: ${detail}`);
       }
 
+      // TUS terminó. Bunny ahora encodea async. El webhook bunny-webhook se
+      // disparará automáticamente cuando cambie el status (uploaded → processing
+      // → finished) y actualizará bunny_status en la DB. No hacemos llamadas
+      // adicionales — el realtime postgres_changes del frontend recogerá el
+      // cambio y el card desaparece.
+
       setState(prev => ({ ...prev, uploadProgress: 100, isUploading: false }));
 
       console.log('[LocalRecording] ✅ Upload complete, recording ID:', saveData.recordingId);
