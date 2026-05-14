@@ -541,9 +541,9 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
       {showUnmutePrompt && (
         <button
           onClick={handleUnmute}
-          className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 cursor-pointer"
+          className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 backdrop-blur-[2px] cursor-pointer"
         >
-          <div className="flex items-center gap-2 bg-background/90 text-foreground px-5 py-3 rounded-full shadow-lg text-sm font-medium">
+          <div className="flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white px-5 py-3 rounded-full shadow-xl ring-1 ring-white/20 text-sm font-semibold hover:scale-105 transition-transform">
             <Volume2 className="w-5 h-5" />
             Toca para activar el sonido
           </div>
