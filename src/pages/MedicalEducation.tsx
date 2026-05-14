@@ -166,10 +166,19 @@ export default function MedicalEducation() {
     setSubmitting(true);
     let file_url: string | null = null;
     if (file) {
-      const path = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const { error: upErr } = await supabase.storage.from('doctor-content').upload(path, file);
+      // Sanitize filename + extension. Images go to /clinical-cases/ folder to
+      // match storage RLS (auth.uid() = first folder segment).
+      const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const path = `${user.id}/${Date.now()}-${safeName}`;
+      const { error: upErr } = await supabase.storage
+        .from('doctor-content')
+        .upload(path, file, {
+          contentType: file.type || undefined,
+          upsert: false,
+        });
       if (upErr) {
-        toast.error('Error al subir archivo');
+        console.error('clinical_case upload error', upErr);
+        toast.error(`No se pudo subir el archivo: ${upErr.message}`);
         setSubmitting(false);
         return;
       }
@@ -188,7 +197,8 @@ export default function MedicalEducation() {
     });
     setSubmitting(false);
     if (error) {
-      toast.error('No se pudo publicar el caso');
+      console.error('clinical_cases insert error', error);
+      toast.error(`No se pudo publicar el caso: ${error.message}`);
       return;
     }
     toast.success('Caso clínico publicado');
