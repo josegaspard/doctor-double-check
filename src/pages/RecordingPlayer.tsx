@@ -335,15 +335,16 @@ export default function RecordingPlayer() {
               </CardContent>
             </Card>
 
-            <Card className="bg-success/5 border-success/20">
-              <CardContent className="p-3 sm:p-4">
+            <Card className="bg-gradient-to-br from-primary to-secondary border-0 shadow-md text-white overflow-hidden relative">
+              <div aria-hidden className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-light/25 blur-xl" />
+              <CardContent className="p-3 sm:p-4 relative">
                 <div className="flex items-start gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
-                    <Award className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0 ring-1 ring-white/30 shadow-sm">
+                    <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-foreground text-xs sm:text-sm">Acceso Ilimitado</h4>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <h4 className="font-semibold text-white text-xs sm:text-sm">Acceso Ilimitado</h4>
+                    <p className="text-xs text-white/85 mt-1 leading-relaxed">
                       Puedes ver esta grabación las veces que quieras.
                     </p>
                   </div>

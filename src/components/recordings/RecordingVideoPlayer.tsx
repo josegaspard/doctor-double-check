@@ -235,8 +235,9 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
         src={signedUrl || undefined}
         controls
         autoPlay={autoPlay}
+        muted={autoPlay}
         playsInline
-        preload="metadata"
+        preload="auto"
         controlsList="nodownload noremoteplayback noplaybackrate"
         disablePictureInPicture
         onContextMenu={(e) => e.preventDefault()}
