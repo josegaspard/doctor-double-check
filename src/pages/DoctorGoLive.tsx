@@ -38,6 +38,7 @@ export default function DoctorGoLive() {
 
   // Live state
   const [isCreating, setIsCreating] = useState(false);
+  const [creatingStage, setCreatingStage] = useState<'camera' | 'room' | 'connecting'>('camera');
   const [isLive, setIsLive] = useState(false);
   const [liveData, setLiveData] = useState<LiveData | null>(null);
   const [dailyRoomName, setDailyRoomName] = useState<string | null>(null);
@@ -111,6 +112,10 @@ export default function DoctorGoLive() {
 
   const handleStartLive = async (config: LiveConfig) => {
     if (!user?.id) return;
+    if (isCreating) return; // Guard duro contra doble-click
+
+    setIsCreating(true);
+    setCreatingStage('camera');
 
     let stream: MediaStream;
     try {
@@ -121,10 +126,11 @@ export default function DoctorGoLive() {
       setLocalStream(stream);
     } catch (err) {
       toast.error('No se pudo acceder a la cámara/micrófono');
+      setIsCreating(false);
       return;
     }
 
-    setIsCreating(true);
+    setCreatingStage('room');
     setEnableRecording(config.enableRecording);
     setTags(config.tags);
     setRecordingPrice(config.recordingPrice);
@@ -160,6 +166,7 @@ export default function DoctorGoLive() {
 
       if (liveError) throw liveError;
 
+      setCreatingStage('connecting');
       const room = await createRoom(live.id, config.title.trim(), 'live');
       if (!room) {
         await supabase.from('lives').delete().eq('id', live.id);
@@ -512,6 +519,7 @@ export default function DoctorGoLive() {
 
   return (
     <MainLayout>
+      {isCreating && <StartingLiveOverlay stage={creatingStage} />}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary text-primary-foreground border border-primary shadow-md mb-3">
@@ -543,5 +551,80 @@ export default function DoctorGoLive() {
         </Tabs>
       </div>
     </MainLayout>
+  );
+}
+
+function StartingLiveOverlay({ stage }: { stage: 'camera' | 'room' | 'connecting' }) {
+  const steps: Array<{ id: 'camera' | 'room' | 'connecting'; label: string; hint: string }> = [
+    { id: 'camera', label: 'Verificando cámara y micrófono', hint: 'Permite el acceso si tu navegador lo solicita' },
+    { id: 'room', label: 'Creando tu sala de transmisión', hint: 'Reservando recursos en el servidor' },
+    { id: 'connecting', label: 'Conectando con la audiencia', hint: 'Listo en unos segundos…' },
+  ];
+  const currentIdx = steps.findIndex(s => s.id === stage);
+
+  return (
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-gradient-to-br from-primary/95 via-secondary/95 to-primary/95 backdrop-blur-sm px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Iniciando transmisión"
+    >
+      <div className="w-full max-w-md text-white text-center">
+        <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-white/15 border-2 border-white/30 flex items-center justify-center backdrop-blur-md shadow-2xl">
+          <Loader2 className="w-10 h-10 animate-spin" />
+        </div>
+        <h2 className="font-heading text-2xl sm:text-3xl font-bold mb-2">
+          Iniciando tu transmisión en vivo
+        </h2>
+        <p className="text-white/80 text-sm mb-8">
+          No cierres esta ventana ni toques otros botones. Esto puede tardar unos segundos.
+        </p>
+
+        <ol className="space-y-3 text-left">
+          {steps.map((s, idx) => {
+            const isDone = idx < currentIdx;
+            const isCurrent = idx === currentIdx;
+            return (
+              <li
+                key={s.id}
+                className={`flex items-start gap-3 rounded-xl p-3 border ${
+                  isCurrent
+                    ? 'bg-white/15 border-white/40 shadow-lg'
+                    : isDone
+                      ? 'bg-white/5 border-white/15 opacity-75'
+                      : 'bg-white/0 border-white/10 opacity-50'
+                }`}
+              >
+                <div className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                  isDone ? 'bg-white text-primary' : isCurrent ? 'bg-white/30' : 'bg-white/10'
+                }`}>
+                  {isDone ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-4 h-4">
+                      <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : isCurrent ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                  ) : (
+                    <span className="text-xs font-semibold text-white/70">{idx + 1}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-semibold ${isCurrent ? 'text-white' : 'text-white/85'}`}>
+                    {s.label}
+                  </p>
+                  {isCurrent && (
+                    <p className="text-xs text-white/70 mt-0.5">{s.hint}</p>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+
+        <p className="mt-6 text-[11px] text-white/60">
+          Si tarda más de 30 segundos, revisa tu conexión a internet.
+        </p>
+      </div>
+    </div>
   );
 }

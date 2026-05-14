@@ -433,7 +433,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             disabled={isCreating || !isValid}
           >
             {isCreating ? (
-              <><Loader2 className="w-5 h-5 animate-spin" /> Preparando transmisión...</>
+              <><Loader2 className="w-5 h-5 animate-spin" /> Iniciando, no cierres esta ventana...</>
             ) : (
               <><Video className="w-5 h-5" /> Iniciar Transmisión en Vivo</>
             )}
