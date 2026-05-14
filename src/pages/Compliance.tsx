@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Scale, FileText, Globe, Building, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Scale, FileText, Globe, Building, CheckCircle2, AlertCircle } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 
 const complianceAreas = [
@@ -39,19 +39,20 @@ const policies = [
 export default function Compliance() {
   return (
     <MainLayout>
-
       {/* Hero */}
-      <header className="relative pt-20 sm:pt-32 pb-12 sm:pb-24 bg-gradient-to-br from-[#163a83] via-[#00768b] to-[#163a83]">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-12">
+      <header className="relative pt-16 sm:pt-24 pb-12 sm:pb-20 bg-gradient-to-br from-secondary via-primary to-secondary overflow-hidden">
+        <div aria-hidden className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-light/20 blur-3xl" />
+        <div aria-hidden className="absolute -bottom-16 -left-16 w-72 h-72 rounded-full bg-accent/20 blur-3xl" />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative">
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
-              <Scale className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#aed3d9]" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#aed3d9]">Compliance</span>
+              <Scale className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light" />
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">Compliance</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
-              Cumplimiento <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] to-white">Normativo</span>
+              Cumplimiento <span className="text-transparent bg-clip-text bg-gradient-to-r from-light to-white">Normativo</span>
             </h1>
-            <p className="text-sm sm:text-lg text-slate-300 max-w-xl mx-auto px-4">
+            <p className="text-sm sm:text-lg text-light/90 max-w-xl mx-auto px-4">
               Nos adherimos a los más altos estándares regulatorios en cada jurisdicción donde operamos.
             </p>
           </div>
@@ -59,27 +60,27 @@ export default function Compliance() {
       </header>
 
       {/* Compliance Areas */}
-      <section className="py-12 sm:py-24">
+      <section className="py-12 sm:py-20 bg-background">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-xl sm:text-3xl font-bold text-center text-gray-800 mb-6 sm:mb-12">
+          <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-12">
             Áreas de Cumplimiento
           </h2>
-          
+
           <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto">
             {complianceAreas.map((area, index) => (
-              <div key={index} className="bg-white p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm">
+              <div key={index} className="bg-card p-5 sm:p-7 rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3 sm:mb-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#163a83] to-[#00768b] flex items-center justify-center">
-                    <area.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
+                    <area.icon className="w-6 h-6 text-white" />
                   </div>
-                  <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-success">
-                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-success" />
-                    <span className="text-[10px] sm:text-xs font-semibold text-success">Cumple</span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-[10px] sm:text-xs font-semibold text-primary">Cumple</span>
                   </div>
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-1">{area.title}</h3>
-                <p className="text-xs sm:text-sm text-[#00768b] font-medium mb-2 sm:mb-3">{area.region}</p>
-                <p className="text-gray-600 text-xs sm:text-sm">{area.description}</p>
+                <h3 className="text-lg sm:text-xl font-bold text-foreground mb-1">{area.title}</h3>
+                <p className="text-xs sm:text-sm text-primary font-medium mb-2 sm:mb-3">{area.region}</p>
+                <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">{area.description}</p>
               </div>
             ))}
           </div>
@@ -87,25 +88,25 @@ export default function Compliance() {
       </section>
 
       {/* Policies */}
-      <section className="py-12 sm:py-24 bg-white">
+      <section className="py-12 sm:py-20 bg-card">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-xl sm:text-3xl font-bold text-center text-gray-800 mb-6 sm:mb-12">
+          <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-12">
             Políticas y Documentación
           </h2>
-          
+
           <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 max-w-3xl mx-auto">
             {policies.map((policy, index) => (
-              <Link 
+              <Link
                 key={index}
                 to={policy.link}
-                className="flex items-center gap-3 sm:gap-4 p-3 sm:p-5 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
+                className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-primary/5 border border-primary/15 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-colors group"
               >
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#163a83]/10 flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#163a83]" />
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
+                  <FileText className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-800 group-hover:text-[#163a83] transition-colors text-sm sm:text-base">{policy.title}</h3>
-                  <p className="text-xs sm:text-sm text-gray-500">{policy.description}</p>
+                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm sm:text-base">{policy.title}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{policy.description}</p>
                 </div>
               </Link>
             ))}
@@ -114,29 +115,28 @@ export default function Compliance() {
       </section>
 
       {/* Reporting */}
-      <section className="py-12 sm:py-24 bg-gray-100">
+      <section className="py-12 sm:py-20 bg-background">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-warning flex items-center justify-center mx-auto mb-4 sm:mb-6">
-              <AlertCircle className="w-7 h-7 sm:w-8 sm:h-8 text-warning" />
+          <div className="max-w-2xl mx-auto text-center bg-card rounded-2xl p-6 sm:p-10 border border-border shadow-sm">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-md">
+              <AlertCircle className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mb-3 sm:mb-4">
+            <h2 className="text-xl sm:text-3xl font-bold text-foreground mb-3 sm:mb-4">
               Reportar una Preocupación
             </h2>
-            <p className="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base">
-              Si tienes alguna preocupación sobre el cumplimiento normativo o deseas reportar una posible violación, 
+            <p className="text-muted-foreground mb-6 sm:mb-8 text-sm sm:text-base leading-relaxed">
+              Si tienes alguna preocupación sobre el cumplimiento normativo o deseas reportar una posible violación,
               nuestro equipo de compliance está disponible para ayudarte de manera confidencial.
             </p>
-            <Link 
-              to="/contact" 
-              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-white bg-gradient-to-r from-[#163a83] to-[#00768b] rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            <Link
+              to="/contact"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-white bg-gradient-to-r from-primary to-secondary rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
               Contactar Compliance
             </Link>
           </div>
         </div>
       </section>
-
-      </MainLayout>
+    </MainLayout>
   );
 }

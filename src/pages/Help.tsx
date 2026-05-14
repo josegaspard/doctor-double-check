@@ -1,33 +1,16 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, HelpCircle, MessageCircle, Mail, Phone, Book, Video, FileText, ChevronRight } from 'lucide-react';
+import { HelpCircle, MessageCircle, Mail, Phone, Book, Video, FileText, ChevronRight } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
-
-// FAQ items moved to i18n
-// Resources moved to i18n
-
-
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Help() {
   const { t } = useLanguage();
 
   const faqItems = [
-    {
-      question: t('help.faq1_q'),
-      answer: t('help.faq1_a'),
-    },
-    {
-      question: t('help.faq2_q'),
-      answer: t('help.faq2_a'),
-    },
-    {
-      question: t('help.faq3_q'),
-      answer: t('help.faq3_a'),
-    },
-    {
-      question: t('help.faq4_q'),
-      answer: t('help.faq4_a'),
-    },
+    { question: t('help.faq1_q'), answer: t('help.faq1_a') },
+    { question: t('help.faq2_q'), answer: t('help.faq2_a') },
+    { question: t('help.faq3_q'), answer: t('help.faq3_a') },
+    { question: t('help.faq4_q'), answer: t('help.faq4_a') },
   ];
 
   const resources = [
@@ -38,19 +21,20 @@ export default function Help() {
 
   return (
     <MainLayout>
-
       {/* Hero */}
-      <header className="relative pt-20 sm:pt-32 pb-12 sm:pb-24 bg-gradient-to-br from-[#163a83] via-[#00768b] to-[#163a83]">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-12">
+      <header className="relative pt-16 sm:pt-24 pb-12 sm:pb-20 bg-gradient-to-br from-secondary via-primary to-secondary overflow-hidden">
+        <div aria-hidden className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-light/20 blur-3xl" />
+        <div aria-hidden className="absolute -bottom-16 -left-16 w-72 h-72 rounded-full bg-accent/20 blur-3xl" />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative">
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
-              <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#aed3d9]" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#aed3d9]">{t('help.center')}</span>
+              <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light" />
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">{t('help.center')}</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
               {t('help.title')}
             </h1>
-            <p className="text-sm sm:text-lg text-slate-300 max-w-xl mx-auto px-4">
+            <p className="text-sm sm:text-lg text-light/90 max-w-xl mx-auto px-4">
               {t('help.subtitle')}
             </p>
           </div>
@@ -58,63 +42,63 @@ export default function Help() {
       </header>
 
       {/* Contact Options */}
-      <section className="py-8 sm:py-12 bg-white border-b border-gray-100">
+      <section className="py-8 sm:py-12 bg-card border-b border-border">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="grid gap-3 sm:grid-cols-3 sm:gap-6">
-            <Link to="/contact" className="flex items-center gap-3 sm:gap-4 p-3 sm:p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#163a83]/10 flex items-center justify-center flex-shrink-0">
-                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-[#163a83]" />
+            <Link to="/contact" className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-primary/5 border border-primary/15 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-colors group">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
+                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{t('help.liveChat')}</h3>
-                <p className="text-xs sm:text-sm text-gray-500">{t('help.immediateResponse')}</p>
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">{t('help.liveChat')}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">{t('help.immediateResponse')}</p>
               </div>
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-[#163a83] transition-colors" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-primary/60 group-hover:text-primary transition-colors" />
             </Link>
-            
-            <a href="mailto:soporte@medicalplatform.com" className="flex items-center gap-3 sm:gap-4 p-3 sm:p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#00768b]/10 flex items-center justify-center flex-shrink-0">
-                <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-[#00768b]" />
+
+            <a href="mailto:soporte@medicalplatform.com" className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-secondary/5 border border-secondary/15 rounded-xl hover:bg-secondary/10 hover:border-secondary/30 transition-colors group">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-secondary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-secondary/25 transition-colors">
+                <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{t('help.email')}</h3>
-                <p className="text-xs sm:text-sm text-gray-500 truncate">soporte@medical.com</p>
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">{t('help.email')}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">soporte@medical.com</p>
               </div>
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-[#00768b] transition-colors" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-secondary/60 group-hover:text-secondary transition-colors" />
             </a>
-            
-            <a href="tel:+525551234567" className="flex items-center gap-3 sm:gap-4 p-3 sm:p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#163a83]/10 flex items-center justify-center flex-shrink-0">
-                <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-[#163a83]" />
+
+            <a href="tel:+525551234567" className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-primary/5 border border-primary/15 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-colors group">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
+                <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{t('help.phone')}</h3>
-                <p className="text-xs sm:text-sm text-gray-500">+52 55 5123 4567</p>
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">{t('help.phone')}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">+52 55 5123 4567</p>
               </div>
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-[#163a83] transition-colors" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-primary/60 group-hover:text-primary transition-colors" />
             </a>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="py-12 sm:py-24">
+      <section className="py-12 sm:py-20 bg-background">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-xl sm:text-3xl font-bold text-center text-gray-800 mb-6 sm:mb-12">
+          <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-12">
             {t('help.faq')}
           </h2>
-          
+
           <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
             {faqItems.map((item, index) => (
-              <details 
+              <details
                 key={index}
-                className="group bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm"
+                className="group bg-card rounded-xl border border-border overflow-hidden shadow-sm hover:border-primary/30 transition-colors"
               >
-                <summary className="flex items-center justify-between p-3 sm:p-6 cursor-pointer list-none">
-                  <span className="font-semibold text-gray-800 pr-4 text-sm sm:text-base">{item.question}</span>
-                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform group-open:rotate-90 flex-shrink-0" />
+                <summary className="flex items-center justify-between p-4 sm:p-5 cursor-pointer list-none">
+                  <span className="font-semibold text-foreground pr-4 text-sm sm:text-base">{item.question}</span>
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-primary transition-transform group-open:rotate-90 flex-shrink-0" />
                 </summary>
-                <div className="px-3 sm:px-6 pb-3 sm:pb-6 text-gray-600 text-sm">
+                <div className="px-4 sm:px-5 pb-4 sm:pb-5 text-muted-foreground text-sm leading-relaxed">
                   {item.answer}
                 </div>
               </details>
@@ -124,30 +108,29 @@ export default function Help() {
       </section>
 
       {/* Resources */}
-      <section className="py-12 sm:py-24 bg-gray-100">
+      <section className="py-12 sm:py-20 bg-card">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-xl sm:text-3xl font-bold text-center text-gray-800 mb-6 sm:mb-12">
+          <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-12">
             {t('help.resources')}
           </h2>
-          
+
           <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
             {resources.map((resource, index) => (
-              <a 
+              <a
                 key={index}
                 href={resource.link}
-                className="bg-white p-4 sm:p-6 rounded-xl text-center hover:shadow-lg transition-shadow"
+                className="bg-primary/5 border border-primary/15 p-5 sm:p-6 rounded-2xl text-center hover:bg-primary/10 hover:border-primary/30 hover:-translate-y-1 transition-all"
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#163a83] to-[#00768b] flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <resource.icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 shadow-md">
+                  <resource.icon className="w-7 h-7 text-white" />
                 </div>
-                <h3 className="font-semibold text-gray-800 mb-1 text-sm sm:text-base">{resource.title}</h3>
-                <p className="text-xs sm:text-sm text-gray-500">{resource.description}</p>
+                <h3 className="font-semibold text-foreground mb-1 text-sm sm:text-base">{resource.title}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">{resource.description}</p>
               </a>
             ))}
           </div>
         </div>
       </section>
-
-      </MainLayout>
+    </MainLayout>
   );
 }
