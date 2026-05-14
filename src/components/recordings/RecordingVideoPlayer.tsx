@@ -19,6 +19,10 @@ interface RecordingVideoPlayerProps {
   onDurationUpdate?: (duration: number) => void;
   onTimeUpdate?: (currentTime: number) => void;
   autoPlay?: boolean;
+  // Si el padre ya pre-fetcheó el signed URL en paralelo con otras queries,
+  // lo recibimos directamente y saltamos el primer round-trip al edge fn.
+  prefetchedSignedUrl?: string | null;
+  prefetchedTtl?: number;
 }
 
 function isStorageRef(url: string) {
@@ -43,7 +47,7 @@ function getB2Path(url: string) {
  * - Almacenamiento Supabase Storage (storage:path) via signed URL + HTML5 video
  * - Backblaze B2 (b2:path) via edge function presigned URL + HTML5 video
  */
-export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, onTimeUpdate, autoPlay }: RecordingVideoPlayerProps) {
+export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, onTimeUpdate, autoPlay, prefetchedSignedUrl, prefetchedTtl }: RecordingVideoPlayerProps) {
   const storagePath = useMemo(() => (isStorageRef(videoUrl) ? getStoragePath(videoUrl) : null), [videoUrl]);
   const b2Path = useMemo(() => (isB2Ref(videoUrl) ? getB2Path(videoUrl) : null), [videoUrl]);
   const { user, supabaseUser } = useAuth();
@@ -163,8 +167,34 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
 
   useEffect(() => {
     if (!storagePath && !b2Path) return;
+    // Si el padre nos pasó un URL ya pre-fetcheado, lo aplicamos al toque sin
+    // hacer la fetch. Saltamos el round-trip al edge fn (~700ms).
+    if (prefetchedSignedUrl) {
+      setSignedUrl(prefetchedSignedUrl);
+      setUrlGeneratedAt(Date.now());
+      setUrlTtlSec(prefetchedTtl ?? 3600);
+      setIsLoading(false);
+      return;
+    }
     fetchSignedUrl(0);
-  }, [storagePath, b2Path, fetchSignedUrl]);
+  }, [storagePath, b2Path, fetchSignedUrl, prefetchedSignedUrl, prefetchedTtl]);
+
+  // Programmatic play() — el browser bloquea autoplay aunque tengamos
+  // autoPlay+muted en el atributo. Llamamos play() explícitamente apenas
+  // tenemos URL para forzar el inicio sin esperar.
+  useEffect(() => {
+    if (!signedUrl || !autoPlay) return;
+    const vid = videoRef.current;
+    if (!vid) return;
+    // Garantizar muted para que el browser no bloquee
+    vid.muted = true;
+    const playPromise = vid.play();
+    if (playPromise) {
+      playPromise.catch((err) => {
+        console.warn('[RecordingVideoPlayer] auto-play blocked:', err?.message);
+      });
+    }
+  }, [signedUrl, autoPlay]);
 
   // Pre-renew the signed URL at 80% of its real TTL so playback never hits
   // a 403. Backend returns 15min for non-owners (shorter blast-radius on URL

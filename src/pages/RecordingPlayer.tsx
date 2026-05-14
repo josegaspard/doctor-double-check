@@ -51,6 +51,8 @@ export default function RecordingPlayer() {
   const [isLoading, setIsLoading] = useState(true);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
   const [prerollDone, setPrerollDone] = useState(false);
+  const [prefetchedSignedUrl, setPrefetchedSignedUrl] = useState<string | null>(null);
+  const [prefetchedTtl, setPrefetchedTtl] = useState<number>(3600);
 
   const handlePrerollComplete = useCallback(() => {
     setPrerollDone(true);
@@ -131,7 +133,63 @@ export default function RecordingPlayer() {
         .eq('id', recResult.data.doctor_id)
         .single();
 
-      const [purchResult, { data: profile }] = await Promise.all([purchasePromise, profilePromise]);
+      // PREFETCH del signed URL en paralelo con profile/purchase. Esto elimina
+      // el ~700ms de espera entre que el video player se monta y dispara su
+      // propia fetch. Cuando el componente renderiza, ya pasamos el URL listo.
+      const videoUrl = recResult.data.video_url as string | undefined;
+      let signedUrlPromise: Promise<{ url: string; ttlSec: number } | null> = Promise.resolve(null);
+      if (videoUrl) {
+        const b2Match = /^b2:(.+)$/.exec(videoUrl);
+        const storageMatch = /^storage:(.+)$/.exec(videoUrl);
+        // Cache check sessionStorage primero
+        const cacheKey = `signedurl:${b2Match?.[1] || storageMatch?.[1] || videoUrl}`;
+        try {
+          const raw = sessionStorage.getItem(cacheKey);
+          if (raw) {
+            const cached = JSON.parse(raw) as { url: string; generatedAt: number; ttlSec: number };
+            const ageMs = Date.now() - cached.generatedAt;
+            if (ageMs < (cached.ttlSec - 300) * 1000) {
+              signedUrlPromise = Promise.resolve({ url: cached.url, ttlSec: cached.ttlSec });
+            } else {
+              sessionStorage.removeItem(cacheKey);
+            }
+          }
+        } catch { /* ignore */ }
+        if (b2Match && (await signedUrlPromise) === null) {
+          signedUrlPromise = supabase.functions
+            .invoke('b2-presigned-url', { body: { operation: 'get', path: b2Match[1] } })
+            .then(({ data }) => data?.url ? { url: data.url as string, ttlSec: typeof data.expiresSec === 'number' ? data.expiresSec : 3600 } : null)
+            .catch(() => null);
+        } else if (storageMatch && (await signedUrlPromise) === null) {
+          signedUrlPromise = supabase.storage
+            .from('recordings')
+            .createSignedUrl(storageMatch[1], 3600)
+            .then(({ data }) => data?.signedUrl ? { url: data.signedUrl, ttlSec: 3600 } : null)
+            .catch(() => null);
+        }
+      }
+
+      const [purchResult, { data: profile }, signedUrlResult] = await Promise.all([
+        purchasePromise,
+        profilePromise,
+        signedUrlPromise,
+      ]);
+
+      if (signedUrlResult) {
+        setPrefetchedSignedUrl(signedUrlResult.url);
+        setPrefetchedTtl(signedUrlResult.ttlSec);
+        // Cache para revisitas en la sesión
+        const cacheKey = videoUrl ? `signedurl:${videoUrl.replace(/^b2:|^storage:/, '')}` : null;
+        if (cacheKey) {
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify({
+              url: signedUrlResult.url,
+              generatedAt: Date.now(),
+              ttlSec: signedUrlResult.ttlSec,
+            }));
+          } catch { /* quota, ignore */ }
+        }
+      }
 
       setRecording({
         id: recResult.data.id,
@@ -269,6 +327,8 @@ export default function RecordingPlayer() {
                     onDurationUpdate={handleDurationUpdate}
                     onTimeUpdate={setVideoCurrentTime}
                     autoPlay={prerollDone || skipPreroll}
+                    prefetchedSignedUrl={prefetchedSignedUrl}
+                    prefetchedTtl={prefetchedTtl}
                   />
                 </div>
               ) : (
