@@ -113,11 +113,15 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
         call.on('participant-updated', handleParticipantUpdate);
         call.on('error', handleError);
 
+        console.log('[DAILY] joining room:', roomUrl, 'tokenLen:', token?.length || 0);
         await call.join({ url: roomUrl, token });
       } catch (err: any) {
         if (cancelled) return;
-        console.error('Error joining Daily room:', err);
-        setError(err.message || 'Error al conectar');
+        console.error('[DAILY] join failed:', err);
+        console.error('[DAILY] error stack:', err?.stack);
+        const detail = err?.errorMsg || err?.message || err?.toString?.() || 'error desconocido';
+        setError(`No se pudo unirse a la sala. Detalle: ${detail}`);
+        toast.error(`No se pudo conectar: ${detail}`, { duration: 8000 });
         setIsJoining(false);
       }
     };
@@ -177,42 +181,57 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const handleError = useCallback((event: DailyEventObject) => {
     const meetingState = callRef.current?.meetingState?.();
     if (isLeavingRef.current || cleaningUpRef.current || meetingState === 'leaving-meeting' as any || meetingState === 'left-meeting' as any) {
-      console.log('Daily error suppressed (leaving/cleanup):', (event as any).errorMsg);
+      console.log('[DAILY] error suppressed (leaving/cleanup):', (event as any).errorMsg);
       return;
     }
 
-    const errorMsg = ((event as any).errorMsg || '').toLowerCase();
-    
+    const rawMsg = (event as any).errorMsg || (event as any).error?.message || '';
+    const errorType = (event as any).error?.type || '';
+    const errorMsg = rawMsg.toLowerCase();
+
+    // Telemetría amplia para diagnosticar el error en consola
+    console.error('[DAILY ERROR] full event:', event);
+    console.error('[DAILY ERROR] errorMsg:', rawMsg);
+    console.error('[DAILY ERROR] errorType:', errorType);
+    console.error('[DAILY ERROR] roomUrl:', roomUrl);
+    console.error('[DAILY ERROR] tokenLen:', token?.length || 0);
+    console.error('[DAILY ERROR] meetingState:', meetingState);
+
     const nonCriticalPatterns = [
       'meeting has ended', 'exp', 'nbf',
-      'connection error', 'disconnected', 'transport closed',
-      'websocket', 'network connection', 'ice',
+      'transport closed',
     ];
-    
+
     if (
       nonCriticalPatterns.some(p => errorMsg.includes(p)) ||
-      (event as any).error?.type === 'meeting-session-state-error'
+      errorType === 'meeting-session-state-error'
     ) {
-      console.log('Daily room ended by host');
+      console.log('[DAILY] room ended by host (non-critical)');
       setIsConnected(false);
       onLeave?.();
       return;
     }
 
-    console.error('Daily error:', event);
-    let userMessage = 'Error de conexión';
-    
+    // Mensajes accionables según tipo
+    let userMessage: string;
     if (errorMsg.includes('account-missing-payment-method')) {
-      userMessage = 'Se requiere configurar un método de pago en Daily.co para transmitir';
-    } else if (errorMsg.includes('invalid-request-error')) {
-      userMessage = 'Error de configuración del servidor de video';
-    } else if (errorMsg.includes('not-allowed')) {
-      userMessage = 'Permisos de cámara/micrófono denegados';
+      userMessage = 'Daily.co requiere configurar un método de pago para transmitir.';
+    } else if (errorMsg.includes('invalid-request-error') || errorType === 'invalid-request-error') {
+      userMessage = `Configuración inválida del servidor: ${rawMsg}`;
+    } else if (errorMsg.includes('not-allowed') || errorMsg.includes('permission')) {
+      userMessage = 'Permisos de cámara/micrófono denegados. Habilítalos en tu navegador.';
+    } else if (errorMsg.includes('meeting-token-error') || errorMsg.includes('token')) {
+      userMessage = 'Token de transmisión inválido. Cierra y reabre la sesión.';
+    } else if (errorMsg.includes('connection') || errorMsg.includes('network') || errorMsg.includes('websocket') || errorMsg.includes('ice')) {
+      userMessage = `Conexión bloqueada por red/firewall. Si usas Brave, baja Shields para doctores.daily.co. Detalle: ${rawMsg || errorType || 'desconocido'}`;
+    } else {
+      // Mostrar el mensaje real de Daily para que el usuario pueda compartirlo
+      userMessage = `Daily: ${rawMsg || errorType || 'error desconocido'}`;
     }
-    
+
     setError(userMessage);
-    toast.error(userMessage);
-  }, [onLeave]);
+    toast.error(userMessage, { duration: 8000 });
+  }, [onLeave, roomUrl, token]);
 
   const updateVideoElements = (participants: Record<string, DailyParticipant>) => {
     if (!videoContainerRef.current) return;
