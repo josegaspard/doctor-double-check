@@ -370,9 +370,9 @@ export default function MedicalSupplies() {
 
         {/* Product detail dialog */}
         <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-md w-[calc(100%-1.5rem)] sm:w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 rounded-2xl sm:rounded-lg">
             {selectedProduct && (<>
-              <DialogHeader><DialogTitle className="text-base">{selectedProduct.name}</DialogTitle></DialogHeader>
+              <DialogHeader className="pr-10"><DialogTitle className="text-base sm:text-lg leading-tight">{selectedProduct.name}</DialogTitle></DialogHeader>
               {selectedProduct.image_url && <img src={selectedProduct.image_url} alt={selectedProduct.name} className="w-full aspect-video object-cover rounded-lg mb-3" />}
               {featuredIds.has(selectedProduct.id) && <Badge className="bg-warning text-warning text-[10px] gap-1 w-fit mb-2"><Sparkles className="w-3 h-3" /> {es ? featuredMap[selectedProduct.id]?.label_es : featuredMap[selectedProduct.id]?.label_en}</Badge>}
               {selectedProduct.description && <p className="text-sm text-muted-foreground mb-3">{selectedProduct.description}</p>}

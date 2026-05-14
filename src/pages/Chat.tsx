@@ -395,13 +395,15 @@ export default function Chat() {
           </h1>
           <div className="flex items-center gap-2">
             {activeSessions.length > 0 && (
-              <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md text-[11px] sm:text-xs font-bold">
+              <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md text-[11px] sm:text-xs font-bold whitespace-nowrap">
                 <span className="relative flex w-2 h-2">
                   <span className="absolute inset-0 rounded-full bg-white animate-ping opacity-70" />
                   <span className="relative w-2 h-2 rounded-full bg-white" />
                 </span>
                 <span>
-                  {activeSessions.length} {t('chat.active').toLowerCase()}{activeSessions.length !== 1 ? 's' : ''}
+                  {/* i18n 'chat.active' ya devuelve "Activas" (plural) en ES.
+                      No append +s — daba bug "activass". */}
+                  {activeSessions.length} {t('chat.active').toLowerCase()}
                 </span>
               </div>
             )}

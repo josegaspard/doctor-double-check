@@ -697,7 +697,7 @@ export default function UserProfile() {
                             <span className="text-muted-foreground break-all sm:break-normal truncate max-w-[200px] sm:max-w-none">{user.email}</span>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <Badge className="bg-success/10 text-success border-success text-[10px] shrink-0">Verificado</Badge>
+                            <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">Verificado</Badge>
                             <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => { setIsEditingEmail(true); setEditedEmail(''); }}>
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
@@ -797,7 +797,7 @@ export default function UserProfile() {
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
-                                  <Badge className="bg-success/10 text-success border-success text-[10px] shrink-0">Verificado</Badge>
+                                  <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">Verificado</Badge>
                                   <Button size="sm" variant="ghost" className="h-7 text-xs px-2 min-h-[44px] sm:min-h-0" onClick={() => setIsEditingPhone(true)}>
                                     Cambiar
                                   </Button>
@@ -1201,7 +1201,7 @@ export default function UserProfile() {
                         exit={{ opacity: 0, height: 0 }}
                         className="mt-2 space-y-2"
                       >
-                        <p className="text-sm font-medium ml-7 mb-2">{user.email} <Badge className="ml-1 bg-success/10 text-success border-success text-[10px]">Actual</Badge></p>
+                        <p className="text-sm font-medium ml-7 mb-2">{user.email} <Badge className="ml-1 bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">Actual</Badge></p>
                         <div className="flex items-center gap-2 ml-7 flex-wrap">
                           <Input
                             type="email"
@@ -1227,7 +1227,7 @@ export default function UserProfile() {
                     ) : (
                       <p className="mt-1 text-sm font-medium ml-7 flex items-center gap-2">
                         {user.email}
-                        <Badge className="bg-success/10 text-success border-success text-[10px]">Verificado</Badge>
+                        <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">Verificado</Badge>
                       </p>
                     )}
                   </AnimatePresence>
@@ -1319,7 +1319,7 @@ export default function UserProfile() {
                           userPhone ? (
                             <>
                               {userPhone.replace(/(\d{2})(\d+)(\d{4})/, '$1****$3')}
-                              <Badge className="bg-success/10 text-success border-success text-[10px]">Verificado</Badge>
+                              <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">Verificado</Badge>
                             </>
                           ) : (
                             <span className="text-muted-foreground italic">Sin verificar</span>

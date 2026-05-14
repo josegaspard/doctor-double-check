@@ -421,14 +421,15 @@ export default function MedicalRecord() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 max-w-4xl">
+        {/* Header — mobile stacked, tablet+ inline */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-3">
           <div className="min-w-0">
-            <h1 className="font-heading text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <Stethoscope className="w-6 h-6 text-primary flex-shrink-0" />
+            <h1 className="font-heading text-lg sm:text-2xl font-bold flex items-center gap-2">
+              <Stethoscope className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
               <span className="truncate">Expediente Médico</span>
             </h1>
-            <p className="text-sm text-muted-foreground">Tu historial clínico completo</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Tu historial clínico completo</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {role === 'patient' && hasRecord && (
@@ -440,14 +441,14 @@ export default function MedicalRecord() {
                 })}
                 size="sm"
                 variant="outline"
-                className="gap-1.5 min-h-[40px]"
+                className="gap-1.5 h-9 px-3 flex-1 sm:flex-initial bg-card"
                 title="Descargar resumen clínico (uso personal)"
               >
                 <Download className="w-4 h-4" />
-                <span className="hidden xs:inline sm:inline">Descargar</span>
+                <span>Descargar</span>
               </Button>
             )}
-            <Button onClick={handleSave} disabled={isSaving} size="sm" className="gap-2 min-h-[40px]">
+            <Button onClick={handleSave} disabled={isSaving} size="sm" className="gap-2 h-9 px-3 flex-1 sm:flex-initial">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Guardar
             </Button>
@@ -455,21 +456,22 @@ export default function MedicalRecord() {
         </div>
 
         {role === 'patient' && (
-          <div className="mb-4 flex items-start gap-2 p-2.5 rounded-md bg-info/5 border border-info/20 text-xs text-muted-foreground">
-            <ShieldCheck className="w-3.5 h-3.5 text-info flex-shrink-0 mt-0.5" />
+          <div className="mb-3 sm:mb-4 flex items-start gap-2 p-2.5 rounded-lg bg-info/10 border border-info/30 text-[11px] sm:text-xs text-foreground/80">
+            <ShieldCheck className="w-4 h-4 text-info flex-shrink-0 mt-0.5" />
             <span>Tu expediente es privado. Puedes descargar un <strong className="text-foreground">resumen para uso personal</strong> con marca de agua. No compartas el documento fuera de la plataforma.</span>
           </div>
         )}
 
-        <Tabs defaultValue="personal" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-4 sm:grid-cols-7 gap-1">
-            <TabsTrigger value="personal" className="text-xs gap-1"><User className="w-3 h-3" /> Personal</TabsTrigger>
-            <TabsTrigger value="family" className="text-xs gap-1"><Heart className="w-3 h-3" /> Familia</TabsTrigger>
-            <TabsTrigger value="habits" className="text-xs gap-1"><Wine className="w-3 h-3" /> Hábitos</TabsTrigger>
-            <TabsTrigger value="vaccines" className="text-xs gap-1"><Syringe className="w-3 h-3" /> Vacunas</TabsTrigger>
-            <TabsTrigger value="studies" className="text-xs gap-1"><Upload className="w-3 h-3" /> Estudios</TabsTrigger>
-            <TabsTrigger value="summaries" className="text-xs gap-1"><FileText className="w-3 h-3" /> Resúmenes</TabsTrigger>
-            <TabsTrigger value="calculators" className="text-xs gap-1"><Calculator className="w-3 h-3" /> Calc.</TabsTrigger>
+        <Tabs defaultValue="personal" className="space-y-3 sm:space-y-4">
+          {/* Mobile: horizontal scroll (1 fila, sin wrap). Desktop: 7-col grid. */}
+          <TabsList className="w-full flex sm:grid sm:grid-cols-7 gap-1 overflow-x-auto scrollbar-hide sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-1 h-auto py-1 justify-start">
+            <TabsTrigger value="personal" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><User className="w-3.5 h-3.5" /> Personal</TabsTrigger>
+            <TabsTrigger value="family" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Heart className="w-3.5 h-3.5" /> Familia</TabsTrigger>
+            <TabsTrigger value="habits" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Wine className="w-3.5 h-3.5" /> Hábitos</TabsTrigger>
+            <TabsTrigger value="vaccines" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Syringe className="w-3.5 h-3.5" /> Vacunas</TabsTrigger>
+            <TabsTrigger value="studies" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Upload className="w-3.5 h-3.5" /> Estudios</TabsTrigger>
+            <TabsTrigger value="summaries" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><FileText className="w-3.5 h-3.5" /> Resúmenes</TabsTrigger>
+            <TabsTrigger value="calculators" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Calculator className="w-3.5 h-3.5" /> Calc.</TabsTrigger>
           </TabsList>
 
           {/* ── DATOS PERSONALES ── */}

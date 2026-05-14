@@ -463,18 +463,24 @@ export default function Doctors() {
 
           {/* Main content */}
           <div className="min-w-0">
-        {/* Search bar */}
+        {/* Search bar — bg sólido sobre app-bg teal, no transparent que se mezcla */}
         <div className="flex gap-2 mb-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder={t('inputs.searchDoctors')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-11" />
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+            <Input
+              placeholder={t('inputs.searchDoctors')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-11 bg-card border-border shadow-sm focus-visible:ring-primary/40 text-sm placeholder:text-muted-foreground/70"
+            />
           </div>
           <Button
             variant={nearbyMode ? "default" : "outline"}
             size="icon"
-            className="flex-shrink-0 h-11 w-11"
+            className={`flex-shrink-0 h-11 w-11 shadow-sm ${nearbyMode ? '' : 'bg-card hover:bg-muted'}`}
             title="Cerca de mí"
             onClick={handleNearbyToggle}
+            aria-label="Cerca de mí"
           >
             <MapPin className={`w-4 h-4 ${nearbyMode ? 'text-primary-foreground' : ''}`} />
           </Button>
@@ -688,21 +694,21 @@ export default function Doctors() {
           const availableDoctors = doctors.filter(isDoctorAvailableNow);
           if (availableDoctors.length === 0) return null;
           return (
-            <div className="mb-4 p-3 sm:p-4 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-50 via-card to-card dark:from-emerald-950/30 dark:via-card dark:to-card shadow-sm">
+            <div className="mb-4 p-3 sm:p-4 rounded-xl bg-card shadow-md border border-emerald-500/40 ring-1 ring-emerald-500/10">
               {/* Mobile: stack vertical (icon+title, badges row below). Desktop: row inline */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
-                <div className="flex items-start gap-2 flex-1 min-w-0">
-                  <div className="relative w-9 h-9 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                    <Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" strokeWidth={3} />
-                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-card animate-pulse" />
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 mb-3">
+                <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                  <div className="relative w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 shadow-md">
+                    <Plus className="w-5 h-5 text-white" strokeWidth={3} />
+                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-card animate-pulse" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-foreground leading-tight">{t('doctors.emergencyTitle')}</h3>
-                    <p className="text-[11px] text-muted-foreground leading-snug">{t('doctors.emergencySubtitle')}</p>
+                    <h3 className="text-sm sm:text-base font-bold text-foreground leading-tight">{t('doctors.emergencyTitle')}</h3>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug">{t('doctors.emergencySubtitle')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
-                  <Badge className="text-[11px] gap-1 px-2.5 py-1 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 font-bold">
+                  <Badge className="text-[11px] gap-1.5 px-2.5 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-500/40 font-bold whitespace-nowrap">
                     <span className="relative flex w-2 h-2">
                       <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />
                       <span className="relative w-2 h-2 rounded-full bg-emerald-500" />
@@ -711,7 +717,7 @@ export default function Doctors() {
                   </Badge>
                   <Button
                     size="sm"
-                    className="h-8 px-3 text-[11px] gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm whitespace-nowrap"
+                    className="h-9 px-3 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold shadow-md whitespace-nowrap"
                     onClick={(e) => { e.stopPropagation(); navigate('/emergency'); }}
                   >
                     <Plus className="w-3.5 h-3.5" strokeWidth={3} />
