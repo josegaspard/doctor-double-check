@@ -111,19 +111,23 @@ export default function RecordingPlayer() {
             .maybeSingle()
         : Promise.resolve({ data: null, error: null });
 
-      const [recResult, purchResult] = await Promise.all([recordingPromise, purchasePromise]);
+      // Esperar primero solo recording para conocer doctor_id, después lanzar
+      // profile y purchase en paralelo. Antes profile era SECUENCIAL después del
+      // batch — añadía 200-300ms de latencia que retrasaba el render del video.
+      const recResult = await recordingPromise;
 
       if (recResult.error || !recResult.data) {
         setIsLoading(false);
         return;
       }
 
-      // Fetch doctor name (cheap, but after the parallel batch)
-      const { data: profile } = await supabase
+      const profilePromise = supabase
         .from('profiles_public')
         .select('name')
         .eq('id', recResult.data.doctor_id)
         .single();
+
+      const [purchResult, { data: profile }] = await Promise.all([purchasePromise, profilePromise]);
 
       setRecording({
         id: recResult.data.id,

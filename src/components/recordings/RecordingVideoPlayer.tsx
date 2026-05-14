@@ -1,8 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react';
 
 import { supabase } from '@/integrations/supabase/client';
 
-import { CloudflareRecordingPlayer } from '@/components/recordings/CloudflareRecordingPlayer';
+// CloudflareRecordingPlayer trae hls.js (~300KB). Lazy-load para que NO se descargue
+// en la mayoría de los casos (B2 mp4 nunca lo necesita).
+const CloudflareRecordingPlayer = React.lazy(() =>
+  import('@/components/recordings/CloudflareRecordingPlayer').then(m => ({ default: m.CloudflareRecordingPlayer }))
+);
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -149,7 +153,13 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   if (!storagePath && !b2Path) {
     return (
       <div className="relative">
-        <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} autoPlay={autoPlay} />
+        <Suspense fallback={
+          <div className="aspect-video bg-black rounded-xl flex items-center justify-center">
+            <Loader2 className="w-12 h-12 text-primary animate-spin" />
+          </div>
+        }>
+          <CloudflareRecordingPlayer videoUrl={videoUrl} recordingId={recordingId} onDurationUpdate={onDurationUpdate} onTimeUpdate={onTimeUpdate} autoPlay={autoPlay} />
+        </Suspense>
         <DynamicWatermark email={user?.email} userId={supabaseUser?.id} sessionId={sessionId} />
       </div>
     );
@@ -190,6 +200,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
         controls
         autoPlay={autoPlay}
         playsInline
+        preload="metadata"
         controlsList="nodownload noremoteplayback noplaybackrate"
         disablePictureInPicture
         onContextMenu={(e) => e.preventDefault()}
