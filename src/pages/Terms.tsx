@@ -108,7 +108,7 @@ Para cualquier consulta sobre estos términos, puede contactarnos a través de l
 
   return (
     <MainLayout>
-      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-3xl">
+      <main className="container mx-auto px-3 sm:px-4 pt-8 sm:pt-14 pb-8 sm:pb-12 max-w-3xl">
         <Card>
           <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
             <div className="flex items-center gap-2 sm:gap-3">

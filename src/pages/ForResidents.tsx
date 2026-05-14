@@ -49,7 +49,7 @@ export default function ForResidents() {
     <MainLayout>
 
       {/* Hero */}
-      <header className="relative pt-20 sm:pt-32 pb-12 sm:pb-24 bg-gradient-to-br from-primary via-primary to-emerald-600">
+      <header className="relative pt-20 sm:pt-32 pb-12 sm:pb-24 bg-gradient-to-br from-primary via-primary to-secondary">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
@@ -85,7 +85,7 @@ export default function ForResidents() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {benefits.map((benefit, index) => (
               <div key={index} className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-shadow">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center mb-3 sm:mb-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-3 sm:mb-4">
                   <benefit.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2">{benefit.title}</h3>
@@ -143,7 +143,7 @@ export default function ForResidents() {
                   ))}
                 </ul>
               </div>
-              <div className="bg-gradient-to-br from-primary to-emerald-600 p-5 sm:p-8 rounded-xl sm:rounded-2xl text-white">
+              <div className="bg-gradient-to-br from-primary to-secondary p-5 sm:p-8 rounded-xl sm:rounded-2xl text-white">
                 <Shield className="w-10 h-10 sm:w-12 sm:h-12 mb-3 sm:mb-4 text-primary" />
                 <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">Enfoque Académico</h3>
                 <p className="text-primary text-xs sm:text-sm mb-4 sm:mb-6">
@@ -160,7 +160,7 @@ export default function ForResidents() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 sm:py-24 bg-gradient-to-br from-primary to-emerald-600">
+      <section className="py-12 sm:py-24 bg-gradient-to-br from-primary to-secondary">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">¿Listo para comenzar?</h2>
           <p className="text-primary mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">

@@ -57,7 +57,7 @@ export default function ArcoRights() {
 
   return (
     <MainLayout>
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
+      <main className="container mx-auto px-4 pt-10 sm:pt-14 pb-8 max-w-2xl">
         <div className="flex items-center gap-3 mb-2">
           <ShieldCheck className="w-7 h-7 text-primary" />
           <h1 className="text-2xl font-bold text-foreground">Derechos ARCO</h1>

@@ -51,15 +51,15 @@ export default function Enterprise() {
     <MainLayout>
 
       {/* Hero */}
-      <header className="relative pt-20 sm:pt-32 pb-12 sm:pb-24 bg-gradient-to-br from-[#163a83] via-[#00768b] to-[#163a83]">
+      <header className="relative pt-20 sm:pt-32 pb-12 sm:pb-24 bg-gradient-to-br from-secondary via-primary to-secondary">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
-              <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#aed3d9]" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#aed3d9]">Enterprise</span>
+              <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light" />
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">Enterprise</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
-              Salud corporativa <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] to-white">de clase mundial</span>
+              Salud corporativa <span className="text-transparent bg-clip-text bg-gradient-to-r from-light to-white">de clase mundial</span>
             </h1>
             <p className="text-sm sm:text-lg text-slate-300 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
               Potencia el bienestar de tu equipo con nuestra plataforma de telemedicina diseñada para empresas.
@@ -67,7 +67,7 @@ export default function Enterprise() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <Link 
                 to="/contact" 
-                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-[#163a83] bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-secondary bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               >
                 Solicitar Demo
               </Link>
@@ -88,7 +88,7 @@ export default function Enterprise() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <p className="text-xl sm:text-3xl font-bold text-[#163a83]">{stat.value}</p>
+                <p className="text-xl sm:text-3xl font-bold text-secondary">{stat.value}</p>
                 <p className="text-[10px] sm:text-sm text-gray-500 mt-1">{stat.label}</p>
               </div>
             ))}
@@ -109,7 +109,7 @@ export default function Enterprise() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {features.map((feature, index) => (
               <div key={index} className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-shadow">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#163a83] to-[#00768b] flex items-center justify-center mb-3 sm:mb-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center mb-3 sm:mb-4">
                   <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2">{feature.title}</h3>
@@ -160,20 +160,20 @@ export default function Enterprise() {
             </div>
             
             {/* Pro */}
-            <div className="bg-gradient-to-br from-[#163a83] to-[#00768b] p-4 sm:p-8 rounded-xl sm:rounded-2xl text-white relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-0.5 sm:py-1 bg-[#aed3d9] text-[#163a83] text-[10px] sm:text-xs font-bold rounded-full whitespace-nowrap">
+            <div className="bg-gradient-to-br from-secondary to-primary p-4 sm:p-8 rounded-xl sm:rounded-2xl text-white relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-0.5 sm:py-1 bg-light text-secondary text-[10px] sm:text-xs font-bold rounded-full whitespace-nowrap">
                 POPULAR
               </div>
               <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2 mt-2 sm:mt-0">Pro</h3>
               <p className="text-xs sm:text-sm text-slate-300 mb-3 sm:mb-4">Para empresas en crecimiento</p>
               <p className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Desde $15,000<span className="text-xs sm:text-sm font-normal text-slate-300">/mes</span></p>
               <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#aed3d9] flex-shrink-0" />Hasta 250 empleados</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#aed3d9] flex-shrink-0" />Analytics avanzados</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#aed3d9] flex-shrink-0" />Account manager</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#aed3d9] flex-shrink-0" />Integración API</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />Hasta 250 empleados</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />Analytics avanzados</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />Account manager</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />Integración API</li>
               </ul>
-              <Link to="/contact" className="block text-center py-2.5 sm:py-3 bg-white text-[#163a83] rounded-xl font-bold hover:bg-slate-100 transition-colors text-sm">
+              <Link to="/contact" className="block text-center py-2.5 sm:py-3 bg-white text-secondary rounded-xl font-bold hover:bg-slate-100 transition-colors text-sm">
                 Contactar
               </Link>
             </div>
@@ -198,7 +198,7 @@ export default function Enterprise() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 sm:py-24 bg-gradient-to-br from-[#163a83] to-[#00768b]">
+      <section className="py-12 sm:py-24 bg-gradient-to-br from-secondary to-primary">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">¿Listo para transformar la salud de tu empresa?</h2>
           <p className="text-slate-300 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
@@ -206,7 +206,7 @@ export default function Enterprise() {
           </p>
           <Link 
             to="/contact" 
-            className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-[#163a83] bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-secondary bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
           >
             Solicitar Demo Gratuita
           </Link>

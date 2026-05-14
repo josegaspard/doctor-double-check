@@ -46,7 +46,7 @@ export default function Security() {
   return (
     <MainLayout>
       {/* Hero */}
-      <header className="relative pt-16 sm:pt-24 pb-12 sm:pb-20 bg-gradient-to-br from-secondary via-primary to-secondary overflow-hidden">
+      <header className="relative pt-20 sm:pt-28 pb-12 sm:pb-20 bg-gradient-to-br from-secondary via-primary to-secondary overflow-hidden">
         <div aria-hidden className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-light/20 blur-3xl" />
         <div aria-hidden className="absolute -bottom-16 -left-16 w-72 h-72 rounded-full bg-accent/20 blur-3xl" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative">

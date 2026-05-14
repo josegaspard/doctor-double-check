@@ -82,7 +82,7 @@ export default function Contact() {
 
   return (
     <MainLayout>
-      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-4xl">
+      <main className="container mx-auto px-3 sm:px-4 pt-8 sm:pt-14 pb-8 sm:pb-12 max-w-4xl">
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-xl sm:text-2xl font-bold mb-2">
             {language === 'es' ? 'Contacto' : 'Contact'}
