@@ -163,10 +163,15 @@ export function LivesProvider({ children }: { children: ReactNode }) {
     lastFetchTime.current = now;
     
     try {
+      // Gate de visibilidad pública: solo lives status='live' Y donde el doctor
+      // realmente está transmitiendo (Daily room joined → is_broadcasting=true).
+      // Esto evita "ghost lives" que aparecen sin nadie del otro lado.
+      // El propio doctor sigue viendo su live en su panel via fetch directo.
       const { data: livesData, error } = await supabase
         .from('lives')
         .select('*')
         .eq('status', 'live')
+        .eq('is_broadcasting', true)
         .order('started_at', { ascending: false });
 
       if (error) {

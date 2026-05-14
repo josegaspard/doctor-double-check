@@ -100,8 +100,49 @@ export default function RecordingsGrid() {
     }
   });
 
+  // Prefetch del signed URL en hover. Si el user hace click después, el URL
+  // ya está en sessionStorage cache y RecordingPlayer lo aplica al instante.
+  // Cold-load percibido del recording: <300ms vs ~1s antes.
+  const prefetchRecordingUrl = (recording: Recording) => {
+    if (!recording.videoUrl || typeof window === 'undefined') return;
+    const path = recording.videoUrl.replace(/^b2:|^storage:/, '');
+    const cacheKey = `signedurl:${path}`;
+    // Skip si ya está cacheado y vigente
+    try {
+      const raw = sessionStorage.getItem(cacheKey);
+      if (raw) {
+        const cached = JSON.parse(raw) as { url: string; generatedAt: number; ttlSec: number };
+        if (Date.now() - cached.generatedAt < (cached.ttlSec - 300) * 1000) return;
+      }
+    } catch { /* ignore */ }
+
+    if (recording.videoUrl.startsWith('b2:')) {
+      supabase.functions
+        .invoke('b2-presigned-url', { body: { operation: 'get', path } })
+        .then(({ data }) => {
+          if (data?.url) {
+            const ttl = typeof data.expiresSec === 'number' ? data.expiresSec : 3600;
+            sessionStorage.setItem(cacheKey, JSON.stringify({ url: data.url, generatedAt: Date.now(), ttlSec: ttl }));
+          }
+        })
+        .catch(() => { /* fail silently */ });
+    } else if (recording.videoUrl.startsWith('storage:')) {
+      supabase.storage
+        .from('recordings')
+        .createSignedUrl(path, 3600)
+        .then(({ data }) => {
+          if (data?.signedUrl) {
+            sessionStorage.setItem(cacheKey, JSON.stringify({ url: data.signedUrl, generatedAt: Date.now(), ttlSec: 3600 }));
+          }
+        })
+        .catch(() => { /* fail silently */ });
+    }
+  };
+
   const handleRecordingClick = (recording: Recording) => {
     if (!isAuthenticated || role === 'visitor') { navigate('/login'); return; }
+    // Disparar prefetch inmediato (puede que el hover no haya ocurrido)
+    prefetchRecordingUrl(recording);
     if (ownsRecording(recording)) {
       navigate(`/recording/${recording.id}`);
     } else {
@@ -379,6 +420,8 @@ export default function RecordingsGrid() {
                         owned ? 'border-success/30' : 'card-premium'
                       }`}
                       onClick={() => handleRecordingClick(recording)}
+                      onMouseEnter={() => owned && prefetchRecordingUrl(recording)}
+                      onFocus={() => owned && prefetchRecordingUrl(recording)}
                     >
                       <div className="relative aspect-video bg-gradient-to-br from-premium/10 to-primary/10">
                         <HoverPlayCard

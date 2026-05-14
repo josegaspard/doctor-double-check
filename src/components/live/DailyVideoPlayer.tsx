@@ -37,6 +37,7 @@ interface DailyVideoPlayerProps {
   isOwner?: boolean;
   hideControls?: boolean;
   onLeave?: () => void;
+  onJoined?: () => void;
   onParticipantCountChange?: (count: number) => void;
   onMobileFullscreenToggle?: () => void;
   isMobileFullscreen?: boolean;
@@ -50,6 +51,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   isOwner = false,
   hideControls = false,
   onLeave,
+  onJoined,
   onParticipantCountChange,
   onMobileFullscreenToggle,
   isMobileFullscreen = false,
@@ -149,7 +151,8 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     setIsJoining(false);
     setIsConnected(true);
     toast.success(isOwner ? 'Transmisión iniciada' : 'Conectado a la transmisión');
-  }, [isOwner]);
+    onJoined?.();
+  }, [isOwner, onJoined]);
 
   const handleLeftMeeting = useCallback(() => {
     if (cleaningUpRef.current) return;

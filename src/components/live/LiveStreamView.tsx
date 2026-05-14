@@ -5,6 +5,7 @@ import { LiveChat } from './LiveChat';
 import { AnimatedViewerCount } from './AnimatedViewerCount';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Clock,
   Heart,
@@ -175,6 +176,13 @@ export function LiveStreamView({
             isOwner={true}
             hideControls={true}
             onLeave={onEndClick}
+            onJoined={() => {
+              // Marca el live como broadcasting=true cuando el doctor JOIN
+              // el Daily room. Hasta este momento, los pacientes NO ven el
+              // live en /lives (gate de visibilidad). Esto evita "ghost lives"
+              // que aparecen sin nadie del otro lado.
+              supabase.rpc('mark_live_broadcasting', { p_live_id: liveData.id }).catch(() => {});
+            }}
             onParticipantCountChange={() => {}}
             onMobileFullscreenToggle={handleToggleMobileFullscreen}
             isMobileFullscreen={mobileFullscreen}
