@@ -221,7 +221,7 @@ export default function AdminContentModeration() {
                         </Button>
                         {tab === 'pending' && (
                           <>
-                            <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700" onClick={() => { setSelected(it); setNote(''); }}>
+                            <Button size="sm" className="gap-1.5 bg-success hover:bg-success" onClick={() => { setSelected(it); setNote(''); }}>
                               <Check className="w-3.5 h-3.5" /> Aprobar
                             </Button>
                             <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => { setSelected({ ...it, type: '__reject__' + it.type } as any); setNote(''); }}>
@@ -256,7 +256,7 @@ export default function AdminContentModeration() {
                 <Button
                   onClick={() => decide(String(selected.type).startsWith('__reject__') ? 'rejected' : 'approved')}
                   disabled={acting}
-                  className={String(selected.type).startsWith('__reject__') ? 'bg-destructive hover:bg-destructive/90' : 'bg-emerald-600 hover:bg-emerald-700'}
+                  className={String(selected.type).startsWith('__reject__') ? 'bg-destructive hover:bg-destructive/90' : 'bg-success hover:bg-success'}
                 >
                   {acting ? <Loader2 className="w-4 h-4 animate-spin" /> : (String(selected.type).startsWith('__reject__') ? 'Confirmar rechazo' : 'Aprobar')}
                 </Button>

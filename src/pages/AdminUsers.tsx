@@ -111,11 +111,11 @@ export default function AdminUsers() {
 
   const getRoleBadge = (role: string) => {
     const colors: Record<string, string> = {
-      admin: 'bg-purple-100 text-purple-800',
-      doctor: 'bg-blue-100 text-blue-800',
-      resident: 'bg-green-100 text-green-800',
+      admin: 'bg-secondary text-secondary',
+      doctor: 'bg-primary text-primary',
+      resident: 'bg-success text-success',
       patient: 'bg-gray-100 text-gray-800',
-      visitor: 'bg-yellow-100 text-yellow-800',
+      visitor: 'bg-warning text-warning',
     };
     return (
       <Badge variant="outline" className={colors[role] || colors.patient}>
@@ -158,9 +158,9 @@ export default function AdminUsers() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-4 mb-4 sm:mb-6">
           {[
             { value: userStats.total, label: 'Total', color: '' },
-            { value: userStats.admins, label: t('admin.administrators'), color: 'text-purple-600' },
-            { value: userStats.doctors, label: t('admin.doctors'), color: 'text-blue-600' },
-            { value: userStats.residents, label: t('admin.residents'), color: 'text-green-600' },
+            { value: userStats.admins, label: t('admin.administrators'), color: 'text-secondary' },
+            { value: userStats.doctors, label: t('admin.doctors'), color: 'text-primary' },
+            { value: userStats.residents, label: t('admin.residents'), color: 'text-success' },
             { value: userStats.patients, label: t('admin.patients'), color: 'text-gray-600' },
           ].map((s, i) => (
             <Card key={i}>
@@ -230,7 +230,7 @@ export default function AdminUsers() {
                            <h3 className="font-medium text-sm truncate">{userData.name || t('admin.noName')}</h3>
                            {getRoleBadge(userData.role || 'patient')}
                            {userData.is_identity_verified && (
-                             <Badge variant="outline" className="bg-green-100 text-green-800 text-[10px] h-5">
+                             <Badge variant="outline" className="bg-success text-success text-[10px] h-5">
                                {t('admin.verified')}
                              </Badge>
                            )}

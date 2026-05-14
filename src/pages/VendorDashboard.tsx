@@ -330,9 +330,9 @@ export default function VendorDashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
             { icon: Package, label: es ? 'Productos Activos' : 'Active Products', value: activeProducts, color: 'text-primary' },
-            { icon: ShoppingCart, label: es ? 'Pedidos Totales' : 'Total Orders', value: orders.length, color: 'text-blue-500' },
-            { icon: Clock, label: es ? 'Pendientes Envío' : 'Pending Shipment', value: pendingOrders, color: 'text-orange-500' },
-            { icon: DollarSign, label: es ? 'Ingresos' : 'Revenue', value: `$${totalRevenue.toLocaleString()}`, color: 'text-green-500' },
+            { icon: ShoppingCart, label: es ? 'Pedidos Totales' : 'Total Orders', value: orders.length, color: 'text-primary' },
+            { icon: Clock, label: es ? 'Pendientes Envío' : 'Pending Shipment', value: pendingOrders, color: 'text-warning' },
+            { icon: DollarSign, label: es ? 'Ingresos' : 'Revenue', value: `$${totalRevenue.toLocaleString()}`, color: 'text-success' },
           ].map((s, i) => (
             <Card key={i}>
               <CardContent className="p-4">
@@ -375,7 +375,7 @@ export default function VendorDashboard() {
                       {p.category && <Badge variant="secondary" className="text-[10px] mt-1">{p.category}</Badge>}
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => toggleProductActive(p.id, !p.is_active)} title={p.is_active ? 'Desactivar' : 'Activar'}>
-                      {p.is_active ? <Eye className="w-4 h-4 text-green-500" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+                      {p.is_active ? <Eye className="w-4 h-4 text-success" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => { setEditingId(p.id); setForm({ name: p.name, description: p.description || '', category: p.category || '', price: p.price.toString(), image_url: p.image_url || '', stock: p.stock.toString(), is_active: p.is_active }); setDialogOpen(true); }}><Pencil className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>

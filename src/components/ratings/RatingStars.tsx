@@ -61,9 +61,9 @@ export function RatingStars({
                   sizeClasses[size],
                   'transition-colors',
                   isFilled
-                    ? 'fill-yellow-400 text-yellow-400'
+                    ? 'fill-warning text-warning'
                     : isHalf
-                    ? 'fill-yellow-400/50 text-yellow-400'
+                    ? 'fill-warning/50 text-warning'
                     : 'fill-transparent text-gray-300'
                 )}
               />

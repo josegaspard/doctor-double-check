@@ -230,7 +230,7 @@ export default function HospitalDoctorsList({
                     <p className="text-xs text-primary/80 font-medium truncate">{d.specialty}</p>
                     <div className="mt-1 flex items-center flex-wrap gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
                       <span className="inline-flex items-center gap-0.5">
-                        <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                        <Star className="w-3 h-3 fill-warning text-warning" />
                         <span className="font-medium text-foreground">{d.rating > 0 ? d.rating.toFixed(1) : '—'}</span>
                       </span>
                       <span className="inline-flex items-center gap-0.5">

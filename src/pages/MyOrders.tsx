@@ -12,11 +12,11 @@ import { Package, Loader2, Truck, CheckCircle2, Clock, XCircle, ChevronDown, Che
 import { toast } from 'sonner';
 
 const STATUS_CONFIG = {
-  pending: { label_es: 'Pendiente', label_en: 'Pending', icon: Clock, color: 'bg-yellow-100 text-yellow-800 border-yellow-300', dotColor: 'bg-yellow-500' },
-  paid: { label_es: 'Pagado', label_en: 'Paid', icon: CheckCircle2, color: 'bg-blue-100 text-blue-800 border-blue-300', dotColor: 'bg-blue-500' },
-  shipped: { label_es: 'Enviado', label_en: 'Shipped', icon: Truck, color: 'bg-purple-100 text-purple-800 border-purple-300', dotColor: 'bg-purple-500' },
-  delivered: { label_es: 'Entregado', label_en: 'Delivered', icon: CheckCircle2, color: 'bg-green-100 text-green-800 border-green-300', dotColor: 'bg-green-500' },
-  cancelled: { label_es: 'Cancelado', label_en: 'Cancelled', icon: XCircle, color: 'bg-red-100 text-red-800 border-red-300', dotColor: 'bg-red-500' },
+  pending: { label_es: 'Pendiente', label_en: 'Pending', icon: Clock, color: 'bg-warning text-warning border-warning', dotColor: 'bg-warning' },
+  paid: { label_es: 'Pagado', label_en: 'Paid', icon: CheckCircle2, color: 'bg-primary text-primary border-primary', dotColor: 'bg-primary' },
+  shipped: { label_es: 'Enviado', label_en: 'Shipped', icon: Truck, color: 'bg-secondary text-secondary border-secondary', dotColor: 'bg-secondary' },
+  delivered: { label_es: 'Entregado', label_en: 'Delivered', icon: CheckCircle2, color: 'bg-success text-success border-success', dotColor: 'bg-success' },
+  cancelled: { label_es: 'Cancelado', label_en: 'Cancelled', icon: XCircle, color: 'bg-destructive text-destructive border-destructive', dotColor: 'bg-destructive' },
 };
 
 const TIMELINE_STEPS = ['pending', 'paid', 'shipped', 'delivered'];
@@ -97,7 +97,7 @@ export default function MyOrders() {
                 <p className="text-[10px] text-muted-foreground">{es ? 'Total gastado' : 'Total spent'}</p>
               </div>
               <div className="rounded-xl bg-card/80 backdrop-blur p-3 text-center">
-                <p className="text-lg sm:text-xl font-bold text-yellow-600">{stats.active}</p>
+                <p className="text-lg sm:text-xl font-bold text-warning">{stats.active}</p>
                 <p className="text-[10px] text-muted-foreground">{es ? 'En curso' : 'Active'}</p>
               </div>
             </div>
@@ -245,17 +245,17 @@ export default function MyOrders() {
                         )}
 
                         {o.status === 'cancelled' && (
-                          <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-3 flex items-center gap-2">
-                            <XCircle className="w-5 h-5 text-red-500" />
-                            <span className="text-sm text-red-700 dark:text-red-400">{es ? 'Este pedido fue cancelado' : 'This order was cancelled'}</span>
+                          <div className="bg-destructive dark:bg-destructive/20 rounded-lg p-3 flex items-center gap-2">
+                            <XCircle className="w-5 h-5 text-destructive" />
+                            <span className="text-sm text-destructive dark:text-destructive">{es ? 'Este pedido fue cancelado' : 'This order was cancelled'}</span>
                           </div>
                         )}
 
                         {/* Tracking */}
                         {o.tracking_number && (
-                          <div className="bg-purple-50 dark:bg-purple-950/20 rounded-xl p-4">
+                          <div className="bg-secondary dark:bg-secondary/20 rounded-xl p-4">
                             <p className="text-xs font-semibold mb-2 flex items-center gap-1.5">
-                              <Truck className="w-4 h-4 text-purple-600" />
+                              <Truck className="w-4 h-4 text-secondary" />
                               {es ? 'Número de rastreo' : 'Tracking number'}
                             </p>
                             <div className="flex items-center gap-2">
@@ -296,9 +296,9 @@ export default function MyOrders() {
                               <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
                               {es ? 'Creado' : 'Created'}: {new Date(o.created_at).toLocaleString('es-MX')}
                             </div>
-                            {o.paid_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" />✅ {es ? 'Pagado' : 'Paid'}: {new Date(o.paid_at).toLocaleString('es-MX')}</div>}
-                            {o.shipped_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-purple-500" />📦 {es ? 'Enviado' : 'Shipped'}: {new Date(o.shipped_at).toLocaleString('es-MX')}</div>}
-                            {o.delivered_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-green-500" />🎉 {es ? 'Entregado' : 'Delivered'}: {new Date(o.delivered_at).toLocaleString('es-MX')}</div>}
+                            {o.paid_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary" />✅ {es ? 'Pagado' : 'Paid'}: {new Date(o.paid_at).toLocaleString('es-MX')}</div>}
+                            {o.shipped_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-secondary" />📦 {es ? 'Enviado' : 'Shipped'}: {new Date(o.shipped_at).toLocaleString('es-MX')}</div>}
+                            {o.delivered_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-success" />🎉 {es ? 'Entregado' : 'Delivered'}: {new Date(o.delivered_at).toLocaleString('es-MX')}</div>}
                           </div>
                         </div>
 

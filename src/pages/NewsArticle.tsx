@@ -611,7 +611,7 @@ export default function NewsArticle() {
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors duration-200"
+            className="gap-1.5 hover:bg-primary hover:text-white hover:border-primary transition-colors duration-200"
             onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400,noopener,noreferrer')}
           >
             <Facebook className="w-3.5 h-3.5" /> Facebook
@@ -627,7 +627,7 @@ export default function NewsArticle() {
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 text-green-600 border-green-300 hover:bg-green-500 hover:text-white hover:border-green-500 transition-colors duration-200"
+            className="gap-1.5 text-success border-success hover:bg-success hover:text-white hover:border-success transition-colors duration-200"
             onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareTitle + ' ' + shareUrl)}`, '_blank', 'noopener,noreferrer')}
           >
             <MessageCircle className="w-3.5 h-3.5" /> WhatsApp

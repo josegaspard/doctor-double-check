@@ -131,7 +131,7 @@ export function LiveStreamView({
             style={{ paddingTop: 'max(0.25rem, env(safe-area-inset-top))' }}
           >
             <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
-              <Heart className="w-3 h-3 text-red-400" />
+              <Heart className="w-3 h-3 text-destructive" />
               {resolvedLikesCount}
             </span>
             <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
@@ -184,7 +184,7 @@ export function LiveStreamView({
             {mobileFullscreen && (
               <div className="absolute top-2 right-2 z-40 flex items-center gap-1.5">
                 <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
-                  <Heart className="w-3 h-3 text-red-400" />
+                  <Heart className="w-3 h-3 text-destructive" />
                   {resolvedLikesCount}
                 </span>
                 <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">

@@ -158,11 +158,11 @@ export default function AdminResidents() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" /> {t('admin.pending')}</Badge>;
+        return <Badge variant="outline" className="bg-warning text-warning"><Clock className="w-3 h-3 mr-1" /> {t('admin.pending')}</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" /> {t('admin.approved')}</Badge>;
+        return <Badge variant="outline" className="bg-success text-success"><CheckCircle className="w-3 h-3 mr-1" /> {t('admin.approved')}</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" /> {t('admin.rejected')}</Badge>;
+        return <Badge variant="outline" className="bg-destructive text-destructive"><XCircle className="w-3 h-3 mr-1" /> {t('admin.rejected')}</Badge>;
       default:
         return null;
     }
@@ -272,7 +272,7 @@ export default function AdminResidents() {
                         <Button
                           size="sm"
                           variant="default"
-                          className="bg-green-600 hover:bg-green-700 text-xs h-8"
+                          className="bg-success hover:bg-success text-xs h-8"
                           onClick={() => setActionDialog({ open: true, resident, action: 'approve' })}
                         >
                           <CheckCircle className="w-3.5 h-3.5 sm:mr-1" />
@@ -313,7 +313,7 @@ export default function AdminResidents() {
               <AlertDialogCancel>{t('admin.cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleAction}
-                className={actionDialog.action === 'approve' ? 'bg-green-600 hover:bg-green-700' : ''}
+                className={actionDialog.action === 'approve' ? 'bg-success hover:bg-success' : ''}
               >
                 {actionDialog.action === 'approve' ? t('admin.approve') : t('admin.reject')}
               </AlertDialogAction>

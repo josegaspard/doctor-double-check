@@ -43,8 +43,8 @@ function AvailabilityItem({
           <div className="flex items-start gap-3">
             <div className={cn(
               'p-2 rounded-lg flex-shrink-0',
-              isLive ? 'bg-red-500/10 text-red-500' :
-              isConsultation ? 'bg-blue-500/10 text-blue-500' :
+              isLive ? 'bg-destructive/10 text-destructive' :
+              isConsultation ? 'bg-primary/10 text-primary' :
               'bg-muted text-muted-foreground'
             )}>
               <Icon className="h-5 w-5" />
@@ -59,7 +59,7 @@ function AvailabilityItem({
                   {isLive ? 'Live' : isConsultation ? 'Consulta' : 'Horario'}
                 </Badge>
                 {isPremium && isLive && (
-                  <Badge className="text-[10px] bg-yellow-500/10 text-yellow-600 border-yellow-300 gap-0.5">
+                  <Badge className="text-[10px] bg-warning/10 text-warning border-warning gap-0.5">
                     ⭐ Acceso anticipado
                   </Badge>
                 )}

@@ -8,10 +8,10 @@ interface ConnectionQualityIndicatorProps {
 }
 
 const qualityConfig: Record<ConnectionQuality, { label: string; color: string; bars: number }> = {
-  excellent: { label: 'Excelente', color: 'text-emerald-400', bars: 4 },
-  good:      { label: 'Buena',     color: 'text-green-400',   bars: 3 },
-  fair:      { label: 'Regular',   color: 'text-amber-400',   bars: 2 },
-  poor:      { label: 'Débil',     color: 'text-red-400',     bars: 1 },
+  excellent: { label: 'Excelente', color: 'text-success', bars: 4 },
+  good:      { label: 'Buena',     color: 'text-success',   bars: 3 },
+  fair:      { label: 'Regular',   color: 'text-warning',   bars: 2 },
+  poor:      { label: 'Débil',     color: 'text-destructive',     bars: 1 },
   unknown:   { label: '...',       color: 'text-white/50',    bars: 0 },
 };
 
@@ -70,7 +70,7 @@ export function ConnectionQualityIndicator({ stats }: ConnectionQualityIndicator
               {stats.latency !== null && (
                 <div className="flex justify-between">
                   <span>Latencia</span>
-                  <span className={`font-mono ${stats.latency > 300 ? 'text-red-400' : stats.latency > 150 ? 'text-amber-400' : 'text-white'}`}>
+                  <span className={`font-mono ${stats.latency > 300 ? 'text-destructive' : stats.latency > 150 ? 'text-warning' : 'text-white'}`}>
                     {stats.latency}ms
                   </span>
                 </div>
@@ -78,7 +78,7 @@ export function ConnectionQualityIndicator({ stats }: ConnectionQualityIndicator
               {stats.packetLoss !== null && (
                 <div className="flex justify-between">
                   <span>Pérdida paquetes</span>
-                  <span className={`font-mono ${stats.packetLoss > 5 ? 'text-red-400' : stats.packetLoss > 2 ? 'text-amber-400' : 'text-white'}`}>
+                  <span className={`font-mono ${stats.packetLoss > 5 ? 'text-destructive' : stats.packetLoss > 2 ? 'text-warning' : 'text-white'}`}>
                     {stats.packetLoss}%
                   </span>
                 </div>

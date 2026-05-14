@@ -41,10 +41,10 @@ interface ContentPreviewModalProps {
 }
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
-  video: { icon: Video, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Video' },
-  pdf: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'PDF' },
-  image: { icon: ImageIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Imagen' },
-  presentation: { icon: FileText, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'Presentación' },
+  video: { icon: Video, color: 'text-destructive', bg: 'bg-destructive/10', label: 'Video' },
+  pdf: { icon: FileText, color: 'text-primary', bg: 'bg-primary/10', label: 'PDF' },
+  image: { icon: ImageIcon, color: 'text-success', bg: 'bg-success/10', label: 'Imagen' },
+  presentation: { icon: FileText, color: 'text-warning', bg: 'bg-warning/10', label: 'Presentación' },
 };
 
 function PreviewLoading() {
@@ -158,8 +158,8 @@ function PreviewContent({
       return (
         <div className="flex flex-col items-center justify-center h-48 sm:h-56 bg-muted/50 rounded-xl border border-border/50 gap-3"
           onContextMenu={(e) => e.preventDefault()}>
-          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
-            <FileText className="w-8 h-8 text-amber-500" />
+          <div className="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center">
+            <FileText className="w-8 h-8 text-warning" />
           </div>
           <div className="text-center px-6">
             <p className="font-medium text-foreground text-sm">{content.title}</p>

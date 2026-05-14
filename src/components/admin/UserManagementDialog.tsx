@@ -225,9 +225,9 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
 
   const getRoleBadge = (role: string) => {
     const colors: Record<string, string> = {
-      admin: 'bg-purple-100 text-purple-800',
-      doctor: 'bg-blue-100 text-blue-800',
-      resident: 'bg-green-100 text-green-800',
+      admin: 'bg-secondary text-secondary',
+      doctor: 'bg-primary text-primary',
+      resident: 'bg-success text-success',
       patient: 'bg-gray-100 text-gray-800',
     };
     return (

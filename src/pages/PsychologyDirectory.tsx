@@ -61,10 +61,10 @@ export default function PsychologyDirectory() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Hero Section */}
-        <div className="mb-6 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-200/30 dark:border-violet-800/30">
+        <div className="mb-6 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-secondary/10 via-secondary/5 to-fuchsia-500/10 border border-secondary/30 dark:border-secondary/30">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center">
-              <Brain className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+            <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center">
+              <Brain className="w-6 h-6 text-secondary dark:text-secondary" />
             </div>
             <div>
               <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
@@ -77,7 +77,7 @@ export default function PsychologyDirectory() {
             {t('doctors.psychologyHero')}
           </p>
           <div className="flex items-center gap-2 mt-4">
-            <Badge className="bg-violet-500/20 text-violet-700 dark:text-violet-300 border-violet-300/30">
+            <Badge className="bg-secondary/20 text-secondary dark:text-secondary border-secondary/30">
               {doctors.length} {t('doctors.found')}
             </Badge>
           </div>
@@ -104,23 +104,23 @@ export default function PsychologyDirectory() {
               return (
                 <Card
                   key={doctor.id}
-                  className={`group hover:shadow-md transition-all cursor-pointer overflow-hidden ${isAvailable ? 'ring-1 ring-violet-400/25' : ''}`}
+                  className={`group hover:shadow-md transition-all cursor-pointer overflow-hidden ${isAvailable ? 'ring-1 ring-secondary/25' : ''}`}
                   onClick={() => navigate(`/doctor/${doctor.user_id}`)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
-                      <Avatar className="w-14 h-14 border-2 border-violet-200/50">
+                      <Avatar className="w-14 h-14 border-2 border-secondary/50">
                         <AvatarImage src={doctor.avatar_url || undefined} />
-                        <AvatarFallback className="bg-violet-500/10 text-violet-600 text-base font-bold">
+                        <AvatarFallback className="bg-secondary/10 text-secondary text-base font-bold">
                           {getInitials(doctor.name || 'Dr')}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          <h3 className="font-semibold text-sm truncate group-hover:text-violet-600 transition-colors">{doctor.name}</h3>
+                          <h3 className="font-semibold text-sm truncate group-hover:text-secondary transition-colors">{doctor.name}</h3>
                           {doctor.is_identity_verified && <CheckCircle className="w-3.5 h-3.5 text-success flex-shrink-0" />}
                         </div>
-                        <p className="text-xs text-violet-600/80 font-medium mb-1">{doctor.specialty}</p>
+                        <p className="text-xs text-secondary/80 font-medium mb-1">{doctor.specialty}</p>
                         <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
                       </div>
                       <div className="flex-shrink-0 text-right">
@@ -162,7 +162,7 @@ export default function PsychologyDirectory() {
                           {t('doctors.notAvailable')}
                         </div>
                       )}
-                      <Button size="sm" className="h-8 px-3 text-xs bg-violet-600 hover:bg-violet-700 text-white">
+                      <Button size="sm" className="h-8 px-3 text-xs bg-secondary hover:bg-secondary text-white">
                         {t('doctors.viewProfile')}
                       </Button>
                     </div>

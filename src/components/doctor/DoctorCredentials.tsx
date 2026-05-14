@@ -69,7 +69,7 @@ interface Experience {
 const statusBadge = (status: string) => {
   switch (status) {
     case 'approved':
-      return <Badge variant="default" className="gap-1 bg-emerald-600"><CheckCircle className="w-3 h-3" />Aprobado</Badge>;
+      return <Badge variant="default" className="gap-1 bg-success"><CheckCircle className="w-3 h-3" />Aprobado</Badge>;
     case 'rejected':
       return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />Rechazado</Badge>;
     default:

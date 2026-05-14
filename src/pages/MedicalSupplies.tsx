@@ -322,10 +322,10 @@ export default function MedicalSupplies() {
                       const isFeatured = featuredIds.has(p.id);
                       const featuredLabel = isFeatured ? (es ? featuredMap[p.id]?.label_es : featuredMap[p.id]?.label_en) : null;
                       return (
-                        <Card key={p.id} className={`overflow-hidden hover:shadow-lg transition-all cursor-pointer group ${isFeatured ? 'ring-2 ring-yellow-400/60 shadow-yellow-100/50' : ''}`} onClick={() => handleProductClick(p)}>
+                        <Card key={p.id} className={`overflow-hidden hover:shadow-lg transition-all cursor-pointer group ${isFeatured ? 'ring-2 ring-warning/60 shadow-yellow-100/50' : ''}`} onClick={() => handleProductClick(p)}>
                           <div className="relative aspect-square overflow-hidden bg-muted">
                             {p.image_url ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> : <div className="w-full h-full flex items-center justify-center"><Package className="w-12 h-12 text-muted-foreground/30" /></div>}
-                            {isFeatured && <Badge className="absolute top-2 left-2 bg-yellow-400 text-yellow-900 text-[9px] gap-1 shadow-lg"><Sparkles className="w-3 h-3" /> {featuredLabel}</Badge>}
+                            {isFeatured && <Badge className="absolute top-2 left-2 bg-warning text-warning text-[9px] gap-1 shadow-lg"><Sparkles className="w-3 h-3" /> {featuredLabel}</Badge>}
                             {p.stock <= 5 && p.stock > 0 && <Badge variant="destructive" className="absolute top-2 right-2 text-[9px]">{es ? 'Últimas unidades' : 'Low stock'}</Badge>}
                             {p.stock === 0 && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Badge variant="destructive">{es ? 'Agotado' : 'Sold out'}</Badge></div>}
                           </div>
@@ -374,7 +374,7 @@ export default function MedicalSupplies() {
             {selectedProduct && (<>
               <DialogHeader><DialogTitle className="text-base">{selectedProduct.name}</DialogTitle></DialogHeader>
               {selectedProduct.image_url && <img src={selectedProduct.image_url} alt={selectedProduct.name} className="w-full aspect-video object-cover rounded-lg mb-3" />}
-              {featuredIds.has(selectedProduct.id) && <Badge className="bg-yellow-400 text-yellow-900 text-[10px] gap-1 w-fit mb-2"><Sparkles className="w-3 h-3" /> {es ? featuredMap[selectedProduct.id]?.label_es : featuredMap[selectedProduct.id]?.label_en}</Badge>}
+              {featuredIds.has(selectedProduct.id) && <Badge className="bg-warning text-warning text-[10px] gap-1 w-fit mb-2"><Sparkles className="w-3 h-3" /> {es ? featuredMap[selectedProduct.id]?.label_es : featuredMap[selectedProduct.id]?.label_en}</Badge>}
               {selectedProduct.description && <p className="text-sm text-muted-foreground mb-3">{selectedProduct.description}</p>}
               {selectedProduct.category && <Badge variant="outline" className="mb-3">{selectedProduct.category}</Badge>}
               <div className="bg-muted/50 rounded-lg p-3 mb-3">

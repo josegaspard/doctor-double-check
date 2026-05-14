@@ -169,9 +169,9 @@ export default function Enterprise() {
               <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">Para equipos pequeños</p>
               <p className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">Desde $5,000<span className="text-xs sm:text-sm font-normal text-gray-500">/mes</span></p>
               <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />Hasta 50 empleados</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />Consultas ilimitadas</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />Soporte por email</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Hasta 50 empleados</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Consultas ilimitadas</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Soporte por email</li>
               </ul>
               <Link to="/contact" className="block text-center py-2.5 sm:py-3 border border-gray-300 rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm">
                 Contactar
@@ -203,10 +203,10 @@ export default function Enterprise() {
               <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">Para grandes organizaciones</p>
               <p className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">Personalizado</p>
               <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />Empleados ilimitados</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />SLA garantizado</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />Despliegue on-premise</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />Soporte 24/7</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Empleados ilimitados</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />SLA garantizado</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Despliegue on-premise</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Soporte 24/7</li>
               </ul>
               <Link to="/contact" className="block text-center py-2.5 sm:py-3 border border-gray-300 rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm">
                 Contactar

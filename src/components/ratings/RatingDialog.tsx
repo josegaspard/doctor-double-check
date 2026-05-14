@@ -119,7 +119,7 @@ export function RatingDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Star className="w-5 h-5 text-yellow-400" />
+            <Star className="w-5 h-5 text-warning" />
             Califica tu consulta
           </DialogTitle>
           <DialogDescription>

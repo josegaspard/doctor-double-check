@@ -58,7 +58,7 @@ export default function SubscribersList() {
   const tierBadge = (tier: Subscriber['tier']) => {
     if (tier === 'premium')
       return (
-        <Badge className="gap-1 bg-amber-500 hover:bg-amber-500/90">
+        <Badge className="gap-1 bg-warning hover:bg-warning/90">
           <Crown className="w-3 h-3" /> Premium
         </Badge>
       );

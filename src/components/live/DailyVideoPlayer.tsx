@@ -550,7 +550,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
           {/* Screen share indicator */}
           {showingScreenShare && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
-              <Badge variant="secondary" className="gap-1 bg-blue-600/80 text-white border-0">
+              <Badge variant="secondary" className="gap-1 bg-primary/80 text-white border-0">
                 <Monitor className="w-3 h-3" />
                 Pantalla compartida
               </Badge>

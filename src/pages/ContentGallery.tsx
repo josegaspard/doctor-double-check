@@ -85,9 +85,9 @@ const CONTENT_TYPES = [
 
 function getTypeConfig(t: (path: string) => string): Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> {
   return {
-    video: { icon: Video, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Video' },
-    pdf: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'PDF' },
-    image: { icon: ImageIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: t('ads.contentImage') },
+    video: { icon: Video, color: 'text-destructive', bg: 'bg-destructive/10', label: 'Video' },
+    pdf: { icon: FileText, color: 'text-primary', bg: 'bg-primary/10', label: 'PDF' },
+    image: { icon: ImageIcon, color: 'text-success', bg: 'bg-success/10', label: t('ads.contentImage') },
   };
 }
 

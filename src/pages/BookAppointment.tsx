@@ -154,8 +154,8 @@ export default function BookAppointment() {
         <div className="container mx-auto px-4 py-8 max-w-lg">
           <Card className="text-center">
             <CardContent className="py-12 px-6">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-8 h-8 text-success" />
               </div>
               <h2 className="text-xl font-bold mb-2">Cita solicitada</h2>
               <p className="text-muted-foreground text-sm mb-6">

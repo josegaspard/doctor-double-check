@@ -169,7 +169,7 @@ export default function VendorProducts() {
         <div className="container mx-auto px-4 py-8 max-w-lg">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><AlertCircle className="w-5 h-5 text-amber-500" /> Cuenta de vendor en revisión</CardTitle>
+              <CardTitle className="flex items-center gap-2"><AlertCircle className="w-5 h-5 text-warning" /> Cuenta de vendor en revisión</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <p>Tu solicitud como <strong>{vendor.name}</strong> está en revisión por el equipo de Medical Masters. Te notificaremos por correo cuando sea aprobada.</p>
@@ -218,7 +218,7 @@ export default function VendorProducts() {
                   <div className="flex items-center gap-1 mt-3">
                     <Button size="sm" variant="ghost" className="h-7 px-2 gap-1" onClick={() => openEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>
                     <Button size="sm" variant="ghost" className="h-7 px-2 gap-1" onClick={() => toggleActive(p)}>
-                      <span className={`w-2 h-2 rounded-full ${p.is_active ? 'bg-emerald-500' : 'bg-muted-foreground'}`} />
+                      <span className={`w-2 h-2 rounded-full ${p.is_active ? 'bg-success' : 'bg-muted-foreground'}`} />
                     </Button>
                     <Button size="sm" variant="ghost" className="h-7 px-2 gap-1 text-destructive" onClick={() => remove(p.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
                   </div>

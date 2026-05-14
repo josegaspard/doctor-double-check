@@ -91,9 +91,9 @@ export default function Compliance() {
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#163a83] to-[#00768b] flex items-center justify-center">
                     <area.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
-                  <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-green-100">
-                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-                    <span className="text-[10px] sm:text-xs font-semibold text-green-700">Cumple</span>
+                  <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-success">
+                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-success" />
+                    <span className="text-[10px] sm:text-xs font-semibold text-success">Cumple</span>
                   </div>
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-1">{area.title}</h3>
@@ -136,8 +136,8 @@ export default function Compliance() {
       <section className="py-12 sm:py-24 bg-gray-100">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-2xl mx-auto text-center">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4 sm:mb-6">
-              <AlertCircle className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600" />
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-warning flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <AlertCircle className="w-7 h-7 sm:w-8 sm:h-8 text-warning" />
             </div>
             <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mb-3 sm:mb-4">
               Reportar una Preocupación

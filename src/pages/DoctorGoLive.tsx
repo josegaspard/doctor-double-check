@@ -463,8 +463,8 @@ export default function DoctorGoLive() {
     // recording fails silently (lastError), so the doctor knows something is
     // wrong instead of seeing a constant chunks/MB counter.
     const recDiag = enableRecording && localRecording.lastError ? (
-      <div className="fixed top-3 right-3 z-[60] rounded-lg bg-black/85 backdrop-blur-md border border-red-400/30 text-white text-[11px] font-mono px-3 py-2 shadow-2xl pointer-events-none select-none">
-        <div className="text-red-300 max-w-[200px] whitespace-normal">
+      <div className="fixed top-3 right-3 z-[60] rounded-lg bg-black/85 backdrop-blur-md border border-destructive/30 text-white text-[11px] font-mono px-3 py-2 shadow-2xl pointer-events-none select-none">
+        <div className="text-destructive max-w-[200px] whitespace-normal">
           ⚠ {localRecording.lastError}
         </div>
       </div>

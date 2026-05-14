@@ -814,13 +814,13 @@ export default function Onboarding() {
 
             {selectedRole === 'patient' && (
               <motion.div
-                className="w-full max-w-md mx-auto mb-6 p-4 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 text-left"
+                className="w-full max-w-md mx-auto mb-6 p-4 rounded-lg border border-warning bg-warning dark:bg-warning/30 dark:border-warning text-left"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7, duration: 0.4 }}
               >
-                <p className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-1">💰 Tip: Recarga tu wallet</p>
-                <p className="text-xs text-amber-700 dark:text-amber-300">
+                <p className="text-sm font-semibold text-warning dark:text-warning mb-1">💰 Tip: Recarga tu wallet</p>
+                <p className="text-xs text-warning dark:text-warning">
                   Para acceder a contenido premium, suscripciones y consultas médicas necesitarás saldo en tu wallet. 
                   Ve a <strong>Wallet</strong> para agregar fondos con tarjeta de crédito o débito.
                 </p>
@@ -1099,7 +1099,7 @@ export default function Onboarding() {
                             inputMode="numeric"
                           />
                           {phoneVerified ? (
-                            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 flex items-center gap-1 whitespace-nowrap self-center">
+                            <Badge className="bg-success/10 text-success border-success flex items-center gap-1 whitespace-nowrap self-center">
                               <CheckCircle className="w-3.5 h-3.5" />
                               Verificado
                             </Badge>

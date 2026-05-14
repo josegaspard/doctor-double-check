@@ -274,7 +274,7 @@ export default function AdminHospitals() {
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => openEdit(h)}><Pencil className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => toggleActive(h.id, h.is_active)}>
-                      <span className={`w-2 h-2 rounded-full ${h.is_active ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                      <span className={`w-2 h-2 rounded-full ${h.is_active ? 'bg-success' : 'bg-muted-foreground'}`} />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleDelete(h.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                   </div>
@@ -384,7 +384,7 @@ export default function AdminHospitals() {
                           {d.specialty}
                           {Number(d.rating) > 0 && (
                             <span className="inline-flex items-center gap-0.5 ml-2">
-                              <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                              <Star className="w-3 h-3 fill-warning text-warning" />
                               {Number(d.rating).toFixed(1)}
                             </span>
                           )}

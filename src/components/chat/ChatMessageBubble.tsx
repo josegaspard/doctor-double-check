@@ -154,8 +154,8 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
             }`
           : `rounded-2xl rounded-bl-md ${
               isSessionClosed 
-                ? 'bg-blue-50/80 dark:bg-muted/70 text-foreground' 
-                : 'bg-white/90 dark:bg-card border border-blue-100/60 dark:border-border/50 text-foreground shadow-sm'
+                ? 'bg-primary/80 dark:bg-muted/70 text-foreground' 
+                : 'bg-white/90 dark:bg-card border border-primary/60 dark:border-border/50 text-foreground shadow-sm'
             }`
         }
       `}>

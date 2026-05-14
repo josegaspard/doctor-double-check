@@ -111,7 +111,7 @@ export default function SuccessStories() {
                   
                   <div className="flex items-center gap-0.5 sm:gap-1 mt-2">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
+                      <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 text-warning fill-warning" />
                     ))}
                     <span className="text-xs sm:text-sm font-bold text-gray-600 ml-1">{story.stats.rating}</span>
                   </div>
@@ -135,7 +135,7 @@ export default function SuccessStories() {
                       <p className="text-[10px] sm:text-xs text-gray-500">Consultas</p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-2 sm:p-4 text-center">
-                      <Star className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 mx-auto mb-1" />
+                      <Star className="w-4 h-4 sm:w-5 sm:h-5 text-warning mx-auto mb-1" />
                       <p className="text-sm sm:text-xl font-bold text-gray-800">{story.stats.rating}</p>
                       <p className="text-[10px] sm:text-xs text-gray-500">Rating</p>
                     </div>

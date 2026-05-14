@@ -60,10 +60,10 @@ export default function NutritionDirectory() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Hero Section */}
-        <div className="mb-6 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-green-500/5 to-teal-500/10 border border-emerald-200/30 dark:border-emerald-800/30">
+        <div className="mb-6 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-success/10 via-green-500/5 to-primary/10 border border-success/30 dark:border-success/30">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-              <Apple className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            <div className="w-12 h-12 rounded-xl bg-success/20 flex items-center justify-center">
+              <Apple className="w-6 h-6 text-success dark:text-success" />
             </div>
             <div>
               <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
@@ -76,7 +76,7 @@ export default function NutritionDirectory() {
             {t('doctors.nutritionHero')}
           </p>
           <div className="flex items-center gap-2 mt-4">
-            <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-300/30">
+            <Badge className="bg-success/20 text-success dark:text-success border-success/30">
               {doctors.length} {t('doctors.found')}
             </Badge>
           </div>
@@ -103,23 +103,23 @@ export default function NutritionDirectory() {
               return (
                 <Card
                   key={doctor.id}
-                  className={`group hover:shadow-md transition-all cursor-pointer overflow-hidden ${isAvailable ? 'ring-1 ring-emerald-400/25' : ''}`}
+                  className={`group hover:shadow-md transition-all cursor-pointer overflow-hidden ${isAvailable ? 'ring-1 ring-success/25' : ''}`}
                   onClick={() => navigate(`/doctor/${doctor.user_id}`)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
-                      <Avatar className="w-14 h-14 border-2 border-emerald-200/50">
+                      <Avatar className="w-14 h-14 border-2 border-success/50">
                         <AvatarImage src={doctor.avatar_url || undefined} />
-                        <AvatarFallback className="bg-emerald-500/10 text-emerald-600 text-base font-bold">
+                        <AvatarFallback className="bg-success/10 text-success text-base font-bold">
                           {getInitials(doctor.name || 'Dr')}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          <h3 className="font-semibold text-sm truncate group-hover:text-emerald-600 transition-colors">{doctor.name}</h3>
+                          <h3 className="font-semibold text-sm truncate group-hover:text-success transition-colors">{doctor.name}</h3>
                           {doctor.is_identity_verified && <CheckCircle className="w-3.5 h-3.5 text-success flex-shrink-0" />}
                         </div>
-                        <p className="text-xs text-emerald-600/80 font-medium mb-1">{doctor.specialty}</p>
+                        <p className="text-xs text-success/80 font-medium mb-1">{doctor.specialty}</p>
                         <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
                       </div>
                       <div className="flex-shrink-0 text-right">
@@ -161,7 +161,7 @@ export default function NutritionDirectory() {
                           {t('doctors.notAvailable')}
                         </div>
                       )}
-                      <Button size="sm" className="h-8 px-3 text-xs bg-emerald-600 hover:bg-emerald-700 text-white">
+                      <Button size="sm" className="h-8 px-3 text-xs bg-success hover:bg-success text-white">
                         {t('doctors.viewProfile')}
                       </Button>
                     </div>

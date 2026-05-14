@@ -105,24 +105,24 @@ export function RecordingChatReplay({ liveId, videoPreviewUrl }: RecordingChatRe
               key={msg.id}
               className={`flex gap-2 rounded-lg px-1.5 py-1 ${
                 msg.isPaid
-                  ? 'bg-amber-500/10 border border-amber-500/20'
+                  ? 'bg-warning/10 border border-warning/20'
                   : ''
               }`}
             >
               <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                msg.isPaid ? 'bg-amber-500/20' : 'bg-primary/10'
+                msg.isPaid ? 'bg-warning/20' : 'bg-primary/10'
               }`}>
-                <User className={`w-2.5 h-2.5 ${msg.isPaid ? 'text-amber-600' : 'text-primary'}`} />
+                <User className={`w-2.5 h-2.5 ${msg.isPaid ? 'text-warning' : 'text-primary'}`} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-1 flex-wrap">
                   <span className={`font-medium text-[10px] sm:text-xs truncate max-w-[120px] ${
-                    msg.isPaid ? 'text-amber-700 dark:text-amber-400' : 'text-foreground'
+                    msg.isPaid ? 'text-warning dark:text-warning' : 'text-foreground'
                   }`}>
                     {msg.userName}
                   </span>
                   {msg.isPaid && (
-                    <Badge variant="outline" className="h-3.5 px-1 text-[8px] border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/5">
+                    <Badge variant="outline" className="h-3.5 px-1 text-[8px] border-warning/30 text-warning dark:text-warning bg-warning/5">
                       ⭐ Destacado
                     </Badge>
                   )}

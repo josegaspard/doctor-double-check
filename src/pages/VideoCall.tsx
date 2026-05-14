@@ -670,8 +670,8 @@ export default function VideoCall() {
 
             {permissionError && (
               <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-gradient-to-b from-muted/30 to-background">
-                <div className="w-20 h-20 rounded-full bg-amber-500/10 flex items-center justify-center mb-6">
-                  <AlertTriangle className="w-10 h-10 text-amber-500" />
+                <div className="w-20 h-20 rounded-full bg-warning/10 flex items-center justify-center mb-6">
+                  <AlertTriangle className="w-10 h-10 text-warning" />
                 </div>
                 <h2 className="text-xl font-bold text-foreground mb-2">
                   {permissionError === 'denied' ? 'Necesitamos acceso a tu cámara y micrófono' : 'No detectamos cámara o micrófono'}

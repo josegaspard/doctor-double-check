@@ -461,7 +461,7 @@ export default function RecordingsGrid() {
                                   <span className="font-bold text-success">
                                     ${getEffectiveRecordingPrice(recording.price, recording.doctorId).toFixed(0)}
                                   </span>
-                                  <Crown className="w-3 h-3 text-yellow-500" />
+                                  <Crown className="w-3 h-3 text-warning" />
                                 </div>
                               ) : (
                                 <span className="font-bold text-premium">

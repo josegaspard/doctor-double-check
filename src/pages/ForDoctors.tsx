@@ -127,8 +127,8 @@ export default function ForDoctors() {
                 <ul className="space-y-3 sm:space-y-4">
                   {features.map((feature, index) => (
                     <li key={index} className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-success flex items-center justify-center flex-shrink-0">
+                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-success" />
                       </div>
                       <span className="text-gray-700 text-sm sm:text-base">{feature}</span>
                     </li>

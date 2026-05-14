@@ -144,21 +144,21 @@ export function IncomingCallModal({
           <div className="relative mb-6 w-28 h-28 flex items-center justify-center">
             <motion.div
               key={ringCount}
-              className="absolute inset-0 rounded-full border-2 border-emerald-400/40"
+              className="absolute inset-0 rounded-full border-2 border-success/40"
               initial={{ scale: 1, opacity: 0.6 }}
               animate={{ scale: 2.2, opacity: 0 }}
               transition={{ duration: 2, ease: 'easeOut' }}
             />
             <motion.div
               key={`ring2-${ringCount}`}
-              className="absolute inset-0 rounded-full border-2 border-emerald-400/20"
+              className="absolute inset-0 rounded-full border-2 border-success/20"
               initial={{ scale: 1, opacity: 0.4 }}
               animate={{ scale: 2.8, opacity: 0 }}
               transition={{ duration: 2.5, ease: 'easeOut', delay: 0.3 }}
             />
-            <Avatar className="w-24 h-24 ring-4 ring-emerald-400/40 shadow-xl shadow-emerald-500/20">
+            <Avatar className="w-24 h-24 ring-4 ring-success/40 shadow-xl shadow-emerald-500/20">
               <AvatarImage src={doctorAvatar} alt={doctorName} />
-              <AvatarFallback className="bg-emerald-500/20 text-emerald-300 text-2xl font-bold">
+              <AvatarFallback className="bg-success/20 text-success text-2xl font-bold">
                 {getInitials(doctorName)}
               </AvatarFallback>
             </Avatar>
@@ -170,7 +170,7 @@ export function IncomingCallModal({
           </p>
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">{doctorName}</h2>
           {doctorSpecialty && (
-            <div className="flex items-center gap-1.5 text-emerald-300/90 text-sm mb-8 sm:mb-10">
+            <div className="flex items-center gap-1.5 text-success/90 text-sm mb-8 sm:mb-10">
               <Stethoscope className="w-4 h-4" />
               <span>{doctorSpecialty}</span>
             </div>
@@ -181,7 +181,7 @@ export function IncomingCallModal({
             <div className="flex flex-col items-center gap-2.5">
               <Button
                 size="lg"
-                className="rounded-full w-16 h-16 sm:w-18 sm:h-18 bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/40 border-0 active:scale-95 transition-transform"
+                className="rounded-full w-16 h-16 sm:w-18 sm:h-18 bg-destructive hover:bg-destructive shadow-lg shadow-red-500/40 border-0 active:scale-95 transition-transform"
                 onClick={handleReject}
               >
                 <PhoneOff className="w-7 h-7 text-white" />
@@ -196,7 +196,7 @@ export function IncomingCallModal({
               >
                 <Button
                   size="lg"
-                  className="rounded-full w-16 h-16 sm:w-18 sm:h-18 bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/40 border-0 active:scale-95 transition-transform"
+                  className="rounded-full w-16 h-16 sm:w-18 sm:h-18 bg-success hover:bg-success shadow-lg shadow-emerald-500/40 border-0 active:scale-95 transition-transform"
                   onClick={handleAccept}
                 >
                   <Phone className="w-7 h-7 text-white" />

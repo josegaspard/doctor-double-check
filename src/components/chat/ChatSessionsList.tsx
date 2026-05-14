@@ -131,7 +131,7 @@ export function ChatSessionsList({
 
   return (
     <>
-    <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-gradient-to-b from-blue-50/70 to-sky-50/30 dark:from-primary/[0.06] dark:to-transparent ${hidden ? 'hidden md:flex' : 'flex'}`}>
+    <Card className={`flex flex-col min-h-0 max-h-full overflow-hidden border-0 shadow-lg bg-gradient-to-b from-primary/70 to-primary/30 dark:from-primary/[0.06] dark:to-transparent ${hidden ? 'hidden md:flex' : 'flex'}`}>
       <CardHeader className="pb-3 pt-4 px-3 flex-shrink-0 space-y-3">
         <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as 'active' | 'history')} className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-12">

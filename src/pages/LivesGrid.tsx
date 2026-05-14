@@ -61,7 +61,7 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
               {t('lives.liveBadge')}
             </Badge>
             {isPremiumSub && (
-              <Badge className="gap-1 bg-yellow-500/90 text-white border-0 text-[10px]">
+              <Badge className="gap-1 bg-warning/90 text-white border-0 text-[10px]">
                 <Crown className="w-3 h-3" />
                 Premium
               </Badge>
@@ -106,7 +106,7 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
               {live.specialty}
             </Badge>
             {isPremiumSub && (
-              <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-300 gap-1">
+              <Badge variant="outline" className="text-xs text-warning border-warning gap-1">
                 <Crown className="w-3 h-3" />
                 {t('lives.earlyAccess')}
               </Badge>

@@ -90,7 +90,7 @@ function FooterLinkColumn({ title, links }: { title: string; links: { label: str
               to={link.href}
               className={`text-xs sm:text-sm font-medium transition-colors ${
                 link.href === '/report-issue'
-                  ? 'text-orange-200 hover:text-white'
+                  ? 'text-warning hover:text-white'
                   : 'text-white hover:text-white hover:underline'
               }`}
             >
@@ -139,9 +139,9 @@ export function UnifiedFooter({ variant }: Props) {
           <div className="border-t border-white/30 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-xs text-white font-medium">{footerLinks.copyright}</p>
             {footerLinks.show_status_badge && (
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/25 border border-green-400/60">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-green-200 font-bold text-xs">{t('landingFooter.allSystems')}</span>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-success/25 border border-success/60">
+                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                <span className="text-success font-bold text-xs">{t('landingFooter.allSystems')}</span>
               </div>
             )}
           </div>
@@ -172,9 +172,9 @@ export function UnifiedFooter({ variant }: Props) {
           <p className="text-xs sm:text-sm text-center sm:text-left text-white font-medium">{footerLinks.copyright}</p>
           {footerLinks.show_status_badge && (
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/25 border border-green-400/60">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-green-200 font-bold text-xs">{t('landingFooter.allSystems')}</span>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-success/25 border border-success/60">
+                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                <span className="text-success font-bold text-xs">{t('landingFooter.allSystems')}</span>
               </div>
             </div>
           )}

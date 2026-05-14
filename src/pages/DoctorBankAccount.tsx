@@ -370,11 +370,11 @@ export default function DoctorBankAccount() {
                   <CardContent>
                     <ul className="space-y-2 mb-6 text-sm text-muted-foreground">
                       <li className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-success" />
                         {language === 'es' ? 'Pagos automáticos (sin intervención del admin)' : 'Automatic payments (no admin needed)'}
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-success" />
                         {language === 'es' ? 'Depósito directo a tu cuenta' : 'Direct deposit to your account'}
                       </li>
                     </ul>

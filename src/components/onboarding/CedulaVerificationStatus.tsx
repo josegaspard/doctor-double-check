@@ -39,17 +39,17 @@ const statusConfig = {
     icon: Clock,
     label: 'Pendiente de verificación',
     description: 'Será verificada por un administrador',
-    color: 'text-amber-600 dark:text-amber-500',
-    bgColor: 'bg-amber-50 dark:bg-amber-950/30',
-    borderColor: 'border-amber-200 dark:border-amber-800',
+    color: 'text-warning dark:text-warning',
+    bgColor: 'bg-warning dark:bg-warning/30',
+    borderColor: 'border-warning dark:border-warning',
   },
   verified: {
     icon: CheckCircle2,
     label: 'Cédula verificada',
     description: 'Verificada en el Registro Nacional',
-    color: 'text-emerald-600 dark:text-emerald-500',
-    bgColor: 'bg-emerald-50 dark:bg-emerald-950/30',
-    borderColor: 'border-emerald-200 dark:border-emerald-800',
+    color: 'text-success dark:text-success',
+    bgColor: 'bg-success dark:bg-success/30',
+    borderColor: 'border-success dark:border-success',
   },
   checking: {
     icon: Loader2,
@@ -151,10 +151,10 @@ export const CedulaVerificationStatus: React.FC<CedulaVerificationStatusProps> =
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             transition={{ delay: 0.2 }}
-            className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-800/50"
+            className="mt-3 pt-3 border-t border-warning dark:border-warning/50"
           >
             <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
+              <Info className="w-4 h-4 text-warning dark:text-warning mt-0.5 flex-shrink-0" />
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Tu cédula será verificada manualmente por nuestro equipo contra el 
                 <span className="font-medium text-foreground"> Registro Nacional de Profesionistas</span>. 

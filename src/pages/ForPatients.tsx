@@ -147,19 +147,19 @@ export default function ForPatients() {
                 </p>
                 <ul className="space-y-2">
                   <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />
                     Cardiólogos
                   </li>
                   <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />
                     Neurólogos
                   </li>
                   <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />
                     Oncólogos
                   </li>
                   <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />
                     Y muchos más...
                   </li>
                 </ul>

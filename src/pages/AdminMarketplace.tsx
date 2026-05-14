@@ -195,7 +195,7 @@ function VendorsTab({ es }: { es: boolean }) {
               <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-xs font-bold flex-shrink-0">{v.logo_url ? <img src={v.logo_url} alt={v.name} className="w-full h-full object-cover rounded-lg" /> : v.name.slice(0, 2).toUpperCase()}</div>
               <div className="flex-1 min-w-0"><p className="font-medium text-sm truncate">{v.name}</p><p className="text-xs text-muted-foreground truncate">{v.location || v.website || ''}</p></div>
               <Badge variant={v.status === 'approved' ? 'default' : v.status === 'pending' ? 'secondary' : 'destructive'} className="text-[10px]">{v.status}</Badge>
-              {v.status === 'pending' && (<><Button variant="ghost" size="icon" onClick={() => updateStatus(v.id, 'approved')}><Check className="w-4 h-4 text-green-600" /></Button><Button variant="ghost" size="icon" onClick={() => updateStatus(v.id, 'rejected')}><X className="w-4 h-4 text-destructive" /></Button></>)}
+              {v.status === 'pending' && (<><Button variant="ghost" size="icon" onClick={() => updateStatus(v.id, 'approved')}><Check className="w-4 h-4 text-success" /></Button><Button variant="ghost" size="icon" onClick={() => updateStatus(v.id, 'rejected')}><X className="w-4 h-4 text-destructive" /></Button></>)}
               <Button variant="ghost" size="icon" onClick={() => { setEditingId(v.id); setForm({ name: v.name, description: v.description || '', website: v.website || '', phone: v.phone || '', location: v.location || '', logo_url: v.logo_url || '', status: v.status }); setDialogOpen(true); }}><Pencil className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => handleDelete(v.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
             </CardContent></Card>
@@ -400,9 +400,11 @@ function OrdersTab({ es }: { es: boolean }) {
   };
 
   const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800', paid: 'bg-blue-100 text-blue-800',
-    shipped: 'bg-purple-100 text-purple-800', delivered: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800',
+    pending: 'bg-warning/15 text-warning border border-warning/30',
+    paid: 'bg-primary/15 text-primary border border-primary/30',
+    shipped: 'bg-secondary/15 text-secondary border border-secondary/30',
+    delivered: 'bg-success/15 text-success border border-success/30',
+    cancelled: 'bg-destructive/15 text-destructive border border-destructive/30',
   };
 
   return (
@@ -410,22 +412,22 @@ function OrdersTab({ es }: { es: boolean }) {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <Card><CardContent className="p-4 text-center">
-          <DollarSign className="w-5 h-5 text-green-600 mx-auto mb-1" />
+          <DollarSign className="w-5 h-5 text-success mx-auto mb-1" />
           <p className="text-lg font-bold">${stats.revenue.toLocaleString()}</p>
           <p className="text-[10px] text-muted-foreground">{es ? 'Ingresos totales' : 'Total Revenue'}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
-          <ShoppingCart className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+          <ShoppingCart className="w-5 h-5 text-primary mx-auto mb-1" />
           <p className="text-lg font-bold">{stats.today}</p>
           <p className="text-[10px] text-muted-foreground">{es ? 'Pedidos hoy' : 'Orders Today'}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
-          <Package className="w-5 h-5 text-yellow-600 mx-auto mb-1" />
+          <Package className="w-5 h-5 text-warning mx-auto mb-1" />
           <p className="text-lg font-bold">{stats.pending}</p>
           <p className="text-[10px] text-muted-foreground">{es ? 'Por enviar' : 'Pending Ship'}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
-          <BarChart3 className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+          <BarChart3 className="w-5 h-5 text-secondary mx-auto mb-1" />
           <p className="text-lg font-bold">${Math.round(stats.avg).toLocaleString()}</p>
           <p className="text-[10px] text-muted-foreground">{es ? 'Promedio pedido' : 'Avg Order'}</p>
         </CardContent></Card>
@@ -633,22 +635,22 @@ function SalesTab({ es }: { es: boolean }) {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Card><CardContent className="p-4 text-center">
-          <DollarSign className="w-5 h-5 text-green-600 mx-auto mb-1" />
+          <DollarSign className="w-5 h-5 text-success mx-auto mb-1" />
           <p className="text-xl font-bold">${stats.totalRevenue.toLocaleString()}</p>
           <p className="text-[10px] text-muted-foreground">{es ? 'Ventas totales' : 'Total Sales'}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
-          <Package className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+          <Package className="w-5 h-5 text-primary mx-auto mb-1" />
           <p className="text-xl font-bold">{stats.totalUnits}</p>
           <p className="text-[10px] text-muted-foreground">{es ? 'Unidades vendidas' : 'Units Sold'}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
-          <Users className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+          <Users className="w-5 h-5 text-secondary mx-auto mb-1" />
           <p className="text-xl font-bold">{stats.uniqueBuyers}</p>
           <p className="text-[10px] text-muted-foreground">{es ? 'Compradores' : 'Buyers'}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
-          <BarChart3 className="w-5 h-5 text-yellow-600 mx-auto mb-1" />
+          <BarChart3 className="w-5 h-5 text-warning mx-auto mb-1" />
           <p className="text-xl font-bold">${Math.round(stats.avg).toLocaleString()}</p>
           <p className="text-[10px] text-muted-foreground">{es ? 'Promedio' : 'Avg Order'}</p>
         </CardContent></Card>

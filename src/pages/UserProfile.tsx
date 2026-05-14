@@ -549,11 +549,11 @@ export default function UserProfile() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200">{t('profile.statusApproved')}</Badge>;
+        return <Badge className="bg-success/10 text-success border-success">{t('profile.statusApproved')}</Badge>;
       case 'pending':
-        return <Badge className="bg-amber-500/10 text-amber-600 border-amber-200">{t('profile.statusPending')}</Badge>;
+        return <Badge className="bg-warning/10 text-warning border-warning">{t('profile.statusPending')}</Badge>;
       case 'rejected':
-        return <Badge className="bg-red-500/10 text-red-600 border-red-200">{t('profile.statusRejected')}</Badge>;
+        return <Badge className="bg-destructive/10 text-destructive border-destructive">{t('profile.statusRejected')}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -697,7 +697,7 @@ export default function UserProfile() {
                             <span className="text-muted-foreground break-all sm:break-normal truncate max-w-[200px] sm:max-w-none">{user.email}</span>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px] shrink-0">Verificado</Badge>
+                            <Badge className="bg-success/10 text-success border-success text-[10px] shrink-0">Verificado</Badge>
                             <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => { setIsEditingEmail(true); setEditedEmail(''); }}>
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
@@ -797,7 +797,7 @@ export default function UserProfile() {
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
-                                  <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px] shrink-0">Verificado</Badge>
+                                  <Badge className="bg-success/10 text-success border-success text-[10px] shrink-0">Verificado</Badge>
                                   <Button size="sm" variant="ghost" className="h-7 text-xs px-2 min-h-[44px] sm:min-h-0" onClick={() => setIsEditingPhone(true)}>
                                     Cambiar
                                   </Button>
@@ -1050,7 +1050,7 @@ export default function UserProfile() {
                 {/* Stats */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-2">
                   <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
+                    <div className="flex items-center justify-center gap-1 text-warning mb-1">
                       <Star className="w-4 h-4 fill-current" />
                       <span className="font-semibold">{doctorProfile.rating.toFixed(1)}</span>
                     </div>
@@ -1201,7 +1201,7 @@ export default function UserProfile() {
                         exit={{ opacity: 0, height: 0 }}
                         className="mt-2 space-y-2"
                       >
-                        <p className="text-sm font-medium ml-7 mb-2">{user.email} <Badge className="ml-1 bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px]">Actual</Badge></p>
+                        <p className="text-sm font-medium ml-7 mb-2">{user.email} <Badge className="ml-1 bg-success/10 text-success border-success text-[10px]">Actual</Badge></p>
                         <div className="flex items-center gap-2 ml-7 flex-wrap">
                           <Input
                             type="email"
@@ -1227,7 +1227,7 @@ export default function UserProfile() {
                     ) : (
                       <p className="mt-1 text-sm font-medium ml-7 flex items-center gap-2">
                         {user.email}
-                        <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px]">Verificado</Badge>
+                        <Badge className="bg-success/10 text-success border-success text-[10px]">Verificado</Badge>
                       </p>
                     )}
                   </AnimatePresence>
@@ -1319,7 +1319,7 @@ export default function UserProfile() {
                           userPhone ? (
                             <>
                               {userPhone.replace(/(\d{2})(\d+)(\d{4})/, '$1****$3')}
-                              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px]">Verificado</Badge>
+                              <Badge className="bg-success/10 text-success border-success text-[10px]">Verificado</Badge>
                             </>
                           ) : (
                             <span className="text-muted-foreground italic">Sin verificar</span>
@@ -1355,12 +1355,12 @@ export default function UserProfile() {
                       ...
                     </Badge>
                   ) : verificationStatus === 'approved' ? (
-                    <Badge className="gap-1 bg-emerald-500/10 text-emerald-600 border-emerald-200">
+                    <Badge className="gap-1 bg-success/10 text-success border-success">
                       <Check className="w-3 h-3" />
                       {t('profile.verified')}
                     </Badge>
                   ) : verificationStatus === 'pending' ? (
-                    <Badge className="gap-1 bg-amber-500/10 text-amber-600 border-amber-200">
+                    <Badge className="gap-1 bg-warning/10 text-warning border-warning">
                       <Clock className="w-3 h-3" />
                       {t('profile.pending')}
                     </Badge>

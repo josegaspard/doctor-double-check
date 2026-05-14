@@ -16,14 +16,14 @@ import {
 // BMI Calculator with OMS Visual Table
 // ═══════════════════════════════════════════════════
 const BMI_RANGES = [
-  { min: 0, max: 16, label: 'Bajo peso', color: 'bg-blue-600', textColor: 'text-blue-600', risk: 'Alto' },
-  { min: 16, max: 17, label: 'Delgadez moderada', color: 'bg-blue-400', textColor: 'text-blue-500', risk: 'Moderado' },
-  { min: 17, max: 18.5, label: 'Delgadez leve', color: 'bg-sky-400', textColor: 'text-sky-500', risk: 'Bajo' },
-  { min: 18.5, max: 25, label: 'Normal', color: 'bg-emerald-500', textColor: 'text-emerald-600', risk: 'Normal' },
-  { min: 25, max: 30, label: 'Sobrepeso', color: 'bg-amber-400', textColor: 'text-amber-600', risk: 'Aumentado' },
-  { min: 30, max: 35, label: 'Obesidad grado I', color: 'bg-orange-500', textColor: 'text-orange-600', risk: 'Alto' },
-  { min: 35, max: 40, label: 'Obesidad grado II', color: 'bg-red-500', textColor: 'text-red-600', risk: 'Muy alto' },
-  { min: 40, max: 100, label: 'Obesidad grado III', color: 'bg-red-700', textColor: 'text-red-700', risk: 'Extremo' },
+  { min: 0, max: 16, label: 'Bajo peso', color: 'bg-primary', textColor: 'text-primary', risk: 'Alto' },
+  { min: 16, max: 17, label: 'Delgadez moderada', color: 'bg-primary', textColor: 'text-primary', risk: 'Moderado' },
+  { min: 17, max: 18.5, label: 'Delgadez leve', color: 'bg-primary', textColor: 'text-primary', risk: 'Bajo' },
+  { min: 18.5, max: 25, label: 'Normal', color: 'bg-success', textColor: 'text-success', risk: 'Normal' },
+  { min: 25, max: 30, label: 'Sobrepeso', color: 'bg-warning', textColor: 'text-warning', risk: 'Aumentado' },
+  { min: 30, max: 35, label: 'Obesidad grado I', color: 'bg-warning', textColor: 'text-warning', risk: 'Alto' },
+  { min: 35, max: 40, label: 'Obesidad grado II', color: 'bg-destructive', textColor: 'text-destructive', risk: 'Muy alto' },
+  { min: 40, max: 100, label: 'Obesidad grado III', color: 'bg-destructive', textColor: 'text-destructive', risk: 'Extremo' },
 ];
 
 function BMICalculator() {
@@ -200,13 +200,13 @@ function CardiovascularRisk() {
     const recommendations: string[] = [];
 
     if (risk < 5) {
-      level = 'Bajo'; color = 'text-emerald-600';
+      level = 'Bajo'; color = 'text-success';
       recommendations.push('Mantener estilo de vida saludable', 'Control anual');
     } else if (risk < 10) {
-      level = 'Moderado'; color = 'text-amber-600';
+      level = 'Moderado'; color = 'text-warning';
       recommendations.push('Modificar factores de riesgo', 'Ejercicio 150 min/semana', 'Dieta mediterránea');
     } else if (risk < 20) {
-      level = 'Alto'; color = 'text-orange-600';
+      level = 'Alto'; color = 'text-warning';
       recommendations.push('Consulta cardiológica', 'Estatinas si LDL > 115', 'Control cada 3 meses');
     } else {
       level = 'Muy alto'; color = 'text-destructive';
@@ -339,8 +339,8 @@ function GlasgowScale() {
 
   let severity = '', color = '', bgColor = '';
   if (total <= 8) { severity = 'Grave (Intubación)'; color = 'text-destructive'; bgColor = 'bg-destructive/10'; }
-  else if (total <= 12) { severity = 'Moderado'; color = 'text-amber-600'; bgColor = 'bg-amber-50 dark:bg-amber-950/20'; }
-  else { severity = 'Leve'; color = 'text-emerald-600'; bgColor = 'bg-emerald-50 dark:bg-emerald-950/20'; }
+  else if (total <= 12) { severity = 'Moderado'; color = 'text-warning'; bgColor = 'bg-warning dark:bg-warning/20'; }
+  else { severity = 'Leve'; color = 'text-success'; bgColor = 'bg-success dark:bg-success/20'; }
 
   return (
     <Card>
@@ -483,9 +483,9 @@ function CreatinineClearance() {
     if (sex === 'female') clcr *= 0.85;
 
     let stage = '', color = '';
-    if (clcr >= 90) { stage = 'Normal (G1)'; color = 'text-emerald-600'; }
-    else if (clcr >= 60) { stage = 'Leve (G2)'; color = 'text-amber-500'; }
-    else if (clcr >= 30) { stage = 'Moderado (G3)'; color = 'text-orange-600'; }
+    if (clcr >= 90) { stage = 'Normal (G1)'; color = 'text-success'; }
+    else if (clcr >= 60) { stage = 'Leve (G2)'; color = 'text-warning'; }
+    else if (clcr >= 30) { stage = 'Moderado (G3)'; color = 'text-warning'; }
     else if (clcr >= 15) { stage = 'Grave (G4)'; color = 'text-destructive'; }
     else { stage = 'Falla renal (G5)'; color = 'text-destructive'; }
 
@@ -546,12 +546,12 @@ function CreatinineClearance() {
           </div>
           <div className="divide-y divide-border text-[10px]">
             {[
-              { stage: 'G1', range: '≥90', label: 'Normal', c: 'bg-emerald-500' },
-              { stage: 'G2', range: '60–89', label: 'Leve ↓', c: 'bg-amber-400' },
-              { stage: 'G3a', range: '45–59', label: 'Moderada ↓', c: 'bg-orange-400' },
-              { stage: 'G3b', range: '30–44', label: 'Moderada-grave ↓', c: 'bg-orange-500' },
-              { stage: 'G4', range: '15–29', label: 'Grave ↓', c: 'bg-red-500' },
-              { stage: 'G5', range: '<15', label: 'Falla renal', c: 'bg-red-700' },
+              { stage: 'G1', range: '≥90', label: 'Normal', c: 'bg-success' },
+              { stage: 'G2', range: '60–89', label: 'Leve ↓', c: 'bg-warning' },
+              { stage: 'G3a', range: '45–59', label: 'Moderada ↓', c: 'bg-warning' },
+              { stage: 'G3b', range: '30–44', label: 'Moderada-grave ↓', c: 'bg-warning' },
+              { stage: 'G4', range: '15–29', label: 'Grave ↓', c: 'bg-destructive' },
+              { stage: 'G5', range: '<15', label: 'Falla renal', c: 'bg-destructive' },
             ].map(s => (
               <div key={s.stage} className="flex items-center px-3 py-1.5">
                 <div className={`w-2 h-2 rounded-full ${s.c} mr-2`} />

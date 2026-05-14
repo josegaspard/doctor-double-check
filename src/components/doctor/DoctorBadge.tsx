@@ -25,7 +25,7 @@ const colorMap: Record<string, { bg: string; text: string; border: string; fill?
   success: { bg: 'bg-success/15', text: 'text-success', border: 'border-success/30' },
   warning: { bg: 'bg-warning/15', text: 'text-warning', border: 'border-warning/30' },
   premium: { bg: 'bg-premium/15', text: 'text-premium', border: 'border-premium/30', fill: 'fill-premium' },
-  purple: { bg: 'bg-purple-500/15', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/30' },
+  purple: { bg: 'bg-secondary/15', text: 'text-secondary dark:text-secondary', border: 'border-secondary/30' },
 };
 
 export function DoctorBadge({ rank, type, size = 'md', className }: DoctorBadgeProps) {

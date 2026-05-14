@@ -58,7 +58,7 @@ export default function AdminFeatured() {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
         <div className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-            <Star className="w-6 h-6 text-yellow-500" />
+            <Star className="w-6 h-6 text-warning" />
             {es ? 'Destacados y Promociones' : 'Featured & Promotions'}
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -261,7 +261,7 @@ function ListingsTab({ es }: { es: boolean }) {
                     <div className="flex items-center gap-1">
                       <Button variant="ghost" size="icon" onClick={() => openEdit(l)}><Pencil className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => toggleActive(l)}>
-                        <span className={`w-2 h-2 rounded-full ${l.is_active ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                        <span className={`w-2 h-2 rounded-full ${l.is_active ? 'bg-success' : 'bg-muted-foreground'}`} />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(l)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                     </div>
@@ -270,17 +270,17 @@ function ListingsTab({ es }: { es: boolean }) {
                   {/* Metrics row */}
                   <div className="grid grid-cols-4 gap-3">
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
-                      <Eye className="w-3.5 h-3.5 mx-auto mb-0.5 text-blue-500" />
+                      <Eye className="w-3.5 h-3.5 mx-auto mb-0.5 text-primary" />
                       <p className="text-xs font-bold">{stats?.impressions || 0}</p>
                       <p className="text-[9px] text-muted-foreground">{es ? 'Impresiones' : 'Impressions'}</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
-                      <MousePointerClick className="w-3.5 h-3.5 mx-auto mb-0.5 text-green-500" />
+                      <MousePointerClick className="w-3.5 h-3.5 mx-auto mb-0.5 text-success" />
                       <p className="text-xs font-bold">{stats?.clicks || 0}</p>
                       <p className="text-[9px] text-muted-foreground">{es ? 'Clics' : 'Clicks'}</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
-                      <TrendingUp className="w-3.5 h-3.5 mx-auto mb-0.5 text-orange-500" />
+                      <TrendingUp className="w-3.5 h-3.5 mx-auto mb-0.5 text-warning" />
                       <p className="text-xs font-bold">{(stats?.ctr || 0).toFixed(1)}%</p>
                       <p className="text-[9px] text-muted-foreground">CTR</p>
                     </div>
@@ -452,14 +452,14 @@ function AnalyticsTab({ es }: { es: boolean }) {
       <div className="grid grid-cols-3 gap-3 mb-6">
         <Card>
           <CardContent className="p-4 text-center">
-            <Eye className="w-5 h-5 mx-auto mb-1 text-blue-500" />
+            <Eye className="w-5 h-5 mx-auto mb-1 text-primary" />
             <p className="text-lg font-bold">{totals.impressions.toLocaleString()}</p>
             <p className="text-[10px] text-muted-foreground">{es ? 'Impresiones Totales' : 'Total Impressions'}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <MousePointerClick className="w-5 h-5 mx-auto mb-1 text-green-500" />
+            <MousePointerClick className="w-5 h-5 mx-auto mb-1 text-success" />
             <p className="text-lg font-bold">{totals.clicks.toLocaleString()}</p>
             <p className="text-[10px] text-muted-foreground">{es ? 'Clics Totales' : 'Total Clicks'}</p>
           </CardContent>

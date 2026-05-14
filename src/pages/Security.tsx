@@ -110,8 +110,8 @@ export default function Security() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 max-w-4xl mx-auto">
             {certifications.map((cert, index) => (
               <div key={index} className="bg-gray-50 p-3 sm:p-6 rounded-xl text-center">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-2 sm:mb-3">
-                  <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-success flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                  <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-success" />
                 </div>
                 <h3 className="font-bold text-gray-800 text-sm sm:text-lg">{cert.name}</h3>
                 <p className="text-[10px] sm:text-xs text-gray-500 mt-1">{cert.description}</p>

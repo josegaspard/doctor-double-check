@@ -103,9 +103,9 @@ export function ConsultationFeeEditor({ initialFee, onFeeChanged, variant = 'inl
           ) : (
             <motion.div key="display" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="cursor-pointer group" onClick={handleStartEdit}>
               <div className="flex items-center justify-center gap-1 mb-1">
-                <Wallet className="w-4 h-4 text-emerald-500" />
+                <Wallet className="w-4 h-4 text-success" />
                 {isFree ? (
-                  <span className="font-semibold text-emerald-600">{t('doctorLibrary.free')}</span>
+                  <span className="font-semibold text-success">{t('doctorLibrary.free')}</span>
                 ) : (
                   <span className="font-semibold">${fee}</span>
                 )}
@@ -154,7 +154,7 @@ export function ConsultationFeeEditor({ initialFee, onFeeChanged, variant = 'inl
         ) : (
           <motion.p key="display" className="mt-1 text-sm font-medium ml-7">
             {isFree ? (
-              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200">{t('doctorLibrary.free')}</Badge>
+              <Badge className="bg-success/10 text-success border-success">{t('doctorLibrary.free')}</Badge>
             ) : (
               <span>${fee} MXN</span>
             )}

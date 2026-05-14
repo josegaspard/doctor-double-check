@@ -47,7 +47,7 @@ export function AudienceSelector({ value, onChange, disabled }: AudienceSelector
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <RadioGroupItem value="professionals" id="audience-professionals" />
-          <GraduationCap className="h-5 w-5 text-amber-500" />
+          <GraduationCap className="h-5 w-5 text-warning" />
           <div>
             <p className="font-medium">{t('content.professionals')}</p>
             <p className="text-xs text-muted-foreground">

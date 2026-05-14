@@ -81,7 +81,7 @@ export default function ArcoRights() {
         {submitted ? (
           <Card>
             <CardContent className="pt-6 text-center space-y-4">
-              <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto" />
+              <CheckCircle2 className="w-12 h-12 text-success mx-auto" />
               <h2 className="text-lg font-semibold text-foreground">Solicitud enviada</h2>
               <p className="text-sm text-muted-foreground">
                 Hemos recibido tu solicitud. Nuestro equipo de privacidad la revisará y te

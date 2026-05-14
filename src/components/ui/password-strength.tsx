@@ -42,7 +42,7 @@ export function getPasswordStrength(password: string): {
     color = 'bg-warning';
   } else if (score >= 40) {
     label = 'Débil';
-    color = 'bg-orange-500';
+    color = 'bg-warning';
   }
 
   return { score, label, color, requirements };

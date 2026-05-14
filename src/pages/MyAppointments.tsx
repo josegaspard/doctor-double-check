@@ -30,7 +30,7 @@ interface Appt {
 
 const STATUS_BADGE: Record<string, { label: string; variant: any; cls?: string }> = {
   requested: { label: 'Pendiente', variant: 'secondary' },
-  confirmed: { label: 'Confirmada', variant: 'default', cls: 'bg-emerald-600' },
+  confirmed: { label: 'Confirmada', variant: 'default', cls: 'bg-success' },
   cancelled: { label: 'Cancelada', variant: 'destructive' },
   completed: { label: 'Completada', variant: 'outline' },
 };
@@ -199,7 +199,7 @@ export default function MyAppointments() {
                         </div>
                         <div className="flex flex-col gap-2 flex-shrink-0">
                           {role === 'doctor' && a.status === 'requested' && (
-                            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 h-7 text-xs" onClick={() => confirmAppt(a.id)}>Confirmar</Button>
+                            <Button size="sm" className="bg-success hover:bg-success h-7 text-xs" onClick={() => confirmAppt(a.id)}>Confirmar</Button>
                           )}
                           {liveSoon && a.daily_room_url && (
                             <Button size="sm" className="h-7 text-xs gap-1" onClick={() => window.open(a.daily_room_url!, '_blank')}>

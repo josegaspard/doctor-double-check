@@ -24,9 +24,9 @@ interface CalendarGridProps {
 }
 
 const typeConfig = {
-  live: { color: 'bg-red-500', text: 'text-white', icon: Video, label: 'Live' },
-  consultation: { color: 'bg-blue-500', text: 'text-white', icon: MessageSquare, label: 'Orientación' },
-  office_hours: { color: 'bg-emerald-500', text: 'text-white', icon: Clock, label: 'Disponible' },
+  live: { color: 'bg-destructive', text: 'text-white', icon: Video, label: 'Live' },
+  consultation: { color: 'bg-primary', text: 'text-white', icon: MessageSquare, label: 'Orientación' },
+  office_hours: { color: 'bg-success', text: 'text-white', icon: Clock, label: 'Disponible' },
 };
 
 function EventChip({ availability, onClick, isManaging, isSelected, onToggleSelect }: {
