@@ -574,6 +574,47 @@ export default function LivePlayer() {
               <h1 className="font-heading text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-2 sm:mb-3">
                 {live.title.replace(/^EN VIVO\s*[-–:]\s*/i, '')}
               </h1>
+
+              {/* Strip prominente de credenciales profesionales — visible siempre
+                  bajo el título. Obligatorio para que el paciente verifique al
+                  doctor antes/durante la consulta. */}
+              {(live.doctorCedula || live.doctorCofepris) && (
+                <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 px-3 py-2">
+                  <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-primary">
+                    <Award className="w-3.5 h-3.5" />
+                    Profesional verificado
+                  </span>
+                  {live.doctorCedula && (
+                    <span className="text-[11px] sm:text-xs text-foreground/85">
+                      <span className="text-muted-foreground">Céd. Prof.</span>{' '}
+                      <span className="font-mono font-semibold tracking-wide">{live.doctorCedula}</span>
+                    </span>
+                  )}
+                  {live.doctorCofepris && (
+                    <span className="text-[11px] sm:text-xs text-foreground/85">
+                      <span className="text-muted-foreground">COFEPRIS</span>{' '}
+                      <span className="font-mono font-semibold tracking-wide">{live.doctorCofepris}</span>
+                    </span>
+                  )}
+                  <div className="ml-auto flex flex-wrap gap-1">
+                    <CredentialStatusBadge
+                      type="cedula"
+                      status={live.doctorCedulaStatus}
+                      value={live.doctorCedula}
+                      rejectionReason={live.doctorCedulaRejectionReason}
+                      size="xs"
+                    />
+                    <CredentialStatusBadge
+                      type="cofepris"
+                      status={live.doctorCofeprisStatus}
+                      value={live.doctorCofepris}
+                      rejectionReason={live.doctorCofeprisRejectionReason}
+                      size="xs"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {mySubToDoctor?.tier === 'premium' && (
                   <Badge className="gap-1 bg-premium/10 text-premium border-premium/30">

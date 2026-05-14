@@ -153,6 +153,13 @@ export default function DoctorGoLive() {
           recording_price: config.enableRecording ? config.recordingPrice : null,
           thumbnail_url: null,
           status: 'live',
+          // Marcar broadcasting=true al crear: el doctor YA tiene cámara/mic
+          // (getUserMedia OK arriba) y está dentro del LiveStreamView. Esperar
+          // al evento joined-meeting de Daily creaba una ventana donde el live
+          // no aparecía en /lives, porque el evento a veces no se dispara
+          // (latencia, race, navegador con bloqueo). El cleanup de ghost lives
+          // ya cubre el caso del doctor que cierra browser sin terminar.
+          is_broadcasting: true,
           chat_enabled: config.chatEnabled,
           max_questions: config.maxQuestions,
           max_paid_chats: config.maxPaidChats,
