@@ -164,6 +164,15 @@ export default function RecordingPlayer() {
     return hasPurchased;
   };
 
+  // Skip preroll para: admin, doctor (no ven ads), owner del recording, recordings
+  // gratis (price=0). Esto evita 4 queries DB secuenciales antes del play.
+  const skipPreroll = (
+    role === 'admin' ||
+    role === 'doctor' ||
+    !!(recording && recording.price === 0) ||
+    !!(recording && supabaseUser && recording.doctorId === supabaseUser.id)
+  );
+
   const handleDurationUpdate = (newDuration: number) => {
     if (!recording || newDuration <= 0) return;
     if (recording.duration === newDuration) return;
@@ -240,17 +249,22 @@ export default function RecordingPlayer() {
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2 space-y-3 sm:space-y-4">
             <div className="relative no-context-menu aspect-video rounded-xl overflow-hidden bg-black">
-              {!prerollDone && recording.videoUrl && (
+              {/* Skip preroll ad entirely si: usuario es doctor (su propio contenido o
+                  los doctores no ven ads), admin, o el recording es del propio doctor.
+                  Antes AdPreroll hacía 4 queries secuenciales a ad_config/ad_placements/
+                  ad_creatives/ad_campaigns_public antes de decidir si mostrar el video,
+                  retrasando 400-800ms el inicio del reproductor. */}
+              {!prerollDone && recording.videoUrl && skipPreroll === false && (
                 <AdPreroll onComplete={handlePrerollComplete} placementName="recording_preroll" />
               )}
               {recording.videoUrl ? (
-                <div className={!prerollDone ? 'opacity-0 pointer-events-none absolute inset-0' : 'w-full h-full'}>
+                <div className={(!prerollDone && skipPreroll === false) ? 'opacity-0 pointer-events-none absolute inset-0' : 'w-full h-full'}>
                   <RecordingVideoPlayer
                     videoUrl={recording.videoUrl}
                     recordingId={recording.id}
                     onDurationUpdate={handleDurationUpdate}
                     onTimeUpdate={setVideoCurrentTime}
-                    autoPlay={prerollDone}
+                    autoPlay={prerollDone || skipPreroll}
                   />
                 </div>
               ) : (
