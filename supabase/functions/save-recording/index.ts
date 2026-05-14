@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     // Upsert: if a recording row already exists for this live, update it
     const { data: existing } = await admin
       .from("recordings")
-      .select("id")
+      .select("id, bunny_status")
       .eq("live_id", liveId)
       .maybeSingle();
 
@@ -119,8 +119,13 @@ Deno.serve(async (req) => {
     const finalBunnyStatus = bunnyStatus && allowedBunnyStatuses.includes(bunnyStatus)
       ? bunnyStatus
       : 'uploading';
+    // Anti-downgrade: si la row existente ya tiene 'ready' o 'failed', NO
+    // sobreescribir con 'uploading' o 'processing' (evita race con webhook).
+    const skipStatusUpdate = existing && (existing.bunny_status === 'ready' || existing.bunny_status === 'failed');
     const bunnyFields = isBunny
-      ? { bunny_video_id: storagePath, bunny_status: finalBunnyStatus }
+      ? (skipStatusUpdate
+          ? { bunny_video_id: storagePath }
+          : { bunny_video_id: storagePath, bunny_status: finalBunnyStatus })
       : {};
     if (existing) {
       const { error: updErr } = await admin

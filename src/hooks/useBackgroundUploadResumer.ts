@@ -99,11 +99,10 @@ async function resumeOne(item: PendingUpload, UploadCtor: any): Promise<void> {
       },
       onSuccess: async () => {
         console.log('[uploadResumer] Upload reanudado completo:', bunnyVideoId);
-        toast.success('Grabación en segundo plano completada');
-        // El webhook de Bunny actualizará bunny_status a processing→ready
+        toast.success('Grabación en segundo plano completada — reproducible al instante');
         try { await removeUpload(item.id); } catch { /* ignore */ }
-        // Ping save-recording para asegurar bunny_status quede en buen estado
-        // si en alguna versión anterior no se guardó la row
+        // Ping save-recording con bunnyStatus='processing' — desbloquea play
+        // del recording. Webhook flip a 'ready' cuando encoding termine.
         try {
           await supabase.functions.invoke('save-recording', {
             body: {

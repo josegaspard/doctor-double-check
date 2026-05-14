@@ -2,37 +2,40 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface BunnyHLSPlayerProps {
-  /** URL del manifest.m3u8 firmado con token Bunny */
+  /** Master HLS manifest signed URL */
   signedUrl: string;
-  /** Video ID Bunny — para construir el poster thumbnail */
   videoId?: string;
-  /** CDN hostname Bunny — default desde el manifest URL */
   cdnHost?: string;
-  /** Custom thumbnail URL (e.g. live thumbnail subido por doctor) */
   thumbnailUrl?: string;
+  /** MP4 fallback URL si HLS falla en el browser */
+  mp4FallbackUrl?: string;
   recordingId: string;
   onDurationUpdate?: (s: number) => void;
   onTimeUpdate?: (s: number) => void;
   autoPlay?: boolean;
   sessionId?: string;
-  /** Callback para pedir un signed URL fresh cuando el token expira */
   onRefreshSignedUrl?: () => void;
 }
 
 /**
- * Player HLS para Bunny Stream con ABR (adaptive bitrate).
- * Arranca en 240p en ~500ms y sube a 1080p conforme la red lo permite,
- * estilo YouTube. Reutiliza hls.js cuando el browser no soporta HLS nativo.
+ * Player HLS para Bunny Stream con ABR adaptativo.
+ * Arranque rápido en 240p, sube a 1080p conforme la red lo permite (YouTube-style).
+ * Safari/iOS usan HLS nativo. Resto via hls.js.
+ * Si hls.js falla (rare), cae a MP4 720p como fallback.
+ *
+ * Anti-piracy:
+ * - HLS fragmentado (.ts segments) — no es 1 file descargable directo
+ * - controlsList=nodownload, disablePictureInPicture
+ * - onContextMenu bloqueado
  */
 export function BunnyHLSPlayer({
   signedUrl,
   videoId,
   cdnHost,
   thumbnailUrl,
+  mp4FallbackUrl,
   recordingId,
   onDurationUpdate,
   onTimeUpdate,
@@ -41,10 +44,7 @@ export function BunnyHLSPlayer({
   onRefreshSignedUrl,
 }: BunnyHLSPlayerProps) {
   const [errorKind, setErrorKind] = useState<'not_found' | 'forbidden' | 'network' | null>(null);
-  // Poster: prioridad thumbnail custom del doctor → thumbnail auto de Bunny
-  // Bunny genera thumbnail.jpg automáticamente en /<videoId>/thumbnail.jpg
-  // Es PÚBLICO (no requiere signed URL) → carga instantánea como póster.
-  // Si el manifest URL apunta a vz-xxx.b-cdn.net, derivamos el host de ahí.
+  const [fellBackToMp4, setFellBackToMp4] = useState(false);
   const derivedCdnHost = cdnHost || (() => {
     try { return new URL(signedUrl).host; } catch { return null; }
   })();
@@ -53,19 +53,17 @@ export function BunnyHLSPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { user, supabaseUser } = useAuth();
 
   const init = useCallback(() => {
     const video = videoRef.current;
     if (!video || !signedUrl) return;
 
-    // Cleanup previous instance
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
 
-    // Safari y iOS soportan HLS nativo → más eficiente
+    // Safari / iOS — HLS nativo (más eficiente, sin hls.js)
     if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = signedUrl;
       const onLoaded = () => setIsLoading(false);
@@ -74,22 +72,24 @@ export function BunnyHLSPlayer({
     }
 
     if (!Hls.isSupported()) {
-      console.error('[BunnyHLSPlayer] HLS no soportado en este browser');
+      console.warn('[BunnyHLSPlayer] HLS no soportado — fallback a MP4');
+      if (mp4FallbackUrl) {
+        video.src = mp4FallbackUrl;
+        setFellBackToMp4(true);
+        setIsLoading(false);
+      }
       return;
     }
 
-    // ABR config optimizado para "arranque rápido en baja calidad → sube"
     const hls = new Hls({
       enableWorker: true,
       lowLatencyMode: false,
       backBufferLength: 60,
       maxBufferLength: 30,
       maxMaxBufferLength: 120,
-      // Arrancar en el rendition más bajo para que el primer frame aparezca casi
-      // instantáneo. ABR luego sube a la mejor calidad sostenible.
+      // Arrancar en rendition más bajo → primer frame casi instantáneo
       startLevel: 0,
-      // Capacity test: 8s de buffer antes de pasar al siguiente level
-      abrEwmaDefaultEstimate: 500000, // 500 kbps initial bandwidth estimate
+      abrEwmaDefaultEstimate: 500000,
       abrBandWidthFactor: 0.95,
       abrBandWidthUpFactor: 0.7,
     });
@@ -114,14 +114,11 @@ export function BunnyHLSPlayer({
     });
 
     hls.on(Hls.Events.ERROR, (_event, data) => {
-      console.warn('[BunnyHLSPlayer] HLS error:', data.type, data.details, 'response:', data.response?.code);
+      console.warn('[BunnyHLSPlayer] HLS error:', data.type, data.details, 'http:', data.response?.code);
       if (!data.fatal) return;
 
-      // Detectar errores de signed URL / video missing
       const httpCode = data.response?.code;
       if (httpCode === 404) {
-        // Video no existe en Bunny — la grabación está marcada como ready
-        // pero el archivo no está. Probablemente el TUS upload falló.
         setErrorKind('not_found');
         setIsLoading(false);
         hls.destroy();
@@ -129,7 +126,6 @@ export function BunnyHLSPlayer({
         return;
       }
       if (httpCode === 403) {
-        // Token expirado o signature inválida
         if (onRefreshSignedUrl) {
           console.log('[BunnyHLSPlayer] Token expired, requesting refresh');
           onRefreshSignedUrl();
@@ -142,9 +138,23 @@ export function BunnyHLSPlayer({
         return;
       }
 
+      // Fallback a MP4 si HLS errores fatales y tenemos MP4 URL
+      if (mp4FallbackUrl && !fellBackToMp4) {
+        console.log('[BunnyHLSPlayer] HLS fatal, fallback a MP4 720p');
+        hls.destroy();
+        hlsRef.current = null;
+        video.src = mp4FallbackUrl;
+        setFellBackToMp4(true);
+        setIsLoading(false);
+        if (autoPlay) {
+          video.muted = true;
+          video.play().catch(() => {});
+        }
+        return;
+      }
+
       switch (data.type) {
         case Hls.ErrorTypes.NETWORK_ERROR:
-          // Reintentar — error de red transitorio
           hls.startLoad();
           break;
         case Hls.ErrorTypes.MEDIA_ERROR:
@@ -157,7 +167,7 @@ export function BunnyHLSPlayer({
           hlsRef.current = null;
       }
     });
-  }, [signedUrl, autoPlay, onDurationUpdate, onRefreshSignedUrl]);
+  }, [signedUrl, autoPlay, onDurationUpdate, onRefreshSignedUrl, mp4FallbackUrl, fellBackToMp4]);
 
   useEffect(() => {
     const cleanup = init();
@@ -208,9 +218,8 @@ export function BunnyHLSPlayer({
   }
 
   return (
-    <div className="relative w-full max-h-[80vh] mx-auto bg-black rounded-xl overflow-hidden aspect-video">
-      {/* Poster blur en background — visible instantáneo aunque el HLS aún no
-          haya parseado el manifest. El video con poster lo cubre al cargar. */}
+    <div className="relative w-full h-full">
+      {/* Poster blur al fondo — visible instantáneo aunque HLS aún cargue */}
       {poster && (
         <img
           src={poster}
@@ -232,14 +241,19 @@ export function BunnyHLSPlayer({
         controls
         playsInline
         preload="auto"
-        controlsList="nodownload noremoteplayback"
+        controlsList="nodownload noremoteplayback noplaybackrate"
         disablePictureInPicture
         onContextMenu={(e) => e.preventDefault()}
         onTimeUpdate={(e) => {
           if (onTimeUpdate) onTimeUpdate(Math.floor((e.currentTarget as HTMLVideoElement).currentTime));
         }}
+        onLoadedMetadata={(e) => {
+          const vid = e.currentTarget as HTMLVideoElement;
+          if (onDurationUpdate && Number.isFinite(vid.duration) && vid.duration > 0) {
+            onDurationUpdate(Math.floor(vid.duration));
+          }
+        }}
       />
-      <DynamicWatermark email={user?.email} userId={supabaseUser?.id} sessionId={sessionId} />
     </div>
   );
 }

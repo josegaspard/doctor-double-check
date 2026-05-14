@@ -39,6 +39,7 @@ interface Recording {
   liveId?: string;
   createdAt: Date;
   tags: string[];
+  bunnyStatus?: 'uploading' | 'processing' | 'ready' | 'failed' | string | null;
 }
 
 export default function RecordingPlayer() {
@@ -52,7 +53,8 @@ export default function RecordingPlayer() {
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
   const [prerollDone, setPrerollDone] = useState(false);
   const [prefetchedSignedUrl, setPrefetchedSignedUrl] = useState<string | null>(null);
-  const [prefetchedTtl, setPrefetchedTtl] = useState<number>(3600);
+  const [prefetchedTtl, setPrefetchedTtl] = useState<number>(600);
+  const [prefetchedThumbUrl, setPrefetchedThumbUrl] = useState<string | null>(null);
 
   const handlePrerollComplete = useCallback(() => {
     setPrerollDone(true);
@@ -84,6 +86,39 @@ export default function RecordingPlayer() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [supabaseUser?.id, id, hasPurchased]);
+
+  // Realtime: subscribir a cambios de bunny_status del recording actual.
+  // Cuando Bunny webhook actualiza processing → ready, el player switchea
+  // automáticamente de /original a HLS sin reload.
+  useEffect(() => {
+    if (!id || !recording || recording.bunnyStatus === 'ready') return;
+    const channel = supabase
+      .channel(`recording-status-${id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'recordings', filter: `id=eq.${id}` },
+        (payload: any) => {
+          const newStatus = payload.new?.bunny_status;
+          if (newStatus && newStatus !== recording.bunnyStatus) {
+            console.log('[RecordingPlayer] bunny_status →', newStatus);
+            setRecording(prev => prev ? { ...prev, bunnyStatus: newStatus } : null);
+            // Invalidar prefetched signed URL — el player vuelve a pedir uno
+            // nuevo apuntando a HLS en vez de /original.
+            if (newStatus === 'ready') {
+              setPrefetchedSignedUrl(null);
+              setPrefetchedThumbUrl(null);
+              const videoUrl = recording.videoUrl;
+              if (videoUrl?.startsWith('bunny:')) {
+                const cacheKey = `signedurl-v3:bunny:${videoUrl.slice(6)}`;
+                try { sessionStorage.removeItem(cacheKey); } catch { /* ignore */ }
+              }
+            }
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, recording]);
 
   // Auto-confirm wallet/Stripe redirect (?recording_paid=success or legacy ?purchased=true)
   useEffect(() => {
@@ -161,11 +196,16 @@ export default function RecordingPlayer() {
           }
         } catch { /* ignore */ }
         if (bunnyMatch && (await signedUrlPromise) === null) {
-          // Bunny: prefetch MP4 progresivo (no HLS). HTML5 video lo reproduce
-          // con Range requests en segundos, sin hls.js.
+          // Bunny: prefetch HLS (anti-piracy via fragmented .ts segments).
+          // Si bunny_status=processing usaremos /original en el player.
+          const isProcessing = recResult.data.bunny_status && recResult.data.bunny_status !== 'ready';
           signedUrlPromise = supabase.functions
-            .invoke('bunny-signed-url', { body: { videoId: bunnyMatch[1], ttlSec: 3600 } })
-            .then(({ data }) => data?.mp4Url ? { url: data.mp4Url as string, ttlSec: typeof data.expiresSec === 'number' ? data.expiresSec : 3600 } : null)
+            .invoke('bunny-signed-url', { body: { videoId: bunnyMatch[1], ttlSec: 600 } })
+            .then(({ data }) => {
+              if (!data?.hlsUrl) return null;
+              const url = isProcessing ? data.originalUrl : data.hlsUrl;
+              return { url, thumb: data.thumbnailUrl, ttlSec: typeof data.expiresSec === 'number' ? data.expiresSec : 600 };
+            })
             .catch(() => null);
         } else if (b2Match && (await signedUrlPromise) === null) {
           signedUrlPromise = supabase.functions
@@ -188,8 +228,9 @@ export default function RecordingPlayer() {
       ]);
 
       if (signedUrlResult) {
-        setPrefetchedSignedUrl(signedUrlResult.url);
-        setPrefetchedTtl(signedUrlResult.ttlSec);
+        setPrefetchedSignedUrl((signedUrlResult as any).url);
+        setPrefetchedTtl((signedUrlResult as any).ttlSec);
+        if ((signedUrlResult as any).thumb) setPrefetchedThumbUrl((signedUrlResult as any).thumb);
         // Cache para revisitas en la sesión
         const cacheKey = videoUrl
           ? (videoUrl.startsWith('bunny:')
@@ -201,9 +242,10 @@ export default function RecordingPlayer() {
         if (cacheKey) {
           try {
             sessionStorage.setItem(cacheKey, JSON.stringify({
-              url: signedUrlResult.url,
+              url: (signedUrlResult as any).url,
+              poster: (signedUrlResult as any).thumb,
               generatedAt: Date.now(),
-              ttlSec: signedUrlResult.ttlSec,
+              ttlSec: (signedUrlResult as any).ttlSec,
             }));
           } catch { /* quota, ignore */ }
         }
@@ -223,6 +265,7 @@ export default function RecordingPlayer() {
         liveId: recResult.data.live_id || undefined,
         createdAt: new Date(recResult.data.created_at),
         tags: recResult.data.tags || [],
+        bunnyStatus: (recResult.data as any).bunny_status,
       });
 
       if (role === 'admin' || role === 'doctor') {
@@ -342,11 +385,13 @@ export default function RecordingPlayer() {
                   <RecordingVideoPlayer
                     videoUrl={recording.videoUrl}
                     recordingId={recording.id}
+                    bunnyStatus={recording.bunnyStatus}
                     onDurationUpdate={handleDurationUpdate}
                     onTimeUpdate={setVideoCurrentTime}
                     autoPlay={prerollDone || skipPreroll}
                     prefetchedSignedUrl={prefetchedSignedUrl}
                     prefetchedTtl={prefetchedTtl}
+                    prefetchedThumbUrl={prefetchedThumbUrl}
                   />
                 </div>
               ) : (

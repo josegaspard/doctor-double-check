@@ -119,13 +119,16 @@ export default function RecordingsGrid() {
     } catch { /* ignore */ }
 
     if (isBunny) {
-      // Bunny: cacheamos el MP4 progresivo, no el HLS.
+      // Bunny: prefetch HLS (anti-piracy fragmentado). Si está procesando, el
+      // player vuelve a pedir /original — esto es solo el prefetch de hover.
+      const isProcessing = recording.bunnyStatus && recording.bunnyStatus !== 'ready';
       supabase.functions
-        .invoke('bunny-signed-url', { body: { videoId: path, ttlSec: 3600 } })
+        .invoke('bunny-signed-url', { body: { videoId: path, ttlSec: 600 } })
         .then(({ data }) => {
-          if (data?.mp4Url) {
-            const ttl = typeof data.expiresSec === 'number' ? data.expiresSec : 3600;
-            sessionStorage.setItem(cacheKey, JSON.stringify({ url: data.mp4Url, poster: data.thumbnailUrl, generatedAt: Date.now(), ttlSec: ttl }));
+          if (data?.hlsUrl) {
+            const ttl = typeof data.expiresSec === 'number' ? data.expiresSec : 600;
+            const url = isProcessing ? data.originalUrl : data.hlsUrl;
+            sessionStorage.setItem(cacheKey, JSON.stringify({ url, poster: data.thumbnailUrl, generatedAt: Date.now(), ttlSec: ttl }));
           }
         })
         .catch(() => { /* fail silently */ });
@@ -154,18 +157,19 @@ export default function RecordingsGrid() {
 
   const handleRecordingClick = (recording: Recording) => {
     if (!isAuthenticated || role === 'visitor') { navigate('/login'); return; }
-    // Si está en Bunny y aún no terminó encoding, informar y NO navegar
-    // (evita que el player muestre "Failed to load" o 401).
-    if (recording.bunnyStatus && recording.bunnyStatus !== 'ready') {
-      const msgs: Record<string, string> = {
-        uploading: 'Esta grabación aún se está subiendo. Estará lista en unos minutos.',
-        processing: 'Esta grabación se está procesando. Estará lista en 1-3 minutos.',
-        failed: 'Esta grabación tuvo un error de procesado. Contacta a soporte.',
-      };
-      toast.info(msgs[recording.bunnyStatus] || 'Grabación no disponible todavía.');
+    // bunny_status='failed' → bloquear; 'uploading' → bloquear; 'processing' →
+    // permitir click (player usa /original mientras encoding sucede).
+    if (recording.bunnyStatus === 'failed') {
+      toast.error('Esta grabación tuvo un error de procesado. Contacta a soporte.');
       return;
     }
-    // Disparar prefetch inmediato (puede que el hover no haya ocurrido)
+    if (recording.bunnyStatus === 'uploading') {
+      toast.info('Esta grabación aún se está subiendo. Inténtalo en unos segundos.');
+      return;
+    }
+    if (recording.bunnyStatus === 'processing') {
+      toast.info('Reproduciendo versión original mientras optimizamos la calidad...');
+    }
     prefetchRecordingUrl(recording);
     if (ownsRecording(recording)) {
       navigate(`/recording/${recording.id}`);

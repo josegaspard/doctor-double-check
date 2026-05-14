@@ -414,6 +414,20 @@ export function useLocalRecording() {
         throw new Error(`No se pudo registrar la grabación: ${detail}`);
       }
 
+      // TUS terminó → Bunny tiene el /original disponible YA. Movemos el status
+      // de 'uploading' a 'processing' para desbloquear playback del recording.
+      // El player usa /original mientras Bunny encodea (HLS llega ~1-3min).
+      // El webhook bunny-webhook flip a 'ready' cuando termine.
+      if (saveData.recordingId) {
+        await supabase
+          .from('recordings')
+          .update({ bunny_status: 'processing' })
+          .eq('id', saveData.recordingId)
+          .then(({ error }) => {
+            if (error) console.warn('[LocalRecording] No se pudo marcar processing:', error.message);
+          });
+      }
+
       // TUS terminó. Bunny ahora encodea async. El webhook bunny-webhook se
       // disparará automáticamente cuando cambie el status (uploaded → processing
       // → finished) y actualizará bunny_status en la DB. No hacemos llamadas
