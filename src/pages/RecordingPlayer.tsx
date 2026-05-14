@@ -144,10 +144,10 @@ export default function RecordingPlayer() {
         const storageMatch = /^storage:(.+)$/.exec(videoUrl);
         // Cache check sessionStorage primero
         const cacheKey = bunnyMatch
-          ? `signedurl:bunny:${bunnyMatch[1]}`
+          ? `signedurl-v2:bunny:${bunnyMatch[1]}`
           : b2Match
-            ? `signedurl:b2:${b2Match[1]}`
-            : `signedurl:${storageMatch?.[1] || videoUrl}`;
+            ? `signedurl-v2:b2:${b2Match[1]}`
+            : `signedurl-v2:${storageMatch?.[1] || videoUrl}`;
         try {
           const raw = sessionStorage.getItem(cacheKey);
           if (raw) {
@@ -191,10 +191,10 @@ export default function RecordingPlayer() {
         // Cache para revisitas en la sesión
         const cacheKey = videoUrl
           ? (videoUrl.startsWith('bunny:')
-              ? `signedurl:bunny:${videoUrl.slice(6)}`
+              ? `signedurl-v2:bunny:${videoUrl.slice(6)}`
               : videoUrl.startsWith('b2:')
-                ? `signedurl:b2:${videoUrl.slice(3)}`
-                : `signedurl:${videoUrl.replace(/^storage:/, '')}`)
+                ? `signedurl-v2:b2:${videoUrl.slice(3)}`
+                : `signedurl-v2:${videoUrl.replace(/^storage:/, '')}`)
           : null;
         if (cacheKey) {
           try {

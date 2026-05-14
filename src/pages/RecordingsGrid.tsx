@@ -108,7 +108,7 @@ export default function RecordingsGrid() {
     if (!recording.videoUrl || typeof window === 'undefined') return;
     const isBunny = recording.videoUrl.startsWith('bunny:');
     const path = recording.videoUrl.replace(/^b2:|^storage:|^bunny:/, '');
-    const cacheKey = `signedurl:${isBunny ? 'bunny:' : recording.videoUrl.startsWith('b2:') ? 'b2:' : ''}${path}`;
+    const cacheKey = `signedurl-v2:${isBunny ? 'bunny:' : recording.videoUrl.startsWith('b2:') ? 'b2:' : ''}${path}`;
     // Skip si ya está cacheado y vigente
     try {
       const raw = sessionStorage.getItem(cacheKey);

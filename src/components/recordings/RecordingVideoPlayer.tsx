@@ -86,7 +86,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   // Cache key for signed URL in sessionStorage.
   const cacheKey = useMemo(
     () => (bunnyVideoId || b2Path || storagePath)
-      ? `signedurl:${bunnyVideoId ? 'bunny:' : b2Path ? 'b2:' : ''}${bunnyVideoId || b2Path || storagePath}`
+      ? `signedurl-v2:${bunnyVideoId ? 'bunny:' : b2Path ? 'b2:' : ''}${bunnyVideoId || b2Path || storagePath}`
       : null,
     [bunnyVideoId, b2Path, storagePath]
   );
