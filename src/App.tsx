@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useBackgroundUploadResumer } from "@/hooks/useBackgroundUploadResumer";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { LivesProvider } from "@/contexts/LivesContext";
@@ -23,6 +24,9 @@ import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 // Wrapper that only mounts heavy providers when the user is authenticated
 function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
+  // Reanudar uploads pendientes en segundo plano: si el doctor cerró el tab
+  // a mitad de un upload, al volver a entrar autenticado lo retomamos.
+  useBackgroundUploadResumer();
   if (!isAuthenticated) return <>{children}</>;
   return (
     <WalletProvider>

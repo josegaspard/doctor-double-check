@@ -304,10 +304,42 @@ export function useLocalRecording() {
 
       const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
-      // Step 2: PARALELIZAR — registramos la grabación en la DB AHORA con
+      // Step 2a: Persistir el blob + metadata en IndexedDB ANTES del upload.
+      // Si el usuario cierra el tab a la mitad, al volver a entrar el resumer
+      // (useBackgroundUploadResumer) lo detecta y reanuda automáticamente
+      // donde quedó (TUS resumable + blob recuperado de IndexedDB).
+      const { saveUpload, removeUpload } = await import('@/lib/uploadQueue');
+      const uploadId = `upload-${videoId}`;
+      try {
+        await saveUpload({
+          id: uploadId,
+          blob,
+          meta: {
+            liveId: params.liveId,
+            doctorId: params.doctorId,
+            title: params.title,
+            description: params.description,
+            specialty: params.specialty,
+            tags: params.tags,
+            price: params.price,
+            thumbnailUrl: params.thumbnailUrl,
+            recordingId: params.recordingId,
+            bunnyVideoId: videoId,
+            libraryId: String(libraryId),
+            authSignature,
+            authExpire,
+          },
+          createdAt: Date.now(),
+        });
+        console.log('[LocalRecording] Blob persistido en IndexedDB:', uploadId);
+      } catch (e) {
+        console.warn('[LocalRecording] No se pudo persistir blob en IndexedDB (continúa upload sin resume):', e);
+      }
+
+      // Step 2b: PARALELIZAR — registramos la grabación en la DB AHORA con
       // bunny_status='uploading'. El doctor ve su grabación instantáneamente
-      // en /recordings (con un indicador "subiendo X%"), no tiene que esperar
-      // a que termine el TUS upload de 100-200 MB para sentir que se guardó.
+      // en /recordings (con indicador "subiendo X%"), no tiene que esperar a
+      // que termine el TUS upload para sentir que se guardó.
       const savePromise = supabase.functions.invoke('save-recording', {
         body: {
           liveId: params.liveId,
@@ -324,17 +356,23 @@ export function useLocalRecording() {
         },
       });
 
-      // Toast informativo: la grabación YA está en su lista, se sigue subiendo
-      toast.success('Grabación guardada — se está subiendo en segundo plano');
+      // Toast: el doctor puede cerrar el tab y navegar libremente
+      toast.success('Grabación guardada — subiendo en segundo plano. Puedes cerrar la ventana, se reanudará automáticamente.', { duration: 8000 });
 
       // Step 3: TUS resumable upload (Bunny). El frontend NUNCA ve el API key;
       // solo recibe una signature scoped al videoId que expira en 2h.
+      // tus-js-client persiste fingerprint en localStorage → si recargas la
+      // página el upload reanuda desde el byte exacto donde quedó.
       const { Upload } = await import('tus-js-client');
       await new Promise<void>((resolve, reject) => {
         const upload = new Upload(blob, {
           endpoint: 'https://video.bunnycdn.com/tusupload',
-          retryDelays: [0, 2000, 5000, 10000, 20000],
-          chunkSize: 5 * 1024 * 1024, // chunks de 5 MB → más rápido en conexiones decentes
+          retryDelays: [0, 2000, 5000, 10000, 20000, 60000],
+          chunkSize: 5 * 1024 * 1024,
+          // Identificador estable del upload → tus.io guarda en localStorage
+          // un mapping (fingerprint → upload URL) que permite reanudar
+          // exactamente desde el último byte enviado.
+          fingerprint: () => Promise.resolve(uploadId),
           headers: {
             AuthorizationSignature: authSignature,
             AuthorizationExpire: String(authExpire),
@@ -353,8 +391,10 @@ export function useLocalRecording() {
             const pct = 5 + Math.floor((bytesUploaded / bytesTotal) * 90);
             setState(prev => ({ ...prev, uploadProgress: pct }));
           },
-          onSuccess: () => {
+          onSuccess: async () => {
             console.log('[LocalRecording] TUS upload complete:', videoId);
+            // Limpiar de IndexedDB — ya no hace falta resumir
+            try { await removeUpload(uploadId); } catch { /* ignore */ }
             resolve();
           },
         });

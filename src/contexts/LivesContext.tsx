@@ -332,11 +332,10 @@ export function LivesProvider({ children }: { children: ReactNode }) {
             thumbnailUrl = liveThumbnails.get(r.live_id)!;
           }
 
-          // Bunny genera thumbnail automático en /<videoId>/thumbnail.jpg
-          // accesible públicamente (sin token) — perfecto como póster en grid
-          if (!thumbnailUrl && (r as any).bunny_video_id) {
-            thumbnailUrl = `https://vz-0d0ab923-d0b.b-cdn.net/${(r as any).bunny_video_id}/thumbnail.jpg`;
-          }
+          // NOTA: Bunny thumbnail está protegido con Token Auth (mismo pull zone
+          // como manifest). En grid usamos solo thumbnail_url custom o placeholder
+          // — la versión firmada de thumbnail llega vía bunny-signed-url cuando
+          // se abre el recording, no en grid (evita N requests por scroll).
 
           // Auto-generate Cloudflare thumbnail (legacy) si todavía no hay
           if (!thumbnailUrl && r.live_id && liveStreamUids.has(r.live_id)) {
