@@ -109,8 +109,8 @@ export function VideoCallControls({
           </Button>
         )}
 
-        {/* Screen Share — only for doctors on desktop */}
-        {isDoctor && !isMobile && (
+        {/* Screen Share — doctors en cualquier dispositivo. iOS/Android moderno soporta getDisplayMedia */}
+        {isDoctor && (
           <Button
             variant="ghost"
             size="lg"

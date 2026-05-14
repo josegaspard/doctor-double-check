@@ -38,15 +38,25 @@ function renderVideoTracks(container: HTMLDivElement, co: DailyCall) {
   const remotes = Object.values(participants).filter(p => !p.local);
   const local = participants.local;
 
-  // ── Detect screen share from any remote participant ──
+  // ── Detectar screen share: PRIMERO el local (si yo comparto), DESPUÉS los remotos.
+  // Antes solo escaneaba remotos → el que comparte no veía su propia pantalla.
   let screenTrack: MediaStreamTrack | null = null;
   let screenAudioTrack: MediaStreamTrack | null = null;
-  for (const r of remotes) {
-    const st = r.tracks?.screenVideo?.persistentTrack;
-    if (st) {
-      screenTrack = st;
-      screenAudioTrack = r.tracks?.screenAudio?.persistentTrack || null;
-      break;
+  let screenIsLocal = false;
+
+  const localScreen = local?.tracks?.screenVideo?.persistentTrack;
+  if (localScreen) {
+    screenTrack = localScreen;
+    screenAudioTrack = local?.tracks?.screenAudio?.persistentTrack || null;
+    screenIsLocal = true;
+  } else {
+    for (const r of remotes) {
+      const st = r.tracks?.screenVideo?.persistentTrack;
+      if (st) {
+        screenTrack = st;
+        screenAudioTrack = r.tracks?.screenAudio?.persistentTrack || null;
+        break;
+      }
     }
   }
 
@@ -63,22 +73,26 @@ function renderVideoTracks(container: HTMLDivElement, co: DailyCall) {
       screenVideo.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;';
       container.prepend(screenVideo);
     }
+    // Si yo soy el que comparto, mute el audio del track propio para no hacer eco.
     const tracks: MediaStreamTrack[] = [screenTrack];
-    if (screenAudioTrack) tracks.push(screenAudioTrack);
+    if (screenAudioTrack && !screenIsLocal) tracks.push(screenAudioTrack);
+    if (screenIsLocal) screenVideo.muted = true;
     const curIds = (screenVideo.srcObject as MediaStream)?.getTracks().map(t => t.id).join(',') || '';
     const newIds = tracks.map(t => t.id).join(',');
     if (curIds !== newIds) {
       screenVideo.srcObject = new MediaStream(tracks);
       screenVideo.play().catch(() => {});
     }
-    // Badge
+    // Badge: distinto label si la pantalla es propia o del otro
     if (!screenBadge) {
       screenBadge = document.createElement('div');
       screenBadge.setAttribute('data-role', 'screen-badge');
       screenBadge.style.cssText = 'position:absolute;top:12px;left:12px;z-index:20;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.7);color:white;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;';
-      screenBadge.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span> Pantalla compartida';
       container.appendChild(screenBadge);
     }
+    screenBadge.innerHTML = screenIsLocal
+      ? '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span> Compartiendo tu pantalla'
+      : '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span> Pantalla compartida';
   } else {
     screenVideo?.remove();
     screenBadge?.remove();
@@ -483,32 +497,86 @@ export default function VideoCall() {
     </div>
   );
 
-  if (isMobile && isInCall) {
+  // ── MOBILE: full-screen call UI siempre (idle + connecting + connected) ──
+  // Antes el idle mostraba una card chica dentro de MainLayout. Ahora la pantalla
+  // completa simula una llamada nativa: avatar + nombre del otro lado + botón único
+  // (Iniciar / Unirse / Esperando) en idle, video full-screen + controles en in-call.
+  if (isMobile) {
     return (
-      <div className="fixed inset-0 z-50 bg-black flex flex-col" style={{ height: '100dvh' }}>
-        <div className="flex-1 w-full relative">
-          {videoLayoutJSX}
-        </div>
-        <AnimatePresence>
-          {showChat && (
-            <VideoCallChat messages={chatMessages} onSend={handleSendChat} onClose={() => setShowChat(false)} />
-          )}
-        </AnimatePresence>
-        {isInCall && (
-          <VideoCallControls
-            isMuted={isMuted}
-            isCameraOff={isCameraOff}
-            isScreenSharing={isScreenSharing}
-            timeElapsed={timer.timeElapsed}
-            onToggleMute={toggleMute}
-            onToggleCamera={toggleCamera}
-            onToggleScreenShare={toggleScreenShare}
-            onToggleChat={() => setShowChat(!showChat)}
-            onEndCall={handleEndCall}
-            onSwitchCamera={switchCamera}
-            showChat={showChat}
-            isDoctor={isDoctor}
-          />
+      <div className="fixed inset-0 z-50 bg-gradient-to-b from-secondary via-primary to-secondary flex flex-col" style={{ height: '100dvh' }}>
+        {callState === 'idle' ? (
+          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
+            <button
+              onClick={() => navigate(-1)}
+              className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/15 backdrop-blur flex items-center justify-center text-white hover:bg-white/25"
+              aria-label="Volver"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+
+            <div className="w-28 h-28 rounded-full bg-white/15 backdrop-blur ring-4 ring-white/20 flex items-center justify-center mb-6">
+              <Video className="w-14 h-14 text-white" />
+            </div>
+
+            <p className="text-xs uppercase tracking-widest text-white/70 mb-1">
+              {isDoctor ? 'Llamando a' : 'Llamada entrante'}
+            </p>
+            <h2 className="text-2xl font-bold text-white mb-1">
+              {otherParticipantName || (isDoctor ? 'Paciente' : 'Doctor')}
+            </h2>
+            {doctorCreds?.specialty && !isDoctor && (
+              <p className="text-sm text-white/80">{doctorCreds.specialty}</p>
+            )}
+
+            <p className="text-sm text-white/75 mt-6 max-w-xs">
+              {isDoctor
+                ? t('videoCall.doctorStartInfo')
+                : (autoJoin ? t('videoCall.patientJoinInfo') : 'Esperando al médico…')}
+            </p>
+
+            <div className="mt-10 w-full max-w-sm">
+              {(isDoctor || autoJoin) ? (
+                <Button
+                  size="lg"
+                  onClick={handleStart}
+                  className="w-full h-14 rounded-full bg-white text-primary hover:bg-white/90 text-base font-bold gap-2 shadow-2xl"
+                >
+                  <Video className="w-5 h-5" />
+                  {isDoctor ? t('videoCall.startButton') : t('videoCall.joinButton')}
+                </Button>
+              ) : (
+                <div className="flex items-center justify-center gap-3 text-white/85">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-sm">Esperando al médico…</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 w-full relative bg-black">
+              {videoLayoutJSX}
+            </div>
+            <AnimatePresence>
+              {showChat && (
+                <VideoCallChat messages={chatMessages} onSend={handleSendChat} onClose={() => setShowChat(false)} />
+              )}
+            </AnimatePresence>
+            <VideoCallControls
+              isMuted={isMuted}
+              isCameraOff={isCameraOff}
+              isScreenSharing={isScreenSharing}
+              timeElapsed={timer.timeElapsed}
+              onToggleMute={toggleMute}
+              onToggleCamera={toggleCamera}
+              onToggleScreenShare={toggleScreenShare}
+              onToggleChat={() => setShowChat(!showChat)}
+              onEndCall={handleEndCall}
+              onSwitchCamera={switchCamera}
+              showChat={showChat}
+              isDoctor={isDoctor}
+            />
+          </>
         )}
         <PostConsultationSummaryDialog
           open={showPostConsult}
