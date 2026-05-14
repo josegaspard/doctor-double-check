@@ -219,8 +219,10 @@ export function ChatMessagesPanel({
     }
   };
 
+  // Solo aplicar paywall si el doctor cobra consulta (fee > 0). Si la consulta
+  // es gratis (fee === 0) el paciente puede chatear libremente sin entitlement.
   const isChatGated =
-    userRole === 'patient' && entitlementChecked && !hasChatEntitlement && !!otherDoctorId;
+    userRole === 'patient' && entitlementChecked && !hasChatEntitlement && !!otherDoctorId && consultationFee > 0;
 
   const handleSendIntercept = () => {
     if (isChatGated) {
@@ -407,7 +409,7 @@ export function ChatMessagesPanel({
             ) : (
               <div className="p-2 sm:p-4 border-t bg-card flex-shrink-0 space-y-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
                 {/* Chat gate banner — patient without entitlement */}
-                {userRole === 'patient' && entitlementChecked && !hasChatEntitlement && otherDoctorId && (
+                {userRole === 'patient' && entitlementChecked && !hasChatEntitlement && otherDoctorId && consultationFee > 0 && (
                   <button
                     type="button"
                     data-testid="chat-paywall-banner"

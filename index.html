@@ -43,6 +43,12 @@
     <meta name="twitter:description" content="Plataforma de telemedicina mexicana: consultas, lives quirúrgicos, recetas digitales y expediente clínico para pacientes, doctores y residentes." />
     <meta name="twitter:image" content="https://medical-masters.com/icon-512.png?v=15" />
 
+    <!-- Preconnect a Supabase + Daily — abre la TLS handshake antes de que el bundle dispare las peticiones, ~150-300ms ahorrados en cold load -->
+    <link rel="preconnect" href="https://ouawwfqexfwuptlgoksr.supabase.co" crossorigin />
+    <link rel="preconnect" href="https://c.daily.co" crossorigin />
+    <link rel="dns-prefetch" href="https://api.daily.co" />
+    <link rel="dns-prefetch" href="https://doctores.daily.co" />
+
     <!-- Preload background image for instant render (modo imagen del app) -->
     <link rel="preload" as="image" href="/app-bg.jpg" fetchpriority="high" />
 
