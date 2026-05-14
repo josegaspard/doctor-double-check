@@ -42,16 +42,19 @@ export function useNotificationsRealtime() {
         });
         break;
         
-      case 'chat_message':
+      case 'chat_message': {
+        const sessionId = notification.data?.session_id || notification.data?.sessionId;
+        const target = sessionId ? `/chat?session=${sessionId}` : '/chat';
         toast(notification.title, {
           description: notification.message,
           action: {
             label: t('notificationActions.open'),
-            onClick: () => navigate('/chat'),
+            onClick: () => navigate(target),
           },
           duration: 8000,
         });
         break;
+      }
 
       case 'rating_request':
         toast.info(notification.title, {

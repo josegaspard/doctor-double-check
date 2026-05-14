@@ -70,17 +70,36 @@ export default function Chat() {
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   };
 
-  // Handle consultation success from payment redirect
-  // Handle ?session= param (wallet payment redirect)
+  // Handle ?session= param — desde notificación click, wallet redirect, etc.
+  // Garantiza que la sesión se abra aunque no esté en el cache local (recién
+  // creada, en otra tab, etc). Hace fetch directo + carga mensajes.
   useEffect(() => {
     const sessionParam = searchParams.get('session');
-    if (sessionParam && user?.id) {
-      setSearchParams({});
-      refreshSessions().then(() => {
-        setSelectedSession(sessionParam);
-        setActiveTab('active');
-      });
-    }
+    if (!sessionParam || !user?.id) return;
+    setSearchParams({}, { replace: true });
+
+    (async () => {
+      // Refresh primero para que aparezca en sessions list si recién se creó
+      await refreshSessions();
+
+      // Verificar que la sesión existe + el usuario es participante (RLS)
+      const { data: session } = await supabase
+        .from('chat_sessions')
+        .select('id, status')
+        .eq('id', sessionParam)
+        .maybeSingle();
+
+      if (!session) {
+        toast.error('No se encontró la conversación');
+        return;
+      }
+
+      // Cambiar a la tab correcta según status
+      setActiveTab(session.status === 'closed' ? 'history' : 'active');
+      setSelectedSession(sessionParam);
+      // Pre-cargar mensajes para que aparezcan al instante (en vez de empty)
+      try { await loadMessages(sessionParam); } catch { /* ignore */ }
+    })();
   }, [searchParams, user?.id]);
 
   // Handle Stripe redirect: ?consultation=success&doctor=X
@@ -376,9 +395,16 @@ export default function Chat() {
           </h1>
           <div className="flex items-center gap-2">
             {activeSessions.length > 0 && (
-              <Badge variant="secondary" className="gap-1">
-                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                {activeSessions.length} {t('chat.active').toLowerCase()}{activeSessions.length !== 1 ? 's' : ''}
+              <Badge
+                className="gap-1.5 bg-success/15 text-success border border-success/30 dark:bg-success/20 dark:text-success-foreground dark:border-success/40 hover:bg-success/20 px-2.5 py-1 shadow-sm"
+              >
+                <span className="relative flex w-2 h-2">
+                  <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-60" />
+                  <span className="relative w-2 h-2 rounded-full bg-success" />
+                </span>
+                <span className="font-semibold">
+                  {activeSessions.length} {t('chat.active').toLowerCase()}{activeSessions.length !== 1 ? 's' : ''}
+                </span>
               </Badge>
             )}
           </div>

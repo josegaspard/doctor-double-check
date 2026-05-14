@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { tContext } from '@/lib/i18n-context';
 import { formatMessagePreview } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export type ChatParticipantType = 'patient' | 'doctor' | 'resident';
 export type ChatStatus = 'active' | 'closed';
@@ -71,6 +73,13 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  // Ref para que el realtime subscription siempre vea la ruta actual sin
+  // re-suscribirse cada vez que cambia (evita race condition de Supabase
+  // realtime que pierde mensajes mientras re-conecta).
+  const locationRef = useRef(location);
+  useEffect(() => { locationRef.current = location; }, [location]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -271,7 +280,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },
         async (payload) => {
           const newMessage = payload.new as { id: string; session_id: string; sender_id: string; content: string; is_read: boolean; created_at: string; reply_to_id?: string | null };
-          
+
           // Fetch sender name for the new message
           let senderName: string | undefined;
           try {
@@ -305,6 +314,38 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             };
           });
           fetchSessions(); // Update session with latest message
+
+          // Toast global cuando llega un mensaje y el usuario NO está viendo
+          // ese chat específico. Cubre 3 escenarios:
+          // 1. User en otra página (ej. /lives, /recordings) → toast con
+          //    botón "Abrir" que navega a /chat?session=<id>
+          // 2. User en /chat pero viendo otra sesión → toast lateral
+          // 3. User en /chat viendo esta sesión → no toast (mensaje aparece
+          //    en el panel)
+          const isOwnMessage = newMessage.sender_id === user.id;
+          if (!isOwnMessage) {
+            const currentPath = locationRef.current.pathname + locationRef.current.search;
+            const isOnChatPage = locationRef.current.pathname === '/chat';
+            const viewedSession = new URLSearchParams(locationRef.current.search).get('session');
+            const isViewingThisSession = isOnChatPage && viewedSession === newMessage.session_id;
+
+            if (!isViewingThisSession) {
+              const preview = newMessage.content.length > 120
+                ? newMessage.content.slice(0, 117) + '…'
+                : newMessage.content;
+              toast(senderName || 'Nuevo mensaje', {
+                description: preview,
+                action: {
+                  label: 'Abrir',
+                  onClick: () => navigate(`/chat?session=${newMessage.session_id}`),
+                },
+                duration: 8000,
+                // ID único por sesión — si llegan varios mensajes seguidos,
+                // el toast se reemplaza en vez de apilarse.
+                id: `chat-msg-${newMessage.session_id}`,
+              });
+            }
+          }
         }
       )
       .subscribe();
