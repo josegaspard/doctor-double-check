@@ -284,51 +284,52 @@ export function useLocalRecording() {
     setState(prev => ({ ...prev, isUploading: true, uploadProgress: 0 }));
 
     try {
-      const fileExtension = blob.type.includes('mp4') ? 'mp4' : 'webm';
-      const fileName = `${params.liveId}-${Date.now()}.${fileExtension}`;
-      const filePath = `${params.doctorId}/${fileName}`;
-      const contentType = blob.type || `video/${fileExtension}`;
+      const contentType = blob.type || 'video/mp4';
 
-      console.log('[LocalRecording] Requesting B2 presigned PUT url for:', filePath);
+      console.log('[LocalRecording] Requesting Bunny video shell for live:', params.liveId);
 
-      // Step 1: ask edge function for a presigned PUT URL (scoped to <doctorId>/*)
-      const { data: presigned, error: presignError } = await supabase.functions.invoke('b2-presigned-url', {
-        body: { operation: 'put', path: filePath, contentType },
+      // Step 1: create video shell in Bunny → get videoId + uploadUrl + scoped key
+      const { data: bunnyInit, error: bunnyInitErr } = await supabase.functions.invoke('bunny-create-video', {
+        body: { title: params.title || `Live ${params.liveId}`, recordingId: params.recordingId },
       });
-      if (presignError || !presigned?.url) {
-        console.error('[LocalRecording] presigned-url error:', presignError, presigned);
-        throw new Error(`No se pudo obtener URL de subida: ${(presignError as any)?.message || presigned?.error || 'unknown'}`);
+      if (bunnyInitErr || !bunnyInit?.videoId || !bunnyInit?.uploadUrl) {
+        console.error('[LocalRecording] bunny-create-video error:', bunnyInitErr, bunnyInit);
+        throw new Error(`No se pudo crear el video en Bunny: ${(bunnyInitErr as any)?.message || bunnyInit?.error || 'unknown'}`);
       }
 
-      setState(prev => ({ ...prev, uploadProgress: 25 }));
+      const { videoId, uploadUrl, accessKey } = bunnyInit;
+      console.log('[LocalRecording] Bunny video shell created:', videoId);
 
-      // Step 2: PUT the blob directly to B2 (no double bandwidth through edge function)
-      const putRes = await fetch(presigned.url, {
+      setState(prev => ({ ...prev, uploadProgress: 20 }));
+
+      // Step 2: PUT blob directo a Bunny Stream (sin pasar por Supabase)
+      const putRes = await fetch(uploadUrl, {
         method: 'PUT',
-        headers: { 'Content-Type': contentType },
+        headers: {
+          'AccessKey': accessKey,
+          'Content-Type': contentType,
+        },
         body: blob,
       });
       if (!putRes.ok) {
         const errText = await putRes.text().catch(() => '');
-        console.error('[LocalRecording] B2 PUT failed:', putRes.status, errText);
-        throw new Error(`Subida a B2 falló (HTTP ${putRes.status}): ${errText.slice(0, 200)}`);
+        console.error('[LocalRecording] Bunny PUT failed:', putRes.status, errText);
+        throw new Error(`Subida a Bunny falló (HTTP ${putRes.status}): ${errText.slice(0, 200)}`);
       }
 
-      setState(prev => ({ ...prev, uploadProgress: 70 }));
+      setState(prev => ({ ...prev, uploadProgress: 80 }));
 
-      console.log('[LocalRecording] Video stored on B2:', filePath);
-
-      setState(prev => ({ ...prev, uploadProgress: 85 }));
+      console.log('[LocalRecording] Video uploaded to Bunny:', videoId);
 
       const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
-      // Create the recordings DB row server-side via edge function so that any
-      // client RLS / JWT-expiry issue cannot leave us with an orphan storage file.
+      // Create recordings row server-side. Bunny transcodes async → recording
+      // queda con bunny_status=processing hasta que el webhook lo marque ready.
       const { data: saveData, error: saveError } = await supabase.functions.invoke('save-recording', {
         body: {
           liveId: params.liveId,
-          storagePath: filePath,
-          backend: 'b2',
+          storagePath: videoId, // bunny videoId, no path
+          backend: 'bunny',
           duration,
           price: params.price,
           title: params.title,

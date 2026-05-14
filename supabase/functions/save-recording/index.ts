@@ -44,8 +44,10 @@ Deno.serve(async (req) => {
       title, description, specialty, tags = [], thumbnailUrl,
     } = body || {};
 
-    // backend === 'b2' means the upload landed in Backblaze (preferred new flow).
+    // backend === 'bunny' means the upload landed in Bunny Stream (newest flow,
+    // HLS adaptive). backend === 'b2' means Backblaze (mp4 progressive).
     // Anything else falls back to legacy Supabase Storage.
+    const isBunny = backend === 'bunny';
     const isB2 = backend === 'b2';
 
     if (!liveId || !storagePath) {
@@ -71,18 +73,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Sanity-check the storage path is under the doctor's namespace
-    if (!storagePath.startsWith(`${user.id}/`)) {
+    // Sanity-check the storage path is under the doctor's namespace.
+    // Bunny videos use the videoId (GUID) directly, no namespace prefix.
+    if (!isBunny && !storagePath.startsWith(`${user.id}/`)) {
       return new Response(JSON.stringify({ error: "storagePath outside your namespace" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Confirm the file actually exists. For Supabase Storage we list and match;
-    // for B2 the presigned-URL flow already verified the upload succeeded (PUT 200),
-    // so we trust the path. A separate HEAD against B2 would require SigV4 here
-    // and double the function cold-start time for no gain.
-    if (!isB2) {
+    // Confirm the file exists. Supabase Storage → list+match; B2/Bunny → trust
+    // the upload PUT 200 because the presigned/library flow already validated.
+    if (!isB2 && !isBunny) {
       const { data: head } = await admin.storage.from("recordings").list(user.id, {
         limit: 100,
         search: storagePath.split("/").pop(),
@@ -95,7 +96,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    const videoRef = isB2 ? `b2:${storagePath}` : `storage:${storagePath}`;
+    const videoRef = isBunny
+      ? `bunny:${storagePath}`
+      : isB2
+        ? `b2:${storagePath}`
+        : `storage:${storagePath}`;
 
     // Upsert: if a recording row already exists for this live, update it
     const { data: existing } = await admin
@@ -105,10 +110,19 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     let recordingId: string;
+    const bunnyFields = isBunny
+      ? { bunny_video_id: storagePath, bunny_status: 'processing' as const }
+      : {};
     if (existing) {
       const { error: updErr } = await admin
         .from("recordings")
-        .update({ video_url: videoRef, duration, price, thumbnail_url: thumbnailUrl ?? live.thumbnail_url })
+        .update({
+          video_url: videoRef,
+          duration,
+          price,
+          thumbnail_url: thumbnailUrl ?? live.thumbnail_url,
+          ...bunnyFields,
+        })
         .eq("id", existing.id);
       if (updErr) throw updErr;
       recordingId = existing.id;
@@ -126,6 +140,7 @@ Deno.serve(async (req) => {
           price: price ?? live.recording_price ?? 0,
           video_url: videoRef,
           thumbnail_url: thumbnailUrl ?? live.thumbnail_url,
+          ...bunnyFields,
         })
         .select("id")
         .single();

@@ -7,6 +7,10 @@ import { supabase } from '@/integrations/supabase/client';
 const CloudflareRecordingPlayer = React.lazy(() =>
   import('@/components/recordings/CloudflareRecordingPlayer').then(m => ({ default: m.CloudflareRecordingPlayer }))
 );
+// BunnyHLSPlayer también trae hls.js. Mismo chunk lazy.
+const BunnyHLSPlayer = React.lazy(() =>
+  import('@/components/recordings/BunnyHLSPlayer').then(m => ({ default: m.BunnyHLSPlayer }))
+);
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -33,12 +37,20 @@ function isB2Ref(url: string) {
   return url.startsWith('b2:');
 }
 
+function isBunnyRef(url: string) {
+  return url.startsWith('bunny:');
+}
+
 function getStoragePath(url: string) {
   return url.replace(/^storage:/, '');
 }
 
 function getB2Path(url: string) {
   return url.replace(/^b2:/, '');
+}
+
+function getBunnyVideoId(url: string) {
+  return url.replace(/^bunny:/, '');
 }
 
 /**
@@ -50,6 +62,7 @@ function getB2Path(url: string) {
 export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, onTimeUpdate, autoPlay, prefetchedSignedUrl, prefetchedTtl }: RecordingVideoPlayerProps) {
   const storagePath = useMemo(() => (isStorageRef(videoUrl) ? getStoragePath(videoUrl) : null), [videoUrl]);
   const b2Path = useMemo(() => (isB2Ref(videoUrl) ? getB2Path(videoUrl) : null), [videoUrl]);
+  const bunnyVideoId = useMemo(() => (isBunnyRef(videoUrl) ? getBunnyVideoId(videoUrl) : null), [videoUrl]);
   const { user, supabaseUser } = useAuth();
   // Generate a unique sessionId per mount — persists across signed URL renewals
   const sessionId = useMemo(
@@ -72,8 +85,10 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
 
   // Cache key for signed URL in sessionStorage.
   const cacheKey = useMemo(
-    () => (b2Path || storagePath) ? `signedurl:${b2Path || storagePath}` : null,
-    [b2Path, storagePath]
+    () => (bunnyVideoId || b2Path || storagePath)
+      ? `signedurl:${bunnyVideoId ? 'bunny:' : b2Path ? 'b2:' : ''}${bunnyVideoId || b2Path || storagePath}`
+      : null,
+    [bunnyVideoId, b2Path, storagePath]
   );
 
   // Resilient signed URL fetcher with exponential backoff retry chain:
@@ -83,7 +98,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   //   attempt 4: 3500ms later
   // After exhaustion shows the manual "Reintentar" UI.
   const fetchSignedUrl = useCallback(async (attempt: number = 0, skipCache: boolean = false): Promise<void> => {
-    if (!storagePath && !b2Path) return;
+    if (!storagePath && !b2Path && !bunnyVideoId) return;
 
     // Cache hit: lee de sessionStorage si todavía está vigente (margen 5min).
     // Evita el round-trip al edge function en revisitas dentro de la misma
@@ -112,6 +127,17 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
     setExpired(false);
 
     const tryGet = async (): Promise<{ url: string; ttlSec: number } | null> => {
+      if (bunnyVideoId) {
+        const { data, error: invokeErr } = await supabase.functions.invoke('bunny-signed-url', {
+          body: { videoId: bunnyVideoId, ttlSec: 3600 },
+        });
+        if (invokeErr || !data?.url) {
+          const detail = (invokeErr as any)?.message || data?.error || 'No se pudo obtener URL del video';
+          throw new Error(detail);
+        }
+        const ttl = typeof data.expiresSec === 'number' ? data.expiresSec : 3600;
+        return { url: data.url as string, ttlSec: ttl };
+      }
       if (b2Path) {
         const { data, error: invokeErr } = await supabase.functions.invoke('b2-presigned-url', {
           body: { operation: 'get', path: b2Path },
@@ -163,10 +189,10 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
       if (attempt >= MAX_AUTO_RETRIES) setIsLoading(false);
       else if (attempt === 0) setIsLoading(false);
     }
-  }, [storagePath, b2Path]);
+  }, [storagePath, b2Path, bunnyVideoId]);
 
   useEffect(() => {
-    if (!storagePath && !b2Path) return;
+    if (!storagePath && !b2Path && !bunnyVideoId) return;
     // Si el padre nos pasó un URL ya pre-fetcheado, lo aplicamos al toque sin
     // hacer la fetch. Saltamos el round-trip al edge fn (~700ms).
     if (prefetchedSignedUrl) {
@@ -177,7 +203,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
       return;
     }
     fetchSignedUrl(0);
-  }, [storagePath, b2Path, fetchSignedUrl, prefetchedSignedUrl, prefetchedTtl]);
+  }, [storagePath, b2Path, bunnyVideoId, fetchSignedUrl, prefetchedSignedUrl, prefetchedTtl]);
 
   // Programmatic play() — el browser bloquea autoplay aunque tengamos
   // autoPlay+muted en el atributo. Llamamos play() explícitamente apenas
@@ -216,7 +242,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
     }
   };
 
-  if (!storagePath && !b2Path) {
+  if (!storagePath && !b2Path && !bunnyVideoId) {
     return (
       <div className="relative">
         <Suspense fallback={
@@ -228,6 +254,26 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
         </Suspense>
         <DynamicWatermark email={user?.email} userId={supabaseUser?.id} sessionId={sessionId} />
       </div>
+    );
+  }
+
+  // Bunny Stream: HLS adaptive bitrate via hls.js
+  if (bunnyVideoId && signedUrl) {
+    return (
+      <Suspense fallback={
+        <div className="aspect-video bg-black rounded-xl flex items-center justify-center">
+          <Loader2 className="w-12 h-12 text-primary animate-spin" />
+        </div>
+      }>
+        <BunnyHLSPlayer
+          signedUrl={signedUrl}
+          recordingId={recordingId}
+          onDurationUpdate={onDurationUpdate}
+          onTimeUpdate={onTimeUpdate}
+          autoPlay={autoPlay}
+          sessionId={sessionId}
+        />
+      </Suspense>
     );
   }
 

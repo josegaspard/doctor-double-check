@@ -105,8 +105,9 @@ export default function RecordingsGrid() {
   // Cold-load percibido del recording: <300ms vs ~1s antes.
   const prefetchRecordingUrl = (recording: Recording) => {
     if (!recording.videoUrl || typeof window === 'undefined') return;
-    const path = recording.videoUrl.replace(/^b2:|^storage:/, '');
-    const cacheKey = `signedurl:${path}`;
+    const isBunny = recording.videoUrl.startsWith('bunny:');
+    const path = recording.videoUrl.replace(/^b2:|^storage:|^bunny:/, '');
+    const cacheKey = `signedurl:${isBunny ? 'bunny:' : recording.videoUrl.startsWith('b2:') ? 'b2:' : ''}${path}`;
     // Skip si ya está cacheado y vigente
     try {
       const raw = sessionStorage.getItem(cacheKey);
@@ -116,7 +117,17 @@ export default function RecordingsGrid() {
       }
     } catch { /* ignore */ }
 
-    if (recording.videoUrl.startsWith('b2:')) {
+    if (isBunny) {
+      supabase.functions
+        .invoke('bunny-signed-url', { body: { videoId: path, ttlSec: 3600 } })
+        .then(({ data }) => {
+          if (data?.url) {
+            const ttl = typeof data.expiresSec === 'number' ? data.expiresSec : 3600;
+            sessionStorage.setItem(cacheKey, JSON.stringify({ url: data.url, generatedAt: Date.now(), ttlSec: ttl }));
+          }
+        })
+        .catch(() => { /* fail silently */ });
+    } else if (recording.videoUrl.startsWith('b2:')) {
       supabase.functions
         .invoke('b2-presigned-url', { body: { operation: 'get', path } })
         .then(({ data }) => {

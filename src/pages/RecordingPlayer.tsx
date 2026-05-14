@@ -139,10 +139,15 @@ export default function RecordingPlayer() {
       const videoUrl = recResult.data.video_url as string | undefined;
       let signedUrlPromise: Promise<{ url: string; ttlSec: number } | null> = Promise.resolve(null);
       if (videoUrl) {
+        const bunnyMatch = /^bunny:(.+)$/.exec(videoUrl);
         const b2Match = /^b2:(.+)$/.exec(videoUrl);
         const storageMatch = /^storage:(.+)$/.exec(videoUrl);
         // Cache check sessionStorage primero
-        const cacheKey = `signedurl:${b2Match?.[1] || storageMatch?.[1] || videoUrl}`;
+        const cacheKey = bunnyMatch
+          ? `signedurl:bunny:${bunnyMatch[1]}`
+          : b2Match
+            ? `signedurl:b2:${b2Match[1]}`
+            : `signedurl:${storageMatch?.[1] || videoUrl}`;
         try {
           const raw = sessionStorage.getItem(cacheKey);
           if (raw) {
@@ -155,7 +160,12 @@ export default function RecordingPlayer() {
             }
           }
         } catch { /* ignore */ }
-        if (b2Match && (await signedUrlPromise) === null) {
+        if (bunnyMatch && (await signedUrlPromise) === null) {
+          signedUrlPromise = supabase.functions
+            .invoke('bunny-signed-url', { body: { videoId: bunnyMatch[1], ttlSec: 3600 } })
+            .then(({ data }) => data?.url ? { url: data.url as string, ttlSec: typeof data.expiresSec === 'number' ? data.expiresSec : 3600 } : null)
+            .catch(() => null);
+        } else if (b2Match && (await signedUrlPromise) === null) {
           signedUrlPromise = supabase.functions
             .invoke('b2-presigned-url', { body: { operation: 'get', path: b2Match[1] } })
             .then(({ data }) => data?.url ? { url: data.url as string, ttlSec: typeof data.expiresSec === 'number' ? data.expiresSec : 3600 } : null)
@@ -179,7 +189,13 @@ export default function RecordingPlayer() {
         setPrefetchedSignedUrl(signedUrlResult.url);
         setPrefetchedTtl(signedUrlResult.ttlSec);
         // Cache para revisitas en la sesión
-        const cacheKey = videoUrl ? `signedurl:${videoUrl.replace(/^b2:|^storage:/, '')}` : null;
+        const cacheKey = videoUrl
+          ? (videoUrl.startsWith('bunny:')
+              ? `signedurl:bunny:${videoUrl.slice(6)}`
+              : videoUrl.startsWith('b2:')
+                ? `signedurl:b2:${videoUrl.slice(3)}`
+                : `signedurl:${videoUrl.replace(/^storage:/, '')}`)
+          : null;
         if (cacheKey) {
           try {
             sessionStorage.setItem(cacheKey, JSON.stringify({
