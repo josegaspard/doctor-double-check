@@ -267,6 +267,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
       }>
         <BunnyHLSPlayer
           signedUrl={signedUrl}
+          videoId={bunnyVideoId || undefined}
           recordingId={recordingId}
           onDurationUpdate={onDurationUpdate}
           onTimeUpdate={onTimeUpdate}

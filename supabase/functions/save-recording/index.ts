@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
     const {
       liveId, storagePath, backend, duration, price = 0,
       title, description, specialty, tags = [], thumbnailUrl,
+      bunnyStatus,
     } = body || {};
 
     // backend === 'bunny' means the upload landed in Bunny Stream (newest flow,
@@ -110,8 +111,16 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     let recordingId: string;
+    // bunnyStatus default 'uploading' — el frontend lo manda 'uploading' cuando
+    // crea la row antes de que termine el TUS upload (paralelización para que
+    // el doctor vea su grabación instantáneamente). El webhook de Bunny lo
+    // cambia a 'ready' o 'failed' cuando termina el encoding.
+    const allowedBunnyStatuses = ['uploading', 'processing', 'ready', 'failed'];
+    const finalBunnyStatus = bunnyStatus && allowedBunnyStatuses.includes(bunnyStatus)
+      ? bunnyStatus
+      : 'uploading';
     const bunnyFields = isBunny
-      ? { bunny_video_id: storagePath, bunny_status: 'processing' as const }
+      ? { bunny_video_id: storagePath, bunny_status: finalBunnyStatus }
       : {};
     if (existing) {
       const { error: updErr } = await admin

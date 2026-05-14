@@ -8,6 +8,7 @@ import { useWallet } from '@/contexts/WalletContext';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import MainLayout from '@/components/layout/MainLayout';
 import PaywallModal from '@/components/PaywallModal';
 import { HoverPlayCard } from '@/components/recordings/HoverPlayCard';
@@ -152,6 +153,17 @@ export default function RecordingsGrid() {
 
   const handleRecordingClick = (recording: Recording) => {
     if (!isAuthenticated || role === 'visitor') { navigate('/login'); return; }
+    // Si está en Bunny y aún no terminó encoding, informar y NO navegar
+    // (evita que el player muestre "Failed to load" o 401).
+    if (recording.bunnyStatus && recording.bunnyStatus !== 'ready') {
+      const msgs: Record<string, string> = {
+        uploading: 'Esta grabación aún se está subiendo. Estará lista en unos minutos.',
+        processing: 'Esta grabación se está procesando. Estará lista en 1-3 minutos.',
+        failed: 'Esta grabación tuvo un error de procesado. Contacta a soporte.',
+      };
+      toast.info(msgs[recording.bunnyStatus] || 'Grabación no disponible todavía.');
+      return;
+    }
     // Disparar prefetch inmediato (puede que el hover no haya ocurrido)
     prefetchRecordingUrl(recording);
     if (ownsRecording(recording)) {
@@ -475,7 +487,40 @@ export default function RecordingsGrid() {
                             {formatDuration(recording.duration)}
                           </Badge>
                         </div>
-                        
+
+                        {/* Bunny encoding state — overlay informativo, NO bloquea click
+                            (cuando es ready desaparece) */}
+                        {recording.bunnyStatus && recording.bunnyStatus !== 'ready' && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
+                            <div className="text-center text-white px-4">
+                              {recording.bunnyStatus === 'uploading' && (
+                                <>
+                                  <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-white/20 flex items-center justify-center">
+                                    <span className="block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  </div>
+                                  <p className="text-xs font-semibold">Subiendo grabación…</p>
+                                  <p className="text-[10px] text-white/75 mt-0.5">Estará lista en unos minutos</p>
+                                </>
+                              )}
+                              {recording.bunnyStatus === 'processing' && (
+                                <>
+                                  <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-white/20 flex items-center justify-center">
+                                    <span className="block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  </div>
+                                  <p className="text-xs font-semibold">Procesando video…</p>
+                                  <p className="text-[10px] text-white/75 mt-0.5">Optimizando calidad adaptativa</p>
+                                </>
+                              )}
+                              {recording.bunnyStatus === 'failed' && (
+                                <>
+                                  <p className="text-xs font-semibold text-destructive">Error en el procesado</p>
+                                  <p className="text-[10px] text-white/75 mt-0.5">Contacta a soporte</p>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                           <div className="w-12 h-12 rounded-full bg-white/0 group-hover:bg-white/90 flex items-center justify-center transition-colors">
                             <PlayCircle className="w-6 h-6 text-premium opacity-0 group-hover:opacity-100 transition-opacity" />

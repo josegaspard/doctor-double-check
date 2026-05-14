@@ -7,6 +7,12 @@ import { useAuth } from '@/contexts/AuthContext';
 interface BunnyHLSPlayerProps {
   /** URL del manifest.m3u8 firmado con token Bunny */
   signedUrl: string;
+  /** Video ID Bunny — para construir el poster thumbnail */
+  videoId?: string;
+  /** CDN hostname Bunny — default desde el manifest URL */
+  cdnHost?: string;
+  /** Custom thumbnail URL (e.g. live thumbnail subido por doctor) */
+  thumbnailUrl?: string;
   recordingId: string;
   onDurationUpdate?: (s: number) => void;
   onTimeUpdate?: (s: number) => void;
@@ -21,12 +27,24 @@ interface BunnyHLSPlayerProps {
  */
 export function BunnyHLSPlayer({
   signedUrl,
+  videoId,
+  cdnHost,
+  thumbnailUrl,
   recordingId,
   onDurationUpdate,
   onTimeUpdate,
   autoPlay,
   sessionId,
 }: BunnyHLSPlayerProps) {
+  // Poster: prioridad thumbnail custom del doctor → thumbnail auto de Bunny
+  // Bunny genera thumbnail.jpg automáticamente en /<videoId>/thumbnail.jpg
+  // Es PÚBLICO (no requiere signed URL) → carga instantánea como póster.
+  // Si el manifest URL apunta a vz-xxx.b-cdn.net, derivamos el host de ahí.
+  const derivedCdnHost = cdnHost || (() => {
+    try { return new URL(signedUrl).host; } catch { return null; }
+  })();
+  const poster = thumbnailUrl
+    || (videoId && derivedCdnHost ? `https://${derivedCdnHost}/${videoId}/thumbnail.jpg` : undefined);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -119,15 +137,27 @@ export function BunnyHLSPlayer({
   }, [init]);
 
   return (
-    <div className="relative max-h-[80vh] mx-auto bg-black rounded-xl overflow-hidden aspect-video">
+    <div className="relative w-full max-h-[80vh] mx-auto bg-black rounded-xl overflow-hidden aspect-video">
+      {/* Poster blur en background — visible instantáneo aunque el HLS aún no
+          haya parseado el manifest. El video con poster lo cubre al cargar. */}
+      {poster && (
+        <img
+          src={poster}
+          alt=""
+          loading="eager"
+          className="absolute inset-0 w-full h-full object-cover opacity-60 blur-sm scale-105"
+          aria-hidden="true"
+        />
+      )}
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
           <Loader2 className="w-12 h-12 text-primary animate-spin" />
         </div>
       )}
       <video
         ref={videoRef}
-        className="w-full h-full object-contain"
+        className="relative w-full h-full object-contain z-[1]"
+        poster={poster}
         controls
         playsInline
         preload="auto"

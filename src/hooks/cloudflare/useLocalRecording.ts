@@ -300,15 +300,41 @@ export function useLocalRecording() {
       const { videoId, libraryId, authSignature, authExpire } = bunnyInit;
       console.log('[LocalRecording] Bunny video shell created:', videoId);
 
-      setState(prev => ({ ...prev, uploadProgress: 10 }));
+      setState(prev => ({ ...prev, uploadProgress: 5 }));
 
-      // Step 2: upload TUS resumable (Bunny TUS endpoint).
-      // El frontend NUNCA ve el API key — solo una signature scoped a este videoId.
+      const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+
+      // Step 2: PARALELIZAR — registramos la grabación en la DB AHORA con
+      // bunny_status='uploading'. El doctor ve su grabación instantáneamente
+      // en /recordings (con un indicador "subiendo X%"), no tiene que esperar
+      // a que termine el TUS upload de 100-200 MB para sentir que se guardó.
+      const savePromise = supabase.functions.invoke('save-recording', {
+        body: {
+          liveId: params.liveId,
+          storagePath: videoId,
+          backend: 'bunny',
+          duration,
+          price: params.price,
+          title: params.title,
+          description: params.description || null,
+          specialty: params.specialty,
+          tags: params.tags || [],
+          thumbnailUrl: params.thumbnailUrl || null,
+          bunnyStatus: 'uploading',
+        },
+      });
+
+      // Toast informativo: la grabación YA está en su lista, se sigue subiendo
+      toast.success('Grabación guardada — se está subiendo en segundo plano');
+
+      // Step 3: TUS resumable upload (Bunny). El frontend NUNCA ve el API key;
+      // solo recibe una signature scoped al videoId que expira en 2h.
       const { Upload } = await import('tus-js-client');
       await new Promise<void>((resolve, reject) => {
         const upload = new Upload(blob, {
           endpoint: 'https://video.bunnycdn.com/tusupload',
-          retryDelays: [0, 2000, 5000, 10000],
+          retryDelays: [0, 2000, 5000, 10000, 20000],
+          chunkSize: 5 * 1024 * 1024, // chunks de 5 MB → más rápido en conexiones decentes
           headers: {
             AuthorizationSignature: authSignature,
             AuthorizationExpire: String(authExpire),
@@ -324,7 +350,7 @@ export function useLocalRecording() {
             reject(error);
           },
           onProgress: (bytesUploaded, bytesTotal) => {
-            const pct = 10 + Math.floor((bytesUploaded / bytesTotal) * 70);
+            const pct = 5 + Math.floor((bytesUploaded / bytesTotal) * 90);
             setState(prev => ({ ...prev, uploadProgress: pct }));
           },
           onSuccess: () => {
@@ -335,27 +361,12 @@ export function useLocalRecording() {
         upload.start();
       });
 
-      setState(prev => ({ ...prev, uploadProgress: 80 }));
+      setState(prev => ({ ...prev, uploadProgress: 95 }));
       console.log('[LocalRecording] Video uploaded to Bunny:', videoId);
 
-      const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
-
-      // Create recordings row server-side. Bunny transcodes async → recording
-      // queda con bunny_status=processing hasta que el webhook lo marque ready.
-      const { data: saveData, error: saveError } = await supabase.functions.invoke('save-recording', {
-        body: {
-          liveId: params.liveId,
-          storagePath: videoId, // bunny videoId, no path
-          backend: 'bunny',
-          duration,
-          price: params.price,
-          title: params.title,
-          description: params.description || null,
-          specialty: params.specialty,
-          tags: params.tags || [],
-          thumbnailUrl: params.thumbnailUrl || null,
-        },
-      });
+      // Esperar que save-recording termine (debería haber terminado hace rato
+      // en paralelo, pero por si acaso)
+      const { data: saveData, error: saveError } = await savePromise;
 
       if (saveError || !saveData?.ok) {
         const detail = (saveError as any)?.message || saveData?.error || 'unknown';
@@ -366,7 +377,6 @@ export function useLocalRecording() {
       setState(prev => ({ ...prev, uploadProgress: 100, isUploading: false }));
 
       console.log('[LocalRecording] ✅ Upload complete, recording ID:', saveData.recordingId);
-      toast.success('Grabación guardada exitosamente');
 
       return { success: true, recordingId: saveData.recordingId };
     } catch (error: any) {

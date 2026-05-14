@@ -156,6 +156,9 @@ export interface Recording {
   video_url?: string | null;
   tags: string[];
   created_at: string;
+  // Bunny Stream encoding state — null si el video está en B2/legacy
+  bunny_video_id?: string | null;
+  bunny_status?: 'uploading' | 'processing' | 'ready' | 'failed' | null;
   // Joined data (partial profile for display purposes)
   doctor?: { id: string; name: string; avatar_url?: string | null };
 }

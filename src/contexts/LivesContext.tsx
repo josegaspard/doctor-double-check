@@ -50,6 +50,9 @@ export interface Recording {
   createdAt: Date;
   tags: string[];
   peakViewers?: number;
+  bunnyVideoId?: string;
+  /** uploading=TUS aún no termina, processing=Bunny encodando, ready=jugable, failed=error */
+  bunnyStatus?: 'uploading' | 'processing' | 'ready' | 'failed';
 }
 
 export interface DebugCacheEntry {
@@ -323,13 +326,19 @@ export function LivesProvider({ children }: { children: ReactNode }) {
 
         setRecordings(recordingsData.map(r => {
           let thumbnailUrl = r.thumbnail_url || undefined;
-          
+
           // Try live's own uploaded thumbnail first
           if (!thumbnailUrl && r.live_id && liveThumbnails.has(r.live_id)) {
             thumbnailUrl = liveThumbnails.get(r.live_id)!;
           }
-          
-          // Auto-generate Cloudflare thumbnail if still none
+
+          // Bunny genera thumbnail automático en /<videoId>/thumbnail.jpg
+          // accesible públicamente (sin token) — perfecto como póster en grid
+          if (!thumbnailUrl && (r as any).bunny_video_id) {
+            thumbnailUrl = `https://vz-0d0ab923-d0b.b-cdn.net/${(r as any).bunny_video_id}/thumbnail.jpg`;
+          }
+
+          // Auto-generate Cloudflare thumbnail (legacy) si todavía no hay
           if (!thumbnailUrl && r.live_id && liveStreamUids.has(r.live_id)) {
             const streamUid = liveStreamUids.get(r.live_id)!;
             thumbnailUrl = `https://${CLOUDFLARE_CUSTOMER_SUBDOMAIN}/${streamUid}/thumbnails/thumbnail.jpg`;
@@ -350,6 +359,8 @@ export function LivesProvider({ children }: { children: ReactNode }) {
             createdAt: new Date(r.created_at),
             tags: r.tags || [],
             peakViewers: r.peak_viewers ?? undefined,
+            bunnyVideoId: (r as any).bunny_video_id || undefined,
+            bunnyStatus: (r as any).bunny_status || undefined,
           };
         }));
       }

@@ -23,18 +23,24 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// PRE-WARM del edge function b2-presigned-url: cold start de Supabase Edge
-// Functions puede ser 700ms-3s. Disparamos un fire-and-forget al cargar la
-// app (después del primer paint) para que cuando el usuario abra un recording,
-// la function ya esté caliente. Falla silenciosamente.
+// PRE-WARM de las edge functions de video: cold start de Supabase Edge Functions
+// es 700ms-3s. Disparamos fire-and-forget al cargar la app (idle) para que
+// cuando el usuario abra un recording / termine un live, ya estén calientes.
+// b2-presigned-url → recordings viejas (Backblaze)
+// bunny-signed-url → recordings nuevas (HLS)
+// bunny-create-video → cuando el doctor cierra el live (post-upload)
 if (typeof window !== 'undefined') {
   window.addEventListener('load', () => {
     const warm = async () => {
       try {
         const { supabase } = await import('@/integrations/supabase/client');
-        supabase.functions
-          .invoke('b2-presigned-url', { body: { operation: 'warmup', path: '__warmup__' } })
-          .catch(() => { /* silent */ });
+        // Fire-and-forget en paralelo. Cualquier 4xx es OK, solo necesitamos que
+        // el container Deno arranque.
+        Promise.allSettled([
+          supabase.functions.invoke('b2-presigned-url', { body: { operation: 'warmup', path: '__warmup__' } }),
+          supabase.functions.invoke('bunny-signed-url', { body: { videoId: '__warmup__', ttlSec: 60 } }),
+          supabase.functions.invoke('bunny-create-video', { body: { __warmup__: true } }),
+        ]).catch(() => { /* silent */ });
       } catch { /* silent */ }
     };
     if ('requestIdleCallback' in window) {
