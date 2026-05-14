@@ -230,16 +230,16 @@ export default function DoctorVault() {
                     </div>
                   )}
                   {!isPatientVerified(patientId) && (
-                    <div className="bg-info/10 border border-info/30 rounded-lg p-3 mb-3 flex items-center justify-between gap-2">
+                    <div className="bg-secondary/10 border border-secondary/40 rounded-lg p-3 mb-3 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <KeyRound className="w-4 h-4 text-info flex-shrink-0" />
+                        <KeyRound className="w-4 h-4 text-secondary flex-shrink-0" />
                         <span className="text-xs text-foreground font-medium truncate">Requiere verificación OTP</span>
                       </div>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => openOtpForPatient(patientId, patientName)}
-                        className="h-8 text-xs gap-1 flex-shrink-0 border-info/40 text-info hover:bg-info/10"
+                        className="h-8 text-xs gap-1 flex-shrink-0 border-secondary/40 text-secondary hover:bg-secondary/10"
                       >
                         <KeyRound className="w-3 h-3" />
                         Verificar

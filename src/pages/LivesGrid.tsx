@@ -249,9 +249,9 @@ export default function LivesGrid() {
             )}
             {role === 'visitor' && (
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-accent/50 rounded-lg px-3 sm:px-4 py-2">
-                  <Eye className="w-4 h-4 text-accent-foreground" />
-                  <span className="text-xs sm:text-sm text-accent-foreground">
+                <div className="flex items-center gap-2 bg-secondary text-secondary-foreground rounded-lg px-3 sm:px-4 py-2 shadow-md ring-1 ring-secondary/40">
+                  <Eye className="w-4 h-4" />
+                  <span className="text-xs sm:text-sm font-semibold">
                     {t('lives.viewerMode')}
                   </span>
                 </div>

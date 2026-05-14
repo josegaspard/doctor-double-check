@@ -95,7 +95,7 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'show_prescriptions' },
   { labelKey: 'nav.meetings', href: '/meetings', icon: Calendar, roles: ['doctor', 'resident'] },
-  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'resident', 'doctor'] },
+  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient'] },
   { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['patient', 'doctor', 'resident'] },
   { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   { labelKey: 'nav.medicalSupplies', href: '/medical-supplies', icon: Package, roles: ['doctor', 'resident'] },
@@ -397,10 +397,11 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               </Link>
             </div>
 
-            {/* Desktop Nav — split: 6 main items visible + "Más" dropdown for the rest */}
+            {/* Desktop Nav — tablet shows 3 + Más; lg+ shows 6 + Más */}
             <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start mx-1 lg:mx-2 min-w-0">
               <div className="flex items-center gap-2 min-w-0">
-                {filteredNavItems.slice(0, 6).map((item) => {
+                {/* 3 primary items always visible (md-only items hidden on lg+) */}
+                {filteredNavItems.slice(0, 3).map((item) => {
                   const isActive = location.pathname === item.href;
                   const isPanelItem = item.href === '/doctor/dashboard';
                   return (
@@ -420,9 +421,31 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     </Link>
                   );
                 })}
+                {/* Items 4-6: hidden on tablet (md), visible from lg up */}
+                {filteredNavItems.slice(3, 6).map((item) => {
+                  const isActive = location.pathname === item.href;
+                  const isPanelItem = item.href === '/doctor/dashboard';
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      className={`relative hidden lg:flex items-center gap-1.5 px-2 lg:px-2.5 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                        isActive
+                          ? 'app-header-nav-active'
+                          : isPanelItem
+                            ? 'app-header-control px-2 lg:px-2.5'
+                            : 'app-header-nav-link'
+                      }`}
+                    >
+                      <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10" />
+                      <span className="relative z-10">{t(item.shortLabelKey || item.labelKey)}</span>
+                    </Link>
+                  );
+                })}
 
-                {/* "Más" dropdown for remaining items */}
-                {filteredNavItems.length > 6 && (
+                {/* "Más" dropdown — always visible if there are extras.
+                    On md (tablet) collapses items 4+; on lg+ collapses items 7+. */}
+                {filteredNavItems.length > 3 && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
@@ -434,13 +457,18 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-56">
-                      {filteredNavItems.slice(6).map((item) => {
+                      {/* On md show items 3+; on lg+ only show items 6+. Hide
+                          the lg-overlap items via CSS so the dropdown adapts. */}
+                      {filteredNavItems.slice(3).map((item, idx) => {
                         const isActive = location.pathname === item.href;
+                        // Items at index 3..5 (global) are already visible on lg+,
+                        // so on lg+ hide them inside the dropdown.
+                        const hideOnLg = idx < 3;
                         return (
                           <DropdownMenuItem
                             key={item.href}
                             onClick={() => navigate(item.href)}
-                            className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary text-primary-foreground' : ''}`}
+                            className={`py-2.5 text-sm cursor-pointer ${hideOnLg ? 'lg:hidden' : ''} ${isActive ? 'bg-primary text-primary-foreground' : ''}`}
                           >
                             <item.icon className="w-4 h-4 mr-2" />
                             {t(item.labelKey)}

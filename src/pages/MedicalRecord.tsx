@@ -456,9 +456,15 @@ export default function MedicalRecord() {
         </div>
 
         {role === 'patient' && (
-          <div className="mb-3 sm:mb-4 flex items-start gap-2 p-2.5 rounded-lg bg-info/10 border border-info/30 text-[11px] sm:text-xs text-foreground/80">
-            <ShieldCheck className="w-4 h-4 text-info flex-shrink-0 mt-0.5" />
-            <span>Tu expediente es privado. Puedes descargar un <strong className="text-foreground">resumen para uso personal</strong> con marca de agua. No compartas el documento fuera de la plataforma.</span>
+          <div className="mb-3 sm:mb-4 flex items-start gap-2.5 p-3 sm:p-3.5 rounded-xl bg-primary text-primary-foreground shadow-md ring-1 ring-primary/40 text-xs sm:text-sm">
+            <div className="w-7 h-7 rounded-lg bg-primary-foreground/15 flex items-center justify-center flex-shrink-0">
+              <ShieldCheck className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+            </div>
+            <span className="leading-snug">
+              Tu expediente es privado. Puedes descargar un{' '}
+              <strong className="font-bold underline decoration-primary-foreground/40 underline-offset-2">resumen para uso personal</strong>{' '}
+              con marca de agua. No compartas el documento fuera de la plataforma.
+            </span>
           </div>
         )}
 

@@ -61,7 +61,7 @@ export default function Enterprise() {
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
               Salud corporativa <span className="text-transparent bg-clip-text bg-gradient-to-r from-light to-white">de clase mundial</span>
             </h1>
-            <p className="text-sm sm:text-lg text-slate-300 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
+            <p className="text-sm sm:text-lg text-white/85 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
               Potencia el bienestar de tu equipo con nuestra plataforma de telemedicina diseñada para empresas.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
@@ -89,7 +89,7 @@ export default function Enterprise() {
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
                 <p className="text-xl sm:text-3xl font-bold text-secondary">{stat.value}</p>
-                <p className="text-[10px] sm:text-sm text-gray-500 mt-1">{stat.label}</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground mt-1">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -97,23 +97,23 @@ export default function Enterprise() {
       </section>
 
       {/* Features */}
-      <section className="py-12 sm:py-24">
+      <section className="py-12 sm:py-24 bg-card border-b border-border">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-xl sm:text-3xl font-bold text-center text-gray-800 mb-3 sm:mb-4">
+          <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-3 sm:mb-4">
             Solución completa para tu empresa
           </h2>
-          <p className="text-gray-600 text-center max-w-2xl mx-auto mb-6 sm:mb-12 text-sm sm:text-base">
+          <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-6 sm:mb-12 text-sm sm:text-base">
             Todo lo que necesitas para implementar un programa de salud digital exitoso.
           </p>
           
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {features.map((feature, index) => (
-              <div key={index} className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-shadow">
+              <div key={index} className="bg-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-border shadow-sm hover:shadow-lg hover:border-primary/30 transition-all">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center mb-3 sm:mb-4">
                   <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-xs sm:text-sm">{feature.description}</p>
+                <h3 className="text-base sm:text-lg font-bold text-foreground mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground text-xs sm:text-sm">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -121,9 +121,9 @@ export default function Enterprise() {
       </section>
 
       {/* Trusted By */}
-      <section className="py-12 sm:py-24 bg-gray-100">
+      <section className="py-12 sm:py-24 bg-muted/40">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-lg sm:text-2xl font-bold text-center text-gray-800 mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-2xl font-bold text-center text-foreground mb-6 sm:mb-8">
             Empresas que confían en nosotros
           </h2>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-12">
@@ -137,18 +137,18 @@ export default function Enterprise() {
       </section>
 
       {/* Plans */}
-      <section className="py-12 sm:py-24 bg-white">
+      <section className="py-12 sm:py-24 bg-background">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-xl sm:text-3xl font-bold text-center text-gray-800 mb-6 sm:mb-12">
+          <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-6 sm:mb-12">
             Planes Enterprise
           </h2>
           
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
             {/* Starter */}
             <div className="bg-gray-50 p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-200">
-              <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1 sm:mb-2">Starter</h3>
-              <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">Para equipos pequeños</p>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">Desde $5,000<span className="text-xs sm:text-sm font-normal text-gray-500">/mes</span></p>
+              <h3 className="text-base sm:text-lg font-bold text-foreground mb-1 sm:mb-2">Starter</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Para equipos pequeños</p>
+              <p className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">Desde $5,000<span className="text-xs sm:text-sm font-normal text-muted-foreground">/mes</span></p>
               <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Hasta 50 empleados</li>
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Consultas ilimitadas</li>
@@ -165,8 +165,8 @@ export default function Enterprise() {
                 POPULAR
               </div>
               <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2 mt-2 sm:mt-0">Pro</h3>
-              <p className="text-xs sm:text-sm text-slate-300 mb-3 sm:mb-4">Para empresas en crecimiento</p>
-              <p className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Desde $15,000<span className="text-xs sm:text-sm font-normal text-slate-300">/mes</span></p>
+              <p className="text-xs sm:text-sm text-white/85 mb-3 sm:mb-4">Para empresas en crecimiento</p>
+              <p className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Desde $15,000<span className="text-xs sm:text-sm font-normal text-white/85">/mes</span></p>
               <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />Hasta 250 empleados</li>
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />Analytics avanzados</li>
@@ -180,9 +180,9 @@ export default function Enterprise() {
             
             {/* Enterprise */}
             <div className="bg-gray-50 p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-200">
-              <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1 sm:mb-2">Enterprise</h3>
-              <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">Para grandes organizaciones</p>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">Personalizado</p>
+              <h3 className="text-base sm:text-lg font-bold text-foreground mb-1 sm:mb-2">Enterprise</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Para grandes organizaciones</p>
+              <p className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">Personalizado</p>
               <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Empleados ilimitados</li>
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />SLA garantizado</li>
@@ -201,7 +201,7 @@ export default function Enterprise() {
       <section className="py-12 sm:py-24 bg-gradient-to-br from-secondary to-primary">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">¿Listo para transformar la salud de tu empresa?</h2>
-          <p className="text-slate-300 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
+          <p className="text-white/85 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
             Agenda una demo personalizada y descubre cómo podemos ayudar a tu organización.
           </p>
           <Link 

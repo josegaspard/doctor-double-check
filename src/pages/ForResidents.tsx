@@ -73,23 +73,23 @@ export default function ForResidents() {
       </header>
 
       {/* Benefits */}
-      <section className="py-12 sm:py-24">
+      <section className="py-12 sm:py-24 bg-card border-b border-border">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-xl sm:text-3xl font-bold text-center text-gray-800 mb-3 sm:mb-4">
+          <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-3 sm:mb-4">
             ¿Por qué unirte?
           </h2>
-          <p className="text-gray-600 text-center max-w-2xl mx-auto mb-6 sm:mb-12 text-sm sm:text-base">
+          <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-6 sm:mb-12 text-sm sm:text-base">
             Descubre las ventajas de formar parte de nuestra comunidad académica de residentes.
           </p>
           
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {benefits.map((benefit, index) => (
-              <div key={index} className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-shadow">
+              <div key={index} className="bg-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-border shadow-sm hover:shadow-lg hover:border-primary/30 transition-all">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-3 sm:mb-4">
                   <benefit.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2">{benefit.title}</h3>
-                <p className="text-gray-600 text-xs sm:text-sm">{benefit.description}</p>
+                <h3 className="text-base sm:text-lg font-bold text-foreground mb-2">{benefit.title}</h3>
+                <p className="text-muted-foreground text-xs sm:text-sm">{benefit.description}</p>
               </div>
             ))}
           </div>
@@ -97,9 +97,9 @@ export default function ForResidents() {
       </section>
 
       {/* How it works */}
-      <section className="py-12 sm:py-24 bg-white">
+      <section className="py-12 sm:py-24 bg-background">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-xl sm:text-3xl font-bold text-center text-gray-800 mb-8 sm:mb-12">
+          <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-12">
             ¿Cómo funciona?
           </h2>
           <div className="max-w-3xl mx-auto grid sm:grid-cols-2 gap-6 sm:gap-8">
@@ -114,8 +114,8 @@ export default function ForResidents() {
                   <span className="text-lg sm:text-xl font-bold text-primary">{item.step}</span>
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1">{item.title}</h3>
-                  <p className="text-gray-600 text-xs sm:text-sm">{item.desc}</p>
+                  <h3 className="text-base sm:text-lg font-bold text-foreground mb-1">{item.title}</h3>
+                  <p className="text-muted-foreground text-xs sm:text-sm">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -129,7 +129,7 @@ export default function ForResidents() {
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-2 gap-6 sm:gap-12 items-center">
               <div>
-                <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">
                   Todo para tu formación
                 </h2>
                 <ul className="space-y-3 sm:space-y-4">
@@ -138,7 +138,7 @@ export default function ForResidents() {
                       <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                         <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
                       </div>
-                      <span className="text-gray-700 text-sm sm:text-base">{feature}</span>
+                      <span className="text-foreground text-sm sm:text-base">{feature}</span>
                     </li>
                   ))}
                 </ul>
