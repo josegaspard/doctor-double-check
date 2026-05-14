@@ -108,7 +108,7 @@ export default function RecordingsGrid() {
     if (!recording.videoUrl || typeof window === 'undefined') return;
     const isBunny = recording.videoUrl.startsWith('bunny:');
     const path = recording.videoUrl.replace(/^b2:|^storage:|^bunny:/, '');
-    const cacheKey = `signedurl-v2:${isBunny ? 'bunny:' : recording.videoUrl.startsWith('b2:') ? 'b2:' : ''}${path}`;
+    const cacheKey = `signedurl-v3:${isBunny ? 'bunny:' : recording.videoUrl.startsWith('b2:') ? 'b2:' : ''}${path}`;
     // Skip si ya está cacheado y vigente
     try {
       const raw = sessionStorage.getItem(cacheKey);
@@ -119,12 +119,13 @@ export default function RecordingsGrid() {
     } catch { /* ignore */ }
 
     if (isBunny) {
+      // Bunny: cacheamos el MP4 progresivo, no el HLS.
       supabase.functions
         .invoke('bunny-signed-url', { body: { videoId: path, ttlSec: 3600 } })
         .then(({ data }) => {
-          if (data?.url) {
+          if (data?.mp4Url) {
             const ttl = typeof data.expiresSec === 'number' ? data.expiresSec : 3600;
-            sessionStorage.setItem(cacheKey, JSON.stringify({ url: data.url, generatedAt: Date.now(), ttlSec: ttl }));
+            sessionStorage.setItem(cacheKey, JSON.stringify({ url: data.mp4Url, poster: data.thumbnailUrl, generatedAt: Date.now(), ttlSec: ttl }));
           }
         })
         .catch(() => { /* fail silently */ });

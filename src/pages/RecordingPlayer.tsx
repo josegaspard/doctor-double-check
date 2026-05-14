@@ -144,10 +144,10 @@ export default function RecordingPlayer() {
         const storageMatch = /^storage:(.+)$/.exec(videoUrl);
         // Cache check sessionStorage primero
         const cacheKey = bunnyMatch
-          ? `signedurl-v2:bunny:${bunnyMatch[1]}`
+          ? `signedurl-v3:bunny:${bunnyMatch[1]}`
           : b2Match
-            ? `signedurl-v2:b2:${b2Match[1]}`
-            : `signedurl-v2:${storageMatch?.[1] || videoUrl}`;
+            ? `signedurl-v3:b2:${b2Match[1]}`
+            : `signedurl-v3:${storageMatch?.[1] || videoUrl}`;
         try {
           const raw = sessionStorage.getItem(cacheKey);
           if (raw) {
@@ -161,9 +161,11 @@ export default function RecordingPlayer() {
           }
         } catch { /* ignore */ }
         if (bunnyMatch && (await signedUrlPromise) === null) {
+          // Bunny: prefetch MP4 progresivo (no HLS). HTML5 video lo reproduce
+          // con Range requests en segundos, sin hls.js.
           signedUrlPromise = supabase.functions
             .invoke('bunny-signed-url', { body: { videoId: bunnyMatch[1], ttlSec: 3600 } })
-            .then(({ data }) => data?.url ? { url: data.url as string, ttlSec: typeof data.expiresSec === 'number' ? data.expiresSec : 3600 } : null)
+            .then(({ data }) => data?.mp4Url ? { url: data.mp4Url as string, ttlSec: typeof data.expiresSec === 'number' ? data.expiresSec : 3600 } : null)
             .catch(() => null);
         } else if (b2Match && (await signedUrlPromise) === null) {
           signedUrlPromise = supabase.functions
@@ -191,10 +193,10 @@ export default function RecordingPlayer() {
         // Cache para revisitas en la sesión
         const cacheKey = videoUrl
           ? (videoUrl.startsWith('bunny:')
-              ? `signedurl-v2:bunny:${videoUrl.slice(6)}`
+              ? `signedurl-v3:bunny:${videoUrl.slice(6)}`
               : videoUrl.startsWith('b2:')
-                ? `signedurl-v2:b2:${videoUrl.slice(3)}`
-                : `signedurl-v2:${videoUrl.replace(/^storage:/, '')}`)
+                ? `signedurl-v3:b2:${videoUrl.slice(3)}`
+                : `signedurl-v3:${videoUrl.replace(/^storage:/, '')}`)
           : null;
         if (cacheKey) {
           try {
