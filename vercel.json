@@ -33,7 +33,16 @@
     {
       "source": "/",
       "headers": [
-        { "key": "X-Robots-Tag", "value": "index, follow, max-image-preview:large, max-snippet:-1" }
+        { "key": "X-Robots-Tag", "value": "index, follow, max-image-preview:large, max-snippet:-1" },
+        { "key": "Clear-Site-Data", "value": "\"cache\"" },
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Clear-Site-Data", "value": "\"cache\"" },
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
       ]
     }
   ]

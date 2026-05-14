@@ -1,4 +1,19 @@
 // Service Worker for Push Notifications
+// Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
+
+self.addEventListener('install', function(event) {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function(event) {
+  event.waitUntil((async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    } catch (e) {}
+    await self.clients.claim();
+  })());
+});
 
 self.addEventListener('push', function(event) {
   console.log('[SW] Push received:', event);
@@ -62,12 +77,3 @@ self.addEventListener('notificationclick', function(event) {
   );
 });
 
-self.addEventListener('install', function(event) {
-  console.log('[SW] Installing service worker');
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', function(event) {
-  console.log('[SW] Activating service worker');
-  event.waitUntil(clients.claim());
-});
