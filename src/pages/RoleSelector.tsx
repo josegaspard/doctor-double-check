@@ -28,7 +28,7 @@ export default function RoleSelector() {
       title: t('roleSelector.exploreLives'),
       description: t('roleSelector.exploreDescription'),
       icon: Eye,
-      bgImage: '/app-roles/visitor.jpg',
+      bgImage: '/app-roles/visitor.webp',
       fallbackGradient: 'linear-gradient(180deg, #0a1f47 0%, #163a83 60%, #0a1f47 100%)',
       action: 'visitor',
     },
@@ -37,7 +37,7 @@ export default function RoleSelector() {
       title: t('roleSelector.imPatient'),
       description: t('roleSelector.patientDescription'),
       icon: User,
-      bgImage: '/app-roles/patient.jpg',
+      bgImage: '/app-roles/patient.webp',
       fallbackGradient: 'linear-gradient(180deg, #163a83 0%, #00768b 60%, #163a83 100%)',
       action: 'login',
       role: 'patient',
@@ -47,7 +47,7 @@ export default function RoleSelector() {
       title: t('roleSelector.imDoctor'),
       description: t('roleSelector.doctorDescription'),
       icon: Stethoscope,
-      bgImage: '/app-roles/doctor.jpg',
+      bgImage: '/app-roles/doctor.webp',
       fallbackGradient: 'linear-gradient(180deg, #0a1f47 0%, #00768b 60%, #0a1f47 100%)',
       action: 'login',
       role: 'doctor',
@@ -57,7 +57,7 @@ export default function RoleSelector() {
       title: t('roleSelector.imResident'),
       description: t('roleSelector.residentDescription'),
       icon: GraduationCap,
-      bgImage: '/app-roles/resident.jpg',
+      bgImage: '/app-roles/resident.webp',
       fallbackGradient: 'linear-gradient(180deg, #163a83 0%, #0a1f47 60%, #163a83 100%)',
       action: 'login',
       role: 'resident',
@@ -139,7 +139,7 @@ export default function RoleSelector() {
               <div className="absolute inset-0 bg-[#0a1f47]/80 group-hover:bg-[#0a1f47]/30 transition-colors duration-500" />
 
               {/* Contenido: icono + título + descripción, anclado al lower-half */}
-              <div className="relative z-10 h-full min-h-[280px] sm:min-h-[360px] lg:min-h-screen flex flex-col items-center justify-center sm:justify-end px-6 pb-8 sm:pb-12 lg:pb-20 text-center">
+              <div className="relative z-10 h-full min-h-[280px] sm:min-h-[360px] lg:min-h-screen flex flex-col items-center justify-center px-6 py-8 text-center">
                 <div className="mb-4 sm:mb-5 transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-1">
                   <Icon className="w-10 h-10 sm:w-12 sm:h-12 text-white drop-shadow-lg" strokeWidth={1.5} />
                 </div>
