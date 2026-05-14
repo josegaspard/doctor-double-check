@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Eye, User, Stethoscope, GraduationCap, Video, ArrowRight } from 'lucide-react';
+import { Eye, User, Stethoscope, GraduationCap } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
@@ -12,6 +12,7 @@ type RoleOption = {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   bgImage: string;
+  fallbackGradient: string;
   action: 'visitor' | 'login';
   role?: 'patient' | 'doctor' | 'resident';
 };
@@ -28,6 +29,7 @@ export default function RoleSelector() {
       description: t('roleSelector.exploreDescription'),
       icon: Eye,
       bgImage: '/app-roles/visitor.jpg',
+      fallbackGradient: 'linear-gradient(180deg, #0a1f47 0%, #163a83 60%, #0a1f47 100%)',
       action: 'visitor',
     },
     {
@@ -36,6 +38,7 @@ export default function RoleSelector() {
       description: t('roleSelector.patientDescription'),
       icon: User,
       bgImage: '/app-roles/patient.jpg',
+      fallbackGradient: 'linear-gradient(180deg, #163a83 0%, #00768b 60%, #163a83 100%)',
       action: 'login',
       role: 'patient',
     },
@@ -45,6 +48,7 @@ export default function RoleSelector() {
       description: t('roleSelector.doctorDescription'),
       icon: Stethoscope,
       bgImage: '/app-roles/doctor.jpg',
+      fallbackGradient: 'linear-gradient(180deg, #0a1f47 0%, #00768b 60%, #0a1f47 100%)',
       action: 'login',
       role: 'doctor',
     },
@@ -54,6 +58,7 @@ export default function RoleSelector() {
       description: t('roleSelector.residentDescription'),
       icon: GraduationCap,
       bgImage: '/app-roles/resident.jpg',
+      fallbackGradient: 'linear-gradient(180deg, #163a83 0%, #0a1f47 60%, #163a83 100%)',
       action: 'login',
       role: 'resident',
     },
@@ -78,7 +83,7 @@ export default function RoleSelector() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary via-primary to-secondary">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a1f47' }}>
         <div className="flex items-center gap-3 text-white/90">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           <span>Cargando...</span>
@@ -88,84 +93,74 @@ export default function RoleSelector() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-secondary via-primary to-secondary">
-      {/* Header */}
-      <header className="relative z-10 px-4 sm:px-6 py-4 sm:py-5">
-        <div className="container mx-auto flex items-center justify-between">
-          <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 sm:h-10 w-auto" />
+    <div className="min-h-screen flex flex-col relative" style={{ background: '#0a1f47' }}>
+      {/* Header — flota arriba */}
+      <header className="absolute top-0 left-0 right-0 z-40 px-4 sm:px-8 py-4 sm:py-5">
+        <div className="flex items-center justify-between">
+          <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 sm:h-10 w-auto drop-shadow-lg" />
           <LanguageSwitcher className="bg-white/10 hover:bg-white/20 text-white border-white/20" />
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative z-10 px-4 sm:px-6 py-6 sm:py-10 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 mb-4 backdrop-blur-sm">
-          <Video className="w-3.5 h-3.5 text-white" />
-          <span className="text-xs sm:text-sm font-medium text-white">{t('roleSelector.tagline')}</span>
-        </div>
-        <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">
+      {/* Título centrado encima de las columnas */}
+      <div className="absolute top-20 sm:top-24 left-0 right-0 z-30 px-4 text-center pointer-events-none">
+        <p className="text-sm sm:text-base text-white/85 mb-1 sm:mb-2 drop-shadow">
           {t('roleSelector.title')}
-        </h1>
-        <p className="text-sm sm:text-base text-white/80 max-w-xl mx-auto">
-          {t('roleSelector.subtitle')}
         </p>
-      </section>
+        <h1 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-lg max-w-2xl mx-auto leading-tight">
+          {t('roleSelector.subtitle')}
+        </h1>
+      </div>
 
-      {/* 4-column role grid */}
-      <main className="relative z-10 flex-1 px-4 sm:px-6 pb-8 sm:pb-12">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 max-w-7xl mx-auto">
-            {roleOptions.map((option) => {
-              const Icon = option.icon;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => handleRoleSelect(option)}
-                  className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-secondary shadow-xl ring-1 ring-white/10 transition-all duration-300 hover:ring-white/30 hover:shadow-2xl hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-white/60 text-left h-[260px] sm:h-[340px] md:h-[400px] lg:h-[480px]"
-                  aria-label={option.title}
-                >
-                  {/* Background image */}
-                  <div
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-110"
-                    style={{ backgroundImage: `url(${option.bgImage})` }}
-                  />
-                  {/* Fallback color (visible if image missing) */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-secondary via-primary/60 to-secondary -z-10" />
-                  {/* Dark gradient overlay for legibility */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-secondary/95 via-secondary/55 to-secondary/15 group-hover:from-secondary/85 group-hover:via-secondary/40 transition-colors duration-300" />
+      {/* 4 columnas full-bleed, sin gaps */}
+      <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 min-h-screen">
+        {roleOptions.map((option, idx) => {
+          const Icon = option.icon;
+          return (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => handleRoleSelect(option)}
+              className={`group relative overflow-hidden text-left min-h-[280px] sm:min-h-[360px] lg:min-h-screen focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/40 ${
+                idx < roleOptions.length - 1 ? 'lg:border-r border-white/10' : ''
+              }`}
+              aria-label={option.title}
+            >
+              {/* Fallback gradient (siempre presente, sirve si la imagen falla) */}
+              <div className="absolute inset-0" style={{ background: option.fallbackGradient }} />
 
-                  {/* Top: icon chip */}
-                  <div className="relative z-10 p-5 sm:p-6 flex flex-col h-full">
-                    <div className="flex items-start justify-between">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center shadow-lg">
-                        <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                      </div>
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                      </div>
-                    </div>
+              {/* Imagen de fondo: visible en default, MÁS visible en hover */}
+              <div
+                className="absolute inset-0 bg-cover bg-center transition-all duration-500 ease-out opacity-40 group-hover:opacity-100 group-hover:scale-105"
+                style={{ backgroundImage: `url(${option.bgImage})` }}
+              />
 
-                    {/* Bottom: title + desc */}
-                    <div className="mt-auto pt-6">
-                      <h3 className="font-heading text-lg sm:text-xl md:text-2xl font-bold text-white mb-1.5 sm:mb-2 leading-tight drop-shadow-md">
-                        {option.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-white/85 leading-relaxed line-clamp-3">
-                        {option.description}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+              {/* Overlay oscuro: denso en default, se transparenta en hover */}
+              <div className="absolute inset-0 bg-[#0a1f47]/80 group-hover:bg-[#0a1f47]/30 transition-colors duration-500" />
+
+              {/* Contenido: icono + título + descripción, anclado al lower-half */}
+              <div className="relative z-10 h-full min-h-[280px] sm:min-h-[360px] lg:min-h-screen flex flex-col items-center justify-center sm:justify-end px-6 pb-8 sm:pb-12 lg:pb-20 text-center">
+                <div className="mb-4 sm:mb-5 transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-1">
+                  <Icon className="w-10 h-10 sm:w-12 sm:h-12 text-white drop-shadow-lg" strokeWidth={1.5} />
+                </div>
+                <h3 className="font-heading text-base sm:text-lg md:text-xl font-bold text-white mb-2 sm:mb-3 leading-tight drop-shadow-md">
+                  {option.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-white/85 leading-relaxed max-w-[16rem] drop-shadow">
+                  {option.description}
+                </p>
+
+                {/* Indicador hover */}
+                <div className="mt-4 sm:mt-5 h-0.5 w-0 group-hover:w-12 bg-white transition-all duration-500 rounded-full" />
+              </div>
+            </button>
+          );
+        })}
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 px-4 py-4 text-center">
-        <p className="text-xs text-white/70">{t('footer.copyright')}</p>
+      <footer className="relative z-10 px-4 py-3 text-center bg-[#0a1f47]/70 backdrop-blur-sm">
+        <p className="text-[11px] sm:text-xs text-white/70">{t('footer.copyright')}</p>
       </footer>
     </div>
   );
