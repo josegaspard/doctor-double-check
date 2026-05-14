@@ -14,7 +14,7 @@ import { VideoCallControls } from '@/components/videocall/VideoCallControls';
 import { VideoCallChat } from '@/components/videocall/VideoCallChat';
 import { PatientRecordPanel } from '@/components/videocall/PatientRecordPanel';
 import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
-import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle, BadgeCheck, FileText } from 'lucide-react';
+import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle, BadgeCheck, FileText, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 import type { DailyCall } from '@daily-co/daily-js';
@@ -219,6 +219,11 @@ export default function VideoCall() {
 
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState<InCallMessage[]>([]);
+  // Mensajes no leídos cuando showChat=false. Se resetea al abrir el chat.
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  // Preview del último mensaje no leído — burbuja flotante que aparece sobre
+  // el video y al tocarla abre el chat panel.
+  const [lastUnreadMsg, setLastUnreadMsg] = useState<{ sender: string; text: string } | null>(null);
   const [otherParticipantName, setOtherParticipantName] = useState('');
   const [patientId, setPatientId] = useState<string | null>(null);
   const [doctorCreds, setDoctorCreds] = useState<{ name: string; specialty: string | null; cedula: string | null; cofepris: string | null } | null>(null);
@@ -304,18 +309,47 @@ export default function VideoCall() {
       .channel(`call-chat-${consultationId}`)
       .on('broadcast', { event: 'chat-msg' }, ({ payload }) => {
         if (payload.senderId === user.id) return;
+        const senderName = payload.senderName || t('videoCall.participant');
+        const text = payload.text;
         setChatMessages(prev => [...prev, {
           id: Date.now().toString(),
-          sender: payload.senderName || t('videoCall.participant'),
-          text: payload.text,
+          sender: senderName,
+          text,
           time: new Date().toLocaleTimeString(timeLocale, { hour: '2-digit', minute: '2-digit' }),
           isOwn: false,
         }]);
+        // Si el chat panel está cerrado, mostrar burbuja flotante + contador.
+        setShowChat(currentShow => {
+          if (!currentShow) {
+            setUnreadChatCount(c => c + 1);
+            setLastUnreadMsg({ sender: senderName, text });
+            // Vibración + sonido breve (best effort — algunos browsers ignoran)
+            if ('vibrate' in navigator) {
+              try { navigator.vibrate(80); } catch { /* ignore */ }
+            }
+          }
+          return currentShow;
+        });
       })
       .subscribe();
     chatChannelRef.current = ch;
     return () => { supabase.removeChannel(ch); };
   }, [consultationId, user?.id]);
+
+  // Al abrir el chat → resetear unread + esconder burbuja
+  useEffect(() => {
+    if (showChat) {
+      setUnreadChatCount(0);
+      setLastUnreadMsg(null);
+    }
+  }, [showChat]);
+
+  // Auto-esconder la burbuja tras 6s si el usuario no la tocó
+  useEffect(() => {
+    if (!lastUnreadMsg) return;
+    const t = setTimeout(() => setLastUnreadMsg(null), 6000);
+    return () => clearTimeout(t);
+  }, [lastUnreadMsg]);
 
   // Start timer when connected
   useEffect(() => {
@@ -556,6 +590,34 @@ export default function VideoCall() {
           <>
             <div className="flex-1 w-full relative bg-black">
               {videoLayoutJSX}
+
+              {/* Burbuja flotante: aparece sobre el video cuando llega un mensaje
+                  y el chat panel está cerrado. Click → abre el chat. */}
+              <AnimatePresence>
+                {!showChat && lastUnreadMsg && (
+                  <motion.button
+                    initial={{ y: -20, opacity: 0, scale: 0.9 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    exit={{ y: -20, opacity: 0, scale: 0.9 }}
+                    transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+                    onClick={() => setShowChat(true)}
+                    className="absolute top-4 left-1/2 -translate-x-1/2 z-30 max-w-[90%] sm:max-w-md flex items-start gap-2.5 px-3.5 py-2.5 rounded-2xl bg-white/95 dark:bg-card/95 backdrop-blur-md shadow-2xl ring-1 ring-black/10 text-left active:scale-[0.98] transition-transform"
+                    aria-label="Abrir chat de la llamada"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                      <MessageSquare className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-bold text-foreground leading-tight truncate">
+                        {lastUnreadMsg.sender}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-snug line-clamp-2">
+                        {lastUnreadMsg.text}
+                      </p>
+                    </div>
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </div>
             <AnimatePresence>
               {showChat && (
@@ -575,6 +637,7 @@ export default function VideoCall() {
               onSwitchCamera={switchCamera}
               showChat={showChat}
               isDoctor={isDoctor}
+              unreadChatCount={unreadChatCount}
             />
           </>
         )}

@@ -493,35 +493,37 @@ export default function RecordingsGrid() {
                           </Badge>
                         </div>
 
-                        {/* Bunny encoding state — overlay informativo, NO bloquea click
-                            (cuando es ready desaparece) */}
-                        {recording.bunnyStatus && recording.bunnyStatus !== 'ready' && (
+                        {/* Bunny status overlay:
+                            - uploading: bloquea visualmente (no hay video disponible aún)
+                            - processing: NO overlay — el thumbnail/portada del live se ve
+                              normal. El video YA es reproducible via /original (Bunny
+                              encodea en background). Mostramos solo un pequeño badge
+                              "Optimizando" en la esquina, no un overlay full-thumbnail.
+                            - failed: badge de error en la esquina, no bloquea acceso */}
+                        {recording.bunnyStatus === 'uploading' && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
                             <div className="text-center text-white px-4">
-                              {recording.bunnyStatus === 'uploading' && (
-                                <>
-                                  <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-white/20 flex items-center justify-center">
-                                    <span className="block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                  </div>
-                                  <p className="text-xs font-semibold">Subiendo grabación…</p>
-                                  <p className="text-[10px] text-white/75 mt-0.5">Estará lista en unos minutos</p>
-                                </>
-                              )}
-                              {recording.bunnyStatus === 'processing' && (
-                                <>
-                                  <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-white/20 flex items-center justify-center">
-                                    <span className="block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                  </div>
-                                  <p className="text-xs font-semibold">Procesando video…</p>
-                                  <p className="text-[10px] text-white/75 mt-0.5">Optimizando calidad adaptativa</p>
-                                </>
-                              )}
-                              {recording.bunnyStatus === 'failed' && (
-                                <>
-                                  <p className="text-xs font-semibold text-destructive">Error en el procesado</p>
-                                  <p className="text-[10px] text-white/75 mt-0.5">Contacta a soporte</p>
-                                </>
-                              )}
+                              <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-white/20 flex items-center justify-center">
+                                <span className="block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              </div>
+                              <p className="text-xs font-semibold">Subiendo grabación…</p>
+                              <p className="text-[10px] text-white/75 mt-0.5">Estará lista en unos minutos</p>
+                            </div>
+                          </div>
+                        )}
+                        {recording.bunnyStatus === 'processing' && (
+                          <div className="absolute top-2 right-2 pointer-events-none">
+                            <Badge className="gap-1 bg-amber-500/90 text-white border-0 text-[10px] px-2 py-0.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                              Optimizando
+                            </Badge>
+                          </div>
+                        )}
+                        {recording.bunnyStatus === 'failed' && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none">
+                            <div className="text-center text-white px-4">
+                              <p className="text-xs font-semibold text-destructive-foreground bg-destructive/90 inline-block px-2 py-0.5 rounded">Error en el procesado</p>
+                              <p className="text-[10px] text-white/85 mt-1">Contacta a soporte</p>
                             </div>
                           </div>
                         )}

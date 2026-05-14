@@ -222,7 +222,18 @@
   button, a, [role="button"], input, select, textarea {
     touch-action: manipulation;
   }
-  
+
+  /* iOS Safari: previene el auto-zoom al focus en inputs cuando font-size <16px.
+     Aplicamos font-size mínimo de 16px en mobile a TODO input/textarea/select,
+     solo cuando NO tiene una clase explícita Tailwind que controle font-size. */
+  @media (max-width: 640px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    textarea,
+    select {
+      font-size: 16px;
+    }
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   }

@@ -94,26 +94,27 @@ export default function RoleSelector() {
 
   return (
     <div className="min-h-screen flex flex-col relative" style={{ background: '#0a1f47' }}>
-      {/* Header — flota arriba */}
-      <header className="absolute top-0 left-0 right-0 z-40 px-4 sm:px-8 py-4 sm:py-5">
+      {/* Header */}
+      <header className="relative z-40 px-4 sm:px-8 py-3 sm:py-5 flex-shrink-0">
         <div className="flex items-center justify-between">
           <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 sm:h-10 w-auto drop-shadow-lg" />
           <LanguageSwitcher className="bg-white/10 hover:bg-white/20 text-white border-white/20" />
         </div>
       </header>
 
-      {/* Título centrado encima de las columnas */}
-      <div className="absolute top-20 sm:top-24 left-0 right-0 z-30 px-4 text-center pointer-events-none">
-        <p className="text-sm sm:text-base text-white/85 mb-1 sm:mb-2 drop-shadow">
+      {/* Título en flujo normal — no overlap con las cards en mobile */}
+      <div className="relative z-30 px-4 pt-2 pb-5 sm:pb-7 text-center flex-shrink-0">
+        <p className="text-xs sm:text-sm md:text-base text-white/85 mb-1.5 drop-shadow">
           {t('roleSelector.title')}
         </p>
-        <h1 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-lg max-w-2xl mx-auto leading-tight">
+        <h1 className="font-heading text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg max-w-2xl mx-auto leading-tight px-2">
           {t('roleSelector.subtitle')}
         </h1>
       </div>
 
-      {/* 4 columnas full-bleed, sin gaps */}
-      <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 min-h-screen">
+      {/* Mobile: 1 columna stack vertical, scroll natural.
+          Tablet (sm): 2x2 grid. Desktop (lg): 4 columnas full-height */}
+      <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:min-h-0">
         {roleOptions.map((option, idx) => {
           const Icon = option.icon;
           return (
@@ -121,46 +122,37 @@ export default function RoleSelector() {
               key={option.id}
               type="button"
               onClick={() => handleRoleSelect(option)}
-              className={`group relative overflow-hidden text-left min-h-[280px] sm:min-h-[360px] lg:min-h-screen focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/40 ${
+              className={`group relative overflow-hidden text-left min-h-[140px] sm:min-h-[280px] lg:min-h-[calc(100vh-180px)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/40 ${
                 idx < roleOptions.length - 1 ? 'lg:border-r border-white/10' : ''
-              }`}
+              } border-b border-white/10 sm:border-b-0 ${idx < 2 ? 'sm:border-b sm:border-white/10 lg:border-b-0' : ''}`}
               aria-label={option.title}
             >
-              {/* Fallback gradient (siempre presente, sirve si la imagen falla) */}
               <div className="absolute inset-0" style={{ background: option.fallbackGradient }} />
-
-              {/* Imagen de fondo: visible en default, MÁS visible en hover */}
               <div
                 className="absolute inset-0 bg-cover bg-center transition-all duration-500 ease-out opacity-40 group-hover:opacity-100 group-hover:scale-105"
                 style={{ backgroundImage: `url(${option.bgImage})` }}
               />
-
-              {/* Overlay oscuro: denso en default, se transparenta en hover */}
               <div className="absolute inset-0 bg-[#0a1f47]/80 group-hover:bg-[#0a1f47]/30 transition-colors duration-500" />
 
-              {/* Contenido: icono + título + descripción, anclado al lower-half */}
-              <div className="relative z-10 h-full min-h-[280px] sm:min-h-[360px] lg:min-h-screen flex flex-col items-center justify-center px-6 py-8 text-center">
-                <div className="mb-4 sm:mb-5 transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-1">
-                  <Icon className="w-10 h-10 sm:w-12 sm:h-12 text-white drop-shadow-lg" strokeWidth={1.5} />
+              <div className="relative z-10 h-full min-h-[140px] sm:min-h-[280px] lg:min-h-[calc(100vh-180px)] flex flex-col items-center justify-center px-5 py-5 sm:py-8 text-center">
+                <div className="mb-2 sm:mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-1">
+                  <Icon className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white drop-shadow-lg" strokeWidth={1.5} />
                 </div>
-                <h3 className="font-heading text-base sm:text-lg md:text-xl font-bold text-white mb-2 sm:mb-3 leading-tight drop-shadow-md">
+                <h3 className="font-heading text-sm sm:text-base md:text-lg lg:text-xl font-bold text-white mb-1 sm:mb-2 leading-tight drop-shadow-md">
                   {option.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-white/85 leading-relaxed max-w-[16rem] drop-shadow">
+                <p className="text-[11px] sm:text-xs md:text-sm text-white/85 leading-snug max-w-[18rem] drop-shadow line-clamp-3">
                   {option.description}
                 </p>
-
-                {/* Indicador hover */}
-                <div className="mt-4 sm:mt-5 h-0.5 w-0 group-hover:w-12 bg-white transition-all duration-500 rounded-full" />
+                <div className="mt-2 sm:mt-4 h-0.5 w-0 group-hover:w-12 bg-white transition-all duration-500 rounded-full" />
               </div>
             </button>
           );
         })}
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 px-4 py-3 text-center bg-[#0a1f47]/70 backdrop-blur-sm">
-        <p className="text-[11px] sm:text-xs text-white/70">{t('footer.copyright')}</p>
+      <footer className="relative z-10 px-4 py-2 sm:py-3 text-center bg-[#0a1f47]/70 backdrop-blur-sm flex-shrink-0">
+        <p className="text-[10px] sm:text-xs text-white/70">{t('footer.copyright')}</p>
       </footer>
     </div>
   );

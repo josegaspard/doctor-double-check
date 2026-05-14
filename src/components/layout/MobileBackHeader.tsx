@@ -85,11 +85,11 @@ export function MobileBackHeader() {
   const title = t(titleKey);
 
   return (
-    <div className="app-back-header sticky top-[57px] z-40 flex items-center h-11 px-2 sm:hidden bg-[#00768b] border-0">
+    <div className="app-back-header sticky top-12 z-40 flex items-center h-10 px-1 sm:hidden bg-[#00768b] shadow-sm border-t border-white/10">
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-1 px-2 h-9 rounded-md text-white/90 hover:text-white hover:bg-white/10 transition-colors"
+        className="inline-flex items-center gap-1 px-2 h-9 rounded-md text-white/90 hover:text-white active:bg-white/10 transition-colors"
       >
         <ChevronLeft className="w-5 h-5" />
         <span className="text-sm font-medium">{title}</span>

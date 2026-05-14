@@ -176,7 +176,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
         {/* ── Section 0: Content Target ── */}
         <section className="space-y-4">
           <SectionHeader number={1} icon={Users} title="¿Para quién es tu contenido?" subtitle="Selecciona el tipo de audiencia" />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <ChatModeCard
               icon={Stethoscope}
               title="Contenido médico"

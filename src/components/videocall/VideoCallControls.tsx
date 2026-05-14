@@ -29,6 +29,8 @@ interface VideoCallControlsProps {
   onSwitchCamera?: () => void;
   showChat: boolean;
   isDoctor?: boolean;
+  /** Mensajes no leídos del chat de la llamada — badge rojo sobre el icono */
+  unreadChatCount?: number;
 }
 
 export function VideoCallControls({
@@ -44,17 +46,21 @@ export function VideoCallControls({
   onSwitchCamera,
   showChat,
   isDoctor = false,
+  unreadChatCount = 0,
 }: VideoCallControlsProps) {
   const isMobile = useIsMobile();
+  // Botón base con tamaño consistent y touch-target ≥44px (iOS HIG)
+  const btnBase = 'rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center transition-colors touch-manipulation flex-shrink-0';
+
   return (
     <motion.div
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 sm:p-6"
-      style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+      className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-2 pt-3 pb-3 sm:px-6 sm:pt-4 sm:pb-5"
+      style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
       {/* Timer */}
-      <div className="flex justify-center mb-3 sm:mb-4">
+      <div className="flex justify-center mb-2 sm:mb-3">
         <Badge
           variant="secondary"
           className="bg-black/60 text-white border-0 gap-1.5 px-3 py-1 text-sm font-mono"
@@ -64,16 +70,15 @@ export function VideoCallControls({
         </Badge>
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-2 sm:gap-4">
-        {/* Mute */}
+      {/* Controls — flex wrap en mobile evita squeezing, gap consistente */}
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4">
         <Button
           variant="ghost"
           size="lg"
-          className={`rounded-full w-11 h-11 sm:w-14 sm:h-14 ${
+          className={`${btnBase} ${
             isMuted
-              ? 'bg-destructive/80 hover:bg-destructive text-white'
-              : 'bg-white/20 hover:bg-white/30 text-white'
+              ? 'bg-destructive/85 hover:bg-destructive text-white'
+              : 'bg-white/15 hover:bg-white/25 text-white'
           }`}
           onClick={onToggleMute}
           title={isMuted ? 'Activar micrófono' : 'Silenciar'}
@@ -81,14 +86,13 @@ export function VideoCallControls({
           {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
         </Button>
 
-        {/* Camera */}
         <Button
           variant="ghost"
           size="lg"
-          className={`rounded-full w-11 h-11 sm:w-14 sm:h-14 ${
+          className={`${btnBase} ${
             isCameraOff
-              ? 'bg-destructive/80 hover:bg-destructive text-white'
-              : 'bg-white/20 hover:bg-white/30 text-white'
+              ? 'bg-destructive/85 hover:bg-destructive text-white'
+              : 'bg-white/15 hover:bg-white/25 text-white'
           }`}
           onClick={onToggleCamera}
           title={isCameraOff ? 'Activar cámara' : 'Desactivar cámara'}
@@ -96,12 +100,11 @@ export function VideoCallControls({
           {isCameraOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
         </Button>
 
-        {/* Switch camera — mobile only */}
         {isMobile && onSwitchCamera && !isCameraOff && (
           <Button
             variant="ghost"
             size="lg"
-            className="rounded-full w-11 h-11 sm:w-14 sm:h-14 bg-white/20 hover:bg-white/30 text-white"
+            className={`${btnBase} bg-white/15 hover:bg-white/25 text-white`}
             onClick={onSwitchCamera}
             title="Cambiar cámara"
           >
@@ -109,15 +112,15 @@ export function VideoCallControls({
           </Button>
         )}
 
-        {/* Screen Share — doctors en cualquier dispositivo. iOS/Android moderno soporta getDisplayMedia */}
-        {isDoctor && (
+        {/* Screen share: solo doctor + desktop (mobile no soporta bien getDisplayMedia en Safari iOS) */}
+        {isDoctor && !isMobile && (
           <Button
             variant="ghost"
             size="lg"
-            className={`rounded-full w-11 h-11 sm:w-14 sm:h-14 ${
+            className={`${btnBase} ${
               isScreenSharing
-                ? 'bg-primary/80 hover:bg-primary text-white'
-                : 'bg-white/20 hover:bg-white/30 text-white'
+                ? 'bg-primary/85 hover:bg-primary text-white'
+                : 'bg-white/15 hover:bg-white/25 text-white'
             }`}
             onClick={onToggleScreenShare}
             title={isScreenSharing ? 'Dejar de compartir' : 'Compartir pantalla'}
@@ -126,26 +129,32 @@ export function VideoCallControls({
           </Button>
         )}
 
-        {/* Chat */}
-        <Button
-          variant="ghost"
-          size="lg"
-          className={`rounded-full w-11 h-11 sm:w-14 sm:h-14 ${
-            showChat
-              ? 'bg-primary/80 hover:bg-primary text-white'
-              : 'bg-white/20 hover:bg-white/30 text-white'
-          }`}
-          onClick={onToggleChat}
-          title="Chat en llamada"
-        >
-          <MessageSquare className="w-5 h-5" />
-        </Button>
+        {/* Chat con badge de mensajes no leídos */}
+        <div className="relative flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="lg"
+            className={`${btnBase} ${
+              showChat
+                ? 'bg-primary/85 hover:bg-primary text-white'
+                : 'bg-white/15 hover:bg-white/25 text-white'
+            }`}
+            onClick={onToggleChat}
+            title="Chat en llamada"
+          >
+            <MessageSquare className="w-5 h-5" />
+          </Button>
+          {unreadChatCount > 0 && !showChat && (
+            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-black/40 animate-pulse">
+              {unreadChatCount > 9 ? '9+' : unreadChatCount}
+            </span>
+          )}
+        </div>
 
-        {/* End Call */}
         <Button
           variant="destructive"
           size="lg"
-          className="rounded-full w-11 h-11 sm:w-14 sm:h-14 shadow-lg shadow-destructive/40"
+          className={`${btnBase} shadow-lg shadow-destructive/40`}
           onClick={onEndCall}
         >
           <PhoneOff className="w-5 h-5" />
