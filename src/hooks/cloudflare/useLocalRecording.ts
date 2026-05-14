@@ -288,37 +288,54 @@ export function useLocalRecording() {
 
       console.log('[LocalRecording] Requesting Bunny video shell for live:', params.liveId);
 
-      // Step 1: create video shell in Bunny → get videoId + uploadUrl + scoped key
+      // Step 1: create video shell + signed upload (scoped a este videoId)
       const { data: bunnyInit, error: bunnyInitErr } = await supabase.functions.invoke('bunny-create-video', {
         body: { title: params.title || `Live ${params.liveId}`, recordingId: params.recordingId },
       });
-      if (bunnyInitErr || !bunnyInit?.videoId || !bunnyInit?.uploadUrl) {
+      if (bunnyInitErr || !bunnyInit?.videoId) {
         console.error('[LocalRecording] bunny-create-video error:', bunnyInitErr, bunnyInit);
         throw new Error(`No se pudo crear el video en Bunny: ${(bunnyInitErr as any)?.message || bunnyInit?.error || 'unknown'}`);
       }
 
-      const { videoId, uploadUrl, accessKey } = bunnyInit;
+      const { videoId, libraryId, authSignature, authExpire } = bunnyInit;
       console.log('[LocalRecording] Bunny video shell created:', videoId);
 
-      setState(prev => ({ ...prev, uploadProgress: 20 }));
+      setState(prev => ({ ...prev, uploadProgress: 10 }));
 
-      // Step 2: PUT blob directo a Bunny Stream (sin pasar por Supabase)
-      const putRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'AccessKey': accessKey,
-          'Content-Type': contentType,
-        },
-        body: blob,
+      // Step 2: upload TUS resumable (Bunny TUS endpoint).
+      // El frontend NUNCA ve el API key — solo una signature scoped a este videoId.
+      const { Upload } = await import('tus-js-client');
+      await new Promise<void>((resolve, reject) => {
+        const upload = new Upload(blob, {
+          endpoint: 'https://video.bunnycdn.com/tusupload',
+          retryDelays: [0, 2000, 5000, 10000],
+          headers: {
+            AuthorizationSignature: authSignature,
+            AuthorizationExpire: String(authExpire),
+            VideoId: videoId,
+            LibraryId: String(libraryId),
+          },
+          metadata: {
+            filetype: contentType,
+            title: (params.title || `Live ${params.liveId}`).slice(0, 200),
+          },
+          onError: (error) => {
+            console.error('[LocalRecording] TUS upload error:', error);
+            reject(error);
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const pct = 10 + Math.floor((bytesUploaded / bytesTotal) * 70);
+            setState(prev => ({ ...prev, uploadProgress: pct }));
+          },
+          onSuccess: () => {
+            console.log('[LocalRecording] TUS upload complete:', videoId);
+            resolve();
+          },
+        });
+        upload.start();
       });
-      if (!putRes.ok) {
-        const errText = await putRes.text().catch(() => '');
-        console.error('[LocalRecording] Bunny PUT failed:', putRes.status, errText);
-        throw new Error(`Subida a Bunny falló (HTTP ${putRes.status}): ${errText.slice(0, 200)}`);
-      }
 
       setState(prev => ({ ...prev, uploadProgress: 80 }));
-
       console.log('[LocalRecording] Video uploaded to Bunny:', videoId);
 
       const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
