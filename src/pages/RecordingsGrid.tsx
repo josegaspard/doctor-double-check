@@ -387,18 +387,20 @@ export default function RecordingsGrid() {
 
             {/* No balance CTA */}
             {isAuthenticated && (role === 'patient' || role === 'resident') && balance === 0 && (
-              <div className="mb-4 p-4 rounded-xl bg-muted border border-border">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Wallet className="w-5 h-5 text-primary" />
+              <div className="mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-primary to-secondary text-white shadow-lg overflow-hidden relative border-0">
+                <div aria-hidden className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-light/25 blur-2xl" />
+                <div aria-hidden className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-accent/25 blur-2xl" />
+                <div className="relative flex items-start gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur ring-1 ring-white/30 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <Wallet className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">Para comprar contenido premium necesitas saldo en tu billetera</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Recarga tu billetera y compra al instante sin ingresar tu tarjeta cada vez.</p>
+                    <p className="text-sm font-semibold text-white">Para comprar contenido premium necesitas saldo en tu billetera</p>
+                    <p className="text-xs text-white/85 mt-0.5 leading-relaxed">Recarga tu billetera y compra al instante sin ingresar tu tarjeta cada vez.</p>
                   </div>
                 </div>
-                <Link to="/wallet" className="block mt-3">
-                  <Button className="w-full sm:w-auto gap-2">
+                <Link to="/wallet" className="relative block mt-3">
+                  <Button className="w-full sm:w-auto gap-2 bg-white text-primary hover:bg-white/90 shadow-md">
                     <Wallet className="w-4 h-4" />
                     Recargar ahora
                   </Button>

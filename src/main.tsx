@@ -23,6 +23,28 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// PRE-WARM del edge function b2-presigned-url: cold start de Supabase Edge
+// Functions puede ser 700ms-3s. Disparamos un fire-and-forget al cargar la
+// app (después del primer paint) para que cuando el usuario abra un recording,
+// la function ya esté caliente. Falla silenciosamente.
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    const warm = async () => {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        supabase.functions
+          .invoke('b2-presigned-url', { body: { operation: 'warmup', path: '__warmup__' } })
+          .catch(() => { /* silent */ });
+      } catch { /* silent */ }
+    };
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(warm, { timeout: 2000 });
+    } else {
+      setTimeout(warm, 1000);
+    }
+  });
+}
+
 // Force re-login when all browser windows are closed (sessionStorage flag).
 // Must run BEFORE the React tree mounts so AuthProvider hydrates against a clean state.
 enforceBrowserSessionGuard().finally(() => {
