@@ -397,23 +397,20 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               </Link>
             </div>
 
-            {/* Desktop Nav — tablet shows 3 + Más; lg+ shows 6 + Más */}
-            <nav className="hidden md:flex items-center flex-1 justify-center lg:justify-start mx-1 lg:mx-2 min-w-0">
+            {/* Tablet Nav (md only): 3 primarios + Más con items 3+ */}
+            <nav className="hidden md:flex lg:hidden items-center flex-1 justify-center mx-1 min-w-0">
               <div className="flex items-center gap-2 min-w-0">
-                {/* 3 primary items always visible (md-only items hidden on lg+) */}
                 {filteredNavItems.slice(0, 3).map((item) => {
                   const isActive = location.pathname === item.href;
                   const isPanelItem = item.href === '/doctor/dashboard';
                   return (
                     <Link
-                      key={item.href}
+                      key={`md-${item.href}`}
                       to={item.href}
-                      className={`relative flex items-center gap-1.5 px-2 lg:px-2.5 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                        isActive
-                          ? 'app-header-nav-active'
-                          : isPanelItem
-                            ? 'app-header-control px-2 lg:px-2.5'
-                            : 'app-header-nav-link'
+                      className={`relative flex items-center gap-1.5 px-2 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                        isActive ? 'app-header-nav-active'
+                        : isPanelItem ? 'app-header-control px-2'
+                        : 'app-header-nav-link'
                       }`}
                     >
                       <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10" />
@@ -421,34 +418,64 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     </Link>
                   );
                 })}
-                {/* Items 4-6: hidden on tablet (md), visible from lg up */}
-                {filteredNavItems.slice(3, 6).map((item) => {
-                  const isActive = location.pathname === item.href;
-                  const isPanelItem = item.href === '/doctor/dashboard';
-                  return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      className={`relative hidden lg:flex items-center gap-1.5 px-2 lg:px-2.5 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                        isActive
-                          ? 'app-header-nav-active'
-                          : isPanelItem
-                            ? 'app-header-control px-2 lg:px-2.5'
-                            : 'app-header-nav-link'
-                      }`}
-                    >
-                      <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10" />
-                      <span className="relative z-10">{t(item.shortLabelKey || item.labelKey)}</span>
-                    </Link>
-                  );
-                })}
-
-                {/* "Más" dropdown — always visible if there are extras.
-                    On md (tablet) collapses items 4+; on lg+ collapses items 7+. */}
                 {filteredNavItems.length > 3 && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
+                        type="button"
+                        className="app-header-nav-link flex items-center gap-1.5 px-2 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0"
+                        aria-label={t('nav.more')}
+                      >
+                        <MoreHorizontal className="w-3.5 h-3.5" />
+                        <span>{t('nav.more')}</span>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-56 z-[60]">
+                      {filteredNavItems.slice(3).map((item) => {
+                        const isActive = location.pathname === item.href;
+                        return (
+                          <DropdownMenuItem
+                            key={`md-more-${item.href}`}
+                            onClick={() => navigate(item.href)}
+                            className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary text-primary-foreground' : ''}`}
+                          >
+                            <item.icon className="w-4 h-4 mr-2" />
+                            {t(item.labelKey)}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </nav>
+
+            {/* Desktop Nav (lg+): 6 primarios + Más con items 6+ */}
+            <nav className="hidden lg:flex items-center flex-1 justify-start mx-1 lg:mx-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                {filteredNavItems.slice(0, 6).map((item) => {
+                  const isActive = location.pathname === item.href;
+                  const isPanelItem = item.href === '/doctor/dashboard';
+                  return (
+                    <Link
+                      key={`lg-${item.href}`}
+                      to={item.href}
+                      className={`relative flex items-center gap-1.5 px-2 lg:px-2.5 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                        isActive ? 'app-header-nav-active'
+                        : isPanelItem ? 'app-header-control px-2 lg:px-2.5'
+                        : 'app-header-nav-link'
+                      }`}
+                    >
+                      <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10" />
+                      <span className="relative z-10">{t(item.shortLabelKey || item.labelKey)}</span>
+                    </Link>
+                  );
+                })}
+                {filteredNavItems.length > 6 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
                         className="app-header-nav-link flex items-center gap-1.5 px-2 lg:px-2.5 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0"
                         aria-label={t('nav.more')}
                       >
@@ -456,19 +483,14 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         <span>{t('nav.more')}</span>
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-56">
-                      {/* On md show items 3+; on lg+ only show items 6+. Hide
-                          the lg-overlap items via CSS so the dropdown adapts. */}
-                      {filteredNavItems.slice(3).map((item, idx) => {
+                    <DropdownMenuContent align="start" className="w-56 z-[60]">
+                      {filteredNavItems.slice(6).map((item) => {
                         const isActive = location.pathname === item.href;
-                        // Items at index 3..5 (global) are already visible on lg+,
-                        // so on lg+ hide them inside the dropdown.
-                        const hideOnLg = idx < 3;
                         return (
                           <DropdownMenuItem
-                            key={item.href}
+                            key={`lg-more-${item.href}`}
                             onClick={() => navigate(item.href)}
-                            className={`py-2.5 text-sm cursor-pointer ${hideOnLg ? 'lg:hidden' : ''} ${isActive ? 'bg-primary text-primary-foreground' : ''}`}
+                            className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary text-primary-foreground' : ''}`}
                           >
                             <item.icon className="w-4 h-4 mr-2" />
                             {t(item.labelKey)}

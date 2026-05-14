@@ -57,7 +57,7 @@ export default function ForDoctors() {
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">Para Médicos</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
-              Expande tu <span className="text-transparent bg-clip-text bg-gradient-to-r from-light to-white">práctica médica</span>
+              Expande tu <span className="text-white">práctica médica</span>
             </h1>
             <p className="text-sm sm:text-lg text-slate-300 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
               Únete a la plataforma líder de telemedicina y conecta con pacientes de todo el país mientras generas ingresos adicionales.
@@ -148,7 +148,7 @@ export default function ForDoctors() {
             </Link>
             <Link 
               to="/contact" 
-              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-white border border-white/30 rounded-xl hover:bg-white/10 transition-all"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-white bg-white/15 backdrop-blur-sm border-2 border-white/60 rounded-xl hover:bg-white/25 hover:border-white shadow-md transition-all"
             >
               Hablar con Ventas
             </Link>

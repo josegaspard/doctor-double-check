@@ -55,7 +55,7 @@ export default function ForPatients() {
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">Para Pacientes</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
-              Tu salud, <span className="text-transparent bg-clip-text bg-gradient-to-r from-light to-white">nuestra prioridad</span>
+              Tu salud, <span className="text-white">nuestra prioridad</span>
             </h1>
             <p className="text-sm sm:text-lg text-white/85 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
               Accede a los mejores especialistas médicos desde cualquier lugar. Obtén consultas, segundas opiniones y contenido educativo de calidad.
@@ -154,9 +154,9 @@ export default function ForPatients() {
                   Validamos su cédula profesional directamente con la SEP para garantizar que 
                   solo recibas atención de profesionales certificados.
                 </p>
-                <Link 
-                  to="/doctors" 
-                  className="inline-flex items-center text-primary font-semibold hover:underline text-sm sm:text-base"
+                <Link
+                  to="/doctors"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 text-sm sm:text-base shadow-md hover:shadow-lg transition-all"
                 >
                   Explorar médicos →
                 </Link>
