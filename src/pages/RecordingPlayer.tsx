@@ -10,7 +10,11 @@ import { Separator } from '@/components/ui/separator';
 import { RecordingVideoPlayer } from '@/components/recordings/RecordingVideoPlayer';
 import { RecordingPaywall } from '@/components/recordings/RecordingPaywall';
 import { AdPreroll } from '@/components/ads/AdPreroll';
-import { RecordingChatReplay } from '@/components/recordings/RecordingChatReplay';
+// RecordingChatReplay solo se monta si el recording tiene liveId asociado. Lazy
+// para que el chunk principal de RecordingPlayer no lo arrastre.
+const RecordingChatReplay = React.lazy(() =>
+  import('@/components/recordings/RecordingChatReplay').then(m => ({ default: m.RecordingChatReplay }))
+);
 import {
   PlayCircle,
   ArrowLeft,
@@ -303,7 +307,9 @@ export default function RecordingPlayer() {
 
           <div className="space-y-3 sm:space-y-4">
             {recording.liveId && (
-              <RecordingChatReplay liveId={recording.liveId} />
+              <React.Suspense fallback={null}>
+                <RecordingChatReplay liveId={recording.liveId} />
+              </React.Suspense>
             )}
             <Card>
               <CardContent className="p-3 sm:p-4">

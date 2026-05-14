@@ -66,20 +66,48 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
   const videoRef = useRef<HTMLVideoElement>(null);
   const MAX_AUTO_RETRIES = 3;
 
+  // Cache key for signed URL in sessionStorage.
+  const cacheKey = useMemo(
+    () => (b2Path || storagePath) ? `signedurl:${b2Path || storagePath}` : null,
+    [b2Path, storagePath]
+  );
+
   // Resilient signed URL fetcher with exponential backoff retry chain:
   //   attempt 1: immediate
   //   attempt 2: 500ms later
   //   attempt 3: 1500ms later
   //   attempt 4: 3500ms later
   // After exhaustion shows the manual "Reintentar" UI.
-  const fetchSignedUrl = useCallback(async (attempt: number = 0): Promise<void> => {
+  const fetchSignedUrl = useCallback(async (attempt: number = 0, skipCache: boolean = false): Promise<void> => {
     if (!storagePath && !b2Path) return;
+
+    // Cache hit: lee de sessionStorage si todavía está vigente (margen 5min).
+    // Evita el round-trip al edge function en revisitas dentro de la misma
+    // sesión. Cold-load del recording cae de ~700ms a <50ms.
+    if (!skipCache && cacheKey && typeof window !== 'undefined') {
+      try {
+        const raw = sessionStorage.getItem(cacheKey);
+        if (raw) {
+          const cached = JSON.parse(raw) as { url: string; generatedAt: number; ttlSec: number };
+          const ageMs = Date.now() - cached.generatedAt;
+          const validMs = (cached.ttlSec - 300) * 1000;
+          if (ageMs < validMs) {
+            setSignedUrl(cached.url);
+            setUrlGeneratedAt(cached.generatedAt);
+            setUrlTtlSec(cached.ttlSec);
+            setIsLoading(false);
+            return;
+          }
+          sessionStorage.removeItem(cacheKey);
+        }
+      } catch { /* corrupted cache, ignore */ }
+    }
 
     setIsLoading(true);
     setError(null);
     setExpired(false);
 
-    const tryGet = async (): Promise<string | null> => {
+    const tryGet = async (): Promise<{ url: string; ttlSec: number } | null> => {
       if (b2Path) {
         const { data, error: invokeErr } = await supabase.functions.invoke('b2-presigned-url', {
           body: { operation: 'get', path: b2Path },
@@ -88,26 +116,34 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
           const detail = (invokeErr as any)?.message || data?.error || 'No se pudo obtener URL del video';
           throw new Error(detail);
         }
-        if (typeof data.expiresSec === 'number') setUrlTtlSec(data.expiresSec);
-        return data.url as string;
+        const ttl = typeof data.expiresSec === 'number' ? data.expiresSec : 3600;
+        return { url: data.url as string, ttlSec: ttl };
       }
       const { data, error: signError } = await supabase.storage
         .from('recordings')
         .createSignedUrl(storagePath!, 60 * 60);
       if (signError) {
         const { data: publicUrlData } = supabase.storage.from('recordings').getPublicUrl(storagePath!);
-        if (publicUrlData?.publicUrl) return publicUrlData.publicUrl;
+        if (publicUrlData?.publicUrl) return { url: publicUrlData.publicUrl, ttlSec: 3600 };
         throw signError;
       }
-      return data.signedUrl;
+      return { url: data.signedUrl, ttlSec: 3600 };
     };
 
     try {
-      const url = await tryGet();
-      if (url) {
-        setSignedUrl(url);
-        setUrlGeneratedAt(Date.now());
+      const result = await tryGet();
+      if (result) {
+        const now = Date.now();
+        setSignedUrl(result.url);
+        setUrlGeneratedAt(now);
+        setUrlTtlSec(result.ttlSec);
         setRetryAttempt(0);
+        // Cache para próximas visitas en la misma sesión
+        if (cacheKey && typeof window !== 'undefined') {
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify({ url: result.url, generatedAt: now, ttlSec: result.ttlSec }));
+          } catch { /* quota exceeded, ignore */ }
+        }
       }
     } catch (e: any) {
       console.warn(`[RecordingVideoPlayer] Signed URL attempt ${attempt + 1} failed:`, e?.message);
@@ -138,7 +174,7 @@ export function RecordingVideoPlayer({ videoUrl, recordingId, onDurationUpdate, 
     const renewMs = Math.max(60_000, Math.floor(urlTtlSec * 1000 * 0.8));
     const timeout = setTimeout(() => {
       console.log('[RecordingVideoPlayer] Pre-renewing signed URL before expiry');
-      fetchSignedUrl(0);
+      fetchSignedUrl(0, true); // skip cache, force fresh
     }, renewMs);
     return () => clearTimeout(timeout);
   }, [urlGeneratedAt, urlTtlSec, fetchSignedUrl]);
