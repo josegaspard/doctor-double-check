@@ -289,24 +289,34 @@ export default function DoctorUpload() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         <Button variant="ghost" size="sm" onClick={() => navigate('/doctor/dashboard')} className="mb-4 hidden sm:inline-flex">
           <ArrowLeft className="w-4 h-4 mr-2" />Volver al Panel
         </Button>
 
-        <h1 className="font-heading text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
-          <Upload className="w-6 h-6 text-primary" />Subir Contenido
+        <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
+          <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />Subir Contenido
         </h1>
 
         {/* Verification Warning */}
         {!isApproved && (
-          <Card className="mb-6 border-warning/50 bg-warning/5">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-foreground">Verificación requerida</h3>
-                  <p className="text-sm text-muted-foreground mt-1">No puedes subir contenido hasta que tu cuenta esté verificada.</p>
+          <Card className="mb-6 border-l-4 border-l-primary shadow-md bg-card">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="w-11 h-11 rounded-xl bg-primary/15 text-primary flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground text-base">Verificación requerida</h3>
+                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                    No puedes subir contenido hasta que tu cuenta esté verificada. Estamos revisando tu documentación.
+                  </p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="h-2 flex-1 bg-primary/10 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-primary to-secondary w-1/2 animate-pulse rounded-full" />
+                    </div>
+                    <span className="text-xs font-medium text-primary whitespace-nowrap">En revisión</span>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -315,22 +325,22 @@ export default function DoctorUpload() {
 
         {/* Upload Form */}
         <Card className={!isApproved ? 'opacity-50 pointer-events-none' : ''}>
-          <CardHeader><CardTitle className="text-lg">Nuevo Contenido</CardTitle></CardHeader>
-          <CardContent className="space-y-6">
+          <CardHeader className="px-4 sm:px-6 pb-3 sm:pb-4"><CardTitle className="text-base sm:text-lg">Nuevo Contenido</CardTitle></CardHeader>
+          <CardContent className="space-y-5 sm:space-y-6 px-4 sm:px-6">
             {/* Content Target Selector */}
             <div className="space-y-3">
               <Label className="text-sm font-semibold">¿Para quién es este contenido? *</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => { setContentTarget('medical'); setAudienceType('professionals'); }}
-                  className={`text-left p-4 rounded-xl border-2 transition-all ${contentTarget === 'medical' ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/40'}`}
+                  className={`text-left p-3 sm:p-4 rounded-xl border-2 transition-all ${contentTarget === 'medical' ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/40'}`}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${contentTarget === 'medical' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>
                       <Stethoscope className="w-5 h-5" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className={`font-semibold text-sm ${contentTarget === 'medical' ? 'text-primary' : 'text-foreground'}`}>Contenido médico</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Para profesionales de la salud</p>
                     </div>
@@ -339,13 +349,13 @@ export default function DoctorUpload() {
                 <button
                   type="button"
                   onClick={() => { setContentTarget('patients'); setAudienceType('patients'); }}
-                  className={`text-left p-4 rounded-xl border-2 transition-all ${contentTarget === 'patients' ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/40'}`}
+                  className={`text-left p-3 sm:p-4 rounded-xl border-2 transition-all ${contentTarget === 'patients' ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/40'}`}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${contentTarget === 'patients' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>
                       <Users className="w-5 h-5" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className={`font-semibold text-sm ${contentTarget === 'patients' ? 'text-primary' : 'text-foreground'}`}>Contenido para pacientes</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Para pacientes y público general</p>
                     </div>
@@ -395,52 +405,59 @@ export default function DoctorUpload() {
             
 
             {/* Masterclass toggle */}
-            <div className="flex items-center justify-between">
-              <div><Label>Masterclass</Label><p className="text-xs text-muted-foreground">Contenido de múltiples sesiones programadas</p></div>
-              <Switch checked={isMasterclass} onCheckedChange={v => { setIsMasterclass(v); if (v && masterclassSessions.length === 0) setMasterclassSessions([{ session_number: 1, title: '', scheduled_at: '', duration_minutes: 60 }]); }} disabled={!isApproved} />
+            <div className="flex items-start sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-lg bg-muted/30 border border-border">
+              <div className="min-w-0 flex-1"><Label>Masterclass</Label><p className="text-xs text-muted-foreground mt-0.5">Contenido de múltiples sesiones programadas</p></div>
+              <Switch checked={isMasterclass} onCheckedChange={v => { setIsMasterclass(v); if (v && masterclassSessions.length === 0) setMasterclassSessions([{ session_number: 1, title: '', scheduled_at: '', duration_minutes: 60 }]); }} disabled={!isApproved} className="flex-shrink-0" />
             </div>
 
             {isMasterclass && (
-              <div className="space-y-3 border border-border rounded-lg p-4 bg-muted/30">
-                <div className="flex items-center justify-between">
+              <div className="space-y-3 border border-border rounded-lg p-3 sm:p-4 bg-muted/30">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <Label className="text-sm font-medium">Sesiones ({masterclassSessions.length})</Label>
                   <Button type="button" variant="outline" size="sm" className="text-xs h-7" onClick={() => setMasterclassSessions(prev => [...prev, { session_number: prev.length + 1, title: '', scheduled_at: '', duration_minutes: 60 }])}>
                     + Agregar sesión
                   </Button>
                 </div>
                 {masterclassSessions.map((session, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
+                  <div key={i} className="rounded-lg border border-border bg-card p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-primary">Sesión {i + 1}</span>
+                      {masterclassSessions.length > 1 && (
+                        <Button type="button" variant="ghost" size="sm" className="text-destructive h-7 px-2 -mr-2" onClick={() => {
+                          setMasterclassSessions(prev => prev.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, session_number: idx + 1 })));
+                        }}>
+                          <X className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Sesión {i + 1} — Título</Label>
+                      <Label className="text-[10px] text-muted-foreground">Título</Label>
                       <Input placeholder={`Sesión ${i + 1}`} value={session.title} onChange={e => {
                         setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, title: e.target.value } : s));
                       }} className="text-sm" />
                     </div>
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground">Fecha/Hora</Label>
-                      <Input type="datetime-local" value={session.scheduled_at} onChange={e => {
-                        setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, scheduled_at: e.target.value } : s));
-                      }} className="text-sm w-44" />
+                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Fecha/Hora</Label>
+                        <Input type="datetime-local" value={session.scheduled_at} onChange={e => {
+                          setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, scheduled_at: e.target.value } : s));
+                        }} className="text-sm w-full sm:w-48" />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Minutos</Label>
+                        <Input type="number" value={session.duration_minutes} onChange={e => {
+                          setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, duration_minutes: parseInt(e.target.value) || 60 } : s));
+                        }} className="text-sm w-full sm:w-20" />
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground">Min.</Label>
-                      <Input type="number" value={session.duration_minutes} onChange={e => {
-                        setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, duration_minutes: parseInt(e.target.value) || 60 } : s));
-                      }} className="text-sm w-16" />
-                    </div>
-                    {masterclassSessions.length > 1 && (
-                      <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => {
-                        setMasterclassSessions(prev => prev.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, session_number: idx + 1 })));
-                      }}>✕</Button>
-                    )}
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="flex items-center justify-between">
-              <div><Label>Contenido Público</Label><p className="text-xs text-muted-foreground">El contenido público aparece en tu perfil y notifica a suscriptores</p></div>
-              <Switch checked={isPublic} onCheckedChange={setIsPublic} disabled={!isApproved} />
+            <div className="flex items-start sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-lg bg-muted/30 border border-border">
+              <div className="min-w-0 flex-1"><Label>Contenido Público</Label><p className="text-xs text-muted-foreground mt-0.5">El contenido público aparece en tu perfil y notifica a suscriptores</p></div>
+              <Switch checked={isPublic} onCheckedChange={setIsPublic} disabled={!isApproved} className="flex-shrink-0" />
             </div>
             {isUploading && (<div className="space-y-2"><div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Subiendo...</span><span className="font-medium">{uploadProgress}%</span></div><Progress value={uploadProgress} className="h-2" /></div>)}
             {showSuccess && (<div className="flex items-center gap-2 text-success text-sm bg-success/10 p-3 rounded-lg"><CheckCircle className="w-4 h-4" />Contenido subido exitosamente</div>)}
