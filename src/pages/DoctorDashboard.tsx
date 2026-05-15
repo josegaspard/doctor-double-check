@@ -30,7 +30,6 @@ import { DoctorPatientsList } from '@/components/doctor/DoctorPatientsList';
 import { DoctorPatientSearch } from '@/components/doctor/DoctorPatientSearch';
 import { DoctorResidentRequests } from '@/components/doctor/DoctorResidentRequests';
 import { MyNotesWidget } from '@/components/doctor/MyNotesWidget';
-import { StorageWidget } from '@/components/storage/StorageWidget';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -127,12 +126,6 @@ export default function DoctorDashboard() {
 
             {/* ── SOLICITUDES DE RESIDENTES ── */}
             <DoctorResidentRequests />
-
-            {/* ── ALMACENAMIENTO ── */}
-            <section className="space-y-3">
-              <SectionHeader>Mi almacenamiento</SectionHeader>
-              <StorageWidget />
-            </section>
 
             {/* ── MIS NOTAS ── */}
             <section className="space-y-3">

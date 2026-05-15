@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { NotebookPen, Loader2, Trash2, Paperclip, X, FileText, ImageIcon } from 'lucide-react';
 import { z } from 'zod';
-import { useStorageGuard } from '@/hooks/useStorageGuard';
 
 interface Attachment {
   path: string;       // ruta dentro del bucket doctor-content
@@ -33,7 +32,6 @@ const MAX_FILES_PER_NOTE = 5;
 
 export function MyNotesWidget() {
   const { supabaseUser } = useAuth();
-  const storage = useStorageGuard();
   const doctorId = supabaseUser?.id;
   const [notes, setNotes] = useState<DoctorNote[]>([]);
   const [draft, setDraft] = useState('');
@@ -80,17 +78,11 @@ export function MyNotesWidget() {
       return;
     }
     const valid: File[] = [];
-    let totalPendingBytes = pending.reduce((s, f) => s + f.size, 0);
     for (const f of files) {
       if (f.size > MAX_FILE_BYTES) {
         toast.error(`${f.name} excede 10MB`);
         continue;
       }
-      // Bloquear si el total acumulado supera el cupo disponible
-      if (!storage.guardOrToast(totalPendingBytes + f.size)) {
-        break;
-      }
-      totalPendingBytes += f.size;
       valid.push(f);
     }
     setPending(prev => [...prev, ...valid]);
@@ -151,7 +143,6 @@ export function MyNotesWidget() {
       setPending([]);
       toast.success('Nota guardada');
       load();
-      storage.refresh();
     } catch (err: any) {
       console.error('[MyNotesWidget] save error:', err);
       if (err.code === '23503') toast.error('Tu perfil no está completo. Termina el onboarding primero.');

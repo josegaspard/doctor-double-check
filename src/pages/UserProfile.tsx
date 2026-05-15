@@ -69,8 +69,6 @@ const COUNTRY_CODES = [
 ];
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
-import { StorageWidget } from '@/components/storage/StorageWidget';
-import { useStorageGuard } from '@/hooks/useStorageGuard';
 import { VaccinationSchedule } from '@/components/medical/VaccinationSchedule';
 import { ResidentBalanceCard } from '@/components/resident/ResidentBalanceCard';
 import { DoctorCredentialsCard } from '@/components/profile/DoctorCredentialsCard';
@@ -134,7 +132,6 @@ const cardVariants = {
 };
 
 export default function UserProfile() {
-  const storageGuard = useStorageGuard();
   const navigate = useNavigate();
   const { user, role, refreshUser } = useAuth();
   const { language, setLanguage, t } = useLanguage();
@@ -467,8 +464,6 @@ export default function UserProfile() {
   const handleUploadAvatar = async () => {
     if (!selectedFile) return;
 
-    if (!storageGuard.guardOrToast(selectedFile.size)) return;
-
     setIsUploadingAvatar(true);
     try {
       // Generate unique filename
@@ -499,7 +494,6 @@ export default function UserProfile() {
       if (updateError) throw updateError;
 
       toast.success(t('profile.photoUpdated'));
-      storageGuard.refresh();
       setAvatarDialogOpen(false);
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -1176,11 +1170,6 @@ export default function UserProfile() {
                 </Select>
               </CardContent>
             </Card>
-          </motion.div>
-
-          {/* Storage usage + upgrade */}
-          <motion.div variants={itemVariants}>
-            <StorageWidget />
           </motion.div>
 
           {/* Account Info */}
