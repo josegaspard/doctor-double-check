@@ -315,34 +315,43 @@ export default function Login() {
             {/* Register Tab */}
             <TabsContent value="register">
               {showEmailConfirmation ? (
-                <Card className="border-success/30 bg-success/5">
+                <Card className="bg-white border-2 border-primary/30 shadow-xl overflow-hidden">
+                  {/* Top accent ribbon */}
+                  <div className="h-1.5 bg-gradient-to-r from-primary via-success to-secondary" />
                   <CardContent className="p-6">
-                    <div className="text-center space-y-4">
-                      <div className="w-16 h-16 mx-auto rounded-full bg-success/20 flex items-center justify-center">
-                        <CheckCircle className="w-8 h-8 text-success" />
+                    <div className="text-center space-y-5">
+                      <div className="relative w-20 h-20 mx-auto">
+                        <div className="absolute inset-0 rounded-full bg-success/10 animate-ping" />
+                        <div className="relative w-20 h-20 rounded-full bg-success flex items-center justify-center shadow-lg">
+                          <CheckCircle className="w-10 h-10 text-white" strokeWidth={2.5} />
+                        </div>
                       </div>
                       <div>
-                       <h3 className="font-heading text-xl font-bold text-foreground">
+                        <h3 className="font-heading text-xl sm:text-2xl font-bold text-secondary">
                           {t('login.checkEmail')}
                         </h3>
-                        <p className="text-muted-foreground mt-2">
+                        <p className="text-muted-foreground mt-2 text-sm">
                           {t('login.confirmationSentTo')}
                         </p>
-                        <p className="font-medium text-foreground mt-1 flex items-center justify-center gap-2">
-                          <Mail className="w-4 h-4" />
-                          {registerEmail}
-                        </p>
+                        <div className="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+                          <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+                          <span className="font-semibold text-primary text-sm break-all">{registerEmail}</span>
+                        </div>
                       </div>
-                      <Alert className="border-white/15 bg-white/5 text-left">
-                        <Mail className="h-4 w-4" />
-                        <AlertTitle>{t('login.confirmEmail')}</AlertTitle>
-                        <AlertDescription>
-                          {t('login.confirmEmailDescription')}
-                        </AlertDescription>
-                      </Alert>
-                      <Button 
-                        variant="outline" 
-                        className="w-full"
+                      <div className="rounded-lg bg-secondary/5 border-l-4 border-l-secondary border border-secondary/20 p-4 text-left">
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                            <Mail className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h5 className="font-semibold text-secondary mb-1 text-sm">{t('login.confirmEmail')}</h5>
+                            <p className="text-xs text-muted-foreground leading-relaxed">{t('login.confirmEmailDescription')}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full border-primary/30 text-primary hover:bg-primary/5 hover:text-primary hover:border-primary/50 h-11"
                         onClick={() => {
                           setShowEmailConfirmation(false);
                           setRegisterEmail('');
