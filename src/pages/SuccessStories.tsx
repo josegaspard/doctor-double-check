@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Star, Users, TrendingUp, Award, Quote } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const stories = [
   {
@@ -27,6 +28,7 @@ const stories = [
 ];
 
 export default function SuccessStories() {
+  const { language } = useLanguage();
   return (
     <MainLayout>
       {/* Hero */}
@@ -54,20 +56,20 @@ export default function SuccessStories() {
         <div className="container mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
             <div className="text-center">
-              <p className="text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">5,000+</p>
-              <p className="text-[10px] sm:text-sm text-muted-foreground mt-1">Médicos activos</p>
+              <p className="text-3xl sm:text-5xl font-extrabold text-primary">5,000+</p>
+              <p className="text-xs sm:text-sm text-foreground/70 font-medium mt-1">{language === 'es' ? 'Médicos activos' : 'Active doctors'}</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">15M+</p>
-              <p className="text-[10px] sm:text-sm text-muted-foreground mt-1">Pacientes atendidos</p>
+              <p className="text-3xl sm:text-5xl font-extrabold text-secondary">15M+</p>
+              <p className="text-xs sm:text-sm text-foreground/70 font-medium mt-1">{language === 'es' ? 'Pacientes atendidos' : 'Patients served'}</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">98%</p>
-              <p className="text-[10px] sm:text-sm text-muted-foreground mt-1">Satisfacción</p>
+              <p className="text-3xl sm:text-5xl font-extrabold text-primary">98%</p>
+              <p className="text-xs sm:text-sm text-foreground/70 font-medium mt-1">{language === 'es' ? 'Satisfacción' : 'Satisfaction'}</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">24/7</p>
-              <p className="text-[10px] sm:text-sm text-muted-foreground mt-1">Disponibilidad</p>
+              <p className="text-3xl sm:text-5xl font-extrabold text-secondary">24/7</p>
+              <p className="text-xs sm:text-sm text-foreground/70 font-medium mt-1">{language === 'es' ? 'Disponibilidad' : 'Availability'}</p>
             </div>
           </div>
         </div>

@@ -103,19 +103,62 @@ function FooterLinkColumn({ title, links }: { title: string; links: { label: str
   );
 }
 
+// Map href → translation key. Allows links from BD to render translated labels.
+const HREF_I18N_MAP: Record<string, string> = {
+  '/for-doctors': 'landingFooter.forDoctors',
+  '/for-residents': 'landingFooter.forResidents',
+  '/for-patients': 'landingFooter.forPatients',
+  '/enterprise': 'landingFooter.enterprise',
+  '/success-stories': 'landingFooter.successStories',
+  '/help': 'landingFooter.help',
+  '/contact': 'landingFooter.contact',
+  '/privacy': 'landingFooter.privacy',
+  '/terms': 'landingFooter.terms',
+  '/security': 'landingFooter.security',
+  '/compliance': 'landingFooter.compliance',
+  '/arco': 'landingFooter.arco',
+  '/report-issue': 'landingFooter.report',
+  '/advertising': 'ads.advertising',
+};
+
 export function UnifiedFooter({ variant }: Props) {
   const { footerLinks } = useFooterLinks();
   const { socialLinks } = useSocialLinks();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { config: adConfig } = useAdConfig();
 
-  const platformLinks = footerLinks.platform.some(l => l.href === '/for-residents')
+  // Translate labels using i18n keys when href is known; fallback to BD label.
+  const translateLink = (l: { label: string; href: string }) => {
+    const key = HREF_I18N_MAP[l.href];
+    if (key) {
+      const translated = t(key);
+      if (translated && translated !== key) return { ...l, label: translated };
+    }
+    return l;
+  };
+
+  const platformLinksRaw = footerLinks.platform.some(l => l.href === '/for-residents')
     ? footerLinks.platform
     : [...footerLinks.platform, { label: 'Para Residentes', href: '/for-residents' }];
+  const platformLinks = platformLinksRaw.map(translateLink);
 
-  const resourcesLinks = adConfig.is_active
+  const resourcesLinksRaw = adConfig.is_active
     ? [...footerLinks.resources, { label: t('ads.advertising'), href: '/advertising' }]
     : footerLinks.resources;
+  const resourcesLinks = resourcesLinksRaw.map(translateLink);
+
+  const legalLinks = footerLinks.legal.map(translateLink);
+
+  // Copyright translated
+  const year = new Date().getFullYear();
+  const lang = String(language);
+  const copyright = lang === 'es'
+    ? `${year} Medical Masters. Todos los derechos reservados.`
+    : lang === 'pt'
+    ? `${year} Medical Masters. Todos os direitos reservados.`
+    : lang === 'fr'
+    ? `${year} Medical Masters. Tous droits réservés.`
+    : `${year} Medical Masters. All rights reserved.`;
 
   if (variant === 'app') {
     return (
@@ -133,11 +176,11 @@ export function UnifiedFooter({ variant }: Props) {
 
             <FooterLinkColumn title={t('landingFooter.platform')} links={platformLinks} />
             <FooterLinkColumn title={t('landingFooter.resources')} links={resourcesLinks} />
-            <FooterLinkColumn title={t('landingFooter.legal')} links={footerLinks.legal} />
+            <FooterLinkColumn title={t('landingFooter.legal')} links={legalLinks} />
           </div>
 
           <div className="border-t border-white/30 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-white font-medium">{footerLinks.copyright}</p>
+            <p className="text-xs text-white font-medium">{copyright}</p>
             {footerLinks.show_status_badge && (
               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-success/25 border border-success/60">
                 <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
@@ -169,7 +212,7 @@ export function UnifiedFooter({ variant }: Props) {
         </div>
 
         <div className="border-t border-white/30 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs sm:text-sm text-center sm:text-left text-white font-medium">{footerLinks.copyright}</p>
+          <p className="text-xs sm:text-sm text-center sm:text-left text-white font-medium">{copyright}</p>
           {footerLinks.show_status_badge && (
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-success/25 border border-success/60">
