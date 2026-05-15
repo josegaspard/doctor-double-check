@@ -121,14 +121,14 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
     <MainLayout>
       <div ref={ref} className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
         {/* Header */}
-        <div className="mb-6 sm:mb-8 rounded-2xl bg-gradient-to-r from-primary/5 via-primary/10 to-transparent p-4 sm:p-6">
+        <div className="mb-6 sm:mb-8 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4 sm:p-6">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/15 flex items-center justify-center shadow-sm flex-shrink-0">
-              <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow flex-shrink-0">
+              <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="font-heading text-lg sm:text-2xl font-bold truncate">{t('adminDashboard.title')}</h1>
-              <p className="text-muted-foreground text-xs sm:text-sm">{t('adminDashboard.subtitle')}</p>
+              <h1 className="font-heading text-lg sm:text-2xl font-bold text-secondary truncate">{t('adminDashboard.title')}</h1>
+              <p className="text-secondary/70 text-xs sm:text-sm">{t('adminDashboard.subtitle')}</p>
             </div>
           </div>
         </div>

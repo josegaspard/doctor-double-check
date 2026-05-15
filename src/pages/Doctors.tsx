@@ -523,7 +523,7 @@ export default function Doctors() {
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="mb-3">
-            <div className="space-y-3 p-3 rounded-lg bg-muted/30 border">
+            <div className="space-y-3 p-3 rounded-lg bg-white border-2 border-primary/30 shadow-sm">
               {/* Row 1: Rating, Level, Consultations */}
               <div className="flex flex-wrap items-center gap-3">
                 {/* Min Rating */}

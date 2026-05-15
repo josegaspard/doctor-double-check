@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, Building2, Star, MapPin, Phone, Globe, Loader2, Stethoscope, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Building2, Star, MapPin, Phone, Globe, Loader2, Stethoscope, Check, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -208,15 +208,22 @@ export default function AdminHospitals() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <Building2 className="w-6 h-6 text-primary" />
-              {es ? 'Hospitales y Clínicas' : 'Hospitals & Clinics'}
-            </h1>
-            <p className="text-sm text-muted-foreground">{es ? 'Administra el directorio de hospitales' : 'Manage the hospital directory'}</p>
+        <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+          <ArrowLeft className="w-4 h-4 mr-1" /> {es ? 'Volver al panel' : 'Back to admin'}
+        </Button>
+        <div className="mb-6 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4 sm:p-5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 shadow">
+              <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold text-secondary truncate">
+                {es ? 'Hospitales y Clínicas' : 'Hospitals & Clinics'}
+              </h1>
+              <p className="text-xs sm:text-sm text-secondary/70">{es ? 'Administra el directorio de hospitales' : 'Manage the hospital directory'}</p>
+            </div>
           </div>
-          <Button onClick={openCreate} className="gap-1.5">
+          <Button onClick={openCreate} className="gap-1.5 flex-shrink-0">
             <Plus className="w-4 h-4" /> {es ? 'Agregar' : 'Add'}
           </Button>
         </div>

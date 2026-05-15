@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, Package, Store, Tag, ShoppingCart, Loader2, Check, X, Download, TrendingUp, DollarSign, Users, BarChart3, ChevronDown, ChevronUp, Truck, MapPin, Phone, Mail } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Package, Store, Tag, ShoppingCart, Loader2, Check, X, Download, TrendingUp, DollarSign, Users, BarChart3, ChevronDown, ChevronUp, Truck, MapPin, Phone, Mail, ArrowLeft, FileText, Send, Clock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminMarketplace() {
@@ -30,12 +30,21 @@ export default function AdminMarketplace() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
-        <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-            <Package className="w-6 h-6 text-primary" />
-            {es ? 'Marketplace - Material Médico' : 'Marketplace - Medical Supplies'}
-          </h1>
-          <p className="text-sm text-muted-foreground">{es ? 'Administra productos, proveedores, categorías, pedidos y ventas' : 'Manage products, vendors, categories, orders and sales'}</p>
+        <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+          <ArrowLeft className="w-4 h-4 mr-1" /> {es ? 'Volver al panel' : 'Back to admin'}
+        </Button>
+        <div className="mb-6 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4 sm:p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 shadow">
+              <Package className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold text-secondary truncate">
+                {es ? 'Marketplace - Material Médico' : 'Marketplace - Medical Supplies'}
+              </h1>
+              <p className="text-xs sm:text-sm text-secondary/70">{es ? 'Administra productos, proveedores, categorías, pedidos y ventas' : 'Manage products, vendors, categories, orders and sales'}</p>
+            </div>
+          </div>
         </div>
 
         <Tabs defaultValue="products">
@@ -335,6 +344,24 @@ function OrdersTab({ es }: { es: boolean }) {
     return { revenue, today, pending, avg };
   }, [orders]);
 
+  // Días de envío estimados por estado (zona) — persistencia en localStorage para
+  // que admin pueda customizar sin tocar DB. Default 3 días en todo MX.
+  const [deliveryDaysByZone, setDeliveryDaysByZone] = useState<Record<string, number>>(() => {
+    try { return JSON.parse(localStorage.getItem('mm_delivery_days_by_zone') || '{}'); } catch { return {}; }
+  });
+  const getDefaultDays = (city?: string, state?: string) => {
+    const key = (state || city || '').toLowerCase().trim();
+    return deliveryDaysByZone[key] ?? 3;
+  };
+  const saveZoneDays = (zoneKey: string, days: number) => {
+    const next = { ...deliveryDaysByZone, [zoneKey.toLowerCase().trim()]: days };
+    setDeliveryDaysByZone(next);
+    localStorage.setItem('mm_delivery_days_by_zone', JSON.stringify(next));
+  };
+
+  // Estado por-row para el dialog de despachar
+  const [dispatchDialog, setDispatchDialog] = useState<{ orderId: string | null; days: number; tracking: string; carrier: string }>({ orderId: null, days: 3, tracking: '', carrier: '' });
+
   const updateStatus = async (id: string, status: string) => {
     setUpdatingId(id);
     const updates: any = { status };
@@ -378,6 +405,150 @@ function OrdersTab({ es }: { es: boolean }) {
     await supabase.from('marketplace_orders').update({ tracking_number: val } as any).eq('id', id);
     fetchData();
     toast.success(es ? 'Número de rastreo guardado' : 'Tracking number saved');
+  };
+
+  // Despacho con confirmación + tracking + ETA + email + notificación in-app
+  const confirmDispatch = async () => {
+    const id = dispatchDialog.orderId;
+    if (!id) return;
+    const order = orders.find(o => o.id === id);
+    if (!order) return;
+    setUpdatingId(id);
+
+    const eta = new Date();
+    eta.setDate(eta.getDate() + (dispatchDialog.days || 3));
+    const etaISO = eta.toISOString().slice(0, 10);
+
+    const updates: any = {
+      status: 'shipped',
+      shipped_at: new Date().toISOString(),
+      estimated_delivery: etaISO,
+      tracking_number: dispatchDialog.tracking || order.tracking_number || null,
+    };
+
+    await supabase.from('marketplace_orders').update(updates).eq('id', id);
+
+    // Persistir días para la zona si el admin los cambió
+    const zone = order.shipping_state || order.shipping_city;
+    if (zone) saveZoneDays(zone, dispatchDialog.days || 3);
+
+    // Email + notificación in-app
+    if (order.profiles?.email) {
+      try {
+        await supabase.functions.invoke('send-purchase-email', {
+          body: {
+            email: order.profiles.email,
+            name: order.profiles.name || 'Usuario',
+            productName: order.marketplace_products?.name || 'Producto',
+            amount: Number(order.total_amount),
+            currency: 'MXN',
+            orderId: id,
+            type: 'shipped',
+            trackingNumber: updates.tracking_number || undefined,
+            shippingCity: order.shipping_city || undefined,
+          },
+        });
+      } catch (e) {
+        console.error('Email send error:', e);
+      }
+    }
+    if (order.buyer_id) {
+      try {
+        await supabase.from('notifications').insert({
+          user_id: order.buyer_id,
+          type: 'system' as any,
+          title: '📦 Tu pedido fue enviado',
+          message: `Tu pedido "${order.marketplace_products?.name || 'producto'}" salió. Llegada estimada: ${eta.toLocaleDateString('es-MX')}${dispatchDialog.tracking ? ` · Tracking: ${dispatchDialog.tracking}` : ''}.`,
+          data: { order_id: id, type: 'order_shipped', tracking: dispatchDialog.tracking || null, eta: etaISO },
+        });
+      } catch (e) {
+        console.error('Notification insert error:', e);
+      }
+    }
+
+    setDispatchDialog({ orderId: null, days: 3, tracking: '', carrier: '' });
+    fetchData();
+    setUpdatingId(null);
+    toast.success(es ? `Pedido despachado · ETA ${eta.toLocaleDateString('es-MX')}` : `Order dispatched · ETA ${eta.toLocaleDateString('es-MX')}`);
+  };
+
+  const openDispatch = (order: any) => {
+    const days = getDefaultDays(order.shipping_city, order.shipping_state);
+    setDispatchDialog({
+      orderId: order.id,
+      days,
+      tracking: order.tracking_number || trackingInput[order.id] || '',
+      carrier: '',
+    });
+  };
+
+  // PDF: imprime una ventana nueva con el detalle del pedido y dispara print
+  const printOrderPDF = (o: any) => {
+    const eta = o.estimated_delivery ? new Date(o.estimated_delivery).toLocaleDateString('es-MX') : '—';
+    const created = new Date(o.created_at).toLocaleString('es-MX');
+    const html = `
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Pedido #${o.id.slice(0,8).toUpperCase()} — Medical Masters</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#163A83;padding:24px;max-width:780px;margin:0 auto}
+  h1{color:#00768B;margin:0 0 4px}
+  .muted{color:#64748b;font-size:12px}
+  .box{border:1.5px solid #00768B33;border-radius:10px;padding:14px;margin:14px 0;background:#fff}
+  .box h2{margin:0 0 8px;font-size:13px;color:#00768B;text-transform:uppercase;letter-spacing:.5px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td{padding:6px 0;border-bottom:1px solid #00768B14}
+  td:last-child{text-align:right;font-weight:600}
+  .total{font-size:18px;color:#00768B;font-weight:700}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#00768B;color:#fff}
+  @media print{ body{padding:8px} button{display:none} }
+</style></head>
+<body>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <h1>Medical Masters</h1>
+      <div class="muted">Pedido #${o.id.slice(0,8).toUpperCase()}</div>
+      <div class="muted">Generado: ${created}</div>
+    </div>
+    <div style="text-align:right">
+      <span class="badge">${(o.status || '').toUpperCase()}</span>
+      <div class="muted" style="margin-top:6px">ETA: <strong>${eta}</strong></div>
+      ${o.tracking_number ? `<div class="muted">Tracking: <strong>${o.tracking_number}</strong></div>` : ''}
+    </div>
+  </div>
+  <div class="box">
+    <h2>Comprador</h2>
+    <div><strong>${(o.profiles?.name || o.shipping_name || '—').replace(/</g,'&lt;')}</strong></div>
+    <div class="muted">${(o.profiles?.email || '').replace(/</g,'&lt;')}</div>
+  </div>
+  <div class="box">
+    <h2>Dirección de envío</h2>
+    <div><strong>${(o.shipping_name || '—').replace(/</g,'&lt;')}</strong></div>
+    <div class="muted">${(o.shipping_phone || '').replace(/</g,'&lt;')}</div>
+    <div>${[o.shipping_city, o.shipping_state, o.shipping_zip].filter(Boolean).join(', ').replace(/</g,'&lt;') || '—'}</div>
+    ${o.shipping_notes ? `<div class="muted" style="margin-top:6px">📝 ${String(o.shipping_notes).replace(/</g,'&lt;')}</div>` : ''}
+  </div>
+  <div class="box">
+    <h2>Producto</h2>
+    <table>
+      <tr><td>${(o.marketplace_products?.name || '—').replace(/</g,'&lt;')}</td><td>×${o.quantity}</td></tr>
+      <tr><td class="muted">Subtotal</td><td>$${Number(o.total_amount - (o.delivery_fee || 0)).toLocaleString('es-MX')}</td></tr>
+      ${o.delivery_fee ? `<tr><td class="muted">Envío</td><td>$${Number(o.delivery_fee).toLocaleString('es-MX')}</td></tr>` : ''}
+      <tr><td class="total">Total</td><td class="total">$${Number(o.total_amount).toLocaleString('es-MX')} MXN</td></tr>
+    </table>
+  </div>
+  <div class="box">
+    <h2>Proveedor</h2>
+    <div>${(o.marketplace_vendors?.name || '—').replace(/</g,'&lt;')}</div>
+  </div>
+  <div class="muted" style="margin-top:24px;text-align:center;font-size:11px">
+    Este documento es la guía de pedido oficial de Medical Masters. Imprime esta página con Ctrl/Cmd + P y elige "Guardar como PDF".
+  </div>
+  <button style="margin-top:16px;background:#00768B;color:#fff;border:0;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600" onclick="window.print()">Imprimir / Guardar PDF</button>
+</body></html>`;
+    const win = window.open('', '_blank', 'width=820,height=900');
+    if (!win) { toast.error(es ? 'Permite ventanas emergentes para descargar el PDF' : 'Allow popups to download the PDF'); return; }
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => { try { win.print(); } catch {} }, 500);
   };
 
   const exportCSV = () => {
@@ -481,28 +652,95 @@ function OrdersTab({ es }: { es: boolean }) {
 
                   {expanded && (
                     <div className="px-3 pb-4 space-y-3 border-t pt-3 animate-in fade-in duration-200">
-                      {/* Buyer info */}
-                      <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                        <p className="text-xs font-semibold flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {es ? 'Comprador' : 'Buyer'}</p>
-                        <p className="text-sm">{o.profiles?.name || 'N/A'}</p>
-                        {o.profiles?.email && <p className="text-xs text-muted-foreground flex items-center gap-1"><Mail className="w-3 h-3" /> {o.profiles.email}</p>}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Buyer info */}
+                        <div className="bg-primary/8 border border-primary/25 rounded-lg p-3 space-y-1">
+                          <p className="text-xs font-semibold text-primary flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {es ? 'Comprador' : 'Buyer'}</p>
+                          <p className="text-sm text-secondary font-medium">{o.profiles?.name || 'N/A'}</p>
+                          {o.profiles?.email && <p className="text-xs text-secondary/70 flex items-center gap-1 break-all"><Mail className="w-3 h-3 flex-shrink-0" /> {o.profiles.email}</p>}
+                        </div>
+
+                        {/* Shipping info */}
+                        {(o.shipping_name || o.shipping_city) ? (
+                          <div className="bg-secondary/8 border border-secondary/25 rounded-lg p-3 space-y-1">
+                            <p className="text-xs font-semibold text-secondary flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {es ? 'Dirección de envío' : 'Shipping address'}</p>
+                            {o.shipping_name && <p className="text-sm text-secondary font-medium">{o.shipping_name}</p>}
+                            {o.shipping_phone && <p className="text-xs text-secondary/70 flex items-center gap-1"><Phone className="w-3 h-3" /> {o.shipping_phone}</p>}
+                            <p className="text-xs text-secondary/70">{[o.shipping_city, o.shipping_state, o.shipping_zip].filter(Boolean).join(', ') || '—'}</p>
+                            {o.shipping_notes && <p className="text-xs text-secondary/60 italic">📝 {o.shipping_notes}</p>}
+                          </div>
+                        ) : (
+                          <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 text-xs text-warning">
+                            ⚠ {es ? 'Sin dirección de envío registrada' : 'No shipping address on file'}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Shipping info */}
-                      {o.shipping_name && (
-                        <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                          <p className="text-xs font-semibold flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {es ? 'Envío' : 'Shipping'}</p>
-                          <p className="text-sm">{o.shipping_name}</p>
-                          {o.shipping_phone && <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> {o.shipping_phone}</p>}
-                          <p className="text-xs text-muted-foreground">{[o.shipping_city, o.shipping_state, o.shipping_zip].filter(Boolean).join(', ')}</p>
-                          {o.shipping_notes && <p className="text-xs text-muted-foreground italic">💬 {o.shipping_notes}</p>}
-                        </div>
-                      )}
+                      {/* Acciones principales por status */}
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => printOrderPDF(o)}
+                          className="h-9 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/5"
+                        >
+                          <FileText className="w-3.5 h-3.5" /> {es ? 'Descargar PDF' : 'Download PDF'}
+                        </Button>
 
-                      {/* Tracking number input */}
-                      <div className="flex gap-2">
+                        {o.status === 'paid' && (
+                          <Button
+                            size="sm"
+                            onClick={() => openDispatch(o)}
+                            disabled={updatingId === o.id}
+                            className="h-9 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow"
+                          >
+                            <Truck className="w-3.5 h-3.5" /> {es ? 'Despachar ahora' : 'Dispatch now'}
+                          </Button>
+                        )}
+
+                        {o.status === 'shipped' && (
+                          <Button
+                            size="sm"
+                            onClick={() => updateStatus(o.id, 'delivered')}
+                            disabled={updatingId === o.id}
+                            className="h-9 text-xs gap-1.5 bg-secondary text-primary-foreground hover:bg-secondary/90"
+                          >
+                            <Check className="w-3.5 h-3.5" /> {es ? 'Marcar entregado' : 'Mark delivered'}
+                          </Button>
+                        )}
+
+                        {o.status === 'pending' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateStatus(o.id, 'paid')}
+                            disabled={updatingId === o.id}
+                            className="h-9 text-xs gap-1.5"
+                          >
+                            <DollarSign className="w-3.5 h-3.5" /> {es ? 'Marcar pagado' : 'Mark paid'}
+                          </Button>
+                        )}
+
+                        {/* Status override avanzado */}
+                        <div className="flex items-center gap-2 ml-auto">
+                          <Label className="text-xs text-secondary/70">{es ? 'Estado:' : 'Status:'}</Label>
+                          <Select value={o.status} onValueChange={v => updateStatus(o.id, v)}>
+                            <SelectTrigger className="w-32 h-9 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {['pending', 'paid', 'shipped', 'delivered', 'cancelled'].map(s => (
+                                <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {updatingId === o.id && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                        </div>
+                      </div>
+
+                      {/* Tracking number (siempre editable, también después de despachar) */}
+                      <div className="flex gap-2 items-center">
+                        <Label className="text-xs text-secondary/70 whitespace-nowrap">{es ? 'Tracking:' : 'Tracking:'}</Label>
                         <Input
-                          placeholder={es ? 'Número de rastreo...' : 'Tracking number...'}
+                          placeholder={es ? 'Número de guía...' : 'Tracking #...'}
                           value={trackingInput[o.id] ?? o.tracking_number ?? ''}
                           onChange={e => setTrackingInput(p => ({ ...p, [o.id]: e.target.value }))}
                           className="h-8 text-xs flex-1"
@@ -512,25 +750,13 @@ function OrdersTab({ es }: { es: boolean }) {
                         </Button>
                       </div>
 
-                      {/* Status change */}
-                      <div className="flex items-center gap-2">
-                        <Label className="text-xs">{es ? 'Cambiar estado:' : 'Change status:'}</Label>
-                        <Select value={o.status} onValueChange={v => updateStatus(o.id, v)}>
-                          <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {['pending', 'paid', 'shipped', 'delivered', 'cancelled'].map(s => (
-                              <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {updatingId === o.id && <Loader2 className="w-4 h-4 animate-spin" />}
-                      </div>
-
                       {/* Timestamps */}
-                      <div className="text-[10px] text-muted-foreground space-y-0.5">
-                        {o.paid_at && <p>✅ Pagado: {new Date(o.paid_at).toLocaleString()}</p>}
-                        {o.shipped_at && <p>📦 Enviado: {new Date(o.shipped_at).toLocaleString()}</p>}
-                        {o.delivered_at && <p>🎉 Entregado: {new Date(o.delivered_at).toLocaleString()}</p>}
+                      <div className="text-[10px] text-secondary/60 space-y-0.5 pt-2 border-t border-primary/15">
+                        <p>🕒 {es ? 'Creado' : 'Created'}: {new Date(o.created_at).toLocaleString('es-MX')}</p>
+                        {o.paid_at && <p>✅ {es ? 'Pagado' : 'Paid'}: {new Date(o.paid_at).toLocaleString('es-MX')}</p>}
+                        {o.shipped_at && <p>📦 {es ? 'Enviado' : 'Shipped'}: {new Date(o.shipped_at).toLocaleString('es-MX')}</p>}
+                        {o.estimated_delivery && <p>🚚 {es ? 'Llegada estimada' : 'ETA'}: {new Date(o.estimated_delivery).toLocaleDateString('es-MX')}</p>}
+                        {o.delivered_at && <p>🎉 {es ? 'Entregado' : 'Delivered'}: {new Date(o.delivered_at).toLocaleString('es-MX')}</p>}
                       </div>
                     </div>
                   )}
@@ -540,6 +766,89 @@ function OrdersTab({ es }: { es: boolean }) {
           })}
         </div>
       )}
+
+      {/* Dispatch confirmation dialog */}
+      <Dialog open={!!dispatchDialog.orderId} onOpenChange={(open) => !open && setDispatchDialog({ orderId: null, days: 3, tracking: '', carrier: '' })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-secondary">
+              <Truck className="w-5 h-5 text-primary" />
+              {es ? 'Despachar pedido' : 'Dispatch order'}
+            </DialogTitle>
+          </DialogHeader>
+          {(() => {
+            const o = orders.find(x => x.id === dispatchDialog.orderId);
+            if (!o) return null;
+            return (
+              <div className="space-y-4">
+                <div className="bg-primary/8 border border-primary/25 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-primary mb-1">{o.marketplace_products?.name || 'Producto'}</p>
+                  <p className="text-xs text-secondary/70">
+                    {o.shipping_name || o.profiles?.name || 'Sin destinatario'}
+                    {o.shipping_city ? ` · ${o.shipping_city}` : ''}
+                    {o.shipping_state ? `, ${o.shipping_state}` : ''}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">{es ? 'Llegará al comprador en (días)' : 'Will arrive in (days)'}</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={60}
+                      value={dispatchDialog.days}
+                      onChange={(e) => setDispatchDialog(d => ({ ...d, days: Number(e.target.value) || 1 }))}
+                      className="h-9 text-sm w-24"
+                    />
+                    <div className="flex gap-1 flex-wrap">
+                      {[1, 2, 3, 5, 7, 10].map(d => (
+                        <Button key={d} type="button" size="sm" variant={dispatchDialog.days === d ? 'default' : 'outline'} className="h-7 text-[11px] px-2.5" onClick={() => setDispatchDialog(s => ({ ...s, days: d }))}>
+                          {d}d
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-secondary/60">
+                    {es
+                      ? `ETA: ${new Date(Date.now() + (dispatchDialog.days || 0) * 86400000).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' })}. Se guarda como default para esta zona (${o.shipping_state || o.shipping_city || 'sin zona'}).`
+                      : `ETA: ${new Date(Date.now() + (dispatchDialog.days || 0) * 86400000).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}.`}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">{es ? 'Número de guía / tracking (opcional)' : 'Tracking number (optional)'}</Label>
+                  <Input
+                    placeholder="Ej: ESTAFETA-1234567"
+                    value={dispatchDialog.tracking}
+                    onChange={(e) => setDispatchDialog(d => ({ ...d, tracking: e.target.value }))}
+                    className="h-9 text-sm"
+                  />
+                </div>
+
+                <div className="bg-secondary/8 border border-secondary/25 rounded-lg p-3 text-xs text-secondary/80">
+                  <p className="font-semibold mb-1 text-secondary flex items-center gap-1"><Send className="w-3 h-3" /> {es ? 'Al confirmar:' : 'On confirm:'}</p>
+                  <ul className="list-disc list-inside space-y-0.5 text-[11px]">
+                    <li>{es ? 'Estado → enviado, ETA registrada' : 'Status → shipped, ETA logged'}</li>
+                    <li>{es ? 'Email al comprador con tracking' : 'Email to buyer with tracking'}</li>
+                    <li>{es ? 'Notificación in-app al comprador' : 'In-app notification to buyer'}</li>
+                  </ul>
+                </div>
+
+                <div className="flex gap-2 justify-end pt-2">
+                  <Button variant="outline" onClick={() => setDispatchDialog({ orderId: null, days: 3, tracking: '', carrier: '' })} disabled={updatingId === o.id}>
+                    {es ? 'Cancelar' : 'Cancel'}
+                  </Button>
+                  <Button onClick={confirmDispatch} disabled={updatingId === o.id} className="gap-1.5">
+                    {updatingId === o.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {es ? 'Confirmar despacho' : 'Confirm dispatch'}
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
