@@ -22,6 +22,15 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
+  editing?: {
+    id: string;
+    title: string;
+    description?: string;
+    specialty: string;
+    caseSummary?: string;
+    scheduledAt?: Date | null;
+    meetingType?: 'case_discussion' | 'resident_class';
+  } | null;
 }
 
 interface InviteeDoc {
@@ -31,12 +40,32 @@ interface InviteeDoc {
   inviteeType?: 'doctor' | 'resident' | 'patient';
 }
 
-export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
+export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: Props) {
   const { user, role } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState({
     title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '', meetingType: 'case_discussion' as 'case_discussion' | 'resident_class',
   });
+  const isEditing = !!editing;
+
+  // Pre-fill form on edit mode open
+  useEffect(() => {
+    if (!open) return;
+    if (editing) {
+      setForm({
+        title: editing.title || '',
+        description: editing.description || '',
+        specialty: editing.specialty || '',
+        caseSummary: editing.caseSummary || '',
+        scheduledAt: editing.scheduledAt
+          ? new Date(editing.scheduledAt.getTime() - editing.scheduledAt.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+          : '',
+        meetingType: editing.meetingType || 'case_discussion',
+      });
+    } else {
+      setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '', meetingType: 'case_discussion' });
+    }
+  }, [open, editing?.id]);
 
   // Doctor search for invitations
   const [searchQuery, setSearchQuery] = useState('');
@@ -138,44 +167,72 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
     setIsCreating(true);
 
     try {
-      const { data: session, error } = await supabase
-        .from('clinical_sessions')
-        .insert({
-          title: form.title,
-          description: form.description || null,
-          specialty: form.specialty,
-          case_summary: form.caseSummary || null,
-          scheduled_at: form.scheduledAt || null,
-          organizer_id: user.id,
-          meeting_type: form.meetingType,
-        })
-        .select('id')
-        .single();
+      if (isEditing && editing) {
+        // UPDATE existing session
+        const { error } = await supabase
+          .from('clinical_sessions')
+          .update({
+            title: form.title,
+            description: form.description || null,
+            specialty: form.specialty,
+            case_summary: form.caseSummary || null,
+            scheduled_at: form.scheduledAt || null,
+            meeting_type: form.meetingType,
+          } as any)
+          .eq('id', editing.id)
+          .eq('organizer_id', user.id);
+        if (error) throw error;
 
-      if (error) throw error;
+        // Add new invitations (if any added)
+        if (selectedInvitees.length > 0) {
+          const newInvitations = selectedInvitees.map(doc => ({
+            session_id: editing.id,
+            doctor_id: doc.id,
+            invitee_name: doc.name,
+          }));
+          await supabase.from('clinical_session_invitations').insert(newInvitations as any);
+        }
 
-      // Create invitations for selected doctors
-      if (selectedInvitees.length > 0 && session) {
-        const invitations = selectedInvitees.map(doc => ({
-          session_id: session.id,
-          doctor_id: doc.id,
-          invitee_name: doc.name,
-        }));
+        toast.success('Reunión actualizada');
+      } else {
+        // INSERT new session
+        const { data: session, error } = await supabase
+          .from('clinical_sessions')
+          .insert({
+            title: form.title,
+            description: form.description || null,
+            specialty: form.specialty,
+            case_summary: form.caseSummary || null,
+            scheduled_at: form.scheduledAt || null,
+            organizer_id: user.id,
+            meeting_type: form.meetingType,
+          })
+          .select('id')
+          .single();
 
-        const { error: invError } = await supabase
-          .from('clinical_session_invitations')
-          .insert(invitations as any);
+        if (error) throw error;
 
-        if (invError) console.error('Error creating invitations:', invError);
+        if (selectedInvitees.length > 0 && session) {
+          const invitations = selectedInvitees.map(doc => ({
+            session_id: session.id,
+            doctor_id: doc.id,
+            invitee_name: doc.name,
+          }));
+          const { error: invError } = await supabase
+            .from('clinical_session_invitations')
+            .insert(invitations as any);
+          if (invError) console.error('Error creating invitations:', invError);
+        }
+
+        toast.success('Reunión creada exitosamente');
       }
 
-      toast.success('Reunión creada exitosamente');
       onOpenChange(false);
       setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '', meetingType: 'case_discussion' });
       setSelectedInvitees([]);
       onCreated();
     } catch (error: any) {
-      toast.error(error.message || 'Error al crear la reunión');
+      toast.error(error.message || 'Error al guardar la reunión');
     } finally {
       setIsCreating(false);
     }
@@ -185,7 +242,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nueva Reunión</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar reunión' : 'Nueva reunión'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div>
@@ -313,7 +370,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
             disabled={isCreating || !form.title.trim() || !form.specialty}
           >
             {isCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Crear reunión
+            {isEditing ? 'Guardar cambios' : 'Crear reunión'}
           </Button>
         </div>
       </DialogContent>

@@ -6,8 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Video, Calendar, Clock, CheckCircle, XCircle,
-  FileText, ChevronDown, ChevronUp, User,
+  FileText, ChevronDown, ChevronUp, User, Pencil, Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Meeting, MeetingStatus } from '@/pages/Meetings';
 
 interface MeetingCardProps {
@@ -15,10 +19,13 @@ interface MeetingCardProps {
   isOrganizer: boolean;
   onStartCall: (meeting: Meeting) => void;
   onSaveNotes: (meetingId: string, notes: string) => void;
+  onEdit?: (meeting: Meeting) => void;
+  onDelete?: (meeting: Meeting) => void;
   isPast?: boolean;
 }
 
-export function MeetingCard({ meeting, isOrganizer, onStartCall, onSaveNotes, isPast }: MeetingCardProps) {
+export function MeetingCard({ meeting, isOrganizer, onStartCall, onSaveNotes, onEdit, onDelete, isPast }: MeetingCardProps) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const { language } = useLanguage();
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState(meeting.meetingNotes || '');
@@ -98,8 +105,47 @@ export function MeetingCard({ meeting, isOrganizer, onStartCall, onSaveNotes, is
                 Unirse
               </Button>
             )}
+            {isOrganizer && !isPast && onEdit && (
+              <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={() => onEdit(meeting)}>
+                <Pencil className="w-3.5 h-3.5" />
+                Editar
+              </Button>
+            )}
+            {isOrganizer && onDelete && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 h-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Eliminar
+              </Button>
+            )}
           </div>
         </div>
+
+        <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar esta reunión?</AlertDialogTitle>
+              <AlertDialogDescription>
+                <strong>{meeting.title}</strong><br />
+                Se borrará la reunión y todas sus invitaciones. Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => { onDelete?.(meeting); setConfirmDelete(false); }}
+                className="bg-destructive hover:bg-destructive/90 text-white"
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Eliminar definitivamente
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Notes section */}
         {(isOrganizer || meeting.meetingNotes) && (

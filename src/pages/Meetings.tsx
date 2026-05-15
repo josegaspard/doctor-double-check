@@ -41,6 +41,27 @@ export default function Meetings() {
   const [invitations, setInvitations] = useState<Meeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
+
+  const handleEditMeeting = (meeting: Meeting) => {
+    setEditingMeeting(meeting);
+    setShowCreate(true);
+  };
+
+  const handleDeleteMeeting = async (meeting: Meeting) => {
+    try {
+      const { error } = await supabase
+        .from('clinical_sessions')
+        .delete()
+        .eq('id', meeting.id)
+        .eq('organizer_id', user?.id || '');
+      if (error) throw error;
+      toast.success('Reunión eliminada');
+      await fetchMeetings();
+    } catch (err: any) {
+      toast.error(err.message || 'No se pudo eliminar la reunión');
+    }
+  };
 
   const allowedRoles = ['doctor', 'resident'];
 
@@ -263,6 +284,8 @@ export default function Meetings() {
                   isOrganizer={m.organizerId === user?.id}
                   onStartCall={handleStartCall}
                   onSaveNotes={handleSaveNotes}
+                  onEdit={handleEditMeeting}
+                  onDelete={handleDeleteMeeting}
                 />
               ))
             ) : (
@@ -286,6 +309,7 @@ export default function Meetings() {
                   isOrganizer={m.organizerId === user?.id}
                   onStartCall={handleStartCall}
                   onSaveNotes={handleSaveNotes}
+                  onDelete={handleDeleteMeeting}
                   isPast
                 />
               ))
@@ -299,8 +323,17 @@ export default function Meetings() {
 
         <MeetingCreateDialog
           open={showCreate}
-          onOpenChange={setShowCreate}
+          onOpenChange={(o) => { setShowCreate(o); if (!o) setEditingMeeting(null); }}
           onCreated={fetchMeetings}
+          editing={editingMeeting ? {
+            id: editingMeeting.id,
+            title: editingMeeting.title,
+            description: editingMeeting.description,
+            specialty: editingMeeting.specialty,
+            caseSummary: editingMeeting.caseSummary,
+            scheduledAt: editingMeeting.scheduledAt,
+            meetingType: undefined,
+          } : null}
         />
       </div>
     </MainLayout>
