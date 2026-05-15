@@ -194,6 +194,12 @@ function MoreNavPopover({
     };
   }, [open]);
 
+  // Colores hardcodeados con inline style para defeat el override global
+  // ".app-bg-image .text-foreground { color:#fff !important }" que estaba
+  // pintando items en blanco-sobre-blanco. Los hsl() vienen del brandbook
+  // y son los mismos que las variables --foreground / --primary.
+  const ITEM_INACTIVE = { color: 'hsl(220 71% 18%)' }; // Metallic Blue oscuro
+  const ITEM_ACTIVE = { color: 'hsl(0 0% 100%)', backgroundColor: 'hsl(189 100% 27%)' }; // Blue Lagoon
   return (
     <div ref={wrapperRef} className="relative flex-shrink-0">
       <button
@@ -210,7 +216,9 @@ function MoreNavPopover({
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-[calc(100%+6px)] z-[80] w-60 rounded-lg border border-border bg-card text-foreground shadow-xl overflow-hidden py-1"
+          aria-label={t('nav.more')}
+          className="absolute left-0 top-[calc(100%+6px)] z-[80] w-60 rounded-lg border border-border shadow-xl overflow-hidden py-1"
+          style={{ backgroundColor: 'hsl(0 0% 100%)' }}
         >
           {items.map((item) => {
             const isActive = pathname === item.href;
@@ -220,10 +228,9 @@ function MoreNavPopover({
                 type="button"
                 role="menuitem"
                 onClick={() => { setOpen(false); navigate(item.href); }}
+                style={isActive ? ITEM_ACTIVE : ITEM_INACTIVE}
                 className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground font-semibold'
-                    : 'text-foreground hover:bg-muted'
+                  isActive ? 'font-semibold' : 'hover:bg-muted'
                 }`}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
@@ -513,10 +520,13 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               </div>
             </nav>
 
-            {/* Desktop Nav (lg+): 6 primarios + Más con items 6+ */}
+            {/* Desktop Nav (lg+): muestra 5 primarios + Más con items 5+
+                Threshold bajo (length > 5) para garantizar que el botón Más
+                aparezca para cualquier rol que tenga al menos 6 items en su
+                navegación filtrada. */}
             <nav className="hidden lg:flex items-center flex-1 justify-start mx-1 lg:mx-2 min-w-0">
               <div className="flex items-center gap-2 min-w-0">
-                {filteredNavItems.slice(0, 6).map((item) => {
+                {filteredNavItems.slice(0, 5).map((item) => {
                   const isActive = location.pathname === item.href;
                   const isPanelItem = item.href === '/doctor/dashboard';
                   return (
@@ -534,9 +544,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     </Link>
                   );
                 })}
-                {filteredNavItems.length > 6 && (
+                {filteredNavItems.length > 5 && (
                   <MoreNavPopover
-                    items={filteredNavItems.slice(6)}
+                    items={filteredNavItems.slice(5)}
                     t={t}
                     navigate={navigate}
                     pathname={location.pathname}
