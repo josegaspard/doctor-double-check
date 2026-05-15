@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { HardDrive, Sparkles, AlertTriangle } from 'lucide-react';
 import { StorageUpgradeDialog } from './StorageUpgradeDialog';
+import { setStorageUpgradeOpener } from '@/hooks/useStorageGuard';
 
 function formatStorageSize(bytes: number): string {
   const gb = bytes / (1024 * 1024 * 1024);
@@ -39,6 +40,12 @@ export function StorageWidget({ variant = 'card' }: Props) {
   };
 
   useEffect(() => { fetchStorage(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [supabaseUser?.id]);
+
+  // Register global opener so useStorageGuard can trigger this dialog from anywhere
+  useEffect(() => {
+    setStorageUpgradeOpener(() => setUpgradeOpen(true));
+    return () => setStorageUpgradeOpener(null);
+  }, []);
 
   const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
   const isFull = pct >= 95;

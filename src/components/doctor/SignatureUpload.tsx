@@ -7,10 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Upload, Trash2, Loader2, PenLine, Image as ImageIcon } from 'lucide-react';
+import { useStorageGuard } from '@/hooks/useStorageGuard';
 
 export function SignatureUpload() {
   const { user } = useAuth();
   const { language } = useLanguage();
+  const storage = useStorageGuard();
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -60,6 +62,8 @@ export function SignatureUpload() {
       return;
     }
 
+    if (!storage.guardOrToast(file.size)) return;
+
     setIsUploading(true);
     try {
       const ext = (file.name.split('.').pop() || 'png').toLowerCase();
@@ -93,6 +97,7 @@ export function SignatureUpload() {
 
       setSignatureUrl(signatureUrl2);
       toast.success(language === 'es' ? 'Firma actualizada' : 'Signature updated');
+      storage.refresh();
     } catch (err: any) {
       console.error('signature upload error', err);
       toast.error(err.message || 'Error al subir la firma');
