@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, Package, Store, Tag, ShoppingCart, Loader2, Check, X, Download, TrendingUp, DollarSign, Users, BarChart3, ChevronDown, ChevronUp, Truck, MapPin, Phone, Mail, ArrowLeft, FileText, Send, Clock, RotateCcw, AlertTriangle, CreditCard, ClipboardList, AlertCircle, Warehouse } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Package, Store, Tag, ShoppingCart, Loader2, Check, X, Download, TrendingUp, DollarSign, Users, BarChart3, ChevronDown, ChevronUp, Truck, MapPin, Phone, Mail, ArrowLeft, FileText, Send, Clock, RotateCcw, AlertTriangle, CreditCard, ClipboardList, AlertCircle, Warehouse, Star, EyeOff, Eye as EyeIcon, Percent } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminMarketplace() {
@@ -48,7 +48,7 @@ export default function AdminMarketplace() {
         </div>
 
         <Tabs defaultValue="products">
-          <TabsList className="w-full grid grid-cols-5 sm:grid-cols-10 mb-4 h-auto">
+          <TabsList className="w-full grid grid-cols-4 sm:grid-cols-11 mb-4 h-auto">
             <TabsTrigger value="products" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Package className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Productos' : 'Products'}</span></TabsTrigger>
             <TabsTrigger value="vendors" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Store className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Vendors' : 'Vendors'}</span></TabsTrigger>
             <TabsTrigger value="categories" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Tag className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Cats' : 'Cats'}</span></TabsTrigger>
@@ -59,6 +59,7 @@ export default function AdminMarketplace() {
             <TabsTrigger value="payouts" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><CreditCard className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Pagos' : 'Payouts'}</span></TabsTrigger>
             <TabsTrigger value="stock" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Warehouse className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Stock' : 'Stock'}</span></TabsTrigger>
             <TabsTrigger value="audit" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><ClipboardList className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Audit' : 'Audit'}</span></TabsTrigger>
+            <TabsTrigger value="reviews" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Star className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Reviews' : 'Reviews'}</span></TabsTrigger>
           </TabsList>
 
           <TabsContent value="products"><ProductsTab es={es} /></TabsContent>
@@ -71,6 +72,7 @@ export default function AdminMarketplace() {
           <TabsContent value="payouts"><PayoutsTab es={es} /></TabsContent>
           <TabsContent value="stock"><StockTab es={es} /></TabsContent>
           <TabsContent value="audit"><AuditTab es={es} /></TabsContent>
+          <TabsContent value="reviews"><ReviewsTab es={es} /></TabsContent>
         </Tabs>
       </div>
     </MainLayout>
@@ -176,7 +178,7 @@ function VendorsTab({ es }: { es: boolean }) {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', description: '', website: '', phone: '', location: '', logo_url: '', status: 'approved' });
+  const [form, setForm] = useState({ name: '', description: '', website: '', phone: '', location: '', logo_url: '', status: 'approved', commission_rate: '0.15', iva_rate: '0.16', legal_name: '', tax_id: '' });
   const [saving, setSaving] = useState(false);
 
   const fetchData = async () => { setLoading(true); const { data } = await supabase.from('marketplace_vendors').select('*').order('created_at', { ascending: false }); setVendors((data as any[]) || []); setLoading(false); };
@@ -185,7 +187,9 @@ function VendorsTab({ es }: { es: boolean }) {
   const handleSave = async () => {
     if (!form.name) { toast.error(es ? 'Nombre requerido' : 'Name required'); return; }
     setSaving(true);
-    const payload = { name: form.name, description: form.description || null, website: form.website || null, phone: form.phone || null, location: form.location || null, logo_url: form.logo_url || null, status: form.status };
+    const commission = Math.max(0, Math.min(1, parseFloat(form.commission_rate) || 0.15));
+    const iva = Math.max(0, Math.min(1, parseFloat(form.iva_rate) || 0.16));
+    const payload: any = { name: form.name, description: form.description || null, website: form.website || null, phone: form.phone || null, location: form.location || null, logo_url: form.logo_url || null, status: form.status, commission_rate: commission, iva_rate: iva, legal_name: form.legal_name || null, tax_id: form.tax_id || null };
     if (editingId) await supabase.from('marketplace_vendors').update(payload as any).eq('id', editingId);
     else await supabase.from('marketplace_vendors').insert(payload as any);
     setSaving(false); setDialogOpen(false); fetchData(); toast.success(es ? 'Guardado' : 'Saved');
@@ -205,7 +209,7 @@ function VendorsTab({ es }: { es: boolean }) {
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <Button onClick={() => { setEditingId(null); setForm({ name: '', description: '', website: '', phone: '', location: '', logo_url: '', status: 'approved' }); setDialogOpen(true); }} className="gap-1.5"><Plus className="w-4 h-4" /> {es ? 'Agregar Proveedor' : 'Add Vendor'}</Button>
+        <Button onClick={() => { setEditingId(null); setForm({ name: '', description: '', website: '', phone: '', location: '', logo_url: '', status: 'approved', commission_rate: '0.15', iva_rate: '0.16', legal_name: '', tax_id: '' }); setDialogOpen(true); }} className="gap-1.5"><Plus className="w-4 h-4" /> {es ? 'Agregar Proveedor' : 'Add Vendor'}</Button>
       </div>
       {loading ? <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> : (
         <div className="space-y-2">
@@ -215,7 +219,8 @@ function VendorsTab({ es }: { es: boolean }) {
               <div className="flex-1 min-w-0"><p className="font-medium text-sm truncate">{v.name}</p><p className="text-xs text-muted-foreground truncate">{v.location || v.website || ''}</p></div>
               <Badge variant={v.status === 'approved' ? 'default' : v.status === 'pending' ? 'secondary' : 'destructive'} className="text-[10px]">{v.status}</Badge>
               {v.status === 'pending' && (<><Button variant="ghost" size="icon" onClick={() => updateStatus(v.id, 'approved')}><Check className="w-4 h-4 text-success" /></Button><Button variant="ghost" size="icon" onClick={() => updateStatus(v.id, 'rejected')}><X className="w-4 h-4 text-destructive" /></Button></>)}
-              <Button variant="ghost" size="icon" onClick={() => { setEditingId(v.id); setForm({ name: v.name, description: v.description || '', website: v.website || '', phone: v.phone || '', location: v.location || '', logo_url: v.logo_url || '', status: v.status }); setDialogOpen(true); }}><Pencil className="w-4 h-4" /></Button>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20" title="Comisión plataforma">{((v.commission_rate || 0.15) * 100).toFixed(0)}%</span>
+              <Button variant="ghost" size="icon" onClick={() => { setEditingId(v.id); setForm({ name: v.name, description: v.description || '', website: v.website || '', phone: v.phone || '', location: v.location || '', logo_url: v.logo_url || '', status: v.status, commission_rate: String(v.commission_rate ?? 0.15), iva_rate: String(v.iva_rate ?? 0.16), legal_name: v.legal_name || '', tax_id: v.tax_id || '' }); setDialogOpen(true); }}><Pencil className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => handleDelete(v.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
             </CardContent></Card>
           ))}
@@ -234,6 +239,26 @@ function VendorsTab({ es }: { es: boolean }) {
             </div>
             <div><Label>{es ? 'Ubicación' : 'Location'}</Label><Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} /></div>
             <div><Label>Logo URL</Label><Input value={form.logo_url} onChange={e => setForm(f => ({ ...f, logo_url: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+              <div>
+                <Label className="text-xs flex items-center gap-1"><Percent className="w-3 h-3" /> {es ? 'Comisión plataforma' : 'Platform commission'}</Label>
+                <div className="relative">
+                  <Input type="number" step="0.01" min="0" max="1" value={form.commission_rate} onChange={e => setForm(f => ({ ...f, commission_rate: e.target.value }))} className="pr-12" />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">= {((parseFloat(form.commission_rate) || 0) * 100).toFixed(1)}%</span>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">{es ? 'Tasa IVA' : 'VAT rate'}</Label>
+                <div className="relative">
+                  <Input type="number" step="0.01" min="0" max="1" value={form.iva_rate} onChange={e => setForm(f => ({ ...f, iva_rate: e.target.value }))} className="pr-12" />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">= {((parseFloat(form.iva_rate) || 0) * 100).toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div><Label>{es ? 'Razón social' : 'Legal name'}</Label><Input value={form.legal_name} onChange={e => setForm(f => ({ ...f, legal_name: e.target.value }))} /></div>
+              <div><Label>RFC / Tax ID</Label><Input value={form.tax_id} onChange={e => setForm(f => ({ ...f, tax_id: e.target.value }))} /></div>
+            </div>
             <div><Label>{es ? 'Estado' : 'Status'}</Label>
               <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -389,7 +414,21 @@ function OrdersTab({ es }: { es: boolean }) {
   };
 
   // Estado por-row para el dialog de despachar
-  const [dispatchDialog, setDispatchDialog] = useState<{ orderId: string | null; days: number; tracking: string; carrier: string }>({ orderId: null, days: 3, tracking: '', carrier: '' });
+  const [dispatchDialog, setDispatchDialog] = useState<{ orderId: string | null; days: number; tracking: string; carrier: string; trackingUrl: string }>({ orderId: null, days: 3, tracking: '', carrier: '', trackingUrl: '' });
+
+  // Auto-fill tracking URL from carrier + tracking number (mejores carriers MX)
+  const buildTrackingUrl = (carrier: string, num: string): string => {
+    if (!num) return '';
+    const lower = (carrier || '').toLowerCase().trim();
+    if (lower.includes('estafeta')) return `https://www.estafeta.com/Herramientas/Rastreo?wayBill=${encodeURIComponent(num)}`;
+    if (lower.includes('dhl')) return `https://www.dhl.com/mx-es/home/tracking.html?tracking-id=${encodeURIComponent(num)}`;
+    if (lower.includes('fedex')) return `https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(num)}`;
+    if (lower.includes('ups')) return `https://www.ups.com/track?tracknum=${encodeURIComponent(num)}`;
+    if (lower.includes('redpack')) return `https://www.redpack.com.mx/rastreo-de-envios/?guias=${encodeURIComponent(num)}`;
+    if (lower.includes('paquetexpress') || lower.includes('paquete')) return `https://www.paquetexpress.com.mx/rastreo/buscador?numero=${encodeURIComponent(num)}`;
+    if (lower.includes('99minutos') || lower.includes('99 minutos')) return `https://tracking.99minutos.com/${encodeURIComponent(num)}`;
+    return '';
+  };
 
   const updateStatus = async (id: string, status: string) => {
     setUpdatingId(id);
@@ -448,11 +487,16 @@ function OrdersTab({ es }: { es: boolean }) {
     eta.setDate(eta.getDate() + (dispatchDialog.days || 3));
     const etaISO = eta.toISOString().slice(0, 10);
 
+    const finalTrackingUrl = dispatchDialog.trackingUrl || buildTrackingUrl(dispatchDialog.carrier, dispatchDialog.tracking) || null;
+
     const updates: any = {
       status: 'shipped',
+      shipping_status: 'shipped',
       shipped_at: new Date().toISOString(),
       estimated_delivery: etaISO,
       tracking_number: dispatchDialog.tracking || order.tracking_number || null,
+      courier_name: dispatchDialog.carrier || null,
+      tracking_url: finalTrackingUrl,
     };
 
     await supabase.from('marketplace_orders').update(updates).eq('id', id);
@@ -495,7 +539,7 @@ function OrdersTab({ es }: { es: boolean }) {
       }
     }
 
-    setDispatchDialog({ orderId: null, days: 3, tracking: '', carrier: '' });
+    setDispatchDialog({ orderId: null, days: 3, tracking: '', carrier: '', trackingUrl: '' });
     fetchData();
     setUpdatingId(null);
     toast.success(es ? `Pedido despachado · ETA ${eta.toLocaleDateString('es-MX')}` : `Order dispatched · ETA ${eta.toLocaleDateString('es-MX')}`);
@@ -507,7 +551,8 @@ function OrdersTab({ es }: { es: boolean }) {
       orderId: order.id,
       days,
       tracking: order.tracking_number || trackingInput[order.id] || '',
-      carrier: '',
+      carrier: order.courier_name || '',
+      trackingUrl: order.tracking_url || '',
     });
   };
 
@@ -797,7 +842,7 @@ function OrdersTab({ es }: { es: boolean }) {
       )}
 
       {/* Dispatch confirmation dialog */}
-      <Dialog open={!!dispatchDialog.orderId} onOpenChange={(open) => !open && setDispatchDialog({ orderId: null, days: 3, tracking: '', carrier: '' })}>
+      <Dialog open={!!dispatchDialog.orderId} onOpenChange={(open) => !open && setDispatchDialog({ orderId: null, days: 3, tracking: '', carrier: '', trackingUrl: '' })}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-secondary">
@@ -846,13 +891,45 @@ function OrdersTab({ es }: { es: boolean }) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs">{es ? 'Número de guía / tracking (opcional)' : 'Tracking number (optional)'}</Label>
+                  <Label className="text-xs">{es ? 'Paquetería' : 'Carrier'}</Label>
+                  <Select value={dispatchDialog.carrier} onValueChange={(v) => setDispatchDialog(d => ({ ...d, carrier: v, trackingUrl: buildTrackingUrl(v, d.tracking) }))}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder={es ? 'Selecciona paquetería' : 'Select carrier'} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Estafeta">Estafeta</SelectItem>
+                      <SelectItem value="DHL">DHL</SelectItem>
+                      <SelectItem value="FedEx">FedEx</SelectItem>
+                      <SelectItem value="UPS">UPS</SelectItem>
+                      <SelectItem value="Redpack">Redpack</SelectItem>
+                      <SelectItem value="Paquetexpress">Paquetexpress</SelectItem>
+                      <SelectItem value="99minutos">99minutos</SelectItem>
+                      <SelectItem value="Otro">{es ? 'Otro' : 'Other'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">{es ? 'Número de guía / tracking' : 'Tracking number'}</Label>
                   <Input
-                    placeholder="Ej: ESTAFETA-1234567"
+                    placeholder="Ej: 1234567890"
                     value={dispatchDialog.tracking}
-                    onChange={(e) => setDispatchDialog(d => ({ ...d, tracking: e.target.value }))}
+                    onChange={(e) => setDispatchDialog(d => ({ ...d, tracking: e.target.value, trackingUrl: buildTrackingUrl(d.carrier, e.target.value) }))}
                     className="h-9 text-sm"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">{es ? 'URL de rastreo (auto-generada — editable)' : 'Tracking URL (auto-filled — editable)'}</Label>
+                  <Input
+                    placeholder="https://..."
+                    value={dispatchDialog.trackingUrl}
+                    onChange={(e) => setDispatchDialog(d => ({ ...d, trackingUrl: e.target.value }))}
+                    className="h-9 text-sm font-mono text-[11px]"
+                  />
+                  {dispatchDialog.trackingUrl && (
+                    <a href={dispatchDialog.trackingUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary underline inline-flex items-center gap-1">
+                      <Truck className="w-3 h-3" /> {es ? 'Abrir en nueva pestaña' : 'Open in new tab'}
+                    </a>
+                  )}
                 </div>
 
                 <div className="bg-secondary/8 border border-secondary/25 rounded-lg p-3 text-xs text-secondary/80">
@@ -865,7 +942,7 @@ function OrdersTab({ es }: { es: boolean }) {
                 </div>
 
                 <div className="flex gap-2 justify-end pt-2">
-                  <Button variant="outline" onClick={() => setDispatchDialog({ orderId: null, days: 3, tracking: '', carrier: '' })} disabled={updatingId === o.id}>
+                  <Button variant="outline" onClick={() => setDispatchDialog({ orderId: null, days: 3, tracking: '', carrier: '', trackingUrl: '' })} disabled={updatingId === o.id}>
                     {es ? 'Cancelar' : 'Cancel'}
                   </Button>
                   <Button onClick={confirmDispatch} disabled={updatingId === o.id} className="gap-1.5">
@@ -1418,6 +1495,95 @@ function AuditTab({ es }: { es: boolean }) {
           </CardContent>
         </Card>
       ))}
+    </div>
+  );
+}
+
+/* =================== REVIEWS TAB =================== */
+function ReviewsTab({ es }: { es: boolean }) {
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'visible' | 'hidden'>('all');
+
+  const fetchData = async () => {
+    setLoading(true);
+    const { data } = await (supabase as any)
+      .from('product_reviews')
+      .select('id, rating, title, body, verified_purchase, is_hidden, created_at, vendor_reply, vendor_reply_at, reviewer_id, marketplace_products(name, marketplace_vendors(name))')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    setReviews(data || []);
+    setLoading(false);
+  };
+  useEffect(() => { fetchData(); }, []);
+
+  const filtered = useMemo(() => {
+    if (filter === 'visible') return reviews.filter(r => !r.is_hidden);
+    if (filter === 'hidden') return reviews.filter(r => r.is_hidden);
+    return reviews;
+  }, [reviews, filter]);
+
+  const toggleHide = async (r: any) => {
+    const { error } = await (supabase as any).from('product_reviews').update({ is_hidden: !r.is_hidden }).eq('id', r.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(r.is_hidden ? (es ? 'Reseña visible' : 'Review visible') : (es ? 'Reseña oculta' : 'Review hidden'));
+    fetchData();
+  };
+
+  const deleteReview = async (id: string) => {
+    if (!confirm(es ? '¿Eliminar esta reseña permanentemente?' : 'Delete this review permanently?')) return;
+    const { error } = await (supabase as any).from('product_reviews').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(es ? 'Reseña eliminada' : 'Review deleted');
+    fetchData();
+  };
+
+  if (loading) return <Loader2 className="w-5 h-5 animate-spin" />;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>{es ? 'Todas' : 'All'} ({reviews.length})</Button>
+        <Button size="sm" variant={filter === 'visible' ? 'default' : 'outline'} onClick={() => setFilter('visible')}>{es ? 'Visibles' : 'Visible'} ({reviews.filter(r => !r.is_hidden).length})</Button>
+        <Button size="sm" variant={filter === 'hidden' ? 'default' : 'outline'} onClick={() => setFilter('hidden')}>{es ? 'Ocultas' : 'Hidden'} ({reviews.filter(r => r.is_hidden).length})</Button>
+      </div>
+      {filtered.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{es ? 'Sin reseñas' : 'No reviews'}</CardContent></Card> : (
+        <div className="space-y-2">
+          {filtered.map(r => (
+            <Card key={r.id} className={r.is_hidden ? 'bg-muted/40 opacity-70' : ''}>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <div className="flex">
+                        {[1,2,3,4,5].map(n => (
+                          <Star key={n} className={`w-3.5 h-3.5 ${n <= r.rating ? 'fill-warning text-warning' : 'text-muted-foreground/30'}`} />
+                        ))}
+                      </div>
+                      <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                      {r.verified_purchase && <Badge variant="verified" className="text-[10px]">✓ Compra verificada</Badge>}
+                      {r.is_hidden && <Badge variant="destructive" className="text-[10px]">Oculta</Badge>}
+                    </div>
+                    {r.title && <p className="text-sm font-semibold">{r.title}</p>}
+                    {r.body && <p className="text-xs text-muted-foreground line-clamp-3 mt-1">{r.body}</p>}
+                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                      <strong>{r.marketplace_products?.name || '—'}</strong> · {r.marketplace_products?.marketplace_vendors?.name || '—'}
+                    </p>
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleHide(r)} title={r.is_hidden ? 'Mostrar' : 'Ocultar'}>
+                      {r.is_hidden ? <EyeIcon className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteReview(r.id)} title="Eliminar">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
