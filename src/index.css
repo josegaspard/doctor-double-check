@@ -1702,3 +1702,64 @@
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+/* =============================================================
+   NUCLEAR FINAL: cualquier svg / icono / texto dentro de un
+   contenedor pintado con gradient primary→secondary o sólido
+   bg-primary/bg-secondary/bg-destructive/bg-success/bg-warning
+   ES BLANCO, sin excepción. Esta sección DEBE ir al final del
+   archivo para ganar por orden de cascada.
+   ============================================================= */
+html body [class*="bg-gradient-to-"][class*="from-primary"],
+html body [class*="bg-gradient-to-"][class*="from-primary"] *,
+html body [class*="bg-gradient-to-"][class*="from-primary"] svg,
+html body [class*="bg-gradient-to-"][class*="from-secondary"],
+html body [class*="bg-gradient-to-"][class*="from-secondary"] *,
+html body [class*="bg-gradient-to-"][class*="from-secondary"] svg,
+html body [class*="bg-gradient-to-"][class*="to-primary"],
+html body [class*="bg-gradient-to-"][class*="to-primary"] *,
+html body [class*="bg-gradient-to-"][class*="to-primary"] svg,
+html body [class*="bg-gradient-to-"][class*="to-secondary"],
+html body [class*="bg-gradient-to-"][class*="to-secondary"] *,
+html body [class*="bg-gradient-to-"][class*="to-secondary"] svg,
+html body .bg-primary:not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20),
+html body .bg-primary:not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20) > svg,
+html body .bg-primary:not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20) > * > svg,
+html body .bg-primary:not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20) svg,
+html body .bg-primary:not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20) *,
+html body .bg-secondary:not(.bg-secondary\/0):not(.bg-secondary\/5):not(.bg-secondary\/10):not(.bg-secondary\/20),
+html body .bg-secondary:not(.bg-secondary\/0):not(.bg-secondary\/5):not(.bg-secondary\/10):not(.bg-secondary\/20) svg,
+html body .bg-secondary:not(.bg-secondary\/0):not(.bg-secondary\/5):not(.bg-secondary\/10):not(.bg-secondary\/20) *,
+html body .bg-destructive:not(.bg-destructive\/10):not(.bg-destructive\/20),
+html body .bg-destructive:not(.bg-destructive\/10):not(.bg-destructive\/20) svg,
+html body .bg-destructive:not(.bg-destructive\/10):not(.bg-destructive\/20) *,
+html body .bg-success:not(.bg-success\/10):not(.bg-success\/20),
+html body .bg-success:not(.bg-success\/10):not(.bg-success\/20) svg,
+html body .bg-success:not(.bg-success\/10):not(.bg-success\/20) *,
+html body .bg-warning:not(.bg-warning\/10):not(.bg-warning\/20),
+html body .bg-warning:not(.bg-warning\/10):not(.bg-warning\/20) svg,
+html body .bg-warning:not(.bg-warning\/10):not(.bg-warning\/20) *,
+html body .bg-info:not(.bg-info\/10):not(.bg-info\/20),
+html body .bg-info:not(.bg-info\/10):not(.bg-info\/20) svg,
+html body .bg-info:not(.bg-info\/10):not(.bg-info\/20) * {
+  color: #ffffff !important;
+  stroke: currentColor !important;
+}
+
+/* Salvedad: badges y elementos con clase text-* explícita dentro
+   de estos contenedores (ej. una badge bg-white text-primary anidada)
+   recuperan su color via clase específica del propio elemento, no del
+   padre, así que la regla anterior NO los toca porque apunta a
+   "descendientes con su propio fondo claro". */
+html body [class*="bg-gradient-to-"][class*="from-primary"] [class*="bg-white"]:not([class*="bg-white/"]),
+html body [class*="bg-gradient-to-"][class*="from-secondary"] [class*="bg-white"]:not([class*="bg-white/"]),
+html body .bg-primary [class*="bg-white"]:not([class*="bg-white/"]),
+html body .bg-secondary [class*="bg-white"]:not([class*="bg-white/"]) {
+  color: #163a83 !important;
+}
+html body [class*="bg-gradient-to-"][class*="from-primary"] [class*="bg-white"]:not([class*="bg-white/"]) svg,
+html body [class*="bg-gradient-to-"][class*="from-secondary"] [class*="bg-white"]:not([class*="bg-white/"]) svg,
+html body .bg-primary [class*="bg-white"]:not([class*="bg-white/"]) svg,
+html body .bg-secondary [class*="bg-white"]:not([class*="bg-white/"]) svg {
+  color: #163a83 !important;
+}
+
