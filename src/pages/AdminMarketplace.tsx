@@ -314,13 +314,32 @@ function OrdersTab({ es }: { es: boolean }) {
 
   const fetchData = async () => {
     setLoading(true);
-    const { data } = await supabase
+    // Split query: no hay FK declarada entre marketplace_orders.buyer_id y
+    // profiles.id, así que PostgREST no puede auto-join. Si lo intentamos en
+    // una sola query, falla con PGRST200 y devuelve vacío → admin no ve pedidos.
+    const { data: rawOrders, error: ordersErr } = await supabase
       .from('marketplace_orders')
-      .select('*, marketplace_products(name, image_url), marketplace_vendors(name), profiles:buyer_id(name, email)')
+      .select('*, marketplace_products(name, image_url), marketplace_vendors(name)')
       .order('created_at', { ascending: false });
-    setOrders((data as any[]) || []); setLoading(false);
+    if (ordersErr) {
+      console.error('orders fetch error', ordersErr);
+      toast.error(es ? 'Error cargando pedidos' : 'Error loading orders');
+      setOrders([]); setLoading(false); return;
+    }
+    const ordersArr: any[] = (rawOrders as any[]) || [];
+    const buyerIds = Array.from(new Set(ordersArr.map(o => o.buyer_id).filter(Boolean)));
+    let profilesMap: Record<string, { name: string; email: string }> = {};
+    if (buyerIds.length > 0) {
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', buyerIds);
+      (profs || []).forEach((p: any) => { profilesMap[p.id] = { name: p.name || '', email: p.email || '' }; });
+    }
+    const merged = ordersArr.map(o => ({ ...o, profiles: profilesMap[o.buyer_id] || null }));
+    setOrders(merged); setLoading(false);
   };
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   const filtered = useMemo(() => {
     return orders.filter(o => {

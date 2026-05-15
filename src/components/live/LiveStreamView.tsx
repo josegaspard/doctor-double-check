@@ -203,11 +203,15 @@ export function LiveStreamView({
 
             {/* Control bar */}
             <div className={`absolute ${mobileFullscreen ? 'bottom-4' : 'bottom-2'} left-0 right-0 z-30 flex items-center justify-center gap-3 px-4`}>
+              {/* Hover de cambio de color removido: hacía que el icono blanco se
+                  fundiera con el fondo en la transición. Cada botón mantiene su
+                  color base. La identificación pressed/active es por la diferencia
+                  del color destructive/primary vs white/10 y por el ícono. */}
               <Button
                 variant="outline"
                 size="icon"
                 onClick={(e) => { e.stopPropagation(); playerRef.current?.toggleMute(); forceUpdate(n => n + 1); }}
-                className={`h-11 w-11 rounded-full border-white/20 text-white ${isMuted ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
+                className={`h-11 w-11 rounded-full border-white/20 text-white ${isMuted ? 'bg-destructive/70' : 'bg-white/10'}`}
               >
                 {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </Button>
@@ -215,7 +219,7 @@ export function LiveStreamView({
                 variant="outline"
                 size="icon"
                 onClick={(e) => { e.stopPropagation(); playerRef.current?.toggleVideo(); forceUpdate(n => n + 1); }}
-                className={`h-11 w-11 rounded-full border-white/20 text-white ${isVideoOff ? 'bg-destructive/70 hover:bg-destructive/90' : 'bg-white/10 hover:bg-white/20'}`}
+                className={`h-11 w-11 rounded-full border-white/20 text-white ${isVideoOff ? 'bg-destructive/70' : 'bg-white/10'}`}
               >
                 {isVideoOff ? <VideoOff className="w-5 h-5" /> : <VideoIcon className="w-5 h-5" />}
               </Button>
@@ -223,7 +227,7 @@ export function LiveStreamView({
                 variant="outline"
                 size="icon"
                 onClick={(e) => { e.stopPropagation(); handleToggleMobileFullscreen(); }}
-                className={`h-11 w-11 rounded-full border-white/20 text-white ${mobileFullscreen ? 'bg-primary/70 hover:bg-primary/90' : 'bg-white/10 hover:bg-white/20'}`}
+                className={`h-11 w-11 rounded-full border-white/20 text-white ${mobileFullscreen ? 'bg-primary/70' : 'bg-white/10'}`}
               >
                 {mobileFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
               </Button>
@@ -232,7 +236,7 @@ export function LiveStreamView({
                   variant="outline"
                   size="icon"
                   onClick={(e) => { e.stopPropagation(); setMobileChatOpen(!mobileChatOpen); }}
-                  className={`h-11 w-11 rounded-full border-white/20 text-white ${mobileChatOpen ? 'bg-primary/70 hover:bg-primary/90' : 'bg-white/10 hover:bg-white/20'}`}
+                  className={`h-11 w-11 rounded-full border-white/20 text-white ${mobileChatOpen ? 'bg-primary/70' : 'bg-white/10'}`}
                 >
                   <MessageSquare className="w-5 h-5" />
                 </Button>

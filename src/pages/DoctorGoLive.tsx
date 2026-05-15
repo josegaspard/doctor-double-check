@@ -297,6 +297,10 @@ export default function DoctorGoLive() {
       };
       setLiveData(liveDataObj);
       setIsLive(true);
+      // Scroll a top: el form puede dejar al usuario scrolleado abajo, y al
+      // mostrar la live view queremos que vea el header + video, no estar
+      // pegado al footer del form anterior.
+      setTimeout(() => { try { window.scrollTo({ top: 0, behavior: 'instant' as any }); } catch { window.scrollTo(0, 0); } }, 0);
 
       // Store in global context so navigation away doesn't lose session
       setActiveLiveSession({

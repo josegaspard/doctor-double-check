@@ -112,57 +112,49 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
               </Badge>
             )}
           </div>
-          {/* Verified credentials with status */}
-          {(live.doctorCedula || live.doctorCofepris) ? (
-            <>
-              <div className="flex flex-wrap gap-1 mt-2">
-                <CredentialStatusBadge
-                  type="cedula"
-                  status={live.doctorCedulaStatus}
-                  value={live.doctorCedula}
-                  rejectionReason={live.doctorCedulaRejectionReason}
-                  size="xs"
-                />
-                <CredentialStatusBadge
-                  type="cofepris"
-                  status={live.doctorCofeprisStatus}
-                  value={live.doctorCofepris}
-                  rejectionReason={live.doctorCofeprisRejectionReason}
-                  size="xs"
-                />
-              </div>
-              {(() => {
-                const parts: string[] = [];
-                if (live.doctorCedulaStatus === 'rejected' && live.doctorCedulaRejectionReason) {
-                  parts.push(`Cédula: ${live.doctorCedulaRejectionReason}`);
-                }
-                if (live.doctorCofeprisStatus === 'rejected' && live.doctorCofeprisRejectionReason) {
-                  parts.push(`COFEPRIS: ${live.doctorCofeprisRejectionReason}`);
-                }
-                // Fallback when there's a rejection but no reason recorded
-                if (
-                  parts.length === 0 &&
-                  (live.doctorCedulaStatus === 'rejected' || live.doctorCofeprisStatus === 'rejected')
-                ) {
-                  parts.push('Credencial rechazada (sin motivo registrado)');
-                }
-                if (parts.length === 0) return null;
-                return (
-                  <p className="text-[10px] text-destructive mt-1 line-clamp-2 flex items-start gap-1">
-                    <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-                    <span>{parts.join(' · ')}</span>
-                  </p>
-                );
-              })()}
-            </>
-          ) : (
+          {/* Verified credentials con status — SIEMPRE visible (compliance).
+              Si la cédula o el COFEPRIS aún no están cargados, los badges
+              muestran "Pendiente" en vez de ocultarse. */}
+          <>
             <div className="flex flex-wrap gap-1 mt-2">
-              <Badge variant="outline" className="text-[10px] gap-0.5 text-muted-foreground h-4 px-1.5 py-0">
-                <Clock className="w-2.5 h-2.5" />
-                Verificando credenciales…
-              </Badge>
+              <CredentialStatusBadge
+                type="cedula"
+                status={live.doctorCedulaStatus}
+                value={live.doctorCedula}
+                rejectionReason={live.doctorCedulaRejectionReason}
+                size="xs"
+              />
+              <CredentialStatusBadge
+                type="cofepris"
+                status={live.doctorCofeprisStatus}
+                value={live.doctorCofepris}
+                rejectionReason={live.doctorCofeprisRejectionReason}
+                size="xs"
+              />
             </div>
-          )}
+            {(() => {
+              const parts: string[] = [];
+              if (live.doctorCedulaStatus === 'rejected' && live.doctorCedulaRejectionReason) {
+                parts.push(`Cédula: ${live.doctorCedulaRejectionReason}`);
+              }
+              if (live.doctorCofeprisStatus === 'rejected' && live.doctorCofeprisRejectionReason) {
+                parts.push(`COFEPRIS: ${live.doctorCofeprisRejectionReason}`);
+              }
+              if (
+                parts.length === 0 &&
+                (live.doctorCedulaStatus === 'rejected' || live.doctorCofeprisStatus === 'rejected')
+              ) {
+                parts.push('Credencial rechazada (sin motivo registrado)');
+              }
+              if (parts.length === 0) return null;
+              return (
+                <p className="text-[10px] text-destructive mt-1 line-clamp-2 flex items-start gap-1">
+                  <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                  <span>{parts.join(' · ')}</span>
+                </p>
+              );
+            })()}
+          </>
         </CardContent>
       </Card>
     </Link>

@@ -31,10 +31,11 @@ export function CredentialStatusBadge({
   size = 'xs',
   className,
 }: CredentialStatusBadgeProps) {
-  // Si no hay valor, no renderizar nada
-  if (!value || !String(value).trim()) return null;
-
-  const effectiveStatus: CredentialStatus = status || (value ? 'approved' : 'pending');
+  // Compliance: el badge SIEMPRE renderiza (en /lives card y en LivePlayer la
+  // barra "Profesional verificado" debe ser visible aunque la credencial aún
+  // no esté cargada). Si no hay value, mostramos "Pendiente" en vez de ocultar.
+  const hasValue = !!(value && String(value).trim());
+  const effectiveStatus: CredentialStatus = status || (hasValue ? 'approved' : 'pending');
 
   const labels = {
     cedula: 'Céd. Prof.',
@@ -98,11 +99,9 @@ export function CredentialStatusBadge({
           >
             <Icon className={size === 'xs' ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
             <span className="font-medium">{labels[type]}</span>
-            {value && (
-              <span className="opacity-90 ml-0.5 truncate max-w-[80px]">
-                {String(value).slice(0, 12)}
-              </span>
-            )}
+            <span className="opacity-90 ml-0.5 truncate max-w-[80px]">
+              {hasValue ? String(value).slice(0, 12) : 'Pendiente'}
+            </span>
           </Badge>
         </button>
       </PopoverTrigger>

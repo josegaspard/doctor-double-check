@@ -578,50 +578,48 @@ export default function LivePlayer() {
               {/* Strip prominente de credenciales profesionales — visible siempre
                   bajo el título. Obligatorio para que el paciente verifique al
                   doctor antes/durante la consulta. */}
-              {(live.doctorCedula || live.doctorCofepris) && (
-                <div className="mb-3 rounded-xl border-2 border-primary/40 bg-white shadow-sm px-3 py-2.5 sm:px-4 sm:py-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground flex-shrink-0">
-                      <Award className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-xs sm:text-sm font-bold text-secondary">
-                      Profesional verificado por Medical Masters
+              {/* Tarjeta de credenciales — SIEMPRE visible (requerido por
+                  compliance: el paciente debe ver al doctor verificado en cada
+                  live). Si falta cédula/COFEPRIS muestra "Pendiente" en vez de
+                  ocultar la sección. */}
+              <div className="mb-3 rounded-xl border-2 border-primary/40 bg-white shadow-sm px-3 py-2.5 sm:px-4 sm:py-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground flex-shrink-0">
+                    <Award className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-bold text-secondary">
+                    Profesional verificado por Medical Masters
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
+                  <div className="flex items-center gap-2 rounded-lg bg-primary/8 border border-primary/25 px-2.5 py-1.5">
+                    <CredentialStatusBadge
+                      type="cedula"
+                      status={live.doctorCedulaStatus}
+                      value={live.doctorCedula}
+                      rejectionReason={live.doctorCedulaRejectionReason}
+                      size="xs"
+                    />
+                    <span className="text-[11px] sm:text-xs text-secondary/70 ml-auto">
+                      <span className="text-secondary/60 mr-1">Céd. Prof.</span>
+                      <span className="font-mono font-semibold text-secondary tracking-wide">{live.doctorCedula || '—'}</span>
                     </span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
-                    {live.doctorCedula && (
-                      <div className="flex items-center gap-2 rounded-lg bg-primary/8 border border-primary/25 px-2.5 py-1.5">
-                        <CredentialStatusBadge
-                          type="cedula"
-                          status={live.doctorCedulaStatus}
-                          value={live.doctorCedula}
-                          rejectionReason={live.doctorCedulaRejectionReason}
-                          size="xs"
-                        />
-                        <span className="text-[11px] sm:text-xs text-secondary/70 ml-auto">
-                          <span className="text-secondary/60 mr-1">Céd. Prof.</span>
-                          <span className="font-mono font-semibold text-secondary tracking-wide">{live.doctorCedula}</span>
-                        </span>
-                      </div>
-                    )}
-                    {live.doctorCofepris && (
-                      <div className="flex items-center gap-2 rounded-lg bg-secondary/8 border border-secondary/25 px-2.5 py-1.5">
-                        <CredentialStatusBadge
-                          type="cofepris"
-                          status={live.doctorCofeprisStatus}
-                          value={live.doctorCofepris}
-                          rejectionReason={live.doctorCofeprisRejectionReason}
-                          size="xs"
-                        />
-                        <span className="text-[11px] sm:text-xs text-secondary/70 ml-auto">
-                          <span className="text-secondary/60 mr-1">COFEPRIS</span>
-                          <span className="font-mono font-semibold text-secondary tracking-wide truncate max-w-[140px] inline-block align-bottom">{live.doctorCofepris}</span>
-                        </span>
-                      </div>
-                    )}
+                  <div className="flex items-center gap-2 rounded-lg bg-secondary/8 border border-secondary/25 px-2.5 py-1.5">
+                    <CredentialStatusBadge
+                      type="cofepris"
+                      status={live.doctorCofeprisStatus}
+                      value={live.doctorCofepris}
+                      rejectionReason={live.doctorCofeprisRejectionReason}
+                      size="xs"
+                    />
+                    <span className="text-[11px] sm:text-xs text-secondary/70 ml-auto">
+                      <span className="text-secondary/60 mr-1">COFEPRIS</span>
+                      <span className="font-mono font-semibold text-secondary tracking-wide truncate max-w-[140px] inline-block align-bottom">{live.doctorCofepris || '—'}</span>
+                    </span>
                   </div>
                 </div>
-              )}
+              </div>
 
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {mySubToDoctor?.tier === 'premium' && (
