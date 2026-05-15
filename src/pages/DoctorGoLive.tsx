@@ -111,6 +111,19 @@ export default function DoctorGoLive() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isLive, isEnding]);
 
+  // ⚠️ Hooks DEBEN declararse antes de cualquier early-return (isAuthLoading,
+  // role!==doctor, isLive). Si se declaran después, el conteo de hooks cambia
+  // entre renders → React error #310 (rendered fewer/more hooks than expected),
+  // que en build minificada aparece como #300. Esto rompía la transmisión.
+  const handleCancelCreating = useCallback(() => {
+    if (localStream) {
+      localStream.getTracks().forEach((t) => t.stop());
+      setLocalStream(null);
+    }
+    setIsCreating(false);
+    setCreatingStage('camera');
+  }, [localStream]);
+
   const handleStartLive = async (config: LiveConfig) => {
     if (!user?.id) return;
     if (isCreating) return; // Guard duro contra doble-click
@@ -557,15 +570,6 @@ export default function DoctorGoLive() {
 
     return <MainLayout>{liveContent}</MainLayout>;
   }
-
-  const handleCancelCreating = useCallback(() => {
-    if (localStream) {
-      localStream.getTracks().forEach((t) => t.stop());
-      setLocalStream(null);
-    }
-    setIsCreating(false);
-    setCreatingStage('camera');
-  }, [localStream]);
 
   return (
     <MainLayout>
