@@ -1640,18 +1640,18 @@
 /* 16c. SAFETY NET: cualquier botón ghost cuyo HOVER se vuelve claro.
        hover:bg-accent / hover:bg-muted / hover:bg-secondary cambian a fondo claro,
        por lo que el texto y los iconos en hover deben ser oscuros. */
-.app-bg-image :is(button, a)[class*="hover:bg-accent"]:hover,
-.app-bg-image :is(button, a)[class*="hover:bg-muted"]:hover,
-.app-bg-image :is(button, a)[class*="hover:bg-secondary"]:hover,
-.app-bg-image :is(button, a)[class*="hover:bg-background"]:hover,
-.app-bg-image :is(button, a)[class*="hover:bg-card"]:hover {
+.app-bg-image :is(button, a)[class*="hover:bg-accent"]:not([class~="bg-primary"]):not([class~="bg-secondary"]):not([class~="bg-destructive"]):not([class~="bg-success"]):not([class~="bg-warning"]):not([class~="bg-info"]):hover,
+.app-bg-image :is(button, a)[class*="hover:bg-muted"]:not([class~="bg-primary"]):not([class~="bg-secondary"]):not([class~="bg-destructive"]):not([class~="bg-success"]):not([class~="bg-warning"]):not([class~="bg-info"]):hover,
+.app-bg-image :is(button, a)[class*="hover:bg-secondary"]:not([class~="bg-primary"]):not([class~="bg-secondary"]):not([class~="bg-destructive"]):not([class~="bg-success"]):not([class~="bg-warning"]):not([class~="bg-info"]):hover,
+.app-bg-image :is(button, a)[class*="hover:bg-background"]:not([class~="bg-primary"]):not([class~="bg-secondary"]):not([class~="bg-destructive"]):not([class~="bg-success"]):not([class~="bg-warning"]):not([class~="bg-info"]):hover,
+.app-bg-image :is(button, a)[class*="hover:bg-card"]:not([class~="bg-primary"]):not([class~="bg-secondary"]):not([class~="bg-destructive"]):not([class~="bg-success"]):not([class~="bg-warning"]):not([class~="bg-info"]):hover {
   color: #163a83 !important;
 }
-.app-bg-image :is(button, a)[class*="hover:bg-accent"]:hover svg,
-.app-bg-image :is(button, a)[class*="hover:bg-muted"]:hover svg,
-.app-bg-image :is(button, a)[class*="hover:bg-secondary"]:hover svg,
-.app-bg-image :is(button, a)[class*="hover:bg-background"]:hover svg,
-.app-bg-image :is(button, a)[class*="hover:bg-card"]:hover svg {
+.app-bg-image :is(button, a)[class*="hover:bg-accent"]:not([class~="bg-primary"]):not([class~="bg-secondary"]):not([class~="bg-destructive"]):not([class~="bg-success"]):not([class~="bg-warning"]):not([class~="bg-info"]):hover svg,
+.app-bg-image :is(button, a)[class*="hover:bg-muted"]:not([class~="bg-primary"]):not([class~="bg-secondary"]):not([class~="bg-destructive"]):not([class~="bg-success"]):not([class~="bg-warning"]):not([class~="bg-info"]):hover svg,
+.app-bg-image :is(button, a)[class*="hover:bg-secondary"]:not([class~="bg-primary"]):not([class~="bg-secondary"]):not([class~="bg-destructive"]):not([class~="bg-success"]):not([class~="bg-warning"]):not([class~="bg-info"]):hover svg,
+.app-bg-image :is(button, a)[class*="hover:bg-background"]:not([class~="bg-primary"]):not([class~="bg-secondary"]):not([class~="bg-destructive"]):not([class~="bg-success"]):not([class~="bg-warning"]):not([class~="bg-info"]):hover svg,
+.app-bg-image :is(button, a)[class*="hover:bg-card"]:not([class~="bg-primary"]):not([class~="bg-secondary"]):not([class~="bg-destructive"]):not([class~="bg-success"]):not([class~="bg-warning"]):not([class~="bg-info"]):hover svg {
   color: #163a83 !important;
 }
 
