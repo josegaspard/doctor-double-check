@@ -1529,7 +1529,10 @@
    pero ahí el sistema base ya gestiona el contraste correctamente).
 */
 
-/* 16a. Bg-white sólido - texto e iconos SIEMPRE oscuros, en reposo y en hover */
+/* 16a. Bg-white sólido - texto e iconos SIEMPRE oscuros, en reposo y en hover.
+   Excepción adicional: si el SVG vive dentro de un contenedor con fondo sólido
+   coloreado (gradient, bg-primary, bg-secondary, bg-destructive, etc.), NO lo
+   pintamos oscuro — ahí el icono debe permanecer blanco (text-white de Tailwind). */
 .app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not([class*="hover:bg-white"]):not(:where(
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
@@ -1542,11 +1545,31 @@
 }
 .app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not([class*="hover:bg-white"]):not(:where(
   [role="dialog"] *,
-  [data-radix-popper-content-wrapper] *
+  [data-radix-popper-content-wrapper] *,
+  [class*="bg-gradient"] *,
+  [class*="bg-primary"] *,
+  [class*="bg-secondary"] *,
+  [class*="bg-destructive"] *,
+  [class*="bg-success"] *,
+  [class*="bg-warning"] *,
+  [class*="bg-info"] *,
+  [class*="bg-accent"] *,
+  [class*="from-primary"] *,
+  [class*="from-secondary"] *
 )) svg,
 .app-bg-image [class*="bg-white"]:not([class*="bg-white/"]):not([class*="hover:bg-white"]):not(:where(
   [role="dialog"] *,
-  [data-radix-popper-content-wrapper] *
+  [data-radix-popper-content-wrapper] *,
+  [class*="bg-gradient"] *,
+  [class*="bg-primary"] *,
+  [class*="bg-secondary"] *,
+  [class*="bg-destructive"] *,
+  [class*="bg-success"] *,
+  [class*="bg-warning"] *,
+  [class*="bg-info"] *,
+  [class*="bg-accent"] *,
+  [class*="from-primary"] *,
+  [class*="from-secondary"] *
 )):hover svg {
   color: #163a83 !important;
 }
