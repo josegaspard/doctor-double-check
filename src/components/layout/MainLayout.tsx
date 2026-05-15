@@ -95,7 +95,7 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'show_prescriptions' },
   { labelKey: 'nav.meetings', href: '/meetings', icon: Calendar, roles: ['doctor', 'resident'] },
-  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient'] },
+  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'resident', 'doctor'] },
   { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['patient', 'doctor', 'resident'] },
   { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   { labelKey: 'nav.medicalSupplies', href: '/medical-supplies', icon: Package, roles: ['doctor', 'resident'] },
@@ -154,9 +154,9 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   ];
 }
 
-// Plain "Más" popover — no Radix Portal / z-index dependencies. Uses click-outside
-// + Escape-key + outside-router-friendly absolute positioning so it always renders
-// inside the header context and never gets eaten by overlay / portal mounting bugs.
+// "Más" dropdown — usa Radix DropdownMenu (renderiza vía Portal fuera del
+// <header>), evitando la regla global ".app-bg-image > header button > svg
+// { color: white }" que pintaba items y iconos blancos sobre fondo blanco.
 type MorePopoverItem = {
   labelKey: string;
   shortLabelKey?: string;
@@ -176,71 +176,34 @@ function MoreNavPopover({
   pathname: string;
   triggerClass: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (!wrapperRef.current) return;
-      if (!wrapperRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', onDocClick);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDocClick);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  // Colores hardcodeados con inline style para defeat el override global
-  // ".app-bg-image .text-foreground { color:#fff !important }" que estaba
-  // pintando items en blanco-sobre-blanco. Los hsl() vienen del brandbook
-  // y son los mismos que las variables --foreground / --primary.
-  const ITEM_INACTIVE = { color: 'hsl(220 71% 18%)' }; // Metallic Blue oscuro
-  const ITEM_ACTIVE = { color: 'hsl(0 0% 100%)', backgroundColor: 'hsl(189 100% 27%)' }; // Blue Lagoon
   return (
-    <div ref={wrapperRef} className="relative flex-shrink-0">
-      <button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={t('nav.more')}
-        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-        className={triggerClass}
-      >
-        <MoreHorizontal className="w-3.5 h-3.5" />
-        <span>{t('nav.more')}</span>
-      </button>
-      {open && (
-        <div
-          role="menu"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
           aria-label={t('nav.more')}
-          className="absolute left-0 top-[calc(100%+6px)] z-[80] w-60 rounded-lg border border-border shadow-xl overflow-hidden py-1"
-          style={{ backgroundColor: 'hsl(0 0% 100%)' }}
+          className={triggerClass}
         >
-          {items.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <button
-                key={item.href}
-                type="button"
-                role="menuitem"
-                onClick={() => { setOpen(false); navigate(item.href); }}
-                style={isActive ? ITEM_ACTIVE : ITEM_INACTIVE}
-                className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors ${
-                  isActive ? 'font-semibold' : 'hover:bg-muted'
-                }`}
-              >
-                <item.icon className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate">{t(item.labelKey)}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
+          <MoreHorizontal className="w-3.5 h-3.5" />
+          <span>{t('nav.more')}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-60">
+        {items.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <DropdownMenuItem
+              key={item.href}
+              onClick={() => navigate(item.href)}
+              className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary text-primary-foreground focus:bg-primary focus:text-primary-foreground' : ''}`}
+            >
+              <item.icon className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="truncate">{t(item.labelKey)}</span>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
