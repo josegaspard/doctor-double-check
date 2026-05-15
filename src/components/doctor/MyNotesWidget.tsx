@@ -19,26 +19,30 @@ const noteSchema = z.object({
 });
 
 export function MyNotesWidget() {
-  const { user } = useAuth();
+  const { supabaseUser } = useAuth();
+  const doctorId = supabaseUser?.id;
   const [notes, setNotes] = useState<DoctorNote[]>([]);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    if (!user?.id) return;
+    if (!doctorId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('doctor_notes' as any)
       .select('id, content, created_at')
-      .eq('doctor_id', user.id)
+      .eq('doctor_id', doctorId)
       .order('created_at', { ascending: false })
       .limit(5);
+    if (error) {
+      console.error('[MyNotesWidget] load error:', error);
+    }
     if (!error && data) setNotes(data as unknown as DoctorNote[]);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [user?.id]);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [doctorId]);
 
   const save = async () => {
     const parsed = noteSchema.safeParse({ content: draft });
@@ -46,14 +50,25 @@ export function MyNotesWidget() {
       toast.error(parsed.error.issues[0].message);
       return;
     }
-    if (!user?.id) return;
+    if (!doctorId) {
+      toast.error('Sesión expirada. Recarga la página.');
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from('doctor_notes' as any)
-      .insert({ doctor_id: user.id, content: parsed.data.content });
+      .insert({ doctor_id: doctorId, content: parsed.data.content });
     setSaving(false);
     if (error) {
-      toast.error('No se pudo guardar la nota');
+      console.error('[MyNotesWidget] save error:', error);
+      // Mensaje específico cuando falta perfil (FK violation contra profiles.id)
+      if (error.code === '23503') {
+        toast.error('Tu perfil no está completo. Termina el onboarding primero.');
+      } else if (error.code === '42501' || error.message?.toLowerCase().includes('row-level security')) {
+        toast.error('Permisos insuficientes (RLS). Verifica tu sesión.');
+      } else {
+        toast.error(`No se pudo guardar la nota: ${error.message}`);
+      }
       return;
     }
     setDraft('');
@@ -64,7 +79,8 @@ export function MyNotesWidget() {
   const remove = async (id: string) => {
     const { error } = await supabase.from('doctor_notes' as any).delete().eq('id', id);
     if (error) {
-      toast.error('No se pudo eliminar');
+      console.error('[MyNotesWidget] delete error:', error);
+      toast.error(`No se pudo eliminar: ${error.message}`);
       return;
     }
     setNotes(prev => prev.filter(n => n.id !== id));
