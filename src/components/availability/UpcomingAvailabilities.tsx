@@ -196,6 +196,7 @@ export function UpcomingAvailabilities() {
   const { subscriptions } = useSubscriptions();
   const [selected, setSelected] = useState<DoctorAvailability | null>(null);
   const [open, setOpen] = useState(false);
+  const [allOpen, setAllOpen] = useState(false);
 
   const premiumDoctorIds = new Set(subscriptions.filter(s => s.tier === 'premium').map(s => s.creatorId));
   const subscribedDoctorIds = new Set(subscriptions.map(s => s.creatorId));
@@ -277,16 +278,19 @@ export function UpcomingAvailabilities() {
                 />
               ))}
 
-              <Link to="/doctor/availability">
-                <Card className="min-w-[120px] max-w-[120px] sm:min-w-[160px] sm:max-w-[160px] h-full flex items-center justify-center bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40 transition-all cursor-pointer group">
-                  <CardContent className="p-3 sm:p-4 text-center flex flex-col items-center justify-center gap-2">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-primary group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                    <p className="text-xs sm:text-sm font-medium text-primary">Ver todos</p>
-                  </CardContent>
-                </Card>
-              </Link>
+              {displayAvailabilities.length > 3 && (
+                <button type="button" onClick={() => setAllOpen(true)} className="text-left">
+                  <Card className="min-w-[120px] max-w-[120px] sm:min-w-[160px] sm:max-w-[160px] h-full flex items-center justify-center bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40 transition-all cursor-pointer group">
+                    <CardContent className="p-3 sm:p-4 text-center flex flex-col items-center justify-center gap-2">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                        <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-primary group-hover:translate-x-0.5 transition-transform" />
+                      </div>
+                      <p className="text-xs sm:text-sm font-medium text-primary">Ver todas</p>
+                      <p className="text-[10px] text-muted-foreground">({displayAvailabilities.length})</p>
+                    </CardContent>
+                  </Card>
+                </button>
+              )}
             </div>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
@@ -300,6 +304,85 @@ export function UpcomingAvailabilities() {
         open={open}
         onOpenChange={setOpen}
       />
+
+      <Dialog open={allOpen} onOpenChange={setAllOpen}>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              {followedAvailabilities.length > 0
+                ? 'Próximos de doctores que sigues'
+                : 'Próximas actividades'}
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              {displayAvailabilities.length} {displayAvailabilities.length === 1 ? 'actividad' : 'actividades'}
+            </p>
+          </DialogHeader>
+
+          <div className="overflow-y-auto -mx-6 px-6 space-y-2">
+            {displayAvailabilities.map(a => {
+              const isLive = a.type === 'live';
+              const isConsultation = a.type === 'consultation';
+              const ItemIcon = isLive ? Video : isConsultation ? MessageSquare : Clock;
+              const timeUntil = formatDistanceToNow(a.scheduledAt, {
+                addSuffix: true,
+                locale: language === 'es' ? es : enUS,
+              });
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => {
+                    setAllOpen(false);
+                    setTimeout(() => openDetails(a), 80);
+                  }}
+                  className={cn(
+                    'w-full text-left rounded-lg border bg-card p-3 hover:shadow-md transition-all border-l-4',
+                    isLive ? 'border-l-red-500' :
+                    isConsultation ? 'border-l-blue-500' :
+                    'border-l-muted-foreground'
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={cn(
+                      'p-1.5 rounded-lg flex-shrink-0',
+                      isLive ? 'bg-destructive/10 text-destructive' :
+                      isConsultation ? 'bg-primary/10 text-primary' :
+                      'bg-muted text-muted-foreground'
+                    )}>
+                      <ItemIcon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm line-clamp-2 break-words leading-snug">
+                        {a.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                        {a.doctorName}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1 text-[11px] text-muted-foreground flex-wrap">
+                        <Calendar className="h-3 w-3 flex-shrink-0" />
+                        <span>
+                          {format(a.scheduledAt, "d MMM, HH:mm", {
+                            locale: language === 'es' ? es : enUS,
+                          })}
+                        </span>
+                        <span className="text-primary font-medium">({timeUntil})</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAllOpen(false)} className="w-full sm:w-auto">
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
