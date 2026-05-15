@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { GraduationCap, Plus, MessageCircle, Eye, Stethoscope, Send, FileText, ArrowLeft, Loader2 } from 'lucide-react';
+import { GraduationCap, Plus, MessageCircle, Eye, Stethoscope, Send, FileText, ArrowLeft, Loader2, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { SPECIALTIES_LIST } from '@/lib/specialties';
 import { InlineFileViewer } from '@/components/content/InlineFileViewer';
@@ -211,6 +212,37 @@ export default function MedicalEducation() {
 
   const isDoctor = role === 'doctor' || role === 'admin';
 
+  const [deletingCase, setDeletingCase] = useState<ClinicalCase | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const canDelete = (c: ClinicalCase) => !!user && (c.author_id === user.id || role === 'admin');
+
+  const handleDelete = async () => {
+    if (!deletingCase) return;
+    setDeleting(true);
+    try {
+      // Borra archivo en storage si existe
+      if (deletingCase.file_url) {
+        const m = deletingCase.file_url.match(/\/doctor-content\/(.+?)(\?|$)/);
+        if (m && m[1]) {
+          await supabase.storage.from('doctor-content').remove([decodeURIComponent(m[1])]);
+        }
+      }
+      const { error } = await supabase.from('clinical_cases').delete().eq('id', deletingCase.id);
+      if (error) {
+        toast.error(`No se pudo eliminar: ${error.message}`);
+        setDeleting(false);
+        return;
+      }
+      setCases(cs => cs.filter(c => c.id !== deletingCase.id));
+      if (activeCase?.id === deletingCase.id) setActiveCase(null);
+      toast.success('Caso eliminado');
+      setDeletingCase(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-5xl">
@@ -330,9 +362,22 @@ export default function MedicalEducation() {
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-base sm:text-lg">{c.title}</CardTitle>
-                    <Badge variant={c.author_role === 'resident' ? 'warning' : 'verified'} className="text-[10px] flex-shrink-0">
-                      {c.author_role === 'resident' ? 'Residente' : 'Doctor'}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Badge variant={c.author_role === 'resident' ? 'warning' : 'verified'} className="text-[10px]">
+                        {c.author_role === 'resident' ? 'Residente' : 'Doctor'}
+                      </Badge>
+                      {canDelete(c) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={(e) => { e.stopPropagation(); setDeletingCase(c); }}
+                          aria-label="Eliminar caso"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
                     <Stethoscope className="w-3 h-3" />
@@ -363,7 +408,19 @@ export default function MedicalEducation() {
             {activeCase && (
               <>
                 <DialogHeader>
-                  <DialogTitle>{activeCase.title}</DialogTitle>
+                  <div className="flex items-start justify-between gap-2 pr-6">
+                    <DialogTitle className="flex-1 min-w-0">{activeCase.title}</DialogTitle>
+                    {canDelete(activeCase) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-1.5 h-8"
+                        onClick={() => setDeletingCase(activeCase)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Eliminar
+                      </Button>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
                     <Stethoscope className="w-3 h-3" />
                     {activeCase.specialty} · {activeCase.author_name}
@@ -413,6 +470,25 @@ export default function MedicalEducation() {
             )}
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={!!deletingCase} onOpenChange={open => !open && setDeletingCase(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar este caso clínico?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deletingCase?.title && <><strong>{deletingCase.title}</strong><br /></>}
+                Se borrará el caso, todos sus comentarios y el archivo adjunto. Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive hover:bg-destructive/90 text-white">
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+                Eliminar definitivamente
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
   );
