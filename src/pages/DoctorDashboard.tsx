@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Folder, BarChart3, Settings, ChevronDown, Megaphone } from 'lucide-react';
+import { Folder, BarChart3, Settings, ChevronDown, Megaphone, ArrowLeft } from 'lucide-react';
 import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
 import { SignatureUpload } from '@/components/doctor/SignatureUpload';
 import { EmailStatsCard } from '@/components/doctor/EmailStatsCard';
@@ -77,6 +77,9 @@ export default function DoctorDashboard() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 max-w-7xl">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+          <ArrowLeft className="w-4 h-4 mr-1" /> Volver
+        </Button>
         <DoctorDashboardHeader
           userName={user?.name}
           isApproved={isApproved}

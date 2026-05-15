@@ -15,20 +15,37 @@ export function SignatureUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Fetch current signature on mount
-  React.useEffect(() => {
+  // Fetch + re-sign current signature on mount (signed URLs caducan al año o si la firma rota)
+  const refreshSignatureUrl = React.useCallback(async () => {
     if (!user?.id) return;
-    supabase
+    const { data: prof } = await supabase
       .from('doctor_profiles')
       .select('signature_url')
       .eq('user_id', user.id)
-      .single()
-      .then(({ data }) => {
-        if ((data as any)?.signature_url) {
-          setSignatureUrl((data as any).signature_url);
-        }
-      });
+      .single();
+    const current = (prof as any)?.signature_url as string | null;
+    if (!current) { setSignatureUrl(null); return; }
+    // Si el URL guardado es signed y vence, re-firmarlo a partir del path
+    const m = current.match(/\/documents\/(signatures\/[^?]+)/);
+    if (m && m[1]) {
+      const { data: signed, error: signErr } = await supabase.storage.from('documents').createSignedUrl(m[1], 60 * 60 * 24 * 365);
+      if (signErr) {
+        // El archivo puede no existir ya. Limpia el campo.
+        await supabase.from('doctor_profiles').update({ signature_url: null }).eq('user_id', user.id);
+        setSignatureUrl(null);
+        return;
+      }
+      const fresh = signed?.signedUrl;
+      if (fresh && fresh !== current) {
+        await supabase.from('doctor_profiles').update({ signature_url: fresh }).eq('user_id', user.id);
+      }
+      setSignatureUrl(fresh || current);
+    } else {
+      setSignatureUrl(current);
+    }
   }, [user?.id]);
+
+  React.useEffect(() => { void refreshSignatureUrl(); }, [refreshSignatureUrl]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,17 +62,28 @@ export function SignatureUpload() {
 
     setIsUploading(true);
     try {
-      const ext = file.name.split('.').pop();
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
       const path = `signatures/${user.id}/signature.${ext}`;
-      
+
+      // Limpia variantes previas con otra extensión para que solo exista una firma
+      try {
+        await supabase.storage.from('documents').remove([
+          `signatures/${user.id}/signature.png`,
+          `signatures/${user.id}/signature.jpg`,
+          `signatures/${user.id}/signature.jpeg`,
+          `signatures/${user.id}/signature.webp`,
+        ].filter(p => p !== path));
+      } catch {/* ignore */}
+
       const { error: uploadError } = await supabase.storage
         .from('documents')
-        .upload(path, file, { upsert: true });
+        .upload(path, file, { upsert: true, contentType: file.type });
       if (uploadError) throw uploadError;
 
-      // Generate a public-like URL for the signature (documents bucket is private, use signed URL)
-      const { data: signedData } = await supabase.storage.from('documents').createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
+      const { data: signedData, error: signedErr } = await supabase.storage.from('documents').createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (signedErr) throw signedErr;
       const signatureUrl2 = signedData?.signedUrl;
+      if (!signatureUrl2) throw new Error('No se pudo firmar la URL');
 
       const { error: updateError } = await supabase
         .from('doctor_profiles')
@@ -63,10 +91,11 @@ export function SignatureUpload() {
         .eq('user_id', user.id);
       if (updateError) throw updateError;
 
-      setSignatureUrl(signatureUrl2 || null);
+      setSignatureUrl(signatureUrl2);
       toast.success(language === 'es' ? 'Firma actualizada' : 'Signature updated');
     } catch (err: any) {
-      toast.error(err.message || 'Error');
+      console.error('signature upload error', err);
+      toast.error(err.message || 'Error al subir la firma');
     } finally {
       setIsUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -77,16 +106,27 @@ export function SignatureUpload() {
     if (!user?.id) return;
     setIsUploading(true);
     try {
+      // Borra todos los archivos físicos posibles del usuario
+      try {
+        await supabase.storage.from('documents').remove([
+          `signatures/${user.id}/signature.png`,
+          `signatures/${user.id}/signature.jpg`,
+          `signatures/${user.id}/signature.jpeg`,
+          `signatures/${user.id}/signature.webp`,
+        ]);
+      } catch {/* ignore */}
+
       await supabase
         .from('doctor_profiles')
         .update({ signature_url: null })
         .eq('user_id', user.id);
       setSignatureUrl(null);
       toast.success(language === 'es' ? 'Firma eliminada' : 'Signature removed');
-    } catch {
-      toast.error('Error');
+    } catch (err: any) {
+      toast.error(err.message || 'Error');
     } finally {
       setIsUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
     }
   };
 

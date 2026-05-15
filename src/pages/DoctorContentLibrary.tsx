@@ -43,6 +43,7 @@ import {
   Lock,
   Loader2,
   Settings2,
+  ArrowLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -235,6 +236,9 @@ export default function DoctorContentLibrary() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+          <ArrowLeft className="w-4 h-4 mr-1" /> Volver
+        </Button>
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>

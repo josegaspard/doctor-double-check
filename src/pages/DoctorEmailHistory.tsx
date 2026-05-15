@@ -11,7 +11,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { Mail, CheckCircle, XCircle, Video, Calendar as CalendarIcon, Filter, X, Download, Trash2, SquareCheck, Square } from 'lucide-react';
+import { Mail, CheckCircle, XCircle, Video, Calendar as CalendarIcon, Filter, X, Download, Trash2, SquareCheck, Square, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
@@ -69,6 +70,7 @@ const getEmailTypeLabel = (type: string) => {
 };
 
 export default function DoctorEmailHistory() {
+  const navigate = useNavigate();
   const { supabaseUser } = useAuth();
   const [emails, setEmails] = useState<EmailItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -175,6 +177,9 @@ export default function DoctorEmailHistory() {
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="hidden sm:inline-flex -ml-2 text-white hover:bg-white/10 hover:text-white">
+          <ArrowLeft className="w-4 h-4 mr-1" /> Volver
+        </Button>
         <MobileBackHeader />
 
         {/* Stats */}

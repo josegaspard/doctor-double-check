@@ -17,7 +17,7 @@ import { ScheduleCourseForm } from '@/components/live/ScheduleCourseForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Video, Loader2, Radio, CalendarClock, X } from 'lucide-react';
+import { Video, Loader2, Radio, CalendarClock, X, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import Daily from '@daily-co/daily-js';
 
@@ -579,6 +579,9 @@ export default function DoctorGoLive() {
     <MainLayout>
       {isCreating && <StartingLiveOverlay stage={creatingStage} onCancel={handleCancelCreating} />}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+          <ArrowLeft className="w-4 h-4 mr-1" /> Volver
+        </Button>
         <div className="mb-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary text-primary-foreground border border-primary shadow-md mb-3">
             <Radio className="w-3.5 h-3.5" />

@@ -1709,18 +1709,18 @@
    ES BLANCO, sin excepción. Esta sección DEBE ir al final del
    archivo para ganar por orden de cascada.
    ============================================================= */
-html body [class*="bg-gradient-to-"][class*="from-primary"],
-html body [class*="bg-gradient-to-"][class*="from-primary"] *,
-html body [class*="bg-gradient-to-"][class*="from-primary"] svg,
-html body [class*="bg-gradient-to-"][class*="from-secondary"],
-html body [class*="bg-gradient-to-"][class*="from-secondary"] *,
-html body [class*="bg-gradient-to-"][class*="from-secondary"] svg,
-html body [class*="bg-gradient-to-"][class*="to-primary"],
-html body [class*="bg-gradient-to-"][class*="to-primary"] *,
-html body [class*="bg-gradient-to-"][class*="to-primary"] svg,
-html body [class*="bg-gradient-to-"][class*="to-secondary"],
-html body [class*="bg-gradient-to-"][class*="to-secondary"] *,
-html body [class*="bg-gradient-to-"][class*="to-secondary"] svg,
+html body [class*="bg-gradient-to-"][class~="from-primary"],
+html body [class*="bg-gradient-to-"][class~="from-primary"] *,
+html body [class*="bg-gradient-to-"][class~="from-primary"] svg,
+html body [class*="bg-gradient-to-"][class~="from-secondary"],
+html body [class*="bg-gradient-to-"][class~="from-secondary"] *,
+html body [class*="bg-gradient-to-"][class~="from-secondary"] svg,
+html body [class*="bg-gradient-to-"][class~="to-primary"],
+html body [class*="bg-gradient-to-"][class~="to-primary"] *,
+html body [class*="bg-gradient-to-"][class~="to-primary"] svg,
+html body [class*="bg-gradient-to-"][class~="to-secondary"],
+html body [class*="bg-gradient-to-"][class~="to-secondary"] *,
+html body [class*="bg-gradient-to-"][class~="to-secondary"] svg,
 html body .bg-primary:not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20),
 html body .bg-primary:not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20) > svg,
 html body .bg-primary:not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20) > * > svg,
@@ -1750,14 +1750,14 @@ html body .bg-info:not(.bg-info\/10):not(.bg-info\/20) * {
    recuperan su color via clase específica del propio elemento, no del
    padre, así que la regla anterior NO los toca porque apunta a
    "descendientes con su propio fondo claro". */
-html body [class*="bg-gradient-to-"][class*="from-primary"] [class*="bg-white"]:not([class*="bg-white/"]),
-html body [class*="bg-gradient-to-"][class*="from-secondary"] [class*="bg-white"]:not([class*="bg-white/"]),
+html body [class*="bg-gradient-to-"][class~="from-primary"] [class*="bg-white"]:not([class*="bg-white/"]),
+html body [class*="bg-gradient-to-"][class~="from-secondary"] [class*="bg-white"]:not([class*="bg-white/"]),
 html body .bg-primary [class*="bg-white"]:not([class*="bg-white/"]),
 html body .bg-secondary [class*="bg-white"]:not([class*="bg-white/"]) {
   color: #163a83 !important;
 }
-html body [class*="bg-gradient-to-"][class*="from-primary"] [class*="bg-white"]:not([class*="bg-white/"]) svg,
-html body [class*="bg-gradient-to-"][class*="from-secondary"] [class*="bg-white"]:not([class*="bg-white/"]) svg,
+html body [class*="bg-gradient-to-"][class~="from-primary"] [class*="bg-white"]:not([class*="bg-white/"]) svg,
+html body [class*="bg-gradient-to-"][class~="from-secondary"] [class*="bg-white"]:not([class*="bg-white/"]) svg,
 html body .bg-primary [class*="bg-white"]:not([class*="bg-white/"]) svg,
 html body .bg-secondary [class*="bg-white"]:not([class*="bg-white/"]) svg {
   color: #163a83 !important;

@@ -87,7 +87,10 @@ export default function HospitalLocator() {
       setActiveDoctorsCount(docCount || 0);
       setHospitals(hospData.map(hosp => ({
         ...hosp,
-        specialties: Array.isArray(hosp.specialties) ? hosp.specialties : [],
+        specialties: (Array.isArray(hosp.specialties) ? hosp.specialties : [])
+          .filter((s: any) => typeof s === 'string' && s.trim().length > 0)
+          .filter((s: string) => !/^https?:\/\//i.test(s.trim()))
+          .filter((s: string) => !/\.(jpg|jpeg|png|gif|webp|svg|avif|bmp)(\?|$)/i.test(s.trim())),
         avg_rating: revMap[hosp.id] ? revMap[hosp.id].reduce((a, rv) => a + rv.rating, 0) / revMap[hosp.id].length : 0,
         review_count: revMap[hosp.id]?.length || 0,
       })));
