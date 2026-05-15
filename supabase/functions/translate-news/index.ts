@@ -1,6 +1,4 @@
-// MIGRATION 2026-05-08: AI gateway switched from Lovable → Gemini API direct.
-// To revert: swap the LOVABLE-LEGACY block (uncomment) with the NATIVE-IMPL block (comment).
-
+// Traductor de noticias vía Gemini API directo.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -23,33 +21,6 @@ serve(async (req) => {
 
     const targetLangName = targetLang === 'en' ? 'English' : 'Spanish';
 
-    // ─── LOVABLE-LEGACY (kept for rollback) ─────────────────────────────────
-    // const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    // if (!LOVABLE_API_KEY) {
-    //   return new Response(JSON.stringify({ error: "Translation service not configured" }), {
-    //     status: 500,
-    //     headers: { ...corsHeaders, "Content-Type": "application/json" },
-    //   });
-    // }
-    // const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    //   method: "POST",
-    //   headers: {
-    //     Authorization: `Bearer ${LOVABLE_API_KEY}`,
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     model: "google/gemini-3-flash-preview",
-    //     messages: [
-    //       { role: "system", content: `You are a professional medical translator...` },
-    //       { role: "user", content: `Translate this article:\n\nTitle: ${title}\n\nContent (HTML): ${content}` },
-    //     ],
-    //     tools: [{ type: "function", function: { name: "return_translation", parameters: { ... } } }],
-    //     tool_choice: { type: "function", function: { name: "return_translation" } },
-    //   }),
-    // });
-    // ... legacy parsing of tool_calls[0].function.arguments
-
-    // ─── NATIVE-IMPL (active, post-migration) ───────────────────────────────
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) {
       return new Response(JSON.stringify({ error: "Translation service not configured" }), {

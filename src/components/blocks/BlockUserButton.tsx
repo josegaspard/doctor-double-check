@@ -71,15 +71,32 @@ export function BlockUserButton({ targetUserId, targetUserName, size = 'sm' }: B
   if (!user?.id || user.id === targetUserId) return null;
 
   if (isBlocked) {
+    if (size === 'icon') {
+      // Icon-only para grid de acciones: mismo tamaño/altura que sus vecinos
+      // (Suscribirse · Ver Lives). Tooltip "Desbloquear" en hover.
+      return (
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleToggleBlock}
+          disabled={isLoading}
+          title="Desbloquear"
+          aria-label="Desbloquear"
+          className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 text-destructive border-destructive/40 hover:bg-destructive/10 rounded-md"
+        >
+          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
+        </Button>
+      );
+    }
     return (
       <Button
         variant="outline"
         size={size}
         onClick={handleToggleBlock}
         disabled={isLoading}
-        className="gap-1 text-destructive border-destructive/30"
+        className="gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10"
       >
-        {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
+        {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ban className="w-3.5 h-3.5" />}
         Desbloquear
       </Button>
     );
@@ -89,12 +106,13 @@ export function BlockUserButton({ targetUserId, targetUserName, size = 'sm' }: B
     <AlertDialog>
       <AlertDialogTrigger asChild>
         {size === 'icon' ? (
-          <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full" title="Bloquear">
-            <Ban className="w-3.5 h-3.5" />
+          // Icon-only para grid: mismo alto que Suscribirse/Ver Lives (h-9 sm:h-10)
+          <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md" title="Bloquear" aria-label="Bloquear">
+            <Ban className="w-4 h-4" />
           </Button>
         ) : (
-          <Button variant="ghost" size={size} className="gap-1 text-muted-foreground hover:text-destructive">
-            <Ban className="w-3 h-3" />
+          <Button variant="ghost" size={size} className="gap-1.5 text-muted-foreground hover:text-destructive">
+            <Ban className="w-3.5 h-3.5" />
             Bloquear
           </Button>
         )}

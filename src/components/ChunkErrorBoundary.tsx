@@ -6,6 +6,8 @@ interface State {
   isChunkError: boolean;
   isLiveRoute: boolean;
   liveCountdown: number;
+  errorMsg: string;
+  errorStack: string;
 }
 
 /**
@@ -22,22 +24,20 @@ interface State {
  * recarga manual.
  */
 export class ChunkErrorBoundary extends React.Component<{ children: React.ReactNode }, State> {
-  state: State = { hasError: false, isChunkError: false, isLiveRoute: false, liveCountdown: 6 };
+  state: State = { hasError: false, isChunkError: false, isLiveRoute: false, liveCountdown: 6, errorMsg: '', errorStack: '' };
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
 
   static getDerivedStateFromError(error: unknown): State {
     const msg = (error as any)?.message?.toString() ?? '';
     const name = (error as any)?.name?.toString() ?? '';
+    const stack = (error as any)?.stack?.toString() ?? '';
     const isChunkError =
       /failed to fetch dynamically imported module/i.test(msg) ||
       /chunkloaderror/i.test(name) ||
       /loading chunk \d+ failed/i.test(msg) ||
       /importing a module script failed/i.test(msg);
-    // Si el error ocurre estando en /live/:id, lo tratamos como cierre de live
-    // (lo más probable: el doctor terminó la transmisión, el Daily SDK
-    // desconectó y algún render derefereció state inconsistente).
     const isLiveRoute = typeof window !== 'undefined' && /^\/live\//.test(window.location.pathname);
-    return { hasError: true, isChunkError, isLiveRoute, liveCountdown: 6 };
+    return { hasError: true, isChunkError, isLiveRoute, liveCountdown: 6, errorMsg: `${name}: ${msg}`, errorStack: stack };
   }
 
   componentDidCatch(error: unknown) {
@@ -124,12 +124,23 @@ export class ChunkErrorBoundary extends React.Component<{ children: React.ReactN
       }
       return (
         <div className="min-h-screen flex items-center justify-center bg-background p-6">
-          <div className="max-w-md text-center space-y-4">
+          <div className="max-w-2xl w-full text-center space-y-4">
             <h1 className="text-2xl font-bold text-foreground">Algo salió mal</h1>
             <p className="text-sm text-muted-foreground">
               Hubo un error inesperado. Recarga la página para volver a intentarlo.
             </p>
+            {this.state.errorMsg && (
+              <details className="text-left mx-auto max-w-xl">
+                <summary className="cursor-pointer text-xs text-primary font-semibold mb-2">Ver detalles técnicos</summary>
+                <pre className="text-[10px] whitespace-pre-wrap break-words bg-muted p-3 rounded-md text-foreground/80 overflow-x-auto max-h-[40vh]">
+{this.state.errorMsg}
+{'\n\n'}
+{this.state.errorStack.split('\n').slice(0, 12).join('\n')}
+                </pre>
+              </details>
+            )}
             <button
+              type="button"
               onClick={() => window.location.reload()}
               className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90"
             >

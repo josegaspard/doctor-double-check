@@ -76,6 +76,6 @@ Pedimos un periodo razonable de **90 días** para remediar antes de divulgación
 
 ## Fuera de alcance técnico
 
-- **CSP estricto con nonces**: incompatible con la inyección de scripts en runtime de Lovable.
-- **Rate limiting custom**: no soportado por Lovable Cloud (usar Cloudflare WAF).
+- **CSP estricto con nonces**: incompatible con el bundler actual (Vite + injection runtime). Mitigado con CSP relajado + COOP/CORP/X-Frame.
+- **Rate limiting custom**: delegado a Cloudflare WAF / Vercel firewall a nivel edge.
 - **PCI-DSS**: cubierto por Stripe Checkout (no procesamos tarjetas en el dominio).
