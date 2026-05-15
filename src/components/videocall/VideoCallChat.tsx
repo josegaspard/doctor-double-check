@@ -47,19 +47,21 @@ export function VideoCallChat({ messages, onSend, onClose }: VideoCallChatProps)
       transition={{ type: 'spring', stiffness: 280, damping: 30 }}
       // Mobile: bottom-sheet full-width, ~70% altura.
       // Desktop: side-panel derecho 320px full-height.
-      className="absolute z-30 bg-card/97 backdrop-blur-md flex flex-col shadow-2xl
+      // Fondo SÓLIDO (sin transparencia) y header en primary para que destaque
+      // sobre el video oscuro de la llamada.
+      className="absolute z-30 bg-card flex flex-col shadow-2xl
                  inset-x-0 bottom-0 h-[70%] rounded-t-2xl border-t border-border
                  sm:inset-y-0 sm:right-0 sm:left-auto sm:bottom-auto sm:h-auto sm:w-80 sm:rounded-none sm:border-t-0 sm:border-l"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {/* Handle bar visible solo en mobile bottom-sheet */}
-      <div className="sm:hidden flex justify-center pt-2 pb-1">
-        <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+      <div className="sm:hidden flex justify-center pt-2 pb-1 bg-primary">
+        <div className="w-10 h-1 rounded-full bg-primary-foreground/40" />
       </div>
 
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-primary text-primary-foreground flex-shrink-0">
         <h3 className="font-semibold text-sm">Chat en llamada</h3>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" onClick={onClose}>
           <X className="w-4 h-4" />
         </Button>
       </div>

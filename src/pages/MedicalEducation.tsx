@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { GraduationCap, Plus, MessageCircle, Eye, Stethoscope, Send, FileText, ArrowLeft, Loader2 } from 'lucide-react';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { SPECIALTIES_LIST } from '@/lib/specialties';
+import { InlineFileViewer } from '@/components/content/InlineFileViewer';
 import { toast } from 'sonner';
 
 interface ClinicalCase {
@@ -373,9 +374,7 @@ export default function MedicalEducation() {
                     <p className="text-sm whitespace-pre-wrap">{activeCase.description}</p>
                   )}
                   {activeCase.file_url && (
-                    <a href={activeCase.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                      <FileText className="w-4 h-4" /> Ver archivo adjunto
-                    </a>
+                    <InlineFileViewer fileUrl={activeCase.file_url} />
                   )}
                   <div className="border-t pt-3">
                     <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">

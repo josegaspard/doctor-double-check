@@ -186,16 +186,16 @@ export default function PrescriptionDetail() {
         </div>
 
         {/* Doctor Info */}
-        <Card className="mb-4 bg-primary/5 border-primary/20">
+        <Card className="mb-4 bg-white border-2 border-primary/40 shadow-md">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Stethoscope className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-sm">
+                <Stethoscope className="w-6 h-6 text-primary-foreground" />
               </div>
-              <div>
-                <p className="font-semibold text-foreground">{prescription.doctorName}</p>
-                <p className="text-sm text-muted-foreground">{prescription.doctorSpecialty}</p>
-                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+              <div className="min-w-0">
+                <p className="font-semibold text-secondary truncate">{prescription.doctorName}</p>
+                <p className="text-sm text-primary font-medium">{prescription.doctorSpecialty}</p>
+                <div className="flex items-center gap-3 mt-1 text-xs text-secondary/80">
                   <span>Lic: {prescription.doctorLicense}</span>
                   {prescription.doctorCedula && <span>Cédula: {prescription.doctorCedula}</span>}
                 </div>

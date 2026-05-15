@@ -122,15 +122,15 @@ export default function MyOrders() {
                   <button
                     key={s}
                     onClick={() => setStatusFilter(s)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 border ${
                       active
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                        : 'bg-white text-secondary border-secondary/30 hover:bg-secondary/10'
                     }`}
                   >
                     {s === 'all' ? (es ? 'Todos' : 'All') : (es ? sc!.label_es : sc!.label_en)}
                     <span className={`min-w-[18px] h-[18px] rounded-full text-[10px] flex items-center justify-center ${
-                      active ? 'bg-primary-foreground/20' : 'bg-muted-foreground/10'
+                      active ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-secondary/15 text-secondary'
                     }`}>{count}</span>
                   </button>
                 );

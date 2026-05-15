@@ -14,7 +14,8 @@ import { VideoCallControls } from '@/components/videocall/VideoCallControls';
 import { VideoCallChat } from '@/components/videocall/VideoCallChat';
 import { PatientRecordPanel } from '@/components/videocall/PatientRecordPanel';
 import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
-import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle, BadgeCheck, FileText, MessageSquare } from 'lucide-react';
+import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle, BadgeCheck, FileText, MessageSquare, PhoneOff } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 import type { DailyCall } from '@daily-co/daily-js';
@@ -307,6 +308,18 @@ export default function VideoCall() {
     if (!consultationId || !user?.id) return;
     const ch = supabase
       .channel(`call-chat-${consultationId}`)
+      .on('broadcast', { event: 'call-ended' }, ({ payload }) => {
+        const data = payload as { endedBy?: 'doctor' | 'patient'; userId?: string };
+        if (!data?.endedBy || data.userId === user.id) return;
+        setOtherHangup(data.endedBy);
+        // Cerrar el video de nuestro lado también
+        try { endCall(); } catch { /* ignore */ }
+        timer.stop();
+        // Doctor: abrir el resumen post-consulta automáticamente
+        if (isDoctor && consultationId) {
+          setTimeout(() => setShowPostConsult(true), 400);
+        }
+      })
       .on('broadcast', { event: 'chat-msg' }, ({ payload }) => {
         if (payload.senderId === user.id) return;
         const senderName = payload.senderName || t('videoCall.participant');
@@ -334,7 +347,7 @@ export default function VideoCall() {
       .subscribe();
     chatChannelRef.current = ch;
     return () => { supabase.removeChannel(ch); };
-  }, [consultationId, user?.id]);
+  }, [consultationId, user?.id, endCall, timer, isDoctor, t, timeLocale]);
 
   // Al abrir el chat → resetear unread + esconder burbuja
   useEffect(() => {
@@ -445,13 +458,24 @@ export default function VideoCall() {
   }, [consultationId, user, isDoctor, callState, startCall, joinCall, t]);
 
   const handleEndCall = useCallback(async () => {
+    // Notificar a la otra parte que el usuario actual colgó.
+    try {
+      chatChannelRef.current?.send({
+        type: 'broadcast',
+        event: 'call-ended',
+        payload: { endedBy: isDoctor ? 'doctor' : 'patient', userId: user?.id },
+      });
+    } catch (_) { /* best effort */ }
     timer.stop();
     endCall();
     // Doctor: open post-consultation summary dialog automatically
     if (isDoctor && consultationId) {
       setTimeout(() => setShowPostConsult(true), 400);
     }
-  }, [endCall, timer, isDoctor, consultationId]);
+  }, [endCall, timer, isDoctor, consultationId, user?.id]);
+
+  // Escucha el hangup del otro lado para mostrar aviso adecuado.
+  const [otherHangup, setOtherHangup] = useState<null | 'doctor' | 'patient'>(null);
 
   const handleSendChat = (text: string) => {
     chatChannelRef.current?.send({
@@ -647,6 +671,12 @@ export default function VideoCall() {
           consultationId={consultationId}
           onSaved={() => navigate('/chat')}
         />
+        <OtherPartyHangupDialog
+          open={!!otherHangup}
+          endedBy={otherHangup}
+          isDoctor={isDoctor}
+          onClose={() => { setOtherHangup(null); if (!isDoctor) navigate('/chat'); }}
+        />
       </div>
     );
   }
@@ -835,7 +865,53 @@ export default function VideoCall() {
           consultationId={consultationId}
           onSaved={() => navigate('/chat')}
         />
+        <OtherPartyHangupDialog
+          open={!!otherHangup}
+          endedBy={otherHangup}
+          isDoctor={isDoctor}
+          onClose={() => { setOtherHangup(null); if (!isDoctor) navigate('/chat'); }}
+        />
       </div>
     </MainLayout>
+  );
+}
+
+function OtherPartyHangupDialog({
+  open,
+  endedBy,
+  isDoctor,
+  onClose,
+}: {
+  open: boolean;
+  endedBy: 'doctor' | 'patient' | null;
+  isDoctor: boolean;
+  onClose: () => void;
+}) {
+  if (!endedBy) return null;
+  // Mensaje según quién terminó y quién está viendo el modal
+  const otherEnded = (isDoctor && endedBy === 'patient') || (!isDoctor && endedBy === 'doctor');
+  if (!otherEnded) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-foreground">
+            <PhoneOff className="w-5 h-5 text-destructive" />
+            {endedBy === 'doctor' ? 'El médico terminó la llamada' : 'El paciente terminó la llamada'}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground pt-2">
+            {isDoctor
+              ? 'El paciente colgó la videollamada. No olvides dejar la receta, el resumen de la consulta y cualquier indicación pendiente antes de salir.'
+              : 'El médico cerró la videollamada. En unos momentos recibirás el resumen de la consulta y la receta médica si corresponde. Revisa tu chat y tu expediente.'}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button onClick={onClose} className="w-full sm:w-auto">
+            {isDoctor ? 'Entendido, dejar receta/resumen' : 'Entendido'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

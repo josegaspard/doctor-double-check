@@ -28,6 +28,7 @@ interface InviteeDoc {
   id: string;
   name: string;
   specialty?: string;
+  inviteeType?: 'doctor' | 'resident' | 'patient';
 }
 
 export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
@@ -65,39 +66,55 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
         }
       }
 
-      // Search doctors and residents (via doctor_profiles)
-      let query = supabase
+      // Search doctors/residents (via doctor_profiles) + pacientes (via profiles_public)
+      const results: InviteeDoc[] = [];
+
+      // 1) Doctores / residentes
+      let docQuery = supabase
         .from('doctor_profiles')
         .select('user_id, specialty')
         .neq('user_id', user?.id || '');
-
-      // If resident, restrict to accepted connections only
-      if (allowedDoctorIds) {
-        query = query.in('user_id', allowedDoctorIds);
-      }
-
-      const { data: docProfiles } = await query.limit(20);
+      if (allowedDoctorIds) docQuery = docQuery.in('user_id', allowedDoctorIds);
+      const { data: docProfiles } = await docQuery.limit(20);
 
       if (docProfiles && docProfiles.length > 0) {
         const userIds = docProfiles.map(d => d.user_id);
-        const { data } = await supabase
+        const { data: profs } = await supabase
           .from('profiles')
           .select('id, name')
           .in('id', userIds)
           .ilike('name', `%${searchQuery}%`)
           .limit(6);
-
         const specMap: Record<string, string> = {};
         docProfiles.forEach(d => { specMap[d.user_id] = d.specialty; });
-
-        setSearchResults((data || []).map(d => ({
-          id: d.id,
-          name: d.name,
-          specialty: specMap[d.id],
-        })));
-      } else {
-        setSearchResults([]);
+        (profs || []).forEach(d => results.push({ id: d.id, name: d.name, specialty: specMap[d.id], inviteeType: 'doctor' }));
       }
+
+      // 2) Pacientes — solo si el organizador es doctor (no residente).
+      // profiles_public es la vista filtrada con name+email accesible a authenticated users.
+      if (role === 'doctor') {
+        const { data: patProfiles } = await supabase
+          .from('profiles_public')
+          .select('id, name')
+          .ilike('name', `%${searchQuery}%`)
+          .neq('id', user?.id || '')
+          .limit(6);
+        // Validar que sean pacientes consultando user_roles
+        if (patProfiles && patProfiles.length > 0) {
+          const patIds = patProfiles.map((p: any) => p.id);
+          const { data: roles } = await supabase
+            .from('user_roles')
+            .select('user_id, role')
+            .in('user_id', patIds)
+            .eq('role', 'patient');
+          const patientSet = new Set((roles || []).map((r: any) => r.user_id));
+          patProfiles.forEach((p: any) => {
+            if (patientSet.has(p.id)) results.push({ id: p.id, name: p.name, inviteeType: 'patient' });
+          });
+        }
+      }
+
+      setSearchResults(results.slice(0, 10));
       setIsSearching(false);
     }, 300);
 
@@ -259,7 +276,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
               <Input
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Buscar doctor por nombre..."
+                placeholder={role === 'doctor' ? 'Buscar doctor, residente o paciente por nombre...' : 'Buscar doctor o residente por nombre...'}
                 className="pl-8 text-sm"
               />
               {isSearching && (
@@ -271,11 +288,16 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated }: Props) {
               <div className="mt-1 border border-border rounded-md bg-popover shadow-md max-h-40 overflow-y-auto">
                 {searchResults.map(doc => (
                   <button
-                    key={doc.id}
+                    key={`${doc.inviteeType || 'doctor'}-${doc.id}`}
                     onClick={() => addInvitee(doc)}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 flex items-center justify-between"
                   >
-                    <span>{doc.name}</span>
+                    <span className="flex items-center gap-1.5">
+                      {doc.name}
+                      {doc.inviteeType === 'patient' && (
+                        <Badge variant="info" className="text-[10px]">Paciente</Badge>
+                      )}
+                    </span>
                     {doc.specialty && (
                       <Badge variant="outline" className="text-[10px]">{doc.specialty}</Badge>
                     )}

@@ -133,8 +133,8 @@ export default function Wallet() {
           {t('wallet.title')}
         </h1>
 
-        {/* Balance Card — full width hero */}
-        <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground relative overflow-hidden mb-4 sm:mb-6">
+        {/* Balance Card — full width hero (gradient primary → secondary) */}
+        <Card className="bg-gradient-to-br from-primary via-primary to-secondary text-primary-foreground relative overflow-hidden mb-4 sm:mb-6 shadow-xl shadow-primary/30 border-0">
           <CardContent className="p-5 sm:p-8">
             <p className="text-primary-foreground/80 text-xs sm:text-sm mb-1 font-medium">{t('wallet.balance')}</p>
             <motion.p
@@ -174,18 +174,18 @@ export default function Wallet() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-4 sm:mb-6 p-5 sm:p-6 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 text-center"
+            className="mb-4 sm:mb-6 p-5 sm:p-6 rounded-xl border-2 border-dashed border-primary/50 bg-white text-center shadow-sm"
           >
             <Sparkles className="w-10 h-10 mx-auto text-primary mb-3" />
-            <h3 className="font-semibold text-base sm:text-lg text-foreground mb-1">{t('wallet.emptyTitle')}</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">{t('wallet.emptyDescription')}</p>
+            <h3 className="font-semibold text-base sm:text-lg text-secondary mb-1">{t('wallet.emptyTitle')}</h3>
+            <p className="text-sm text-secondary/70 max-w-sm mx-auto mb-4">{t('wallet.emptyDescription')}</p>
           </motion.div>
         )}
 
         {/* How it works stepper — collapsible for returning users */}
         {isEmptyBalance && (
-          <div className="mb-4 sm:mb-6 p-4 sm:p-5 rounded-xl bg-muted/50 border border-border">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t('wallet.howItWorks')}</p>
+          <div className="mb-4 sm:mb-6 p-4 sm:p-5 rounded-xl bg-white border border-primary/20 shadow-sm">
+            <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">{t('wallet.howItWorks')}</p>
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
               {[
                 { step: '1', icon: CreditCard, label: t('wallet.step1') },
@@ -193,11 +193,11 @@ export default function Wallet() {
                 { step: '3', icon: ShieldCheck, label: t('wallet.step3') },
               ].map((s) => (
                 <div key={s.step} className="flex flex-col items-center text-center gap-1.5">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center relative">
-                    <s.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">{s.step}</span>
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary flex items-center justify-center relative shadow-sm">
+                    <s.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-secondary text-primary-foreground text-[10px] font-bold flex items-center justify-center">{s.step}</span>
                   </div>
-                  <span className="text-xs text-foreground font-medium leading-tight">{s.label}</span>
+                  <span className="text-xs text-secondary font-medium leading-tight">{s.label}</span>
                 </div>
               ))}
             </div>

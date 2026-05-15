@@ -167,9 +167,7 @@ export default function RecordingsGrid() {
       toast.info('Esta grabación aún se está subiendo. Inténtalo en unos segundos.');
       return;
     }
-    if (recording.bunnyStatus === 'processing') {
-      toast.info('Reproduciendo versión original mientras optimizamos la calidad...');
-    }
+    // 'processing': sin toast — el player reproduce /original transparente
     prefetchRecordingUrl(recording);
     if (ownsRecording(recording)) {
       navigate(`/recording/${recording.id}`);
@@ -511,14 +509,9 @@ export default function RecordingsGrid() {
                             </div>
                           </div>
                         )}
-                        {recording.bunnyStatus === 'processing' && (
-                          <div className="absolute top-2 right-2 pointer-events-none">
-                            <Badge className="gap-1 bg-amber-500/90 text-white border-0 text-[10px] px-2 py-0.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                              Optimizando
-                            </Badge>
-                          </div>
-                        )}
+                        {/* processing: no overlay ni badge — el /original ya es reproducible.
+                            Si Bunny tarda mucho o el webhook no llega, el usuario sigue viendo
+                            el thumbnail normal y al hacer click obtiene /original sin fricción. */}
                         {recording.bunnyStatus === 'failed' && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none">
                             <div className="text-center text-white px-4">

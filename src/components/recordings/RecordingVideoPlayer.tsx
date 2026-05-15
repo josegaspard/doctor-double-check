@@ -351,12 +351,10 @@ export function RecordingVideoPlayer({
     <div
       className="relative max-h-[80vh] mx-auto bg-black rounded-xl overflow-hidden aspect-video select-none"
     >
-      {isStillProcessing && (
-        <div className="absolute top-3 left-3 z-10 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-2 text-xs text-white">
-          <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
-          <span>Optimizando calidad</span>
-        </div>
-      )}
+      {/* Badge "Optimizando calidad" removido. Mientras Bunny no marca 'ready'
+          el player ya está sirviendo /original (MP4 crudo), así que el usuario
+          ve y oye el contenido completo. No vale la pena mostrar un badge
+          insistente que confunde si el webhook de Bunny tarda en llegar. */}
       <video
         key={signedUrl}
         ref={videoRef}

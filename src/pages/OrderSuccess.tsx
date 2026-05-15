@@ -46,8 +46,8 @@ export default function OrderSuccess() {
     <MainLayout>
       <div className="container mx-auto px-4 py-8 max-w-lg">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-full bg-success dark:bg-success/30 flex items-center justify-center mx-auto mb-4 animate-in zoom-in duration-500">
-            <CheckCircle2 className="w-10 h-10 text-success dark:text-success" />
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 animate-in zoom-in duration-500 shadow-lg shadow-primary/30">
+            <CheckCircle2 className="w-10 h-10 text-white" strokeWidth={2.5} />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {es ? '¡Compra Exitosa!' : 'Purchase Successful!'}
@@ -91,7 +91,7 @@ export default function OrderSuccess() {
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t">
-                <Badge className="bg-primary text-primary border-primary border text-xs">
+                <Badge className="bg-primary text-primary-foreground border-primary border text-xs">
                   <CheckCircle2 className="w-3 h-3 mr-1" />
                   {es ? 'Pagado' : 'Paid'}
                 </Badge>
