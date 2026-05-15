@@ -303,7 +303,7 @@ export default function Landing() {
                 { icon: iconUsuarios, title: 'Red de Residentes', desc: 'Conecta, colabora y crece junto a miles de médicos residentes.' },
                 { icon: iconRetransmision, title: 'Retransmisiones Live', desc: 'Cirugías, eventos y conferencias en vivo desde cualquier parte.' },
               ].map((f, i) => (
-                <div key={i} className="flex items-start gap-2 sm:gap-2.5 lg:gap-3">
+                <div key={i} className="flex items-center gap-2 sm:gap-2.5 lg:gap-3">
                   <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg bg-gradient-to-br from-[#00768b]/40 to-[#163a83]/40 border border-[#aed3d9]/20 flex items-center justify-center">
                     <img src={f.icon} alt="" className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
                   </div>
