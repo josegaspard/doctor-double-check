@@ -206,6 +206,20 @@ export default function DoctorAvailabilityPage() {
     }
   };
 
+  // Eliminar un solo evento desde el dialog de detalle. Reutiliza
+  // deleteAvailabilities pasando un array de 1 id.
+  const [confirmDeleteSingle, setConfirmDeleteSingle] = useState<string | null>(null);
+  const handleDeleteSingle = async (id: string) => {
+    const result = await deleteAvailabilities([id]);
+    if (result.success) {
+      toast({ description: language === 'es' ? 'Evento eliminado' : 'Event deleted' });
+      setSelectedEvent(null);
+      setConfirmDeleteSingle(null);
+    } else {
+      toast({ title: t('common.error'), description: result.error, variant: 'destructive' });
+    }
+  };
+
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -398,25 +412,35 @@ export default function DoctorAvailabilityPage() {
                       </div>
                     )}
                   </div>
-                  {!isPast && selectedEvent.status !== 'cancelled' && selectedEvent.status !== 'completed' && (
-                    <DialogFooter className="flex-col sm:flex-row gap-2">
-                      {selectedEvent.status === 'scheduled' && (
-                        <>
-                          <Button size="sm" onClick={() => handleConfirm(selectedEvent.id)}>
-                            <CheckCircle className="h-4 w-4 mr-1" /> {t('common.confirm')}
+                  <DialogFooter className="flex-col sm:flex-row gap-2 sm:justify-between">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setConfirmDeleteSingle(selectedEvent.id)}
+                      className="border-destructive/40 text-destructive hover:bg-destructive/10 sm:mr-auto"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" /> {language === 'es' ? 'Eliminar' : 'Delete'}
+                    </Button>
+                    {!isPast && selectedEvent.status !== 'cancelled' && selectedEvent.status !== 'completed' && (
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        {selectedEvent.status === 'scheduled' && (
+                          <>
+                            <Button size="sm" onClick={() => handleConfirm(selectedEvent.id)}>
+                              <CheckCircle className="h-4 w-4 mr-1" /> {t('common.confirm')}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => handleCancel(selectedEvent.id)}>
+                              <XCircle className="h-4 w-4 mr-1" /> {t('common.cancel')}
+                            </Button>
+                          </>
+                        )}
+                        {!selectedEvent.notificationsSent && (
+                          <Button size="sm" variant="secondary" onClick={() => handleNotify(selectedEvent.id)}>
+                            <Bell className="h-4 w-4 mr-1" /> {language === 'es' ? 'Notificar' : 'Notify'}
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleCancel(selectedEvent.id)}>
-                            <XCircle className="h-4 w-4 mr-1" /> {t('common.cancel')}
-                          </Button>
-                        </>
-                      )}
-                      {!selectedEvent.notificationsSent && (
-                        <Button size="sm" variant="secondary" onClick={() => handleNotify(selectedEvent.id)}>
-                          <Bell className="h-4 w-4 mr-1" /> {language === 'es' ? 'Notificar' : 'Notify'}
-                        </Button>
-                      )}
-                    </DialogFooter>
-                  )}
+                        )}
+                      </div>
+                    )}
+                  </DialogFooter>
                 </>
               );
             })()}
@@ -570,7 +594,7 @@ export default function DoctorAvailabilityPage() {
           </div>
         )}
 
-        {/* Delete confirmation */}
+        {/* Delete confirmation — bulk */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -589,6 +613,32 @@ export default function DoctorAvailabilityPage() {
                 ) : (
                   <><Trash2 className="w-4 h-4 mr-2" />{t('common.delete')} ({selectedIds.size})</>
                 )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete confirmation — single event */}
+        <AlertDialog open={!!confirmDeleteSingle} onOpenChange={(o) => !o && setConfirmDeleteSingle(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {language === 'es' ? '¿Eliminar este evento?' : 'Delete this event?'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {language === 'es'
+                  ? 'Esta acción no se puede deshacer. Si ya enviaste notificaciones, los suscriptores ya recibieron el aviso.'
+                  : 'This action cannot be undone. If you already notified subscribers, they have already received the alert.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => confirmDeleteSingle && handleDeleteSingle(confirmDeleteSingle)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {language === 'es' ? 'Eliminar' : 'Delete'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
