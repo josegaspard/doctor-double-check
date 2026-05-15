@@ -17,7 +17,7 @@ import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultatio
 import { Video, VideoOff, Loader2, ArrowLeft, AlertTriangle, BadgeCheck, FileText, MessageSquare, PhoneOff } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { DailyCall } from '@daily-co/daily-js';
 import { useConnectionQuality } from '@/hooks/useConnectionQuality';
 import { ConnectionQualityIndicator } from '@/components/videocall/ConnectionQualityIndicator';
