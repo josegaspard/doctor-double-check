@@ -511,8 +511,9 @@ export const fr = {
   },
   // Admin
   admin: {
-    title: 'Panel de Administración',
-    dashboard: 'Dashboard',
+    title: 'Panneau d\'administration',
+    backToAdmin: 'Retour au panneau',
+    dashboard: 'Tableau de bord',
     users: 'Usuarios',
     doctors: 'Médecins',
     residents: 'Résidents',

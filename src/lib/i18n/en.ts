@@ -508,6 +508,7 @@ export const en = {
   // Admin
   admin: {
     title: 'Admin Panel',
+    backToAdmin: 'Back to panel',
     dashboard: 'Dashboard',
     users: 'Users',
     doctors: 'Doctors',
