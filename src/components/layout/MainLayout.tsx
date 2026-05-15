@@ -154,6 +154,89 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   ];
 }
 
+// Plain "Más" popover — no Radix Portal / z-index dependencies. Uses click-outside
+// + Escape-key + outside-router-friendly absolute positioning so it always renders
+// inside the header context and never gets eaten by overlay / portal mounting bugs.
+type MorePopoverItem = {
+  labelKey: string;
+  shortLabelKey?: string;
+  href: string;
+  icon: React.ElementType;
+};
+function MoreNavPopover({
+  items,
+  t,
+  navigate,
+  pathname,
+  triggerClass,
+}: {
+  items: MorePopoverItem[];
+  t: (key: string) => string;
+  navigate: (path: string) => void;
+  pathname: string;
+  triggerClass: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (!wrapperRef.current) return;
+      if (!wrapperRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapperRef} className="relative flex-shrink-0">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t('nav.more')}
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className={triggerClass}
+      >
+        <MoreHorizontal className="w-3.5 h-3.5" />
+        <span>{t('nav.more')}</span>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute left-0 top-[calc(100%+6px)] z-[80] w-60 rounded-lg border border-border bg-card text-foreground shadow-xl overflow-hidden py-1"
+        >
+          {items.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <button
+                key={item.href}
+                type="button"
+                role="menuitem"
+                onClick={() => { setOpen(false); navigate(item.href); }}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground font-semibold'
+                    : 'text-foreground hover:bg-muted'
+                }`}
+              >
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{t(item.labelKey)}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Animated wallet balance component
 function AnimatedBalance({ balance }: { balance: number }) {
   const [flash, setFlash] = useState(false);
@@ -419,33 +502,13 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   );
                 })}
                 {filteredNavItems.length > 3 && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="app-header-nav-link flex items-center gap-1.5 px-2 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0"
-                        aria-label={t('nav.more')}
-                      >
-                        <MoreHorizontal className="w-3.5 h-3.5" />
-                        <span>{t('nav.more')}</span>
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-56 z-[60]">
-                      {filteredNavItems.slice(3).map((item) => {
-                        const isActive = location.pathname === item.href;
-                        return (
-                          <DropdownMenuItem
-                            key={`md-more-${item.href}`}
-                            onClick={() => navigate(item.href)}
-                            className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary text-primary-foreground' : ''}`}
-                          >
-                            <item.icon className="w-4 h-4 mr-2" />
-                            {t(item.labelKey)}
-                          </DropdownMenuItem>
-                        );
-                      })}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <MoreNavPopover
+                    items={filteredNavItems.slice(3)}
+                    t={t}
+                    navigate={navigate}
+                    pathname={location.pathname}
+                    triggerClass="app-header-nav-link flex items-center gap-1.5 px-2 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0"
+                  />
                 )}
               </div>
             </nav>
@@ -472,33 +535,13 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   );
                 })}
                 {filteredNavItems.length > 6 && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="app-header-nav-link flex items-center gap-1.5 px-2 lg:px-2.5 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0"
-                        aria-label={t('nav.more')}
-                      >
-                        <MoreHorizontal className="w-3.5 h-3.5" />
-                        <span>{t('nav.more')}</span>
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-56 z-[60]">
-                      {filteredNavItems.slice(6).map((item) => {
-                        const isActive = location.pathname === item.href;
-                        return (
-                          <DropdownMenuItem
-                            key={`lg-more-${item.href}`}
-                            onClick={() => navigate(item.href)}
-                            className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary text-primary-foreground' : ''}`}
-                          >
-                            <item.icon className="w-4 h-4 mr-2" />
-                            {t(item.labelKey)}
-                          </DropdownMenuItem>
-                        );
-                      })}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <MoreNavPopover
+                    items={filteredNavItems.slice(6)}
+                    t={t}
+                    navigate={navigate}
+                    pathname={location.pathname}
+                    triggerClass="app-header-nav-link flex items-center gap-1.5 px-2 lg:px-2.5 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0"
+                  />
                 )}
               </div>
             </nav>
