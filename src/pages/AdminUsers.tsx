@@ -110,15 +110,17 @@ export default function AdminUsers() {
   };
 
   const getRoleBadge = (role: string) => {
+    // Todos los badges con bg sólido primary/secondary y texto BLANCO. Antes
+    // tenían bg-<color> text-<color> (mismo color de fondo y texto → invisible).
     const colors: Record<string, string> = {
-      admin: 'bg-secondary text-secondary',
-      doctor: 'bg-primary text-primary',
-      resident: 'bg-success text-success',
-      patient: 'bg-gray-100 text-gray-800',
-      visitor: 'bg-warning text-warning',
+      admin: 'bg-secondary text-white border-secondary',
+      doctor: 'bg-primary text-white border-primary',
+      resident: 'bg-primary/70 text-white border-primary/70',
+      patient: 'bg-secondary/60 text-white border-secondary/60',
+      visitor: 'bg-warning text-white border-warning',
     };
     return (
-      <Badge variant="outline" className={colors[role] || colors.patient}>
+      <Badge variant="outline" className={`${colors[role] || colors.patient} font-semibold`}>
         {getRoleIcon(role)}
         <span className="ml-1 capitalize">{t(`roles.${role}`)}</span>
       </Badge>
@@ -139,37 +141,45 @@ export default function AdminUsers() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-4 sm:mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="hidden sm:flex">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="min-w-0">
-            <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2">
-              <Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
-              <span className="truncate">{t('admin.userManagement')}</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {users.length} {t('admin.registeredUsers')}
-            </p>
+        <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('admin.backToAdmin') || 'Volver al panel'}
+        </Button>
+        <div className="mb-4 sm:mb-6 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4 sm:p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow flex-shrink-0">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold text-secondary truncate">{t('admin.userManagement')}</h1>
+              <p className="text-xs sm:text-sm text-secondary/70">
+                {users.length} {t('admin.registeredUsers')}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats — todas las cards con ícono blanco sobre cuadro gradient primary→secondary */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-4 mb-4 sm:mb-6">
           {[
-            { value: userStats.total, label: 'Total', color: '' },
-            { value: userStats.admins, label: t('admin.administrators'), color: 'text-secondary' },
-            { value: userStats.doctors, label: t('admin.doctors'), color: 'text-primary' },
-            { value: userStats.residents, label: t('admin.residents'), color: 'text-success' },
-            { value: userStats.patients, label: t('admin.patients'), color: 'text-gray-600' },
-          ].map((s, i) => (
-            <Card key={i}>
-              <CardContent className="p-3 sm:p-4 text-center">
-                <p className={`text-xl sm:text-2xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-[10px] sm:text-sm text-muted-foreground truncate">{s.label}</p>
-              </CardContent>
-            </Card>
-          ))}
+            { value: userStats.total, label: 'Total', icon: Users },
+            { value: userStats.admins, label: t('admin.administrators'), icon: Shield },
+            { value: userStats.doctors, label: t('admin.doctors'), icon: Stethoscope },
+            { value: userStats.residents, label: t('admin.residents'), icon: GraduationCap },
+            { value: userStats.patients, label: t('admin.patients'), icon: User },
+          ].map((s, i) => {
+            const IconCmp = s.icon;
+            return (
+              <Card key={i} className="bg-white border-2 border-primary/20 shadow-sm">
+                <CardContent className="p-3 sm:p-4 text-center">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow mx-auto mb-2">
+                    <IconCmp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  </div>
+                  <p className="text-xl sm:text-2xl font-bold text-secondary">{s.value}</p>
+                  <p className="text-[10px] sm:text-sm text-secondary/70 truncate">{s.label}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Filters */}
@@ -230,8 +240,8 @@ export default function AdminUsers() {
                            <h3 className="font-medium text-sm truncate">{userData.name || t('admin.noName')}</h3>
                            {getRoleBadge(userData.role || 'patient')}
                            {userData.is_identity_verified && (
-                             <Badge variant="outline" className="bg-success text-success text-[10px] h-5">
-                               {t('admin.verified')}
+                             <Badge variant="outline" className="bg-primary text-white border-primary text-[10px] h-5 font-semibold">
+                               ✓ {t('admin.verified')}
                              </Badge>
                            )}
                          </div>

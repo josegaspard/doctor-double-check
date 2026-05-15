@@ -134,44 +134,44 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
         </div>
 
         {/* Platform Totals */}
-        <h2 className="font-heading text-lg font-semibold mb-3">{t('adminDashboard.platformTotals')}</h2>
+        <h2 className="font-heading text-lg font-semibold mb-3 text-white">{t('adminDashboard.platformTotals')}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
           {[
-            { value: stats.totalDoctors, label: t('adminDashboard.activeDoctors'), icon: Stethoscope, color: 'text-secondary', bgGrad: 'from-secondary/10 to-secondary/5' },
-            { value: stats.totalPatients, label: t('adminDashboard.patients'), icon: Users, color: 'text-primary', bgGrad: 'from-primary/10 to-primary/5' },
-            { value: stats.totalResidents, label: t('adminDashboard.residents'), icon: GraduationCap, color: 'text-accent', bgGrad: 'from-accent/10 to-accent/5' },
-            { value: stats.totalUsers, label: t('adminDashboard.totalUsers'), icon: Users, color: 'text-warning', bgGrad: 'from-warning/10 to-warning/5' },
+            { value: stats.totalDoctors, label: t('adminDashboard.activeDoctors'), icon: Stethoscope },
+            { value: stats.totalPatients, label: t('adminDashboard.patients'), icon: Users },
+            { value: stats.totalResidents, label: t('adminDashboard.residents'), icon: GraduationCap },
+            { value: stats.totalUsers, label: t('adminDashboard.totalUsers'), icon: Users },
           ].map((item, i) => (
-            <Card key={i} className={`cursor-pointer hover:shadow-md transition-all rounded-xl overflow-hidden bg-gradient-to-br ${item.bgGrad}`} onClick={() => navigate('/admin/users')}>
+            <Card key={i} className="cursor-pointer hover:shadow-md transition-all rounded-xl overflow-hidden bg-white border-2 border-primary/20" onClick={() => navigate('/admin/users')}>
               <CardContent className="p-3 sm:p-5 text-center">
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-background/80 flex items-center justify-center mx-auto mb-2 shadow-sm`}>
-                  <item.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${item.color}`} />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-2 shadow">
+                  <item.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                {isLoading ? <Loader2 className="w-5 h-5 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className={`text-xl sm:text-3xl font-bold ${item.color} mb-0.5`}>{item.value}</p>}
-                <div className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate">{item.label}</div>
+                {isLoading ? <Loader2 className="w-5 h-5 mx-auto animate-spin text-secondary/70 mb-2" /> : <p className="text-xl sm:text-3xl font-bold text-secondary mb-0.5">{item.value}</p>}
+                <div className="text-[10px] sm:text-xs text-secondary/70 font-medium truncate">{item.label}</div>
               </CardContent>
             </Card>
           ))}
         </div>
 
         {/* Pending Review */}
-        <h2 className="font-heading text-base sm:text-lg font-semibold mb-2 sm:mb-3">{t('adminDashboard.pendingReview')}</h2>
+        <h2 className="font-heading text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-white">{t('adminDashboard.pendingReview')}</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
           {[
-            { value: stats.pendingVerifications, label: t('adminDashboard.verifications'), icon: UserCheck, color: 'text-info', href: '/admin/verifications' },
-            { value: stats.pendingDoctors, label: t('adminDashboard.pendingDoctors'), icon: Stethoscope, color: 'text-success', href: '/admin/doctors' },
-            { value: stats.pendingResidents, label: t('adminDashboard.pendingResidents'), icon: GraduationCap, color: 'text-accent', href: '/admin/residents' },
+            { value: stats.pendingVerifications, label: t('adminDashboard.verifications'), icon: UserCheck, href: '/admin/verifications' },
+            { value: stats.pendingDoctors, label: t('adminDashboard.pendingDoctors'), icon: Stethoscope, href: '/admin/doctors' },
+            { value: stats.pendingResidents, label: t('adminDashboard.pendingResidents'), icon: GraduationCap, href: '/admin/residents' },
           ].map((item, i) => (
-            <Card key={i} className="cursor-pointer hover:shadow-md transition-all rounded-xl" onClick={() => navigate(item.href)}>
+            <Card key={i} className="cursor-pointer hover:shadow-md transition-all rounded-xl bg-white border-2 border-primary/20" onClick={() => navigate(item.href)}>
               <CardContent className="p-4 sm:p-5 text-center relative">
                 {!isLoading && item.value > 0 && (
                   <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
                 )}
-                <div className={`w-10 h-10 rounded-xl bg-muted flex items-center justify-center mx-auto mb-2.5`}>
-                  <item.icon className={`w-5 h-5 ${item.color}`} />
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-2.5 shadow">
+                  <item.icon className="w-5 h-5 text-white" />
                 </div>
-                {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-muted-foreground mb-2" /> : <p className={`text-2xl sm:text-3xl font-bold ${item.color} mb-1`}>{item.value}</p>}
-                <div className="text-xs text-muted-foreground font-medium">{item.label}</div>
+                {isLoading ? <Loader2 className="w-6 h-6 mx-auto animate-spin text-secondary/70 mb-2" /> : <p className="text-2xl sm:text-3xl font-bold text-secondary mb-1">{item.value}</p>}
+                <div className="text-xs text-secondary/70 font-medium">{item.label}</div>
               </CardContent>
             </Card>
           ))}
@@ -180,31 +180,31 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
         {/* Module Categories */}
         {moduleCategories.map((category) => (
           <div key={category.title} className="mb-8">
-            <h2 className="font-heading text-lg font-semibold mb-4">{category.title}</h2>
+            <h2 className="font-heading text-lg font-semibold mb-4 text-white">{category.title}</h2>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {category.modules.map((mod) => {
                 const Icon = mod.icon;
                 return (
-                  <Card 
+                  <Card
                     key={mod.id}
-                    className="cursor-pointer hover:shadow-lg transition-all group rounded-xl overflow-hidden"
+                    className="cursor-pointer hover:shadow-lg transition-all group rounded-xl overflow-hidden bg-white border-2 border-primary/20"
                     onClick={() => navigate(mod.href)}
                   >
-                    <div className={`h-1 ${mod.borderColor.replace('border-l-', 'bg-')}/30`} />
+                    <div className="h-1 bg-gradient-to-r from-primary to-secondary" />
                     <CardContent className="p-4 sm:p-5">
                       <div className="flex items-start justify-between mb-3">
-                        <div className={`w-11 h-11 rounded-xl bg-muted flex items-center justify-center ${mod.color}`}>
-                          <Icon className="w-5 h-5" />
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow">
+                          <Icon className="w-5 h-5 text-white" />
                         </div>
                         <div className="flex items-center gap-2">
                           {mod.badge && mod.badge > 0 ? (
                             <Badge variant="destructive" className="text-xs animate-pulse">{mod.badge}</Badge>
                           ) : null}
-                          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                          <ArrowRight className="w-4 h-4 text-secondary/60 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                         </div>
                       </div>
-                      <CardTitle className="text-sm sm:text-base mb-1">{mod.title}</CardTitle>
-                      <CardDescription className="text-xs sm:text-sm">{mod.desc}</CardDescription>
+                      <CardTitle className="text-sm sm:text-base mb-1 text-secondary">{mod.title}</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm text-secondary/70">{mod.desc}</CardDescription>
                     </CardContent>
                   </Card>
                 );
