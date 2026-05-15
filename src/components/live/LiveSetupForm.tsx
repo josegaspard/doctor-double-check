@@ -288,7 +288,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
               options={SPECIALTIES}
               value={specialty}
               onChange={setSpecialty}
-              placeholder="Selecciona tu especialidad médica"
+              placeholder="Selecciona la especialidad"
               searchPlaceholder="Buscar especialidad..."
               icon={Stethoscope}
               allLabel=""

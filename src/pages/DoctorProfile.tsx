@@ -435,8 +435,8 @@ export default function DoctorProfile() {
 
         {/* Live Indicator Banner */}
         {activeLive && (
-          <Card 
-            className="mb-4 border-destructive/50 bg-destructive/5 cursor-pointer hover:bg-destructive/10 transition-colors"
+          <Card
+            className="mb-4 border-2 border-destructive bg-white shadow-lg shadow-destructive/20 cursor-pointer hover:bg-destructive/5 transition-colors"
             onClick={() => navigate(`/live/${activeLive.id}`)}
           >
             <CardContent className="p-4">

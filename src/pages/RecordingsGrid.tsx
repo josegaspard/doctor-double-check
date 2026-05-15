@@ -428,7 +428,7 @@ export default function RecordingsGrid() {
                   </div>
                 </div>
                 <Link to="/wallet" className="relative block mt-3">
-                  <Button className="w-full sm:w-auto gap-2 bg-white text-primary hover:bg-white/90 shadow-md">
+                  <Button className="w-full sm:w-auto gap-2 bg-white text-secondary font-semibold hover:bg-white/90 shadow-md">
                     <Wallet className="w-4 h-4" />
                     Recargar ahora
                   </Button>

@@ -44,14 +44,15 @@ export function SearchableFilter({
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const displayValue = value || allLabel;
+  const displayValue = value || allLabel || placeholder;
+  const showPlaceholderStyle = !value && !allLabel;
 
   const handleSelect = (selected: string) => {
     onChange(selected === allLabel ? '' : selected);
     setOpen(false);
   };
 
-  const allOptions = [allLabel, ...options];
+  const allOptions = allLabel ? [allLabel, ...options] : options;
 
   const listContent = (
     <Command>
@@ -95,7 +96,7 @@ export function SearchableFilter({
     >
       <span className="flex items-center gap-1.5 truncate min-w-0">
         {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground" />}
-        <span className="truncate">{displayValue}</span>
+        <span className={cn('truncate', showPlaceholderStyle && 'text-muted-foreground font-normal')}>{displayValue}</span>
       </span>
       {value ? (
         <X

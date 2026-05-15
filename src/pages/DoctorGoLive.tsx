@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -16,7 +17,7 @@ import { ScheduleCourseForm } from '@/components/live/ScheduleCourseForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Video, Loader2, Radio, CalendarClock } from 'lucide-react';
+import { Video, Loader2, Radio, CalendarClock, X } from 'lucide-react';
 import { toast } from 'sonner';
 import Daily from '@daily-co/daily-js';
 
@@ -117,12 +118,45 @@ export default function DoctorGoLive() {
     setIsCreating(true);
     setCreatingStage('camera');
 
+    // Forzar devices del dispositivo correcto:
+    // - En desktop (Mac/PC), descartar cámaras/mics tipo Continuity Camera de iPhone/iPad
+    //   y otros virtuales (OBS/Krisp) que dan audio/video con desync.
+    // - En mobile, defaults nativos son fiables (un solo set built-in).
+    let constraints: MediaStreamConstraints = {
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      audio: { echoCancellation: true, noiseSuppression: true },
+    };
+    const isMobileUA = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!isMobileUA) {
+      try {
+        // Permission gate primero para que enumerateDevices devuelva labels
+        const probe = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        probe.getTracks().forEach((tr) => tr.stop());
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const isContinuityOrVirtual = (label: string) => {
+          const l = label.toLowerCase();
+          return l.includes('iphone') || l.includes('ipad') || l.includes('continuity')
+            || l.includes('obs') || l.includes('krisp') || l.includes('virtual')
+            || l.includes('snap camera') || l.includes('elgato virtual');
+        };
+        const cam = devices.find((d) => d.kind === 'videoinput' && d.label && !isContinuityOrVirtual(d.label));
+        const mic = devices.find((d) => d.kind === 'audioinput' && d.label && !isContinuityOrVirtual(d.label));
+        constraints = {
+          video: cam?.deviceId
+            ? { deviceId: { exact: cam.deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+            : { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+          audio: mic?.deviceId
+            ? { deviceId: { exact: mic.deviceId }, echoCancellation: true, noiseSuppression: true }
+            : { echoCancellation: true, noiseSuppression: true },
+        };
+      } catch (probeErr) {
+        // Si el probe falla, caemos a constraints default y el getUserMedia de abajo manejará el error
+      }
+    }
+
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
       setLocalStream(stream);
     } catch (err) {
       toast.error('No se pudo acceder a la cámara/micrófono');
@@ -524,9 +558,18 @@ export default function DoctorGoLive() {
     return <MainLayout>{liveContent}</MainLayout>;
   }
 
+  const handleCancelCreating = useCallback(() => {
+    if (localStream) {
+      localStream.getTracks().forEach((t) => t.stop());
+      setLocalStream(null);
+    }
+    setIsCreating(false);
+    setCreatingStage('camera');
+  }, [localStream]);
+
   return (
     <MainLayout>
-      {isCreating && <StartingLiveOverlay stage={creatingStage} />}
+      {isCreating && <StartingLiveOverlay stage={creatingStage} onCancel={handleCancelCreating} />}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary text-primary-foreground border border-primary shadow-md mb-3">
@@ -561,7 +604,7 @@ export default function DoctorGoLive() {
   );
 }
 
-function StartingLiveOverlay({ stage }: { stage: 'camera' | 'room' | 'connecting' }) {
+function StartingLiveOverlay({ stage, onCancel }: { stage: 'camera' | 'room' | 'connecting'; onCancel: () => void }) {
   const steps: Array<{ id: 'camera' | 'room' | 'connecting'; label: string; hint: string }> = [
     { id: 'camera', label: 'Verificando cámara y micrófono', hint: 'Permite el acceso si tu navegador lo solicita' },
     { id: 'room', label: 'Creando tu sala de transmisión', hint: 'Reservando recursos en el servidor' },
@@ -569,13 +612,25 @@ function StartingLiveOverlay({ stage }: { stage: 'camera' | 'room' | 'connecting
   ];
   const currentIdx = steps.findIndex(s => s.id === stage);
 
-  return (
+  // Portal a document.body para escapar el stacking context de MainLayout
+  // (framer-motion crea transform que atrapa fixed elements y deja ver el
+  // header/footer por debajo).
+  if (typeof document === 'undefined') return null;
+  return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-gradient-to-br from-primary/95 via-secondary/95 to-primary/95 backdrop-blur-sm px-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-primary/95 via-secondary/95 to-primary/95 backdrop-blur-sm px-4"
       role="dialog"
       aria-modal="true"
       aria-label="Iniciando transmisión"
     >
+      <button
+        type="button"
+        onClick={onCancel}
+        aria-label="Cancelar inicio de transmisión"
+        className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 backdrop-blur flex items-center justify-center text-white transition-colors"
+      >
+        <X className="w-5 h-5" />
+      </button>
       <div className="w-full max-w-md text-white text-center">
         <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-white/15 border-2 border-white/30 flex items-center justify-center backdrop-blur-md shadow-2xl">
           <Loader2 className="w-10 h-10 animate-spin" />
@@ -632,6 +687,7 @@ function StartingLiveOverlay({ stage }: { stage: 'camera' | 'room' | 'connecting
           Si tarda más de 30 segundos, revisa tu conexión a internet.
         </p>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

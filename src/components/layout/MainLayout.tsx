@@ -95,7 +95,7 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'show_prescriptions' },
   { labelKey: 'nav.meetings', href: '/meetings', icon: Calendar, roles: ['doctor', 'resident'] },
-  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'resident', 'doctor'] },
+  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient'] },
   { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['patient', 'doctor', 'resident'] },
   { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   { labelKey: 'nav.medicalSupplies', href: '/medical-supplies', icon: Package, roles: ['doctor', 'resident'] },
