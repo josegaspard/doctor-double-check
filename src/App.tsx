@@ -140,6 +140,9 @@ const HospitalLocator = React.lazy(() => import("./pages/HospitalLocator"));
 const MedicalSupplies = React.lazy(() => import("./pages/MedicalSupplies"));
 const AdminHospitals = React.lazy(() => import("./pages/AdminHospitals"));
 const AdminMarketplace = React.lazy(() => import("./pages/AdminMarketplace"));
+const AdminAccounting = React.lazy(() => import("./pages/AdminAccounting"));
+const VendorStripeSetup = React.lazy(() => import("./pages/VendorStripeSetup"));
+const VendorEarnings = React.lazy(() => import("./pages/VendorEarnings"));
 const VendorDashboard = React.lazy(() => import("./pages/VendorDashboard"));
 const AdminFeatured = React.lazy(() => import("./pages/AdminFeatured"));
 const MyOrders = React.lazy(() => import("./pages/MyOrders"));
@@ -290,6 +293,9 @@ const App = () => {
                       <Route path="/admin/ads" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminAds /></AccessGuard>} />
                       <Route path="/admin/hospitals" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminHospitals /></AccessGuard>} />
                       <Route path="/admin/marketplace" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminMarketplace /></AccessGuard>} />
+                      <Route path="/admin/accounting" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminAccounting /></AccessGuard>} />
+                      <Route path="/vendor/stripe-setup" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><VendorStripeSetup /></AccessGuard>} />
+                      <Route path="/vendor/earnings" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><VendorEarnings /></AccessGuard>} />
                       <Route path="/vendor/dashboard" element={<VendorDashboard />} />
                       <Route path="/admin/featured" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminFeatured /></AccessGuard>} />
                       <Route path="/admin/qa-checklist" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminQAChecklist /></AccessGuard>} />

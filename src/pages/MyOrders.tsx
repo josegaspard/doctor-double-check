@@ -8,8 +8,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Package, Loader2, Truck, CheckCircle2, Clock, XCircle, ChevronDown, ChevronUp, MapPin, Phone, Copy, Search, ShoppingBag, DollarSign, ArrowRight, ExternalLink } from 'lucide-react';
+import { Package, Loader2, Truck, CheckCircle2, Clock, XCircle, ChevronDown, ChevronUp, MapPin, Phone, Copy, Search, ShoppingBag, DollarSign, ArrowRight, ExternalLink, RotateCcw, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 const STATUS_CONFIG = {
   // Badge style: fondo tintado + texto sólido + borde para que SE VEA en cards blancos.
@@ -34,6 +38,60 @@ export default function MyOrders() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [refundOrder, setRefundOrder] = useState<any>(null);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundCategory, setRefundCategory] = useState<string>('damaged');
+  const [refundBusy, setRefundBusy] = useState(false);
+  const [reviewOrder, setReviewOrder] = useState<any>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewTitle, setReviewTitle] = useState('');
+  const [reviewBody, setReviewBody] = useState('');
+  const [reviewBusy, setReviewBusy] = useState(false);
+
+  const submitRefund = async () => {
+    if (!refundOrder || !refundReason.trim()) {
+      toast.error(es ? 'Describe el motivo' : 'Describe the reason');
+      return;
+    }
+    setRefundBusy(true);
+    const { data, error } = await supabase.functions.invoke('request-marketplace-refund', {
+      body: { orderId: refundOrder.id, reasonCategory: refundCategory, reason: refundReason },
+    });
+    setRefundBusy(false);
+    if (error || !data?.ok) {
+      toast.error(error?.message || data?.error || 'Error');
+      return;
+    }
+    toast.success(es ? 'Solicitud enviada — recibirás respuesta en 48h' : 'Request submitted — response in 48h');
+    setRefundOrder(null); setRefundReason(''); setRefundCategory('damaged');
+    // Refresh orders
+    if (user) {
+      const { data } = await supabase.from('marketplace_orders').select('*, marketplace_products(name, image_url, currency)').eq('buyer_id', user.id).order('created_at', { ascending: false });
+      setOrders((data as any[]) || []);
+    }
+  };
+
+  const submitReview = async () => {
+    if (!reviewOrder || reviewRating < 1) return;
+    setReviewBusy(true);
+    const { error } = await (supabase as any).from('product_reviews').insert({
+      product_id: reviewOrder.product_id,
+      order_id: reviewOrder.id,
+      reviewer_id: user?.id,
+      rating: reviewRating,
+      title: reviewTitle.trim() || null,
+      body: reviewBody.trim() || null,
+      verified_purchase: true,
+    });
+    setReviewBusy(false);
+    if (error) {
+      if (error.code === '23505') toast.error(es ? 'Ya reseñaste este pedido' : 'Already reviewed');
+      else toast.error(error.message);
+      return;
+    }
+    toast.success(es ? 'Gracias por tu reseña' : 'Thanks for your review');
+    setReviewOrder(null); setReviewRating(5); setReviewTitle(''); setReviewBody('');
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -307,6 +365,26 @@ export default function MyOrders() {
                           </div>
                         </div>
 
+                        {/* Refund + Review actions */}
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          {(['paid','shipped','delivered'].includes(o.status)) && o.refund_status !== 'refunded' && o.refund_status !== 'requested' && (
+                            <Button variant="outline" size="sm" className="flex-1 text-xs gap-1.5" onClick={() => setRefundOrder(o)}>
+                              <RotateCcw className="w-3.5 h-3.5" /> {es ? 'Solicitar devolución' : 'Request refund'}
+                            </Button>
+                          )}
+                          {o.refund_status === 'requested' && (
+                            <Badge variant="secondary" className="self-center text-[10px]">{es ? 'Devolución en revisión' : 'Refund under review'}</Badge>
+                          )}
+                          {o.refund_status === 'refunded' && (
+                            <Badge variant="verified" className="self-center text-[10px]">{es ? 'Reembolsado' : 'Refunded'}</Badge>
+                          )}
+                          {o.status === 'delivered' && (
+                            <Button variant="outline" size="sm" className="flex-1 text-xs gap-1.5" onClick={() => setReviewOrder(o)}>
+                              <Star className="w-3.5 h-3.5" /> {es ? 'Calificar producto' : 'Rate product'}
+                            </Button>
+                          )}
+                        </div>
+
                         {/* Contact support */}
                         <Button variant="ghost" size="sm" className="w-full text-xs gap-1.5 text-muted-foreground" onClick={() => navigate('/contact')}>
                           <ExternalLink className="w-3 h-3" />
@@ -320,6 +398,77 @@ export default function MyOrders() {
             })}
           </div>
         )}
+
+        {/* Refund Dialog */}
+        <Dialog open={!!refundOrder} onOpenChange={(o) => { if (!o) setRefundOrder(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>{es ? 'Solicitar devolución' : 'Request refund'}</DialogTitle></DialogHeader>
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground">{refundOrder?.marketplace_products?.name}</p>
+              <p className="font-semibold">{es ? 'Importe' : 'Amount'}: {Number(refundOrder?.total_amount || 0).toFixed(2)} {refundOrder?.marketplace_products?.currency || 'MXN'}</p>
+              <div>
+                <Label className="text-xs">{es ? 'Motivo' : 'Reason'}</Label>
+                <Select value={refundCategory} onValueChange={setRefundCategory}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="damaged">{es ? 'Producto dañado' : 'Damaged'}</SelectItem>
+                    <SelectItem value="not_received">{es ? 'No lo recibí' : 'Not received'}</SelectItem>
+                    <SelectItem value="wrong_item">{es ? 'Producto incorrecto' : 'Wrong item'}</SelectItem>
+                    <SelectItem value="not_as_described">{es ? 'No corresponde a la descripción' : 'Not as described'}</SelectItem>
+                    <SelectItem value="changed_mind">{es ? 'Cambié de opinión' : 'Changed mind'}</SelectItem>
+                    <SelectItem value="other">{es ? 'Otro' : 'Other'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">{es ? 'Cuéntanos más detalles' : 'More details'}</Label>
+                <Textarea value={refundReason} onChange={e => setRefundReason(e.target.value)} rows={4} placeholder={es ? 'Ej: El producto llegó con la caja rota...' : 'E.g. arrived with broken packaging...'} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRefundOrder(null)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+              <Button onClick={submitRefund} disabled={refundBusy || !refundReason.trim()}>
+                {refundBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                {es ? 'Enviar solicitud' : 'Submit'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Review Dialog */}
+        <Dialog open={!!reviewOrder} onOpenChange={(o) => { if (!o) setReviewOrder(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>{es ? 'Calificar producto' : 'Rate product'}</DialogTitle></DialogHeader>
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground">{reviewOrder?.marketplace_products?.name}</p>
+              <div>
+                <Label className="text-xs">{es ? 'Calificación' : 'Rating'}</Label>
+                <div className="flex gap-1 mt-1">
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n} type="button" onClick={() => setReviewRating(n)}>
+                      <Star className={`w-7 h-7 ${n <= reviewRating ? 'fill-warning text-warning' : 'text-muted-foreground'}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">{es ? 'Título (opcional)' : 'Title (optional)'}</Label>
+                <Input value={reviewTitle} onChange={e => setReviewTitle(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">{es ? 'Reseña (opcional)' : 'Review (optional)'}</Label>
+                <Textarea value={reviewBody} onChange={e => setReviewBody(e.target.value)} rows={3} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setReviewOrder(null)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+              <Button onClick={submitReview} disabled={reviewBusy}>
+                {reviewBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                {es ? 'Publicar reseña' : 'Submit review'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* CTA at bottom */}
         {orders.length > 0 && (

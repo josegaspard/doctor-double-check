@@ -150,6 +150,66 @@ Deno.serve(async (req) => {
       await handleTransferUpdate(db, transfer);
     }
 
+    // Marketplace: chargeback / dispute opened
+    if (event.type === "charge.dispute.created" || event.type === "charge.dispute.updated" || event.type === "charge.dispute.closed") {
+      const dispute = event.data.object as Stripe.Dispute;
+      try {
+        const chargeId = typeof dispute.charge === "string" ? dispute.charge : dispute.charge?.id;
+        let orderId: string | null = null;
+        if (chargeId) {
+          const charge = await stripe.charges.retrieve(chargeId);
+          const piId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+          if (piId) {
+            const { data: ord } = await db
+              .from("marketplace_orders")
+              .select("id")
+              .eq("stripe_payment_intent_id", piId)
+              .maybeSingle();
+            orderId = ord?.id || null;
+          }
+        }
+        await db.from("order_disputes").upsert({
+          stripe_dispute_id: dispute.id,
+          stripe_charge_id: chargeId || null,
+          order_id: orderId,
+          amount: dispute.amount / 100,
+          currency: (dispute.currency || "mxn").toUpperCase(),
+          reason: dispute.reason,
+          status: dispute.status,
+          evidence_due_by: dispute.evidence_details?.due_by ? new Date(dispute.evidence_details.due_by * 1000).toISOString() : null,
+          raw: dispute as any,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "stripe_dispute_id" });
+
+        if (orderId) {
+          await db.from("marketplace_orders").update({
+            dispute_status: dispute.status,
+          }).eq("id", orderId);
+        }
+        logStep("Dispute upserted", { id: dispute.id, status: dispute.status, orderId });
+      } catch (e: any) {
+        logStep("Dispute handler error", { error: e.message });
+      }
+    }
+
+    // Marketplace: refund created/updated/failed via Stripe Dashboard (not just our API)
+    if (event.type === "charge.refunded" || event.type === "refund.updated" || event.type === "refund.failed") {
+      const refundObj = event.data.object as any;
+      try {
+        const stripeRefundId = refundObj.id?.startsWith("re_") ? refundObj.id : refundObj.refunds?.data?.[0]?.id;
+        if (stripeRefundId) {
+          const status = refundObj.status === "succeeded" || event.type === "charge.refunded" ? "refunded" : refundObj.status || "processing";
+          await db
+            .from("order_refunds")
+            .update({ status, refunded_at: status === "refunded" ? new Date().toISOString() : null })
+            .eq("stripe_refund_id", stripeRefundId);
+          logStep("Refund webhook synced", { id: stripeRefundId, status });
+        }
+      } catch (e: any) {
+        logStep("Refund webhook error", { error: e.message });
+      }
+    }
+
     // Mark idempotency row as processed so we have a healthy audit trail.
     await db
       .from("stripe_webhook_events")

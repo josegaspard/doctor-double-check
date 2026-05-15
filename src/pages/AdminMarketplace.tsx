@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, Package, Store, Tag, ShoppingCart, Loader2, Check, X, Download, TrendingUp, DollarSign, Users, BarChart3, ChevronDown, ChevronUp, Truck, MapPin, Phone, Mail, ArrowLeft, FileText, Send, Clock } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Package, Store, Tag, ShoppingCart, Loader2, Check, X, Download, TrendingUp, DollarSign, Users, BarChart3, ChevronDown, ChevronUp, Truck, MapPin, Phone, Mail, ArrowLeft, FileText, Send, Clock, RotateCcw, AlertTriangle, CreditCard, ClipboardList, AlertCircle, Warehouse } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminMarketplace() {
@@ -48,12 +48,17 @@ export default function AdminMarketplace() {
         </div>
 
         <Tabs defaultValue="products">
-          <TabsList className="w-full grid grid-cols-5 mb-4">
-            <TabsTrigger value="products" className="text-xs sm:text-sm gap-1"><Package className="w-3.5 h-3.5 hidden sm:inline" />{es ? 'Productos' : 'Products'}</TabsTrigger>
-            <TabsTrigger value="vendors" className="text-xs sm:text-sm gap-1"><Store className="w-3.5 h-3.5 hidden sm:inline" />{es ? 'Proveedores' : 'Vendors'}</TabsTrigger>
-            <TabsTrigger value="categories" className="text-xs sm:text-sm gap-1"><Tag className="w-3.5 h-3.5 hidden sm:inline" />{es ? 'Categorías' : 'Categories'}</TabsTrigger>
-            <TabsTrigger value="orders" className="text-xs sm:text-sm gap-1"><ShoppingCart className="w-3.5 h-3.5 hidden sm:inline" />{es ? 'Pedidos' : 'Orders'}</TabsTrigger>
-            <TabsTrigger value="sales" className="text-xs sm:text-sm gap-1"><TrendingUp className="w-3.5 h-3.5 hidden sm:inline" />{es ? 'Ventas' : 'Sales'}</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-5 sm:grid-cols-10 mb-4 h-auto">
+            <TabsTrigger value="products" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Package className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Productos' : 'Products'}</span></TabsTrigger>
+            <TabsTrigger value="vendors" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Store className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Vendors' : 'Vendors'}</span></TabsTrigger>
+            <TabsTrigger value="categories" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Tag className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Cats' : 'Cats'}</span></TabsTrigger>
+            <TabsTrigger value="orders" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><ShoppingCart className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Pedidos' : 'Orders'}</span></TabsTrigger>
+            <TabsTrigger value="sales" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><TrendingUp className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Ventas' : 'Sales'}</span></TabsTrigger>
+            <TabsTrigger value="refunds" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><RotateCcw className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Devol.' : 'Refunds'}</span></TabsTrigger>
+            <TabsTrigger value="disputes" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><AlertTriangle className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Disputas' : 'Disputes'}</span></TabsTrigger>
+            <TabsTrigger value="payouts" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><CreditCard className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Pagos' : 'Payouts'}</span></TabsTrigger>
+            <TabsTrigger value="stock" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Warehouse className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Stock' : 'Stock'}</span></TabsTrigger>
+            <TabsTrigger value="audit" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><ClipboardList className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Audit' : 'Audit'}</span></TabsTrigger>
           </TabsList>
 
           <TabsContent value="products"><ProductsTab es={es} /></TabsContent>
@@ -61,6 +66,11 @@ export default function AdminMarketplace() {
           <TabsContent value="categories"><CategoriesTab es={es} /></TabsContent>
           <TabsContent value="orders"><OrdersTab es={es} /></TabsContent>
           <TabsContent value="sales"><SalesTab es={es} /></TabsContent>
+          <TabsContent value="refunds"><RefundsTab es={es} /></TabsContent>
+          <TabsContent value="disputes"><DisputesTab es={es} /></TabsContent>
+          <TabsContent value="payouts"><PayoutsTab es={es} /></TabsContent>
+          <TabsContent value="stock"><StockTab es={es} /></TabsContent>
+          <TabsContent value="audit"><AuditTab es={es} /></TabsContent>
         </Tabs>
       </div>
     </MainLayout>
@@ -1060,6 +1070,354 @@ function SalesTab({ es }: { es: boolean }) {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+
+/* =================== REFUNDS TAB =================== */
+function RefundsTab({ es }: { es: boolean }) {
+  const [refunds, setRefunds] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>('requested');
+  const [selected, setSelected] = useState<any>(null);
+  const [actionDialog, setActionDialog] = useState<'approve' | 'reject' | null>(null);
+  const [notes, setNotes] = useState('');
+  const [rejection, setRejection] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const fetchData = async () => {
+    setLoading(true);
+    let q = (supabase as any).from('order_refunds').select('*, marketplace_orders(id, total_amount, currency, buyer_id, vendor_id, product_id, marketplace_vendors(name), marketplace_products(name))').order('created_at', { ascending: false }).limit(100);
+    if (statusFilter !== 'all') q = q.eq('status', statusFilter);
+    const { data, error } = await q;
+    if (error) { toast.error(error.message); setLoading(false); return; }
+    setRefunds(data || []);
+    setLoading(false);
+  };
+  useEffect(() => { fetchData(); }, [statusFilter]);
+
+  const handleAction = async () => {
+    if (!selected || !actionDialog) return;
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke('process-marketplace-refund', {
+      body: { refundId: selected.id, action: actionDialog, adminNotes: notes, rejectionReason: rejection },
+    });
+    setBusy(false);
+    if (error || !data?.ok) { toast.error(error?.message || data?.error || 'Error'); return; }
+    toast.success(actionDialog === 'approve' ? (es ? 'Reembolso aprobado' : 'Refund approved') : (es ? 'Reembolso rechazado' : 'Refund rejected'));
+    setActionDialog(null); setSelected(null); setNotes(''); setRejection(''); fetchData();
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-44 h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{es ? 'Todos' : 'All'}</SelectItem>
+            <SelectItem value="requested">{es ? 'Solicitados' : 'Requested'}</SelectItem>
+            <SelectItem value="approved">{es ? 'Aprobados' : 'Approved'}</SelectItem>
+            <SelectItem value="rejected">{es ? 'Rechazados' : 'Rejected'}</SelectItem>
+            <SelectItem value="refunded">{es ? 'Reembolsados' : 'Refunded'}</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button size="sm" variant="outline" onClick={fetchData} disabled={loading}>{es ? 'Actualizar' : 'Refresh'}</Button>
+      </div>
+
+      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : refunds.length === 0 ? (
+        <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{es ? 'Sin devoluciones' : 'No refunds'}</CardContent></Card>
+      ) : (
+        <div className="space-y-2">
+          {refunds.map(r => (
+            <Card key={r.id} className="hover:shadow-md transition">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant={r.status === 'refunded' ? 'verified' : r.status === 'requested' ? 'secondary' : r.status === 'rejected' ? 'destructive' : 'outline'}>{r.status}</Badge>
+                      <span className="text-xs text-muted-foreground">#{r.id.slice(0,8)} · {new Date(r.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-sm font-medium mt-1 line-clamp-2">{r.marketplace_orders?.marketplace_products?.name || '—'}</p>
+                    <p className="text-xs text-muted-foreground">{r.marketplace_orders?.marketplace_vendors?.name || '—'} · <span className="capitalize">{r.reason_category}</span></p>
+                    <p className="text-xs mt-1 line-clamp-2"><strong>{es ? 'Motivo' : 'Reason'}:</strong> {r.reason}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold">{Number(r.amount).toFixed(2)} {r.currency}</p>
+                    {r.status === 'requested' && (
+                      <div className="flex gap-1 mt-2">
+                        <Button size="sm" variant="default" onClick={() => { setSelected(r); setActionDialog('approve'); }}>{es ? 'Aprobar' : 'Approve'}</Button>
+                        <Button size="sm" variant="destructive" onClick={() => { setSelected(r); setActionDialog('reject'); }}>{es ? 'Rechazar' : 'Reject'}</Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={!!actionDialog} onOpenChange={(o) => { if (!o) { setActionDialog(null); setSelected(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{actionDialog === 'approve' ? (es ? 'Aprobar devolución' : 'Approve refund') : (es ? 'Rechazar devolución' : 'Reject refund')}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">{selected && `${Number(selected.amount).toFixed(2)} ${selected.currency} — ${selected.marketplace_orders?.marketplace_products?.name || '—'}`}</p>
+            {actionDialog === 'reject' && (
+              <div>
+                <Label className="text-xs">{es ? 'Razón del rechazo (visible al paciente)' : 'Rejection reason (visible to patient)'}</Label>
+                <Textarea value={rejection} onChange={e => setRejection(e.target.value)} rows={3} />
+              </div>
+            )}
+            <div>
+              <Label className="text-xs">{es ? 'Notas internas' : 'Internal notes'}</Label>
+              <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setActionDialog(null)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+              <Button onClick={handleAction} disabled={busy}>
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (actionDialog === 'approve' ? (es ? 'Aprobar y reembolsar' : 'Approve & refund') : (es ? 'Rechazar' : 'Reject'))}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+/* =================== DISPUTES TAB =================== */
+function DisputesTab({ es }: { es: boolean }) {
+  const [disputes, setDisputes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const { data, error } = await (supabase as any).from('order_disputes').select('*, marketplace_orders(id, total_amount, marketplace_vendors(name), marketplace_products(name))').order('created_at', { ascending: false }).limit(100);
+      if (error) { toast.error(error.message); setLoading(false); return; }
+      setDisputes(data || []);
+      setLoading(false);
+    })();
+  }, []);
+  if (loading) return <Loader2 className="w-5 h-5 animate-spin" />;
+  if (disputes.length === 0) return <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{es ? 'Sin disputas activas' : 'No active disputes'}</CardContent></Card>;
+  return (
+    <div className="space-y-2">
+      {disputes.map(d => (
+        <Card key={d.id}>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant={d.status === 'won' ? 'verified' : d.status === 'lost' ? 'destructive' : 'secondary'}>{d.status.replace(/_/g, ' ')}</Badge>
+                  <span className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</span>
+                </div>
+                <p className="text-sm font-medium mt-1">{d.marketplace_orders?.marketplace_products?.name || '—'}</p>
+                <p className="text-xs text-muted-foreground">{d.marketplace_orders?.marketplace_vendors?.name || '—'} · {d.reason || '—'}</p>
+                {d.evidence_due_by && <p className="text-xs text-warning mt-1">{es ? 'Evidencia hasta' : 'Evidence due'} {new Date(d.evidence_due_by).toLocaleDateString()}</p>}
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold">{Number(d.amount).toFixed(2)} {d.currency}</p>
+                <a href={`https://dashboard.stripe.com/disputes/${d.stripe_dispute_id}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">Stripe →</a>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/* =================== PAYOUTS TAB =================== */
+function PayoutsTab({ es }: { es: boolean }) {
+  const [balances, setBalances] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const [{ data: bals }, { data: payoutHist }] = await Promise.all([
+      (supabase as any).rpc('get_vendor_payout_balance'),
+      (supabase as any).from('vendor_payouts').select('*, marketplace_vendors(name)').order('initiated_at', { ascending: false }).limit(50),
+    ]);
+    setBalances(bals || []);
+    setPayouts(payoutHist || []);
+    setLoading(false);
+  };
+  useEffect(() => { fetchData(); }, []);
+
+  const eligible = balances.filter((b: any) => b.payouts_enabled && b.stripe_account_id && Number(b.available_amount) > 0);
+
+  const handlePayAll = async () => {
+    if (!confirm(es ? `¿Pagar ${eligible.length} vendors por un total de ${eligible.reduce((s: number,e: any)=>s+Number(e.available_amount),0).toFixed(2)} MXN?` : `Pay ${eligible.length} vendors?`)) return;
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke('process-vendor-payouts', { body: {} });
+    setBusy(false);
+    if (error || !data?.ok) { toast.error(error?.message || data?.error || 'Error'); return; }
+    toast.success(`${data.processed} payouts procesados`);
+    fetchData();
+  };
+
+  const handlePayOne = async (vendorId: string) => {
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke('process-vendor-payouts', { body: { vendorIds: [vendorId] } });
+    setBusy(false);
+    if (error || !data?.ok) { toast.error(error?.message || data?.error || 'Error'); return; }
+    toast.success(es ? 'Payout enviado' : 'Payout sent');
+    fetchData();
+  };
+
+  if (loading) return <Loader2 className="w-5 h-5 animate-spin" />;
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold">{es ? 'Balances de vendors' : 'Vendor balances'}</p>
+              <p className="text-xs text-muted-foreground">{eligible.length} {es ? 'vendors elegibles' : 'eligible vendors'} · {eligible.reduce((s: number,e: any)=>s+Number(e.available_amount),0).toFixed(2)} MXN {es ? 'disponible' : 'available'}</p>
+            </div>
+            <Button onClick={handlePayAll} disabled={busy || eligible.length === 0}>
+              {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />}
+              {es ? 'Pagar a TODOS los elegibles' : 'Pay ALL eligible'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-2">
+        {balances.map((b: any) => (
+          <Card key={b.vendor_id}>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-sm truncate">{b.vendor_name}</p>
+                    {b.payouts_enabled ? <Badge variant="verified" className="text-[10px]">Stripe OK</Badge> : <Badge variant="destructive" className="text-[10px]">{es ? 'Sin Stripe' : 'No Stripe'}</Badge>}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{es ? 'Disp.' : 'Avail.'}: <strong className="text-primary">{Number(b.available_amount).toFixed(2)}</strong> · {es ? 'Pend.' : 'Pend.'}: {Number(b.pending_amount).toFixed(2)} · {es ? 'Pagado total' : 'Total paid'}: {Number(b.total_paid).toFixed(2)}</p>
+                </div>
+                {b.payouts_enabled && Number(b.available_amount) > 0 && (
+                  <Button size="sm" variant="outline" onClick={() => handlePayOne(b.vendor_id)} disabled={busy}>
+                    {es ? 'Pagar' : 'Pay'}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div>
+        <p className="text-sm font-semibold mb-2">{es ? 'Historial de pagos' : 'Payout history'}</p>
+        <div className="space-y-1.5">
+          {payouts.map((p: any) => (
+            <Card key={p.id} className="bg-muted/30">
+              <CardContent className="p-3 flex items-center justify-between text-sm">
+                <div>
+                  <span className="font-medium">{p.marketplace_vendors?.name || '—'}</span>
+                  <span className="text-muted-foreground"> · {p.earnings_count} {es ? 'ventas' : 'sales'}</span>
+                  <span className="text-muted-foreground"> · {new Date(p.initiated_at).toLocaleDateString()}</span>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold">{Number(p.total_amount).toFixed(2)} {p.currency}</p>
+                  <Badge variant={p.status === 'paid' ? 'verified' : p.status === 'failed' ? 'destructive' : 'secondary'} className="text-[10px]">{p.status}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {payouts.length === 0 && <p className="text-xs text-muted-foreground">{es ? 'Sin payouts aún' : 'No payouts yet'}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =================== STOCK TAB =================== */
+function StockTab({ es }: { es: boolean }) {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'low' | 'out'>('low');
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const { data } = await (supabase as any).from('marketplace_products').select('id, name, stock, low_stock_threshold, track_stock, total_sold, is_active, marketplace_vendors(name)').eq('track_stock', true).order('stock', { ascending: true });
+      setProducts(data || []);
+      setLoading(false);
+    })();
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (filter === 'out') return products.filter(p => p.stock === 0);
+    if (filter === 'low') return products.filter(p => p.stock <= (p.low_stock_threshold || 5));
+    return products;
+  }, [products, filter]);
+
+  if (loading) return <Loader2 className="w-5 h-5 animate-spin" />;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>{es ? 'Todos' : 'All'} ({products.length})</Button>
+        <Button size="sm" variant={filter === 'low' ? 'default' : 'outline'} onClick={() => setFilter('low')}>{es ? 'Bajo' : 'Low'}</Button>
+        <Button size="sm" variant={filter === 'out' ? 'default' : 'outline'} onClick={() => setFilter('out')}>{es ? 'Agotados' : 'Out'}</Button>
+      </div>
+      {filtered.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{es ? 'Sin productos en este filtro' : 'No products in this filter'}</CardContent></Card> : (
+        <div className="space-y-1.5">
+          {filtered.map(p => (
+            <Card key={p.id} className={p.stock === 0 ? 'border-destructive' : ''}>
+              <CardContent className="p-3 flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{p.name}</p>
+                  <p className="text-xs text-muted-foreground">{p.marketplace_vendors?.name} · {p.total_sold || 0} {es ? 'vendidos' : 'sold'}</p>
+                </div>
+                <div className="text-right">
+                  <p className={`text-lg font-bold ${p.stock === 0 ? 'text-destructive' : p.stock <= p.low_stock_threshold ? 'text-warning' : 'text-foreground'}`}>{p.stock}</p>
+                  <p className="text-[10px] text-muted-foreground">{es ? 'mín' : 'min'} {p.low_stock_threshold}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =================== AUDIT TAB =================== */
+function AuditTab({ es }: { es: boolean }) {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any).from('marketplace_audit_log').select('*, profiles!actor_id(name)').order('created_at', { ascending: false }).limit(200);
+      setLogs(data || []);
+      setLoading(false);
+    })();
+  }, []);
+  if (loading) return <Loader2 className="w-5 h-5 animate-spin" />;
+  if (logs.length === 0) return <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{es ? 'Sin registros de auditoría' : 'No audit logs'}</CardContent></Card>;
+  return (
+    <div className="space-y-1">
+      {logs.map(l => (
+        <Card key={l.id} className="bg-muted/30">
+          <CardContent className="p-2.5">
+            <div className="flex items-start justify-between gap-2 text-xs">
+              <div className="flex-1 min-w-0">
+                <span className="font-mono text-[11px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">{l.action}</span>
+                <span className="ml-2 text-muted-foreground">{l.profiles?.name || l.actor_role || (l.actor_id ? l.actor_id.slice(0,8) : 'system')}</span>
+                {l.metadata && Object.keys(l.metadata).length > 0 && (
+                  <pre className="mt-1 text-[10px] text-muted-foreground whitespace-pre-wrap break-all">{JSON.stringify(l.metadata, null, 0).slice(0, 200)}</pre>
+                )}
+              </div>
+              <span className="text-muted-foreground whitespace-nowrap text-[10px]">{new Date(l.created_at).toLocaleString()}</span>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
