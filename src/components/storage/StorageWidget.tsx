@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { HardDrive, Sparkles, AlertTriangle } from 'lucide-react';
+import { StorageUpgradeDialog } from './StorageUpgradeDialog';
 
 function formatStorageSize(bytes: number): string {
   const gb = bytes / (1024 * 1024 * 1024);
@@ -19,26 +19,26 @@ interface Props {
 
 export function StorageWidget({ variant = 'card' }: Props) {
   const { supabaseUser } = useAuth();
-  const navigate = useNavigate();
   const [used, setUsed] = useState(0);
   const [limit, setLimit] = useState(1073741824);
   const [loading, setLoading] = useState(true);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchStorage = async () => {
     if (!supabaseUser?.id) return;
-    (async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('storage_used_bytes, storage_limit_bytes')
-        .eq('id', supabaseUser.id)
-        .maybeSingle();
-      if (data) {
-        setUsed((data as any).storage_used_bytes || 0);
-        setLimit((data as any).storage_limit_bytes || 1073741824);
-      }
-      setLoading(false);
-    })();
-  }, [supabaseUser?.id]);
+    const { data } = await supabase
+      .from('profiles')
+      .select('storage_used_bytes, storage_limit_bytes')
+      .eq('id', supabaseUser.id)
+      .maybeSingle();
+    if (data) {
+      setUsed((data as any).storage_used_bytes || 0);
+      setLimit((data as any).storage_limit_bytes || 1073741824);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchStorage(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [supabaseUser?.id]);
 
   const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
   const isFull = pct >= 95;
@@ -77,9 +77,10 @@ export function StorageWidget({ variant = 'card' }: Props) {
             <div className={`h-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
           </div>
         </div>
-        <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => navigate('/vault')}>
+        <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setUpgradeOpen(true)}>
           <Sparkles className="w-3 h-3" /> Ampliar
         </Button>
+        <StorageUpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} onUpgraded={fetchStorage} />
       </div>
     );
   }
@@ -119,11 +120,12 @@ export function StorageWidget({ variant = 'card' }: Props) {
           </div>
         )}
 
-        <Button onClick={() => navigate('/vault')} className="w-full gap-1.5" size="sm" variant={isFull ? 'default' : 'outline'}>
+        <Button onClick={() => setUpgradeOpen(true)} className="w-full gap-1.5" size="sm" variant={isFull ? 'default' : 'outline'}>
           <Sparkles className="w-4 h-4" />
-          {isFull ? 'Ampliar ahora' : 'Gestionar / Ampliar espacio'}
+          {isFull ? 'Ampliar ahora' : 'Ampliar espacio'}
         </Button>
       </CardContent>
+      <StorageUpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} onUpgraded={fetchStorage} />
     </Card>
   );
 }
