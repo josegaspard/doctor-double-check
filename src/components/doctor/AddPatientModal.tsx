@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Search, UserPlus } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Loader2, Search, UserPlus, Send, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -23,14 +24,24 @@ interface Props {
   onAdded?: () => void;
 }
 
+interface PatientResult {
+  user_id: string;
+  name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  country_code: string | null;
+}
+
 export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
   const { user } = useAuth();
   const [tab, setTab] = useState<'registered' | 'external'>('registered');
 
-  // Search registered
+  // Search registered (LIVE)
   const [term, setTerm] = useState('');
   const [searching, setSearching] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<PatientResult[]>([]);
+  const [invitedIds, setInvitedIds] = useState<Set<string>>(new Set());
+  const debounceRef = useRef<number | null>(null);
 
   // External
   const [extName, setExtName] = useState('');
@@ -39,38 +50,62 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
   const [extNotes, setExtNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const handleSearch = async () => {
-    if (!term.trim() || term.trim().length < 2) return;
-    setSearching(true);
-    try {
-      const { data, error } = await supabase.rpc('search_patients_for_doctor', {
-        p_term: term.trim(),
-        p_limit: 10,
-      });
-      if (error) throw error;
-      setResults(data || []);
-    } catch (e: any) {
-      toast.error(e.message || 'Error al buscar');
-    } finally {
+  // Debounced live search
+  useEffect(() => {
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    const q = term.trim();
+    if (q.length < 1) {
+      setResults([]);
       setSearching(false);
+      return;
     }
-  };
+    setSearching(true);
+    debounceRef.current = window.setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.rpc('search_patients_for_doctor', {
+          p_term: q,
+          p_limit: 12,
+        });
+        if (error) {
+          console.error('search_patients_for_doctor error', error);
+          toast.error(error.message);
+          setResults([]);
+          return;
+        }
+        setResults((data || []) as PatientResult[]);
+      } finally {
+        setSearching(false);
+      }
+    }, 280);
 
-  const handleInvite = async (patientId: string, patientName: string) => {
+    return () => {
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    };
+  }, [term]);
+
+  // Reset on close
+  useEffect(() => {
+    if (!open) {
+      setTerm(''); setResults([]); setInvitedIds(new Set());
+      setExtName(''); setExtEmail(''); setExtPhone(''); setExtNotes('');
+    }
+  }, [open]);
+
+  const handleInvite = async (patient: PatientResult) => {
     if (!user?.id) return;
+    if (invitedIds.has(patient.user_id)) return;
     try {
-      // Send a notification inviting the patient to grant vault access
       const { error } = await supabase.from('notifications').insert({
-        user_id: patientId,
+        user_id: patient.user_id,
         type: 'system' as any,
         title: '🩺 Un médico solicita acceso a tu expediente',
         message: 'Para iniciar tu seguimiento, autoriza el acceso desde tu Vault.',
         data: { doctor_id: user.id, action: 'request_vault_access' },
       });
       if (error) throw error;
-      toast.success(`Invitación enviada a ${patientName}`);
+      setInvitedIds(prev => new Set(prev).add(patient.user_id));
+      toast.success(`Invitación enviada a ${patient.name || 'paciente'}`);
       onAdded?.();
-      onOpenChange(false);
     } catch (e: any) {
       toast.error(e.message || 'No se pudo enviar la invitación');
     }
@@ -99,7 +134,6 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
       });
       if (error) throw error;
       toast.success('Paciente externo agregado');
-      setExtName(''); setExtEmail(''); setExtPhone(''); setExtNotes('');
       onAdded?.();
       onOpenChange(false);
     } catch (e: any) {
@@ -115,7 +149,7 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5" /> Agregar paciente</DialogTitle>
           <DialogDescription>
-            Invita a un paciente registrado para que te dé acceso a su expediente, o registra uno externo (offline).
+            Busca un paciente registrado para invitarlo, o registra uno externo (offline).
           </DialogDescription>
         </DialogHeader>
 
@@ -126,47 +160,74 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
           </TabsList>
 
           <TabsContent value="registered" className="space-y-3 pt-3">
-            <div className="flex gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={term}
                 onChange={e => setTerm(e.target.value)}
-                placeholder="Buscar por nombre o correo"
-                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                placeholder="Escribe nombre o correo del paciente…"
+                className="pl-9 pr-9 h-11"
+                autoFocus
                 maxLength={100}
               />
-              <Button onClick={handleSearch} disabled={searching || term.trim().length < 2}>
-                {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              </Button>
+              {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
             </div>
-            <div className="space-y-1.5 max-h-72 overflow-auto">
-              {results.length === 0 && !searching && (
-                <p className="text-xs text-muted-foreground italic text-center py-4">Escribe al menos 2 caracteres y presiona buscar.</p>
-              )}
-              {results.map((r) => (
-                <div key={r.user_id} className="flex items-center justify-between gap-2 p-2.5 rounded-md border border-border hover:bg-muted/50">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{r.name || 'Sin nombre'}</p>
-                    <p className="text-xs text-muted-foreground truncate">{r.email}</p>
-                  </div>
-                  <Button size="sm" variant="outline" onClick={() => handleInvite(r.user_id, r.name || 'Paciente')}>Invitar</Button>
+
+            <div className="space-y-1.5 max-h-80 overflow-auto -mx-1 px-1">
+              {term.trim().length === 0 && (
+                <div className="text-center py-6">
+                  <Search className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+                  <p className="text-xs text-muted-foreground">Empieza a escribir para buscar pacientes</p>
                 </div>
-              ))}
+              )}
+              {!searching && term.trim().length > 0 && results.length === 0 && (
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground">Sin resultados para "<strong>{term}</strong>"</p>
+                  <p className="text-xs text-muted-foreground mt-1">Verifica el nombre, o agrégalo como paciente externo →</p>
+                </div>
+              )}
+              {results.map((r) => {
+                const alreadyInvited = invitedIds.has(r.user_id);
+                return (
+                  <div key={r.user_id} className="flex items-center gap-2 p-2.5 rounded-md border border-border hover:bg-muted/40 transition-colors">
+                    <Avatar className="h-9 w-9 flex-shrink-0">
+                      <AvatarImage src={r.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                        {(r.name || r.email || '?').slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{r.name || 'Sin nombre'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{r.email}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={alreadyInvited ? 'outline' : 'default'}
+                      disabled={alreadyInvited}
+                      onClick={() => handleInvite(r)}
+                      className="flex-shrink-0 gap-1"
+                    >
+                      {alreadyInvited ? <><Check className="w-3.5 h-3.5" /> Enviada</> : <><Send className="w-3.5 h-3.5" /> Invitar</>}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </TabsContent>
 
           <TabsContent value="external" className="space-y-3 pt-3">
             <div className="space-y-1.5">
               <Label>Nombre completo *</Label>
-              <Input value={extName} onChange={e => setExtName(e.target.value)} maxLength={120} />
+              <Input value={extName} onChange={e => setExtName(e.target.value)} maxLength={120} placeholder="María González López" />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
                 <Label>Correo</Label>
-                <Input value={extEmail} onChange={e => setExtEmail(e.target.value)} maxLength={255} type="email" />
+                <Input value={extEmail} onChange={e => setExtEmail(e.target.value)} maxLength={255} type="email" placeholder="opcional" />
               </div>
               <div className="space-y-1.5">
                 <Label>Teléfono</Label>
-                <Input value={extPhone} onChange={e => setExtPhone(e.target.value)} maxLength={30} />
+                <Input value={extPhone} onChange={e => setExtPhone(e.target.value)} maxLength={30} placeholder="opcional" />
               </div>
             </div>
             <div className="space-y-1.5">
