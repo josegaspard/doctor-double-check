@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
-import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useDevToolsDetector } from '@/hooks/useDevToolsDetector';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface BunnyHLSPlayerProps {
   /** Master HLS manifest signed URL */
@@ -43,6 +45,7 @@ export function BunnyHLSPlayer({
   sessionId,
   onRefreshSignedUrl,
 }: BunnyHLSPlayerProps) {
+  const { user } = useAuth();
   const [errorKind, setErrorKind] = useState<'not_found' | 'forbidden' | 'network' | null>(null);
   const [fellBackToMp4, setFellBackToMp4] = useState(false);
   const derivedCdnHost = cdnHost || (() => {
@@ -53,6 +56,17 @@ export function BunnyHLSPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // DevTools detection: pause playback + log forensic event.
+  // If the user reopens DevTools, video stays paused until they close them.
+  const devtoolsOpen = useDevToolsDetector({
+    fileId: recordingId,
+    bucket: 'bunny-stream',
+    onOpen: () => {
+      const vid = videoRef.current;
+      if (vid && !vid.paused) vid.pause();
+    },
+  });
 
   const init = useCallback(() => {
     const video = videoRef.current;
@@ -254,6 +268,45 @@ export function BunnyHLSPlayer({
           }
         }}
       />
+
+      {/* Anti-piracy: watermark centrado tenue — sobrevive capturas de pantalla */}
+      {user?.email && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center select-none"
+        >
+          <span
+            className="font-mono text-white/15 text-base sm:text-xl md:text-2xl tracking-widest -rotate-12 px-4 py-2 text-center max-w-[80%] break-all"
+            style={{ textShadow: '0 0 8px rgba(0,0,0,0.5)' }}
+            data-testid="player-watermark-centered"
+          >
+            {user.email} · {recordingId.slice(0, 8)}
+          </span>
+        </div>
+      )}
+
+      {/* DevTools detected overlay: pausa + advertencia */}
+      {devtoolsOpen && (
+        <div
+          className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 backdrop-blur-md"
+          data-testid="devtools-block-overlay"
+        >
+          <div className="text-center max-w-md px-6">
+            <Eye className="w-12 h-12 mx-auto text-amber-400 mb-4" />
+            <h3 className="font-semibold text-white text-lg mb-2">
+              Reproducción pausada
+            </h3>
+            <p className="text-sm text-white/80">
+              Detectamos las herramientas de desarrollo abiertas. Por motivos de
+              seguridad de contenido médico, la reproducción está pausada.
+              Cierra las herramientas de desarrollo para continuar.
+            </p>
+            <p className="text-[10px] text-white/40 mt-4 font-mono">
+              Este evento fue registrado.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

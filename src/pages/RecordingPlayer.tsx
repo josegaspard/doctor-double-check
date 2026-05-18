@@ -200,11 +200,11 @@ export default function RecordingPlayer() {
           // Si bunny_status=processing usaremos /original en el player.
           const isProcessing = recResult.data.bunny_status && recResult.data.bunny_status !== 'ready';
           signedUrlPromise = supabase.functions
-            .invoke('bunny-signed-url', { body: { videoId: bunnyMatch[1], ttlSec: 600 } })
+            .invoke('bunny-signed-url', { body: { videoId: bunnyMatch[1], ttlSec: 180 } })
             .then(({ data }) => {
               if (!data?.hlsUrl) return null;
               const url = isProcessing ? data.originalUrl : data.hlsUrl;
-              return { url, thumb: data.thumbnailUrl, ttlSec: typeof data.expiresSec === 'number' ? data.expiresSec : 600 };
+              return { url, thumb: data.thumbnailUrl, ttlSec: typeof data.expiresSec === 'number' ? data.expiresSec : 180 };
             })
             .catch(() => null);
         } else if (b2Match && (await signedUrlPromise) === null) {

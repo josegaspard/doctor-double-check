@@ -134,13 +134,13 @@ export function RecordingVideoPlayer({
     const tryGet = async (): Promise<{ url: string; bunny?: BunnyUrls; poster?: string; ttlSec: number } | null> => {
       if (bunnyVideoId) {
         const { data, error: invokeErr } = await supabase.functions.invoke('bunny-signed-url', {
-          body: { videoId: bunnyVideoId, ttlSec: 600 },
+          body: { videoId: bunnyVideoId, ttlSec: 180 },
         });
         if (invokeErr || !data?.hlsUrl) {
           const detail = (invokeErr as any)?.message || data?.error || 'No se pudo obtener URL del video';
           throw new Error(detail);
         }
-        const ttl = typeof data.expiresSec === 'number' ? data.expiresSec : 600;
+        const ttl = typeof data.expiresSec === 'number' ? data.expiresSec : 180;
         const bunny: BunnyUrls = {
           hlsUrl: data.hlsUrl,
           mp4Url: data.mp4Url,
@@ -214,7 +214,7 @@ export function RecordingVideoPlayer({
       setSignedUrl(prefetchedSignedUrl);
       if (prefetchedThumbUrl) setPosterUrl(prefetchedThumbUrl);
       setUrlGeneratedAt(Date.now());
-      setUrlTtlSec(prefetchedTtl ?? 600);
+      setUrlTtlSec(prefetchedTtl ?? 180);
       setIsLoading(false);
       return;
     }
@@ -234,10 +234,11 @@ export function RecordingVideoPlayer({
     }
   }, [signedUrl, autoPlay]);
 
-  // Pre-renew signed URL al 70% del TTL para evitar 403 mid-playback.
+  // Pre-renew signed URL al 60% del TTL para evitar 403 mid-playback.
+  // Con TTL=180s, renueva cada ~108s — ventana copy-and-share <3 min.
   useEffect(() => {
     if (!urlGeneratedAt || !urlTtlSec) return;
-    const renewMs = Math.max(30_000, Math.floor(urlTtlSec * 1000 * 0.7));
+    const renewMs = Math.max(30_000, Math.floor(urlTtlSec * 1000 * 0.6));
     const timeout = setTimeout(() => {
       console.log('[RecordingVideoPlayer] Pre-renewing signed URL');
       fetchSignedUrl(0, true);
