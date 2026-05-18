@@ -12,6 +12,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { FileText, Video, Image as ImageIcon, Loader2, ExternalLink, RefreshCw, User, DollarSign, X, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeCredential } from '@/lib/utils';
+import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
+import { SecureImage } from '@/components/security/SecureImage';
 import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -97,15 +99,15 @@ function PreviewContent({
     case 'image':
       return (
         <div
-          className="relative w-full max-h-[50vh] sm:max-h-[60vh] overflow-hidden rounded-xl bg-muted/30 border border-border/50 select-none"
+          className="relative w-full overflow-hidden rounded-xl bg-muted/30 border border-border/50 select-none"
           onContextMenu={(e) => e.preventDefault()}
         >
-          <img
-            src={signedUrl}
+          <SecureImage
+            signedUrl={signedUrl}
             alt={content.title}
-            className="w-full h-full object-contain pointer-events-none"
-            draggable={false}
-            onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+            fileId={content.file_url}
+            bucket="doctor-content"
+            maxHeight="60vh"
           />
         </div>
       );
@@ -136,20 +138,13 @@ function PreviewContent({
           onContextMenu={(e) => e.preventDefault()}
           style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
         >
-          <div className="relative w-full h-[50vh] sm:h-[60vh] rounded-xl overflow-hidden border border-border/50 bg-muted/20">
-            {blobUrl ? (
-                <iframe
-                  src={`${blobUrl}#toolbar=0&navpanes=0&view=FitH`}
-                  className="w-full h-full"
-                  title={content.title}
-                  allow="fullscreen"
-                />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full gap-3">
-                <FileText className="w-12 h-12 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Cargando PDF…</p>
-              </div>
-            )}
+          <div className="relative w-full rounded-xl overflow-hidden border border-border/50 bg-muted/20 p-2">
+            <SecurePDFViewer
+              signedUrl={signedUrl}
+              fileName={content.title}
+              fileId={content.file_url}
+              bucket="doctor-content"
+            />
           </div>
         </div>
       );
@@ -199,22 +194,17 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
     try {
       let url = content.file_url;
       if (!content.file_url.startsWith('http')) {
+        // Short TTL: anti-piracy. SecurePDFViewer / SecureImage fetch and
+        // render through canvas — URL is never embedded in <iframe>/<img>.
         const { data, error: urlError } = await supabase.storage
           .from('doctor-content')
-          .createSignedUrl(content.file_url, 60 * 60);
+          .createSignedUrl(content.file_url, 600); // 10 min
         if (urlError) throw urlError;
         url = data?.signedUrl || '';
       }
       if (!url) throw new Error('No URL');
       setSignedUrl(url);
-      if (content.type === 'pdf') {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to fetch file');
-        const rawBlob = await response.blob();
-        const pdfBlob = new Blob([rawBlob], { type: 'application/pdf' });
-        const objectUrl = URL.createObjectURL(pdfBlob);
-        setBlobUrl(objectUrl);
-      }
+      setBlobUrl(null);
     } catch (err) {
       console.error('Error loading content:', err);
       setError('No se pudo cargar el archivo. Verifica que tengas acceso.');

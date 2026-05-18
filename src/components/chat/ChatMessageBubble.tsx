@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Image, Download, ExternalLink, Reply, CornerDownRight } from 'lucide-react';
+import { FileText, Image, Reply, CornerDownRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChatMessage } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
+import { SecureImage } from '@/components/security/SecureImage';
+import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
@@ -81,16 +83,14 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
       const [, fileName, url] = imageMatch;
       return (
         <div className="space-y-2">
-          <div className="relative group/img rounded-lg overflow-hidden">
-            <img 
-              src={url} 
-              alt={fileName} 
-              className="max-w-full rounded-lg cursor-pointer transition-transform hover:scale-[1.02]"
-              onClick={() => window.open(url, '_blank')}
+          <div className="relative rounded-lg overflow-hidden bg-muted/30">
+            <SecureImage
+              signedUrl={url}
+              alt={fileName}
+              fileId={`chat-${message.id}`}
+              bucket="documents"
+              maxHeight="400px"
             />
-            <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover/img:opacity-100">
-              <ExternalLink className="w-6 h-6 text-white drop-shadow-lg" />
-            </div>
           </div>
           <p className="text-[11px] opacity-70 flex items-center gap-1">
             <Image className="w-3 h-3" />
@@ -102,17 +102,31 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
 
     if (fileMatch) {
       const [, fileName, url] = fileMatch;
+      const isPdf = /\.pdf(\?|$)/i.test(fileName) || /\.pdf(\?|$)/i.test(url);
+      if (isPdf) {
+        return (
+          <div className="space-y-2">
+            <div className="rounded-lg overflow-hidden bg-muted/30 p-2">
+              <SecurePDFViewer
+                signedUrl={url}
+                fileName={fileName}
+                fileId={`chat-${message.id}`}
+                bucket="documents"
+              />
+            </div>
+            <p className="text-[11px] opacity-70 flex items-center gap-1">
+              <FileText className="w-3 h-3" />
+              {fileName}
+            </p>
+          </div>
+        );
+      }
+      // Non-PDF, non-image file: show metadata only, no download link (anti-piracy)
       return (
-        <a 
-          href={url} 
-          target="_blank" 
-          rel="noopener noreferrer"
+        <div
           className={`
-            flex items-center gap-3 p-3 rounded-lg transition-all
-            ${isOwn 
-              ? 'bg-white/10 hover:bg-white/20' 
-              : 'bg-primary/5 hover:bg-primary/10'
-            }
+            flex items-center gap-3 p-3 rounded-lg
+            ${isOwn ? 'bg-white/10' : 'bg-primary/5'}
           `}
         >
           <div className={`
@@ -123,10 +137,9 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{fileName}</p>
-            <p className="text-[11px] opacity-70">Clic para descargar</p>
+            <p className="text-[11px] opacity-70">Vista previa no disponible</p>
           </div>
-          <Download className="w-4 h-4 opacity-50" />
-        </a>
+        </div>
       );
     }
 

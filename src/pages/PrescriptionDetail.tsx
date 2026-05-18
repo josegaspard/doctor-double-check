@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportPrescriptionToPDF } from '@/lib/generatePrescriptionPDF';
+import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
+import { SecureImage } from '@/components/security/SecureImage';
 import {
   ArrowLeft,
   FileText,
@@ -21,7 +23,6 @@ import {
   Clock,
   Image,
   File,
-  ExternalLink,
   Loader2,
   AlertCircle,
 } from 'lucide-react';
@@ -95,12 +96,12 @@ export default function PrescriptionDetail() {
         setPrescription(prev => prev ? { ...prev, doctorSignatureUrl: sigUrl } : prev);
       }
 
-      // Get signed URL for the file
+      // Get signed URL for the file (short TTL anti-piracy)
       if ((data as any).file_url) {
         setIsLoadingFile(true);
         const { data: signedData } = await supabase.storage
           .from('prescriptions')
-          .createSignedUrl((data as any).file_url, 3600); // 1 hour
+          .createSignedUrl((data as any).file_url, 600); // 10 min
         if (signedData?.signedUrl) {
           setFileSignedUrl(signedData.signedUrl);
         }
@@ -250,27 +251,20 @@ export default function PrescriptionDetail() {
               ) : fileSignedUrl ? (
                 <div>
                   {isImage ? (
-                    <img 
-                      src={fileSignedUrl} 
-                      alt="Receta adjunta" 
-                      className="rounded-lg border max-w-full max-h-[500px] object-contain mx-auto"
+                    <SecureImage
+                      signedUrl={fileSignedUrl}
+                      alt="Receta adjunta"
+                      bucket="prescriptions"
+                      fileId={prescription.id}
+                      maxHeight="500px"
                     />
                   ) : (
-                    <div className="bg-muted/50 rounded-lg p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <File className="w-8 h-8 text-primary" />
-                        <div>
-                          <p className="font-medium text-sm">Documento PDF</p>
-                          <p className="text-xs text-muted-foreground">Haz clic para ver o descargar</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={fileSignedUrl} target="_blank" rel="noopener noreferrer" className="gap-1">
-                          <ExternalLink className="w-3 h-3" />
-                          Abrir
-                        </a>
-                      </Button>
-                    </div>
+                    <SecurePDFViewer
+                      signedUrl={fileSignedUrl}
+                      fileName={`Receta-${prescription.id}.pdf`}
+                      bucket="prescriptions"
+                      fileId={prescription.id}
+                    />
                   )}
                 </div>
               ) : (

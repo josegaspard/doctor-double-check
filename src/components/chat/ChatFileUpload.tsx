@@ -82,9 +82,11 @@ export const ChatFileUpload = forwardRef<ChatFileUploadRef, ChatFileUploadProps>
         setUploadProgress(70);
 
         // Get signed URL
+        // Short TTL: anti-piracy. URL embedded in message will expire — recipient
+        // re-fetches a fresh signed URL on display (see ChatMessageBubble).
         const { data: signedUrlData } = await supabase.storage
           .from('documents')
-          .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
+          .createSignedUrl(path, 15 * 60); // 15 min
 
         setUploadProgress(100);
 

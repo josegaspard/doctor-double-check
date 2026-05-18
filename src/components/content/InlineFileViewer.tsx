@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, FileText, AlertCircle } from 'lucide-react';
+import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
+import { SecureImage } from '@/components/security/SecureImage';
 
 // Extrae el path dentro del bucket dado un URL público o un path crudo.
 // Soporta:
@@ -32,7 +34,7 @@ interface Props {
   className?: string;
 }
 
-export function InlineFileViewer({ fileUrl, bucket = 'doctor-content', ttlSeconds = 3600, className }: Props) {
+export function InlineFileViewer({ fileUrl, bucket = 'doctor-content', ttlSeconds = 600, className }: Props) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const path = useMemo(() => extractPath(bucket, fileUrl), [fileUrl, bucket]);
@@ -81,13 +83,12 @@ export function InlineFileViewer({ fileUrl, bucket = 'doctor-content', ttlSecond
   if (kind === 'image') {
     return (
       <div className={wrapClass} {...noDownloadProps}>
-        <img
-          src={signedUrl}
+        <SecureImage
+          signedUrl={signedUrl}
           alt="Archivo adjunto"
-          draggable={false}
-          className="block w-full h-auto max-h-[75vh] object-contain select-none pointer-events-auto"
-          style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' as any }}
-          {...noDownloadProps}
+          bucket={bucket}
+          fileId={path}
+          maxHeight="75vh"
         />
       </div>
     );
@@ -95,16 +96,13 @@ export function InlineFileViewer({ fileUrl, bucket = 'doctor-content', ttlSecond
 
   if (kind === 'pdf') {
     return (
-      <div className={wrapClass} {...noDownloadProps} style={{ aspectRatio: '4 / 5' }}>
-        {/* #toolbar=0&navpanes=0 esconde la UI de Chrome/Brave que incluye botón descargar */}
-        <iframe
-          src={`${signedUrl}#toolbar=0&navpanes=0&statusbar=0`}
-          title="Archivo PDF"
-          className="absolute inset-0 w-full h-full"
-          style={{ border: 0 }}
+      <div className={`${wrapClass} p-2`} {...noDownloadProps}>
+        <SecurePDFViewer
+          signedUrl={signedUrl}
+          fileName={path.split('/').pop()}
+          fileId={path}
+          bucket={bucket}
         />
-        {/* Capa transparente para suprimir click-derecho sobre el iframe */}
-        <div className="absolute inset-0 pointer-events-none" />
       </div>
     );
   }

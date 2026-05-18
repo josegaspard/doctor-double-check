@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, Image, Calendar, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
+import { SecureImage } from '@/components/security/SecureImage';
 
 interface VaultFilePreviewModalProps {
   isOpen: boolean;
@@ -38,13 +40,9 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
     if (isOpen && file) {
       loadFileAsBlob();
     } else {
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
       setBlobUrl(null);
       setError(null);
     }
-    return () => {
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
-    };
   }, [isOpen, file?.id]);
 
   const loadFileAsBlob = async () => {
@@ -61,28 +59,14 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
         if (match) filePath = match[1];
       }
 
-      // Generate a fresh signed URL
+      // Short-TTL signed URL: anti-piracy. SecurePDFViewer / SecureImage
+      // fetch the file and render through canvas — original URL never reaches DOM.
       const { data, error: urlError } = await supabase.storage
         .from('vault-files')
-        .createSignedUrl(filePath, 3600);
+        .createSignedUrl(filePath, 600); // 10 min
 
       const signedUrl = urlError ? file.fileUrl : data.signedUrl;
-
-      // Fetch as blob to prevent direct URL exposure
-      const response = await fetch(signedUrl);
-      const rawBlob = await response.blob();
-
-      let finalBlob: Blob;
-      if (file.type === 'pdf') {
-        finalBlob = new Blob([rawBlob], { type: 'application/pdf' });
-      } else if (file.type === 'image') {
-        finalBlob = new Blob([rawBlob], { type: rawBlob.type || 'image/png' });
-      } else {
-        finalBlob = rawBlob;
-      }
-
-      const objectUrl = URL.createObjectURL(finalBlob);
-      setBlobUrl(objectUrl);
+      setBlobUrl(signedUrl);
 
       // Audit: registrar acceso real al archivo
       if (file.patientId) {
@@ -192,22 +176,20 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
           ) : blobUrl ? (
             <div className="w-full h-full flex items-center justify-center p-4">
               {file.type === 'image' ? (
-                <div className="relative">
-                  <img
-                    src={blobUrl}
-                    alt={file.name}
-                    className="max-w-full max-h-[500px] object-contain rounded-lg"
-                    draggable={false}
-                    onDragStart={(e) => e.preventDefault()}
-                  />
-                  {/* Transparent overlay to prevent drag-save */}
-                  <div className="absolute inset-0 pointer-events-none" />
-                </div>
+                <SecureImage
+                  signedUrl={blobUrl}
+                  alt={file.name}
+                  fileId={file.id}
+                  bucket="vault-files"
+                  maxHeight="500px"
+                />
               ) : file.type === 'pdf' ? (
-                <iframe
-                  src={`${blobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                  className="w-full h-[500px] rounded-lg border"
-                  title={file.name}
+                <SecurePDFViewer
+                  signedUrl={blobUrl}
+                  fileName={file.name}
+                  fileId={file.id}
+                  bucket="vault-files"
+                  className="w-full"
                 />
               ) : (
                 <div className="text-center p-8">
