@@ -19,29 +19,17 @@ async function bunnyTokenHash(data: string) {
 }
 
 /**
- * Bunny Stream token formula (with IP binding):
- *   SHA256(security_key + dir_path + expires + ip)
- * Bunny CDN re-computes the hash on each segment request using the
- * requesting client's IP. If the IP differs from the one we signed
- * with, the request fails with 403 — even though the token+expires
- * still match. This kills "copy URL and share / use in yt-dlp from
- * another machine" attacks.
+ * Bunny Stream token formula:
+ *   SHA256(security_key + dir_path + expires)
+ *
+ * NOTE 2026-05-18: IP binding `SHA256(...+ip)` was attempted but Bunny Stream
+ * library tokens DO NOT support IP in the hash (only Bunny CDN Pull Zone
+ * tokens do — they're a different product). Including IP broke playback for
+ * all paying users. Reverted. Anti-piracy now relies on: short TTL (180s) +
+ * frontend HLS/MSE + watermark + DevTools detector.
  */
-async function signDirectory(dirPath: string, expires: number, ip: string) {
-  return bunnyTokenHash(`${TOKEN_KEY}${dirPath}${expires}${ip}`);
-}
-
-function extractClientIp(req: Request): string {
-  // Supabase Edge runtime forwards the real client IP in these headers.
-  // x-forwarded-for can be a comma-separated chain — first entry is the client.
-  const xff = req.headers.get('x-forwarded-for');
-  if (xff) {
-    const first = xff.split(',')[0].trim();
-    if (first) return first;
-  }
-  return req.headers.get('cf-connecting-ip')
-    || req.headers.get('x-real-ip')
-    || '';
+async function signDirectory(dirPath: string, expires: number) {
+  return bunnyTokenHash(`${TOKEN_KEY}${dirPath}${expires}`);
 }
 
 Deno.serve(async (req) => {
@@ -63,31 +51,21 @@ Deno.serve(async (req) => {
     if (!user) return json({ error: 'unauthorized' }, 401);
 
     const body = await req.json().catch(() => ({}));
-    const { videoId, ttlSec, bindIp } = body;
+    const { videoId, ttlSec } = body;
     if (!videoId || typeof videoId !== 'string')
       return json({ error: 'videoId required' }, 400);
 
-    // TTL corto = anti-piracy. URLs comparten <3 min y mueren.
+    // TTL corto = anti-piracy. URLs comparten ~3 min y mueren.
     // Frontend renueva automáticamente antes de expirar.
-    // Defaults: 180s, min 60s, max 1h (no permitimos sesiones largas que
-    // dejen URL viva mucho tiempo).
     const ttl = Math.min(Math.max(Number(ttlSec) || 180, 60), 3600);
     const expires = Math.floor(Date.now() / 1000) + ttl;
-
-    // IP binding: si bindIp != false, atamos el token a la IP del cliente.
-    // Defaults a true. Para warmup / debug se puede mandar bindIp: false.
-    const clientIp = extractClientIp(req);
-    const shouldBindIp = bindIp !== false && !!clientIp;
-    const ipForHash = shouldBindIp ? clientIp : '';
 
     // Firmamos el DIRECTORIO /${videoId}/ — un solo token cubre HLS playlist,
     // sub-manifests, .ts segments, MP4 renditions, /original, thumbnail.
     const dirPath = `/${videoId}/`;
-    const token = await signDirectory(dirPath, expires, ipForHash);
+    const token = await signDirectory(dirPath, expires);
 
     const baseUrl = `https://${CDN_HOST}`;
-    // El parámetro &token_ip= NO se incluye en URL; Bunny lee la IP del request
-    // entrante y la concatena al hash. Nuestro hash debe usar la MISMA IP.
     const queryString = `?token=${token}&expires=${expires}`;
 
     return json({
@@ -101,7 +79,6 @@ Deno.serve(async (req) => {
       previewUrl: `${baseUrl}/${videoId}/preview.webp${queryString}`,
       expiresSec: ttl,
       expiresAt: expires,
-      ipBound: shouldBindIp,
     });
   } catch (e) {
     console.error('[bunny-signed-url] error:', e);
