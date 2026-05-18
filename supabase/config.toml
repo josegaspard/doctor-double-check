@@ -1,4 +1,10 @@
-project_id = "jbthjpnxiwnegzgfzfth"
+project_id = "ouawwfqexfwuptlgoksr"
+
+# SECURITY 2026-05-17: las funciones translate-news, send-missed-call-email,
+# send-appointment-confirmation y notify-admin ahora validan JWT internamente
+# vía requireUserJWT / requireUserOrService (ver _shared/auth-guards.ts).
+# No agregamos `verify_jwt = false` aquí porque el default es true y eso
+# añade una segunda capa de protección a nivel gateway.
 
 [functions]
   [functions.auth-email-hook]

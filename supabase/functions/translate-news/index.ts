@@ -1,19 +1,60 @@
 // Traductor de noticias vía Gemini API directo.
+// SECURITY 2026-05-17: requireUserJWT + CORS allowlist + input size cap.
+// Antes: endpoint público que cualquiera podía invocar para quemar cuota Gemini
+// con prompts arbitrarios (prompt-injection vector). Ahora: requiere usuario
+// autenticado y limita el tamaño de la entrada.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireUserJWT, AuthError, corsHeadersFor } from "../_shared/auth-guards.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const MAX_CONTENT_BYTES = 32_000; // ~32KB ≈ 8K tokens, suficiente para una nota larga
+const MAX_TITLE_BYTES = 500;
 
 serve(async (req) => {
+  const corsHeaders = corsHeadersFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Auth: usuario autenticado obligatorio. Visitantes sin sesión reciben 401.
+  try {
+    await requireUserJWT(req);
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: e.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ error: "Auth check failed" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const { title, content, targetLang } = await req.json();
 
     if (!title || !content || !targetLang) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (typeof title !== "string" || typeof content !== "string" || typeof targetLang !== "string") {
+      return new Response(JSON.stringify({ error: "Invalid field types" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (title.length > MAX_TITLE_BYTES || content.length > MAX_CONTENT_BYTES) {
+      return new Response(JSON.stringify({ error: "Input too large" }), {
+        status: 413,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (targetLang !== "en" && targetLang !== "es") {
+      return new Response(JSON.stringify({ error: "Unsupported targetLang" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

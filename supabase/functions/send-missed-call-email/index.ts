@@ -1,18 +1,36 @@
 // Notify the patient by email + push when they missed a video call from their doctor.
+// SECURITY 2026-05-17: requireUserJWT + ownership check (caller must be the
+// consultation's doctor). Antes: cualquiera con un consultationId podía spamear
+// emails "📞 Llamada perdida del Dr. X" + notificación in-app a pacientes.
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireUserJWT, AuthError, corsHeadersFor } from "../_shared/auth-guards.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>";
 const APP_URL = "https://medical-masters.com";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
 Deno.serve(async (req: Request): Promise<Response> => {
+  const corsHeaders = corsHeadersFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Auth: caller debe ser un usuario autenticado.
+  let callerId: string;
+  try {
+    const user = await requireUserJWT(req);
+    callerId = user.id;
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: e.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ error: "Auth check failed" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const { consultationId } = await req.json();
@@ -36,6 +54,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (!consultation) {
       return new Response(JSON.stringify({ error: "consultation not found" }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Solo el doctor de la consulta puede disparar el "llamada perdida".
+    if (consultation.doctor_id !== callerId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -111,3 +137,4 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
   }
 });
+

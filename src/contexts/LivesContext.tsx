@@ -279,9 +279,13 @@ export function LivesProvider({ children }: { children: ReactNode }) {
 
   const fetchRecordings = useCallback(async () => {
     try {
+      // Columnas explícitas: anon no tiene grant sobre bunny_video_id/video_url
+      // (migración 20260517_recordings_anon_columns.sql). El RecordingPlayer
+      // pide esos campos por separado vía /recording/:id que sí requiere auth.
+      // bunny_status se omite aquí (no tipado en types.ts; el grid no lo renderiza).
       const { data: recordingsData } = await supabase
         .from('recordings')
-        .select('*')
+        .select('id, live_id, doctor_id, title, description, specialty, duration, price, thumbnail_url, peak_viewers, created_at, tags')
         .order('created_at', { ascending: false });
 
       if (recordingsData) {
@@ -354,12 +358,14 @@ export function LivesProvider({ children }: { children: ReactNode }) {
             duration: r.duration,
             price: Number(r.price),
             thumbnailUrl,
-            videoUrl: r.video_url || undefined,
+            // videoUrl/bunnyVideoId/bunnyStatus se obtienen en RecordingPlayer
+            // vía fetch autenticado (anon no tiene grant sobre esas columnas).
+            videoUrl: undefined,
             createdAt: new Date(r.created_at),
             tags: r.tags || [],
             peakViewers: r.peak_viewers ?? undefined,
-            bunnyVideoId: (r as any).bunny_video_id || undefined,
-            bunnyStatus: (r as any).bunny_status || undefined,
+            bunnyVideoId: undefined,
+            bunnyStatus: undefined,
           };
         }));
       }

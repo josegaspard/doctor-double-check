@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Env files — NUNCA commitear (incluso anon keys; pueden filtrar project_id viejo)
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -12,7 +12,7 @@
 
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/auth-guards.ts";
+import { requireUserOrService, AuthError, corsHeadersFor } from "../_shared/auth-guards.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>";
@@ -161,12 +161,42 @@ function buildEmail(type: NotifyType, data: any): { subject: string; html: strin
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
+  const corsHeaders = corsHeadersFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // SECURITY 2026-05-17: caller debe ser un usuario autenticado (ReportIssue,
+  // Onboarding) o el service-role (stripe-webhook server-side). Antes: open
+  // relay — cualquiera podía dispararle emails a los admins arbitrariamente.
+  let caller: { id: string } | null = null;
+  try {
+    const user = await requireUserOrService(req);
+    caller = user ? { id: user.id } : null;
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: e.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ error: "Auth check failed" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const { type, data } = await req.json() as { type: NotifyType; data: any };
     if (!type || !data) {
       return new Response(JSON.stringify({ error: "Missing type or data" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // `new_purchase` solo lo dispara el stripe-webhook server-side (service-role).
+    // Bloquear que un usuario regular falsifique compras para spamear admins.
+    if (type === "new_purchase" && caller !== null) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Fetch admin emails via service-role client
