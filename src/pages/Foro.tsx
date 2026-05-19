@@ -87,14 +87,14 @@ export default function Foro() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-10 max-w-5xl">
-        <header className="mb-6 sm:mb-10 text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-3">
+        <header className="mb-6 sm:mb-10 text-center sm:text-left rounded-2xl bg-white/95 dark:bg-slate-900/85 supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-slate-900/70 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-xl p-5 sm:p-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#163a83]/12 text-[#163a83] dark:bg-cyan-400/15 dark:text-cyan-200 text-xs font-semibold mb-3">
             <MessageSquare className="w-3.5 h-3.5" /> Foro Medical Masters
           </div>
-          <h1 className="text-2xl sm:text-4xl font-bold text-foreground tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
             La sala común de la red médica
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-2 max-w-2xl">
+          <p className="text-sm sm:text-base text-slate-700 dark:text-slate-200 mt-2 max-w-2xl">
             Videoconferencias médico-residente y médico-médico, eventos, convocatorias, lives y zooms
             — todo en un mismo lugar para la comunidad verificada de Medical Masters.
           </p>
@@ -102,7 +102,7 @@ export default function Foro() {
             <Button onClick={() => navigate('/meetings?new=1')} className="gap-1.5">
               <Calendar className="w-4 h-4" /> Crear reunión
             </Button>
-            <Button variant="outline" onClick={() => navigate('/lives?new=1')} className="gap-1.5">
+            <Button variant="outline" onClick={() => navigate('/lives?new=1')} className="gap-1.5 bg-white/90 dark:bg-white/10 dark:text-white dark:border-white/20 dark:hover:bg-white/20">
               <Radio className="w-4 h-4" /> Iniciar live
             </Button>
           </div>
@@ -131,9 +131,9 @@ export default function Foro() {
           })}
         </div>
 
-        <div className="mt-10 p-4 sm:p-6 rounded-xl bg-muted/40 border border-border">
-          <p className="text-sm font-medium mb-1">Próximamente en el Foro</p>
-          <p className="text-xs text-muted-foreground">
+        <div className="mt-10 p-4 sm:p-6 rounded-xl bg-white/95 dark:bg-slate-900/85 supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-slate-900/70 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-lg">
+          <p className="text-sm font-semibold mb-1 text-slate-900 dark:text-white">Próximamente en el Foro</p>
+          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
             Hilos de discusión asincrónica por especialidad, biblioteca de presentaciones, tablero de
             convocatorias internacionales y agenda compartida con tus colegas.
           </p>
